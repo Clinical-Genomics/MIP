@@ -370,7 +370,7 @@ eval_parameter_hash({parameter_href => \%parameter,
 my $mip_version = "v4.0.19";	#Set MIP version
 
 ## Directories, files, job_ids and sample_info
-my (%infile, %indir_path, %infile_lane_no_ending, %lane, %infile_both_strands_no_ending, %job_id, %sample_info);
+my (%infile, %indir_path, %infile_lane_prefix, %lane, %infile_both_strands_prefix, %job_id, %sample_info);
 
 
 ####Staging/Sanity Check Area
@@ -1043,8 +1043,8 @@ my $uncompressed_file_switch = infiles_reformat({active_parameter_href => \%acti
 						 file_info_href => \%file_info,
 						 infile_href => \%infile,
 						 indir_path_href => \%indir_path,
-						 infile_lane_no_ending_href => \%infile_lane_no_ending,
-						 infile_both_strands_no_ending_href => \%infile_both_strands_no_ending,
+						 infile_lane_prefix_href => \%infile_lane_prefix,
+						 infile_both_strands_prefix_href => \%infile_both_strands_prefix,
 						 lane_href => \%lane,
 						 job_id_href => \%job_id,
 						 outaligner_dir_ref => \$active_parameter{outaligner_dir},
@@ -1056,7 +1056,7 @@ my $uncompressed_file_switch = infiles_reformat({active_parameter_href => \%acti
 create_file_endings({parameter_href => \%parameter,
 		     active_parameter_href => \%active_parameter,
 		     file_info_href => \%file_info,
-		     infile_lane_no_ending_href => \%infile_lane_no_ending,
+		     infile_lane_prefix_href => \%infile_lane_prefix,
 		     order_parameters_ref => \@order_parameters,
 		    });
 
@@ -1091,7 +1091,7 @@ if ($active_parameter{dry_run_all} == 0) {
 check_vt_for_references({parameter_href => \%parameter,
 			 active_parameter_href => \%active_parameter,
 			 sample_info_href => \%sample_info,
-			 infile_lane_no_ending_href => \%infile_lane_no_ending,
+			 infile_lane_prefix_href => \%infile_lane_prefix,
 			 job_id_href => \%job_id,
 			 vt_references_ref => \@{ $active_parameter{decompose_normalize_references} },
 			 vt_decompose => $active_parameter{vt_decompose},
@@ -1110,7 +1110,7 @@ if ($active_parameter{psplit_fastq_file} > 0) {  #Split of fastq files in batche
 			  sample_info_href => \%sample_info,
 			  infile_href => \%infile,
 			  indir_path_href => \%indir_path,
-			  infile_lane_no_ending_href => \%infile_lane_no_ending,
+			  infile_lane_prefix_href => \%infile_lane_prefix,
 			  job_id_href => \%job_id,
 			  sample_id_ref => \$sample_id,
 			  program_name => "split_fastq_file",
@@ -1140,7 +1140,7 @@ if ( ($active_parameter{pgzip_fastq} > 0) && ($uncompressed_file_switch eq "unco
 			    sample_info_href => \%sample_info,
 			    infile_href => \%infile,
 			    indir_path_href => \%indir_path,
-			    infile_lane_no_ending_href => \%infile_lane_no_ending,
+			    infile_lane_prefix_href => \%infile_lane_prefix,
 			    job_id_href => \%job_id,
 			    sample_id => $sample_id,
 			    program_name => "gzip_fastq"
@@ -1162,7 +1162,7 @@ if ($active_parameter{pfastqc} > 0) {  #Run FastQC
 		 sample_info_href => \%sample_info,
 		 infile_href => \%infile,
 		 indir_path_href => \%indir_path,
-		 infile_lane_no_ending_href => \%infile_lane_no_ending,
+		 infile_lane_prefix_href => \%infile_lane_prefix,
 		 job_id_href => \%job_id,
 		 sample_id_ref => \$sample_id,
 		 program_name => "fastqc",
@@ -1177,7 +1177,7 @@ if ($active_parameter{pmadeline} > 0) {  #Run madeline
     madeline({parameter_href => \%parameter,
 	      active_parameter_href => \%active_parameter,
 	      sample_info_href => \%sample_info,
-	      infile_lane_no_ending_href => \%infile_lane_no_ending,
+	      infile_lane_prefix_href => \%infile_lane_prefix,
 	      job_id_href => \%job_id,
 	      program_name => "madeline",
 	     });
@@ -1196,7 +1196,7 @@ if ($active_parameter{pbwa_mem} > 0) {  #Run BWA Mem
 				     active_parameter_href => \%active_parameter,
 				     sample_info_href => \%sample_info,
 				     file_info_href => \%file_info,
-				     infile_lane_no_ending_href => \%infile_lane_no_ending,
+				     infile_lane_prefix_href => \%infile_lane_prefix,
 				     job_id_href => \%job_id,
 				     bwa_build_reference_file_endings_ref => \@{ $file_info{bwa_build_reference_file_endings} },
 				     program_name => "bwa_mem",
@@ -1211,7 +1211,7 @@ if ($active_parameter{pbwa_mem} > 0) {  #Run BWA Mem
 		 file_info_href => \%file_info,
 		 infile_href => \%infile,
 		 indir_path_href => \%indir_path,
-		 infile_lane_no_ending_href => \%infile_lane_no_ending,
+		 infile_lane_prefix_href => \%infile_lane_prefix,
 		 job_id_href => \%job_id,
 		 sample_id_ref => \$sample_id,
 		 program_name => "bwa_mem",
@@ -1230,7 +1230,7 @@ if ($active_parameter{ppicardtools_mergerapidreads} > 0) {  #Run PicardtoolsMerg
 				     active_parameter_href => \%active_parameter,
 				     sample_info_href => \%sample_info,
 				     file_info_href => \%file_info,
-				     infile_lane_no_ending_href => \%infile_lane_no_ending,
+				     infile_lane_prefix_href => \%infile_lane_prefix,
 				     lane_href => \%lane,
 				     job_id_href => \%job_id,
 				     sample_id_ref => \$sample_id,
@@ -1252,7 +1252,7 @@ if ($active_parameter{pbwa_aln} > 0) {  #Run BWA Aln
 				     active_parameter_href => \%active_parameter,
 				     sample_info_href => \%sample_info,
 				     file_info_href => \%file_info,
-				     infile_lane_no_ending_href => \%infile_lane_no_ending,
+				     infile_lane_prefix_href => \%infile_lane_prefix,
 				     job_id_href => \%job_id,
 				     bwa_build_reference_file_endings_ref => \@{ $file_info{bwa_build_reference_file_endings} },
 				     program_name => "bwa_aln",
@@ -1261,7 +1261,7 @@ if ($active_parameter{pbwa_aln} > 0) {  #Run BWA Aln
     }
     foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
 
-	bwa_aln(\%parameter, \%active_parameter, \%sample_info, \%infile, \%indir_path, \%infile_lane_no_ending, \%infile_both_strands_no_ending, \%job_id, $sample_id, $active_parameter{outaligner_dir}, "bwa_aln");
+	bwa_aln(\%parameter, \%active_parameter, \%sample_info, \%infile, \%indir_path, \%infile_lane_prefix, \%infile_both_strands_prefix, \%job_id, $sample_id, $active_parameter{outaligner_dir}, "bwa_aln");
     }
 }
 
@@ -1277,7 +1277,7 @@ if ($active_parameter{pbwa_sampe} > 0) {  #Run BWA Sampe
 				     active_parameter_href => \%active_parameter,
 				     sample_info_href => \%sample_info,
 				     file_info_href => \%file_info,
-				     infile_lane_no_ending_href => \%infile_lane_no_ending,
+				     infile_lane_prefix_href => \%infile_lane_prefix,
 				     job_id_href => \%job_id,
 				     bwa_build_reference_file_endings_ref => \@{ $file_info{bwa_build_reference_file_endings} },
 				     program_name => "bwa_sampe",
@@ -1285,7 +1285,7 @@ if ($active_parameter{pbwa_sampe} > 0) {  #Run BWA Sampe
 	}
     }
     foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
-	bwa_sampe(\%parameter, \%active_parameter, \%sample_info, \%infile, \%indir_path, \%infile_lane_no_ending, \%infile_both_strands_no_ending, \%job_id, $sample_id, $active_parameter{outaligner_dir}, "bwa_sampe");
+	bwa_sampe(\%parameter, \%active_parameter, \%sample_info, \%infile, \%indir_path, \%infile_lane_prefix, \%infile_both_strands_prefix, \%job_id, $sample_id, $active_parameter{outaligner_dir}, "bwa_sampe");
     }
 }
 
@@ -1299,7 +1299,7 @@ if ($active_parameter{reduce_io}) {  #Run consecutive models
 			 active_parameter_href => \%active_parameter,
 			 sample_info_href => \%sample_info,
 			 file_info_href => \%file_info,
-			 infile_lane_no_ending_href => \%infile_lane_no_ending,
+			 infile_lane_prefix_href => \%infile_lane_prefix,
 			 lane_href => \%lane,
 			 job_id_href => \%job_id,
 			 outaligner_dir_ref => \$active_parameter{outaligner_dir},
@@ -1319,7 +1319,7 @@ else {
 				   active_parameter_href => \%active_parameter,
 				   sample_info_href => \%sample_info,
 				   file_info_href => \%file_info,
-				   infile_lane_no_ending_href => \%infile_lane_no_ending,
+				   infile_lane_prefix_href => \%infile_lane_prefix,
 				   lane_href => \%lane,
 				   job_id_href => \%job_id,
 				   sample_id_ref => \$sample_id,
@@ -1337,7 +1337,7 @@ else {
 			     active_parameter_href => \%active_parameter,
 			     sample_info_href => \%sample_info,
 			     file_info_href => \%file_info,
-			     infile_lane_no_ending_href => \%infile_lane_no_ending,
+			     infile_lane_prefix_href => \%infile_lane_prefix,
 			     lane_href => \%lane,
 			     job_id_href => \%job_id,
 			     sample_id_ref => \$sample_id,
@@ -1354,7 +1354,7 @@ else {
 						active_parameter_href => \%active_parameter,
 						sample_info_href => \%sample_info,
 						file_info_href => \%file_info,
-						infile_lane_no_ending_href => \%infile_lane_no_ending,
+						infile_lane_prefix_href => \%infile_lane_prefix,
 						job_id_href => \%job_id,
 						program_name => "gatk_realigner",
 					       });
@@ -1365,7 +1365,7 @@ else {
 						    active_parameter_href => \%active_parameter,
 						    sample_info_href => \%sample_info,
 						    file_info_href => \%file_info,
-						    infile_lane_no_ending_href => \%infile_lane_no_ending,
+						    infile_lane_prefix_href => \%infile_lane_prefix,
 						    job_id_href => \%job_id,
 						    program_name => "gatk_realigner",
 						   });
@@ -1376,7 +1376,7 @@ else {
 			    active_parameter_href => \%active_parameter,
 			    sample_info_href => \%sample_info,
 			    file_info_href => \%file_info,
-			    infile_lane_no_ending_href => \%infile_lane_no_ending,
+			    infile_lane_prefix_href => \%infile_lane_prefix,
 			    job_id_href => \%job_id,
 			    sample_id_ref => \$sample_id,
 			    program_name => "gatk_realigner",
@@ -1392,7 +1392,7 @@ else {
 						active_parameter_href => \%active_parameter,
 						sample_info_href => \%sample_info,
 						file_info_href => \%file_info,
-						infile_lane_no_ending_href => \%infile_lane_no_ending,
+						infile_lane_prefix_href => \%infile_lane_prefix,
 						job_id_href => \%job_id,
 						program_name => "gatk_baserecalibration",
 					       });
@@ -1403,7 +1403,7 @@ else {
 						    active_parameter_href => \%active_parameter,
 						    sample_info_href => \%sample_info,
 						    file_info_href => \%file_info,
-						    infile_lane_no_ending_href => \%infile_lane_no_ending,
+						    infile_lane_prefix_href => \%infile_lane_prefix,
 						    job_id_href => \%job_id,
 						    program_name => "gatk_baserecalibration",
 						   });
@@ -1414,7 +1414,7 @@ else {
 				    active_parameter_href => \%active_parameter,
 				    sample_info_href => \%sample_info,
 				    file_info_href => \%file_info,
-				    infile_lane_no_ending_href => \%infile_lane_no_ending,
+				    infile_lane_prefix_href => \%infile_lane_prefix,
 				    job_id_href => \%job_id,
 				    sample_id_ref => \$sample_id,
 				    program_name => "gatk_baserecalibration",
@@ -1434,7 +1434,7 @@ if ($active_parameter{pchanjo_sexcheck} > 0) {
 			 active_parameter_href => \%active_parameter,
 			 sample_info_href => \%sample_info,
 			 file_info_href => \%file_info,
-			 infile_lane_no_ending_href => \%infile_lane_no_ending,
+			 infile_lane_prefix_href => \%infile_lane_prefix,
 			 job_id_href => \%job_id,
 			 sample_id_ref => \$sample_id,
 			 program_name => "chanjo_sexcheck",
@@ -1452,7 +1452,7 @@ if ($active_parameter{psambamba_depth} > 0) {
 			active_parameter_href => \%active_parameter,
 			sample_info_href => \%sample_info,
 			file_info_href => \%file_info,
-			infile_lane_no_ending_href => \%infile_lane_no_ending,
+			infile_lane_prefix_href => \%infile_lane_prefix,
 			job_id_href => \%job_id,
 			sample_id_ref => \$sample_id,
 			program_name => "sambamba_depth",
@@ -1471,7 +1471,7 @@ if ($active_parameter{pbedtools_genomecov} > 0) {  #Run bedtools genomecov
 			    active_parameter_href => \%active_parameter,
 			    sample_info_href => \%sample_info,
 			    file_info_href => \%file_info,
-			    infile_lane_no_ending_href => \%infile_lane_no_ending,
+			    infile_lane_prefix_href => \%infile_lane_prefix,
 			    job_id_href => \%job_id,
 			    sample_id_ref => \$sample_id,
 			    program_name => "bedtools_genomecov",
@@ -1487,7 +1487,7 @@ if ($active_parameter{ppicardtools_collectmultiplemetrics} > 0) {  #Run picardto
 					    active_parameter_href => \%active_parameter,
 					    sample_info_href => \%sample_info,
 					    file_info_href => \%file_info,
-					    infile_lane_no_ending_href => \%infile_lane_no_ending,
+					    infile_lane_prefix_href => \%infile_lane_prefix,
 					    job_id_href => \%job_id,
 					    program_name => "picardtools_collectmultiplemetrics",
 					   });
@@ -1498,7 +1498,7 @@ if ($active_parameter{ppicardtools_collectmultiplemetrics} > 0) {  #Run picardto
 					    active_parameter_href => \%active_parameter,
 					    sample_info_href => \%sample_info,
 					    file_info_href => \%file_info,
-					    infile_lane_no_ending_href => \%infile_lane_no_ending,
+					    infile_lane_prefix_href => \%infile_lane_prefix,
 					    job_id_href => \%job_id,
 					    sample_id_ref => \$sample_id,
 					    program_name => "picardtools_collectmultiplemetrics",
@@ -1514,7 +1514,7 @@ if ($active_parameter{ppicardtools_collecthsmetrics} > 0) {  #Run Picardtools_co
 					    active_parameter_href => \%active_parameter,
 					    sample_info_href => \%sample_info,
 					    file_info_href => \%file_info,
-					    infile_lane_no_ending_href => \%infile_lane_no_ending,
+					    infile_lane_prefix_href => \%infile_lane_prefix,
 					    job_id_href => \%job_id,
 					    program_name => "picardtools_collecthsmetrics",
 					   });
@@ -1525,7 +1525,7 @@ if ($active_parameter{ppicardtools_collecthsmetrics} > 0) {  #Run Picardtools_co
 						active_parameter_href => \%active_parameter,
 						sample_info_href => \%sample_info,
 						file_info_href => \%file_info,
-						infile_lane_no_ending_href => \%infile_lane_no_ending,
+						infile_lane_prefix_href => \%infile_lane_prefix,
 						job_id_href => \%job_id,
 						program_name => "picardtools_collecthsmetrics",
 					       });
@@ -1536,7 +1536,7 @@ if ($active_parameter{ppicardtools_collecthsmetrics} > 0) {  #Run Picardtools_co
 				      active_parameter_href => \%active_parameter,
 				      sample_info_href => \%sample_info,
 				      file_info_href => \%file_info,
-				      infile_lane_no_ending_href => \%infile_lane_no_ending,
+				      infile_lane_prefix_href => \%infile_lane_prefix,
 				      job_id_href => \%job_id,
 				      sample_id_ref => \$sample_id,
 				      program_name => "picardtools_collecthsmetrics",
@@ -1557,7 +1557,7 @@ if ($active_parameter{prcovplots} > 0) {  #Run Rcovplot scripts
 			    sample_info_href => \%sample_info,
 			    file_info_href => \%file_info,
 			    lane_href => \%lane,
-			    infile_lane_no_ending_href => \%infile_lane_no_ending,
+			    infile_lane_prefix_href => \%infile_lane_prefix,
 			    job_id_href => \%job_id,
 			    sample_id_ref => \$sample_id,
 			    program_name => "rcovplots",
@@ -1575,7 +1575,7 @@ if ($active_parameter{pcnvnator} > 0) {  #Run CNVnator
 					    active_parameter_href => \%active_parameter,
 					    sample_info_href => \%sample_info,
 					    file_info_href => \%file_info,
-					    infile_lane_no_ending_href => \%infile_lane_no_ending,
+					    infile_lane_prefix_href => \%infile_lane_prefix,
 					    job_id_href => \%job_id,
 					    program_name => "cnvnator",
 					   });
@@ -1586,7 +1586,7 @@ if ($active_parameter{pcnvnator} > 0) {  #Run CNVnator
 		  active_parameter_href => \%active_parameter,
 		  sample_info_href => \%sample_info,
 		  file_info_href => \%file_info,
-		  infile_lane_no_ending_href => \%infile_lane_no_ending,
+		  infile_lane_prefix_href => \%infile_lane_prefix,
 		  job_id_href => \%job_id,
 		  sample_id_ref => \$sample_id,
 		  program_name => "cnvnator",
@@ -1603,7 +1603,7 @@ if ($active_parameter{pdelly_call} > 0) {  #Run delly_call
 					    active_parameter_href => \%active_parameter,
 					    sample_info_href => \%sample_info,
 					    file_info_href => \%file_info,
-					    infile_lane_no_ending_href => \%infile_lane_no_ending,
+					    infile_lane_prefix_href => \%infile_lane_prefix,
 					    job_id_href => \%job_id,
 					    program_name => "delly_call",
 					   });
@@ -1614,7 +1614,7 @@ if ($active_parameter{pdelly_call} > 0) {  #Run delly_call
 		    active_parameter_href => \%active_parameter,
 		    sample_info_href => \%sample_info,
 		    file_info_href => \%file_info,
-		    infile_lane_no_ending_href => \%infile_lane_no_ending,
+		    infile_lane_prefix_href => \%infile_lane_prefix,
 		    job_id_href => \%job_id,
 		    sample_id_ref => \$sample_id,
 		    program_name => "delly_call",
@@ -1631,7 +1631,7 @@ if ($active_parameter{pdelly_reformat} > 0) {  #Run Delly merge, regenotype, bcf
 					    active_parameter_href => \%active_parameter,
 					    sample_info_href => \%sample_info,
 					    file_info_href => \%file_info,
-					    infile_lane_no_ending_href => \%infile_lane_no_ending,
+					    infile_lane_prefix_href => \%infile_lane_prefix,
 					    job_id_href => \%job_id,
 					    program_name => "delly_reformat",
 					   });
@@ -1640,7 +1640,7 @@ if ($active_parameter{pdelly_reformat} > 0) {  #Run Delly merge, regenotype, bcf
 		    active_parameter_href => \%active_parameter,
 		    sample_info_href => \%sample_info,
 		    file_info_href => \%file_info,
-		    infile_lane_no_ending_href => \%infile_lane_no_ending,
+		    infile_lane_prefix_href => \%infile_lane_prefix,
 		    job_id_href => \%job_id,
 		    program_name => "delly_reformat",
 		   });
@@ -1654,7 +1654,7 @@ if ($active_parameter{pmanta} > 0) {  #Run Manta
 					    active_parameter_href => \%active_parameter,
 					    sample_info_href => \%sample_info,
 					    file_info_href => \%file_info,
-					    infile_lane_no_ending_href => \%infile_lane_no_ending,
+					    infile_lane_prefix_href => \%infile_lane_prefix,
 					    job_id_href => \%job_id,
 					    program_name => "manta",
 					   });
@@ -1663,7 +1663,7 @@ if ($active_parameter{pmanta} > 0) {  #Run Manta
 	   active_parameter_href => \%active_parameter,
 	   sample_info_href => \%sample_info,
 	   file_info_href => \%file_info,
-	   infile_lane_no_ending_href => \%infile_lane_no_ending,
+	   infile_lane_prefix_href => \%infile_lane_prefix,
 	   job_id_href => \%job_id,
 	   program_name => "manta",
 	  });
@@ -1677,7 +1677,7 @@ if ($active_parameter{ptiddit} > 0) {  #Run Tiddit
 	    active_parameter_href => \%active_parameter,
 	    sample_info_href => \%sample_info,
 	    file_info_href => \%file_info,
-	    infile_lane_no_ending_href => \%infile_lane_no_ending,
+	    infile_lane_prefix_href => \%infile_lane_prefix,
 	    job_id_href => \%job_id,
 	    program_name => "tiddit",
 	   });
@@ -1692,7 +1692,7 @@ if ($active_parameter{psv_combinevariantcallsets} > 0) {  #Run combinevariantcal
 			       active_parameter_href => \%active_parameter,
 			       sample_info_href => \%sample_info,
 			       file_info_href => \%file_info,
-			       infile_lane_no_ending_href => \%infile_lane_no_ending,
+			       infile_lane_prefix_href => \%infile_lane_prefix,
 			       job_id_href => \%job_id,
 			       program_name => "sv_combinevariantcallsets",
 			      });
@@ -1707,7 +1707,7 @@ if ($active_parameter{psv_varianteffectpredictor} > 0) {  #Run sv_varianteffectp
 			       active_parameter_href => \%active_parameter,
 			       sample_info_href => \%sample_info,
 			       file_info_href => \%file_info,
-			       infile_lane_no_ending_href => \%infile_lane_no_ending,
+			       infile_lane_prefix_href => \%infile_lane_prefix,
 			       job_id_href => \%job_id,
 			       program_name => "sv_varianteffectpredictor",
 			      });
@@ -1722,7 +1722,7 @@ if ($active_parameter{psv_vcfparser} > 0) {  #Run sv_vcfparser. Done per family
 		  active_parameter_href => \%active_parameter,
 		  sample_info_href => \%sample_info,
 		  file_info_href => \%file_info,
-		  infile_lane_no_ending_href => \%infile_lane_no_ending,
+		  infile_lane_prefix_href => \%infile_lane_prefix,
 		  job_id_href => \%job_id,
 		  program_name => "sv_vcfparser",
 		 });
@@ -1737,7 +1737,7 @@ if ($active_parameter{psv_rankvariant} > 0) {  #Run sv_rankvariant. Done per fam
 		    active_parameter_href => \%active_parameter,
 		    sample_info_href => \%sample_info,
 		    file_info_href => \%file_info,
-		    infile_lane_no_ending_href => \%infile_lane_no_ending,
+		    infile_lane_prefix_href => \%infile_lane_prefix,
 		    job_id_href => \%job_id,
 		    program_name => "sv_rankvariant",
 		   });
@@ -1751,7 +1751,7 @@ if ($active_parameter{psv_reformat} > 0) {  #Run sv_reformat. Done per family
 		 active_parameter_href => \%active_parameter,
 		 sample_info_href => \%sample_info,
 		 file_info_href => \%file_info,
-		 infile_lane_no_ending_href => \%infile_lane_no_ending,
+		 infile_lane_prefix_href => \%infile_lane_prefix,
 		 job_id_href => \%job_id,
 		 program_name => "sv_reformat",
 		});
@@ -1766,7 +1766,7 @@ if ($active_parameter{psamtools_mpileup} > 0) {  #Run samtools mpileup
 					    active_parameter_href => \%active_parameter,
 					    sample_info_href => \%sample_info,
 					    file_info_href => \%file_info,
-					    infile_lane_no_ending_href => \%infile_lane_no_ending,
+					    infile_lane_prefix_href => \%infile_lane_prefix,
 					    job_id_href => \%job_id,
 					    program_name => "samtools_mpileup",
 					   });
@@ -1775,7 +1775,7 @@ if ($active_parameter{psamtools_mpileup} > 0) {  #Run samtools mpileup
 		      active_parameter_href => \%active_parameter,
 		      sample_info_href => \%sample_info,
 		      file_info_href => \%file_info,
-		      infile_lane_no_ending_href => \%infile_lane_no_ending,
+		      infile_lane_prefix_href => \%infile_lane_prefix,
 		      job_id_href => \%job_id,
 		      program_name => "samtools_mpileup",
 		     });
@@ -1789,7 +1789,7 @@ if ($active_parameter{pfreebayes} > 0) {  #Run Freebayes
 					    active_parameter_href => \%active_parameter,
 					    sample_info_href => \%sample_info,
 					    file_info_href => \%file_info,
-					    infile_lane_no_ending_href => \%infile_lane_no_ending,
+					    infile_lane_prefix_href => \%infile_lane_prefix,
 					    job_id_href => \%job_id,
 					    program_name => "freebayes",
 					   });
@@ -1799,7 +1799,7 @@ if ($active_parameter{pfreebayes} > 0) {  #Run Freebayes
 	       active_parameter_href => \%active_parameter,
 	       sample_info_href => \%sample_info,
 	       file_info_href => \%file_info,
-	       infile_lane_no_ending_href => \%infile_lane_no_ending,
+	       infile_lane_prefix_href => \%infile_lane_prefix,
 	       job_id_href => \%job_id,
 	       program_name => "freebayes",
 	      });
@@ -1814,7 +1814,7 @@ if ($active_parameter{pgatk_haplotypecaller} > 0) {  #Run GATK haplotypecaller
 					    active_parameter_href => \%active_parameter,
 					    sample_info_href => \%sample_info,
 					    file_info_href => \%file_info,
-					    infile_lane_no_ending_href => \%infile_lane_no_ending,
+					    infile_lane_prefix_href => \%infile_lane_prefix,
 					    job_id_href => \%job_id,
 					    program_name => "gatk_haplotypecaller",
 					   });
@@ -1827,7 +1827,7 @@ if ($active_parameter{pgatk_haplotypecaller} > 0) {  #Run GATK haplotypecaller
 						    active_parameter_href => \%active_parameter,
 						    sample_info_href => \%sample_info,
 						    file_info_href => \%file_info,
-						    infile_lane_no_ending_href => \%infile_lane_no_ending,
+						    infile_lane_prefix_href => \%infile_lane_prefix,
 						    job_id_href => \%job_id,
 						    program_name => "gatk_haplotypecaller",
 						   });
@@ -1837,7 +1837,7 @@ if ($active_parameter{pgatk_haplotypecaller} > 0) {  #Run GATK haplotypecaller
 			      active_parameter_href => \%active_parameter,
 			      sample_info_href => \%sample_info,
 			      file_info_href => \%file_info,
-			      infile_lane_no_ending_href => \%infile_lane_no_ending,
+			      infile_lane_prefix_href => \%infile_lane_prefix,
 			      job_id_href => \%job_id,
 			      sample_id_ref => \$sample_id,
 			      program_name => "gatk_haplotypecaller",
@@ -1853,7 +1853,7 @@ if ($active_parameter{pgatk_genotypegvcfs} > 0) {  #Run GATK genotypegvcfs. Done
 					    active_parameter_href => \%active_parameter,
 					    sample_info_href => \%sample_info,
 					    file_info_href => \%file_info,
-					    infile_lane_no_ending_href => \%infile_lane_no_ending,
+					    infile_lane_prefix_href => \%infile_lane_prefix,
 					    job_id_href => \%job_id,
 					    program_name => "gatk_genotypegvcfs",
 					   });
@@ -1862,7 +1862,7 @@ if ($active_parameter{pgatk_genotypegvcfs} > 0) {  #Run GATK genotypegvcfs. Done
 			active_parameter_href => \%active_parameter,
 			sample_info_href => \%sample_info,
 			file_info_href => \%file_info,
-			infile_lane_no_ending_href => \%infile_lane_no_ending,
+			infile_lane_prefix_href => \%infile_lane_prefix,
 			job_id_href => \%job_id,
 			program_name => "gatk_genotypegvcfs",
 		       });
@@ -1871,7 +1871,7 @@ if ($active_parameter{pgatk_genotypegvcfs} > 0) {  #Run GATK genotypegvcfs. Done
 				    active_parameter_href => \%active_parameter,
 				    sample_info_href => \%sample_info,
 				    file_info_href => \%file_info,
-				    infile_lane_no_ending_href => \%infile_lane_no_ending,
+				    infile_lane_prefix_href => \%infile_lane_prefix,
 				    job_id_href => \%job_id,
 				    program_name => "gatk_genotypegvcfs",
 				   });
@@ -1885,7 +1885,7 @@ if ($active_parameter{pgatk_variantrecalibration} > 0) {  #Run GATK VariantRecal
 					    active_parameter_href => \%active_parameter,
 					    sample_info_href => \%sample_info,
 					    file_info_href => \%file_info,
-					    infile_lane_no_ending_href => \%infile_lane_no_ending,
+					    infile_lane_prefix_href => \%infile_lane_prefix,
 					    job_id_href => \%job_id,
 					    program_name => "gatk_variantrecalibration",
 					   });
@@ -1898,7 +1898,7 @@ if ($active_parameter{pgatk_variantrecalibration} > 0) {  #Run GATK VariantRecal
 						    active_parameter_href => \%active_parameter,
 						    sample_info_href => \%sample_info,
 						    file_info_href => \%file_info,
-						    infile_lane_no_ending_href => \%infile_lane_no_ending,
+						    infile_lane_prefix_href => \%infile_lane_prefix,
 						    job_id_href => \%job_id,
 						    program_name => "gatk_variantrecalibration",
 						   });
@@ -1908,7 +1908,7 @@ if ($active_parameter{pgatk_variantrecalibration} > 0) {  #Run GATK VariantRecal
 			       active_parameter_href => \%active_parameter,
 			       sample_info_href => \%sample_info,
 			       file_info_href => \%file_info,
-			       infile_lane_no_ending_href => \%infile_lane_no_ending,
+			       infile_lane_prefix_href => \%infile_lane_prefix,
 			       job_id_href => \%job_id,
 			       program_name => "gatk_variantrecalibration",
 			      });
@@ -1923,7 +1923,7 @@ if ($active_parameter{pgatk_combinevariantcallsets} > 0) {  #Run gatk_combinevar
 				 active_parameter_href => \%active_parameter,
 				 sample_info_href => \%sample_info,
 				 file_info_href => \%file_info,
-				 infile_lane_no_ending_href => \%infile_lane_no_ending,
+				 infile_lane_prefix_href => \%infile_lane_prefix,
 				 job_id_href => \%job_id,
 				 program_name => "gatk_combinevariantcallsets",
 				});
@@ -1938,7 +1938,7 @@ if ($active_parameter{ppeddy} > 0) {  #Run plink. Done per family
 	    active_parameter_href => \%active_parameter,
 	    sample_info_href => \%sample_info,
 	    file_info_href => \%file_info,
-	    infile_lane_no_ending_href => \%infile_lane_no_ending,
+	    infile_lane_prefix_href => \%infile_lane_prefix,
 	    job_id_href => \%job_id,
 	    program_name => "peddy",
 	   });
@@ -1953,7 +1953,7 @@ if ($active_parameter{pplink} > 0) {  #Run plink. Done per family
 	    active_parameter_href => \%active_parameter,
 	    sample_info_href => \%sample_info,
 	    file_info_href => \%file_info,
-	    infile_lane_no_ending_href => \%infile_lane_no_ending,
+	    infile_lane_prefix_href => \%infile_lane_prefix,
 	    job_id_href => \%job_id,
 	    program_name => "plink",
 	   });
@@ -1968,7 +1968,7 @@ if ($active_parameter{pvariant_integrity} > 0) {  #Run variant_integrity. Done p
 		       active_parameter_href => \%active_parameter,
 		       sample_info_href => \%sample_info,
 		       file_info_href => \%file_info,
-		       infile_lane_no_ending_href => \%infile_lane_no_ending,
+		       infile_lane_prefix_href => \%infile_lane_prefix,
 		       job_id_href => \%job_id,
 		       program_name => "variant_integrity",
 		      });
@@ -1986,7 +1986,7 @@ if ($active_parameter{pevaluation} > 0) {  #Run evaluation. Done per family
 			active_parameter_href => \%active_parameter,
 			sample_info_href => \%sample_info,
 			file_info_href => \%file_info,
-			infile_lane_no_ending_href => \%infile_lane_no_ending,
+			infile_lane_prefix_href => \%infile_lane_prefix,
 			job_id_href => \%job_id,
 			sample_id_ref => \$sample_id,
 			call_type => "BOTH",
@@ -2007,11 +2007,11 @@ if ($active_parameter{pgatk_phasebytransmission} > 0) {  #Run GATK phasebytransm
 					    active_parameter_href => \%active_parameter,
 					    sample_info_href => \%sample_info,
 					    file_info_href => \%file_info,
-					    infile_lane_no_ending_href => \%infile_lane_no_ending,
+					    infile_lane_prefix_href => \%infile_lane_prefix,
 					    job_id_href => \%job_id,
 					    program_name => "gatk_phasebytransmission",
 					   });
-    gatk_phasebytransmission(\%parameter, \%active_parameter, \%sample_info, \%file_info, \%infile_lane_no_ending, \%job_id, $active_parameter{family_id}, $active_parameter{outaligner_dir}, "BOTH", "gatk_phasebytransmission");
+    gatk_phasebytransmission(\%parameter, \%active_parameter, \%sample_info, \%file_info, \%infile_lane_prefix, \%job_id, $active_parameter{family_id}, $active_parameter{outaligner_dir}, "BOTH", "gatk_phasebytransmission");
 }
 
 if ($active_parameter{pgatk_readbackedphasing} > 0) {  #Run GATK ReadBackedPhasing. Done per family. NOTE: Needs phased calls
@@ -2022,11 +2022,11 @@ if ($active_parameter{pgatk_readbackedphasing} > 0) {  #Run GATK ReadBackedPhasi
 					    active_parameter_href => \%active_parameter,
 					    sample_info_href => \%sample_info,
 					    file_info_href => \%file_info,
-					    infile_lane_no_ending_href => \%infile_lane_no_ending,
+					    infile_lane_prefix_href => \%infile_lane_prefix,
 					    job_id_href => \%job_id,
 					    program_name => "gatk_readbackedphasing",
 					   });
-    gatk_readbackedphasing(\%parameter, \%active_parameter, \%sample_info, \%file_info, \%lane, \%infile_lane_no_ending, \%job_id, $active_parameter{family_id}, $active_parameter{outaligner_dir}, "BOTH", "gatk_readbackedphasing");
+    gatk_readbackedphasing(\%parameter, \%active_parameter, \%sample_info, \%file_info, \%lane, \%infile_lane_prefix, \%job_id, $active_parameter{family_id}, $active_parameter{outaligner_dir}, "BOTH", "gatk_readbackedphasing");
 }
 
 if ($active_parameter{pgatk_variantevalall} > 0) {  #Run GATK varianteval for all variants. Done per sample_id
@@ -2037,7 +2037,7 @@ if ($active_parameter{pgatk_variantevalall} > 0) {  #Run GATK varianteval for al
 					    active_parameter_href => \%active_parameter,
 					    sample_info_href => \%sample_info,
 					    file_info_href => \%file_info,
-					    infile_lane_no_ending_href => \%infile_lane_no_ending,
+					    infile_lane_prefix_href => \%infile_lane_prefix,
 					    job_id_href => \%job_id,
 					    program_name => "gatk_variantevalall",
 					   });
@@ -2048,7 +2048,7 @@ if ($active_parameter{pgatk_variantevalall} > 0) {  #Run GATK varianteval for al
 			     active_parameter_href => \%active_parameter,
 			     sample_info_href => \%sample_info,
 			     file_info_href => \%file_info,
-			     infile_lane_no_ending_href => \%infile_lane_no_ending,
+			     infile_lane_prefix_href => \%infile_lane_prefix,
 			     job_id_href => \%job_id,
 			     sample_id_ref => \$sample_id,
 			     program_name => "gatk_variantevalall",
@@ -2077,7 +2077,7 @@ if ($active_parameter{reduce_io}) {  #Run consecutive models
 			    active_parameter_href => \%active_parameter,
 			    sample_info_href => \%sample_info,
 			    file_info_href => \%file_info,
-			    infile_lane_no_ending_href => \%infile_lane_no_ending,
+			    infile_lane_prefix_href => \%infile_lane_prefix,
 			    job_id_href => \%job_id,
 			    annovar_table_href => \%annovar_table,
 			    outaligner_dir_ref => \$active_parameter{outaligner_dir},
@@ -2093,7 +2093,7 @@ else {
 				      active_parameter_href => \%active_parameter,
 				      sample_info_href => \%sample_info,
 				      file_info_href => \%file_info,
-				      infile_lane_no_ending_href => \%infile_lane_no_ending,
+				      infile_lane_prefix_href => \%infile_lane_prefix,
 				      job_id_href => \%job_id,
 				      call_type => "BOTH",
 				      program_name => "prepareforvariantannotationblock",
@@ -2107,7 +2107,7 @@ else {
 		 active_parameter_href => \%active_parameter,
 		 sample_info_href => \%sample_info,
 		 file_info_href => \%file_info,
-		 infile_lane_no_ending_href => \%infile_lane_no_ending,
+		 infile_lane_prefix_href => \%infile_lane_prefix,
 		 job_id_href => \%job_id,
 		 call_type => "BOTH",
 		 program_name => "rhocall",
@@ -2121,7 +2121,7 @@ else {
 	    active_parameter_href => \%active_parameter,
 	    sample_info_href => \%sample_info,
 	    file_info_href => \%file_info,
-	    infile_lane_no_ending_href => \%infile_lane_no_ending,
+	    infile_lane_prefix_href => \%infile_lane_prefix,
 	    job_id_href => \%job_id,
 	    call_type => "BOTH",
 	    program_name => "vt",
@@ -2135,7 +2135,7 @@ else {
 				active_parameter_href => \%active_parameter,
 				sample_info_href => \%sample_info,
 				file_info_href => \%file_info,
-				infile_lane_no_ending_href => \%infile_lane_no_ending,
+				infile_lane_prefix_href => \%infile_lane_prefix,
 				job_id_href => \%job_id,
 				call_type => "BOTH",
 				program_name => "varianteffectpredictor",
@@ -2149,7 +2149,7 @@ else {
 		    active_parameter_href => \%active_parameter,
 		    sample_info_href => \%sample_info,
 		    file_info_href => \%file_info,
-		    infile_lane_no_ending_href => \%infile_lane_no_ending,
+		    infile_lane_prefix_href => \%infile_lane_prefix,
 		    job_id_href => \%job_id,
 		    call_type => "BOTH",
 		    program_name => "vcfparser",
@@ -2164,7 +2164,7 @@ else {
 						active_parameter_href => \%active_parameter,
 						sample_info_href => \%sample_info,
 						file_info_href => \%file_info,
-						infile_lane_no_ending_href => \%infile_lane_no_ending,
+						infile_lane_prefix_href => \%infile_lane_prefix,
 						job_id_href => \%job_id,
 						program_name => "annovar",
 					       });
@@ -2176,7 +2176,7 @@ else {
 		build_annovar_prerequisites({parameter_href => \%parameter,
 					     active_parameter_href => \%active_parameter,
 					     sample_info_href => \%sample_info,
-					     infile_lane_no_ending_href => \%infile_lane_no_ending,
+					     infile_lane_prefix_href => \%infile_lane_prefix,
 					     job_id_href => \%job_id,
 					     annovar_table_href => \%annovar_table,
 					     program_name => "annovar",
@@ -2188,7 +2188,7 @@ else {
 		 active_parameter_href => \%active_parameter,
 		 sample_info_href => \%sample_info,
 		 file_info_href => \%file_info,
-		 infile_lane_no_ending_href => \%infile_lane_no_ending,
+		 infile_lane_prefix_href => \%infile_lane_prefix,
 		 job_id_href => \%job_id,
 		 annovar_table_href => \%annovar_table,
 		 call_type => "BOTH",
@@ -2204,7 +2204,7 @@ else {
 		active_parameter_href => \%active_parameter,
 		sample_info_href => \%sample_info,
 		file_info_href => \%file_info,
-		infile_lane_no_ending_href => \%infile_lane_no_ending,
+		infile_lane_prefix_href => \%infile_lane_prefix,
 		job_id_href => \%job_id,
 		call_type => "BOTH",
 		program_name => "snpeff",
@@ -2218,7 +2218,7 @@ else {
 		     active_parameter_href => \%active_parameter,
 		     sample_info_href => \%sample_info,
 		     file_info_href => \%file_info,
-		     infile_lane_no_ending_href => \%infile_lane_no_ending,
+		     infile_lane_prefix_href => \%infile_lane_prefix,
 		     job_id_href => \%job_id,
 		     call_type => "BOTH",
 		     program_name => "rankvariant",
@@ -2232,7 +2232,7 @@ else {
 				   active_parameter_href => \%active_parameter,
 				   sample_info_href => \%sample_info,
 				   file_info_href => \%file_info,
-				   infile_lane_no_ending_href => \%infile_lane_no_ending,
+				   infile_lane_prefix_href => \%infile_lane_prefix,
 				   job_id_href => \%job_id,
 				   call_type => "BOTH",
 				   program_name => "endvariantannotationblock",
@@ -2248,7 +2248,7 @@ if ($active_parameter{pgatk_variantevalexome} > 0) {  #Run GATK varianteval for 
 					    active_parameter_href => \%active_parameter,
 					    sample_info_href => \%sample_info,
 					    file_info_href => \%file_info,
-					    infile_lane_no_ending_href => \%infile_lane_no_ending,
+					    infile_lane_prefix_href => \%infile_lane_prefix,
 					    job_id_href => \%job_id,
 					    program_name => "gatk_variantevalexome",
 					   });
@@ -2259,7 +2259,7 @@ if ($active_parameter{pgatk_variantevalexome} > 0) {  #Run GATK varianteval for 
 			       active_parameter_href => \%active_parameter,
 			       sample_info_href => \%sample_info,
 			       file_info_href => \%file_info,
-			       infile_lane_no_ending_href => \%infile_lane_no_ending,
+			       infile_lane_prefix_href => \%infile_lane_prefix,
 			       job_id_href => \%job_id,
 			       sample_id_ref => \$sample_id,
 			       program_name => "gatk_variantevalexome",
@@ -2274,7 +2274,7 @@ if ($active_parameter{pqccollect} > 0) {  #Run qccollect. Done per family
     mqccollect({parameter_href => \%parameter,
 		active_parameter_href => \%active_parameter,
 		sample_info_href => \%sample_info,
-		infile_lane_no_ending_href => \%infile_lane_no_ending,
+		infile_lane_prefix_href => \%infile_lane_prefix,
 		job_id_href => \%job_id,
 		program_name => "qccollect",
 	       });
@@ -2288,7 +2288,7 @@ if ($active_parameter{pmultiqc} > 0) {
     mmultiqc({parameter_href => \%parameter,
 	      active_parameter_href => \%active_parameter,
 	      sample_info_href => \%sample_info,
-	      infile_lane_no_ending_href => \%infile_lane_no_ending,
+	      infile_lane_prefix_href => \%infile_lane_prefix,
 	      job_id_href => \%job_id,
 	      program_name => "multiqc",
 	     });
@@ -2303,7 +2303,7 @@ if ($active_parameter{premoveredundantfiles} > 0) {  #Sbatch generation of remov
 			  active_parameter_href => \%active_parameter,
 			  sample_info_href => \%sample_info,
 			  file_info_href => \%file_info,
-			  infile_lane_no_ending_href => \%infile_lane_no_ending,
+			  infile_lane_prefix_href => \%infile_lane_prefix,
 			  job_id_href => \%job_id,
 			  lane_href => \%lane,
 			  program_name => "removeredundantfiles",
@@ -2322,7 +2322,7 @@ if ($active_parameter{panalysisrunstatus} > 0) {
     analysisrunstatus({parameter_href => \%parameter,
 		       active_parameter_href => \%active_parameter,
 		       sample_info_href => \%sample_info,
-		       infile_lane_no_ending_href => \%infile_lane_no_ending,
+		       infile_lane_prefix_href => \%infile_lane_prefix,
 		       job_id_href => \%job_id,
 		       program_name => "analysisrunstatus",
 		      });
@@ -2335,7 +2335,7 @@ if ( ($active_parameter{psacct} > 0) && ($active_parameter{dry_run_all} == 0) ) 
     msacct({parameter_href => \%parameter,
 	   active_parameter_href => \%active_parameter,
 	   sample_info_href => \%sample_info,
-	   infile_lane_no_ending_href => \%infile_lane_no_ending,
+	   infile_lane_prefix_href => \%infile_lane_prefix,
 	   job_id_href => \%job_id,
 	   program_name => "sacct",
 	  });
@@ -2362,11 +2362,11 @@ sub msacct {
 
 ##Function : Output SLURM info on each job via sacct command
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $family_id_ref
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $family_id_ref
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $program_name               => The program name
 ##         : $family_id_ref              => The family_id {REF}
@@ -2380,7 +2380,7 @@ sub msacct {
     my $parameter_href;
     my $active_parameter_href;
     my $sample_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
 
@@ -2388,7 +2388,7 @@ sub msacct {
 	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
@@ -2428,7 +2428,7 @@ sub msacct {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    dependencies => "chain_and_parallel_dependency",
 		    path => $jobid_chain,
 		    sbatch_file_name => $file_name,
@@ -2444,11 +2444,11 @@ sub analysisrunstatus {
 
 ##Function : Execute last in MAIN chain, tests that all recorded files exists, have a file sixe greater than zero, checks QC-metrics for PASS or FAIL and sets analysis run status flag to finished.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $family_id_ref,
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $family_id_ref,
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $program_name               => The program name
 ##         : $family_id_ref              => The family_id {REF}
@@ -2462,7 +2462,7 @@ sub analysisrunstatus {
     my $parameter_href;
     my $active_parameter_href;
     my $sample_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
 
@@ -2470,7 +2470,7 @@ sub analysisrunstatus {
 	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
@@ -2636,7 +2636,7 @@ sub analysisrunstatus {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    dependencies => "chain_and_parallel_dependency",
 		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
@@ -2652,12 +2652,12 @@ sub removeredundantfiles {
 
 ##Function : Generates a sbatch script, which removes redundant files.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $lane_href, $program_name, family_id_ref, $outaligner_dir_ref, $call_type
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $lane_href, $program_name, family_id_ref, $outaligner_dir_ref, $call_type
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $lane_href                  => The lane info hash {REF}
 ##         : $program_name               => The program name
@@ -2677,7 +2677,7 @@ sub removeredundantfiles {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $lane_href = $arg_href->{lane_href};
     my $program_name = $arg_href->{program_name};
@@ -2687,7 +2687,7 @@ sub removeredundantfiles {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	lane_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$lane_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
@@ -2724,7 +2724,7 @@ sub removeredundantfiles {
 	##Removes intermediate files from the MIP analysis depending on set MIP parameters
 	remove_redundant_files({parameter_href => $parameter_href,
 				active_parameter_href => $active_parameter_href,
-				infile_lane_no_ending_href => $infile_lane_no_ending_href,
+				infile_lane_prefix_href => $infile_lane_prefix_href,
 				sample_info_href => $sample_info_href,
 				file_info_href => $file_info_href,
 				lane_href => $lane_href,
@@ -2739,7 +2739,7 @@ sub removeredundantfiles {
     ##Removes intermediate files from the MIP analysis depending on set MIP parameters
     remove_redundant_files({parameter_href => $parameter_href,
 			    active_parameter_href => $active_parameter_href,
-			    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+			    infile_lane_prefix_href => $infile_lane_prefix_href,
 			    sample_info_href => $sample_info_href,
 			    file_info_href => $file_info_href,
 			    lane_href => $lane_href,
@@ -2757,11 +2757,11 @@ sub mmultiqc {
 
 ##Function : Aggregate bioinforamtics reports per case
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $family_id_ref,
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $family_id_ref,
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $program_name               => The program name
 ##         : $family_id_ref              => The family_id {REF}
@@ -2775,7 +2775,7 @@ sub mmultiqc {
     my $parameter_href;
     my $active_parameter_href;
     my $sample_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
 
@@ -2783,7 +2783,7 @@ sub mmultiqc {
 	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
@@ -2834,7 +2834,7 @@ sub mmultiqc {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    dependencies => "chain_and_parallel_dependency",
 		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
@@ -2849,11 +2849,11 @@ sub mqccollect {
 
 ##Function : Collect qc metrics for this analysis run.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, family_id_ref, $call_type,
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, family_id_ref, $call_type,
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $program_name               => The program name
 ##         : $family_id_ref              => The family_id {REF}
@@ -2869,7 +2869,7 @@ sub mqccollect {
     my $parameter_href;
     my $active_parameter_href;
     my $sample_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
 
@@ -2877,7 +2877,7 @@ sub mqccollect {
 	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
@@ -2936,7 +2936,7 @@ sub mqccollect {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    dependencies => "chain_and_parallel_dependency",
 		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
@@ -2951,12 +2951,12 @@ sub evaluation {
 
 ##Function : Compare metrics for this analysis run with the NIST reference dataset.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $sample_id_ref              => The sample_id {REF}
 ##         : $program_name               => The program name
@@ -2980,7 +2980,7 @@ sub evaluation {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $sample_id_ref;
     my $program_name;
@@ -2990,7 +2990,7 @@ sub evaluation {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
@@ -3040,17 +3040,17 @@ sub evaluation {
 
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
-    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
-    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
-    my $outfile_no_ending = $$family_id_ref.".Vs.".$active_parameter_href->{nist_id}."-NIST_genome";
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending),
+    my $infile_prefix = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_prefix = catfile($$temp_directory_ref, $infile_prefix);
+    my $outfile_prefix = $$family_id_ref.".Vs.".$active_parameter_href->{nist_id}."-NIST_genome";
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix),
     my $call_file_path = catfile($$temp_directory_ref, $$family_id_ref);
     my $nist_file_path = catfile($$temp_directory_ref, "NIST");
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     migrate_file({FILEHANDLE => $FILEHANDLE,
-		  infile_path => catfile($infamily_directory, $infile_no_ending.".vcf*"),
+		  infile_path => catfile($infamily_directory, $infile_prefix.".vcf*"),
 		  outfile_path => $$temp_directory_ref
 		 });
     say $FILEHANDLE "wait", "\n";
@@ -3101,9 +3101,9 @@ sub evaluation {
     ## Create .interval_list file from NIST union bed
     say $FILEHANDLE "## Prepare .interval_list file from NIST union bed\n";
 
-    my $genome_dict_file_path = catfile($$temp_directory_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict");
+    my $genome_dict_file_path = catfile($$temp_directory_ref, $file_info_href->{human_genome_reference_name_prefix}.".dict");
     print $FILEHANDLE q?perl -nae 'unless($_=~/NC_007605/ || $_=~/hs37d5/ || $_=~/GL\d+/) {print $_}' ?;
-    print $FILEHANDLE catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict")." ";
+    print $FILEHANDLE catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_prefix}.".dict")." ";
     print $FILEHANDLE "> ".$genome_dict_file_path." ";
     say $FILEHANDLE "\n";
 
@@ -3149,7 +3149,7 @@ sub evaluation {
     selectvariants({sample_names_ref => [$$sample_id_ref],
 		    logging_level => $active_parameter_href->{gatk_logging_level},
 		    referencefile_path => $active_parameter_href->{human_genome_reference},
-		    infile_path => $file_path_no_ending.".vcf",
+		    infile_path => $file_path_prefix.".vcf",
 		    outfile_path => $call_file_path.".vcf",
 		    exclude_nonvariants => 1,
 		    FILEHANDLE => $FILEHANDLE,
@@ -3222,7 +3222,7 @@ sub evaluation {
     genotypeconcordance({intervals_ref => [$nist_file_path.".bed.interval_list"],
 			 infile_path => $call_file_path."_lts_refrm.vcf",
 			 truth_file_path => $nist_file_path.".vcf",
-			 outfile_prefix_path => $outfile_path_no_ending."_bed",
+			 outfile_prefix_path => $outfile_path_prefix."_bed",
 			 truth_sample => $active_parameter_href->{nist_id}."-NIST",
 			 call_sample => $$sample_id_ref,
 			 min_genotype_quality => 20,
@@ -3241,7 +3241,7 @@ sub evaluation {
 
     genotypeconcordance({infile_path => $call_file_path."_lts_refrm.vcf",
 			 truth_file_path => $nist_file_path.".vcf",
-			 outfile_prefix_path => $outfile_path_no_ending,
+			 outfile_prefix_path => $outfile_path_prefix,
 			 truth_sample => $active_parameter_href->{nist_id}."-NIST",
 			 call_sample => $$sample_id_ref,
 			 min_genotype_quality => 20,
@@ -3252,7 +3252,7 @@ sub evaluation {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    my @outfiles = ($outfile_no_ending."*", "*vcf.stats");
+    my @outfiles = ($outfile_prefix."*", "*vcf.stats");
     foreach my $outfile (@outfiles) {
 
 	migrate_file({infile_path => catfile($$temp_directory_ref, $outfile),
@@ -3269,7 +3269,7 @@ sub evaluation {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    dependencies => "case_dependency_dead_end",
 		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
@@ -3284,12 +3284,12 @@ sub endvariantannotationblock {
 
 ##Function : Concatenate ouput from variant annotation block.
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $program_name               => The program name
 ##         : $program_info_path          => The program info path
@@ -3318,7 +3318,7 @@ sub endvariantannotationblock {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
     my $program_info_path;
@@ -3330,7 +3330,7 @@ sub endvariantannotationblock {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	program_info_path => { strict_type => 1, store => \$program_info_path},
@@ -3393,12 +3393,12 @@ sub endvariantannotationblock {
 
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{prankvariant}{file_tag};
-    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
-    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+    my $infile_prefix = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_prefix = catfile($$temp_directory_ref, $infile_prefix);
     my $outfile_tag = $file_info_href->{$$family_id_ref}{prankvariant}{file_tag};
-    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type);
-    my $final_path_no_ending = catfile($outfamily_directory, $outfile_no_ending);
+    my $outfile_prefix = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type);
+    my $final_path_prefix = catfile($outfamily_directory, $outfile_prefix);
 
     ## Assign suffix
     my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
@@ -3441,7 +3441,7 @@ sub endvariantannotationblock {
 							      program_info_path => $program_info_path,
 							      core_number => $core_number,
 							      xargs_file_counter => $xargs_file_counter,
-							      infile => $infile_no_ending,
+							      infile => $infile_prefix,
 							      file_ending => $vcfparser_analysis_type.$infile_suffix."*",
 							      indirectory => $infamily_directory,
 							      temp_directory => $active_parameter_href->{temp_directory},
@@ -3452,9 +3452,9 @@ sub endvariantannotationblock {
 	concatenate_variants({active_parameter_href => $active_parameter_href,
 			      FILEHANDLE => $FILEHANDLE,
 			      elements_ref => \@contigs,
-			      infile_prefix => $file_path_no_ending."_",
+			      infile_prefix => $file_path_prefix."_",
 			      infile_postfix => $vcfparser_analysis_type.$infile_suffix,
-			      outfile => $outfile_path_no_ending.$vcfparser_analysis_type.$outfile_suffix,
+			      outfile => $outfile_path_prefix.$vcfparser_analysis_type.$outfile_suffix,
 			     });
 
 	## Remove variants in hgnc_id list from vcf
@@ -3462,8 +3462,8 @@ sub endvariantannotationblock {
 
 	    ## Removes contig_names from contigs array if no male or other found
 	    Program::Gnu::Grep::Software::grep({filter_file_path => catfile($$reference_dir_ref, $active_parameter_href->{sv_reformat_remove_genes_file}),
-						infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.$outfile_suffix,
-						outfile_path => $outfile_path_no_ending.$vcfparser_analysis_type."_filtered".$outfile_suffix,
+						infile_path => $outfile_path_prefix.$vcfparser_analysis_type.$outfile_suffix,
+						outfile_path => $outfile_path_prefix.$vcfparser_analysis_type."_filtered".$outfile_suffix,
 						invert_match => 1,
 						FILEHANDLE => $FILEHANDLE,
 					       });
@@ -3471,16 +3471,16 @@ sub endvariantannotationblock {
 
 	    if ($vcfparser_outfile_counter == 1) {
 
-		$sample_info_href->{program}{$program_name}{reformat_remove_genes_file}{clinical}{path} = $final_path_no_ending.$vcfparser_analysis_type."_filtered".$outfile_suffix;   #Save filtered file
+		$sample_info_href->{program}{$program_name}{reformat_remove_genes_file}{clinical}{path} = $final_path_prefix.$vcfparser_analysis_type."_filtered".$outfile_suffix;   #Save filtered file
 	    }
 	    else {
 
-		$sample_info_href->{program}{$program_name}{reformat_remove_genes_file}{research}{path} = $final_path_no_ending.$vcfparser_analysis_type."_filtered".$outfile_suffix;   #Save filtered file
+		$sample_info_href->{program}{$program_name}{reformat_remove_genes_file}{research}{path} = $final_path_prefix.$vcfparser_analysis_type."_filtered".$outfile_suffix;   #Save filtered file
 	    }
 
 	    ## Copies file from temporary directory.
 	    say $FILEHANDLE "## Copy file from temporary directory";
-	    migrate_file({infile_path => $outfile_path_no_ending.$vcfparser_analysis_type."_filtered".$outfile_suffix,
+	    migrate_file({infile_path => $outfile_path_prefix.$vcfparser_analysis_type."_filtered".$outfile_suffix,
 			  outfile_path => $outfamily_directory,
 			  FILEHANDLE => $FILEHANDLE,
 			 });
@@ -3491,15 +3491,15 @@ sub endvariantannotationblock {
 
 	    ## Compress or decompress original file or stream to outfile (if supplied)
 	    bgzip({FILEHANDLE => $FILEHANDLE,
-		   infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.$outfile_suffix,
-		   outfile_path => $outfile_path_no_ending.$vcfparser_analysis_type.$outfile_suffix.".gz",
+		   infile_path => $outfile_path_prefix.$vcfparser_analysis_type.$outfile_suffix,
+		   outfile_path => $outfile_path_prefix.$vcfparser_analysis_type.$outfile_suffix.".gz",
 		   write_to_stdout => 1,
 		  });
 	    say $FILEHANDLE "\n";
 
 	    ## Index file using tabix
 	    tabix({FILEHANDLE => $FILEHANDLE,
-		   infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.$outfile_suffix.".gz",
+		   infile_path => $outfile_path_prefix.$vcfparser_analysis_type.$outfile_suffix.".gz",
 		   force => 1,
 		   preset => substr($outfile_suffix, 1),
 		  });
@@ -3508,7 +3508,7 @@ sub endvariantannotationblock {
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file({infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.$outfile_suffix."*",
+	migrate_file({infile_path => $outfile_path_prefix.$vcfparser_analysis_type.$outfile_suffix."*",
 		      outfile_path => $outfamily_directory,
 		      FILEHANDLE => $FILEHANDLE,
 		     });
@@ -3518,7 +3518,7 @@ sub endvariantannotationblock {
 	add_most_complete_vcf({active_parameter_href => $active_parameter_href,
 			       sample_info_href => $sample_info_href,
 			       program_name => $program_name,
-			       path => $final_path_no_ending.$vcfparser_analysis_type.$outfile_suffix,
+			       path => $final_path_prefix.$vcfparser_analysis_type.$outfile_suffix,
 			       vcfparser_outfile_counter => $vcfparser_outfile_counter,
 			      });
 
@@ -3526,20 +3526,20 @@ sub endvariantannotationblock {
 
 	    if ($vcfparser_outfile_counter == 1) {
 
-		$sample_info_href->{program}{$program_name}{clinical}{path} = $final_path_no_ending.$vcfparser_analysis_type.$outfile_suffix;   #Save clinical candidate list path
+		$sample_info_href->{program}{$program_name}{clinical}{path} = $final_path_prefix.$vcfparser_analysis_type.$outfile_suffix;   #Save clinical candidate list path
 
 		if ($active_parameter_href->{rankvariant_binary_file}) {
 
-		    $sample_info_href->{vcf_binary_file}{clinical}{path} = $final_path_no_ending.$vcfparser_analysis_type.$outfile_suffix.".gz";
+		    $sample_info_href->{vcf_binary_file}{clinical}{path} = $final_path_prefix.$vcfparser_analysis_type.$outfile_suffix.".gz";
 		}
 	    }
 	    else {
 
-		$sample_info_href->{program}{$program_name}{research}{path} = $final_path_no_ending.$vcfparser_analysis_type.$outfile_suffix;   #Save research candidate list path
+		$sample_info_href->{program}{$program_name}{research}{path} = $final_path_prefix.$vcfparser_analysis_type.$outfile_suffix;   #Save research candidate list path
 
 		if ($active_parameter_href->{rankvariant_binary_file}) {
 
-		    $sample_info_href->{vcf_binary_file}{research}{path} = $final_path_no_ending.$vcfparser_analysis_type.$outfile_suffix.".gz";
+		    $sample_info_href->{vcf_binary_file}{research}{path} = $final_path_prefix.$vcfparser_analysis_type.$outfile_suffix.".gz";
 		}
 	    }
 	}
@@ -3552,7 +3552,7 @@ sub endvariantannotationblock {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    dependencies => "case_dependency",
 		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
@@ -3571,12 +3571,12 @@ sub rankvariant {
 
 ##Function : Annotate and score variants depending on mendelian inheritance, frequency and phenotype etc.
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $program_name               => The program name
 ##         : $program_info_path          => The program info path
@@ -3602,7 +3602,7 @@ sub rankvariant {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
     my $program_info_path;
@@ -3614,7 +3614,7 @@ sub rankvariant {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	program_info_path => { strict_type => 1, store => \$program_info_path},
@@ -3684,11 +3684,11 @@ sub rankvariant {
 
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{psnpeff}{file_tag};
-    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
-    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+    my $infile_prefix = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_prefix = catfile($$temp_directory_ref, $infile_prefix);
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
-    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+    my $outfile_prefix = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix);
 
     ## Assign suffix
     my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
@@ -3747,7 +3747,7 @@ sub rankvariant {
 							      program_info_path => $program_info_path,
 							      core_number => $core_number,
 							      xargs_file_counter => $xargs_file_counter,
-							      infile => $infile_no_ending,
+							      infile => $infile_prefix,
 							      file_ending => $vcfparser_analysis_type.$infile_suffix."*",
 							      indirectory => $infamily_directory,
 							      temp_directory => $active_parameter_href->{temp_directory},
@@ -3773,7 +3773,7 @@ sub rankvariant {
 
 	    ## Get parameters
 	    $genmod_module = "";  #Restart for next contig
-	    my $genmod_indata = $file_path_no_ending."_".$contig.$vcfparser_analysis_type.$infile_suffix;  #InFile
+	    my $genmod_indata = $file_path_prefix."_".$contig.$vcfparser_analysis_type.$infile_suffix;  #InFile
 
 	    my $genmod_outfile_path;
 	    ## Check affected/unaffected status
@@ -3786,7 +3786,7 @@ sub rankvariant {
 		}
 
 		## Output file
-		$genmod_outfile_path = $outfile_path_no_ending."_".$contig.$vcfparser_analysis_type.$infile_suffix;
+		$genmod_outfile_path = $outfile_path_prefix."_".$contig.$vcfparser_analysis_type.$infile_suffix;
 
 	    }
 	    else {
@@ -3859,7 +3859,7 @@ sub rankvariant {
 		$genmod_module .= "_compound";
 
 		compound({infile_path => $genmod_indata,
-			  outfile_path => $outfile_path_no_ending."_".$contig.$vcfparser_analysis_type.$infile_suffix,
+			  outfile_path => $outfile_path_prefix."_".$contig.$vcfparser_analysis_type.$infile_suffix,
 			  stderrfile_path => $xargs_file_name.".".$contig.$genmod_module.".stderr.txt",
 			  verbosity => "v",
 			  temp_directory_path => $$temp_directory_ref,
@@ -3881,7 +3881,7 @@ sub rankvariant {
 										  program_info_path => $program_info_path,
 										  core_number => $active_parameter_href->{max_cores_per_node},
 										  xargs_file_counter => $xargs_file_counter,
-										  outfile => $outfile_no_ending,
+										  outfile => $outfile_prefix,
 										  file_ending => $vcfparser_analysis_type.$outfile_suffix."*",
 										  outdirectory => $outfamily_directory,
 										  temp_directory => $$temp_directory_ref,
@@ -3890,7 +3890,7 @@ sub rankvariant {
 	else {
 
 	    ## QC Data File(s)
-	    migrate_file({infile_path => $outfile_path_no_ending."_".$file_info_href->{contigs_size_ordered}[0].$vcfparser_analysis_type.$outfile_suffix,
+	    migrate_file({infile_path => $outfile_path_prefix."_".$file_info_href->{contigs_size_ordered}[0].$vcfparser_analysis_type.$outfile_suffix,
 			  outfile_path => $outfamily_directory,
 			  FILEHANDLE => $FILEHANDLE,
 			 });
@@ -3902,7 +3902,7 @@ sub rankvariant {
 	    sample_info_qc({sample_info_href => $sample_info_href,
 			    program_name => "genmod",
 			    outdirectory => $outfamily_directory,
-			    outfile_ending => $outfile_no_ending."_".$file_info_href->{contigs_size_ordered}[0].$vcfparser_analysis_type.$outfile_suffix,
+			    outfile_ending => $outfile_prefix."_".$file_info_href->{contigs_size_ordered}[0].$vcfparser_analysis_type.$outfile_suffix,
 			    outdata_type => "static"
 			   });
 
@@ -3926,7 +3926,7 @@ sub rankvariant {
 	    submit_job({active_parameter_href => $active_parameter_href,
 			sample_info_href => $sample_info_href,
 			job_id_href => $job_id_href,
-			infile_lane_no_ending_href => $infile_lane_no_ending_href,
+			infile_lane_prefix_href => $infile_lane_prefix_href,
 			dependencies => "case_dependency",
 			path => $jobid_chain,
 			sbatch_file_name => $file_name
@@ -3946,12 +3946,12 @@ sub gatk_variantevalexome {
 
 ##Function : GATK varianteval for exome variants.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type,
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type,
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $sample_id_ref              => The sample_id {REF}
 ##         : $program_name               => The program name {REF}
@@ -3973,7 +3973,7 @@ sub gatk_variantevalexome {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $sample_id_ref;
     my $program_name;
@@ -3983,7 +3983,7 @@ sub gatk_variantevalexome {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
@@ -4031,10 +4031,10 @@ sub gatk_variantevalexome {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
     my $outfile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
-    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
-    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
-    my $outfile_no_ending = $infile.$outfile_tag;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+    my $infile_prefix = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_prefix = catfile($$temp_directory_ref, $infile_prefix);
+    my $outfile_prefix = $infile.$outfile_tag;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix);
 
     ### Assign suffix
     ## Return the current infile vcf compression suffix for this jobid chain
@@ -4053,7 +4053,7 @@ sub gatk_variantevalexome {
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     migrate_file({FILEHANDLE => $FILEHANDLE,
-		  infile_path => catfile($infamily_directory, $infile_no_ending.$infile_suffix."*"),
+		  infile_path => catfile($infamily_directory, $infile_prefix.$infile_suffix."*"),
 		  outfile_path => $$temp_directory_ref
 		 });
 
@@ -4075,21 +4075,21 @@ sub gatk_variantevalexome {
     selectvariants({sample_names_ref => [$$sample_id_ref],
 		    logging_level => $active_parameter_href->{gatk_logging_level},
 		    referencefile_path => $active_parameter_href->{human_genome_reference},
-		    infile_path => $file_path_no_ending.$infile_suffix,
-		    outfile_path => $outfile_path_no_ending.$call_type."_temp".$infile_suffix,
+		    infile_path => $file_path_prefix.$infile_suffix,
+		    outfile_path => $outfile_path_prefix.$call_type."_temp".$infile_suffix,
 		    FILEHANDLE => $FILEHANDLE,
 		   });
     say $FILEHANDLE "\n";
 
     ## Update file_tags
     $infile_tag = $file_info_href->{$$family_id_ref}{prankvariant}{file_tag};
-    $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
-    $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+    $infile_prefix = $$family_id_ref.$infile_tag.$call_type;
+    $file_path_prefix = catfile($$temp_directory_ref, $infile_prefix);
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     migrate_file({FILEHANDLE => $FILEHANDLE,
-		  infile_path => catfile($infamily_directory, $infile_no_ending.$infile_suffix."*"),
+		  infile_path => catfile($infamily_directory, $infile_prefix.$infile_suffix."*"),
 		  outfile_path => $$temp_directory_ref
 		 });
     say $FILEHANDLE "wait", "\n";
@@ -4097,7 +4097,7 @@ sub gatk_variantevalexome {
     ## Extract exonic variants
     say $FILEHANDLE "## Extract exonic variants";
     print $FILEHANDLE $extract_exonic_regexp;
-    print $FILEHANDLE $file_path_no_ending.$infile_suffix." ";  #InFile
+    print $FILEHANDLE $file_path_prefix.$infile_suffix." ";  #InFile
     say $FILEHANDLE "> ".catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants".$infile_suffix), "\n";  #OutFile
 
     ## Include potential select file variants
@@ -4108,7 +4108,7 @@ sub gatk_variantevalexome {
 	## Copy file(s) to temporary directory
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
 	migrate_file({FILEHANDLE => $FILEHANDLE,
-		      infile_path => catfile($infamily_directory, $infile_no_ending.$vcfparser_analysis_type.$infile_suffix."*"),
+		      infile_path => catfile($infamily_directory, $infile_prefix.$vcfparser_analysis_type.$infile_suffix."*"),
 		      outfile_path => $$temp_directory_ref
 		     });
 	say $FILEHANDLE "wait", "\n";
@@ -4116,7 +4116,7 @@ sub gatk_variantevalexome {
 	## Extract exonic variants
 	say $FILEHANDLE "## Extract exonic variants";
 	print $FILEHANDLE $extract_exonic_regexp;
-	print $FILEHANDLE $file_path_no_ending.$vcfparser_analysis_type.$infile_suffix." ";  #InFile
+	print $FILEHANDLE $file_path_prefix.$vcfparser_analysis_type.$infile_suffix." ";  #InFile
 	say $FILEHANDLE "> ".catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants".$vcfparser_analysis_type.$infile_suffix), "\n";  #OutFile
 
 	## Merge orphans and selectfiles
@@ -4139,7 +4139,7 @@ sub gatk_variantevalexome {
     }
 
     print $FILEHANDLE q?perl -ne ' if ($_=~/^#/) {print $_;}' ?;
-    print $FILEHANDLE $file_path_no_ending.$infile_suffix." ";  #InFile
+    print $FILEHANDLE $file_path_prefix.$infile_suffix." ";  #InFile
     print $FILEHANDLE "| ";  #Pipe
     cat({infile_paths_ref => ["-",
 			      catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants".$infile_suffix)],
@@ -4151,9 +4151,9 @@ sub gatk_variantevalexome {
     ## Intersect exonic variants from created sample_id vcf file (required for gatk_varianteval for exonic variants)
     say $FILEHANDLE "## Intersect exonic variants from created sample_id vcf file";
     intersectbed({with_header => 1,
-		  infile_path => $outfile_path_no_ending.$call_type."_temp".$infile_suffix,
+		  infile_path => $outfile_path_prefix.$call_type."_temp".$infile_suffix,
 		  intersectfile_path => catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants_head".$infile_suffix),
-		  outfile_path => $outfile_path_no_ending.$call_type."_exome".$infile_suffix,
+		  outfile_path => $outfile_path_prefix.$call_type."_exome".$infile_suffix,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
     say $FILEHANDLE "\n";
@@ -4169,8 +4169,8 @@ sub gatk_variantevalexome {
 	  java_jar => catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar"),
 	 });
 
-    varianteval({infile_paths_ref => [$outfile_path_no_ending.$call_type."_exome".$infile_suffix],
-		 outfile_path => $outfile_path_no_ending.$call_type."_exome".$outfile_suffix,
+    varianteval({infile_paths_ref => [$outfile_path_prefix.$call_type."_exome".$infile_suffix],
+		 outfile_path => $outfile_path_prefix.$call_type."_exome".$outfile_suffix,
 		 logging_level => $active_parameter_href->{gatk_logging_level},
 		 referencefile_path => $active_parameter_href->{human_genome_reference},
 		 dbsnp_file_path => $active_parameter_href->{gatk_varianteval_dbsnp},
@@ -4181,7 +4181,7 @@ sub gatk_variantevalexome {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file({infile_path => $outfile_path_no_ending.$call_type."_exome".$outfile_suffix,
+    migrate_file({infile_path => $outfile_path_prefix.$call_type."_exome".$outfile_suffix,
 		  outfile_path => $outsample_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -4206,7 +4206,7 @@ sub gatk_variantevalexome {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    dependencies => "case_dependency_dead_end",
 		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
@@ -4221,12 +4221,12 @@ sub gatk_variantevalall {
 
 ##Function : GATK varianteval for all variants.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name,
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name,
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $sample_id_ref              => The sample_id {REF}
 ##         : $program_name               => The program name
@@ -4244,7 +4244,7 @@ sub gatk_variantevalall {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $sample_id_ref;
     my $program_name;
@@ -4254,7 +4254,7 @@ sub gatk_variantevalall {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
@@ -4301,10 +4301,10 @@ sub gatk_variantevalall {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
     my $outfile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
-    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
-    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
-    my $outfile_no_ending = $infile.$outfile_tag;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+    my $infile_prefix = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_prefix = catfile($$temp_directory_ref, $infile_prefix);
+    my $outfile_prefix = $infile.$outfile_tag;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix);
 
     ### Assign suffix
     ## Return the current infile vcf compression suffix for this jobid chain
@@ -4321,7 +4321,7 @@ sub gatk_variantevalall {
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     migrate_file({FILEHANDLE => $FILEHANDLE,
-		  infile_path => catfile($infamily_directory, $infile_no_ending.$infile_suffix."*"),
+		  infile_path => catfile($infamily_directory, $infile_prefix.$infile_suffix."*"),
 		  outfile_path => $$temp_directory_ref
 		 });
     say $FILEHANDLE "wait", "\n";
@@ -4342,8 +4342,8 @@ sub gatk_variantevalall {
     selectvariants({sample_names_ref => [$$sample_id_ref],
 		    logging_level => $active_parameter_href->{gatk_logging_level},
 		    referencefile_path => $active_parameter_href->{human_genome_reference},
-		    infile_path => $file_path_no_ending.$infile_suffix,
-		    outfile_path => $outfile_path_no_ending.$call_type.$infile_suffix,
+		    infile_path => $file_path_prefix.$infile_suffix,
+		    outfile_path => $outfile_path_prefix.$call_type.$infile_suffix,
 		    FILEHANDLE => $FILEHANDLE,
 		   });
     say $FILEHANDLE "\n";
@@ -4360,7 +4360,7 @@ sub gatk_variantevalall {
 	 });
 
     varianteval({infile_paths_ref => [catfile($$temp_directory_ref, $infile.$infile_tag.$call_type.$infile_suffix)],
-		 outfile_path => $outfile_path_no_ending.$call_type.$outfile_suffix,
+		 outfile_path => $outfile_path_prefix.$call_type.$outfile_suffix,
 		 logging_level => $active_parameter_href->{gatk_logging_level},
 		 referencefile_path => $active_parameter_href->{human_genome_reference},
 		 dbsnp_file_path => $active_parameter_href->{gatk_varianteval_dbsnp},
@@ -4371,7 +4371,7 @@ sub gatk_variantevalall {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file({infile_path => $outfile_path_no_ending.$call_type.$outfile_suffix,
+    migrate_file({infile_path => $outfile_path_prefix.$call_type.$outfile_suffix,
 		  outfile_path => $outsample_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -4396,7 +4396,7 @@ sub gatk_variantevalall {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    dependencies => "case_dependency_dead_end",
 		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
@@ -4411,12 +4411,12 @@ sub snpeff {
 
 ##Function : snpeff annotates variants from different sources.
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $program_name               => The program name
 ##         : $program_info_path          => The program info path
@@ -4441,7 +4441,7 @@ sub snpeff {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
     my $program_info_path;
@@ -4453,7 +4453,7 @@ sub snpeff {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	program_info_path => { strict_type => 1, store => \$program_info_path},
@@ -4516,10 +4516,10 @@ sub snpeff {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{pannovar}{file_tag};
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
-    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
-    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
-    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+    my $infile_prefix = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_prefix = catfile($$temp_directory_ref, $infile_prefix);
+    my $outfile_prefix = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix);
 
     ### Assign suffix
     ## Return the current infile vcf compression suffix for this jobid chain
@@ -4555,7 +4555,7 @@ sub snpeff {
 										  program_info_path => $program_info_path,
 										  core_number => $core_number,
 										  xargs_file_counter => $xargs_file_counter,
-										  infile => $infile_no_ending,
+										  infile => $infile_prefix,
 										  file_ending => $vcfparser_analysis_type.$infile_suffix."*",
 										  indirectory => $infamily_directory,
 										  temp_directory => $$temp_directory_ref,
@@ -4588,8 +4588,8 @@ sub snpeff {
 		Program::Variantcalling::Snpeff::ann({verbosity => "v",
 						      genome_build_version => $active_parameter_href->{snpeff_genome_build_version},
 						      config_file_path => catfile($active_parameter_href->{snpeff_path}, "snpEff.config"),
-						      infile_path => $file_path_no_ending."_".$contig.$vcfparser_analysis_type.$infile_suffix,
-						      outfile_path => $file_path_no_ending."_".$contig.$vcfparser_analysis_type.$infile_suffix.".".$xargs_file_counter,
+						      infile_path => $file_path_prefix."_".$contig.$vcfparser_analysis_type.$infile_suffix,
+						      outfile_path => $file_path_prefix."_".$contig.$vcfparser_analysis_type.$infile_suffix.".".$xargs_file_counter,
 						      stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
 						      FILEHANDLE => $XARGSFILEHANDLE,
 						     });
@@ -4632,16 +4632,16 @@ sub snpeff {
 		my $infile_path;
 		if ( ! $annotation_file_counter) {  #First file per contig
 
-		    $infile_path = $file_path_no_ending."_".$contig.$vcfparser_analysis_type.$infile_suffix;
+		    $infile_path = $file_path_prefix."_".$contig.$vcfparser_analysis_type.$infile_suffix;
 		}
 		else {
 
 		    my $annotation_infile_number = $xargs_file_counter - 1;
-		    $infile_path = $file_path_no_ending."_".$contig.$vcfparser_analysis_type.$infile_suffix.".".$annotation_infile_number;  #Infile from previous round
+		    $infile_path = $file_path_prefix."_".$contig.$vcfparser_analysis_type.$infile_suffix.".".$annotation_infile_number;  #Infile from previous round
 		}
 		Program::Variantcalling::Snpsift::annotate({verbosity => "v",
 							    infile_path => $infile_path,
-							    outfile_path => $file_path_no_ending."_".$contig.$vcfparser_analysis_type.$infile_suffix.".".$xargs_file_counter,
+							    outfile_path => $file_path_prefix."_".$contig.$vcfparser_analysis_type.$infile_suffix.".".$xargs_file_counter,
 							    config_file_path => catfile($active_parameter_href->{snpeff_path}, "snpEff.config"),
 							    database_path => $annotation_file,
 							    name_prefix => $name_prefix,
@@ -4680,8 +4680,8 @@ sub snpeff {
 	    foreach my $contig (@$vcfparser_contigs_ref) {
 
 		Program::Variantcalling::Snpsift::dbnsfp({annotate_fields_ref => \@{ $active_parameter_href->{snpsift_dbnsfp_annotations} },
-							  infile_path => $file_path_no_ending."_".$contig.$vcfparser_analysis_type.$infile_suffix.".".$annotation_infile_number,
-							  outfile_path => $file_path_no_ending."_".$contig.$vcfparser_analysis_type.$infile_suffix.".".$xargs_file_counter,
+							  infile_path => $file_path_prefix."_".$contig.$vcfparser_analysis_type.$infile_suffix.".".$annotation_infile_number,
+							  outfile_path => $file_path_prefix."_".$contig.$vcfparser_analysis_type.$infile_suffix.".".$xargs_file_counter,
 							  config_file_path => catfile($active_parameter_href->{snpeff_path}, "snpEff.config"),
 							  database_path => $active_parameter_href->{snpsift_dbnsfp_file},
 							  stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
@@ -4710,8 +4710,8 @@ sub snpeff {
 
 	foreach my $contig (@$vcfparser_contigs_ref) {
 
-	    vcfparser({infile_path => $file_path_no_ending."_".$contig.$vcfparser_analysis_type.$infile_suffix.".".$annotation_infile_number,
-		       outfile_path => $outfile_path_no_ending."_".$contig.$vcfparser_analysis_type.$outfile_suffix,
+	    vcfparser({infile_path => $file_path_prefix."_".$contig.$vcfparser_analysis_type.$infile_suffix.".".$annotation_infile_number,
+		       outfile_path => $outfile_path_prefix."_".$contig.$vcfparser_analysis_type.$outfile_suffix,
 		       stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt ",
 		       append_stderr_info => 1,
 		       FILEHANDLE => $XARGSFILEHANDLE,
@@ -4730,7 +4730,7 @@ sub snpeff {
 										  program_info_path => $program_info_path,
 										  core_number => $active_parameter_href->{max_cores_per_node},
 										  xargs_file_counter => $xargs_file_counter,
-										  outfile => $outfile_no_ending,
+										  outfile => $outfile_prefix,
 										  file_ending => $vcfparser_analysis_type.$outfile_suffix."*",
 										  outdirectory => $outfamily_directory,
 										  temp_directory => $$temp_directory_ref,
@@ -4739,7 +4739,7 @@ sub snpeff {
 	else {
 
 	    ## QC Data File(s)
-	    migrate_file({infile_path => $outfile_path_no_ending."_".$file_info_href->{contigs_size_ordered}[0].$vcfparser_analysis_type.$outfile_suffix,
+	    migrate_file({infile_path => $outfile_path_prefix."_".$file_info_href->{contigs_size_ordered}[0].$vcfparser_analysis_type.$outfile_suffix,
 			  outfile_path => $outfamily_directory,
 			  FILEHANDLE => $FILEHANDLE,
 			 });
@@ -4753,7 +4753,7 @@ sub snpeff {
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => $program_name,
 			outdirectory => $outfamily_directory,
-			outfile_ending => $outfile_no_ending."_".$file_info_href->{contigs_size_ordered}[0].$vcfparser_analysis_type.$outfile_suffix,
+			outfile_ending => $outfile_prefix."_".$file_info_href->{contigs_size_ordered}[0].$vcfparser_analysis_type.$outfile_suffix,
 			outdata_type => "static"
 		       });
     }
@@ -4767,7 +4767,7 @@ sub snpeff {
 	    submit_job({active_parameter_href => $active_parameter_href,
 			sample_info_href => $sample_info_href,
 			job_id_href => $job_id_href,
-			infile_lane_no_ending_href => $infile_lane_no_ending_href,
+			infile_lane_prefix_href => $infile_lane_prefix_href,
 			dependencies => "case_dependency",
 			path => $jobid_chain,
 			sbatch_file_name => $file_name
@@ -4787,12 +4787,12 @@ sub annovar {
 
 ##Function : Annotate and filter SNVs by gene, region and databases.
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $annovar_table_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $annovar_table_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $annovar_table_href         => annovar_table_href {REF}
 ##         : $program_name               => The program name
@@ -4819,7 +4819,7 @@ sub annovar {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $annovar_table_href;
     my $program_name;
@@ -4832,7 +4832,7 @@ sub annovar {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	annovar_table_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$annovar_table_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
@@ -5033,7 +5033,7 @@ sub annovar {
 	    submit_job({active_parameter_href => $active_parameter_href,
 			sample_info_href => $sample_info_href,
 			job_id_href => $job_id_href,
-			infile_lane_no_ending_href => $infile_lane_no_ending_href,
+			infile_lane_prefix_href => $infile_lane_prefix_href,
 			dependencies => "case_dependency",
 			path => $parameter_href->{"p".$program_name}{chain},
 			sbatch_file_name => $file_name
@@ -5053,12 +5053,12 @@ sub mvcfparser {
 
 ##Function : Vcfparser performs parsing of varianteffectpredictor annotated variants
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $program_name               => The program name
 ##         : $program_info_path          => The program info path
@@ -5084,7 +5084,7 @@ sub mvcfparser {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_info_path;
     my $program_name;
@@ -5096,7 +5096,7 @@ sub mvcfparser {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	program_info_path => { strict_type => 1, store => \$program_info_path},
@@ -5157,10 +5157,10 @@ sub mvcfparser {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{pvarianteffectpredictor}{file_tag};
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
-    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
-    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
-    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+    my $infile_prefix = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_prefix = catfile($$temp_directory_ref, $infile_prefix);
+    my $outfile_prefix = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix);
 
     ### Assign suffix
     ## Return the current infile vcf compression suffix for this jobid chain
@@ -5185,7 +5185,7 @@ sub mvcfparser {
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
 									      xargs_file_counter => $xargs_file_counter,
-									      infile => $infile_no_ending,
+									      infile => $infile_prefix,
 									      indirectory => $infamily_directory,
 									      temp_directory => $$temp_directory_ref,
 									     });
@@ -5232,14 +5232,14 @@ sub mvcfparser {
 
 		    @select_feature_annotation_columns = @{ $active_parameter_href->{vcfparser_select_feature_annotation_columns} };
 		}
-		$select_outfile = $outfile_path_no_ending."_".$contig.".selected".$infile_suffix;
+		$select_outfile = $outfile_path_prefix."_".$contig.".selected".$infile_suffix;
 	    }
 	}
 
 	vcfparser({range_feature_annotation_columns_ref => \@{ $active_parameter_href->{vcfparser_range_feature_annotation_columns} },
 		   select_feature_annotation_columns_ref => \@select_feature_annotation_columns,
-		   infile_path => $file_path_no_ending."_".$contig.$infile_suffix,
-		   outfile_path => $outfile_path_no_ending."_".$contig.$infile_suffix,
+		   infile_path => $file_path_prefix."_".$contig.$infile_suffix,
+		   outfile_path => $outfile_path_prefix."_".$contig.$infile_suffix,
 		   stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt ",
 		   range_feature_file_path => $active_parameter_href->{vcfparser_range_feature_file},
 		   select_feature_file_path => $select_file,
@@ -5253,7 +5253,7 @@ sub mvcfparser {
     }
 
     ## QC Data File(s)
-    migrate_file({infile_path => $outfile_path_no_ending."_".$file_info_href->{contigs_size_ordered}[0].$infile_suffix,
+    migrate_file({infile_path => $outfile_path_prefix."_".$file_info_href->{contigs_size_ordered}[0].$infile_suffix,
 		  outfile_path => $outfamily_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -5285,7 +5285,7 @@ sub mvcfparser {
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => $program_name,
 			outdirectory => $outfamily_directory,
-			outfile_ending => $outfile_no_ending."_".$file_info_href->{contigs_size_ordered}[0].$infile_suffix,
+			outfile_ending => $outfile_prefix."_".$file_info_href->{contigs_size_ordered}[0].$infile_suffix,
 			outdata_type => "static"
 		       });
     }
@@ -5314,7 +5314,7 @@ sub mvcfparser {
 										  program_info_path => $program_info_path,
 										  core_number => $core_number,
 										  xargs_file_counter => $xargs_file_counter,
-										  outfile => $outfile_no_ending,
+										  outfile => $outfile_prefix,
 										  file_ending => $vcfparser_analysis_type.$infile_suffix."*",
 										  outdirectory => $outfamily_directory,
 										  temp_directory => $$temp_directory_ref,
@@ -5330,7 +5330,7 @@ sub mvcfparser {
 	    submit_job({active_parameter_href => $active_parameter_href,
 			sample_info_href => $sample_info_href,
 			job_id_href => $job_id_href,
-			infile_lane_no_ending_href => $infile_lane_no_ending_href,
+			infile_lane_prefix_href => $infile_lane_prefix_href,
 			dependencies => "case_dependency",
 			path => $jobid_chain,
 			sbatch_file_name => $file_name
@@ -5350,12 +5350,12 @@ sub varianteffectpredictor {
 
 ##Function : varianteffectpredictor performs annotation of variants.
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, $file_name, $stderr_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_name, $stderr_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $program_name               => The program name
 ##         : $program_info_path          => The program info path
@@ -5382,7 +5382,7 @@ sub varianteffectpredictor {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
     my $program_info_path;
@@ -5395,7 +5395,7 @@ sub varianteffectpredictor {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	program_info_path => { strict_type => 1, store => \$program_info_path},
@@ -5465,10 +5465,10 @@ sub varianteffectpredictor {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{pvt}{file_tag};
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
-    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
-    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
-    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+    my $infile_prefix = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_prefix = catfile($$temp_directory_ref, $infile_prefix);
+    my $outfile_prefix = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix);
 
     ### Assign suffix
     ## Return the current infile vcf compression suffix for this jobid chain
@@ -5493,7 +5493,7 @@ sub varianteffectpredictor {
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
 									      xargs_file_counter => $xargs_file_counter,
-									      infile => $infile_no_ending,
+									      infile => $infile_prefix,
 									      indirectory => $infamily_directory,
 									      temp_directory => $$temp_directory_ref,
 									     });
@@ -5564,8 +5564,8 @@ sub varianteffectpredictor {
 				  outfile_format => substr($outfile_suffix, 1),
 				  fork => $fork_number,
 				  buffer_size => 20000,
-				  infile_path => $file_path_no_ending."_".$contig.$infile_suffix,
-				  outfile_path => $outfile_path_no_ending."_".$contig.$infile_suffix,
+				  infile_path => $file_path_prefix."_".$contig.$infile_suffix,
+				  outfile_path => $outfile_path_prefix."_".$contig.$infile_suffix,
 				  stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
 				  stdoutfile_path => $xargs_file_name.".".$contig.".stdout.txt",
 				  FILEHANDLE => $XARGSFILEHANDLE,
@@ -5579,20 +5579,20 @@ sub varianteffectpredictor {
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => $program_name."summary",
 			outdirectory => $outfamily_directory,
-			outfile_ending => $outfile_no_ending."_".$file_info_href->{contigs_size_ordered}[0].$infile_suffix."_summary.html",
+			outfile_ending => $outfile_prefix."_".$file_info_href->{contigs_size_ordered}[0].$infile_suffix."_summary.html",
 			outdata_type => "static"
 		       });
 	## Collect QC metadata info for later use
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => $program_name,
 			outdirectory => $outfamily_directory,
-			outfile_ending => $outfile_no_ending."_".$file_info_href->{contigs_size_ordered}[0].$infile_suffix,
+			outfile_ending => $outfile_prefix."_".$file_info_href->{contigs_size_ordered}[0].$infile_suffix,
 			outdata_type => "static"
 		       });
     }
 
     ## QC Data File(s)
-    migrate_file({infile_path => $outfile_path_no_ending."_*".$infile_suffix."_s*",
+    migrate_file({infile_path => $outfile_path_prefix."_*".$infile_suffix."_s*",
 		  outfile_path => $outfamily_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -5604,7 +5604,7 @@ sub varianteffectpredictor {
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file({infile_path => $outfile_path_no_ending."_*".$infile_suffix."*",
+	migrate_file({infile_path => $outfile_path_prefix."_*".$infile_suffix."*",
 		      outfile_path => $outfamily_directory,
 		      FILEHANDLE => $FILEHANDLE,
 		     });
@@ -5616,7 +5616,7 @@ sub varianteffectpredictor {
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file({infile_path => $outfile_path_no_ending."_".$file_info_href->{contigs_size_ordered}[0].$infile_suffix,
+	migrate_file({infile_path => $outfile_path_prefix."_".$file_info_href->{contigs_size_ordered}[0].$infile_suffix,
 		      outfile_path => $outfamily_directory,
 		      FILEHANDLE => $FILEHANDLE,
 		     });
@@ -5631,7 +5631,7 @@ sub varianteffectpredictor {
 	    submit_job({active_parameter_href => $active_parameter_href,
 			sample_info_href => $sample_info_href,
 			job_id_href => $job_id_href,
-			infile_lane_no_ending_href => $infile_lane_no_ending_href,
+			infile_lane_prefix_href => $infile_lane_prefix_href,
 			dependencies => "case_dependency",
 			path => $jobid_chain,
 			sbatch_file_name => $file_name
@@ -5663,13 +5663,13 @@ sub gatk_readbackedphasing {
 
 ##Function : GATK ReadBackedPhasing performs physical phasing of SNP calls, based on sequencing reads.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $lane_href, $infile_lane_no_ending_href, $job_id_href, $family_id, $outaligner_dir, $call_type, $program_name
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $lane_href, $infile_lane_prefix_href, $job_id_href, $family_id, $outaligner_dir, $call_type, $program_name
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
 ##         : $lane_href                  => The lane info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $family_id                  => The family_id
 ##         : $outaligner_dir             => The outaligner_dir used in the analysis
@@ -5681,7 +5681,7 @@ sub gatk_readbackedphasing {
     my $sample_info_href = $_[2];
     my $file_info_href = $_[3];
     my $lane_href = $_[4];
-    my $infile_lane_no_ending_href = $_[5];
+    my $infile_lane_prefix_href = $_[5];
     my $job_id_href = $_[6];
     my $family_id = $_[7];
     my $outaligner_dir = $_[8];
@@ -5799,7 +5799,7 @@ sub gatk_readbackedphasing {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    dependencies => "case_dependency_dead_end",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
@@ -5814,12 +5814,12 @@ sub gatk_phasebytransmission {
 
 ##Function : GATK PhaseByTransmission computes the most likely genotype combination and phases trios and parent/child pairs given their genotype likelihoods and a mutation prior and phases all sites were parent/child transmission can be inferred unambiguously.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $family_id, $outaligner_dir, $call_type, $program_name
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $family_id, $outaligner_dir, $call_type, $program_name
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $family_id                  => The family_id
 ##         : $outaligner_dir             => The outaligner_dir used in the analysis
@@ -5830,7 +5830,7 @@ sub gatk_phasebytransmission {
     my $active_parameter_href = $_[1];
     my $sample_info_href = $_[2];
     my $file_info_href = $_[3];
-    my $infile_lane_no_ending_href = $_[4];
+    my $infile_lane_prefix_href = $_[4];
     my $job_id_href = $_[5];
     my $family_id = $_[6];
     my $outaligner_dir = $_[7];
@@ -5916,7 +5916,7 @@ sub gatk_phasebytransmission {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    dependencies => "case_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
@@ -5931,12 +5931,12 @@ sub mpeddy {
 
 ##Function : Compares familial-relationships and sexes.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $program_name               => The program name
 ##         : $family_id_ref              => The family_id {REF}
@@ -5957,7 +5957,7 @@ sub mpeddy {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
 
@@ -5966,7 +5966,7 @@ sub mpeddy {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
@@ -6010,8 +6010,8 @@ sub mpeddy {
 
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
-    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
-    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+    my $infile_prefix = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_prefix = catfile($$temp_directory_ref, $infile_prefix);
 
     ### Assign suffix
     ## Return the current infile vcf compression suffix for this jobid chain_vcf_data
@@ -6034,14 +6034,14 @@ sub mpeddy {
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     migrate_file({FILEHANDLE => $FILEHANDLE,
-		  infile_path => catfile($infamily_directory, $infile_no_ending.$infile_suffix."*"),
+		  infile_path => catfile($infamily_directory, $infile_prefix.$infile_suffix."*"),
 		  outfile_path => $$temp_directory_ref
 		 });
     say $FILEHANDLE "wait", "\n";
 
     ## Reformat variant calling file and index
-    view_vcf({infile_path => $file_path_no_ending.$infile_suffix,
-	      outfile_path_no_ending => $file_path_no_ending,
+    view_vcf({infile_path => $file_path_prefix.$infile_suffix,
+	      outfile_path_prefix => $file_path_prefix,
 	      output_type => "z",
 	      index => 1,
 	      index_type => "tbi",
@@ -6049,7 +6049,7 @@ sub mpeddy {
 	     });
 
     ## peddy
-    peddy({infile_path => $file_path_no_ending.$suffix,
+    peddy({infile_path => $file_path_prefix.$suffix,
 	   outfile_prefix_path => catfile($outfamily_directory, $$family_id_ref),
 	   family_file_path => $family_file,
 	   FILEHANDLE => $FILEHANDLE,
@@ -6074,7 +6074,7 @@ sub mpeddy {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    dependencies => "case_dependency_dead_end",
 		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
@@ -6089,12 +6089,12 @@ sub mplink {
 
 ##Function : Tests sample for correct relatives (only performed for samples with relatives defined in pedigree file) performed on sequence data.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $program_name               => The program name
 ##         : $family_id_ref              => The family_id {REF}
@@ -6115,7 +6115,7 @@ sub mplink {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
 
@@ -6124,7 +6124,7 @@ sub mplink {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
@@ -6171,8 +6171,8 @@ sub mplink {
 
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
-    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
-    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+    my $infile_prefix = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_prefix = catfile($$temp_directory_ref, $infile_prefix);
 
     ### Assign suffix
     ## Return the current infile vcf compression suffix for this jobid chain_vcf_data
@@ -6193,15 +6193,15 @@ sub mplink {
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     migrate_file({FILEHANDLE => $FILEHANDLE,
-		  infile_path => catfile($infamily_directory, $infile_no_ending.$infile_suffix."*"),
+		  infile_path => catfile($infamily_directory, $infile_prefix.$infile_suffix."*"),
 		  outfile_path => $$temp_directory_ref
 		 });
     say $FILEHANDLE "wait", "\n";
 
     ## Prepare input
     say $FILEHANDLE "## Remove indels using bcftools ";
-    Program::Variantcalling::Bcftools::view({infile_path => $file_path_no_ending.$infile_suffix,
-					     outfile_path => $file_path_no_ending."_no_indels".$infile_suffix,
+    Program::Variantcalling::Bcftools::view({infile_path => $file_path_prefix.$infile_suffix,
+					     outfile_path => $file_path_prefix."_no_indels".$infile_suffix,
 					     output_type => "v",
 					     exclude_types_ref => ["indels"],
 					     FILEHANDLE => $FILEHANDLE,
@@ -6211,7 +6211,7 @@ sub mplink {
     say $FILEHANDLE "## Create uniq IDs and remove duplicate variants";
     Program::Variantcalling::Bcftools::annotate({remove_ids_ref => ["ID"],
 						 set_id => q?+'%CHROM:%POS:%REF:%ALT'?,
-						 infile_path => $file_path_no_ending."_no_indels".$infile_suffix,
+						 infile_path => $file_path_prefix."_no_indels".$infile_suffix,
 						 output_type => "v",
 						 FILEHANDLE => $FILEHANDLE,
 						});
@@ -6220,14 +6220,14 @@ sub mplink {
 
     ## Drops duplicate variants that appear later in the the VCF file
     Program::Variantcalling::Vt::vt_uniq({infile_path => "-",
-					  outfile_path => $file_path_no_ending."_no_indels_ann_uniq".$infile_suffix,
+					  outfile_path => $file_path_prefix."_no_indels_ann_uniq".$infile_suffix,
 					  FILEHANDLE => $FILEHANDLE,
 					 });
     say $FILEHANDLE "\n";
 
     ### Plink
     say $FILEHANDLE "## Create pruning set and uniq IDs";
-    plink({vcffile_path => $file_path_no_ending."_no_indels_ann_uniq".$infile_suffix,
+    plink({vcffile_path => $file_path_prefix."_no_indels_ann_uniq".$infile_suffix,
 	   outfile_prefix => catfile($$temp_directory_ref, $$family_id_ref."_data"),
 	   vcf_require_gt => 1,
 	   vcf_half_call => "haploid",
@@ -6360,7 +6360,7 @@ sub mplink {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    dependencies => "case_dependency_dead_end",
 		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
@@ -6375,12 +6375,12 @@ sub variant_integrity {
 
 ##Function : Tests sample for correct relatives (only performed for samples with relatives defined in pedigree file) performed on sequence data.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $program_name               => The program name
 ##         : $family_id_ref              => The family_id {REF}
@@ -6401,7 +6401,7 @@ sub variant_integrity {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
 
@@ -6410,7 +6410,7 @@ sub variant_integrity {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
@@ -6454,8 +6454,8 @@ sub variant_integrity {
 
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
-    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
-    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+    my $infile_prefix = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_prefix = catfile($$temp_directory_ref, $infile_prefix);
 
     ### Assign suffix
     ## Return the current infile vcf compression suffix for this jobid chain_vcf_data
@@ -6476,7 +6476,7 @@ sub variant_integrity {
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     migrate_file({FILEHANDLE => $FILEHANDLE,
-		  infile_path => catfile($infamily_directory, $infile_no_ending.$infile_suffix."*"),
+		  infile_path => catfile($infamily_directory, $infile_prefix.$infile_suffix."*"),
 		  outfile_path => $$temp_directory_ref
 		 });
     say $FILEHANDLE "wait", "\n";
@@ -6486,7 +6486,7 @@ sub variant_integrity {
 
 	if ($parameter_href->{dynamic_parameter}{trio}) {
 
-	    mendel({infile_path => $file_path_no_ending.$infile_suffix,
+	    mendel({infile_path => $file_path_prefix.$infile_suffix,
 		    outfile_path => catfile($outfamily_directory, $$family_id_ref."_mendel.txt"),
 		    family_file => $family_file,
 		    family_type => $active_parameter_href->{genmod_models_family_type},
@@ -6512,7 +6512,7 @@ sub variant_integrity {
 
 	    if ($father_info ne 0) {  #Father is included in analysis
 
-		father({infile_path => $file_path_no_ending.$infile_suffix,
+		father({infile_path => $file_path_prefix.$infile_suffix,
 			outfile_path => catfile($outfamily_directory, $$family_id_ref."_father.txt"),
 			family_file => $family_file,
 			family_type => $active_parameter_href->{genmod_models_family_type},
@@ -6541,7 +6541,7 @@ sub variant_integrity {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    dependencies => "case_dependency_dead_end",
 		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
@@ -6556,12 +6556,12 @@ sub vt {
 
 ##Function : Split multi allelic records into single records and normalize
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, $file_name, $stderr_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_name, $stderr_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $program_name               => The program name
 ##         : $program_info_path          => The program info path
@@ -6588,7 +6588,7 @@ sub vt {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
     my $program_info_path;
@@ -6601,7 +6601,7 @@ sub vt {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	program_info_path => { strict_type => 1, store => \$program_info_path},
@@ -6669,10 +6669,10 @@ sub vt {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{prhocall}{file_tag};
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
-    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
-    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
-    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+    my $infile_prefix = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_prefix = catfile($$temp_directory_ref, $infile_prefix);
+    my $outfile_prefix = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix);
 
     ### Assign suffix
     ## Return the current infile vcf compression suffix for this jobid chain
@@ -6697,7 +6697,7 @@ sub vt {
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
 									      xargs_file_counter => $xargs_file_counter,
-									      infile => $infile_no_ending,
+									      infile => $infile_prefix,
 									      indirectory => $infamily_directory,
 									      temp_directory => $$temp_directory_ref,
 									     });
@@ -6722,11 +6722,11 @@ sub vt {
 	## vt - Split multi allelic records into single records and normalize
 	vt_core({active_parameter_href => $active_parameter_href,
 		 sample_info_href => $sample_info_href,
-		 infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		 infile_lane_prefix_href => $infile_lane_prefix_href,
 		 job_id_href => $job_id_href,
 		 FILEHANDLE => $XARGSFILEHANDLE,
-		 infile_path => $file_path_no_ending."_".$contig.$infile_suffix,
-		 outfile_path => $outfile_path_no_ending."_".$contig.$outfile_suffix,
+		 infile_path => $file_path_prefix."_".$contig.$infile_suffix,
+		 outfile_path => $outfile_path_prefix."_".$contig.$outfile_suffix,
 		 decompose => $active_parameter_href->{vt_decompose},
 		 normalize => $active_parameter_href->{vt_normalize},
 		 sed => 1,
@@ -6758,8 +6758,8 @@ sub vt {
 	if ($active_parameter_href->{vt_missing_alt_allele}) {
 
 	    $alt_file_tag = "_nostar";
-	    print $XARGSFILEHANDLE catfile($remove_star_regexp.$$temp_directory_ref, $outfile_no_ending."_".$contig.$outfile_suffix)." ";
-	    print $XARGSFILEHANDLE "> ".$outfile_path_no_ending."_".$contig.$alt_file_tag.$outfile_suffix." ";
+	    print $XARGSFILEHANDLE catfile($remove_star_regexp.$$temp_directory_ref, $outfile_prefix."_".$contig.$outfile_suffix)." ";
+	    print $XARGSFILEHANDLE "> ".$outfile_path_prefix."_".$contig.$alt_file_tag.$outfile_suffix." ";
 	    print $XARGSFILEHANDLE "2>> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    print $XARGSFILEHANDLE "; ";
 	}
@@ -6767,7 +6767,7 @@ sub vt {
 	## Remove common variants
 	if ($active_parameter_href->{vt_genmod_filter}) {
 
-	    Program::Variantcalling::Genmod::annotate({infile_path => $outfile_path_no_ending."_".$contig.$alt_file_tag.$outfile_suffix,
+	    Program::Variantcalling::Genmod::annotate({infile_path => $outfile_path_prefix."_".$contig.$alt_file_tag.$outfile_suffix,
 						       outfile_path => catfile(dirname(devnull()), "stdout"),
 						       stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
 						       append_stderr_info => 1,
@@ -6782,7 +6782,7 @@ sub vt {
 	    $alt_file_tag .= "_genmod_filter";  #Update file tag
 
 	    Program::Variantcalling::Genmod::filter({infile_path => "-",
-						     outfile_path => $outfile_path_no_ending."_".$contig.$alt_file_tag.$outfile_suffix,
+						     outfile_path => $outfile_path_prefix."_".$contig.$alt_file_tag.$outfile_suffix,
 						     stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
 						     append_stderr_info => 1,
 						     verbosity => "v",
@@ -6792,8 +6792,8 @@ sub vt {
 	    print $XARGSFILEHANDLE "; ";
 	}
 
-	mv({infile_path => $outfile_path_no_ending."_".$contig.$alt_file_tag.$outfile_suffix,
-	    outfile_path => $outfile_path_no_ending."_".$contig.$outfile_suffix,
+	mv({infile_path => $outfile_path_prefix."_".$contig.$alt_file_tag.$outfile_suffix,
+	    outfile_path => $outfile_path_prefix."_".$contig.$outfile_suffix,
 	    FILEHANDLE => $XARGSFILEHANDLE,
 	   });
 	say $XARGSFILEHANDLE "\n";
@@ -6803,7 +6803,7 @@ sub vt {
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file({infile_path => $outfile_path_no_ending."_*".$outfile_suffix."*",
+	migrate_file({infile_path => $outfile_path_prefix."_*".$outfile_suffix."*",
 		      outfile_path => $outfamily_directory,
 		      FILEHANDLE => $FILEHANDLE,
 		     });
@@ -6819,7 +6819,7 @@ sub vt {
 	    submit_job({active_parameter_href => $active_parameter_href,
 			sample_info_href => $sample_info_href,
 			job_id_href => $job_id_href,
-			infile_lane_no_ending_href => $infile_lane_no_ending_href,
+			infile_lane_prefix_href => $infile_lane_prefix_href,
 			dependencies => "case_dependency",
 			path => $jobid_chain,
 			sbatch_file_name => $file_name
@@ -6839,12 +6839,12 @@ sub rhocall {
 
 ##Function : Rhocall performs annotation of autozygosity regions
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, $file_name, $stderr_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_name, $stderr_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $program_name               => The program name
 ##         : $program_info_path          => The program info path
@@ -6871,7 +6871,7 @@ sub rhocall {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
     my $program_info_path;
@@ -6884,7 +6884,7 @@ sub rhocall {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	program_info_path => { strict_type => 1, store => \$program_info_path},
@@ -6952,10 +6952,10 @@ sub rhocall {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
-    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
-    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
-    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+    my $infile_prefix = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_prefix = catfile($$temp_directory_ref, $infile_prefix);
+    my $outfile_prefix = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix);
 
     ### Assign suffix
     ## Return the current infile vcf compression suffix for this jobid chain
@@ -6980,7 +6980,7 @@ sub rhocall {
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
 									      xargs_file_counter => $xargs_file_counter,
-									      infile => $infile_no_ending,
+									      infile => $infile_prefix,
 									      indirectory => $infamily_directory,
 									      temp_directory => $$temp_directory_ref,
 									     });
@@ -7010,8 +7010,8 @@ sub rhocall {
 	    push(@sample_ids, $active_parameter_href->{sample_ids}[0]);  #No affected - pick any sample_id
 	}
 
-	roh({infile_path => $file_path_no_ending."_".$contig.$infile_suffix,
-	     outfile_path => $file_path_no_ending."_".$contig.".roh",
+	roh({infile_path => $file_path_prefix."_".$contig.$infile_suffix,
+	     outfile_path => $file_path_prefix."_".$contig.".roh",
 	     af_file_path => $active_parameter_href->{rhocall_frequency_file},
 	     sample_ids_ref => \@sample_ids,
 	     skip_indels => 1,  #Skip indels as their genotypes are enriched for errors
@@ -7019,9 +7019,9 @@ sub rhocall {
 	    });
 	print $XARGSFILEHANDLE "; ";
 
-	Program::Variantcalling::Rhocall::annotate({infile_path => $file_path_no_ending."_".$contig.$infile_suffix,
-						    outfile_path => $outfile_path_no_ending."_".$contig.$outfile_suffix,
-						    rohfile_path => $file_path_no_ending."_".$contig.".roh",
+	Program::Variantcalling::Rhocall::annotate({infile_path => $file_path_prefix."_".$contig.$infile_suffix,
+						    outfile_path => $outfile_path_prefix."_".$contig.$outfile_suffix,
+						    rohfile_path => $file_path_prefix."_".$contig.".roh",
 						    v14 => 1,
 						    FILEHANDLE => $XARGSFILEHANDLE,
 						   });
@@ -7032,7 +7032,7 @@ sub rhocall {
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file({infile_path => $outfile_path_no_ending."_*".$outfile_suffix."*",
+	migrate_file({infile_path => $outfile_path_prefix."_*".$outfile_suffix."*",
 		      outfile_path => $outfamily_directory,
 		      FILEHANDLE => $FILEHANDLE,
 		     });
@@ -7048,7 +7048,7 @@ sub rhocall {
 	    submit_job({active_parameter_href => $active_parameter_href,
 			sample_info_href => $sample_info_href,
 			job_id_href => $job_id_href,
-			infile_lane_no_ending_href => $infile_lane_no_ending_href,
+			infile_lane_prefix_href => $infile_lane_prefix_href,
 			dependencies => "case_dependency",
 			path => $jobid_chain,
 			sbatch_file_name => $file_name
@@ -7068,12 +7068,12 @@ sub prepareforvariantannotationblock {
 
 ##Function : Copy files for variantannotationblock to enable restart and skip of modules within block
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, $file_name, $stderr_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_name, $stderr_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $program_name               => The program name
 ##         : $program_info_path          => The program info path
@@ -7100,7 +7100,7 @@ sub prepareforvariantannotationblock {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
     my $program_info_path;
@@ -7113,7 +7113,7 @@ sub prepareforvariantannotationblock {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	program_info_path => { strict_type => 1, store => \$program_info_path},
@@ -7179,8 +7179,8 @@ sub prepareforvariantannotationblock {
 
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
-    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
-    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+    my $infile_prefix = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_prefix = catfile($$temp_directory_ref, $infile_prefix);
 
     ## Assign suffix
     my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
@@ -7196,22 +7196,22 @@ sub prepareforvariantannotationblock {
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     migrate_file({FILEHANDLE => $FILEHANDLE,
-		  infile_path => catfile($infamily_directory, $infile_no_ending.$infile_suffix."*"),
+		  infile_path => catfile($infamily_directory, $infile_prefix.$infile_suffix."*"),
 		  outfile_path => $$temp_directory_ref
 		 });
     say $FILEHANDLE "wait", "\n";
 
     ## Compress or decompress original file or stream to outfile (if supplied)
     bgzip({FILEHANDLE => $FILEHANDLE,
-	   infile_path => $file_path_no_ending.$infile_suffix,
-	   outfile_path => $file_path_no_ending.$outfile_suffix,
+	   infile_path => $file_path_prefix.$infile_suffix,
+	   outfile_path => $file_path_prefix.$outfile_suffix,
 	   write_to_stdout => 1,
 	  });
     say $FILEHANDLE "\n";
 
     ## Index file using tabix
     tabix({FILEHANDLE => $FILEHANDLE,
-	   infile_path => $file_path_no_ending.$outfile_suffix,
+	   infile_path => $file_path_prefix.$outfile_suffix,
 	   force => 1,
 	   preset => "vcf",
 	  });
@@ -7229,7 +7229,7 @@ sub prepareforvariantannotationblock {
     foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 
 	tabix({regions_ref => [$contig],
-	       infile_path => $file_path_no_ending.$outfile_suffix,
+	       infile_path => $file_path_prefix.$outfile_suffix,
 	       with_header => 1,
 	       FILEHANDLE => $XARGSFILEHANDLE,
 	      });
@@ -7237,14 +7237,14 @@ sub prepareforvariantannotationblock {
 
 	## Compress or decompress original file or stream to outfile (if supplied)
 	bgzip({FILEHANDLE => $XARGSFILEHANDLE,
-	       outfile_path => $file_path_no_ending."_".$contig.$outfile_suffix,
+	       outfile_path => $file_path_prefix."_".$contig.$outfile_suffix,
 	       write_to_stdout => 1,
 	      });
 	print $XARGSFILEHANDLE "; ";
 
 	## Index file using tabix
 	tabix({FILEHANDLE => $XARGSFILEHANDLE,
-	       infile_path => $file_path_no_ending."_".$contig.$outfile_suffix,
+	       infile_path => $file_path_prefix."_".$contig.$outfile_suffix,
 	       force => 1,
 	       preset => "vcf",
 	      });
@@ -7255,7 +7255,7 @@ sub prepareforvariantannotationblock {
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file({infile_path => $file_path_no_ending."_*".$infile_suffix."*",
+	migrate_file({infile_path => $file_path_prefix."_*".$infile_suffix."*",
 		      outfile_path => $outfamily_directory,
 		      FILEHANDLE => $FILEHANDLE,
 		     });
@@ -7271,7 +7271,7 @@ sub prepareforvariantannotationblock {
 	    submit_job({active_parameter_href => $active_parameter_href,
 			sample_info_href => $sample_info_href,
 			job_id_href => $job_id_href,
-			infile_lane_no_ending_href => $infile_lane_no_ending_href,
+			infile_lane_prefix_href => $infile_lane_prefix_href,
 			dependencies => "case_dependency",
 			path => $jobid_chain,
 			sbatch_file_name => $file_name
@@ -7291,12 +7291,12 @@ sub gatk_combinevariantcallsets {
 
 ##Function : GATK CombineVariants to combine all variants call from different callers.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $program_name               => The program name
 ##         : $family_id_ref              => The family_id {REF}
@@ -7317,7 +7317,7 @@ sub gatk_combinevariantcallsets {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
 
@@ -7326,7 +7326,7 @@ sub gatk_combinevariantcallsets {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
@@ -7370,8 +7370,8 @@ sub gatk_combinevariantcallsets {
     ## Assign file_tags
     my $outfile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
     my @file_tags_and_paths;
-    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+    my $outfile_prefix = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix);
 
     ### Assign suffix
     ## Set file suffix for next module within jobid chain
@@ -7392,7 +7392,7 @@ sub gatk_combinevariantcallsets {
 
 	    ## Assign file_tags
 	    my $infile_tag = $file_info_href->{$$family_id_ref}{$variant_caller}{file_tag};
-	    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
+	    my $infile_prefix = $$family_id_ref.$infile_tag.$call_type;
 
 	    ## Assign suffix
 	    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
@@ -7400,7 +7400,7 @@ sub gatk_combinevariantcallsets {
 						 program_name => $variant_caller,
 						});
 
-	    push(@file_tags_and_paths, $program_outdirectory_name." ".catfile($$temp_directory_ref, $infile_no_ending.$infile_suffix));  #Collect both tag and path in the same string
+	    push(@file_tags_and_paths, $program_outdirectory_name." ".catfile($$temp_directory_ref, $infile_prefix.$infile_suffix));  #Collect both tag and path in the same string
 
 	    unshift(@variant_callers, $program_outdirectory_name);  #To prioritize downstream - 1. gatk 2. samtools determined by order_parameters order
 
@@ -7412,7 +7412,7 @@ sub gatk_combinevariantcallsets {
 	    ## Copy file(s) to temporary directory
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
 	    migrate_file({FILEHANDLE => $FILEHANDLE,
-			  infile_path => catfile($infamily_directory, $infile_no_ending.$infile_suffix."*"),
+			  infile_path => catfile($infamily_directory, $infile_prefix.$infile_suffix."*"),
 			  outfile_path => $$temp_directory_ref
 			 });
 	}
@@ -7431,7 +7431,7 @@ sub gatk_combinevariantcallsets {
 	 });
 
     Program::Variantcalling::Gatk::combinevariants({infile_paths_ref => \@file_tags_and_paths,
-						    outfile_path => $outfile_path_no_ending.$outfile_suffix,
+						    outfile_path => $outfile_path_prefix.$outfile_suffix,
 						    logging_level => $active_parameter_href->{gatk_logging_level},
 						    referencefile_path => $active_parameter_href->{human_genome_reference},
 						    genotype_merge_option => $active_parameter_href->{gatk_combinevariants_genotype_merge_option},
@@ -7444,15 +7444,15 @@ sub gatk_combinevariantcallsets {
     if ($active_parameter_href->{gatk_combinevariantcallsets_bcf_file}) {
 
 	## Reformat variant calling file and index
-	view_vcf({infile_path => $outfile_path_no_ending.$outfile_suffix,
-		  outfile_path_no_ending => $outfile_path_no_ending,
+	view_vcf({infile_path => $outfile_path_prefix.$outfile_suffix,
+		  outfile_path_prefix => $outfile_path_prefix,
 		  output_type => "b",
 		  FILEHANDLE => $FILEHANDLE,
 		 });
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file({infile_path => $outfile_path_no_ending.".bcf*",
+	migrate_file({infile_path => $outfile_path_prefix.".bcf*",
 		      outfile_path => $outfamily_directory,
 		      FILEHANDLE => $FILEHANDLE,
 		     });
@@ -7460,7 +7460,7 @@ sub gatk_combinevariantcallsets {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file({infile_path => $outfile_path_no_ending.$outfile_suffix,
+    migrate_file({infile_path => $outfile_path_prefix.$outfile_suffix,
 		  outfile_path => $outfamily_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -7470,17 +7470,17 @@ sub gatk_combinevariantcallsets {
 
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
-	$sample_info_href->{vcf_file}{ready_vcf}{path} = catfile($outfamily_directory, $outfile_no_ending.$outfile_suffix);
+	$sample_info_href->{vcf_file}{ready_vcf}{path} = catfile($outfamily_directory, $outfile_prefix.$outfile_suffix);
 
 	if ($active_parameter_href->{gatk_combinevariantcallsets_bcf_file}) {
 
-	    $sample_info_href->{bcf_file}{path} = catfile($outfamily_directory, $outfile_no_ending.".bcf");
+	    $sample_info_href->{bcf_file}{path} = catfile($outfamily_directory, $outfile_prefix.".bcf");
 	}
 
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    dependencies => "chain_and_parallel_dependency",
 		    path => $jobid_chain,
 		    sbatch_file_name => $file_name,
@@ -7496,12 +7496,12 @@ sub gatk_variantrecalibration {
 
 ##Function : GATK VariantRecalibrator/ApplyRecalibration.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $program_name               => The program name
 ##         : $family_id_ref              => The family_id {REF}
@@ -7522,7 +7522,7 @@ sub gatk_variantrecalibration {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
 
@@ -7531,7 +7531,7 @@ sub gatk_variantrecalibration {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
@@ -7566,10 +7566,10 @@ sub gatk_variantrecalibration {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_genotypegvcfs}{file_tag};
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
-    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
-    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
-    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+    my $infile_prefix = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_prefix = catfile($$temp_directory_ref, $infile_prefix);
+    my $outfile_prefix = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix);
 
     ### Assign suffix
     my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
@@ -7615,7 +7615,7 @@ sub gatk_variantrecalibration {
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     migrate_file({FILEHANDLE => $FILEHANDLE,
-		  infile_path => catfile($infamily_directory, $infile_no_ending.$infile_suffix."*"),
+		  infile_path => catfile($infamily_directory, $infile_prefix.$infile_suffix."*"),
 		  outfile_path => $$temp_directory_ref
 		 });
     say $FILEHANDLE "wait", "\n";
@@ -7646,13 +7646,13 @@ sub gatk_variantrecalibration {
 	my $max_gaussian_level;
 	if ( ($consensus_analysis_type eq "wes") || ($consensus_analysis_type eq "rapid") ) {  #Exome/rapid analysis use combined reference for more power
 
-	    push(@infiles, $file_path_no_ending.$infile_suffix);  #Infile HaplotypeCaller combined vcf which used reference gVCFs to create combined vcf (30> samples gCVFs)
+	    push(@infiles, $file_path_prefix.$infile_suffix);  #Infile HaplotypeCaller combined vcf which used reference gVCFs to create combined vcf (30> samples gCVFs)
 	}
 	else {  #WGS
 
 	    if ($mode eq "SNP") {
 
-		push(@infiles, $file_path_no_ending.$infile_suffix);
+		push(@infiles, $file_path_prefix.$infile_suffix);
 
 		if ($active_parameter_href->{gatk_variantrecalibration_snv_max_gaussians} ne 0) {
 
@@ -7661,7 +7661,7 @@ sub gatk_variantrecalibration {
 	    }
 	    if ($mode eq "INDEL") {#Use created recalibrated snp vcf as input
 
-		push(@infiles, $outfile_path_no_ending.".SNV".$infile_suffix);
+		push(@infiles, $outfile_path_prefix.".SNV".$infile_suffix);
 	    }
 	}
 
@@ -7701,9 +7701,9 @@ sub gatk_variantrecalibration {
 			     resources_ref => \@resources,
 			     logging_level => $active_parameter_href->{gatk_logging_level},
 			     referencefile_path => $active_parameter_href->{human_genome_reference},
-			     recal_file_path => $file_path_no_ending.".intervals",
-			     rscript_file_path => $file_path_no_ending.".intervals.plots.R",
-			     tranches_file_path => $file_path_no_ending.".intervals.tranches",
+			     recal_file_path => $file_path_prefix.".intervals",
+			     rscript_file_path => $file_path_prefix.".intervals.plots.R",
+			     tranches_file_path => $file_path_prefix.".intervals.tranches",
 			     max_gaussian_level => $max_gaussian_level,
 			     mode => $mode,
 			     pedigree_validation_type => $commands{pedigree_validation_type},
@@ -7729,22 +7729,22 @@ sub gatk_variantrecalibration {
 	my $ts_filter_level;
 	if ( ($consensus_analysis_type eq "wes") || ($consensus_analysis_type eq "rapid")) {  #Exome/rapid analysis use combined reference for more power
 
-	    $infile_path = $file_path_no_ending.$infile_suffix;  #Infile genotypegvcfs combined vcf which used reference gVCFs to create combined vcf file
-	    $outfile_path = $outfile_path_no_ending."_filtered".$outfile_suffix;
+	    $infile_path = $file_path_prefix.$infile_suffix;  #Infile genotypegvcfs combined vcf which used reference gVCFs to create combined vcf file
+	    $outfile_path = $outfile_path_prefix."_filtered".$outfile_suffix;
 	    $ts_filter_level = $active_parameter_href->{gatk_variantrecalibration_snv_tsfilter_level};
 	}
 	else  {  #WGS
 
 	    if ($mode eq "SNP") {
 
-		$infile_path = $file_path_no_ending.$infile_suffix;
-		$outfile_path = $outfile_path_no_ending.".SNV".$outfile_suffix;
+		$infile_path = $file_path_prefix.$infile_suffix;
+		$outfile_path = $outfile_path_prefix.".SNV".$outfile_suffix;
 		$ts_filter_level = $active_parameter_href->{gatk_variantrecalibration_snv_tsfilter_level};
 	    }
 	    if ($mode eq "INDEL") {#Use created recalibrated snp vcf as input
 
-		$infile_path = $outfile_path_no_ending.".SNV".$outfile_suffix;
-		$outfile_path = $outfile_path_no_ending.$outfile_suffix;
+		$infile_path = $outfile_path_prefix.".SNV".$outfile_suffix;
+		$outfile_path = $outfile_path_prefix.$outfile_suffix;
 		$ts_filter_level = $active_parameter_href->{gatk_variantrecalibration_indel_tsfilter_level};
 	    }
 	}
@@ -7753,8 +7753,8 @@ sub gatk_variantrecalibration {
 			    outfile_path => $outfile_path,
 			    logging_level => $active_parameter_href->{gatk_logging_level},
 			    referencefile_path => $active_parameter_href->{human_genome_reference},
-			    recal_file_path => $file_path_no_ending.".intervals",
-			    tranches_file_path => $file_path_no_ending.".intervals.tranches",
+			    recal_file_path => $file_path_prefix.".intervals",
+			    tranches_file_path => $file_path_prefix.".intervals.tranches",
 			    ts_filter_level => $ts_filter_level,
 			    mode => $mode,
 			    pedigree_validation_type => $commands{pedigree_validation_type},
@@ -7769,11 +7769,11 @@ sub gatk_variantrecalibration {
 	## BcfTools norm, Left-align and normalize indels, split multiallelics
 	norm({FILEHANDLE => $FILEHANDLE,
 	      reference_path => $active_parameter_href->{human_genome_reference},
-	      infile_path => $outfile_path_no_ending."_filtered".$outfile_suffix,
+	      infile_path => $outfile_path_prefix."_filtered".$outfile_suffix,
 	      output_type => "v",
-	      outfile_path => $outfile_path_no_ending."_filtered_normalized".$outfile_suffix,
+	      outfile_path => $outfile_path_prefix."_filtered_normalized".$outfile_suffix,
 	      multiallelic => "-",
-	      stderrfile_path => $outfile_path_no_ending."_filtered_normalized.stderr",
+	      stderrfile_path => $outfile_path_prefix."_filtered_normalized.stderr",
 	     });
 	say $FILEHANDLE "\n";
     }
@@ -7796,8 +7796,8 @@ sub gatk_variantrecalibration {
 	selectvariants({sample_names_ref => \@{ $active_parameter_href->{sample_ids} },
 			logging_level => $active_parameter_href->{gatk_logging_level},
 			referencefile_path => $active_parameter_href->{human_genome_reference},
-			infile_path => $outfile_path_no_ending."_filtered_normalized".$outfile_suffix,
-			outfile_path => $outfile_path_no_ending.$outfile_suffix,
+			infile_path => $outfile_path_prefix."_filtered_normalized".$outfile_suffix,
+			outfile_path => $outfile_path_prefix.$outfile_suffix,
 			exclude_nonvariants => 1,
 			FILEHANDLE => $FILEHANDLE,
 		       });
@@ -7819,15 +7819,15 @@ sub gatk_variantrecalibration {
 	    selectvariants({sample_names_ref => \@{ $active_parameter_href->{sample_ids} },
 			    logging_level => $active_parameter_href->{gatk_logging_level},
 			    referencefile_path => $active_parameter_href->{human_genome_reference},
-			    infile_path => $outfile_path_no_ending."_filtered".$outfile_suffix,
-			    outfile_path => $outfile_path_no_ending."_incnonvariantloci".$outfile_suffix,
+			    infile_path => $outfile_path_prefix."_filtered".$outfile_suffix,
+			    outfile_path => $outfile_path_prefix."_incnonvariantloci".$outfile_suffix,
 			    FILEHANDLE => $FILEHANDLE,
 			   });
 	    say $FILEHANDLE "\n\nwait\n";
 
 	    ## Copies file from temporary directory.
 	    say $FILEHANDLE "## Copy file from temporary directory";
-	    migrate_file({infile_path => $outfile_path_no_ending."_incnonvariantloci".$outfile_suffix."*",
+	    migrate_file({infile_path => $outfile_path_prefix."_incnonvariantloci".$outfile_suffix."*",
 			  outfile_path => $outfamily_directory,
 			  FILEHANDLE => $FILEHANDLE,
 			 });
@@ -7850,8 +7850,8 @@ sub gatk_variantrecalibration {
 
 	calculategenotypeposteriors({logging_level => $active_parameter_href->{gatk_logging_level},
 				     referencefile_path => $active_parameter_href->{human_genome_reference},
-				     infile_path => $outfile_path_no_ending.$outfile_suffix,
-				     outfile_path => $outfile_path_no_ending."_refined".$outfile_suffix,
+				     infile_path => $outfile_path_prefix.$outfile_suffix,
+				     outfile_path => $outfile_path_prefix."_refined".$outfile_suffix,
 				     supporting_callset_file_path => $active_parameter_href->{gatk_calculategenotypeposteriors_support_set},
 				     pedigree_validation_type => $commands{pedigree_validation_type},
 				     pedigree => $commands{pedigree},
@@ -7860,8 +7860,8 @@ sub gatk_variantrecalibration {
 	say $FILEHANDLE "\n";
 
 	## Change name of file to accomodate downstream
-	mv({infile_path => $outfile_path_no_ending."_refined".$outfile_suffix,
-	    outfile_path => $outfile_path_no_ending.$outfile_suffix,
+	mv({infile_path => $outfile_path_prefix."_refined".$outfile_suffix,
+	    outfile_path => $outfile_path_prefix.$outfile_suffix,
 	    FILEHANDLE => $FILEHANDLE,
 	   });
 	say $FILEHANDLE "\n";
@@ -7870,16 +7870,16 @@ sub gatk_variantrecalibration {
     ## BcfTools norm, Left-align and normalize indels, split multiallelics
     norm({FILEHANDLE => $FILEHANDLE,
 	  reference_path => $active_parameter_href->{human_genome_reference},
-	  infile_path => $outfile_path_no_ending.$outfile_suffix,
+	  infile_path => $outfile_path_prefix.$outfile_suffix,
 	  output_type => "v",
-	  outfile_path => $outfile_path_no_ending."_normalized".$outfile_suffix,
+	  outfile_path => $outfile_path_prefix."_normalized".$outfile_suffix,
 	  multiallelic => "-",
 	 });
     say $FILEHANDLE "\n";
 
     ## Change name of file to accomodate downstream
-    mv({infile_path => $outfile_path_no_ending."_normalized".$outfile_suffix,
-	outfile_path => $outfile_path_no_ending.$outfile_suffix,
+    mv({infile_path => $outfile_path_prefix."_normalized".$outfile_suffix,
+	outfile_path => $outfile_path_prefix.$outfile_suffix,
 	FILEHANDLE => $FILEHANDLE,
        });
     say $FILEHANDLE "\n";
@@ -7888,15 +7888,15 @@ sub gatk_variantrecalibration {
     if ($active_parameter_href->{gatk_variantrecalibration_bcf_file}) {
 
 	## Reformat variant calling file and index
-	view_vcf({infile_path => $outfile_path_no_ending.$outfile_suffix,
-		  outfile_path_no_ending => $outfile_path_no_ending,
+	view_vcf({infile_path => $outfile_path_prefix.$outfile_suffix,
+		  outfile_path_prefix => $outfile_path_prefix,
 		  output_type => "b",
 		  FILEHANDLE => $FILEHANDLE,
 		 });
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file({infile_path => $outfile_path_no_ending.".bcf*",
+	migrate_file({infile_path => $outfile_path_prefix.".bcf*",
 		      outfile_path => $outfamily_directory,
 		      FILEHANDLE => $FILEHANDLE,
 		     });
@@ -7905,7 +7905,7 @@ sub gatk_variantrecalibration {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    my @outfiles = ($outfile_path_no_ending.$outfile_suffix."*", $file_path_no_ending.".intervals.tranches.pdf");
+    my @outfiles = ($outfile_path_prefix.$outfile_suffix."*", $file_path_prefix.".intervals.tranches.pdf");
     foreach my $outfile (@outfiles) {
 
 	migrate_file({infile_path => $outfile,
@@ -7923,20 +7923,20 @@ sub gatk_variantrecalibration {
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => "pedigree_check",  #Disabled pedigreeCheck to not include relationship test is qccollect
 			outdirectory => $outfamily_directory,
-			outfile_ending => $outfile_no_ending.$outfile_suffix,
+			outfile_ending => $outfile_prefix.$outfile_suffix,
 			outdata_type => "infile_dependent"
 		       });
-	$sample_info_href->{vcf_file}{ready_vcf}{path} = catfile($outfamily_directory, $outfile_no_ending.$outfile_suffix);
+	$sample_info_href->{vcf_file}{ready_vcf}{path} = catfile($outfamily_directory, $outfile_prefix.$outfile_suffix);
 
 	if ($active_parameter_href->{gatk_variantrecalibration_bcf_file} eq 1) {
 
-	    $sample_info_href->{bcf_file}{path} = catfile($outfamily_directory, $outfile_no_ending.".bcf");
+	    $sample_info_href->{bcf_file}{path} = catfile($outfamily_directory, $outfile_prefix.".bcf");
 	}
 
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    dependencies => "case_dependency",
 		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
@@ -7951,12 +7951,12 @@ sub gatk_concatenate_genotypegvcfs {
 
 ##Function : Concatenate GVCFs produced after gatk_genotypegvcfs done per contig.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $program_name               => The program name
 
@@ -7973,7 +7973,7 @@ sub gatk_concatenate_genotypegvcfs {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
 
@@ -7982,7 +7982,7 @@ sub gatk_concatenate_genotypegvcfs {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
@@ -8013,10 +8013,10 @@ sub gatk_concatenate_genotypegvcfs {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
-    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
-    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
-    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+    my $infile_prefix = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_prefix = catfile($$temp_directory_ref, $infile_prefix);
+    my $outfile_prefix = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix);
 
     ### Assign suffix
     my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
@@ -8057,7 +8057,7 @@ sub gatk_concatenate_genotypegvcfs {
 
 	## Copy file(s) to temporary directory
 	migrate_file({FILEHANDLE => $FILEHANDLE,
-		      infile_path => catfile($infamily_directory, $infile_no_ending."_".$contig.$infile_suffix."*"),
+		      infile_path => catfile($infamily_directory, $infile_prefix."_".$contig.$infile_suffix."*"),
 		      outfile_path => $$temp_directory_ref
 		     });
     }
@@ -8067,9 +8067,9 @@ sub gatk_concatenate_genotypegvcfs {
     concatenate_variants({active_parameter_href => $active_parameter_href,
 			  FILEHANDLE => $FILEHANDLE,
 			  elements_ref => \@{ $file_info_href->{contigs} },
-			  infile_prefix => $file_path_no_ending."_",
+			  infile_prefix => $file_path_prefix."_",
 			  infile_postfix => $infile_suffix,
-			  outfile => $outfile_path_no_ending.$outfile_suffix,
+			  outfile => $outfile_path_prefix.$outfile_suffix,
 			 });
 
     ## Produce a bcf compressed and index from vcf
@@ -8092,30 +8092,30 @@ sub gatk_concatenate_genotypegvcfs {
 	    selectvariants({sample_names_ref => \@{ $active_parameter_href->{sample_ids} },
 			    logging_level => $active_parameter_href->{gatk_logging_level},
 			    referencefile_path => $active_parameter_href->{human_genome_reference},
-			    infile_path => $outfile_path_no_ending.$outfile_suffix,
-			    outfile_path => $outfile_path_no_ending."_incnonvariantloci".$outfile_suffix,
+			    infile_path => $outfile_path_prefix.$outfile_suffix,
+			    outfile_path => $outfile_path_prefix."_incnonvariantloci".$outfile_suffix,
 			    FILEHANDLE => $FILEHANDLE,
 			   });
 	    say $FILEHANDLE "\n";
 
 	    ## Move to original filename
-	    mv({infile_path => $outfile_path_no_ending."_incnonvariantloci".$outfile_suffix,
-		outfile_path => $outfile_path_no_ending.$outfile_suffix,
+	    mv({infile_path => $outfile_path_prefix."_incnonvariantloci".$outfile_suffix,
+		outfile_path => $outfile_path_prefix.$outfile_suffix,
 		FILEHANDLE => $FILEHANDLE,
 	       });
 	    say $FILEHANDLE "\n";
 	}
 
 	## Reformat variant calling file and index
-	view_vcf({infile_path => $outfile_path_no_ending.$outfile_suffix,
-		  outfile_path_no_ending => $outfile_path_no_ending,
+	view_vcf({infile_path => $outfile_path_prefix.$outfile_suffix,
+		  outfile_path_prefix => $outfile_path_prefix,
 		  output_type => "b",
 		  FILEHANDLE => $FILEHANDLE,
 		 });
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file({infile_path => $outfile_path_no_ending.".bcf*",
+	migrate_file({infile_path => $outfile_path_prefix.".bcf*",
 		      outfile_path => $outfamily_directory,
 		      FILEHANDLE => $FILEHANDLE,
 		     });
@@ -8124,7 +8124,7 @@ sub gatk_concatenate_genotypegvcfs {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file({infile_path => $outfile_path_no_ending.$outfile_suffix."*",
+    migrate_file({infile_path => $outfile_path_prefix.$outfile_suffix."*",
 		  outfile_path => $outfamily_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -8136,16 +8136,16 @@ sub gatk_concatenate_genotypegvcfs {
 
 	if ($active_parameter_href->{gatk_concatenate_genotypegvcfs_bcf_file} eq 1) {
 
-	    $sample_info_href->{gbcf_file}{path} = catfile($outfamily_directory, $outfile_no_ending.".bcf");
+	    $sample_info_href->{gbcf_file}{path} = catfile($outfamily_directory, $outfile_prefix.".bcf");
 	}
 
 	## Collect QC metadata info for later use
-	$sample_info_href->{vcf_file}{ready_vcf}{path} = catfile($outfamily_directory, $outfile_no_ending.$outfile_suffix);
+	$sample_info_href->{vcf_file}{ready_vcf}{path} = catfile($outfamily_directory, $outfile_prefix.$outfile_suffix);
 
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    dependencies => "case_dependency",
 		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
@@ -8160,12 +8160,12 @@ sub gatk_genotypegvcfs {
 
 ##Function : GATK GenoTypeGVCFs.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $family_id_ref, $outaligner_dir_ref, $call_type, $program_name
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $family_id_ref, $outaligner_dir_ref, $call_type, $program_name
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $family_id_ref              => The family_id {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
@@ -8185,7 +8185,7 @@ sub gatk_genotypegvcfs {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
 
@@ -8194,7 +8194,7 @@ sub gatk_genotypegvcfs {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
@@ -8258,8 +8258,8 @@ sub gatk_genotypegvcfs {
     foreach my $contig (@{ $file_info_href->{contigs} }) {
 
 	## Assign file_tags
-	my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type."_".$contig;
-	my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+	my $outfile_prefix = $$family_id_ref.$outfile_tag.$call_type."_".$contig;
+	my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix);
 	
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	my ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -8287,15 +8287,15 @@ sub gatk_genotypegvcfs {
 
 	    ## Assign file_tags
 	    my $infile_tag = $file_info_href->{$sample_id}{pgatk_haplotypecaller}{file_tag};
-	    my $infile_no_ending = $infile.$infile_tag."_".$contig;
+	    my $infile_prefix = $infile.$infile_tag."_".$contig;
 
 	    ## Collect for downstream use
-	    push(@file_paths, catfile($$temp_directory_ref, $infile_no_ending.$infile_suffix));
+	    push(@file_paths, catfile($$temp_directory_ref, $infile_prefix.$infile_suffix));
 
 	    ## Copy file(s) to temporary directory
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
 	    migrate_file({FILEHANDLE => $FILEHANDLE,
-			  infile_path => catfile($insample_directory, $infile_no_ending.$infile_suffix."*"),
+			  infile_path => catfile($insample_directory, $infile_prefix.$infile_suffix."*"),
 			  outfile_path => $$temp_directory_ref
 			 });
 	    say $FILEHANDLE "wait", "\n";
@@ -8326,7 +8326,7 @@ sub gatk_genotypegvcfs {
 
 	genotypegvcfs({intervals_ref => [$contig],
 		       infile_paths_ref => \@file_paths,
-		       outfile_path => $outfile_path_no_ending.$outfile_suffix,
+		       outfile_path => $outfile_path_prefix.$outfile_suffix,
 		       logging_level => $active_parameter_href->{gatk_logging_level},
 		       referencefile_path => $active_parameter_href->{human_genome_reference},
 		       dbsnp => $active_parameter_href->{gatk_haplotypecaller_snp_known_set},
@@ -8339,7 +8339,7 @@ sub gatk_genotypegvcfs {
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file({infile_path => $outfile_path_no_ending.$outfile_suffix."*",
+	migrate_file({infile_path => $outfile_path_prefix.$outfile_suffix."*",
 		      outfile_path => $outfamily_directory,
 		      FILEHANDLE => $FILEHANDLE,
 		     });
@@ -8352,7 +8352,7 @@ sub gatk_genotypegvcfs {
 	    submit_job({active_parameter_href => $active_parameter_href,
 			sample_info_href => $sample_info_href,
 			job_id_href => $job_id_href,
-			infile_lane_no_ending_href => $infile_lane_no_ending_href,
+			infile_lane_prefix_href => $infile_lane_prefix_href,
 			dependencies => "sample_id_dependency_step_in_parallel",
 			path => $jobid_chain,
 			sbatch_file_name => $file_name,
@@ -8370,13 +8370,13 @@ sub rcoverageplots {
 
 ##Function : Generates sbatch scripts for R scripts: 1. covplots_genome.R 2. covplots_exome.R; on files generated from bedtools genomecov.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $lane_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, $temp_directory_ref, $outaligner_dir_ref,
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $lane_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, $temp_directory_ref, $outaligner_dir_ref,
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
 ##         : $lane_href                  => The lane info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $sample_id_ref              => The sample_id {REF}
 ##         : $program_name               => The program name
@@ -8395,7 +8395,7 @@ sub rcoverageplots {
     my $sample_info_href;
     my $file_info_href;
     my $lane_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $sample_id_ref;
     my $program_name;
@@ -8406,7 +8406,7 @@ sub rcoverageplots {
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	lane_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$lane_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
@@ -8458,7 +8458,7 @@ sub rcoverageplots {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    sample_id => $$sample_id_ref,
 		    dependencies => "case_dependency_dead_end",
 		    path => $jobid_chain,
@@ -8475,12 +8475,12 @@ sub bedtools_genomecov {
 
 ##Function : Calculates coverage on BAM files.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $sample_id_ref              => The sample_id_ref
 ##         : $program_name               => The program name
@@ -8500,7 +8500,7 @@ sub bedtools_genomecov {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $sample_id_ref;
     my $program_name;
@@ -8510,7 +8510,7 @@ sub bedtools_genomecov {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
@@ -8541,10 +8541,10 @@ sub bedtools_genomecov {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
-    my $infile_no_ending = $infile.$infile_tag;
-    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
-    my $outfile_no_ending = $infile.$outfile_tag;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+    my $infile_prefix = $infile.$infile_tag;
+    my $file_path_prefix = catfile($$temp_directory_ref, $infile_prefix);
+    my $outfile_prefix = $infile.$outfile_tag;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix);
 
     ## Assign suffix
     my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
@@ -8567,15 +8567,15 @@ sub bedtools_genomecov {
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     migrate_file({FILEHANDLE => $FILEHANDLE,
-		  infile_path => catfile($insample_directory, $infile_no_ending.substr($infile_suffix, 0, 2)."*"),
+		  infile_path => catfile($insample_directory, $infile_prefix.substr($infile_suffix, 0, 2)."*"),
 		  outfile_path => $$temp_directory_ref,
 		 });
     say $FILEHANDLE "wait", "\n";
 
     ## Bedtools Genomecov
     say $FILEHANDLE "## Calculate coverage metrics on alignment";
-    genomecov({infile_path => $file_path_no_ending.$infile_suffix,
-	       outfile_path => $outfile_path_no_ending,
+    genomecov({infile_path => $file_path_prefix.$infile_suffix,
+	       outfile_path => $outfile_path_prefix,
 	       referencefile_path => $active_parameter_href->{human_genome_reference},
 	       max_coverage => $active_parameter_href->{bedtools_genomecov_max_coverage},
 	       FILEHANDLE => $FILEHANDLE,
@@ -8584,7 +8584,7 @@ sub bedtools_genomecov {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file({infile_path => $outfile_path_no_ending,
+    migrate_file({infile_path => $outfile_path_prefix,
 		  outfile_path => $outsample_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -8597,7 +8597,7 @@ sub bedtools_genomecov {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    sample_id => $$sample_id_ref,
 		    dependencies => "case_dependency",
 		    path => $jobid_chain,
@@ -8614,12 +8614,12 @@ sub picardtools_collecthsmetrics {
 
 ##Function : Calculates coverage on exonic part of BAM files.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $sample_id_ref              => The sample_id
 ##         : $program_name               => The program name
@@ -8639,7 +8639,7 @@ sub picardtools_collecthsmetrics {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $sample_id_ref;
     my $program_name;
@@ -8649,7 +8649,7 @@ sub picardtools_collecthsmetrics {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
@@ -8681,10 +8681,10 @@ sub picardtools_collecthsmetrics {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
-    my $infile_no_ending = $infile.$infile_tag;
-    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
-    my $outfile_no_ending = $infile.$outfile_tag;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+    my $infile_prefix = $infile.$infile_tag;
+    my $file_path_prefix = catfile($$temp_directory_ref, $infile_prefix);
+    my $outfile_prefix = $infile.$outfile_tag;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix);
 
     ## Assign suffix
     my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
@@ -8711,7 +8711,7 @@ sub picardtools_collecthsmetrics {
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     migrate_file({FILEHANDLE => $FILEHANDLE,
-		  infile_path => catfile($insample_directory, $infile_no_ending.substr($infile_suffix, 0, 2)."*"),
+		  infile_path => catfile($insample_directory, $infile_prefix.substr($infile_suffix, 0, 2)."*"),
 		  outfile_path => $$temp_directory_ref,
 		 });
     say $FILEHANDLE "wait", "\n";
@@ -8734,8 +8734,8 @@ sub picardtools_collecthsmetrics {
 
     collecthsmetrics({bait_interval_file_paths_ref => [$exome_target_bed_file.$$padded_infile_list_ending_ref],
 		      target_interval_file_paths_ref => [$exome_target_bed_file.$$infile_list_ending_ref],
-		      infile_path => $file_path_no_ending.$infile_suffix,
-		      outfile_path => $outfile_path_no_ending,
+		      infile_path => $file_path_prefix.$infile_suffix,
+		      outfile_path => $outfile_path_prefix,
 		      referencefile_path => $active_parameter_href->{human_genome_reference},
 		      FILEHANDLE => $FILEHANDLE,
 		     });
@@ -8743,7 +8743,7 @@ sub picardtools_collecthsmetrics {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file({infile_path => $outfile_path_no_ending,
+    migrate_file({infile_path => $outfile_path_prefix,
 		  outfile_path => $outsample_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -8768,7 +8768,7 @@ sub picardtools_collecthsmetrics {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    sample_id => $$sample_id_ref,
 		    dependencies => "case_dependency",
 		    path => $jobid_chain,
@@ -8784,12 +8784,12 @@ sub picardtools_collectmultiplemetrics {
 
 ##Function : Calculates coverage and alignment metrics on BAM files.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $sample_id_ref              => The sample_id
 ##         : $program_name               => The program name
@@ -8809,7 +8809,7 @@ sub picardtools_collectmultiplemetrics {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $sample_id_ref;
     my $program_name;
@@ -8819,7 +8819,7 @@ sub picardtools_collectmultiplemetrics {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
@@ -8851,10 +8851,10 @@ sub picardtools_collectmultiplemetrics {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
-    my $infile_no_ending = $infile.$infile_tag;
-    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
-    my $outfile_no_ending = $infile.$outfile_tag;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+    my $infile_prefix = $infile.$infile_tag;
+    my $file_path_prefix = catfile($$temp_directory_ref, $infile_prefix);
+    my $outfile_prefix = $infile.$outfile_tag;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix);
 
     ## Assign suffix
     my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
@@ -8877,7 +8877,7 @@ sub picardtools_collectmultiplemetrics {
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     migrate_file({FILEHANDLE => $FILEHANDLE,
-		  infile_path => catfile($insample_directory, $infile_no_ending.substr($infile_suffix, 0, 2)."*"),
+		  infile_path => catfile($insample_directory, $infile_prefix.substr($infile_suffix, 0, 2)."*"),
 		  outfile_path => $$temp_directory_ref,
 		 });
     say $FILEHANDLE "wait", "\n";
@@ -8893,8 +8893,8 @@ sub picardtools_collectmultiplemetrics {
 	  java_jar => catfile($active_parameter_href->{picardtools_path}, "picard.jar"),
 	 });
 
-    collectmultiplemetrics({infile_path => $file_path_no_ending.$infile_suffix,
-			    outfile_path => $outfile_path_no_ending,
+    collectmultiplemetrics({infile_path => $file_path_prefix.$infile_suffix,
+			    outfile_path => $outfile_path_prefix,
 			    referencefile_path => $active_parameter_href->{human_genome_reference},
 			    FILEHANDLE => $FILEHANDLE,
 			   });
@@ -8902,9 +8902,9 @@ sub picardtools_collectmultiplemetrics {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    my @outfiles = ($outfile_no_ending.".alignment_summary_metrics",
-		    $outfile_no_ending.".quality*",
-		    $outfile_no_ending.".insert*",
+    my @outfiles = ($outfile_prefix.".alignment_summary_metrics",
+		    $outfile_prefix.".quality*",
+		    $outfile_prefix.".insert*",
 	);
     foreach my $outfile (@outfiles) {
 
@@ -8942,7 +8942,7 @@ sub picardtools_collectmultiplemetrics {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    sample_id => $$sample_id_ref,
 		    dependencies => "case_dependency",
 		    path => $jobid_chain,
@@ -8958,12 +8958,12 @@ sub chanjo_sexcheck {
 
 ##Function : Predict gender from BAM files.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $sample_id_ref              => The sample_id {REF}
 ##         : $program_name               => The program name
@@ -8983,7 +8983,7 @@ sub chanjo_sexcheck {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $sample_id_ref;
     my $program_name;
@@ -8993,7 +8993,7 @@ sub chanjo_sexcheck {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
@@ -9024,8 +9024,8 @@ sub chanjo_sexcheck {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
-    my $infile_no_ending = $infile.$infile_tag;
-    my $outfile_no_ending = $infile.$outfile_tag;
+    my $infile_prefix = $infile.$infile_tag;
+    my $outfile_prefix = $infile.$outfile_tag;
 
     ## Assign suffix
     my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
@@ -9058,10 +9058,10 @@ sub chanjo_sexcheck {
 
 	$chr_prefix = "chr";
     }
-    sex({infile_path => catfile($insample_directory, $infile_no_ending.$infile_suffix),
-	 outfile_path => catfile($outsample_directory, $outfile_no_ending.$outfile_suffix),
+    sex({infile_path => catfile($insample_directory, $infile_prefix.$infile_suffix),
+	 outfile_path => catfile($outsample_directory, $outfile_prefix.$outfile_suffix),
 	 log_level => $active_parameter_href->{chanjo_sexcheck_log_level},
-	 log_file_path => catfile($outsample_directory, $infile_no_ending."_chanjo_sexcheck.log"),
+	 log_file_path => catfile($outsample_directory, $infile_prefix."_chanjo_sexcheck.log"),
 	 chr_prefix => $chr_prefix,
 	 FILEHANDLE => $FILEHANDLE,
 	});
@@ -9094,7 +9094,7 @@ sub chanjo_sexcheck {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    sample_id => $$sample_id_ref,
 		    dependencies => "case_dependency",
 		    path => $jobid_chain,
@@ -9110,12 +9110,12 @@ sub sambamba_depth {
 
 ##Function : Generate coverage bed outfile for each individual.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $sample_id_ref              => The sample_id {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
@@ -9136,7 +9136,7 @@ sub sambamba_depth {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $sample_id_ref;
     my $program_name;
@@ -9146,7 +9146,7 @@ sub sambamba_depth {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
@@ -9177,10 +9177,10 @@ sub sambamba_depth {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
-    my $infile_no_ending = $infile.$infile_tag;
-    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
-    my $outfile_no_ending = $infile.$outfile_tag;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+    my $infile_prefix = $infile.$infile_tag;
+    my $file_path_prefix = catfile($$temp_directory_ref, $infile_prefix);
+    my $outfile_prefix = $infile.$outfile_tag;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix);
 
     ## Assign suffix
     my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
@@ -9207,7 +9207,7 @@ sub sambamba_depth {
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     migrate_file({FILEHANDLE => $FILEHANDLE,
-		  infile_path => catfile($insample_directory, $infile_no_ending.substr($infile_suffix, 0, 2)."*"), #".bam" -> ".b*" for getting index as well),
+		  infile_path => catfile($insample_directory, $infile_prefix.substr($infile_suffix, 0, 2)."*"), #".bam" -> ".b*" for getting index as well),
 		  outfile_path => $$temp_directory_ref
 		 });
     say $FILEHANDLE "wait", "\n";
@@ -9228,8 +9228,8 @@ sub sambamba_depth {
     $sambamba_filter .= q?'?;
 
     depth({depth_cutoffs_ref => \@{ $active_parameter_href->{sambamba_depth_cutoffs} },
-	   infile_path => $file_path_no_ending.$infile_suffix,
-	   outfile_path => $outfile_path_no_ending.$outfile_suffix,
+	   infile_path => $file_path_prefix.$infile_suffix,
+	   outfile_path => $outfile_path_prefix.$outfile_suffix,
 	   mode => $active_parameter_href->{sambamba_depth_mode},
 	   fix_mate_overlap => 1,
 	   min_base_quality => $active_parameter_href->{sambamba_depth_base_quality},
@@ -9241,7 +9241,7 @@ sub sambamba_depth {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file({infile_path => $outfile_path_no_ending.$outfile_suffix,
+    migrate_file({infile_path => $outfile_path_prefix.$outfile_suffix,
 		  outfile_path => $outsample_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -9249,7 +9249,7 @@ sub sambamba_depth {
 
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
-	$sample_info_href->{sample}{$$sample_id_ref}{program}{$program_name}{$infile}{ substr($outfile_suffix, 1) }{path} = catfile($outsample_directory, $outfile_no_ending.$outfile_suffix);
+	$sample_info_href->{sample}{$$sample_id_ref}{program}{$program_name}{$infile}{ substr($outfile_suffix, 1) }{path} = catfile($outsample_directory, $outfile_prefix.$outfile_suffix);
     }
 
     close($FILEHANDLE);
@@ -9259,7 +9259,7 @@ sub sambamba_depth {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    sample_id => $$sample_id_ref,
 		    dependencies => "case_dependency_add_to_case",
 		    path => $jobid_chain,
@@ -9275,12 +9275,12 @@ sub sv_reformat {
 
 ##Function : Concatenate contig files.
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $family_id_ref              => The family_id_ref {REF}
 ##         : $call_type                  => The variant call type
@@ -9309,7 +9309,7 @@ sub sv_reformat {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
 
@@ -9318,7 +9318,7 @@ sub sv_reformat {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
@@ -9369,12 +9369,12 @@ sub sv_reformat {
 
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{psv_rankvariant}{file_tag};
-    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
-    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+    my $infile_prefix = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_prefix = catfile($$temp_directory_ref, $infile_prefix);
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
-    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type);
-    my $final_path_no_ending = catfile($outfamily_directory, $outfile_no_ending);
+    my $outfile_prefix = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type);
+    my $final_path_prefix = catfile($outfamily_directory, $outfile_prefix);
 
     ## Assign suffix
     my $file_suffix = get_file_suffix({parameter_href => $parameter_href,
@@ -9446,7 +9446,7 @@ sub sv_reformat {
 							      program_info_path => $program_info_path,
 							      core_number => $core_number,
 							      xargs_file_counter => $xargs_file_counter,
-							      infile => $infile_no_ending,
+							      infile => $infile_prefix,
 							      file_ending => $vcfparser_analysis_type.$file_suffix."*",
 							      indirectory => $infamily_directory,
 							      temp_directory => $active_parameter_href->{temp_directory},
@@ -9457,7 +9457,7 @@ sub sv_reformat {
 	    ## Copy file(s) to temporary directory
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
 	    migrate_file({FILEHANDLE => $FILEHANDLE,
-			  infile_path => catfile($infamily_directory, $infile_no_ending.$vcfparser_analysis_type.$file_suffix),
+			  infile_path => catfile($infamily_directory, $infile_prefix.$vcfparser_analysis_type.$file_suffix),
 			  outfile_path => $$temp_directory_ref
 			 });
 	    say $FILEHANDLE "wait", "\n";
@@ -9472,18 +9472,18 @@ sub sv_reformat {
 	    concatenate_variants({active_parameter_href => $active_parameter_href,
 				  FILEHANDLE => $FILEHANDLE,
 				  elements_ref => \@contigs,
-				  infile_prefix => $file_path_no_ending."_",
+				  infile_prefix => $file_path_prefix."_",
 				  infile_postfix => $vcfparser_analysis_type.$file_suffix,
-				  outfile => $file_path_no_ending.$vcfparser_analysis_type.$concatenate_ending.$file_suffix,
+				  outfile => $file_path_prefix.$vcfparser_analysis_type.$concatenate_ending.$file_suffix,
 				 });
 	}
 
 	## Writes sbatch code to supplied filehandle to sort variants in vcf format
 	sort_vcf({active_parameter_href => $active_parameter_href,
 		  FILEHANDLE => $FILEHANDLE,
-		  sequence_dict_file => catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict"),
-		  infile_paths_ref => [$file_path_no_ending.$vcfparser_analysis_type.$concatenate_ending.$file_suffix],
-		  outfile => $outfile_path_no_ending.$vcfparser_analysis_type.$file_suffix,
+		  sequence_dict_file => catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_prefix}.".dict"),
+		  infile_paths_ref => [$file_path_prefix.$vcfparser_analysis_type.$concatenate_ending.$file_suffix],
+		  outfile => $outfile_path_prefix.$vcfparser_analysis_type.$file_suffix,
 		 });
 
 	print $FILEHANDLE "\n";
@@ -9493,8 +9493,8 @@ sub sv_reformat {
 
 	    ## Removes contig_names from contigs array if no male or other found
 	    Program::Gnu::Grep::grep({filter_file_path => catfile($$reference_dir_ref, $active_parameter_href->{sv_reformat_remove_genes_file}),
-				      infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.$file_suffix,
-				      outfile_path => $outfile_path_no_ending.$vcfparser_analysis_type."_filtered".$file_suffix,
+				      infile_path => $outfile_path_prefix.$vcfparser_analysis_type.$file_suffix,
+				      outfile_path => $outfile_path_prefix.$vcfparser_analysis_type."_filtered".$file_suffix,
 				      invert_match => 1,
 				      FILEHANDLE => $FILEHANDLE,
 				     });
@@ -9502,16 +9502,16 @@ sub sv_reformat {
 	    
 	    if ($vcfparser_outfile_counter == 1) {
 
-		$sample_info_href->{program}{$program_name}{sv_reformat_remove_genes_file}{clinical}{path} = $final_path_no_ending.$vcfparser_analysis_type."_filtered".$file_suffix;   #Save filtered file
+		$sample_info_href->{program}{$program_name}{sv_reformat_remove_genes_file}{clinical}{path} = $final_path_prefix.$vcfparser_analysis_type."_filtered".$file_suffix;   #Save filtered file
 	    }
 	    else {
 
-		$sample_info_href->{program}{$program_name}{sv_reformat_remove_genes_file}{research}{path} = $final_path_no_ending.$vcfparser_analysis_type."_filtered".$file_suffix;   #Save filtered file
+		$sample_info_href->{program}{$program_name}{sv_reformat_remove_genes_file}{research}{path} = $final_path_prefix.$vcfparser_analysis_type."_filtered".$file_suffix;   #Save filtered file
 	    }
 
 	    ## Copies file from temporary directory.
 	    say $FILEHANDLE "## Copy file from temporary directory";
-	    migrate_file({infile_path => $outfile_path_no_ending.$vcfparser_analysis_type."_filtered".$file_suffix,
+	    migrate_file({infile_path => $outfile_path_prefix.$vcfparser_analysis_type."_filtered".$file_suffix,
 			  outfile_path => $outfamily_directory,
 			  FILEHANDLE => $FILEHANDLE,
 			 });
@@ -9522,15 +9522,15 @@ sub sv_reformat {
 
 	    ## Compress or decompress original file or stream to outfile (if supplied)
 	    bgzip({FILEHANDLE => $FILEHANDLE,
-		   infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.$file_suffix,
-		   outfile_path => $outfile_path_no_ending.$vcfparser_analysis_type.$file_suffix.".gz",
+		   infile_path => $outfile_path_prefix.$vcfparser_analysis_type.$file_suffix,
+		   outfile_path => $outfile_path_prefix.$vcfparser_analysis_type.$file_suffix.".gz",
 		   write_to_stdout => 1,
 		  });
 	    say $FILEHANDLE "\n";
 
 	    ## Index file using tabix
 	    tabix({FILEHANDLE => $FILEHANDLE,
-		   infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.$file_suffix.".gz",
+		   infile_path => $outfile_path_prefix.$vcfparser_analysis_type.$file_suffix.".gz",
 		   force => 1,
 		   preset => substr($file_suffix, 1),
 		  });
@@ -9539,7 +9539,7 @@ sub sv_reformat {
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file({infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.$file_suffix."*",
+	migrate_file({infile_path => $outfile_path_prefix.$vcfparser_analysis_type.$file_suffix."*",
 		      outfile_path => $outfamily_directory,
 		      FILEHANDLE => $FILEHANDLE,
 		     });
@@ -9549,7 +9549,7 @@ sub sv_reformat {
 	add_most_complete_vcf({active_parameter_href => $active_parameter_href,
 			       sample_info_href => $sample_info_href,
 			       program_name => $program_name,
-			       path => $final_path_no_ending.$vcfparser_analysis_type.$file_suffix,
+			       path => $final_path_prefix.$vcfparser_analysis_type.$file_suffix,
 			       vcfparser_outfile_counter => $vcfparser_outfile_counter,
 			       vcf_file_key => "sv_".substr($file_suffix, 1)."_file",
 			      });
@@ -9558,20 +9558,20 @@ sub sv_reformat {
 
 	    if ($vcfparser_outfile_counter == 1) {
 
-		$sample_info_href->{program}{$program_name}{clinical}{path} = $final_path_no_ending.$vcfparser_analysis_type.$file_suffix;   #Save clinical candidate list path
+		$sample_info_href->{program}{$program_name}{clinical}{path} = $final_path_prefix.$vcfparser_analysis_type.$file_suffix;   #Save clinical candidate list path
 
 		if ($active_parameter_href->{sv_rankvariant_binary_file}) {
 
-		    $sample_info_href->{sv_vcf_binary_file}{clinical}{path} = $final_path_no_ending.$vcfparser_analysis_type.$file_suffix.".gz";
+		    $sample_info_href->{sv_vcf_binary_file}{clinical}{path} = $final_path_prefix.$vcfparser_analysis_type.$file_suffix.".gz";
 		}
 	    }
 	    else {
 
-		$sample_info_href->{program}{$program_name}{research}{path} = $final_path_no_ending.$vcfparser_analysis_type.$file_suffix;   #Save research candidate list path
+		$sample_info_href->{program}{$program_name}{research}{path} = $final_path_prefix.$vcfparser_analysis_type.$file_suffix;   #Save research candidate list path
 
 		if ($active_parameter_href->{sv_rankvariant_binary_file}) {
 
-		    $sample_info_href->{sv_vcf_binary_file}{research}{path} = $final_path_no_ending.$vcfparser_analysis_type.$file_suffix.".gz";
+		    $sample_info_href->{sv_vcf_binary_file}{research}{path} = $final_path_prefix.$vcfparser_analysis_type.$file_suffix.".gz";
 		}
 	    }
 	}
@@ -9583,7 +9583,7 @@ sub sv_reformat {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    dependencies => "case_dependency",
 		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
@@ -9598,12 +9598,12 @@ sub sv_rankvariant {
 
 ##Function : Annotate and score SV variants depending on mendelian inheritance, frequency and phenotype etc.
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $family_id_ref              => The family_id_ref {REF}
 ##         : $call_type                  => The variant call type
@@ -9632,7 +9632,7 @@ sub sv_rankvariant {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
 
@@ -9641,7 +9641,7 @@ sub sv_rankvariant {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
@@ -9698,10 +9698,10 @@ sub sv_rankvariant {
 
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{psv_vcfparser}{file_tag};
-    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
+    my $infile_prefix = $$family_id_ref.$infile_tag.$call_type;
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
-    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+    my $outfile_prefix = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix);
 
     ## Assign suffix
     my $file_suffix = get_file_suffix({parameter_href => $parameter_href,
@@ -9784,7 +9784,7 @@ sub sv_rankvariant {
 							      program_info_path => $program_info_path,
 							      core_number => $core_number,
 							      xargs_file_counter => $xargs_file_counter,
-							      infile => $infile_no_ending,
+							      infile => $infile_prefix,
 							      file_ending => $vcfparser_analysis_type.$file_suffix."*",
 							      indirectory => $infamily_directory,
 							      temp_directory => $active_parameter_href->{temp_directory},
@@ -9795,7 +9795,7 @@ sub sv_rankvariant {
 	    ## Copy file(s) to temporary directory
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
 	    migrate_file({FILEHANDLE => $FILEHANDLE,
-			  infile_path => catfile($infamily_directory, $infile_no_ending.$vcfparser_analysis_type.$file_suffix),
+			  infile_path => catfile($infamily_directory, $infile_prefix.$vcfparser_analysis_type.$file_suffix),
 			  outfile_path => $$temp_directory_ref
 			 });
 	    say $FILEHANDLE "wait", "\n";
@@ -9828,15 +9828,15 @@ sub sv_rankvariant {
 	foreach my $contig (@contigs_size_ordered) {
 
 	    ## Get parameters
-	    my $genmod_file_ending_stub = $infile_no_ending;
-	    my $genmod_outfile_path_no_ending = $outfile_path_no_ending;
+	    my $genmod_file_ending_stub = $infile_prefix;
+	    my $genmod_outfile_path_prefix = $outfile_path_prefix;
 	    my $genmod_xargs_file_name = $xargs_file_name;
 	    my $genmod_indata = catfile($$temp_directory_ref, $genmod_file_ending_stub.$vcfparser_analysis_type.$file_suffix);  #InFile
 
 	    if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Update endings with contig info
 
-		$genmod_file_ending_stub = $infile_no_ending."_".$contig;
-		$genmod_outfile_path_no_ending = $outfile_path_no_ending."_".$contig;
+		$genmod_file_ending_stub = $infile_prefix."_".$contig;
+		$genmod_outfile_path_prefix = $outfile_path_prefix."_".$contig;
 		$genmod_xargs_file_name = $xargs_file_name.".".$contig;
 		$genmod_indata = catfile($$temp_directory_ref, $genmod_file_ending_stub.$vcfparser_analysis_type.$file_suffix);  #InFile
 	    }
@@ -9849,7 +9849,7 @@ sub sv_rankvariant {
 	    if ( (defined($parameter_href->{dynamic_parameter}{unaffected})) && (@{ $parameter_href->{dynamic_parameter}{unaffected} } eq @{ $active_parameter_href->{sample_ids} }) ) {  #Only unaffected
 
 		## Write to outputFile - last genmod module
-		$genmod_outfile_path = $genmod_outfile_path_no_ending.$vcfparser_analysis_type.$file_suffix;  #OutFile
+		$genmod_outfile_path = $genmod_outfile_path_prefix.$vcfparser_analysis_type.$file_suffix;  #OutFile
 	    }
 	    else {
 
@@ -9920,7 +9920,7 @@ sub sv_rankvariant {
 		$genmod_module .= "_compound";
 
 		compound({infile_path => $genmod_indata,
-			  outfile_path => $genmod_outfile_path_no_ending.$vcfparser_analysis_type.$file_suffix,
+			  outfile_path => $genmod_outfile_path_prefix.$vcfparser_analysis_type.$file_suffix,
 			  stderrfile_path => $genmod_xargs_file_name.$genmod_module.".stderr.txt",
 			  verbosity => "v",
 			  temp_directory_path => $$temp_directory_ref,
@@ -9947,7 +9947,7 @@ sub sv_rankvariant {
 										  program_info_path => $program_info_path,
 										  core_number => $core_number,
 										  xargs_file_counter => $xargs_file_counter,
-										  outfile => $outfile_no_ending,
+										  outfile => $outfile_prefix,
 										  file_ending => $vcfparser_analysis_type.$file_suffix."*",
 										  outdirectory => $outfamily_directory,
 										  temp_directory => $$temp_directory_ref,
@@ -9957,7 +9957,7 @@ sub sv_rankvariant {
 
 	    ## Copies file from temporary directory.
 	    say $FILEHANDLE "## Copy file from temporary directory";
-	    migrate_file({infile_path => catfile($$temp_directory_ref, $outfile_no_ending.$vcfparser_analysis_type.$file_suffix."*"),
+	    migrate_file({infile_path => catfile($$temp_directory_ref, $outfile_prefix.$vcfparser_analysis_type.$file_suffix."*"),
 			  outfile_path => $outfamily_directory,
 			  FILEHANDLE => $FILEHANDLE,
 			 });
@@ -9967,7 +9967,7 @@ sub sv_rankvariant {
 	    add_most_complete_vcf({active_parameter_href => $active_parameter_href,
 				   sample_info_href => $sample_info_href,
 				   program_name => $program_name,
-				   path => catfile($outfamily_directory, $outfile_no_ending.$vcfparser_analysis_type.$file_suffix),
+				   path => catfile($outfamily_directory, $outfile_prefix.$vcfparser_analysis_type.$file_suffix),
 				   vcfparser_outfile_counter => $vcfparser_outfile_counter,
 				   vcf_file_key => "sv_".substr($file_suffix, 1)."_file",
 				  });
@@ -9996,7 +9996,7 @@ sub sv_rankvariant {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    dependencies => "case_dependency",
 		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
@@ -10011,12 +10011,12 @@ sub sv_vcfparser {
 
 ##Function : sv_vcfparser performs parsing of varianteffectpredictor annotated variants
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $file_name, $program_info_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $file_name, $program_info_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $program_name               => The program name
 ##         : $FILEHANDLE                 => Sbatch filehandle to write to
@@ -10040,7 +10040,7 @@ sub sv_vcfparser {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
 
@@ -10049,7 +10049,7 @@ sub sv_vcfparser {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
@@ -10098,9 +10098,9 @@ sub sv_vcfparser {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{psv_varianteffectpredictor}{file_tag};
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
-    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
-    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+    my $infile_prefix = $$family_id_ref.$infile_tag.$call_type;
+    my $outfile_prefix = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix);
 
     ## Assign suffix
     my $file_suffix = get_file_suffix({parameter_href => $parameter_href,
@@ -10132,7 +10132,7 @@ sub sv_vcfparser {
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
 									      xargs_file_counter => $xargs_file_counter,
-									      infile => $infile_no_ending,
+									      infile => $infile_prefix,
 									      indirectory => $infamily_directory,
 									      temp_directory => $$temp_directory_ref,
 									     });
@@ -10163,14 +10163,14 @@ sub sv_vcfparser {
     foreach my $contig (@contigs) {
 
 	## Get parameters
-	my $vcfparser_infile_no_ending = $infile_no_ending;
-	my $vcfparser_outfile_no_ending = $outfile_no_ending;
+	my $vcfparser_infile_prefix = $infile_prefix;
+	my $vcfparser_outfile_prefix = $outfile_prefix;
 	my $vcfparser_xargs_file_name = $xargs_file_name;
 
 	if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Update endings with contig info
 
-	    $vcfparser_infile_no_ending = $infile_no_ending."_".$contig;
-	    $vcfparser_outfile_no_ending = $outfile_no_ending."_".$contig;
+	    $vcfparser_infile_prefix = $infile_prefix."_".$contig;
+	    $vcfparser_outfile_prefix = $outfile_prefix."_".$contig;
 	    $vcfparser_xargs_file_name = $xargs_file_name.".".$contig;
 	}
 
@@ -10200,14 +10200,14 @@ sub sv_vcfparser {
 
 		    @select_feature_annotation_columns = @{ $active_parameter_href->{sv_vcfparser_select_feature_annotation_columns} };
 		}
-		$select_outfile = catfile($$temp_directory_ref, $vcfparser_outfile_no_ending.".selected".$file_suffix);
+		$select_outfile = catfile($$temp_directory_ref, $vcfparser_outfile_prefix.".selected".$file_suffix);
 	    }
 	}
 
 	vcfparser({range_feature_annotation_columns_ref => \@{ $active_parameter_href->{sv_vcfparser_range_feature_annotation_columns} },
 		   select_feature_annotation_columns_ref => \@select_feature_annotation_columns,
-		   infile_path => catfile($$temp_directory_ref, $vcfparser_infile_no_ending.$file_suffix),
-		   outfile_path => catfile($$temp_directory_ref, $vcfparser_outfile_no_ending.$file_suffix),
+		   infile_path => catfile($$temp_directory_ref, $vcfparser_infile_prefix.$file_suffix),
+		   outfile_path => catfile($$temp_directory_ref, $vcfparser_outfile_prefix.$file_suffix),
 		   stderrfile_path => $vcfparser_xargs_file_name.".stderr.txt",
 		   range_feature_file_path => $active_parameter_href->{sv_vcfparser_range_feature_file},
 		   select_feature_file_path => $select_file,
@@ -10226,14 +10226,10 @@ sub sv_vcfparser {
 	}
     }
 
-    my $outfile_prefix = $outfile_no_ending;
-
-    if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Update endings with contig info
-
-	$outfile_prefix .= "_".$contigs[0];
+    if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {
 
 	## QC Data File(s)
-	migrate_file({infile_path => catfile($$temp_directory_ref, $outfile_prefix.$file_suffix),
+	migrate_file({infile_path => catfile($$temp_directory_ref, $outfile_prefix."_".$contigs[0].$file_suffix),  #Add contig info
 		      outfile_path => $outfamily_directory,
 		      FILEHANDLE => $FILEHANDLE,
 		     });
@@ -10248,11 +10244,18 @@ sub sv_vcfparser {
 	    delete($sample_info_href->{$program_name});
 	}
 
+	my $outfile_sample_info_prefix = $outfile_prefix;
+
+	if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Update endings with contig info
+
+	    $outfile_sample_info_prefix .= "_".$contigs[0];
+	}
+
 	## Collect QC metadata info for later use
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => $program_name,
 			outdirectory => $outfamily_directory,
-			outfile_ending => $outfile_prefix.$file_suffix,
+			outfile_ending => $outfile_sample_info_prefix.$file_suffix,
 			outdata_type => "static"
 		       });
 
@@ -10299,7 +10302,7 @@ sub sv_vcfparser {
 										  program_info_path => $program_info_path,
 										  core_number => $core_number,
 										  xargs_file_counter => $xargs_file_counter,
-										  outfile => $outfile_no_ending,
+										  outfile => $outfile_prefix,
 										  file_ending => $vcfparser_analysis_type.$file_suffix."*",
 										  outdirectory => $outfamily_directory,
 										  temp_directory => $$temp_directory_ref,
@@ -10309,7 +10312,7 @@ sub sv_vcfparser {
 
 	    ## Copies file from temporary directory.
 	    say $FILEHANDLE "## Copy file from temporary directory";
-	    migrate_file({infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.$file_suffix."*",
+	    migrate_file({infile_path => $outfile_path_prefix.$vcfparser_analysis_type.$file_suffix."*",
 			  outfile_path => $outfamily_directory,
 			  FILEHANDLE => $FILEHANDLE,
 			 });
@@ -10319,7 +10322,7 @@ sub sv_vcfparser {
 	    add_most_complete_vcf({active_parameter_href => $active_parameter_href,
 				   sample_info_href => $sample_info_href,
 				   program_name => $program_name,
-				   path => catfile($outfamily_directory, $outfile_no_ending.$vcfparser_analysis_type.$file_suffix),
+				   path => catfile($outfamily_directory, $outfile_prefix.$vcfparser_analysis_type.$file_suffix),
 				   vcfparser_outfile_counter => $vcfparser_outfile_counter,
 				   vcf_file_key => "sv_".substr($file_suffix, 1)."_file",
 				  });
@@ -10332,7 +10335,7 @@ sub sv_vcfparser {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    dependencies => "case_dependency",
 		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
@@ -10347,12 +10350,12 @@ sub sv_varianteffectpredictor {
 
 ##Function : SV varianteffectpredictor performs annotation of SV variants.
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, $stderr_path, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, $stderr_path, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $program_name               => The program name
 ##         : $program_info_path          => The program info path
@@ -10379,7 +10382,7 @@ sub sv_varianteffectpredictor {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
     my $stderr_path;
@@ -10389,7 +10392,7 @@ sub sv_varianteffectpredictor {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
@@ -10462,10 +10465,10 @@ sub sv_varianteffectpredictor {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{psv_combinevariantcallsets}{file_tag};
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
-    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
-    my $infile_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
-    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+    my $infile_prefix = $$family_id_ref.$infile_tag.$call_type;
+    my $infile_path_prefix = catfile($$temp_directory_ref, $infile_prefix);
+    my $outfile_prefix = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix);
 
     ## Assign suffix
     my $file_suffix = get_file_suffix({parameter_href => $parameter_href,
@@ -10476,7 +10479,7 @@ sub sv_varianteffectpredictor {
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     migrate_file({FILEHANDLE => $FILEHANDLE,
-		  infile_path => catfile($infamily_directory, $infile_no_ending.$file_suffix."*"),
+		  infile_path => catfile($infamily_directory, $infile_prefix.$file_suffix."*"),
 		  outfile_path => $$temp_directory_ref
 		 });
     say $FILEHANDLE "wait", "\n";
@@ -10492,8 +10495,8 @@ sub sv_varianteffectpredictor {
     $perl_fix_sv_nolengths .= q?else {print $_}' ?;  #All other lines - print
 
     print $FILEHANDLE $perl_fix_sv_nolengths." ";
-    print $FILEHANDLE $infile_path_no_ending.$file_suffix." ";
-    say $FILEHANDLE "> ".$infile_path_no_ending."_fixedsvlength".$file_suffix." ", "\n";
+    print $FILEHANDLE $infile_path_prefix.$file_suffix." ";
+    say $FILEHANDLE "> ".$infile_path_prefix."_fixedsvlength".$file_suffix." ", "\n";
 
     ## varianteffectpredictor
     say $FILEHANDLE "## varianteffectpredictor";
@@ -10516,14 +10519,14 @@ sub sv_varianteffectpredictor {
     foreach my $contig (@contigs) {
 
 	## Get parameters
-	my $vep_outfile_no_ending = $outfile_no_ending;
+	my $vep_outfile_prefix = $outfile_prefix;
 	my $vep_xargs_file_name = $xargs_file_name;
 	my @regions;
 
 	## Contig specific
 	if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Update endings with contig info
 
-	    $vep_outfile_no_ending = $outfile_no_ending."_".$contig;
+	    $vep_outfile_prefix = $outfile_prefix."_".$contig;
 	    $vep_xargs_file_name = $xargs_file_name.".".$contig;
 	    push(@regions, $contig);
 	}
@@ -10572,8 +10575,8 @@ sub sv_varianteffectpredictor {
 				  outfile_format => substr($file_suffix, 1),
 				  fork => $fork_number,
 				  buffer_size => 100,
-				  infile_path => $infile_path_no_ending."_fixedsvlength".$file_suffix,
-				  outfile_path => catfile($$temp_directory_ref, $vep_outfile_no_ending.$file_suffix),
+				  infile_path => $infile_path_prefix."_fixedsvlength".$file_suffix,
+				  outfile_path => catfile($$temp_directory_ref, $vep_outfile_prefix.$file_suffix),
 				  stderrfile_path => $vep_xargs_file_name.".stderr.txt",
 				  stdoutfile_path => $vep_xargs_file_name.".stdout.txt",
 				  FILEHANDLE => $XARGSFILEHANDLE,
@@ -10588,18 +10591,18 @@ sub sv_varianteffectpredictor {
 
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
-	my $outfile_prefix = $outfile_no_ending;
+	my $outfile_sample_info_prefix = $outfile_prefix;
 
 	if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Update endings with contig info
 
-	    $outfile_prefix .= "_".$contigs[0];
+	    $outfile_sample_info_prefix .= "_".$contigs[0];
 	}
 
 	## Collect QC metadata info for later use
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => $program_name."summary",
 			outdirectory => $outfamily_directory,
-			outfile_ending => $outfile_prefix.".vcf_summary.html",
+			outfile_ending => $outfile_sample_info_prefix.".vcf_summary.html",
 			outdata_type => "static"
 		       });
 
@@ -10607,13 +10610,13 @@ sub sv_varianteffectpredictor {
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => $program_name,
 			outdirectory => $outfamily_directory,
-			outfile_ending => $outfile_prefix.$file_suffix,
+			outfile_ending => $outfile_sample_info_prefix.$file_suffix,
 			outdata_type => "static"
 		       });
     }
 
     ## QC Data File(s)
-    migrate_file({infile_path => $outfile_path_no_ending."*".$file_suffix."_s*",
+    migrate_file({infile_path => $outfile_path_prefix."*".$file_suffix."_s*",
 		  outfile_path => $outfamily_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -10623,7 +10626,7 @@ sub sv_varianteffectpredictor {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file({infile_path => $outfile_path_no_ending."*".$file_suffix."*",
+    migrate_file({infile_path => $outfile_path_prefix."*".$file_suffix."*",
 		  outfile_path => $outfamily_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -10637,7 +10640,7 @@ sub sv_varianteffectpredictor {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    dependencies => "case_dependency",
 		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
@@ -10652,12 +10655,12 @@ sub sv_combinevariantcallsets {
 
 ##Function : CombineVariants to combine all structural variants call from different callers.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $program_name               => The program name
 ##         : $family_id_ref              => The family_id {REF}
@@ -10680,7 +10683,7 @@ sub sv_combinevariantcallsets {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
 
@@ -10689,7 +10692,7 @@ sub sv_combinevariantcallsets {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
@@ -10739,9 +10742,9 @@ sub sv_combinevariantcallsets {
 
     ## Assign file_tags
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
-    my $merged_file_path_no_ending = catfile($$temp_directory_ref, $$family_id_ref."_".$call_type);
-    my %file_path_no_ending;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type);
+    my $merged_file_path_prefix = catfile($$temp_directory_ref, $$family_id_ref."_".$call_type);
+    my %file_path_prefix;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type);
 
     ### Assign suffix
     my %suffix;
@@ -10769,8 +10772,8 @@ sub sv_combinevariantcallsets {
 
 		## Assign file_tags
 		my $infile_tag = $file_info_href->{$sample_id}{$structural_variant_caller}{file_tag};
-		my $infile_no_ending = $infile.$infile_tag;
-		$file_path_no_ending{$sample_id}{$structural_variant_caller} = catfile($$temp_directory_ref, $infile_no_ending);
+		my $infile_prefix = $infile.$infile_tag;
+		$file_path_prefix{$sample_id}{$structural_variant_caller} = catfile($$temp_directory_ref, $infile_prefix);
 
 		## Assign suffix
 		$suffix{$structural_variant_caller} = get_file_suffix({parameter_href => $parameter_href,
@@ -10786,15 +10789,15 @@ sub sv_combinevariantcallsets {
 		## Copy file(s) to temporary directory
 		say $FILEHANDLE "## Copy file(s) to temporary directory";
 		migrate_file({FILEHANDLE => $FILEHANDLE,
-			      infile_path => catfile($insample_directory, $infile_no_ending.$suffix{$structural_variant_caller}."*"),
+			      infile_path => catfile($insample_directory, $infile_prefix.$suffix{$structural_variant_caller}."*"),
 			      outfile_path => $$temp_directory_ref
 			     });
 
 		say $FILEHANDLE "wait", "\n";
 
 		## Reformat variant calling file and index
-		view_vcf({infile_path => $file_path_no_ending{$sample_id}{$structural_variant_caller}.$suffix{$structural_variant_caller},
-			  outfile_path_no_ending => $file_path_no_ending{$sample_id}{$structural_variant_caller},
+		view_vcf({infile_path => $file_path_prefix{$sample_id}{$structural_variant_caller}.$suffix{$structural_variant_caller},
+			  outfile_path_prefix => $file_path_prefix{$sample_id}{$structural_variant_caller},
 			  output_type => "z",
 			  FILEHANDLE => $FILEHANDLE,
 			 });
@@ -10808,7 +10811,7 @@ sub sv_combinevariantcallsets {
 	if ($active_parameter_href->{$structural_variant_caller} > 0 && ($structural_variant_caller !~/pmanta|pdelly_reformat|ptiddit/) ) {  #Expect vcf. Special case: manta is processed by joint calling and per family
 	    
 	    ## Assemble file paths by adding file ending
-	    my @file_paths = map { $file_path_no_ending{$_}{$structural_variant_caller}.$suffix{$structural_variant_caller}.".gz" } @{ $active_parameter_href->{sample_ids} };
+	    my @file_paths = map { $file_path_prefix{$_}{$structural_variant_caller}.$suffix{$structural_variant_caller}.".gz" } @{ $active_parameter_href->{sample_ids} };
 
 	    if (scalar(@{ $active_parameter_href->{sample_ids} }) > 1) {
 
@@ -10850,7 +10853,7 @@ sub sv_combinevariantcallsets {
 
 	    ## Assign file_tags
 	    my $infile_tag = $file_info_href->{$$family_id_ref}{$structural_variant_caller}{file_tag};
-	    my $infile_no_ending = $$family_id_ref.$infile_tag."_".$call_type;
+	    my $infile_prefix = $$family_id_ref.$infile_tag."_".$call_type;
 
 	    ## Assign suffix
 	    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
@@ -10866,7 +10869,7 @@ sub sv_combinevariantcallsets {
 	    ## Copy file(s) to temporary directory
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
 	    migrate_file({FILEHANDLE => $FILEHANDLE,
-			  infile_path => catfile($infamily_directory, $infile_no_ending.$infile_suffix."*"),
+			  infile_path => catfile($infamily_directory, $infile_prefix.$infile_suffix."*"),
 			  outfile_path => $$temp_directory_ref
 			 });
 	    say $FILEHANDLE "wait", "\n";
@@ -10875,7 +10878,7 @@ sub sv_combinevariantcallsets {
 
 		## Split multiallelic variants
 		say $FILEHANDLE "## Split multiallelic variants";
-		decompose({infile_path => catfile($$temp_directory_ref, $infile_no_ending.$infile_suffix),
+		decompose({infile_path => catfile($$temp_directory_ref, $infile_prefix.$infile_suffix),
 			   outfile_path => catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.$infile_suffix),
 			   FILEHANDLE => $FILEHANDLE,
 			   smart_decomposition => 1,
@@ -10900,7 +10903,7 @@ sub sv_combinevariantcallsets {
     }
 
     Program::Variantcalling::Svdb::merge({infile_paths_ref => \@infile_paths,
-					  outfile_path => $merged_file_path_no_ending.$outfile_suffix,
+					  outfile_path => $merged_file_path_prefix.$outfile_suffix,
 					  priority => $active_parameter_href->{sv_svdb_merge_prioritize},
 					  FILEHANDLE => $FILEHANDLE,
 					 });
@@ -10914,8 +10917,8 @@ sub sv_combinevariantcallsets {
 
 	## Split multiallelic variants
 	say $FILEHANDLE "## Split multiallelic variants";
-	decompose({infile_path => $merged_file_path_no_ending.$outfile_suffix,
-		   outfile_path => $merged_file_path_no_ending.$alt_file_tag.$outfile_suffix,
+	decompose({infile_path => $merged_file_path_prefix.$outfile_suffix,
+		   outfile_path => $merged_file_path_prefix.$alt_file_tag.$outfile_suffix,
 		   FILEHANDLE => $FILEHANDLE,
 		   smart_decomposition => 1,
 		  });
@@ -10925,7 +10928,7 @@ sub sv_combinevariantcallsets {
 	
 	use Program::Gnu::Coreutils qw(mv);
 
-	my $infile_path = $merged_file_path_no_ending.$alt_file_tag.$outfile_suffix;
+	my $infile_path = $merged_file_path_prefix.$alt_file_tag.$outfile_suffix;
 	$alt_file_tag .= "_svdbq";  #Update alternative ending
 
 	my $annotation_file_counter = 0;  #Ensure correct infile
@@ -10935,11 +10938,11 @@ sub sv_combinevariantcallsets {
 	    
 	    if ($annotation_file_counter) {
 
-		$infile_path = $merged_file_path_no_ending.$alt_file_tag.$outfile_suffix.".".$outfile_tracker;
+		$infile_path = $merged_file_path_prefix.$alt_file_tag.$outfile_suffix.".".$outfile_tracker;
 		$outfile_tracker++;  #Increment now that infile has been set
 	    }
 	    query({infile_path => $infile_path,
-		   outfile_path => $merged_file_path_no_ending.$alt_file_tag.$outfile_suffix.".".$outfile_tracker,
+		   outfile_path => $merged_file_path_prefix.$alt_file_tag.$outfile_suffix.".".$outfile_tracker,
 		   dbfile_path => $query_db_file,
 		   bnd_distance => 25000,
 		   overlap => 0.8,
@@ -10952,8 +10955,8 @@ sub sv_combinevariantcallsets {
 	}
 
 	## Rename to remove outfile_tracker
-	mv({infile_path => $merged_file_path_no_ending.$alt_file_tag.$outfile_suffix.".".$outfile_tracker,
-	    outfile_path => $merged_file_path_no_ending.$alt_file_tag.$outfile_suffix,
+	mv({infile_path => $merged_file_path_prefix.$alt_file_tag.$outfile_suffix.".".$outfile_tracker,
+	    outfile_path => $merged_file_path_prefix.$alt_file_tag.$outfile_suffix,
 	    FILEHANDLE => $FILEHANDLE,
 	   });
 	say $FILEHANDLE "\n";
@@ -10964,9 +10967,9 @@ sub sv_combinevariantcallsets {
     ## Writes sbatch code to supplied filehandle to sort variants in vcf format
     sort_vcf({active_parameter_href => $active_parameter_href,
 	      FILEHANDLE => $FILEHANDLE,
-	      sequence_dict_file => catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict"),
-	      infile_paths_ref => [$merged_file_path_no_ending.$alt_file_tag.$outfile_suffix],
-	      outfile => $outfile_path_no_ending.$outfile_alt_file_tag.$outfile_suffix,
+	      sequence_dict_file => catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_prefix}.".dict"),
+	      infile_paths_ref => [$merged_file_path_prefix.$alt_file_tag.$outfile_suffix],
+	      outfile => $outfile_path_prefix.$outfile_alt_file_tag.$outfile_suffix,
 	     });
     print $FILEHANDLE "\n";
 
@@ -10977,8 +10980,8 @@ sub sv_combinevariantcallsets {
 
 	say $FILEHANDLE "## Remove FILTER ne PASS";
 	Program::Variantcalling::Bcftools::view({apply_filters_ref => ["PASS"],
-						 infile_path => $outfile_path_no_ending.$alt_file_tag.$outfile_suffix,
-						 outfile_path => $outfile_path_no_ending.$alt_file_tag."_filt".$outfile_suffix,
+						 infile_path => $outfile_path_prefix.$alt_file_tag.$outfile_suffix,
+						 outfile_path => $outfile_path_prefix.$alt_file_tag."_filt".$outfile_suffix,
 						 FILEHANDLE => $FILEHANDLE,
 						});
 	say $FILEHANDLE "\n";
@@ -10990,7 +10993,7 @@ sub sv_combinevariantcallsets {
     if ($active_parameter_href->{sv_genmod_filter} > 0) {
 
 	say $FILEHANDLE "## Remove common variants";
-	Program::Variantcalling::Genmod::annotate({infile_path => $outfile_path_no_ending.$alt_file_tag.$outfile_suffix,
+	Program::Variantcalling::Genmod::annotate({infile_path => $outfile_path_prefix.$alt_file_tag.$outfile_suffix,
 						   outfile_path => catfile(dirname(devnull()), "stdout"),
 						   verbosity => "v",
 						   temp_directory_path => $$temp_directory_ref,
@@ -11002,7 +11005,7 @@ sub sv_combinevariantcallsets {
 	$alt_file_tag .= "_genmod_filter";  #Update file tag
 
 	Program::Variantcalling::Genmod::filter({infile_path => "-",
-						 outfile_path => $outfile_path_no_ending.$alt_file_tag.$outfile_suffix,
+						 outfile_path => $outfile_path_prefix.$alt_file_tag.$outfile_suffix,
 						 verbosity => "v",
 						 threshold => $active_parameter_href->{sv_genmod_filter_threshold},
 						 FILEHANDLE => $FILEHANDLE,
@@ -11014,7 +11017,7 @@ sub sv_combinevariantcallsets {
     if ($active_parameter_href->{sv_vcfanno} > 0) {
 
 	say $FILEHANDLE "## Annotate 1000G structural variants";
-	vcfanno({infile_path => $outfile_path_no_ending.$alt_file_tag.$outfile_suffix,
+	vcfanno({infile_path => $outfile_path_prefix.$alt_file_tag.$outfile_suffix,
 		 toml_configfile_path => $active_parameter_href->{sv_vcfanno_config},
 		 lua => $active_parameter_href->{sv_vcfanno_lua},
 		 ends => 1,
@@ -11025,7 +11028,7 @@ sub sv_combinevariantcallsets {
 
 	$alt_file_tag .= "_vcfanno";  #Update file tag
 
-	say $FILEHANDLE "> ".$outfile_path_no_ending.$alt_file_tag.$outfile_suffix, "\n";
+	say $FILEHANDLE "> ".$outfile_path_prefix.$alt_file_tag.$outfile_suffix, "\n";
 
 	if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
@@ -11038,8 +11041,8 @@ sub sv_combinevariantcallsets {
 	}
 
 	say $FILEHANDLE "## Add header for 1000G annotation of structural variants";
-	Program::Variantcalling::Bcftools::annotate({infile_path => $outfile_path_no_ending.$alt_file_tag.$outfile_suffix,
-						     outfile_path => $outfile_path_no_ending.$alt_file_tag."_bcftools_annotate".$outfile_suffix,
+	Program::Variantcalling::Bcftools::annotate({infile_path => $outfile_path_prefix.$alt_file_tag.$outfile_suffix,
+						     outfile_path => $outfile_path_prefix.$alt_file_tag."_bcftools_annotate".$outfile_suffix,
 						     output_type => "v",
 						     headerfile_path => $active_parameter_href->{sv_vcfannotation_header_lines_file},
 						     FILEHANDLE => $FILEHANDLE,
@@ -11053,9 +11056,9 @@ sub sv_combinevariantcallsets {
 	## Writes sbatch code to supplied filehandle to sort variants in vcf format
 	sort_vcf({active_parameter_href => $active_parameter_href,
 		  FILEHANDLE => $FILEHANDLE,
-		  sequence_dict_file => catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict"),
-		  infile_paths_ref => [$outfile_path_no_ending.$alt_file_tag.$outfile_suffix],
-		  outfile => $outfile_path_no_ending.$outfile_suffix,
+		  sequence_dict_file => catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_prefix}.".dict"),
+		  infile_paths_ref => [$outfile_path_prefix.$alt_file_tag.$outfile_suffix],
+		  outfile => $outfile_path_prefix.$outfile_suffix,
 		 });
 
 	print $FILEHANDLE "\n";
@@ -11064,15 +11067,15 @@ sub sv_combinevariantcallsets {
     if ($active_parameter_href->{sv_combinevariantcallsets_bcf_file}) {
 
 	## Reformat variant calling file and index
-	view_vcf({infile_path => $outfile_path_no_ending.$outfile_suffix,
-		  outfile_path_no_ending => $outfile_path_no_ending,
+	view_vcf({infile_path => $outfile_path_prefix.$outfile_suffix,
+		  outfile_path_prefix => $outfile_path_prefix,
 		  output_type => "b",
 		  FILEHANDLE => $FILEHANDLE,
 		 });
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file({infile_path => $outfile_path_no_ending.".bcf*",
+	migrate_file({infile_path => $outfile_path_prefix.".bcf*",
 		      outfile_path => $outfamily_directory,
 		      FILEHANDLE => $FILEHANDLE,
 		     });
@@ -11080,7 +11083,7 @@ sub sv_combinevariantcallsets {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file({infile_path => $outfile_path_no_ending.$outfile_suffix,
+    migrate_file({infile_path => $outfile_path_prefix.$outfile_suffix,
 		  outfile_path => $outfamily_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -11100,7 +11103,7 @@ sub sv_combinevariantcallsets {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    dependencies => "chain_and_parallel_dependency",
 		    path => $jobid_chain,
 		    sbatch_file_name => $file_name,
@@ -11116,12 +11119,12 @@ sub cnvnator {
 
 ##Function : Call structural variants using cnvnator
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, $program_info_path, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, $program_info_path, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $sample_id_ref              => The sample_id
 ##         : $program_name               => The program name
@@ -11145,7 +11148,7 @@ sub cnvnator {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $sample_id_ref;
     my $program_name;
@@ -11156,7 +11159,7 @@ sub cnvnator {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
@@ -11211,10 +11214,10 @@ sub cnvnator {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
-    my $infile_no_ending = $infile.$infile_tag;
-    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
-    my $outfile_no_ending = $infile.$outfile_tag;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+    my $infile_prefix = $infile.$infile_tag;
+    my $file_path_prefix = catfile($$temp_directory_ref, $infile_prefix);
+    my $outfile_prefix = $infile.$outfile_tag;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix);
 
     ### Assign suffix
     my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
@@ -11270,7 +11273,7 @@ sub cnvnator {
 									  program_info_path => $program_info_path,
 									  core_number => $core_number,
 									  xargs_file_counter => $xargs_file_counter,
-									  infile => $infile_no_ending,
+									  infile => $infile_prefix,
 									  indirectory => $insample_directory,
 									  file_ending => substr($infile_suffix, 0, 2)."*",
 									  temp_directory => $$temp_directory_ref,
@@ -11292,9 +11295,9 @@ sub cnvnator {
     foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 
 	## Assemble parameter
-	$root_file = $file_path_no_ending."_".$contig.".root";  #Output ROOT file
+	$root_file = $file_path_prefix."_".$contig.".root";  #Output ROOT file
 
-	read_extraction({infile_paths_ref => [$file_path_no_ending."_".$contig.".bam"],
+	read_extraction({infile_paths_ref => [$file_path_prefix."_".$contig.".bam"],
 			 outfile_path => $root_file,
 			 regions_ref => [$contig],
 			 unique => 1,
@@ -11333,7 +11336,7 @@ sub cnvnator {
 	print $XARGSFILEHANDLE "; ";
 	
 	Program::Variantcalling::Cnvnator::calling({infile_path => $root_file,
-						    outfile_path => $outfile_path_no_ending."_".$contig.".cnvnator",
+						    outfile_path => $outfile_path_prefix."_".$contig.".cnvnator",
 						    regions_ref => [$contig],
 						    cnv_bin_size => $active_parameter_href->{cnv_bin_size},
 						    FILEHANDLE => $XARGSFILEHANDLE,
@@ -11341,8 +11344,8 @@ sub cnvnator {
 						   });
 	print $XARGSFILEHANDLE "; ";
 
-	convert_to_vcf({infile_path => $outfile_path_no_ending."_".$contig.".cnvnator",
-			outfile_path => $outfile_path_no_ending."_".$contig.$outfile_suffix,
+	convert_to_vcf({infile_path => $outfile_path_prefix."_".$contig.".cnvnator",
+			outfile_path => $outfile_path_prefix."_".$contig.$outfile_suffix,
 			stderrfile_path => $xargs_file_name.".".$contig."_convert_to_vcf.stderr.txt",
 			referencedirectory_path => $$temp_directory_ref,
 			FILEHANDLE => $XARGSFILEHANDLE,
@@ -11354,19 +11357,19 @@ sub cnvnator {
     concatenate_variants({active_parameter_href => $active_parameter_href,
 			  FILEHANDLE => $FILEHANDLE,
 			  elements_ref => \@{ $file_info_href->{contigs} },
-			  infile_prefix => $outfile_path_no_ending."_",
+			  infile_prefix => $outfile_path_prefix."_",
 			  infile_postfix => $outfile_suffix,
-			  outfile => $outfile_path_no_ending."_concat".$outfile_suffix,
+			  outfile => $outfile_path_prefix."_concat".$outfile_suffix,
 			 });
 
     ## Fix GT FORMAT in header and Sample_id and GT and Genotype call
     print $FILEHANDLE $perl_vcf_fix." ";
-    print $FILEHANDLE $outfile_path_no_ending."_concat".$outfile_suffix." ";
-    say $FILEHANDLE "> ".$outfile_path_no_ending."_concat_fix".$outfile_suffix, "\n";
+    print $FILEHANDLE $outfile_path_prefix."_concat".$outfile_suffix." ";
+    say $FILEHANDLE "> ".$outfile_path_prefix."_concat_fix".$outfile_suffix, "\n";
 
     ##Add contigs to header
-    annotate({infile_path => $outfile_path_no_ending."_concat_fix".$outfile_suffix,
-	      outfile_path => $outfile_path_no_ending.$outfile_suffix,
+    annotate({infile_path => $outfile_path_prefix."_concat_fix".$outfile_suffix,
+	      outfile_path => $outfile_path_prefix.$outfile_suffix,
 	      output_type => "v",
 	      headerfile_path => catfile($$temp_directory_ref, "contig_header.txt"),
 	      FILEHANDLE => $FILEHANDLE,
@@ -11375,7 +11378,7 @@ sub cnvnator {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file({infile_path => $outfile_path_no_ending.$outfile_suffix."*",
+    migrate_file({infile_path => $outfile_path_prefix.$outfile_suffix."*",
 		  outfile_path => $outsample_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -11388,13 +11391,13 @@ sub cnvnator {
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => "cnvnator",
 			outdirectory => $outsample_directory,
-			outfile_ending => $outfile_no_ending.$outfile_suffix,
+			outfile_ending => $outfile_prefix.$outfile_suffix,
 			outdata_type => "static"
 		       });
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    sample_id => $$sample_id_ref,
 		    dependencies => "case_dependency",
 		    path => $jobid_chain,
@@ -11410,12 +11413,12 @@ sub delly_reformat {
 
 ##Function : Merge, regenotype, and filter using delly
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $xargs_file_counter, $call_type
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $xargs_file_counter, $call_type
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $program_name               => The program name
 ##         : $family_id_ref              => The family_id {REF}
@@ -11440,7 +11443,7 @@ sub delly_reformat {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
     my $FILEHANDLE;
@@ -11450,7 +11453,7 @@ sub delly_reformat {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
@@ -11500,8 +11503,8 @@ sub delly_reformat {
 
     ## Assign file_tags
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
-    my $outfile_no_ending = $$family_id_ref.$outfile_tag."_".$call_type;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+    my $outfile_prefix = $$family_id_ref.$outfile_tag."_".$call_type;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix);
 
     ### Assign suffix
     ## Set file suffix for next module within jobid chain
@@ -11523,8 +11526,8 @@ sub delly_reformat {
 			 });
 
     ## Collect files and suffix for all sample_ids
-    my %infile_path_no_ending;
-    my %file_path_no_ending;
+    my %infile_path_prefix;
+    my %file_path_prefix;
     my %suffix;
     my @program_tag_keys = ("pgatk_baserecalibration", "pdelly_call");
     foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
@@ -11540,10 +11543,10 @@ sub delly_reformat {
 
 	    ## Assign file_tags
 	    my $infile_tag = $file_info_href->{$sample_id}{$infile_tag_key}{file_tag};
-	    my $infile_no_ending = $infile.$infile_tag;
+	    my $infile_prefix = $infile.$infile_tag;
 	    
-	    $infile_path_no_ending{$sample_id}{$infile_tag_key} = catfile($$temp_directory_ref, $infile_no_ending);
-	    $file_path_no_ending{$sample_id} = catfile($$temp_directory_ref, $infile.$outfile_tag);  #Used downstream
+	    $infile_path_prefix{$sample_id}{$infile_tag_key} = catfile($$temp_directory_ref, $infile_prefix);
+	    $file_path_prefix{$sample_id} = catfile($$temp_directory_ref, $infile.$outfile_tag);  #Used downstream
 
 	    if ($infile_tag_key eq "pdelly_call") {  #BCFs
 		
@@ -11646,10 +11649,10 @@ sub delly_reformat {
 		foreach my $contig (@contigs) {
 
 		    ## Assemble file paths by adding file ending
-		    my @file_paths = map { $infile_path_no_ending{$_}{pdelly_call}."_".$contig."_".$sv_type.$suffix{pdelly_call} } @{ $active_parameter_href->{sample_ids} };
+		    my @file_paths = map { $infile_path_prefix{$_}{pdelly_call}."_".$contig."_".$sv_type.$suffix{pdelly_call} } @{ $active_parameter_href->{sample_ids} };
 
 		    Program::Variantcalling::Delly::merge({infile_paths_ref => \@file_paths,
-							   outfile_path => $outfile_path_no_ending."_".$contig."_".$sv_type.".bcf",
+							   outfile_path => $outfile_path_prefix."_".$contig."_".$sv_type.".bcf",
 							   stdoutfile_path => $xargs_file_name.".".$contig.".".$sv_type.".stdout.txt",
 							   stderrfile_path => $xargs_file_name.".".$contig.".".$sv_type.".stderr.txt",
 							   sv_type => $sv_type,
@@ -11663,10 +11666,10 @@ sub delly_reformat {
 	    else {
 
 		## Assemble file paths by adding file ending
-		my @file_paths = map { $infile_path_no_ending{$_}{pdelly_call}."_".$sv_type.$suffix{pdelly_call} } @{ $active_parameter_href->{sample_ids} };
+		my @file_paths = map { $infile_path_prefix{$_}{pdelly_call}."_".$sv_type.$suffix{pdelly_call} } @{ $active_parameter_href->{sample_ids} };
 
 		Program::Variantcalling::Delly::merge({infile_paths_ref => \@file_paths,
-						       outfile_path => $outfile_path_no_ending."_".$sv_type.".bcf",
+						       outfile_path => $outfile_path_prefix."_".$sv_type.".bcf",
 						       stdoutfile_path => $xargs_file_name.".".$sv_type.".stdout.txt",
 						       stderrfile_path => $xargs_file_name.".".$sv_type.".stderr.txt",
 						       sv_type => $sv_type,
@@ -11701,11 +11704,11 @@ sub delly_reformat {
 		    foreach my $contig (@contigs) {
 
 			## Assemble file path
-			my $alignment_sample_file_path = $infile_path_no_ending{$sample_id}{pgatk_baserecalibration}."_".$contig.$suffix{pgatk_baserecalibration};
+			my $alignment_sample_file_path = $infile_path_prefix{$sample_id}{pgatk_baserecalibration}."_".$contig.$suffix{pgatk_baserecalibration};
 
 			Program::Variantcalling::Delly::call ({infile_path => $alignment_sample_file_path,
-							       genotypefile_path => $outfile_path_no_ending."_".$contig."_".$sv_type.$suffix{pdelly_call},
-							       outfile_path => $file_path_no_ending{$sample_id}."_".$contig."_".$sv_type."_geno".$suffix{pdelly_call},
+							       genotypefile_path => $outfile_path_prefix."_".$contig."_".$sv_type.$suffix{pdelly_call},
+							       outfile_path => $file_path_prefix{$sample_id}."_".$contig."_".$sv_type."_geno".$suffix{pdelly_call},
 							       stdoutfile_path => $xargs_file_name.".".$contig.".".$sv_type.".stdout.txt",
 							       stderrfile_path => $xargs_file_name.".".$contig.".".$sv_type.".stderr.txt",
 							       sv_type => $sv_type,
@@ -11719,11 +11722,11 @@ sub delly_reformat {
 		else {
 
 		    ## Assemble file path
-		    my $alignment_sample_file_path = $infile_path_no_ending{$sample_id}{pgatk_baserecalibration}.$suffix{pgatk_baserecalibration};
+		    my $alignment_sample_file_path = $infile_path_prefix{$sample_id}{pgatk_baserecalibration}.$suffix{pgatk_baserecalibration};
 
 		    Program::Variantcalling::Delly::call ({infile_path => $alignment_sample_file_path,
-							   genotypefile_path => $outfile_path_no_ending."_".$sv_type.$suffix{pdelly_call},
-							   outfile_path => $file_path_no_ending{$sample_id}."_".$sv_type."_geno".$suffix{pdelly_call},
+							   genotypefile_path => $outfile_path_prefix."_".$sv_type.$suffix{pdelly_call},
+							   outfile_path => $file_path_prefix{$sample_id}."_".$sv_type."_geno".$suffix{pdelly_call},
 							   stdoutfile_path => $xargs_file_name.".".$sv_type.".stdout.txt",
 							   stderrfile_path => $xargs_file_name.".".$sv_type.".stderr.txt",
 							   sv_type => $sv_type,
@@ -11756,10 +11759,10 @@ sub delly_reformat {
 		foreach my $contig (@contigs) {
 
 		    ## Assemble file paths by adding file ending
-		    my @file_paths = map { $file_path_no_ending{$_}."_".$contig."_".$sv_type."_geno".$suffix{pdelly_call} } @{ $active_parameter_href->{sample_ids} };
+		    my @file_paths = map { $file_path_prefix{$_}."_".$contig."_".$sv_type."_geno".$suffix{pdelly_call} } @{ $active_parameter_href->{sample_ids} };
 
 		    Program::Variantcalling::Bcftools::merge({infile_paths_ref => \@file_paths,
-							      outfile_path => $outfile_path_no_ending."_".$contig."_".$sv_type.$suffix{pdelly_call},
+							      outfile_path => $outfile_path_prefix."_".$contig."_".$sv_type.$suffix{pdelly_call},
 							      output_type => "b",
 							      stdoutfile_path => $xargs_file_name.".".$contig.".".$sv_type.".stdout.txt",
 							      stderrfile_path => $xargs_file_name.".".$contig.".".$sv_type.".stderr.txt",
@@ -11771,10 +11774,10 @@ sub delly_reformat {
 	    else {
 		
 		## Assemble file paths by adding file ending
-		my @file_paths = map { $file_path_no_ending{$_}."_".$sv_type."_geno".$suffix{pdelly_call} } @{ $active_parameter_href->{sample_ids} };
+		my @file_paths = map { $file_path_prefix{$_}."_".$sv_type."_geno".$suffix{pdelly_call} } @{ $active_parameter_href->{sample_ids} };
 		
 		Program::Variantcalling::Bcftools::merge({infile_paths_ref => \@file_paths,
-							  outfile_path => $outfile_path_no_ending."_".$sv_type.$suffix{pdelly_call},
+							  outfile_path => $outfile_path_prefix."_".$sv_type.$suffix{pdelly_call},
 							  output_type => "b",
 							  stdoutfile_path => $xargs_file_name.".".$sv_type.".stdout.txt",
 							  stderrfile_path => $xargs_file_name.".".$sv_type.".stderr.txt",
@@ -11795,15 +11798,15 @@ sub delly_reformat {
 
 	    if($sv_type ne "TRA") {
 
-		push(@file_paths, map { $outfile_path_no_ending."_".$_."_".$sv_type.$suffix{pdelly_call} } @contigs);
+		push(@file_paths, map { $outfile_path_prefix."_".$_."_".$sv_type.$suffix{pdelly_call} } @contigs);
 	    }
 	    else {
 		
-		push(@file_paths, $outfile_path_no_ending."_".$sv_type.$suffix{pdelly_call});
+		push(@file_paths, $outfile_path_prefix."_".$sv_type.$suffix{pdelly_call});
 	    }
 	    
 	    Program::Variantcalling::Bcftools::concat({infile_paths_ref => \@file_paths,
-						       outfile_path => $outfile_path_no_ending."_".$sv_type."_concat".$suffix{pdelly_call},
+						       outfile_path => $outfile_path_prefix."_".$sv_type."_concat".$suffix{pdelly_call},
 						       output_type => "b",
 						       stderrfile_path => $program_info_path."_".$sv_type."_concat.stderr.txt",
 						       allow_overlaps => 1,
@@ -11811,7 +11814,7 @@ sub delly_reformat {
 						      });
 	    say $FILEHANDLE "\n";
 
-	    Program::Variantcalling::Bcftools::index({infile_path => $outfile_path_no_ending."_".$sv_type."_concat".$suffix{pdelly_call},
+	    Program::Variantcalling::Bcftools::index({infile_path => $outfile_path_prefix."_".$sv_type."_concat".$suffix{pdelly_call},
 						      stderrfile_path => $xargs_file_name.".".$sv_type."_index.stderr.txt",
 						      output_type => "csi",
 						      FILEHANDLE => $FILEHANDLE,
@@ -11835,8 +11838,8 @@ sub delly_reformat {
 	    
 	    if ($sv_type ne "TRA") {
 		
-		Program::Variantcalling::Delly::filter({infile_path => $outfile_path_no_ending."_".$sv_type."_concat".$suffix{pdelly_call},
-							outfile_path => $outfile_path_no_ending."_".$sv_type."_filtered".$suffix{pdelly_call},
+		Program::Variantcalling::Delly::filter({infile_path => $outfile_path_prefix."_".$sv_type."_concat".$suffix{pdelly_call},
+							outfile_path => $outfile_path_prefix."_".$sv_type."_filtered".$suffix{pdelly_call},
 							stdoutfile_path => $xargs_file_name.".".$sv_type.".stdout.txt",
 							stderrfile_path => $xargs_file_name.".".$sv_type.".stderr.txt",
 							sv_type => $sv_type,
@@ -11847,8 +11850,8 @@ sub delly_reformat {
 	    }
 	    else {
 		
-		Program::Variantcalling::Delly::filter({infile_path => $outfile_path_no_ending."_".$sv_type.$suffix{pdelly_call},
-							outfile_path => $outfile_path_no_ending."_".$sv_type."_filtered".$suffix{pdelly_call},
+		Program::Variantcalling::Delly::filter({infile_path => $outfile_path_prefix."_".$sv_type.$suffix{pdelly_call},
+							outfile_path => $outfile_path_prefix."_".$sv_type."_filtered".$suffix{pdelly_call},
 							stdoutfile_path => $xargs_file_name.".".$sv_type.".stdout.txt",
 							stderrfile_path => $xargs_file_name.".".$sv_type.".stderr.txt",
 							sv_type => $sv_type,
@@ -11868,7 +11871,7 @@ sub delly_reformat {
 
 	say $FILEHANDLE "## bcftools concat - merge all SV types";
 
-	@file_paths = map { $outfile_path_no_ending."_".$_."_filtered".$suffix{pdelly_call} } @{ $active_parameter_href->{delly_types} };
+	@file_paths = map { $outfile_path_prefix."_".$_."_filtered".$suffix{pdelly_call} } @{ $active_parameter_href->{delly_types} };
     }
     else {  #Only one sample 
 
@@ -11884,17 +11887,17 @@ sub delly_reformat {
 		foreach my $contig (@contigs) {
 
 		    ## Assemble file paths by adding file ending
-		    push(@file_paths, map { $infile_path_no_ending{$_}{pdelly_call}."_".$contig."_".$sv_type.$suffix{pdelly_call} } @{ $active_parameter_href->{sample_ids} });
+		    push(@file_paths, map { $infile_path_prefix{$_}{pdelly_call}."_".$contig."_".$sv_type.$suffix{pdelly_call} } @{ $active_parameter_href->{sample_ids} });
 		}
 	    }
 	    else {
 
-		push(@file_paths, map { $infile_path_no_ending{$_}{pdelly_call}."_".$sv_type.$suffix{pdelly_call} } @{ $active_parameter_href->{sample_ids} });	
+		push(@file_paths, map { $infile_path_prefix{$_}{pdelly_call}."_".$sv_type.$suffix{pdelly_call} } @{ $active_parameter_href->{sample_ids} });	
 	    }
 	}
     }
     Program::Variantcalling::Bcftools::concat({infile_paths_ref => \@file_paths,
-					       outfile_path => $outfile_path_no_ending."_concat".$outfile_suffix,
+					       outfile_path => $outfile_path_prefix."_concat".$outfile_suffix,
 					       output_type => "v",
 					       stderrfile_path => $program_info_path."_concat.stderr.txt",
 					       allow_overlaps => 1,
@@ -11905,14 +11908,14 @@ sub delly_reformat {
     ## Writes sbatch code to supplied filehandle to sort variants in vcf format
     sort_vcf({active_parameter_href => $active_parameter_href,
 	      FILEHANDLE => $FILEHANDLE,
-	      sequence_dict_file => catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict"),
-	      infile_paths_ref => [$outfile_path_no_ending."_concat".$outfile_suffix],
-	      outfile => $outfile_path_no_ending.$outfile_suffix,
+	      sequence_dict_file => catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_prefix}.".dict"),
+	      infile_paths_ref => [$outfile_path_prefix."_concat".$outfile_suffix],
+	      outfile => $outfile_path_prefix.$outfile_suffix,
 	     });
     
     ## Copies file from temporary directory.
     say $FILEHANDLE "\n## Copy file from temporary directory";
-    migrate_file({infile_path => $outfile_path_no_ending.$outfile_suffix,
+    migrate_file({infile_path => $outfile_path_prefix.$outfile_suffix,
 		  outfile_path => $outfamily_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -11923,7 +11926,7 @@ sub delly_reformat {
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => "delly",
 			outdirectory => $outfamily_directory,
-			outfile_ending => $outfile_no_ending.$outfile_suffix,
+			outfile_ending => $outfile_prefix.$outfile_suffix,
 			outdata_type => "static"
 		       });
     }
@@ -11934,7 +11937,7 @@ sub delly_reformat {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    dependencies => "case_dependency",
 		    path => $jobid_chain,
 		    sbatch_file_name => $file_name,
@@ -11949,12 +11952,12 @@ sub delly_call {
 
 ##Function : Call structural variants using delly
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, $program_info_path, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, $program_info_path, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $sample_id_ref              => The sample_id
 ##         : $program_name               => The program name
@@ -11978,7 +11981,7 @@ sub delly_call {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $sample_id_ref;
     my $program_name;
@@ -11988,7 +11991,7 @@ sub delly_call {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
@@ -12041,10 +12044,10 @@ sub delly_call {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
-    my $infile_no_ending = $infile.$infile_tag;
-    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
-    my $outfile_no_ending = $infile.$outfile_tag;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+    my $infile_prefix = $infile.$infile_tag;
+    my $file_path_prefix = catfile($$temp_directory_ref, $infile_prefix);
+    my $outfile_prefix = $infile.$outfile_tag;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix);
 
     ## Assign suffix
     my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
@@ -12075,7 +12078,7 @@ sub delly_call {
 	## Copy file(s) to temporary directory
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
 	migrate_file({FILEHANDLE => $FILEHANDLE,
-		      infile_path => catfile($insample_directory, $infile_no_ending.substr($infile_suffix, 0, 2)."*"),
+		      infile_path => catfile($insample_directory, $infile_prefix.substr($infile_suffix, 0, 2)."*"),
 		      outfile_path => $active_parameter_href->{temp_directory}
 		     });
     }
@@ -12090,7 +12093,7 @@ sub delly_call {
 									      program_info_path => $program_info_path,
 									      core_number => ($core_number - 1),  #Compensate for cp of entire BAM (INS, TRA), see above
 									      xargs_file_counter => $xargs_file_counter,
-									      infile => $infile_no_ending,
+									      infile => $infile_prefix,
 									      indirectory => $insample_directory,
 									      file_ending => substr($infile_suffix, 0, 2)."*",
 									      temp_directory => $$temp_directory_ref,
@@ -12117,8 +12120,8 @@ sub delly_call {
 	    ## Process per contig
 	    foreach my $contig (@contigs) {
 
-		Program::Variantcalling::Delly::call ({infile_path => $file_path_no_ending."_".$contig.$infile_suffix,
-						       outfile_path => $outfile_path_no_ending."_".$contig."_".$sv_type.$outfile_suffix,
+		Program::Variantcalling::Delly::call ({infile_path => $file_path_prefix."_".$contig.$infile_suffix,
+						       outfile_path => $outfile_path_prefix."_".$contig."_".$sv_type.$outfile_suffix,
 						       stdoutfile_path => $xargs_file_name.".".$contig.".".$sv_type.".stdout.txt",
 						       stderrfile_path => $xargs_file_name.".".$contig.".".$sv_type.".stderr.txt",
 						       sv_type => $sv_type,
@@ -12131,8 +12134,8 @@ sub delly_call {
 	}
 	else {
 
-	    Program::Variantcalling::Delly::call ({infile_path => $file_path_no_ending.$infile_suffix,
-						   outfile_path => $outfile_path_no_ending."_".$sv_type.$outfile_suffix,
+	    Program::Variantcalling::Delly::call ({infile_path => $file_path_prefix.$infile_suffix,
+						   outfile_path => $outfile_path_prefix."_".$sv_type.$outfile_suffix,
 						   stdoutfile_path => $xargs_file_name.".".$sv_type.".stdout.txt",
 						   stderrfile_path => $xargs_file_name.".".$sv_type.".stderr.txt",
 						   sv_type => $sv_type,
@@ -12147,7 +12150,7 @@ sub delly_call {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file({infile_path => $outfile_path_no_ending."*".$outfile_suffix."*",
+    migrate_file({infile_path => $outfile_path_prefix."*".$outfile_suffix."*",
 		  outfile_path => $outsample_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -12160,7 +12163,7 @@ sub delly_call {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    sample_id => $$sample_id_ref,
 		    dependencies => "case_dependency",
 		    path => $jobid_chain,
@@ -12176,12 +12179,12 @@ sub manta {
 
 ##Function : Joint analysis of structural variation
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $program_name               => The program name
 ##         : $family_id_ref              => The family_id {REF}
@@ -12202,7 +12205,7 @@ sub manta {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
 
@@ -12211,7 +12214,7 @@ sub manta {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
@@ -12254,8 +12257,8 @@ sub manta {
 
     ## Assign file_tags
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
-    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+    my $outfile_prefix = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix);
 
     ## Assign suffix
     my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
@@ -12269,7 +12272,7 @@ sub manta {
 					  file_suffix => $parameter_href->{"p".$program_name}{outfile_suffix},
 					 });
 
-    my %file_path_no_ending;
+    my %file_path_prefix;
     my $core_counter = 1;
     ## Collect infiles for all sample_ids to enable migration to temporary directory
     while ( my ($sample_id_index, $sample_id) = each (@{ $active_parameter_href->{sample_ids} }) ) {
@@ -12288,14 +12291,14 @@ sub manta {
 
 	## Assign file_tags
 	my $infile_tag = $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
-	my $infile_no_ending = $infile.$infile_tag;
+	my $infile_prefix = $infile.$infile_tag;
 
-	$file_path_no_ending{$sample_id} = catfile($$temp_directory_ref, $infile_no_ending);
+	$file_path_prefix{$sample_id} = catfile($$temp_directory_ref, $infile_prefix);
 
 	## Copy file(s) to temporary directory
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
 	migrate_file({FILEHANDLE => $FILEHANDLE,
-		      infile_path => catfile($insample_directory, $infile_no_ending.substr($infile_suffix, 0, 2)."*"),
+		      infile_path => catfile($insample_directory, $infile_prefix.substr($infile_suffix, 0, 2)."*"),
 		      outfile_path => $$temp_directory_ref,
 		     });
     }
@@ -12312,7 +12315,7 @@ sub manta {
     }
 
     ## Assemble file paths by adding file ending
-    my @file_paths = map { $file_path_no_ending{$_}.$infile_suffix } @{ $active_parameter_href->{sample_ids} };
+    my @file_paths = map { $file_path_prefix{$_}.$infile_suffix } @{ $active_parameter_href->{sample_ids} };
 
     config({infile_paths_ref => \@file_paths,
 	    outdirectory_path => $$temp_directory_ref,
@@ -12333,14 +12336,14 @@ sub manta {
     gzip({decompress => 1,
 	  stdout => 1,
 	  infile_path => catfile($$temp_directory_ref, "results", "variants", "diploidSV.vcf.gz"),
-	  outfile_path => $outfile_path_no_ending.$outfile_suffix,
+	  outfile_path => $outfile_path_prefix.$outfile_suffix,
 	  FILEHANDLE => $FILEHANDLE,
 	 });
     say $FILEHANDLE "\n";
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file({infile_path => $outfile_path_no_ending.$outfile_suffix."*",
+    migrate_file({infile_path => $outfile_path_prefix.$outfile_suffix."*",
 		  outfile_path => $outfamily_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -12351,7 +12354,7 @@ sub manta {
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => "manta",
 			outdirectory => $outfamily_directory,
-			outfile_ending => $outfile_no_ending.$outfile_suffix,
+			outfile_ending => $outfile_prefix.$outfile_suffix,
 			outdata_type => "static"
 		       });
     }
@@ -12362,7 +12365,7 @@ sub manta {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    dependencies => "case_dependency",
 		    path => $jobid_chain,
 		    sbatch_file_name => $file_name,
@@ -12377,12 +12380,12 @@ sub tiddit {
 
 ##Function : Call structural variants using tiddit
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type
+##Arguments: $parameter_href, $active_parameter_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $family_id_ref              => The family_id {REF}
 ##         : $temp_directory_ref         => The temporary directory {REF}
@@ -12404,7 +12407,7 @@ sub tiddit {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
 
@@ -12413,7 +12416,7 @@ sub tiddit {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
@@ -12460,10 +12463,10 @@ sub tiddit {
     $parameter_href->{"p".$program_name}{indirectory} = $outfamily_directory;  #Used downstream
 
     ## Assign file_tags
-    my %file_path_no_ending;
+    my %file_path_prefix;
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
-    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+    my $outfile_prefix = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix);
 
     ## Assign suffix
     my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
@@ -12489,11 +12492,11 @@ sub tiddit {
 
 	## Assign file_tags
 	my $infile_tag = $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
-	my $infile_no_ending = $infile.$infile_tag;
-	my $sample_outfile_no_ending = $infile.$outfile_tag;
+	my $infile_prefix = $infile.$infile_tag;
+	my $sample_outfile_prefix = $infile.$outfile_tag;
 
-	$file_path_no_ending{$sample_id}{in} = catfile($$temp_directory_ref, $infile_no_ending);
-	$file_path_no_ending{$sample_id}{out} = catfile($$temp_directory_ref, $sample_outfile_no_ending);
+	$file_path_prefix{$sample_id}{in} = catfile($$temp_directory_ref, $infile_prefix);
+	$file_path_prefix{$sample_id}{out} = catfile($$temp_directory_ref, $sample_outfile_prefix);
 
 	print_wait({counter_ref => \$sample_id_index,
 		    core_number_ref => \$core_number,
@@ -12504,7 +12507,7 @@ sub tiddit {
 	## Copy file(s) to temporary directory
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
 	migrate_file({FILEHANDLE => $FILEHANDLE,
-		      infile_path => catfile($insample_directory, $infile_no_ending.substr($infile_suffix, 0, 2)."*"), #".bam" -> ".b*" for getting index as well
+		      infile_path => catfile($insample_directory, $infile_prefix.substr($infile_suffix, 0, 2)."*"), #".bam" -> ".b*" for getting index as well
 		      outfile_path => $$temp_directory_ref,
 		     });
     }
@@ -12521,8 +12524,8 @@ sub tiddit {
 
 	## Tiddit
 	sv({FILEHANDLE => $FILEHANDLE,
-	    infile_path => $file_path_no_ending{$sample_id}{in}.$infile_suffix,
-	    outfile_path_prefix => $file_path_no_ending{$sample_id}{out},
+	    infile_path => $file_path_prefix{$sample_id}{in}.$infile_suffix,
+	    outfile_path_prefix => $file_path_prefix{$sample_id}{out},
 	    minimum_number_supporting_pairs => $active_parameter_href->{tiddit_minimum_number_supporting_pairs},
 	   });
 	say $FILEHANDLE "& \n";
@@ -12531,16 +12534,16 @@ sub tiddit {
 
     ## Get parameters
     ## Tiddit sample outfiles
-    my @infile_paths = map { $file_path_no_ending{$_}{out}.$outfile_suffix } (keys %file_path_no_ending);
+    my @infile_paths = map { $file_path_prefix{$_}{out}.$outfile_suffix } (keys %file_path_prefix);
     Program::Variantcalling::Svdb::merge({infile_paths_ref => \@infile_paths,
-					  outfile_path => $outfile_path_no_ending.$outfile_suffix,
+					  outfile_path => $outfile_path_prefix.$outfile_suffix,
 					  FILEHANDLE => $FILEHANDLE,
 					 });
     say $FILEHANDLE "\n";
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file({infile_path => $outfile_path_no_ending.$outfile_suffix."*",
+    migrate_file({infile_path => $outfile_path_prefix.$outfile_suffix."*",
 		  outfile_path => $outfamily_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -12553,14 +12556,14 @@ sub tiddit {
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => "tiddit",
 			outdirectory => $outfamily_directory,
-			outfile_ending => $outfile_path_no_ending.$outfile_suffix,
+			outfile_ending => $outfile_path_prefix.$outfile_suffix,
 			outdata_type => "static"
 		       });
 
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    dependencies => "case_dependency",
 		    path => $jobid_chain,
 		    sbatch_file_name => $file_name,
@@ -12575,12 +12578,12 @@ sub samtools_mpileup {
 
 ##Function : samtools_mpileup
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $sample_id_ref              => The sample_id {REF}
 ##         : $program_name               => The program name
@@ -12604,7 +12607,7 @@ sub samtools_mpileup {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $sample_id_ref;
     my $program_name;
@@ -12614,7 +12617,7 @@ sub samtools_mpileup {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
@@ -12662,8 +12665,8 @@ sub samtools_mpileup {
 
     ## Assign file_tags
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
-    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+    my $outfile_prefix = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix);
 
     ## Assign suffix
     my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
@@ -12687,7 +12690,7 @@ sub samtools_mpileup {
 		     include_header => 0,
 		    });
 
-    my %file_path_no_ending;
+    my %file_path_prefix;
 
     foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {  #Collect infiles for all sample_ids
 
@@ -12699,9 +12702,9 @@ sub samtools_mpileup {
 
 	## Assign file_tags
 	my $infile_tag = $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
-	my $infile_no_ending = $infile.$infile_tag;
+	my $infile_prefix = $infile.$infile_tag;
 
-	$file_path_no_ending{$sample_id} = catfile($$temp_directory_ref, $infile_no_ending);
+	$file_path_prefix{$sample_id} = catfile($$temp_directory_ref, $infile_prefix);
 
 	## Copy file(s) to temporary directory
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -12712,7 +12715,7 @@ sub samtools_mpileup {
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
 									      xargs_file_counter => $xargs_file_counter,
-									      infile => $infile_no_ending,
+									      infile => $infile_prefix,
 									      indirectory => $insample_directory,
 									      file_ending => substr($infile_suffix, 0, 2)."*", #".bam" -> ".b*" for getting index as well
 									      temp_directory => $$temp_directory_ref,
@@ -12735,7 +12738,7 @@ sub samtools_mpileup {
     foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 
 	## Assemble file paths by adding file ending
-	my @file_paths = map { $file_path_no_ending{$_}."_".$contig.$infile_suffix } @{ $active_parameter_href->{sample_ids} };
+	my @file_paths = map { $file_path_prefix{$_}."_".$contig.$infile_suffix } @{ $active_parameter_href->{sample_ids} };
 
 	mpileup({infile_paths_ref => \@file_paths,
 		 output_tags_ref => ["DV", "AD"],
@@ -12788,7 +12791,7 @@ sub samtools_mpileup {
 	norm({FILEHANDLE => $XARGSFILEHANDLE,
 	      reference_path => $active_parameter_href->{human_genome_reference},
 	      output_type => "v",
-	      outfile_path => $outfile_path_no_ending."_".$contig.$outfile_suffix,
+	      outfile_path => $outfile_path_prefix."_".$contig.$outfile_suffix,
 	      multiallelic => "-",
 	      stderrfile_path => catfile($xargs_file_name.".".$contig."_norm.stderr.txt"),
 	     });
@@ -12799,14 +12802,14 @@ sub samtools_mpileup {
     concatenate_variants({active_parameter_href => $active_parameter_href,
 			  FILEHANDLE => $FILEHANDLE,
 			  elements_ref => \@{ $file_info_href->{contigs} },
-			  infile_prefix => $outfile_path_no_ending."_",
+			  infile_prefix => $outfile_path_prefix."_",
 			  infile_postfix => $outfile_suffix,
-			  outfile => $outfile_path_no_ending.$outfile_suffix,
+			  outfile => $outfile_path_prefix.$outfile_suffix,
 			 });
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file({infile_path => $outfile_path_no_ending.$outfile_suffix."*",
+    migrate_file({infile_path => $outfile_path_prefix.$outfile_suffix."*",
 		  outfile_path => $outfamily_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -12820,27 +12823,27 @@ sub samtools_mpileup {
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => "samtools",
 			outdirectory => $outfamily_directory,
-			outfile_ending => $outfile_no_ending.$outfile_suffix,
+			outfile_ending => $outfile_prefix.$outfile_suffix,
 			outdata_type => "static"
 		       });
 	## Locating samtools_mpileup file
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => "samtools_mpileup",
 			outdirectory => $outfamily_directory,
-			outfile_ending => $outfile_no_ending.$outfile_suffix,
+			outfile_ending => $outfile_prefix.$outfile_suffix,
 			outdata_type => "static"
 		       });
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => "bcftools",
 			outdirectory => $outfamily_directory,
-			outfile_ending => $outfile_no_ending.$outfile_suffix,
+			outfile_ending => $outfile_prefix.$outfile_suffix,
 			outdata_type => "static"
 		       });
 
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    dependencies => "case_dependency",
 		    path => $jobid_chain,
 		    sbatch_file_name => $file_name,
@@ -12854,12 +12857,12 @@ sub freebayes {
 
 ##Function : Call snv/small indels usig freebayes
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $sample_id_ref              => The sample_id {REF}
 ##         : $program_name               => The program name
@@ -12878,7 +12881,7 @@ sub freebayes {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $sample_id_ref;
     my $program_name;
@@ -12888,7 +12891,7 @@ sub freebayes {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
@@ -12936,8 +12939,8 @@ sub freebayes {
 
     ## Assign file_tags
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
-    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+    my $outfile_prefix = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix);
 
     ## Assign suffix
     my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
@@ -12952,7 +12955,7 @@ sub freebayes {
 					  file_suffix => $parameter_href->{"p".$program_name}{outfile_suffix},
 					 });
 
-    my %file_path_no_ending;
+    my %file_path_prefix;
 
   SAMPLE:
     foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
@@ -12965,9 +12968,9 @@ sub freebayes {
 
 	## Assign file_tags
 	my $infile_tag = $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
-	my $infile_no_ending = $infile.$infile_tag;
+	my $infile_prefix = $infile.$infile_tag;
 
-	$file_path_no_ending{$sample_id} = catfile($$temp_directory_ref, $infile_no_ending);
+	$file_path_prefix{$sample_id} = catfile($$temp_directory_ref, $infile_prefix);
 
 	## Copy file(s) to temporary directory
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -12978,7 +12981,7 @@ sub freebayes {
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
 									      xargs_file_counter => $xargs_file_counter,
-									      infile => $infile_no_ending,
+									      infile => $infile_prefix,
 									      indirectory => $insample_directory,
 									      file_ending => substr($infile_suffix, 0, 2)."*", #".bam" -> ".b*" for getting index as well
 									      temp_directory => $$temp_directory_ref,
@@ -13001,7 +13004,7 @@ sub freebayes {
     foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 
 	## Assemble file paths by adding file ending
-	my @file_paths = map { $file_path_no_ending{$_}."_".$contig.$infile_suffix } @{ $active_parameter_href->{sample_ids} };
+	my @file_paths = map { $file_path_prefix{$_}."_".$contig.$infile_suffix } @{ $active_parameter_href->{sample_ids} };
 
 	calling({infile_paths_ref => \@file_paths,
 		 referencefile_path => $active_parameter_href->{human_genome_reference},
@@ -13033,7 +13036,7 @@ sub freebayes {
 	norm({FILEHANDLE => $XARGSFILEHANDLE,
 	      reference_path => $active_parameter_href->{human_genome_reference},
 	      output_type => "v",
-	      outfile_path => $outfile_path_no_ending."_".$contig.$outfile_suffix,
+	      outfile_path => $outfile_path_prefix."_".$contig.$outfile_suffix,
 	      multiallelic => "-",
 	      stderrfile_path => catfile($xargs_file_name.".".$contig."_norm.stderr.txt"),
 	     });
@@ -13044,14 +13047,14 @@ sub freebayes {
     concatenate_variants({active_parameter_href => $active_parameter_href,
 			  FILEHANDLE => $FILEHANDLE,
 			  elements_ref => \@{ $file_info_href->{contigs} },
-			  infile_prefix => $outfile_path_no_ending."_",
+			  infile_prefix => $outfile_path_prefix."_",
 			  infile_postfix => $outfile_suffix,
-			  outfile => $outfile_path_no_ending.$outfile_suffix,
+			  outfile => $outfile_path_prefix.$outfile_suffix,
 			 });
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file({infile_path => $outfile_path_no_ending.$outfile_suffix."*",
+    migrate_file({infile_path => $outfile_path_prefix.$outfile_suffix."*",
 		  outfile_path => $outfamily_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -13064,20 +13067,20 @@ sub freebayes {
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => "freebayes",
 			outdirectory => $outfamily_directory,
-			outfile_ending => $outfile_no_ending.$outfile_suffix,
+			outfile_ending => $outfile_prefix.$outfile_suffix,
 			outdata_type => "static"
 		       });
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => "bcftools",
 			outdirectory => $outfamily_directory,
-			outfile_ending => $outfile_no_ending.$outfile_suffix,
+			outfile_ending => $outfile_prefix.$outfile_suffix,
 			outdata_type => "static"
 		       });
 
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    dependencies => "case_dependency",
 		    path => $jobid_chain,
 		    sbatch_file_name => $file_name,
@@ -13092,12 +13095,12 @@ sub gatk_haplotypecaller {
 
 ##Function : gatk_haplotypecaller.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $sample_id_ref              => The sample_id {REF}
 ##         : $program_name               => The program name
@@ -13119,7 +13122,7 @@ sub gatk_haplotypecaller {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $sample_id_ref;
     my $program_name;
@@ -13129,7 +13132,7 @@ sub gatk_haplotypecaller {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
@@ -13187,10 +13190,10 @@ sub gatk_haplotypecaller {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
-    my $infile_no_ending = $infile.$infile_tag;
-    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
-    my $outfile_no_ending = $infile.$outfile_tag;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+    my $infile_prefix = $infile.$infile_tag;
+    my $file_path_prefix = catfile($$temp_directory_ref, $infile_prefix);
+    my $outfile_prefix = $infile.$outfile_tag;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix);
 
     ## Assign suffix
     my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
@@ -13239,7 +13242,7 @@ sub gatk_haplotypecaller {
 									  program_info_path => $program_info_path,
 									  core_number => $core_number,
 									  xargs_file_counter => $xargs_file_counter,
-									  infile => $infile_no_ending,
+									  infile => $infile_prefix,
 									  indirectory => $insample_directory,
 									  file_ending => substr($infile_suffix, 0, 2)."*", #".bam" -> ".b*" for getting index as well
 									  temp_directory => $$temp_directory_ref,
@@ -13294,8 +13297,8 @@ sub gatk_haplotypecaller {
 			 dont_use_soft_clipped_bases => $active_parameter_href->{gatk_haplotypecaller_no_soft_clipped_bases},
 			 pcr_indel_model => $pcr_indel_model,
 			 variant_index_parameter => "128000",
-			 infile_path => $file_path_no_ending."_".$contig.$infile_suffix,
-			 outfile_path => $outfile_path_no_ending."_".$contig.$outfile_suffix,
+			 infile_path => $file_path_prefix."_".$contig.$infile_suffix,
+			 outfile_path => $outfile_path_prefix."_".$contig.$outfile_suffix,
 			 stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
 			 referencefile_path => $active_parameter_href->{human_genome_reference},
 			 logging_level => $active_parameter_href->{gatk_logging_level},
@@ -13315,7 +13318,7 @@ sub gatk_haplotypecaller {
 									  program_info_path => $program_info_path,
 									  core_number => $core_number,
 									  xargs_file_counter => $xargs_file_counter,
-									  outfile => $outfile_no_ending,
+									  outfile => $outfile_prefix,
 									  outdirectory => $outsample_directory,
 									  temp_directory => $$temp_directory_ref,
 									  file_ending => $outfile_suffix."*",
@@ -13327,7 +13330,7 @@ sub gatk_haplotypecaller {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    sample_id => $$sample_id_ref,
 		    dependencies => "case_dependency",
 		    path => $jobid_chain,
@@ -13343,12 +13346,12 @@ sub gatk_baserecalibration {
 
 ##Function : GATK baserecalibrator/printreads to recalibrate bases before variant calling. Both BaseRecalibrator/PrintReads will be executed within the same sbatch script.
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $sample_id_ref              => The sample_id {REF}
 ##         : $program_name               => The program name
@@ -13373,7 +13376,7 @@ sub gatk_baserecalibration {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $sample_id_ref;
     my $program_name;
@@ -13386,7 +13389,7 @@ sub gatk_baserecalibration {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
@@ -13449,10 +13452,10 @@ sub gatk_baserecalibration {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_realigner}{file_tag};
     my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
-    my $infile_no_ending = $infile.$infile_tag;
-    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
-    my $outfile_no_ending = $infile.$outfile_tag;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+    my $infile_prefix = $infile.$infile_tag;
+    my $file_path_prefix = catfile($$temp_directory_ref, $infile_prefix);
+    my $outfile_prefix = $infile.$outfile_tag;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix);
 
     ## Assign suffix
     my $infile_suffix = my $outfile_suffix = get_file_suffix({parameter_href => $parameter_href,
@@ -13492,7 +13495,7 @@ sub gatk_baserecalibration {
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
 									      xargs_file_counter => $xargs_file_counter,
-									      infile => $infile_no_ending,
+									      infile => $infile_prefix,
 									      indirectory => $insample_directory,
 									      file_ending => substr($infile_suffix, 0, 2)."*", #".bam" -> ".b*" for getting index as well
 									      temp_directory => $$temp_directory_ref,
@@ -13538,8 +13541,8 @@ sub gatk_baserecalibration {
 	baserecalibrator({known_alleles_ref => \@{ $active_parameter_href->{gatk_baserecalibration_known_sites} },
 			  intervals_ref => \@intervals,
 			  covariates_ref => \@{ $active_parameter_href->{gatk_baserecalibration_covariates} },
-			  infile_path => $file_path_no_ending."_".$contig.$infile_suffix,
-			  outfile_path => $file_path_no_ending."_".$contig.".grp",
+			  infile_path => $file_path_prefix."_".$contig.$infile_suffix,
+			  outfile_path => $file_path_prefix."_".$contig.".grp",
 			  stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
 			  referencefile_path => $active_parameter_href->{human_genome_reference},
 			  logging_level => $active_parameter_href->{gatk_logging_level},
@@ -13584,11 +13587,11 @@ sub gatk_baserecalibration {
 
 	printreads({intervals_ref => \@intervals,
 		    read_filters_ref => \@{ $active_parameter_href->{gatk_baserecalibration_read_filters} },
-		    base_quality_score_recalibration_file => $file_path_no_ending."_".$contig.".grp",
+		    base_quality_score_recalibration_file => $file_path_prefix."_".$contig.".grp",
 		    static_quantized_quals_ref => \@{ $active_parameter_href->{gatk_baserecalibration_static_quantized_quals} },
 		    disable_indel_qual => $active_parameter_href->{gatk_baserecalibration_disable_indel_qual},
-		    infile_path => $file_path_no_ending."_".$contig.$infile_suffix,
-		    outfile_path => $outfile_path_no_ending."_".$contig.$outfile_suffix,
+		    infile_path => $file_path_prefix."_".$contig.$infile_suffix,
+		    outfile_path => $outfile_path_prefix."_".$contig.$outfile_suffix,
 		    stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
 		    referencefile_path => $active_parameter_href->{human_genome_reference},
 		    logging_level => $active_parameter_href->{gatk_logging_level},
@@ -13609,7 +13612,7 @@ sub gatk_baserecalibration {
 									  program_info_path => $program_info_path,
 									  core_number => $core_number,
 									  xargs_file_counter => $xargs_file_counter,
-									  outfile => $outfile_no_ending,
+									  outfile => $outfile_prefix,
 									  outdirectory => $outsample_directory,
 									  temp_directory => $$temp_directory_ref,
 									  file_ending => substr($infile_suffix, 0, 2)."*", #".bam" -> ".b*" for getting index as well
@@ -13621,7 +13624,7 @@ sub gatk_baserecalibration {
 	remove_contig_files({file_elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
 			     FILEHANDLE => $FILEHANDLE,
 			     core_number => $core_number,
-			     file_name => $infile_no_ending,
+			     file_name => $infile_prefix,
 			     file_ending => substr($infile_suffix, 0, 2)."*", #".bam" -> ".b*" for getting index as well
 			     indirectory => $$temp_directory_ref,
 			    });
@@ -13631,7 +13634,7 @@ sub gatk_baserecalibration {
     say $FILEHANDLE "## Gather BAM files";
 
     ## Assemble infile paths by adding directory and file ending
-    my @infile_paths = map { catfile($$temp_directory_ref, $outfile_no_ending."_".$_.$outfile_suffix) } @{ $file_info_href->{contigs } };
+    my @infile_paths = map { catfile($$temp_directory_ref, $outfile_prefix."_".$_.$outfile_suffix) } @{ $file_info_href->{contigs } };
 
     ## Writes java core commands to filehandle.
     core({FILEHANDLE => $FILEHANDLE,
@@ -13642,7 +13645,7 @@ sub gatk_baserecalibration {
 	 });
 
     gatherbamfiles({infile_paths_ref => \@infile_paths,
-		    outfile_path => catfile($$temp_directory_ref, $outfile_no_ending.$outfile_suffix),
+		    outfile_path => catfile($$temp_directory_ref, $outfile_prefix.$outfile_suffix),
 		    create_index => "true",
 		    FILEHANDLE => $FILEHANDLE,
 		   });
@@ -13650,14 +13653,14 @@ sub gatk_baserecalibration {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file({infile_path => $outfile_path_no_ending.substr($infile_suffix, 0, 2)."*",
+    migrate_file({infile_path => $outfile_path_prefix.substr($infile_suffix, 0, 2)."*",
 		  outfile_path => $outsample_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
     say $FILEHANDLE "wait", "\n";
 
     ## Remove concatenated BAM file at temporary directory
-    rm({infile_path => $outfile_path_no_ending.substr($infile_suffix, 0, 2)."*",
+    rm({infile_path => $outfile_path_prefix.substr($infile_suffix, 0, 2)."*",
 	force => 1,
 	FILEHANDLE => $FILEHANDLE,
        });
@@ -13665,7 +13668,7 @@ sub gatk_baserecalibration {
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
 	my $most_complete_format_key = "most_complete_".substr($outfile_suffix, 1);
-	$sample_info_href->{sample}{$$sample_id_ref}{$most_complete_format_key}{path} = catfile($outsample_directory, $outfile_no_ending.$outfile_suffix);
+	$sample_info_href->{sample}{$$sample_id_ref}{$most_complete_format_key}{path} = catfile($outsample_directory, $outfile_prefix.$outfile_suffix);
     }
 
     close($XARGSFILEHANDLE);
@@ -13677,7 +13680,7 @@ sub gatk_baserecalibration {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    sample_id => $$sample_id_ref,
 		    dependencies => "case_dependency",
 		    path => $jobid_chain,
@@ -13693,12 +13696,12 @@ sub gatk_realigner {
 
 ##Function : GATK ReAlignerTargetCreator/IndelRealigner to rearrange reads around INDELs. Both ReAlignerTargetCreator and IndelRealigner will be executed within the same sbatch script.
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $sample_id_ref              => The sample_id {REF}
 ##         : $program_name               => The program name
@@ -13723,7 +13726,7 @@ sub gatk_realigner {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $sample_id_ref;
     my $program_name;
@@ -13736,7 +13739,7 @@ sub gatk_realigner {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { strict_type => 1, store => \$program_name},
@@ -13796,10 +13799,10 @@ sub gatk_realigner {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$sample_id_ref}{pmarkduplicates}{file_tag};
     my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
-    my $infile_no_ending = $infile.$infile_tag;
-    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
-    my $outfile_no_ending = $infile.$outfile_tag;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+    my $infile_prefix = $infile.$infile_tag;
+    my $file_path_prefix = catfile($$temp_directory_ref, $infile_prefix);
+    my $outfile_prefix = $infile.$outfile_tag;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix);
 
     ## Assign suffix
     my $infile_suffix = my $outfile_suffix = get_file_suffix({parameter_href => $parameter_href,
@@ -13835,7 +13838,7 @@ sub gatk_realigner {
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
 									      xargs_file_counter => $xargs_file_counter,
-									      infile => $infile_no_ending,
+									      infile => $infile_prefix,
 									      indirectory => $insample_directory,
 									      file_ending => substr($infile_suffix, 0, 2)."*", #".bam" -> ".b*" for getting index as well
 									      temp_directory => $$temp_directory_ref,
@@ -13880,8 +13883,8 @@ sub gatk_realigner {
 
 	realignertargetcreator({known_alleles_ref => \@{ $active_parameter_href->{gatk_realigner_indel_known_sites} },
 				intervals_ref => \@intervals,
-				infile_path => $file_path_no_ending."_".$contig.$infile_suffix,
-				outfile_path => $outfile_path_no_ending."_".$contig.".intervals",
+				infile_path => $file_path_prefix."_".$contig.$infile_suffix,
+				outfile_path => $outfile_path_prefix."_".$contig.".intervals",
 				stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
 				referencefile_path => $active_parameter_href->{human_genome_reference},
 				logging_level => $active_parameter_href->{gatk_logging_level},
@@ -13925,9 +13928,9 @@ sub gatk_realigner {
 
 	indelrealigner({known_alleles_ref => \@{ $active_parameter_href->{gatk_realigner_indel_known_sites} },
 			intervals_ref => \@intervals,
-			infile_path => $file_path_no_ending."_".$contig.$infile_suffix,
-			outfile_path => $outfile_path_no_ending ."_".$contig.$outfile_suffix,
-			target_intervals_file => $outfile_path_no_ending."_".$contig.".intervals",
+			infile_path => $file_path_prefix."_".$contig.$infile_suffix,
+			outfile_path => $outfile_path_prefix ."_".$contig.$outfile_suffix,
+			target_intervals_file => $outfile_path_prefix."_".$contig.".intervals",
 			stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
 			referencefile_path => $active_parameter_href->{human_genome_reference},
 			logging_level => $active_parameter_href->{gatk_logging_level},
@@ -13949,7 +13952,7 @@ sub gatk_realigner {
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
 									      xargs_file_counter => $xargs_file_counter,
-									      outfile => $outfile_no_ending,
+									      outfile => $outfile_prefix,
 									      outdirectory => $outsample_directory,
 									      temp_directory => $$temp_directory_ref,
 									      file_ending => substr($infile_suffix, 0, 2)."*", #".bam" -> ".b*" for getting index as well
@@ -13958,7 +13961,7 @@ sub gatk_realigner {
 	if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
 	    my $most_complete_format_key = "most_complete_".substr($outfile_suffix, 1);
-	    $sample_info_href->{sample}{$$sample_id_ref}{$most_complete_format_key}{path} = catfile($outsample_directory, $outfile_no_ending.$outfile_suffix);
+	    $sample_info_href->{sample}{$$sample_id_ref}{$most_complete_format_key}{path} = catfile($outsample_directory, $outfile_prefix.$outfile_suffix);
 	}
     }
     else {
@@ -13967,7 +13970,7 @@ sub gatk_realigner {
 	remove_contig_files({file_elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
 			     FILEHANDLE => $FILEHANDLE,
 			     core_number => $core_number,
-			     file_name => $infile_no_ending,
+			     file_name => $infile_prefix,
 			     file_ending => substr($infile_suffix, 0, 2)."*", #".bam" -> ".b*" for getting index as well
 			     indirectory => $$temp_directory_ref,
 			    });
@@ -13984,7 +13987,7 @@ sub gatk_realigner {
 	    submit_job({active_parameter_href => $active_parameter_href,
 			sample_info_href => $sample_info_href,
 			job_id_href => $job_id_href,
-			infile_lane_no_ending_href => $infile_lane_no_ending_href,
+			infile_lane_prefix_href => $infile_lane_prefix_href,
 			sample_id => $$sample_id_ref,
 			dependencies => "case_dependency",
 			path => $parameter_href->{"p".$program_name}{chain},
@@ -14005,12 +14008,12 @@ sub pmarkduplicates {
 
 ##Function : Mark duplicated reads using Picardtools markduplicates or Sambamba markduplicates in files generated from alignment (sorted, merged).
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $lane_href, $job_id_href, $sample_id_ref, $program_name, $program_info_path, $file_name,, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $lane_href, $job_id_href, $sample_id_ref, $program_name, $program_info_path, $file_name,, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $lane_href                  => The lane info hash {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $sample_id_ref              => The sample_id {REF}
@@ -14036,7 +14039,7 @@ sub pmarkduplicates {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $lane_href;
     my $job_id_href;
     my $sample_id_ref;
@@ -14050,7 +14053,7 @@ sub pmarkduplicates {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	lane_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$lane_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
@@ -14099,10 +14102,10 @@ sub pmarkduplicates {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$sample_id_ref}{ppicardtools_mergesamfiles}{file_tag};
     my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
-    my $infile_no_ending = $infile.$infile_tag;
-    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
-    my $outfile_no_ending = $infile.$outfile_tag;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+    my $infile_prefix = $infile.$infile_tag;
+    my $file_path_prefix = catfile($$temp_directory_ref, $infile_prefix);
+    my $outfile_prefix = $infile.$outfile_tag;
+    my $outfile_path_prefix = catfile($$temp_directory_ref, $outfile_prefix);
 
     ## Assign suffix
     my $infile_suffix = my $outfile_suffix = get_file_suffix({parameter_href => $parameter_href,
@@ -14138,7 +14141,7 @@ sub pmarkduplicates {
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
 									      xargs_file_counter => $xargs_file_counter,
-									      infile => $infile_no_ending,
+									      infile => $infile_prefix,
 									      indirectory => $insample_directory,
 									      file_ending => substr($infile_suffix, 0, 2)."*", #".bam" -> ".b*" for getting index as well
 									      temp_directory => $$temp_directory_ref,
@@ -14171,18 +14174,18 @@ sub pmarkduplicates {
 	
 	foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 	    
-	    markduplicates({infile_paths_ref => [$file_path_no_ending."_".$contig.$infile_suffix],
-			    outfile_path => $outfile_path_no_ending."_".$contig.$outfile_suffix,
+	    markduplicates({infile_paths_ref => [$file_path_prefix."_".$contig.$infile_suffix],
+			    outfile_path => $outfile_path_prefix."_".$contig.$outfile_suffix,
 			    stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
-			    metrics_file => $outfile_path_no_ending."_".$contig.".metric",
+			    metrics_file => $outfile_path_prefix."_".$contig.".metric",
 			    FILEHANDLE => $XARGSFILEHANDLE,
 			    create_index => "true",
 			   });
 	    print $XARGSFILEHANDLE "; ";
 	    
 	    ## Process BAM with sambamba flagstat to produce metric file for downstream analysis
-	    flagstat({infile_path => $outfile_path_no_ending."_".$contig.$outfile_suffix,
-		      outfile_path => $outfile_path_no_ending."_".$contig."_metric",
+	    flagstat({infile_path => $outfile_path_prefix."_".$contig.$outfile_suffix,
+		      outfile_path => $outfile_path_prefix."_".$contig."_metric",
 		      stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
 		      FILEHANDLE => $XARGSFILEHANDLE,
 		     });
@@ -14207,8 +14210,8 @@ sub pmarkduplicates {
 
 	foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 
-	    markdup({infile_path => $file_path_no_ending."_".$contig.$infile_suffix,
-		     outfile_path => $outfile_path_no_ending."_".$contig.$outfile_suffix,
+	    markdup({infile_path => $file_path_prefix."_".$contig.$infile_suffix,
+		     outfile_path => $outfile_path_prefix."_".$contig.$outfile_suffix,
 		     stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
 		     FILEHANDLE => $XARGSFILEHANDLE,
 		     temp_directory => $$temp_directory_ref,
@@ -14220,8 +14223,8 @@ sub pmarkduplicates {
 	    print $XARGSFILEHANDLE "; ";
 	    
 	    ## Process BAM with sambamba flagstat to produce metric file for downstream analysis
-	    flagstat({infile_path => $outfile_path_no_ending."_".$contig.$outfile_suffix,
-		      outfile_path => $outfile_path_no_ending."_".$contig."_metric",
+	    flagstat({infile_path => $outfile_path_prefix."_".$contig.$outfile_suffix,
+		      outfile_path => $outfile_path_prefix."_".$contig."_metric",
 		      stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
 		      FILEHANDLE => $XARGSFILEHANDLE,
 		     });
@@ -14230,19 +14233,19 @@ sub pmarkduplicates {
     }
 
     ## Concatenate all metric files
-    cat({infile_paths_ref => [$outfile_path_no_ending."_*_metric"],
-	 outfile_path => $outfile_path_no_ending."_metric_all",
+    cat({infile_paths_ref => [$outfile_path_prefix."_*_metric"],
+	 outfile_path => $outfile_path_prefix."_metric_all",
 	 FILEHANDLE => $FILEHANDLE,
 	});
     say $FILEHANDLE "\n";
 
     ## Sum metric over concatenated file
     print $FILEHANDLE $regexp." ";
-    print $FILEHANDLE $outfile_path_no_ending."_metric_all"." ";
-    say $FILEHANDLE "> ".$outfile_path_no_ending."_metric"." ", "\n";  #Sum of all original metric files
+    print $FILEHANDLE $outfile_path_prefix."_metric_all"." ";
+    say $FILEHANDLE "> ".$outfile_path_prefix."_metric"." ", "\n";  #Sum of all original metric files
 
 
-    migrate_file({infile_path => $outfile_path_no_ending."_metric",
+    migrate_file({infile_path => $outfile_path_prefix."_metric",
 		  outfile_path => $outsample_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -14264,7 +14267,7 @@ sub pmarkduplicates {
 	if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
 
 	    my $most_complete_format_key = "most_complete_".substr($outfile_suffix, 1);
-	    $sample_info_href->{sample}{$$sample_id_ref}{$most_complete_format_key}{path} = catfile($outsample_directory, $outfile_no_ending."_".$file_info_href->{contigs_size_ordered}[0].$outfile_suffix);
+	    $sample_info_href->{sample}{$$sample_id_ref}{$most_complete_format_key}{path} = catfile($outsample_directory, $outfile_prefix."_".$file_info_href->{contigs_size_ordered}[0].$outfile_suffix);
 	}
     }
 
@@ -14279,7 +14282,7 @@ sub pmarkduplicates {
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
 									      xargs_file_counter => $xargs_file_counter,
-									      outfile => $outfile_no_ending,
+									      outfile => $outfile_prefix,
 									      outdirectory => $outsample_directory,
 									      temp_directory => $$temp_directory_ref,
 									      file_ending => substr($infile_suffix, 0, 2)."*",
@@ -14291,7 +14294,7 @@ sub pmarkduplicates {
 	remove_contig_files({file_elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
 			     FILEHANDLE => $FILEHANDLE,
 			     core_number => $core_number,
-			     file_name => $infile_no_ending,
+			     file_name => $infile_prefix,
 			     file_ending => substr($infile_suffix, 0, 2)."*",
 			     indirectory => $$temp_directory_ref,
 			    });
@@ -14308,7 +14311,7 @@ sub pmarkduplicates {
 	    submit_job({active_parameter_href => $active_parameter_href,
 			sample_info_href => $sample_info_href,
 			job_id_href => $job_id_href,
-			infile_lane_no_ending_href => $infile_lane_no_ending_href,
+			infile_lane_prefix_href => $infile_lane_prefix_href,
 			sample_id => $$sample_id_ref,
 			dependencies => "case_dependency",
 			path => $jobid_chain,
@@ -14329,12 +14332,12 @@ sub picardtools_mergesamfiles {
 
 ##Function : Merges all bam files using Picardtools mergesamfiles within each sampleid and files generated previously (option if provided with '-picardtools_mergesamfiles_previous_bams'). The merged files have to be sorted before attempting to merge.
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $lane_href, $job_id_href, $sample_id_ref, $program_name, $program_info_path, $file_name,, $FILEHANDLE, $family_id_ref, $outaligner_dir_ref, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $lane_href, $job_id_href, $sample_id_ref, $program_name, $program_info_path, $file_name,, $FILEHANDLE, $family_id_ref, $outaligner_dir_ref, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $lane_href                  => The lane info hash {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $sample_id_ref              => The sample_id {REF}
@@ -14360,7 +14363,7 @@ sub picardtools_mergesamfiles {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $lane_href;
     my $sample_id_ref;
@@ -14374,7 +14377,7 @@ sub picardtools_mergesamfiles {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	lane_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$lane_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
@@ -14451,7 +14454,7 @@ sub picardtools_mergesamfiles {
 							     });
 
     ## Copies files from source to destination
-    migrate_files({infiles_ref => \@{ $infile_lane_no_ending_href->{$$sample_id_ref} },
+    migrate_files({infiles_ref => \@{ $infile_lane_prefix_href->{$$sample_id_ref} },
 		   outfile_path => $$temp_directory_ref,
 		   FILEHANDLE => $FILEHANDLE,
 		   indirectory => $insample_directory,
@@ -14459,7 +14462,7 @@ sub picardtools_mergesamfiles {
 		   file_ending => $infile_tag.$infile_suffix."*",
 		  });
 
-    foreach my $infile ( @{ $infile_lane_no_ending_href->{$$sample_id_ref} } ) {
+    foreach my $infile ( @{ $infile_lane_prefix_href->{$$sample_id_ref} } ) {
 
 	## Split BAMs using Samtools
 	say $FILEHANDLE "## Split alignment files per contig";
@@ -14477,7 +14480,7 @@ sub picardtools_mergesamfiles {
 										});
     }
 
-    if (scalar( @{ $infile_lane_no_ending_href->{$$sample_id_ref} }) > 1) {
+    if (scalar( @{ $infile_lane_prefix_href->{$$sample_id_ref} }) > 1) {
 
 	## picardtools_mergesamfiles
 	say $FILEHANDLE "## Merging alignment files";
@@ -14506,7 +14509,7 @@ sub picardtools_mergesamfiles {
 
 	  INFILES:
 	    ## Assemble infile paths by adding directory and file ending
-	    my @infile_paths = map { catfile($$temp_directory_ref, $_).$infile_tag."_".$contig.$infile_suffix } @{ $infile_lane_no_ending_href->{$$sample_id_ref} };
+	    my @infile_paths = map { catfile($$temp_directory_ref, $_).$infile_tag."_".$contig.$infile_suffix } @{ $infile_lane_prefix_href->{$$sample_id_ref} };
 	    
 	    mergesamfiles({infile_paths_ref => \@infile_paths,
 			   outfile_path => catfile($$temp_directory_ref, $$sample_id_ref."_lanes_".$lanes.$outfile_tag."_".$contig.$outfile_suffix),
@@ -14536,7 +14539,7 @@ sub picardtools_mergesamfiles {
 	foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 
 	  INFILES:
-	    foreach my $infile (@{ $infile_lane_no_ending_href->{$$sample_id_ref} }) {
+	    foreach my $infile (@{ $infile_lane_prefix_href->{$$sample_id_ref} }) {
 
 		## Rename
 		mv({infile_path => catfile($$temp_directory_ref, $infile.$infile_tag."_".$contig.$infile_suffix),
@@ -14565,7 +14568,7 @@ sub picardtools_mergesamfiles {
 
     ## Merge previously merged files with merged files generated this run
     if ( ($file_info_href->{$$sample_id_ref}{picardtools_mergesamfiles_previous_bams})
-	 && (scalar( @{ $infile_lane_no_ending_href->{$$sample_id_ref} }) > 1) ) {
+	 && (scalar( @{ $infile_lane_prefix_href->{$$sample_id_ref} }) > 1) ) {
 
       PREVIOUS_FILES_TO_MERGE:
 	foreach my $merge_file (@{ $active_parameter_href->{picardtools_mergesamfiles_previous_bams} }) {
@@ -14585,7 +14588,7 @@ sub picardtools_mergesamfiles {
 		    my $merge_lanes; if($1) {$merge_lanes = $1;} else {$merge_lanes = $2;}  #Make sure to always supply lanes from previous regexp
 
 		    ## Removes ".file_ending" in filename.FILENDING
-		    my $picardtools_mergesamfiles_previous_bams_file_no_ending = fileparse($picardtools_mergesamfiles_previous_bams_file,
+		    my $picardtools_mergesamfiles_previous_bams_file_prefix = fileparse($picardtools_mergesamfiles_previous_bams_file,
 											   qr/$infile_suffix/);
 
 		    ## Split BAMs using Samtools
@@ -14599,7 +14602,7 @@ sub picardtools_mergesamfiles {
 											     core_number => $core_number,
 											     xargs_file_counter => $xargs_file_counter,
 											     temp_directory_ref => $temp_directory_ref,
-											     infile => $picardtools_mergesamfiles_previous_bams_file_no_ending,
+											     infile => $picardtools_mergesamfiles_previous_bams_file_prefix,
 											     output_format => substr($infile_suffix, 1),  #Remove "." in suffix
 											    });
 
@@ -14630,7 +14633,7 @@ sub picardtools_mergesamfiles {
 
 			## Assemble infile paths by adding directory and file ending
 			my @infile_paths = (catfile($$temp_directory_ref, $$sample_id_ref."_lanes_".$lanes.$outfile_tag."_".$contig.$outfile_suffix),
-					    catfile($$temp_directory_ref, $picardtools_mergesamfiles_previous_bams_file_no_ending."_".$contig.$outfile_suffix)
+					    catfile($$temp_directory_ref, $picardtools_mergesamfiles_previous_bams_file_prefix."_".$contig.$outfile_suffix)
 			    );
 			
 			mergesamfiles({infile_paths_ref => \@infile_paths,
@@ -14689,7 +14692,7 @@ sub picardtools_mergesamfiles {
 	    if ($merge_file =~ /lane(\d+)|s_(\d+)/) {  #Look for lanes_ or lane\d in previously generated file to be merged with current run to be able to extract previous lanes
 
 		my $merge_lanes; if($1) {$merge_lanes = $1;} else {$merge_lanes = $2;}  #Make sure to always supply lanes from previous regexp
-		my $infile = $infile_lane_no_ending_href->{$$sample_id_ref}[0];  #Can only be 1 element in array due to previous if statement
+		my $infile = $infile_lane_prefix_href->{$$sample_id_ref}[0];  #Can only be 1 element in array due to previous if statement
 
 		## picardtools_mergesamfiles
 		say $FILEHANDLE "## Merging alignment files";
@@ -14700,7 +14703,7 @@ sub picardtools_mergesamfiles {
 						     });  #To not exceed maximum
 
 		## Removes ".file_ending" in filename.FILENDING(.gz)
-		my $picardtools_mergesamfiles_previous_bams_file_no_ending = fileparse($picardtools_mergesamfiles_previous_bams_file,
+		my $picardtools_mergesamfiles_previous_bams_file_prefix = fileparse($picardtools_mergesamfiles_previous_bams_file,
 										       qr/$infile_suffix/);
 
 		## Split BAMs using Samtools
@@ -14714,7 +14717,7 @@ sub picardtools_mergesamfiles {
 											 core_number => $core_number,
 											 xargs_file_counter => $xargs_file_counter,
 											 temp_directory_ref => $temp_directory_ref,
-											 infile => $picardtools_mergesamfiles_previous_bams_file_no_ending,
+											 infile => $picardtools_mergesamfiles_previous_bams_file_prefix,
 											 output_format => substr($infile_suffix, 1),  #Remove "." in suffix
 											});
 
@@ -14737,7 +14740,7 @@ sub picardtools_mergesamfiles {
 
 		    ## Assemble infile paths by adding directory and file ending
 		    my @infile_paths = (catfile($$temp_directory_ref, $infile.$infile_tag."_".$contig.$infile_suffix),
-					catfile($$temp_directory_ref, $picardtools_mergesamfiles_previous_bams_file_no_ending."_".$contig.$infile_suffix)
+					catfile($$temp_directory_ref, $picardtools_mergesamfiles_previous_bams_file_prefix."_".$contig.$infile_suffix)
 			);
 		    
 		    mergesamfiles({infile_paths_ref => \@infile_paths,
@@ -14804,7 +14807,7 @@ sub picardtools_mergesamfiles {
     add_merged_infile_name({active_parameter_href => $active_parameter_href,
 			    file_info_href => $file_info_href,
 			    lane_href => $lane_href,
-			    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+			    infile_lane_prefix_href => $infile_lane_prefix_href,
 			    sample_id => $$sample_id_ref,
 			   });
 
@@ -14817,7 +14820,7 @@ sub picardtools_mergesamfiles {
 	    submit_job({active_parameter_href => $active_parameter_href,
 			sample_info_href => $sample_info_href,
 			job_id_href => $job_id_href,
-			infile_lane_no_ending_href => $infile_lane_no_ending_href,
+			infile_lane_prefix_href => $infile_lane_prefix_href,
 			sample_id => $$sample_id_ref,
 			dependencies => "case_dependency",
 			path => $jobid_chain,
@@ -14827,7 +14830,7 @@ sub picardtools_mergesamfiles {
     }
     else {
 
-	remove_files({infiles_ref => \@{ $infile_lane_no_ending_href->{$$sample_id_ref} },
+	remove_files({infiles_ref => \@{ $infile_lane_prefix_href->{$$sample_id_ref} },
 		      FILEHANDLE => $FILEHANDLE,
 		      indirectory => $insample_directory,
 		      core_number => $core_number,
@@ -14844,14 +14847,14 @@ sub bwa_sampe {
 
 ##Function : Perform alignment of BWA Aln index reads using BWA sampe.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_href, $indir_path_href, $infile_lane_no_ending_href, $infile_both_strands_no_ending_href, $job_id_href, $sample_id, $outaligner_dir, $program_name
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_href, $indir_path_href, $infile_lane_prefix_href, $infile_both_strands_prefix_href, $job_id_href, $sample_id, $outaligner_dir, $program_name
 ##         : $parameter_href                     => The parameter hash {REF}
 ##         : $active_parameter_href              => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href                   => Info on samples and family hash {REF}
 ##         : $infile_href                        => The infiles hash {REF}
 ##         : $indir_path_href                    => The indirectories path(s) hash {REF}
-##         : $infile_lane_no_ending_href         => The infile(s) without the ".ending" {REF}
-##         : $infile_both_strands_no_ending_href => The infile(s) without the ".ending" and strand info {REF}
+##         : $infile_lane_prefix_href         => The infile(s) without the ".ending" {REF}
+##         : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
 ##         : $job_id_href                        => The job_id hash {REF}
 ##         : $sample_id                          => The sample_id
 ##         : $outaligner_dir                     => The outaligner_dir used in the analysis
@@ -14862,8 +14865,8 @@ sub bwa_sampe {
     my $sample_info_href = $_[2];
     my $infile_href = $_[3];
     my $indir_path_href = $_[4];
-    my $infile_lane_no_ending_href = $_[5];
-    my $infile_both_strands_no_ending_href = $_[6];
+    my $infile_lane_prefix_href = $_[5];
+    my $infile_both_strands_prefix_href = $_[6];
     my $job_id_href = $_[7];
     my $sample_id = $_[8];
     my $outaligner_dir = $_[9];
@@ -14877,7 +14880,7 @@ sub bwa_sampe {
 
     use Program::Alignment::Samtools qw(view);
 
-    while ( my ($infile_no_ending_index, $infile_no_ending) = each (@{ $infile_lane_no_ending_href->{$sample_id} }) ) {  #For all files from BWA aln but process in the same command i.e. both reads per align call
+    while ( my ($infile_prefix_index, $infile_prefix) = each (@{ $infile_lane_prefix_href->{$sample_id} }) ) {  #For all files from BWA aln but process in the same command i.e. both reads per align call
 
 	if ($consensus_analysis_type eq "wgs") {
 
@@ -14889,7 +14892,7 @@ sub bwa_sampe {
 	}
 
 	my $core_number = 2;
-	my $sequence_run_mode = $sample_info_href->{sample}{$sample_id}{file}{$infile_no_ending}{sequence_run_type};  #Collect paired-end or single-end sequence run mode
+	my $sequence_run_mode = $sample_info_href->{sample}{$sample_id}{file}{$infile_prefix}{sequence_run_type};  #Collect paired-end or single-end sequence run mode
 
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	my ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -14918,7 +14921,7 @@ sub bwa_sampe {
 		       indirectory => $fastq_insample_directory,
 		       core_number => $core_number,
 		      });  #Fastq files
-	migrate_files({infiles_ref => \@{ $infile_both_strands_no_ending_href->{$sample_id} },
+	migrate_files({infiles_ref => \@{ $infile_both_strands_prefix_href->{$sample_id} },
 		       outfile_path => $active_parameter_href->{temp_directory},
 		       FILEHANDLE => $FILEHANDLE,
 		       indirectory => $insample_directory,
@@ -14930,16 +14933,16 @@ sub bwa_sampe {
 	say $FILEHANDLE "## Aligning reads";
 	print $FILEHANDLE "bwa sampe ";
 	print $FILEHANDLE q?-r "@RG\t?;
-	print $FILEHANDLE q?ID:?.$infile_no_ending.q?\t?;
+	print $FILEHANDLE q?ID:?.$infile_prefix.q?\t?;
 	print $FILEHANDLE q?SM:?.$sample_id.q?\t?;
 	print $FILEHANDLE q?PL:?.$active_parameter_href->{platform}.q?" ?;  #Read group header line
 	print $FILEHANDLE $active_parameter_href->{human_genome_reference}." ";  #Reference
-	print $FILEHANDLE catfile($active_parameter_href->{temp_directory}, $infile_both_strands_no_ending_href->{$sample_id}[$paired_end_tracker].".sai")." ";  #Read 1
+	print $FILEHANDLE catfile($active_parameter_href->{temp_directory}, $infile_both_strands_prefix_href->{$sample_id}[$paired_end_tracker].".sai")." ";  #Read 1
 
 	if ( $sequence_run_mode eq "paired_end") {
 
 	    $paired_end_tracker = $paired_end_tracker+1;  #Increment to collect correct read 2 from %infile
-	    print $FILEHANDLE catfile($active_parameter_href->{temp_directory}, $infile_both_strands_no_ending_href->{$sample_id}[$paired_end_tracker].".sai")." ";  #Read 2
+	    print $FILEHANDLE catfile($active_parameter_href->{temp_directory}, $infile_both_strands_prefix_href->{$sample_id}[$paired_end_tracker].".sai")." ";  #Read 2
 	}
 
 	print $FILEHANDLE catfile($active_parameter_href->{temp_directory}, $infile)." ";  #Fastq read 1
@@ -14949,12 +14952,12 @@ sub bwa_sampe {
 	    print $FILEHANDLE catfile($active_parameter_href->{temp_directory}, $infile_href->{$sample_id}[$paired_end_tracker])." ";  #Fastq read 2
 	}
 
-	say $FILEHANDLE "> ".catfile($active_parameter_href->{temp_directory}, $infile_no_ending.".sam"), "\n";  #Outfile (SAM)
+	say $FILEHANDLE "> ".catfile($active_parameter_href->{temp_directory}, $infile_prefix.".sam"), "\n";  #Outfile (SAM)
 
 	## Convert SAM to BAM using samtools view
 	say $FILEHANDLE "## Convert SAM to BAM";
-	view({infile_path => catfile($active_parameter_href->{temp_directory}, $infile_no_ending.".sam"),
-	      outfile_path => catfile($active_parameter_href->{temp_directory}, $infile_no_ending.".bam"),
+	view({infile_path => catfile($active_parameter_href->{temp_directory}, $infile_prefix.".sam"),
+	      outfile_path => catfile($active_parameter_href->{temp_directory}, $infile_prefix.".bam"),
 	      FILEHANDLE => $FILEHANDLE,
 	      auto_detect_input_format => 1,
 	      with_header => 1,
@@ -14964,7 +14967,7 @@ sub bwa_sampe {
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file({infile_path => catfile($active_parameter_href->{temp_directory}, $infile_no_ending.".bam"),
+	migrate_file({infile_path => catfile($active_parameter_href->{temp_directory}, $infile_prefix.".bam"),
 		      outfile_path => $outsample_directory,
 		      FILEHANDLE => $FILEHANDLE,
 		     });
@@ -14974,17 +14977,17 @@ sub bwa_sampe {
 
 	if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
-	    $sample_info_href->{sample}{$sample_id}{most_complete_bam}{path} = catfile($outsample_directory, $infile_no_ending.".bam");
+	    $sample_info_href->{sample}{$sample_id}{most_complete_bam}{path} = catfile($outsample_directory, $infile_prefix.".bam");
 
 	    submit_job({active_parameter_href => $active_parameter_href,
 			sample_info_href => $sample_info_href,
 			job_id_href => $job_id_href,
-			infile_lane_no_ending_href => $infile_lane_no_ending_href,
+			infile_lane_prefix_href => $infile_lane_prefix_href,
 			sample_id => $sample_id,
 			dependencies => "sample_id_dependency_step_in_parallel",
 			path => $parameter_href->{"p".$program_name}{chain},
 			sbatch_file_name => $file_name,
-			sbatch_script_tracker => $infile_no_ending_index,
+			sbatch_script_tracker => $infile_prefix_index,
 		       });
 	}
 	$paired_end_tracker++;
@@ -14998,14 +15001,14 @@ sub bwa_aln {
 
 ##Function : Generates BWA aln index on fastq files.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_href, $indir_path_href, $infile_lane_no_ending_href, $infile_both_strands_no_ending_href, $job_id_href, $sample_id, $outaligner_dir, $program_name
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_href, $indir_path_href, $infile_lane_prefix_href, $infile_both_strands_prefix_href, $job_id_href, $sample_id, $outaligner_dir, $program_name
 ##         : $parameter_href                     => The parameter hash {REF}
 ##         : $active_parameter_href              => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href                   => Info on samples and family hash {REF}
 ##         : $infile_href                        => The infiles hash {REF}
 ##         : $indir_path_href                    => The indirectories path(s) hash {REF}
-##         : $infile_lane_no_ending_href         => The infile(s) without the ".ending" {REF}
-##         : $infile_both_strands_no_ending_href => The infile(s) without the ".ending" and strand info {REF}
+##         : $infile_lane_prefix_href         => The infile(s) without the ".ending" {REF}
+##         : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
 ##         : $job_id_href                        => The job_id hash {REF}
 ##         : $sample_id                          => The sample_id
 ##         : $outaligner_dir                     => The outaligner_dir used in the analysis
@@ -15016,18 +15019,18 @@ sub bwa_aln {
     my $sample_info_href = $_[2];
     my $infile_href = $_[3];
     my $indir_path_href = $_[4];
-    my $infile_lane_no_ending_href = $_[5];
-    my $infile_both_strands_no_ending_href = $_[6];
+    my $infile_lane_prefix_href = $_[5];
+    my $infile_both_strands_prefix_href = $_[6];
     my $job_id_href = $_[7];
     my $sample_id = $_[8];
     my $outaligner_dir = $_[9];
     my $program_name = $_[10];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $time = ceil(2.5*scalar( @{ $infile_lane_no_ending_href->{$sample_id} }));  #One full lane on Hiseq takes approx. 2,5 h for bwa_aln to process, round up to nearest full hour.
+    my $time = ceil(2.5*scalar( @{ $infile_lane_prefix_href->{$sample_id} }));  #One full lane on Hiseq takes approx. 2,5 h for bwa_aln to process, round up to nearest full hour.
     my $core_number = 0;
 
-    foreach my $infile (@{ $infile_lane_no_ending_href->{$sample_id} }) {  #For all files
+    foreach my $infile (@{ $infile_lane_prefix_href->{$sample_id} }) {  #For all files
 
 	## Adjust the number of cores to be used in the analysis according to sequencing mode requirements.
 	adjust_core_number_to_seq_mode({core_number_ref => \$core_number,
@@ -15083,12 +15086,12 @@ sub bwa_aln {
 	print $FILEHANDLE "-q ".$active_parameter_href->{bwa_aln_quality_trimming}." ";  #Quality trimming
 	print $FILEHANDLE $active_parameter_href->{human_genome_reference}." ";  #Reference
 	print $FILEHANDLE catfile($active_parameter_href->{temp_directory}, $infile)." ";  #InFile
-	say $FILEHANDLE "> ".catfile($active_parameter_href->{temp_directory}, $infile_both_strands_no_ending_href->{$sample_id}[$infile_counter_index].".sai")." &\n";  #OutFile
+	say $FILEHANDLE "> ".catfile($active_parameter_href->{temp_directory}, $infile_both_strands_prefix_href->{$sample_id}[$infile_counter_index].".sai")." &\n";  #OutFile
     }
     say $FILEHANDLE "wait", "\n";
 
     ## Copies files from source to destination
-    migrate_files({infiles_ref => \@{ $infile_both_strands_no_ending_href->{$sample_id} },
+    migrate_files({infiles_ref => \@{ $infile_both_strands_prefix_href->{$sample_id} },
 		   outfile_path => $outsample_directory,
 		   FILEHANDLE => $FILEHANDLE,
 		   indirectory => $active_parameter_href->{temp_directory},
@@ -15103,7 +15106,7 @@ sub bwa_aln {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    sample_id => $sample_id,
 		    dependencies => "case_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
@@ -15118,12 +15121,12 @@ sub picardtools_mergerapidreads {
 
 ##Function : Merges all batch read processes to one file using Picardtools mergesamfiles within each sampleid. The read batch proccessed files have to be sorted before attempting to merge.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id, $program_name, $outaligner_dir_ref, $temp_directory_ref
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id, $program_name, $outaligner_dir_ref, $temp_directory_ref
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $sample_id_ref              => The sample_id {REF}
 ##         : $program_name               => The program name
@@ -15141,7 +15144,7 @@ sub picardtools_mergerapidreads {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $sample_id_ref;
     my $program_name;
@@ -15151,7 +15154,7 @@ sub picardtools_mergerapidreads {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
@@ -15190,10 +15193,10 @@ sub picardtools_mergerapidreads {
     my $core_counter = 1;
     my $core_tracker=0;  #Required to portion out cores and files before wait and to track the MOS_BU outfiles to correct lane
 
-    for (my $infile_counter=0;$infile_counter<scalar( @{ $infile_lane_no_ending_href->{$$sample_id_ref} });$infile_counter++) {  #For all files from
+    for (my $infile_counter=0;$infile_counter<scalar( @{ $infile_lane_prefix_href->{$$sample_id_ref} });$infile_counter++) {  #For all files from
 
-	my $infile = $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter];
-	my $nr_read_batch_process = $sample_info_href->{sample}{$$sample_id_ref}{$infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter]}{pbwa_mem}{read_batch_process};
+	my $infile = $infile_lane_prefix_href->{$$sample_id_ref}[$infile_counter];
+	my $nr_read_batch_process = $sample_info_href->{sample}{$$sample_id_ref}{$infile_lane_prefix_href->{$$sample_id_ref}[$infile_counter]}{pbwa_mem}{read_batch_process};
 
 	if ($nr_read_batch_process > 0) {  #Check that we have read batch processes to merge
 
@@ -15217,9 +15220,9 @@ sub picardtools_mergerapidreads {
 		    print $FILEHANDLE "MergeSamFiles ";
 		    print $FILEHANDLE "USE_THREADING=TRUE "; #Create a background thread to encode, compress and write to disk the output file
 		    print $FILEHANDLE "CREATE_INDEX=TRUE ";  #Create a BAM index when writing a coordinate-sorted BAM file.
-		    print $FILEHANDLE "OUTPUT=".catfile($outsample_directory, $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter].$outfile_tag.".bam")." ";  #OutFile
+		    print $FILEHANDLE "OUTPUT=".catfile($outsample_directory, $infile_lane_prefix_href->{$$sample_id_ref}[$infile_counter].$outfile_tag.".bam")." ";  #OutFile
 		}
-		print $FILEHANDLE "INPUT=".catfile($insample_directory, $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter]."_".$read_batch_processes_count.$outfile_tag.".bam")." ";  #InFile(s)
+		print $FILEHANDLE "INPUT=".catfile($insample_directory, $infile_lane_prefix_href->{$$sample_id_ref}[$infile_counter]."_".$read_batch_processes_count.$outfile_tag.".bam")." ";  #InFile(s)
 	    }
 	    say $FILEHANDLE "& ","\n";
 	    $core_tracker++;  #Track nr of merge calls for infiles so that wait can be printed at the correct intervals (dependent on $active_parameter_href->{max_cores_per_node})
@@ -15236,8 +15239,8 @@ sub picardtools_mergerapidreads {
 	    print $FILEHANDLE "MergeSamFiles ";
 	    print $FILEHANDLE "USE_THREADING=TRUE ";  #Create a background thread to encode, compress and write to disk the output file
 	    print $FILEHANDLE "CREATE_INDEX=TRUE ";  #Create a BAM index when writing a coordinate-sorted BAM file.
-	    print $FILEHANDLE "INPUT=".catfile($insample_directory, $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter]."_0".$outfile_tag."_rg.bam")." ";  #InFile
-	    say $FILEHANDLE "OUTPUT=".catfile($outsample_directory, $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter].$outfile_tag.".bam")." &";  #OutFile
+	    print $FILEHANDLE "INPUT=".catfile($insample_directory, $infile_lane_prefix_href->{$$sample_id_ref}[$infile_counter]."_0".$outfile_tag."_rg.bam")." ";  #InFile
+	    say $FILEHANDLE "OUTPUT=".catfile($outsample_directory, $infile_lane_prefix_href->{$$sample_id_ref}[$infile_counter].$outfile_tag.".bam")." &";  #OutFile
 	}
     }
     say $FILEHANDLE "wait", "\n";
@@ -15256,7 +15259,7 @@ sub picardtools_mergerapidreads {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    sample_id => $$sample_id_ref,
 		    dependencies => "case_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
@@ -15272,14 +15275,14 @@ sub bwa_mem {
 
 ##Function : Performs alignment of single and paired-end as well as interleaved fastq(.gz) files.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_href, $indir_path_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, $family_id_ref, $outaligner_dir_ref, $temp_directory_ref
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_href, $indir_path_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, $family_id_ref, $outaligner_dir_ref, $temp_directory_ref
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file info hash {REF}
 ##         : $infile_href                => The infiles hash {REF}
 ##         : $indir_path_href            => The indirectories path(s) hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $sample_id_ref              => The sample_id {REF}
 ##         : $program_name               => The program name
@@ -15301,7 +15304,7 @@ sub bwa_mem {
     my $file_info_href;
     my $infile_href;
     my $indir_path_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $sample_id_ref;
     my $program_name;
@@ -15313,7 +15316,7 @@ sub bwa_mem {
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
 	infile_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_href},
 	indir_path_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$indir_path_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
@@ -15365,21 +15368,21 @@ sub bwa_mem {
     }
 
     ## Collect fastq file(s) size and interleaved info
-    while ( my ($infile_index, $infile_no_ending) = each(@{ $infile_lane_no_ending_href->{$$sample_id_ref} }) ) {
+    while ( my ($infile_index, $infile_prefix) = each(@{ $infile_lane_prefix_href->{$$sample_id_ref} }) ) {
 
 	## Assign file tags
-	my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
-	my $outfile_path_no_ending = $file_path_no_ending.$outfile_tag;
-	my $sequence_run_mode = $sample_info_href->{sample}{$$sample_id_ref}{file}{$infile_no_ending}{sequence_run_type};  #Collect paired-end or single-end sequence run mode
+	my $file_path_prefix = catfile($$temp_directory_ref, $infile_prefix);
+	my $outfile_path_prefix = $file_path_prefix.$outfile_tag;
+	my $sequence_run_mode = $sample_info_href->{sample}{$$sample_id_ref}{file}{$infile_prefix}{sequence_run_type};  #Collect paired-end or single-end sequence run mode
 
-	my $interleaved_fastq_file = $sample_info_href->{sample}{$$sample_id_ref}{file}{$infile_no_ending}{interleaved};
+	my $interleaved_fastq_file = $sample_info_href->{sample}{$$sample_id_ref}{file}{$infile_prefix}{interleaved};
 	my $fastq_file_first = $infile_href->{$$sample_id_ref}[$infile_index];
 	my $fastq_file_second;  #Initiate
 
 	## Fastq.gz
 	if ($fastq_file_first =~/.fastq.gz$/) {  #Files are already gz and presently the scalar for compression has not been investigated. Therefore no automatic time allocation can be performed.
 
-	    if ($sample_info_href->{sample}{$$sample_id_ref}{file}{$infile_no_ending}{sequence_run_type} eq "paired_end") {  #Second read direction if present
+	    if ($sample_info_href->{sample}{$$sample_id_ref}{file}{$infile_prefix}{sequence_run_type} eq "paired_end") {  #Second read direction if present
 
 		$fastq_file_second = $infile_href->{$$sample_id_ref}[$infile_index+$infile_index];
                 $infile_size = -s catfile($insample_directory, $fastq_file_second);
@@ -15391,7 +15394,7 @@ sub bwa_mem {
         }
         else {  #Files are in fastq format
 
-	    if ($sample_info_href->{sample}{$$sample_id_ref}{file}{$infile_no_ending}{sequence_run_type} eq "paired_end") {  #Second read direction if present
+	    if ($sample_info_href->{sample}{$$sample_id_ref}{file}{$infile_prefix}{sequence_run_type} eq "paired_end") {  #Second read direction if present
 		$fastq_file_second = $infile_href->{$$sample_id_ref}[$infile_index + $infile_index];
 		$infile_size = -s catfile($insample_directory, $fastq_file_second);  # collect .fastq file size to enable estimation of time required for aligning, +1 for syncing multiple infiles per sample_id. Hence, filesize will be calculated on read2 (should not matter).
 	    }
@@ -15404,7 +15407,7 @@ sub bwa_mem {
 	## Parallelize alignment by spliting of alignment processes as the files are read
 	if ($consensus_analysis_type eq "rapid") {
 
-	    my $seq_length = $sample_info_href->{sample}{$$sample_id_ref}{file}{$infile_no_ending}{sequence_length};
+	    my $seq_length = $sample_info_href->{sample}{$$sample_id_ref}{file}{$infile_prefix}{sequence_length};
 	    my ($number_nodes, $read_nr_of_lines) = determine_nr_of_rapid_nodes({seq_length => $seq_length,
 										 infile_size => $infile_size,
 										});
@@ -15450,7 +15453,7 @@ sub bwa_mem {
 
 		## Read group header line
 		print $FILEHANDLE q?-R "@RG\t?;
-		print $FILEHANDLE q?ID:?.$infile_no_ending.q?\t?;
+		print $FILEHANDLE q?ID:?.$infile_prefix.q?\t?;
 		print $FILEHANDLE q?SM:?.$$sample_id_ref.q?\t?;
 		print $FILEHANDLE q?PL:?.$active_parameter_href->{platform}.q?" ?;
 
@@ -15484,17 +15487,17 @@ sub bwa_mem {
 		intersectbed({with_header => 1,
 			      infile_path => "stdin",
 			      intersectfile_path => $active_parameter_href->{bwa_mem_rapid_db},
-			      outfile_path => catfile($outsample_directory, $infile_no_ending."_".$sbatch_counter.$outfile_suffix),
+			      outfile_path => catfile($outsample_directory, $infile_prefix."_".$sbatch_counter.$outfile_suffix),
 			      FILEHANDLE => $FILEHANDLE,
 			     });
 		say $FILEHANDLE "\n";
 
 		print $FILEHANDLE "samtools sort ";
-		print $FILEHANDLE catfile($outsample_directory, $infile_no_ending."_".$sbatch_counter.$outfile_suffix)." ";  #Infile
-		say $FILEHANDLE catfile($outsample_directory, $infile_no_ending."_".$sbatch_counter.$outfile_tag), "\n";  #OutFile
+		print $FILEHANDLE catfile($outsample_directory, $infile_prefix."_".$sbatch_counter.$outfile_suffix)." ";  #Infile
+		say $FILEHANDLE catfile($outsample_directory, $infile_prefix."_".$sbatch_counter.$outfile_tag), "\n";  #OutFile
 
 		print $FILEHANDLE "samtools index ";
-		say $FILEHANDLE catfile($outsample_directory, $infile_no_ending."_".$sbatch_counter.$outfile_tag.$outfile_suffix), "\n";  #OutFile
+		say $FILEHANDLE catfile($outsample_directory, $infile_prefix."_".$sbatch_counter.$outfile_tag.$outfile_suffix), "\n";  #OutFile
 
 		close($FILEHANDLE);
 
@@ -15503,7 +15506,7 @@ sub bwa_mem {
 		    submit_job({active_parameter_href => $active_parameter_href,
 				sample_info_href => $sample_info_href,
 				job_id_href => $job_id_href,
-				infile_lane_no_ending_href => $infile_lane_no_ending_href,
+				infile_lane_prefix_href => $infile_lane_prefix_href,
 				sample_id => $$sample_id_ref,
 				dependencies => "sample_id_dependency_step_in_parallel",
 				path => $parameter_href->{"p".$program_name}{chain},
@@ -15514,7 +15517,7 @@ sub bwa_mem {
 		$total_sbatch_counter++;
 
                 ## Save sbatch Counter to track how many read batch processes we have engaged
-		$sample_info_href->{sample}{$$sample_id_ref}{ $infile_no_ending }{pbwa_mem}{read_batch_process} = $sbatch_counter + 1;  #Used to be  $sbatch_counter
+		$sample_info_href->{sample}{$$sample_id_ref}{ $infile_prefix }{pbwa_mem}{read_batch_process} = $sbatch_counter + 1;  #Used to be  $sbatch_counter
 		$sample_info_href->{sample}{$$sample_id_ref}{pbwa_mem}{sbatch_batch_processes} = $total_sbatch_counter;
 	    }
 	}
@@ -15571,7 +15574,7 @@ sub bwa_mem {
 
 	    ## Read group header line
 	    my @read_group_headers = (q?"@RG\t?,
-				      q?ID:?.$infile_no_ending.q?\t?,
+				      q?ID:?.$infile_prefix.q?\t?,
 				      q?SM:?.$$sample_id_ref.q?\t?,
 				      q?PL:?.$active_parameter_href->{platform}.q?"?,
 		);
@@ -15609,7 +15612,7 @@ sub bwa_mem {
 		run_bwamem({infile_path => $fastq_file_path,
 			    second_infile_path => $second_fastq_file_path,
 			    idxbase => $active_parameter_href->{human_genome_reference},
-			    outfiles_prefix_path => $file_path_no_ending,
+			    outfiles_prefix_path => $file_path_prefix,
 			    FILEHANDLE => $FILEHANDLE,
 			    thread_number => $active_parameter_href->{module_core_number}{"p".$program_name},
 			    read_group_header => join("", @read_group_headers),
@@ -15620,13 +15623,13 @@ sub bwa_mem {
 		say $FILEHANDLE "\n";
 
 		## Set sambamba sort input; Sort directly from run-bwakit
-		$sambamba_sort_infile = $file_path_no_ending.".aln".$outfile_suffix;
+		$sambamba_sort_infile = $file_path_prefix.".aln".$outfile_suffix;
 	    }
 	    $paired_end_tracker++;
 
 	    ## Sort the output from bwa mem|run-bwamem
 	    Program::Alignment::Sambamba::sort({infile_path => $sambamba_sort_infile,
-						outfile_path => $outfile_path_no_ending.$outfile_suffix,
+						outfile_path => $outfile_path_prefix.$outfile_suffix,
 						FILEHANDLE => $FILEHANDLE,
 						show_progress => 1,
 						memory_limit => $active_parameter_href->{bwa_sambamba_sort_memory_limit},
@@ -15637,7 +15640,7 @@ sub bwa_mem {
 	    if ($bwa_binary eq "bwa mem") {
 
 		## BAMS, bwa_mem logs etc.
-		migrate_file({infile_path => $outfile_path_no_ending.".*",
+		migrate_file({infile_path => $outfile_path_prefix.".*",
 			      outfile_path => $outsample_directory,
 			      FILEHANDLE => $FILEHANDLE,
 			     });
@@ -15647,9 +15650,9 @@ sub bwa_mem {
 
 		## Copies file from temporary directory.
 		say $FILEHANDLE "## Copy file from temporary directory";
-		my @outfiles = ($outfile_path_no_ending.substr($outfile_suffix, 0, 2)."*", #".bam" -> ".b*" for getting index as well
-				$file_path_no_ending.".log*",
-				$file_path_no_ending.".hla*",
+		my @outfiles = ($outfile_path_prefix.substr($outfile_suffix, 0, 2)."*", #".bam" -> ".b*" for getting index as well
+				$file_path_prefix.".log*",
+				$file_path_prefix.".hla*",
 		    );
 		foreach my $outfile (@outfiles) {
 
@@ -15663,7 +15666,7 @@ sub bwa_mem {
 	    
 	    if ($active_parameter_href->{bwa_mem_bamstats}) {
 
-		stats({infile_path => $outfile_path_no_ending.$outfile_suffix,
+		stats({infile_path => $outfile_path_prefix.$outfile_suffix,
 		       FILEHANDLE => $FILEHANDLE,
 		       auto_detect_input_format => 1,
 		      });
@@ -15671,11 +15674,11 @@ sub bwa_mem {
 
 		## Add percentage mapped reads to samtools stats output
 		print $FILEHANDLE q?perl -ne '$raw; $map; chomp($_); print $_, "\n"; if($_=~/raw total sequences:\s+(\d+)/) {$raw = $1;} elsif($_=~/reads mapped:\s+(\d+)/) {$map = $1; $p = ($map / $raw ) * 100; print "percentage mapped reads:\t".$p."\n"}' ?;
-		say $FILEHANDLE "> ".$outfile_path_no_ending.".stats"." ", "\n";
+		say $FILEHANDLE "> ".$outfile_path_prefix.".stats"." ", "\n";
 
 		## Copies file from temporary directory.
 		say $FILEHANDLE "## Copy file from temporary directory";
-		migrate_file({infile_path => $outfile_path_no_ending.".stats",
+		migrate_file({infile_path => $outfile_path_prefix.".stats",
 			      outfile_path => $outsample_directory,
 			      FILEHANDLE => $FILEHANDLE,
 			     });
@@ -15685,8 +15688,8 @@ sub bwa_mem {
 	    if ( ($active_parameter_href->{bwa_mem_cram}) && ($outfile_suffix ne ".cram") ) {
 
 		say $FILEHANDLE "## Create CRAM file from SAM|BAM";
-		view({infile_path => $outfile_path_no_ending.$outfile_suffix,
-		      outfile_path => $outfile_path_no_ending.".cram",
+		view({infile_path => $outfile_path_prefix.$outfile_suffix,
+		      outfile_path => $outfile_path_prefix.".cram",
 		      referencefile_path => $active_parameter_href->{human_genome_reference},
 		      output_format => "cram",
 		      FILEHANDLE => $FILEHANDLE,
@@ -15696,7 +15699,7 @@ sub bwa_mem {
 
 		## Copies file from temporary directory.
 		say $FILEHANDLE "## Copy file from temporary directory";
-		migrate_file({infile_path => $outfile_path_no_ending.".cram",
+		migrate_file({infile_path => $outfile_path_prefix.".cram",
 			      outfile_path => $outsample_directory,
 			      FILEHANDLE => $FILEHANDLE,
 			     });
@@ -15707,12 +15710,12 @@ sub bwa_mem {
 
 	    if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
-		$sample_info_href->{sample}{$$sample_id_ref}{most_complete_bam}{path} = catfile($outsample_directory, $infile_no_ending.$outfile_suffix);
+		$sample_info_href->{sample}{$$sample_id_ref}{most_complete_bam}{path} = catfile($outsample_directory, $infile_prefix.$outfile_suffix);
 
 		if ( ($active_parameter_href->{bwa_mem_cram}) && ($outfile_suffix ne ".cram") ) {
 
-		    $sample_info_href->{sample}{$$sample_id_ref}{program}{bwa}{$infile_no_ending}{path} = catfile($outsample_directory, $infile_no_ending.$outfile_tag.".cram");  #Required for analysisRunStatus check downstream
-		    $sample_info_href->{sample}{$$sample_id_ref}{file}{$infile_no_ending}{cram_file} = catfile($outsample_directory, $infile_no_ending.$outfile_tag.".cram");  #Fastreference to cram file
+		    $sample_info_href->{sample}{$$sample_id_ref}{program}{bwa}{$infile_prefix}{path} = catfile($outsample_directory, $infile_prefix.$outfile_tag.".cram");  #Required for analysisRunStatus check downstream
+		    $sample_info_href->{sample}{$$sample_id_ref}{file}{$infile_prefix}{cram_file} = catfile($outsample_directory, $infile_prefix.$outfile_tag.".cram");  #Fastreference to cram file
 		}
 		if ($active_parameter_href->{bwa_mem_bamstats}) {
 
@@ -15720,7 +15723,7 @@ sub bwa_mem {
 		    sample_info_qc({sample_info_href => $sample_info_href,
 				    sample_id => $$sample_id_ref,
 				    program_name => "bamstats",
-				    infile => $infile_no_ending,
+				    infile => $infile_prefix,
 				    outdirectory => $outsample_directory,
 				    outfile_ending => $outfile_tag.".stats",
 				    outdata_type => "infile_dependent"
@@ -15732,7 +15735,7 @@ sub bwa_mem {
 		    sample_info_qc({sample_info_href => $sample_info_href,
 				    sample_id => $$sample_id_ref,
 				    program_name => "bwa",
-				    infile => $infile_no_ending,
+				    infile => $infile_prefix,
 				    outdirectory => $directory,
 				    outfile_ending => $stderr_file,
 				    outdata_type => "info_directory"
@@ -15743,7 +15746,7 @@ sub bwa_mem {
 		    sample_info_qc({sample_info_href => $sample_info_href,
 				    sample_id => $$sample_id_ref,
 				    program_name => "Bwa",
-				    infile => $infile_no_ending,
+				    infile => $infile_prefix,
 				    outdirectory => $outsample_directory,
 				    outfile_ending => ".log.bwamem",
 				    outdata_type => "infile_dependent"
@@ -15752,7 +15755,7 @@ sub bwa_mem {
 		submit_job({active_parameter_href => $active_parameter_href,
 			    sample_info_href => $sample_info_href,
 			    job_id_href => $job_id_href,
-			    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+			    infile_lane_prefix_href => $infile_lane_prefix_href,
 			    sample_id => $$sample_id_ref,
 			    dependencies => "sample_id_dependency_step_in_parallel",
 			    path => $parameter_href->{"p".$program_name}{chain},
@@ -15771,12 +15774,12 @@ sub variantannotationblock {
 
 ##Function : Run consecutive module
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $annovar_table_href, $program_name, family_id_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $annovar_table_href, $program_name, family_id_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $annovar_table_href         => annovar_table_href {REF}
 ##         : $program_name               => The program name
@@ -15798,7 +15801,7 @@ sub variantannotationblock {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $annovar_table_href;
     my $program_name;
@@ -15808,7 +15811,7 @@ sub variantannotationblock {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	annovar_table_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$annovar_table_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
@@ -15848,7 +15851,7 @@ sub variantannotationblock {
 						active_parameter_href => $active_parameter_href,
 						sample_info_href => $sample_info_href,
 						file_info_href => $file_info_href,
-						infile_lane_no_ending_href => $infile_lane_no_ending_href,
+						infile_lane_prefix_href => $infile_lane_prefix_href,
 						job_id_href => $job_id_href,
 						program_name => "vt",
 					       });
@@ -15869,7 +15872,7 @@ sub variantannotationblock {
 						active_parameter_href => $active_parameter_href,
 						sample_info_href => $sample_info_href,
 						file_info_href => $file_info_href,
-						infile_lane_no_ending_href => $infile_lane_no_ending_href,
+						infile_lane_prefix_href => $infile_lane_prefix_href,
 						job_id_href => $job_id_href,
 						program_name => "annovar",
 					       });
@@ -15881,7 +15884,7 @@ sub variantannotationblock {
 		build_annovar_prerequisites({parameter_href => $parameter_href,
 					     active_parameter_href => $active_parameter_href,
 					     sample_info_href => $sample_info_href,
-					     infile_lane_no_ending_href => $infile_lane_no_ending_href,
+					     infile_lane_prefix_href => $infile_lane_prefix_href,
 					     job_id_href => $job_id_href,
 					     annovar_table_href => $annovar_table_href,
 					     program_name => "annovar",
@@ -15919,7 +15922,7 @@ sub variantannotationblock {
 										active_parameter_href => $active_parameter_href,
 										sample_info_href => $sample_info_href,
 										file_info_href => $file_info_href,
-										infile_lane_no_ending_href => $infile_lane_no_ending_href,
+										infile_lane_prefix_href => $infile_lane_prefix_href,
 										job_id_href => $job_id_href,
 										call_type => $call_type,
 										program_name => "prepareforvariantannotationblock",
@@ -15935,7 +15938,7 @@ sub variantannotationblock {
 							   active_parameter_href => $active_parameter_href,
 							   sample_info_href => $sample_info_href,
 							   file_info_href => $file_info_href,
-							   infile_lane_no_ending_href => $infile_lane_no_ending_href,
+							   infile_lane_prefix_href => $infile_lane_prefix_href,
 							   job_id_href => $job_id_href,
 							   call_type => $call_type,
 							   program_name => "rhocall",
@@ -15952,7 +15955,7 @@ sub variantannotationblock {
 						      active_parameter_href => $active_parameter_href,
 						      sample_info_href => $sample_info_href,
 						      file_info_href => $file_info_href,
-						      infile_lane_no_ending_href => $infile_lane_no_ending_href,
+						      infile_lane_prefix_href => $infile_lane_prefix_href,
 						      job_id_href => $job_id_href,
 						      call_type => $call_type,
 						      program_name => "vt",
@@ -15969,7 +15972,7 @@ sub variantannotationblock {
 									  active_parameter_href => $active_parameter_href,
 									  sample_info_href => $sample_info_href,
 									  file_info_href => $file_info_href,
-									  infile_lane_no_ending_href => $infile_lane_no_ending_href,
+									  infile_lane_prefix_href => $infile_lane_prefix_href,
 									  job_id_href => $job_id_href,
 									  call_type => $call_type,
 									  program_name => "varianteffectpredictor",
@@ -15986,7 +15989,7 @@ sub variantannotationblock {
 							      active_parameter_href => $active_parameter_href,
 							      sample_info_href => $sample_info_href,
 							      file_info_href => $file_info_href,
-							      infile_lane_no_ending_href => $infile_lane_no_ending_href,
+							      infile_lane_prefix_href => $infile_lane_prefix_href,
 							      job_id_href => $job_id_href,
 							      call_type => $call_type,
 							      program_name => "vcfparser",
@@ -16002,7 +16005,7 @@ sub variantannotationblock {
 							   active_parameter_href => $active_parameter_href,
 							   sample_info_href => $sample_info_href,
 							   file_info_href => $file_info_href,
-							   infile_lane_no_ending_href => $infile_lane_no_ending_href,
+							   infile_lane_prefix_href => $infile_lane_prefix_href,
 							   job_id_href => $job_id_href,
 							   annovar_table_href => $annovar_table_href,
 							   call_type => $call_type,
@@ -16019,7 +16022,7 @@ sub variantannotationblock {
 							  active_parameter_href => $active_parameter_href,
 							  sample_info_href => $sample_info_href,
 							  file_info_href => $file_info_href,
-							  infile_lane_no_ending_href => $infile_lane_no_ending_href,
+							  infile_lane_prefix_href => $infile_lane_prefix_href,
 							  job_id_href => $job_id_href,
 							  call_type => $call_type,
 							  program_name => "snpeff",
@@ -16035,7 +16038,7 @@ sub variantannotationblock {
 							       active_parameter_href => $active_parameter_href,
 							       sample_info_href => $sample_info_href,
 							       file_info_href => $file_info_href,
-							       infile_lane_no_ending_href => $infile_lane_no_ending_href,
+							       infile_lane_prefix_href => $infile_lane_prefix_href,
 							       job_id_href => $job_id_href,
 							       call_type => $call_type,
 							       program_name => "rankvariant",
@@ -16052,7 +16055,7 @@ sub variantannotationblock {
 									     active_parameter_href => $active_parameter_href,
 									     sample_info_href => $sample_info_href,
 									     file_info_href => $file_info_href,
-									     infile_lane_no_ending_href => $infile_lane_no_ending_href,
+									     infile_lane_prefix_href => $infile_lane_prefix_href,
 									     job_id_href => $job_id_href,
 									     call_type => $call_type,
 									     program_name => "endvariantannotationblock",
@@ -16071,12 +16074,12 @@ sub bamcalibrationblock {
 
 ##Function : Run consecutive module
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $lane_href, $job_id_href, $outaligner_dir, $program_name
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $lane_href, $job_id_href, $outaligner_dir, $program_name
 ##         : $parameter_href                  => The parameter hash {REF}
 ##         : $active_parameter_href           => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href                => Info on samples and family hash {REF}
 ##         : $file_info_href                  => The file info hash {REF}
-##         : $infile_lane_no_ending_href      => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href      => The infile(s) without the ".ending" {REF}
 ##         : $lane_href                       => The lane info hash {REF}
 ##         : $job_id_href                     => The job_id hash {REF}
 ##         : $outaligner_dir                  => The outaligner_dir used
@@ -16094,7 +16097,7 @@ sub bamcalibrationblock {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $lane_href;
     my $job_id_href;
     my $program_name;
@@ -16104,7 +16107,7 @@ sub bamcalibrationblock {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	lane_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$lane_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
@@ -16143,7 +16146,7 @@ sub bamcalibrationblock {
 						active_parameter_href => $active_parameter_href,
 						sample_info_href => $sample_info_href,
 						file_info_href => $file_info_href,
-						infile_lane_no_ending_href => $infile_lane_no_ending_href,
+						infile_lane_prefix_href => $infile_lane_prefix_href,
 						job_id_href => $job_id_href,
 						program_name => "gatk_realigner",
 					       });
@@ -16156,7 +16159,7 @@ sub bamcalibrationblock {
 						active_parameter_href => $active_parameter_href,
 						sample_info_href => $sample_info_href,
 						file_info_href => $file_info_href,
-						infile_lane_no_ending_href => $infile_lane_no_ending_href,
+						infile_lane_prefix_href => $infile_lane_prefix_href,
 						job_id_href => $job_id_href,
 						program_name => "gatk_baserecalibration",
 					       });
@@ -16185,7 +16188,7 @@ sub bamcalibrationblock {
 									     active_parameter_href => $active_parameter_href,
 									     sample_info_href => $sample_info_href,
 									     file_info_href => $file_info_href,
-									     infile_lane_no_ending_href => $infile_lane_no_ending_href,
+									     infile_lane_prefix_href => $infile_lane_prefix_href,
 									     lane_href => $lane_href,
 									     job_id_href => $job_id_href,
 									     sample_id_ref => \$sample_id,
@@ -16201,7 +16204,7 @@ sub bamcalibrationblock {
 								       active_parameter_href => $active_parameter_href,
 								       sample_info_href => $sample_info_href,
 								       file_info_href => $file_info_href,
-								       infile_lane_no_ending_href => $infile_lane_no_ending_href,
+								       infile_lane_prefix_href => $infile_lane_prefix_href,
 								       lane_href => $lane_href,
 								       job_id_href => $job_id_href,
 								       sample_id_ref => \$sample_id,
@@ -16218,7 +16221,7 @@ sub bamcalibrationblock {
 								      active_parameter_href => $active_parameter_href,
 								      sample_info_href => $sample_info_href,
 								      file_info_href => $file_info_href,
-								      infile_lane_no_ending_href => $infile_lane_no_ending_href,
+								      infile_lane_prefix_href => $infile_lane_prefix_href,
 								      job_id_href => $job_id_href,
 								      sample_id_ref => \$sample_id,
 								      program_name => "gatk_realigner",
@@ -16234,7 +16237,7 @@ sub bamcalibrationblock {
 									      active_parameter_href => $active_parameter_href,
 									      sample_info_href => $sample_info_href,
 									      file_info_href => $file_info_href,
-									      infile_lane_no_ending_href => $infile_lane_no_ending_href,
+									      infile_lane_prefix_href => $infile_lane_prefix_href,
 									      job_id_href => $job_id_href,
 									      sample_id_ref => \$sample_id,
 									      program_name => "gatk_baserecalibration",
@@ -16254,11 +16257,11 @@ sub madeline {
 
 ##Function : Draw pedigree trees.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_no_ending_href, $job_id_href, $family_id_ref, $program_name
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_prefix_href, $job_id_href, $family_id_ref, $program_name
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $family_id_ref              => The family_id_ref {REF}
 ##         : $program_name               => The program name
@@ -16273,7 +16276,7 @@ sub madeline {
     my $parameter_href;
     my $active_parameter_href;
     my $sample_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
 
@@ -16281,7 +16284,7 @@ sub madeline {
 	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
@@ -16337,7 +16340,7 @@ sub madeline {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    dependencies => "case_dependency_dead_end",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
@@ -16352,13 +16355,13 @@ sub mfastqc {
 
 ##Function : Raw sequence quality analysis using FASTQC.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_href, $indir_path_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_href, $indir_path_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $infile_href                => The infiles hash {REF}
 ##         : $indir_path_href            => The indirectories path(s) hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $sample_id_ref              => The sample_id {REF}
 ##         : $program_name               => The program name
@@ -16375,7 +16378,7 @@ sub mfastqc {
     my $sample_info_href;
     my $infile_href;
     my $indir_path_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $sample_id_ref;
     my $program_name;
@@ -16386,7 +16389,7 @@ sub mfastqc {
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	infile_href => { defined => 1, default => {}, strict_type => 1, store => \$infile_href},
 	indir_path_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$indir_path_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
@@ -16406,7 +16409,7 @@ sub mfastqc {
     ## Filehandles
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
-    foreach my $infile (@{ $infile_lane_no_ending_href->{$$sample_id_ref} }) {
+    foreach my $infile (@{ $infile_lane_prefix_href->{$$sample_id_ref} }) {
 
 	## Adjust the number of cores to be used in the analysis according to sequencing mode requirements.
 	adjust_core_number_to_seq_mode({core_number_ref => \$core_number,
@@ -16513,7 +16516,7 @@ sub mfastqc {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    sample_id => $$sample_id_ref,
 		    dependencies => "case_dependency_dead_end",
 		    path => $parameter_href->{"p".$program_name}{chain},
@@ -16529,13 +16532,13 @@ sub gzip_fastq {
 
 ##Function : Automatically gzips fastq files.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_href, $indir_path_href, $infile_lane_no_ending_href, $job_id_href, $sample_id, $program_name
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_href, $indir_path_href, $infile_lane_prefix_href, $job_id_href, $sample_id, $program_name
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $infile_href                => The infiles hash {REF}
 ##         : $indir_path_href            => The indirectories path(s) hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $sample_id                  => The sample_id
 ##         : $program_name               => The program name
@@ -16552,7 +16555,7 @@ sub gzip_fastq {
     my $sample_info_href;
     my $infile_href;
     my $indir_path_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $sample_id;
     my $program_name;
@@ -16563,7 +16566,7 @@ sub gzip_fastq {
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	infile_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_href},
 	indir_path_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$indir_path_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id => { required => 1, defined => 1, strict_type => 1, store => \$sample_id},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
@@ -16585,7 +16588,7 @@ sub gzip_fastq {
     my $time = $active_parameter_href->{module_time}{"p".$program_name} * scalar( @{ $infile_href->{$sample_id} });  #One full lane on Hiseq takes approx. 2 h for gzip to process
     my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
 
-    foreach my $infile (@{ $infile_lane_no_ending_href->{$sample_id} }) {
+    foreach my $infile (@{ $infile_lane_prefix_href->{$sample_id} }) {
 
 	## Adjust the number of cores to be used in the analysis according to sequencing mode requirements.
 	adjust_core_number_to_seq_mode({core_number_ref => \$core_number,
@@ -16647,7 +16650,7 @@ sub gzip_fastq {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    sample_id => $sample_id,
 		    dependencies => "no_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
@@ -16663,13 +16666,13 @@ sub split_fastq_file {
 
 ##Function : Split input fastq files into batches of reads, versions and compress. Moves original file to subdirectory.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_href, $indir_path_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, sequence_read_batch
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_href, $indir_path_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, sequence_read_batch
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $infile_href                => The infiles hash {REF}
 ##         : $indir_path_href            => The indirectories path(s) hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $sample_id_ref              => The sample_id {REF}
 ##         : $program_name               => The program name
@@ -16688,7 +16691,7 @@ sub split_fastq_file {
     my $sample_info_href;
     my $infile_href;
     my $indir_path_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $sample_id_ref;
     my $program_name;
@@ -16699,7 +16702,7 @@ sub split_fastq_file {
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	infile_href => { defined => 1, default => {}, strict_type => 1, store => \$infile_href},
 	indir_path_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$indir_path_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
@@ -16853,7 +16856,7 @@ sub split_fastq_file {
 	    submit_job({active_parameter_href => $active_parameter_href,
 			sample_info_href => $sample_info_href,
 			job_id_href => $job_id_href,
-			infile_lane_no_ending_href => $infile_lane_no_ending_href,
+			infile_lane_prefix_href => $infile_lane_prefix_href,
 			sample_id => $$sample_id_ref,
 			dependencies => "case_dependency_dead_end",
 			path => $parameter_href->{"p".$program_name}{chain},
@@ -16871,10 +16874,10 @@ sub build_annovar_prerequisites {
 
 ##Function : Creates the annovarPreRequisites.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $infile_lane_no_ending_href, $job_id_href, $annovar_table_href, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref
+##Arguments: $parameter_href, $active_parameter_href, $infile_lane_prefix_href, $job_id_href, $annovar_table_href, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $annovar_table_href         => annovar_table_href {REF}
 ##         : $program_name               => The program name
@@ -16894,7 +16897,7 @@ sub build_annovar_prerequisites {
     my $parameter_href;
     my $active_parameter_href;
     my $sample_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $annovar_table_href;
     my $program_name;
@@ -16903,7 +16906,7 @@ sub build_annovar_prerequisites {
 	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	annovar_table_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$annovar_table_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
@@ -17061,7 +17064,7 @@ sub build_annovar_prerequisites {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    dependencies => "no_dependency_add_to_case",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
@@ -17077,12 +17080,12 @@ sub build_ptchs_metric_prerequisites {
 
 ##Function : Creates the target "infiles_list" "padded.infile_list" and interval_list files.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $FILEHANDLE, $family_id_ref, $outaligner_dir_ref, temp_directory_ref
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $FILEHANDLE, $family_id_ref, $outaligner_dir_ref, temp_directory_ref
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $program_name               => The program name
 ##         : $FILEHANDLE                 => Filehandle to write to
@@ -17102,7 +17105,7 @@ sub build_ptchs_metric_prerequisites {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
     my $FILEHANDLE;  #Decides if a new sbatch script will be generated or handled by supplied FILEHANDLE
@@ -17112,7 +17115,7 @@ sub build_ptchs_metric_prerequisites {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	FILEHANDLE => { store => \$FILEHANDLE},
@@ -17270,7 +17273,7 @@ sub build_ptchs_metric_prerequisites {
 	    submit_job({active_parameter_href => $active_parameter_href,
 			sample_info_href => $sample_info_href,
 			job_id_href => $job_id_href,
-			infile_lane_no_ending_href => $infile_lane_no_ending_href,
+			infile_lane_prefix_href => $infile_lane_prefix_href,
 			dependencies => "no_dependency_add_to_case",
 			path => "MAIN",
 			sbatch_file_name => $file_name
@@ -17285,12 +17288,12 @@ sub build_bwa_prerequisites {
 
 ##Function : Creates the BwaPreRequisites using active_parameters{'human_genome_reference'} as reference.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $bwa_build_reference_file_endings_ref, $program_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $human_genome_reference_ref
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $bwa_build_reference_file_endings_ref, $program_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $human_genome_reference_ref
 ##         : $parameter_href                       => The parameter hash {REF}
 ##         : $active_parameter_href                => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href                     => Info on samples and family hash {REF}
 ##         : $file_info_href                       => The file_info hash {REF}
-##         : $infile_lane_no_ending_href           => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href           => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                          => The job_id hash {REF}
 ##         : $bwa_build_reference_file_endings_ref => The bwa reference associated file endings {REF}
 ##         : $family_id_ref                        => Family ID {REF}
@@ -17314,7 +17317,7 @@ sub build_bwa_prerequisites {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $bwa_build_reference_file_endings_ref;
     my $program_name;
@@ -17324,7 +17327,7 @@ sub build_bwa_prerequisites {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	bwa_build_reference_file_endings_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$bwa_build_reference_file_endings_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
@@ -17360,7 +17363,7 @@ sub build_bwa_prerequisites {
 				      active_parameter_href => $active_parameter_href,
 				      sample_info_href => $sample_info_href,
 				      file_info_href => $file_info_href,
-				      infile_lane_no_ending_href => $infile_lane_no_ending_href,
+				      infile_lane_prefix_href => $infile_lane_prefix_href,
 				      job_id_href => $job_id_href,
 				      program => $program_name,
 				      FILEHANDLE => $FILEHANDLE,
@@ -17397,7 +17400,7 @@ sub build_bwa_prerequisites {
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    infile_lane_prefix_href => $infile_lane_prefix_href,
 		    dependencies => "no_dependency_add_to_case",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
@@ -17412,12 +17415,12 @@ sub check_build_human_genome_prerequisites {
 
 ##Function : Checks if the HumanGenomePreRequisites needs to be built
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name
 ##         : $parameter_href                  => The parameter hash {REF}
 ##         : $active_parameter_href           => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href                => Info on samples and family hash {REF}
 ##         : $file_info_href                  => The file_info hash {REF}
-##         : $infile_lane_no_ending_href      => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href      => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                     => The job_id hash {REF}
 ##         : $program_name                    => Program name
 
@@ -17428,7 +17431,7 @@ sub check_build_human_genome_prerequisites {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
 
@@ -17437,7 +17440,7 @@ sub check_build_human_genome_prerequisites {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
     };
@@ -17455,7 +17458,7 @@ sub check_build_human_genome_prerequisites {
 						  active_parameter_href => $active_parameter_href,
 						  sample_info_href => $sample_info_href,
 						  file_info_href => $file_info_href,
-						  infile_lane_no_ending_href => $infile_lane_no_ending_href,
+						  infile_lane_prefix_href => $infile_lane_prefix_href,
 						  job_id_href => $job_id_href,
 						  family_id_ref => \$active_parameter_href->{family_id},
 						  outaligner_dir_ref => \$active_parameter_href->{outaligner_dir},
@@ -17474,12 +17477,12 @@ sub check_build_ptchs_metric_prerequisites {
 
 ##Function : Check if PicardtoolsHSMetricsPrequisites needs to be built
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $FILEHANDLE, $family_id_ref
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $FILEHANDLE, $family_id_ref
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The associated reference file endings {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $program_name               => Program name
 ##         : $FILEHANDLE                 => Filehandle to write to
@@ -17495,7 +17498,7 @@ sub check_build_ptchs_metric_prerequisites {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
     my $FILEHANDLE;
@@ -17505,7 +17508,7 @@ sub check_build_ptchs_metric_prerequisites {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	FILEHANDLE => { store => \$FILEHANDLE},
@@ -17521,7 +17524,7 @@ sub check_build_ptchs_metric_prerequisites {
 					  active_parameter_href => $active_parameter_href,
 					  sample_info_href => $sample_info_href,
 					  file_info_href => $file_info_href,
-					  infile_lane_no_ending_href => $infile_lane_no_ending_href,
+					  infile_lane_prefix_href => $infile_lane_prefix_href,
 					  job_id_href => $job_id_href,
 					  program_name => $program_name,
 					  FILEHANDLE => $FILEHANDLE,
@@ -17538,12 +17541,12 @@ sub build_human_genome_prerequisites {
 
 ##Function : Creates the human genome prerequisites using active_parameters{human_genome_reference} as reference.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program, $FILEHANDLE, $random_integer, $family_id_ref, $reference_dir_ref, $outaligner_dir_ref, $human_genome_reference_ref
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program, $FILEHANDLE, $random_integer, $family_id_ref, $reference_dir_ref, $outaligner_dir_ref, $human_genome_reference_ref
 ##         : $parameter_href                  => The parameter hash {REF}
 ##         : $active_parameter_href           => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href                => Info on samples and family hash {REF}
 ##         : $file_info_href                  => The file_info hash {REF}
-##         : $infile_lane_no_ending_href      => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href      => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                     => The job_id hash {REF}
 ##         : $program                         => The program under evaluation
 ##         : $FILEHANDLE                      => Filehandle to write to. A new sbatch script will be generated if $FILEHANDLE is lacking, else write to exising $FILEHANDLE {Optional}
@@ -17566,7 +17569,7 @@ sub build_human_genome_prerequisites {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $program;
     my $FILEHANDLE;
@@ -17577,7 +17580,7 @@ sub build_human_genome_prerequisites {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program => { required => 1, defined => 1, strict_type => 1, store => \$program},
 	FILEHANDLE => { strict_type => 1, store => \$FILEHANDLE},
@@ -17648,7 +17651,7 @@ sub build_human_genome_prerequisites {
 					    active_parameter_href => $active_parameter_href,
 					    sample_info_href => $sample_info_href,
 					    file_info_href => $file_info_href,
-					    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+					    infile_lane_prefix_href => $infile_lane_prefix_href,
 					    job_id_href => $job_id_href,
 					    program_name => $program,
 					    FILEHANDLE => $FILEHANDLE,
@@ -17662,7 +17665,7 @@ sub build_human_genome_prerequisites {
 
 		$log->warn("Will try to create ".$file_ending." file for ".$$human_genome_reference_ref." before executing ".$program."\n");
 
-		my $filename_no_ending = catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending});
+		my $filename_prefix = catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_prefix});
 
 		say $FILEHANDLE "#CreateSequenceDictionary from reference";
 		core({FILEHANDLE => $FILEHANDLE,
@@ -17674,10 +17677,10 @@ sub build_human_genome_prerequisites {
 
 		print $FILEHANDLE "CreateSequenceDictionary ";
 		print $FILEHANDLE "R=".$$human_genome_reference_ref." ";  #Reference genome
-		say $FILEHANDLE "OUTPUT=".$filename_no_ending."_".$random_integer.$file_ending, "\n";  #Output sequence dictionnary
+		say $FILEHANDLE "OUTPUT=".$filename_prefix."_".$random_integer.$file_ending, "\n";  #Output sequence dictionnary
 
-		my $intended_file_path = $filename_no_ending.$file_ending;
-		my $temporary_file_path = $filename_no_ending."_".$random_integer.$file_ending;
+		my $intended_file_path = $filename_prefix.$file_ending;
+		my $temporary_file_path = $filename_prefix."_".$random_integer.$file_ending;
 
 		## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
 		check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
@@ -17727,7 +17730,7 @@ sub build_human_genome_prerequisites {
 	    submit_job({active_parameter_href => $active_parameter_href,
 			sample_info_href => $sample_info_href,
 			job_id_href => $job_id_href,
-			infile_lane_no_ending_href => $infile_lane_no_ending_href,
+			infile_lane_prefix_href => $infile_lane_prefix_href,
 			dependencies => "no_dependency_add_to_case",
 			path => "MAIN",
 			sbatch_file_name => $file_name
@@ -17991,11 +17994,11 @@ sub push_to_job_id {
 
 ##Function : Saves job_id to the correct hash array depending on chaintype.
 ##Returns  : ""
-##Arguments: $active_parameter_href, $sample_info_href, $job_id_href, $infile_lane_no_ending_href, $family_id_chain_key, $sample_id_chain_key, $sample_id, $path, $chain_key_type, $family_id_ref
+##Arguments: $active_parameter_href, $sample_info_href, $job_id_href, $infile_lane_prefix_href, $family_id_chain_key, $sample_id_chain_key, $sample_id, $path, $chain_key_type, $family_id_ref
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $job_id_href                => The info on jobIds hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $family_id_chain_key        => Family ID chain hash key
 ##         : $sample_id_chain_key        => Sample ID chain hash key
 ##         : $sample_id                  => Sample ID
@@ -18011,7 +18014,7 @@ sub push_to_job_id {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $sample_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parallel_chains_ref;
     my $family_id_chain_key;
@@ -18023,7 +18026,7 @@ sub push_to_job_id {
     my $tmpl = {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	parallel_chains_ref => { default => [], strict_type => 1, store => \$parallel_chains_ref},
 	family_id_chain_key => { required => 1, defined => 1, strict_type => 1, store => \$family_id_chain_key},
@@ -18065,7 +18068,7 @@ sub push_to_job_id {
 	else {
 
 	  INFILES:
-	    while ( my ($infile_index) = each($infile_lane_no_ending_href->{$sample_id}) ) {  #All infiles
+	    while ( my ($infile_index) = each($infile_lane_prefix_href->{$sample_id}) ) {  #All infiles
 
 		$chain_key = $sample_id."_".$chain_key_type."_".$path.$infile_index;  #Set key
 
@@ -18108,10 +18111,10 @@ sub submit_job {
 
 ##Function : Submits all job_ids to SLURM using SLURM dependencies. The trunk is the "MAIN path" and any subsequent splits into  branches "other paths" later is handled by adding relevant previous job_ids to the new paths key in job_id{family_path_key} hash. The subroutine supports parallel job within each step and submission which do not leave any dependencies. Currently any path downstream of MAIN inherits the relevant previous jobIds, but it is possible to merge back to MAIN for splited paths downstream.
 ##Returns  : ""
-##Arguments: $active_parameter_href, $sample_info_href, $infile_lane_no_ending_href, $job_id_href, $parallel_chains_ref, $sample_id, $dependencies, $path, $sbatch_file_name, $sbatch_script_tracker, $family_id_ref, $job_dependency_type
+##Arguments: $active_parameter_href, $sample_info_href, $infile_lane_prefix_href, $job_id_href, $parallel_chains_ref, $sample_id, $dependencies, $path, $sbatch_file_name, $sbatch_script_tracker, $family_id_ref, $job_dependency_type
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The info on jobIds hash {REF}
 ##         : $parallel_chains_ref        => The info on parallel chains array {REF}
 ##         : $sample_id                  => Sample id
@@ -18146,7 +18149,7 @@ sub submit_job {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $sample_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $parallel_chains_ref;
     my $sample_id;
@@ -18158,7 +18161,7 @@ sub submit_job {
     my $tmpl = {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	parallel_chains_ref => { default => [], strict_type => 1, store => \$parallel_chains_ref},
 	sample_id => { strict_type => 1, store => \$sample_id},
@@ -18231,7 +18234,7 @@ sub submit_job {
 	    ## Saves job_id to the correct hash array depending on chaintype
 	    push_to_job_id({active_parameter_href => $active_parameter_href,
 			    sample_info_href => $sample_info_href,
-			    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+			    infile_lane_prefix_href => $infile_lane_prefix_href,
 			    job_id_href => $job_id_href,
 			    family_id_chain_key => $family_id_chain_key,
 			    sample_id_chain_key => $sample_id_chain_key,
@@ -18257,7 +18260,7 @@ sub submit_job {
 		## Saves job_id to the correct hash array depending on chaintype
 		push_to_job_id({active_parameter_href => $active_parameter_href,
 				sample_info_href => $sample_info_href,
-				infile_lane_no_ending_href => $infile_lane_no_ending_href,
+				infile_lane_prefix_href => $infile_lane_prefix_href,
 				job_id_href => $job_id_href,
 				family_id_chain_key => $family_id_chain_key,
 				sample_id_chain_key => $sample_id_chain_key,
@@ -18271,7 +18274,7 @@ sub submit_job {
 		## Saves job_id to the correct hash array depending on chaintype
 		push_to_job_id({active_parameter_href => $active_parameter_href,
 				sample_info_href => $sample_info_href,
-				infile_lane_no_ending_href => $infile_lane_no_ending_href,
+				infile_lane_prefix_href => $infile_lane_prefix_href,
 				job_id_href => $job_id_href,
 				family_id_chain_key => $family_id_chain_key,
 				sample_id_chain_key => $sample_id_chain_key,
@@ -18356,7 +18359,7 @@ sub submit_job {
 		@{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} } = ();  #Clear latest family_id/sample_id chain submission
 
 		##Clear all latest parallel jobs within chainkey
-		while (my ($infile_index) = each($infile_lane_no_ending_href->{$sample_id}) ) {
+		while (my ($infile_index) = each($infile_lane_prefix_href->{$sample_id}) ) {
 
 		    my $sample_id_parallel_chain_key = $sample_id."_parallel_".$path.$infile_index;  #Create key
 
@@ -18398,7 +18401,7 @@ sub submit_job {
 		    ## Saves job_id to the correct hash array depending on chaintype
 		    push_to_job_id({active_parameter_href => $active_parameter_href,
 				    sample_info_href => $sample_info_href,
-				    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+				    infile_lane_prefix_href => $infile_lane_prefix_href,
 				    job_id_href => $job_id_href,
 				    family_id_chain_key => $family_id_chain_key,
 				    sample_id_chain_key => $sample_id_chain_key,
@@ -18468,7 +18471,7 @@ sub submit_job {
 						  });
 
 		    }
-		    while (my ($infile_index) = each($infile_lane_no_ending_href->{$sample_id}) ) {
+		    while (my ($infile_index) = each($infile_lane_prefix_href->{$sample_id}) ) {
 
 			my $sample_id_parallel_chain_key = $sample_id."_parallel_".$path.$infile_index;  #Create key
 
@@ -18825,14 +18828,14 @@ sub infiles_reformat {
 
 ##Function : Reformat files for MIP output, which have not yet been created into, correct format so that a sbatch script can be generated with the correct filenames.
 ##Returns  : "$uncompressed_file_counter"
-##Arguments: $active_parameter_href, $sample_info_href, $file_info_href, $infile_href, $indir_path_href, $infile_lane_no_ending_href, $infile_both_strands_no_ending_href, $lane_href, $job_id_href, $program_name, $outaligner_dir_ref
+##Arguments: $active_parameter_href, $sample_info_href, $file_info_href, $infile_href, $indir_path_href, $infile_lane_prefix_href, $infile_both_strands_prefix_href, $lane_href, $job_id_href, $program_name, $outaligner_dir_ref
 ##         : $active_parameter_href              => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href                   => Info on samples and family hash {REF}
 ##         : $file_info_href                     => The file_info hash {REF}
 ##         : $infile_href                        => The infiles hash {REF}
 ##         : $indir_path_href                    => The indirectories path(s) hash {REF}
-##         : $infile_lane_no_ending_href         => The infile(s) without the ".ending" {REF}
-##         : $infile_both_strands_no_ending_href => The infile(s) without the ".ending" and strand info {REF}
+##         : $infile_lane_prefix_href         => The infile(s) without the ".ending" {REF}
+##         : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
 ##         : $lane_href                          => The lane info hash {REF}
 ##         : $job_id_href                        => The job_id hash {REF}
 ##         : $program_name                       => The program name {REF}
@@ -18849,8 +18852,8 @@ sub infiles_reformat {
     my $file_info_href;
     my $infile_href;
     my $indir_path_href;
-    my $infile_lane_no_ending_href;
-    my $infile_both_strands_no_ending_href;
+    my $infile_lane_prefix_href;
+    my $infile_both_strands_prefix_href;
     my $lane_href;
     my $job_id_href;
     my $program_name;
@@ -18861,8 +18864,8 @@ sub infiles_reformat {
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
 	infile_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_href},
 	indir_path_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$indir_path_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
-	infile_both_strands_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_both_strands_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
+	infile_both_strands_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_both_strands_prefix_href},
 	lane_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$lane_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
@@ -18911,8 +18914,8 @@ sub infiles_reformat {
 				 lane_href => $lane_href,
 				 infile_href => $infile_href,
 				 indir_path_href => $indir_path_href,
-				 infile_lane_no_ending_href => $infile_lane_no_ending_href,
-				 infile_both_strands_no_ending_href => $infile_both_strands_no_ending_href,
+				 infile_lane_prefix_href => $infile_lane_prefix_href,
+				 infile_both_strands_prefix_href => $infile_both_strands_prefix_href,
 				 lane => $1,
 				 date => $2,
 				 flowcell => $3,
@@ -18948,8 +18951,8 @@ sub infiles_reformat {
 				 lane_href => $lane_href,
 				 infile_href => $infile_href,
 				 indir_path_href => $indir_path_href,
-				 infile_lane_no_ending_href => $infile_lane_no_ending_href,
-				 infile_both_strands_no_ending_href => $infile_both_strands_no_ending_href,
+				 infile_lane_prefix_href => $infile_lane_prefix_href,
+				 infile_both_strands_prefix_href => $infile_both_strands_prefix_href,
 				 lane => $fastq_info_headers[3],
 				 date => "000101",  #fastq format does not contain a date of the run, so fake it with constant impossible date
 				 flowcell => $fastq_info_headers[2],
@@ -19073,13 +19076,13 @@ sub add_infile_info {
 
 ##Function : Adds information derived from infile name to sample_info hash. Tracks the number of lanes sequenced and checks unique array elementents.
 ##Returns  : ""
-##Arguments: $active_parameter_href, $sample_info_href, $file_info_href, $infile_href, $infile_lane_no_ending_href, $infile_both_strands_no_ending_href, $indir_path_href, $lane_href, $lane, $date, $flowcell, $sample_id, $index, $direction, $lane_tracker_ref, $file_index, $compressed_switch
+##Arguments: $active_parameter_href, $sample_info_href, $file_info_href, $infile_href, $infile_lane_prefix_href, $infile_both_strands_prefix_href, $indir_path_href, $lane_href, $lane, $date, $flowcell, $sample_id, $index, $direction, $lane_tracker_ref, $file_index, $compressed_switch
 ##         : $active_parameter_href              => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href                   => Info on samples and family hash {REF}
 ##         : $file_info_href                     => The file_info hash {REF}
 ##         : $infile_href                        => The infiles hash {REF}
-##         : $infile_lane_no_ending_href         => The infile(s) without the ".ending" {REF}
-##         : $infile_both_strands_no_ending_href => The infile(s) without the ".ending" and strand info {REF}
+##         : $infile_lane_prefix_href         => The infile(s) without the ".ending" {REF}
+##         : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
 ##         : $indir_path_href                    => The indirectories path(s) hash {REF}
 ##         : $lane_href                          => The lane info hash {REF}
 ##         : $lane                               => Flow-cell lane
@@ -19103,8 +19106,8 @@ sub add_infile_info {
     my $file_info_href;
     my $infile_href;
     my $indir_path_href;
-    my $infile_lane_no_ending_href;
-    my $infile_both_strands_no_ending_href;
+    my $infile_lane_prefix_href;
+    my $infile_both_strands_prefix_href;
     my $lane_href;
     my $lane_tracker_ref;
     my $sample_id;
@@ -19122,8 +19125,8 @@ sub add_infile_info {
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
 	infile_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_href},
 	indir_path_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$indir_path_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
-	infile_both_strands_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_both_strands_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
+	infile_both_strands_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_both_strands_prefix_href},
 	lane_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$lane_href},
 	sample_id => { required => 1, defined => 1, strict_type => 1, store => \$sample_id},
 	lane => { required => 1, defined => 1,
@@ -19167,9 +19170,9 @@ sub add_infile_info {
     if ($direction == 1) {  #Read 1
 
 	push( @{ $lane_href->{$sample_id} }, $lane);  #Lane
-	$infile_lane_no_ending_href->{$sample_id}[$$lane_tracker_ref] = $sample_id.".".$date."_".$flowcell."_".$index.".lane".$lane;  #Save new format (sample_id_date_flow-cell_index_lane) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
+	$infile_lane_prefix_href->{$sample_id}[$$lane_tracker_ref] = $sample_id.".".$date."_".$flowcell."_".$index.".lane".$lane;  #Save new format (sample_id_date_flow-cell_index_lane) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
 
-	$file_at_lane_level_ref = \$infile_lane_no_ending_href->{$sample_id}[$$lane_tracker_ref];  #Alias
+	$file_at_lane_level_ref = \$infile_lane_prefix_href->{$sample_id}[$$lane_tracker_ref];  #Alias
 	$sample_info_href->{sample}{$sample_id}{file}{$$file_at_lane_level_ref}{sequence_run_type} = "single_end";  #Single_end until proven otherwise
 
 	## Collect read length from an infile
@@ -19185,23 +19188,23 @@ sub add_infile_info {
 														  });
 
 	## Detect "regexp" in string
-	$file_info_href->{undetermined_in_file_name}{ $infile_lane_no_ending_href->{$sample_id}[$$lane_tracker_ref] } = check_string({string => $flowcell,
+	$file_info_href->{undetermined_in_file_name}{ $infile_lane_prefix_href->{$sample_id}[$$lane_tracker_ref] } = check_string({string => $flowcell,
 																      regexp => "Undetermined",
 																     });
 	$$lane_tracker_ref++;
     }
     if ($direction == 2) {  #2nd read direction
 
-	$file_at_lane_level_ref = \$infile_lane_no_ending_href->{$sample_id}[$$lane_tracker_ref-1];  #Alias
+	$file_at_lane_level_ref = \$infile_lane_prefix_href->{$sample_id}[$$lane_tracker_ref-1];  #Alias
 	$sample_info_href->{sample}{$sample_id}{file}{$$file_at_lane_level_ref}{sequence_run_type} = "paired_end";  #$lane_tracker -1 since it gets incremented after direction eq 1.
     }
 
-    $infile_both_strands_no_ending_href->{$sample_id}[$file_index] = $sample_id.".".$date."_".$flowcell."_".$index.".lane".$lane."_".$direction;  #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and .ending is removed (.fastq).
+    $infile_both_strands_prefix_href->{$sample_id}[$file_index] = $sample_id.".".$date."_".$flowcell."_".$index.".lane".$lane."_".$direction;  #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and .ending is removed (.fastq).
 
-    $file_at_direction_level_ref = \$infile_both_strands_no_ending_href->{$sample_id}[$file_index];  #Alias
+    $file_at_direction_level_ref = \$infile_both_strands_prefix_href->{$sample_id}[$file_index];  #Alias
     $sample_info_href->{sample}{$sample_id}{file}{$$file_at_lane_level_ref}{read_direction_file}{$$file_at_direction_level_ref}{original_file_name} = $infile_href->{$sample_id}[$file_index];  #Original file_name
 
-    $sample_info_href->{sample}{$sample_id}{file}{$$file_at_lane_level_ref}{read_direction_file}{$$file_at_direction_level_ref}{original_file_name_no_ending} = $lane."_".$date."_".$flowcell."_".$sample_id."_".$index."_".$direction;  #Original file_name, but no ending
+    $sample_info_href->{sample}{$sample_id}{file}{$$file_at_lane_level_ref}{read_direction_file}{$$file_at_direction_level_ref}{original_file_name_prefix} = $lane."_".$date."_".$flowcell."_".$sample_id."_".$index."_".$direction;  #Original file_name, but no ending
 
     $sample_info_href->{sample}{$sample_id}{file}{$$file_at_lane_level_ref}{read_direction_file}{$$file_at_direction_level_ref}{lane} = $lane;  #Save sample lane
 
@@ -19848,11 +19851,11 @@ sub create_file_endings {
 
 ##Function : Creates the file_tags depending on which modules are used by the user to relevant chain.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $file_info_href, $infile_lane_no_ending_href, $order_parameters_ref, $family_id_ref
+##Arguments: $parameter_href, $active_parameter_href, $file_info_href, $infile_lane_prefix_href, $order_parameters_ref, $family_id_ref
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $file_info_href             => Info on files hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $order_parameters_ref       => Order of addition to parameter array {REF}
 ##         : $family_id_ref              => The family_id {REF}
 
@@ -19865,14 +19868,14 @@ sub create_file_endings {
     my $parameter_href;
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $order_parameters_ref;
 
     my $tmpl = {
 	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	order_parameters_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$order_parameters_ref},
 	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
 			   strict_type => 1, store => \$family_id_ref},
@@ -20286,10 +20289,10 @@ sub add_merged_infile_name {
 
 ##Function : Add merged infile name after merging all BAM files per sample_id
 ##Returns  : ""
-##Arguments: $active_parameter_href, $file_info_href, $infile_lane_no_ending_href, $lane_href, $sample_id
+##Arguments: $active_parameter_href, $file_info_href, $infile_lane_prefix_href, $lane_href, $sample_id
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $lane_href                  => The lane info hash {REF}
 ##         : $sample_id                  => The sample_id
 
@@ -20298,14 +20301,14 @@ sub add_merged_infile_name {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $lane_href;
     my $sample_id;
 
     my $tmpl = {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	lane_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$lane_href},
 	sample_id => { required => 1, defined => 1, strict_type => 1, store => \$sample_id},
     };
@@ -20989,7 +20992,7 @@ sub parse_human_genome_reference {
     }
 
     ## Removes ".file_ending" in filename.FILENDING(.gz)
-    $file_info_href->{human_genome_reference_name_no_ending} = fileparse($$human_genome_reference_ref,
+    $file_info_href->{human_genome_reference_name_prefix} = fileparse($$human_genome_reference_ref,
 									 qr/\.fasta|\.fasta\.gz/);
 
     $file_info_href->{human_genome_compressed} = check_gzipped({file_name_ref => $human_genome_reference_ref,
@@ -21556,28 +21559,28 @@ sub collect_seq_contigs {
 
 ##Function : Collects sequences contigs used in analysis from human genome sequence dictionnary associated with $human_genome_reference
 ##Returns  : ""
-##Arguments: $contigs_ref, $reference_dir_ref, $human_genome_reference_name_no_ending_ref
+##Arguments: $contigs_ref, $reference_dir_ref, $human_genome_reference_name_prefix_ref
 ##         : $contigs_ref                               => Contig array {REF}
 ##         : $reference_dir_ref                         => The MIP reference directory {REF}
-##         : $human_genome_reference_name_no_ending_ref => The associated human genome file without file ending
+##         : $human_genome_reference_name_prefix_ref => The associated human genome file without file ending
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $contigs_ref;
     my $reference_dir_ref;
-    my $human_genome_reference_name_no_ending_ref;
+    my $human_genome_reference_name_prefix_ref;
 
     my $tmpl = {
 	contigs_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$contigs_ref},
 	reference_dir_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$reference_dir_ref},
-	human_genome_reference_name_no_ending_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$human_genome_reference_name_no_ending_ref},
+	human_genome_reference_name_prefix_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$human_genome_reference_name_prefix_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     my $pqSeqDict = q?perl -nae 'if($F[0]=~/^\@SQ/) { if($F[1]=~/SN\:(\S+)/) {print $1, ",";} }' ?;
-    my $SeqDictLocation = catfile($$reference_dir_ref, $$human_genome_reference_name_no_ending_ref.".dict");
+    my $SeqDictLocation = catfile($$reference_dir_ref, $$human_genome_reference_name_prefix_ref.".dict");
     @$contigs_ref = `$pqSeqDict $SeqDictLocation `;  #Returns a comma seperated string of sequence contigs from dict file
     @$contigs_ref = split(/,/,join(',', @$contigs_ref));
 }
@@ -21974,9 +21977,9 @@ sub modify_file_ending {
     ## Removes ".file_ending" in filename.FILENDING
     my ($file_name, $dir_path) = fileparse($$file_path_ref,
 					   $file_ending);
-    my $file_path_no_ending = catfile($dir_path, $file_name);
+    my $file_path_prefix = catfile($dir_path, $file_name);
 
-    if (defined($file_path_no_ending)) {  #Successfully removed file ending
+    if (defined($file_path_prefix)) {  #Successfully removed file ending
 
 	my $end = ".*";  #Remove all files with ending with ".*"
 
@@ -21988,7 +21991,7 @@ sub modify_file_ending {
 
 	    $end = ".vcf*";  #Removes both .vcf and .vcf.idx
 	}
-	return $file_path_no_ending.$end;
+	return $file_path_prefix.$end;
     }
     else {
 
@@ -22347,19 +22350,19 @@ sub check_human_genome_file_endings {
 
 ##Function : Check the existance of associated Human genome files.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $file_info_href, $parameter_name_ref, $human_genome_reference_name_no_ending_ref, $reference_dir_ref,
+##Arguments: $parameter_href, $active_parameter_href, $file_info_href, $parameter_name_ref, $human_genome_reference_name_prefix_ref, $reference_dir_ref,
 ##         : $parameter_href                            => The parameter hash {REF}
 ##         : $active_parameter_href                     => Holds all set parameter for analysis {REF}
 ##         : $file_info_href                            => The file_info hash {REF}
 ##         : $parameter_name_ref                        => The parameter under evaluation {REF}
-##         : $human_genome_reference_name_no_ending_ref => The associated human genome file without file ending {REF}
+##         : $human_genome_reference_name_prefix_ref => The associated human genome file without file ending {REF}
 ##         : $reference_dir_ref                         => MIP reference directory {REF}
 
     my ($arg_href) = @_;
 
     ## Default(s)
     my $reference_dir_ref;
-    my $human_genome_reference_name_no_ending_ref;
+    my $human_genome_reference_name_prefix_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -22374,8 +22377,8 @@ sub check_human_genome_file_endings {
 	parameter_name_ref => { default => \$$, strict_type => 1, store => \$parameter_name_ref},
 	reference_dir_ref => { default => \$arg_href->{active_parameter_href}{reference_dir},
 			       strict_type => 1, store => \$reference_dir_ref},
-	human_genome_reference_name_no_ending_ref => { default => \$arg_href->{file_info_href}{human_genome_reference_name_no_ending},
-						       strict_type => 1, store => \$human_genome_reference_name_no_ending_ref},
+	human_genome_reference_name_prefix_ref => { default => \$arg_href->{file_info_href}{human_genome_reference_name_prefix},
+						       strict_type => 1, store => \$human_genome_reference_name_prefix_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -22410,7 +22413,7 @@ sub check_human_genome_file_endings {
 	##Collect sequence contigs from human reference ".dict" file since it exists
 	collect_seq_contigs({contigs_ref => \@{ $file_info_href->{contigs} },
 			     reference_dir_ref => $reference_dir_ref,
-			     human_genome_reference_name_no_ending_ref => $human_genome_reference_name_no_ending_ref,
+			     human_genome_reference_name_prefix_ref => $human_genome_reference_name_prefix_ref,
 			    });
     }
 }
@@ -23638,10 +23641,10 @@ sub find_max_seq_length_for_sample_id {
 
 ##Function : Finds the maximum sequence length of the reads for all sequencing file(s).
 ##Returns  : $max_sequence_length
-##Arguments: $active_parameter_href, $sample_info_href, $infile_lane_no_ending_href, $sample_id_ref
+##Arguments: $active_parameter_href, $sample_info_href, $infile_lane_prefix_href, $sample_id_ref
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $sample_id_ref              => The sample_id {REF}
 
     my ($arg_href) = @_;
@@ -23649,12 +23652,12 @@ sub find_max_seq_length_for_sample_id {
     ## Flatten argument(s)
     my $active_parameter_href = $arg_href->{active_parameter_href};
     my $sample_info_href = $arg_href->{sample_info_href};
-    my $infile_lane_no_ending_href = $arg_href->{infile_lane_no_ending_href};
+    my $infile_lane_prefix_href = $arg_href->{infile_lane_prefix_href};
     my $sample_id_ref = $arg_href->{sample_id_ref};
 
     my $max_sequence_length = 0;
 
-    foreach my $infile (@{ $infile_lane_no_ending_href->{$$sample_id_ref} }) {  #For all infiles per lane
+    foreach my $infile (@{ $infile_lane_prefix_href->{$$sample_id_ref} }) {  #For all infiles per lane
 
 	my $seq_length = $sample_info_href->{sample}{$$sample_id_ref}{file}{$infile}{sequence_length};
 
@@ -24542,11 +24545,11 @@ sub vt_core {
 
 ##Function : Split multi allelic records into single records and normalize
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_no_ending_href, $job_id_href, $infile_path, $outfile_path, $family_id, $FILEHANDLE, $core_number, $decompose, $normalize, $max_af, $calculate_af, $sed, $program, $program_directory, $bgzip, $tabix, $instream, $cmd_break, $xargs_file_name, $contig_ref
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_prefix_href, $job_id_href, $infile_path, $outfile_path, $family_id, $FILEHANDLE, $core_number, $decompose, $normalize, $max_af, $calculate_af, $sed, $program, $program_directory, $bgzip, $tabix, $instream, $cmd_break, $xargs_file_name, $contig_ref
 ##         : $parameter_href             => Hash with paremters from yaml file {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $infile_path                => Infile path
 ##         : $outfile_path               => Outfile path
@@ -24590,7 +24593,7 @@ sub vt_core {
     my $parameter_href;
     my $active_parameter_href;
     my $sample_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $infile_path;
     my $FILEHANDLE;
@@ -24601,7 +24604,7 @@ sub vt_core {
 	parameter_href => { default => {}, strict_type => 1, store => \$parameter_href},
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { default => {}, strict_type => 1, store => \$job_id_href},
 	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path},
 	FILEHANDLE => { store => \$FILEHANDLE},
@@ -24785,7 +24788,7 @@ sub vt_core {
 
 	    submit_job({active_parameter_href => $active_parameter_href,
 			sample_info_href => $sample_info_href,
-			infile_lane_no_ending_href => $infile_lane_no_ending_href,
+			infile_lane_prefix_href => $infile_lane_prefix_href,
 			job_id_href => $job_id_href,
 			dependencies => "no_dependency_add_to_case",
 			path => $parameter_href->{"p".$program}{chain},
@@ -24802,11 +24805,11 @@ sub check_vt_for_references {
 
 ##Function : Check if vt has processed references
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_no_ending_href, $job_id_href, $vt_references_ref
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_prefix_href, $job_id_href, $vt_references_ref
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $vt_references_ref          => The references to check with vt {REF}
 
@@ -24820,7 +24823,7 @@ sub check_vt_for_references {
     my $parameter_href;
     my $active_parameter_href;
     my $sample_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $vt_references_ref;
 
@@ -24828,7 +24831,7 @@ sub check_vt_for_references {
 	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	vt_references_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$vt_references_ref},
 	vt_decompose => { default => 0,
@@ -24860,7 +24863,7 @@ sub check_vt_for_references {
 		    check_vt({parameter_href => $parameter_href,
 			      active_parameter_href =>$active_parameter_href,
 			      sample_info_href => $sample_info_href,
-			      infile_lane_no_ending_href => $infile_lane_no_ending_href,
+			      infile_lane_prefix_href => $infile_lane_prefix_href,
 			      job_id_href => $job_id_href,
 			      reference_file_path => $annotation_file,
 			      parameter_name => $parameter_name,
@@ -24878,7 +24881,7 @@ sub check_vt_for_references {
 			check_vt({parameter_href => $parameter_href,
 				  active_parameter_href =>$active_parameter_href,
 				  sample_info_href => $sample_info_href,
-				  infile_lane_no_ending_href => $infile_lane_no_ending_href,
+				  infile_lane_prefix_href => $infile_lane_prefix_href,
 				  job_id_href => $job_id_href,
 				  reference_file_path => $annotation_file,
 				  parameter_name => $parameter_name,
@@ -24897,7 +24900,7 @@ sub check_vt_for_references {
 			check_vt({parameter_href => $parameter_href,
 				  active_parameter_href =>$active_parameter_href,
 				  sample_info_href => $sample_info_href,
-				  infile_lane_no_ending_href => $infile_lane_no_ending_href,
+				  infile_lane_prefix_href => $infile_lane_prefix_href,
 				  job_id_href => $job_id_href,
 				  reference_file_path => $annotation_file,
 				  parameter_name => $parameter_name,
@@ -24917,11 +24920,11 @@ sub check_vt {
 
 ##Function : Check if vt has processed references using regexp
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_no_ending_href, $job_id_href, $reference_file_path, $parameter_name
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_prefix_href, $job_id_href, $reference_file_path, $parameter_name
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $reference_file_path        => The reference file path
 ##         : $parameter_name             => The MIP parameter_name
@@ -24932,7 +24935,7 @@ sub check_vt {
     my $parameter_href;
     my $active_parameter_href;
     my $sample_info_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $job_id_href;
     my $reference_file_path;
     my $parameter_name;
@@ -24941,7 +24944,7 @@ sub check_vt {
 	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	job_id_href => { default => {}, strict_type => 1, store => \$job_id_href},
 	reference_file_path => { required => 1, defined => 1, strict_type => 1, store => \$reference_file_path},
 	parameter_name => { required => 1, defined => 1, strict_type => 1, store => \$parameter_name},
@@ -25017,7 +25020,7 @@ sub check_vt {
 		    vt_core({parameter_href => $parameter_href,
 			     active_parameter_href => $active_parameter_href,
 			     sample_info_href => $sample_info_href,
-			     infile_lane_no_ending_href => $infile_lane_no_ending_href,
+			     infile_lane_prefix_href => $infile_lane_prefix_href,
 			     job_id_href => $job_id_href,
 			     infile_path => $reference_file_path,
 			     program_directory => "vt",
@@ -25046,13 +25049,13 @@ sub remove_redundant_files {
 
 ##Function : Removes intermediate files from the MIP analysis depending on set MIP parameters
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $lane_href, $infile_lane_no_ending_href, $reduce_io_ref, $sample_id, $insample_directory, $FILEHANDLE, family_id_ref, $outaligner_dir_ref, $call_type
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $lane_href, $infile_lane_prefix_href, $reduce_io_ref, $sample_id, $insample_directory, $FILEHANDLE, family_id_ref, $outaligner_dir_ref, $call_type
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
 ##         : $lane_href                  => The lane info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
 ##         : $reduce_io_ref              => Reduce IO - modulates processBlocks {REF}
 ##         : $sample_id                  => The sample_id
 ##         : $insample_directory         => The directory for in sample files to be removed
@@ -25074,7 +25077,7 @@ sub remove_redundant_files {
     my $sample_info_href;
     my $file_info_href;
     my $lane_href;
-    my $infile_lane_no_ending_href;
+    my $infile_lane_prefix_href;
     my $reduce_io_ref;
     my $sample_id;
     my $insample_directory;
@@ -25086,7 +25089,7 @@ sub remove_redundant_files {
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
 	lane_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$lane_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	infile_lane_prefix_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_prefix_href},
 	reduce_io_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$reduce_io_ref},
 	sample_id => { strict_type => 1, store => \$sample_id},
 	insample_directory => { strict_type => 1, store => \$insample_directory},
@@ -25122,7 +25125,7 @@ sub remove_redundant_files {
 		    if ($parameter_href->{$program}{remove_redundant_file_setting} eq "single") {  #Infiles for prior to potential merge
 
 		      INFILE:
-			foreach my $infile (@{ $infile_lane_no_ending_href->{$sample_id} }) {
+			foreach my $infile (@{ $infile_lane_prefix_href->{$sample_id} }) {
 
 			  FILE_ENDINGS:
 			    foreach my $file_ending (@{ $parameter_href->{$program}{file_endings} }) {
@@ -25589,10 +25592,10 @@ sub view_vcf {
 
 ##Function : Reformat variant calling file and index.
 ##Returns  : ""
-##Arguments: $infile_path, $FILEHANDLE, $outfile_path_no_ending, $output_type, $index, $index_type
+##Arguments: $infile_path, $FILEHANDLE, $outfile_path_prefix, $output_type, $index, $index_type
 ##         : $infile_path            => Path to infile to compress and index
 ##         : $FILEHANDLE             => SBATCH script FILEHANDLE to print to
-##         : $outfile_path_no_ending => Out file path no file_ending {Optional}
+##         : $outfile_path_prefix => Out file path no file_ending {Optional}
 ##         : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
 ##         : $index                  => Generate index of reformated file
 ##         : $index_type             => Type of index
@@ -25607,12 +25610,12 @@ sub view_vcf {
     ## Flatten argument(s)
     my $infile_path;
     my $FILEHANDLE;
-    my $outfile_path_no_ending;
+    my $outfile_path_prefix;
 
     my $tmpl = {
 	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path},
 	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
-	outfile_path_no_ending => { strict_type => 1, store => \$outfile_path_no_ending},
+	outfile_path_prefix => { strict_type => 1, store => \$outfile_path_prefix},
 	output_type => { default => "v",
 			 allow => ["b", "u", "z", "v"],
 			 strict_type => 1, store => \$output_type },
@@ -25635,9 +25638,9 @@ sub view_vcf {
 			      v => ".vcf",
 	);
 
-    if (defined($outfile_path_no_ending)) {
+    if (defined($outfile_path_prefix)) {
 	
-	$outfile_path = $outfile_path_no_ending.$output_type_ending{$output_type};
+	$outfile_path = $outfile_path_prefix.$output_type_ending{$output_type};
     }
 
     say $FILEHANDLE "## Reformat variant calling file";
