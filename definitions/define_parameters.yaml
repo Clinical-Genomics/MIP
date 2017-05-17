@@ -373,6 +373,7 @@ source_environment_commands:
    - mip
   element_separator: " "
   data_type: ARRAY
+  mandatory: no
   type: mip
 ###Programs
 ## GZip

@@ -20237,7 +20237,7 @@ sub program_prerequisites {
 
 	say $FILEHANDLE "sleep ".int(rand(60));
     }
-    if (@$source_environment_commands_ref) {
+    if ( ($source_environment_commands_ref) && (@$source_environment_commands_ref) ) {
 
 	say $FILEHANDLE "##Activate environment";
 	say $FILEHANDLE join(' ', @{ $source_environment_commands_ref }), "\n";
