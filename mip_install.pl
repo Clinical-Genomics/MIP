@@ -30,7 +30,7 @@ our $USAGE;
 BEGIN {
     $USAGE =
 	basename($0).qq{ [options]
-           -env/--conda_environment Conda environment (Default: "mip")
+           -env/--conda_environment Conda environment (Default: "")
            -cdp/--conda_path The conda path (Default: "HOME/miniconda")
            -cdu/--conda_update Update conda before installing (Supply flag to enable)
            -bvc/--bioconda Set the module version of the programs that can be installed with bioconda (e.g. 'bwa=0.7.12')
@@ -81,7 +81,6 @@ BEGIN {
 my %parameter;
 
 ##Conda
-$parameter{conda_environment} = "mip";
 $parameter{conda_path} = catdir($ENV{HOME}, "miniconda");
 $parameter{python_version} = "2.7";
 
@@ -124,7 +123,6 @@ $parameter{pip}{chanjo} = "4.0.0";
 
 ## Programs currently installable by SHELL
 $parameter{mip_scripts} = "Your current MIP version";
-$parameter{reference_dir} = undef;  #MIPs
 $parameter{picardtools} = "2.3.0";
 $parameter{sambamba} = "0.6.1";
 $parameter{bedtools} = "2.25.0";
@@ -222,9 +220,18 @@ GetOptions('env|conda_environment:s'  => \$parameter{conda_environment},
 
 
 ## Update default parameter dependent on other parameters
+if (exists($parameter{conda_environment}) && ($parameter{conda_environment}) ) {
+
+    $parameter{conda_prefix_path} = catdir($parameter{conda_path}, "envs", $parameter{conda_environment});
+}
+else {
+
+    $parameter{conda_prefix_path} = $parameter{conda_path};
+}
+
 if (! $parameter{vep_cache_dir}) {
 
-    $parameter{vep_cache_dir} = catdir($parameter{conda_path}, "envs", $parameter{conda_environment}, "ensembl-tools-release-".$parameter{varianteffectpredictor}, "cache");  #Cache directory;)
+    $parameter{vep_cache_dir} = catdir($parameter{conda_prefix_path}, "ensembl-tools-release-".$parameter{varianteffectpredictor}, "cache");  #Cache directory;)
 }
 
 
@@ -254,11 +261,17 @@ check_conda({parameter_href => \%parameter,
 	    });
 
 
-## Create Conda environment if required
-create_conda_environment({parameter_href => \%parameter,
-			  FILEHANDLE => $BASHFILEHANDLE,
-			 });
+if (exists($parameter{conda_environment})) {
 
+    ## Check Conda environment
+    if (! -d catdir($parameter{conda_prefix_path})) {
+	
+	## Create Conda environment if required
+	create_conda_environment({parameter_href => \%parameter,
+				  FILEHANDLE => $BASHFILEHANDLE,
+				 });
+    }
+}
 
 ## Install modules into Conda environment using channel Bioconda
 install_bioconda_modules({parameter_href => \%parameter,
@@ -424,8 +437,8 @@ else {
 	 });
 }
 
-if (defined($parameter{reference_dir})) {
-    
+if (exists($parameter{reference_dir}) && ($parameter{reference_dir}) ) {
+
     references({parameter_href => \%parameter,
 		FILEHANDLE => $BASHFILEHANDLE,
 	       });
@@ -565,7 +578,7 @@ sub check_conda {
     if ($ret) {
 
 	print STDOUT "Found activated conda env: ".$ret."\n";
-	print STDOUT "Please exit conda env: ".$ret." before executing install script\n";
+	print STDOUT "Please exit conda env: ".$ret." with 'source deactivate' before executing install script\n";
 	exit 1;
     }
 
@@ -591,7 +604,7 @@ sub create_conda_environment {
 
 ##create_conda_environment
 
-##Function : Create Conda environment if required
+##Function : Create Conda environment
 ##Returns  : ""
 ##Arguments: $parameter_href
 ##         : $parameter_href => Holds all parameters
@@ -610,23 +623,19 @@ sub create_conda_environment {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    ## Check Conda environment
-    if (! -d catdir($parameter{conda_path}, "envs", $parameter{conda_environment})) {
+    ## Create conda environment
+    print $FILEHANDLE "### Creating Conda Environment and install: ".$parameter_href->{conda_environment}, "\n";
+    print $FILEHANDLE "conda create ";
+    
+    if ($parameter_href->{quiet}) {
 
-	## Create conda environment
-	print $FILEHANDLE "### Creating Conda Environment and install: ".$parameter_href->{conda_environment}, "\n";
-	print $FILEHANDLE "conda create ";
-
-	if ($parameter_href->{quiet}) {
-
-	    print $FILEHANDLE "--quiet ";  #Do not display progress bar
-	}
-	print $FILEHANDLE "-n ".$parameter_href->{conda_environment}." ";
-	print $FILEHANDLE "-y ";
-	print $FILEHANDLE "pip ";
-	print $FILEHANDLE "python=".$parameter_href->{python_version}." ";
-	print $FILEHANDLE "\n\n";
+	print $FILEHANDLE "--quiet ";  #Do not display progress bar
     }
+    print $FILEHANDLE "-n ".$parameter_href->{conda_environment}." ";
+    print $FILEHANDLE "-y ";
+    print $FILEHANDLE "pip ";
+    print $FILEHANDLE "python=".$parameter_href->{python_version}." ";
+    print $FILEHANDLE "\n\n";
 }
 
 sub install_bioconda_modules {
@@ -652,8 +661,15 @@ sub install_bioconda_modules {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    ## Install into conda environment using bioconda channel
-    print $FILEHANDLE "### Installing into Conda Environment: ".$parameter_href->{conda_environment}, "\n";
+    if (exists($parameter_href->{conda_environment}) && ($parameter_href->{conda_environment}) ) {
+
+	## Install into conda environment using bioconda channel
+	print $FILEHANDLE "### Installing into Conda environment: ".$parameter_href->{conda_environment}, "\n";
+    }
+    else {
+
+	print $FILEHANDLE "### Installing into Conda main environment", "\n";
+    }
     print $FILEHANDLE "conda install ";
 
     if ($parameter_href->{quiet}) {
@@ -661,7 +677,10 @@ sub install_bioconda_modules {
 	print $FILEHANDLE "--quiet ";  #Do not display progress bar
     }
 
-    print $FILEHANDLE "-n ".$parameter_href->{conda_environment}." ";
+    if (exists($parameter_href->{conda_environment}) && ($parameter_href->{conda_environment}) ) {
+
+	print $FILEHANDLE "-n ".$parameter_href->{conda_environment}." ";
+    }
     print $FILEHANDLE "-y ";
     print $FILEHANDLE "-c bioconda ";
 
@@ -695,7 +714,7 @@ sub install_bioconda_modules {
 
 		create_softlink({parameter_href => $parameter_href,
 				 FILEHANDLE => $BASHFILEHANDLE,
-				 binary => catfile($parameter{conda_path}, "envs", $parameter{conda_environment}, "share", "bwakit-".$parameter_href->{bioconda}{bwakit}.$parameter_href->{bioconda_bwakit_patch}, $binary),
+				 binary => catfile($parameter_href->{conda_prefix_path}, "share", "bwakit-".$parameter_href->{bioconda}{bwakit}.$parameter_href->{bioconda_bwakit_patch}, $binary),
 				 softlink => $binary,
 				});
 	    }
@@ -703,8 +722,8 @@ sub install_bioconda_modules {
 	    cp({FILEHANDLE => $BASHFILEHANDLE,
 		recursive => 1,
 		force => 1,
-		infile_path => catdir($parameter{conda_path}, "envs", $parameter{conda_environment}, "share", "bwakit-".$parameter_href->{bioconda}{bwakit}.$parameter_href->{bioconda_bwakit_patch}, "resource-human-HLA"),
-		outfile_path => catdir($parameter{conda_path}, "envs", $parameter{conda_environment}, "bin"),
+		infile_path => catdir($parameter_href->{conda_prefix_path}, "share", "bwakit-".$parameter_href->{bioconda}{bwakit}.$parameter_href->{bioconda_bwakit_patch}, "resource-human-HLA"),
+		outfile_path => catdir($parameter_href->{conda_prefix_path}, "bin"),
 	       });
 	    print $BASHFILEHANDLE "\n\n";
 	}
@@ -712,7 +731,7 @@ sub install_bioconda_modules {
 
 	    create_softlink({parameter_href => $parameter_href,
 			     FILEHANDLE => $BASHFILEHANDLE,
-			     binary => catfile($parameter{conda_path}, "envs", $parameter{conda_environment}, "share", "picard-".$parameter_href->{bioconda}{picard}.$parameter_href->{bioconda_picard_patch}, "picard.jar"),
+			     binary => catfile($parameter_href->{conda_prefix_path}, "share", "picard-".$parameter_href->{bioconda}{picard}.$parameter_href->{bioconda_picard_patch}, "picard.jar"),
 			     softlink => "picard.jar",
 			    });
 	}
@@ -727,7 +746,7 @@ sub install_bioconda_modules {
 
 		create_softlink({parameter_href => $parameter_href,
 				 FILEHANDLE => $BASHFILEHANDLE,
-				 binary => catfile($parameter{conda_path}, "envs", $parameter{conda_environment}, "share", "snpeff-".$parameter_href->{bioconda}{snpeff}.$parameter_href->{bioconda_snpeff_patch}, $binary),
+				 binary => catfile($parameter_href->{conda_prefix_path}, "share", "snpeff-".$parameter_href->{bioconda}{snpeff}.$parameter_href->{bioconda_snpeff_patch}, $binary),
 				 softlink => $binary,
 				});
 	    }
@@ -737,12 +756,12 @@ sub install_bioconda_modules {
 		## Check and if required add the vertebrate mitochondrial codon table to snpeff config
 		check_mt_codon_table({parameter_href => $parameter_href,
 				      FILEHANDLE => $BASHFILEHANDLE,
-				      share_dir => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "share", "snpeff-".$parameter_href->{bioconda}{snpeff}.$parameter_href->{bioconda_snpeff_patch}),
+				      share_dir => catdir($parameter_href->{conda_prefix_path}, "share", "snpeff-".$parameter_href->{bioconda}{snpeff}.$parameter_href->{bioconda_snpeff_patch}),
 				      config_file => "snpEff.config",
 				      genome_version_ref => \$genome_version,
 				     });
 
-		unless (-d catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "share", "snpeff-".$parameter_href->{bioconda}{snpeff}.$parameter_href->{bioconda_snpeff_patch}, "data", $genome_version)) {
+		unless (-d catdir($parameter_href->{conda_prefix_path}, "share", "snpeff-".$parameter_href->{bioconda}{snpeff}.$parameter_href->{bioconda_snpeff_patch}, "data", $genome_version)) {
 
 		    ## Write instructions to download snpeff database. This is done by install script to avoid race conditin when doing first analysis run in MIP
 		    snpeff_download({parameter_href => $parameter_href,
@@ -762,7 +781,7 @@ sub install_bioconda_modules {
 
 		create_softlink({parameter_href => $parameter_href,
 				 FILEHANDLE => $BASHFILEHANDLE,
-				 binary => catfile($parameter{conda_path}, "envs", $parameter{conda_environment}, "share", "snpsift-".$parameter_href->{bioconda}{snpsift}.$parameter_href->{bioconda_snpsift_patch}, $binary),
+				 binary => catfile($parameter_href->{conda_prefix_path}, "share", "snpsift-".$parameter_href->{bioconda}{snpsift}.$parameter_href->{bioconda_snpsift_patch}, $binary),
 				 softlink => $binary,
 				});
 	    }
@@ -777,7 +796,7 @@ sub install_bioconda_modules {
 
 		create_softlink({parameter_href => $parameter_href,
 				 FILEHANDLE => $BASHFILEHANDLE,
-				 binary => catfile($parameter{conda_path}, "envs", $parameter{conda_environment}, "share", "manta-".$parameter_href->{bioconda}{manta}.$parameter_href->{bioconda_manta_patch}, "bin", $binary),
+				 binary => catfile($parameter_href->{conda_prefix_path}, "share", "manta-".$parameter_href->{bioconda}{manta}.$parameter_href->{bioconda_manta_patch}, "bin", $binary),
 				 softlink => $binary,
 				});
 	    }
@@ -800,7 +819,10 @@ sub install_bioconda_modules {
 	    print $FILEHANDLE "--quiet ";  #Do not display progress bar
 	}
 	
-	print $FILEHANDLE "-n ".$parameter_href->{conda_environment}." ";
+	if (exists($parameter_href->{conda_environment}) && ($parameter_href->{conda_environment}) ) {
+
+	    print $FILEHANDLE "-n ".$parameter_href->{conda_environment}." ";
+	}
 	print $FILEHANDLE "-y ";
 	say $FILEHANDLE "perl", "\n";
     }
@@ -950,7 +972,7 @@ sub install_perl_cpnam {
     print $FILEHANDLE q?./Configure -des -Dprefix=$HOME/perl-?.$parameter_href->{perl_version}, "\n";
     print $FILEHANDLE "make", "\n";
 
-    if (! $parameter{perl_skip_test}) {
+    if (! $parameter_href->{perl_skip_test}) {
 
 	print $FILEHANDLE "make test", "\n";
     }
@@ -1038,7 +1060,7 @@ sub perl_modules {
     print $FILEHANDLE "## Install perl modules via cpanm\n";
     print $FILEHANDLE "cpanm ";
 
-    if ($parameter{perl_modules_force}) {
+    if ($parameter_href->{perl_modules_force}) {
 
 	print $FILEHANDLE "--force ";
     }
@@ -1073,8 +1095,14 @@ sub pip_install {
     print STDERR "Writting install instructions for pip packages\n";
 
     ## Install PIP packages in conda environment
-    print $FILEHANDLE "### Install PIP packages in conda environment: ".$parameter_href->{conda_environment}, "\n";
+    if (exists($parameter_href->{conda_environment}) && ($parameter_href->{conda_environment}) ) {
 
+	print $FILEHANDLE "### Install PIP packages in conda environment: ".$parameter_href->{conda_environment}, "\n";
+    }
+    else {
+
+	print $FILEHANDLE "### Install PIP packages in conda main environment", "\n";
+    }
     ## Activate conda environment
     activate_conda_environment({parameter_href => $parameter_href,
 				FILEHANDLE => $FILEHANDLE,
@@ -1158,9 +1186,9 @@ sub picardtools {
     print $FILEHANDLE "\n\n";
 
     ## Make available from conda environment
-    if (-d catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "share", "picard-tools-".$parameter_href->{picardtools})) {
+    if (-d catdir($parameter_href->{conda_prefix_path}, "share", "picard-tools-".$parameter_href->{picardtools})) {
 
-	rm({infile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "share", "picard-tools-".$parameter_href->{picardtools}),
+	rm({infile_path => catdir($parameter_href->{conda_prefix_path}, "share", "picard-tools-".$parameter_href->{picardtools}),
 	    force => 1,
 	    recursive => 1,
 	    FILEHANDLE => $FILEHANDLE,
@@ -1170,14 +1198,14 @@ sub picardtools {
 
     print $FILEHANDLE "## Make available from conda environment\n";
     mv({infile_path => "picard-tools-".$parameter_href->{picardtools},
-	outfile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "share"),
+	outfile_path => catdir($parameter_href->{conda_prefix_path}, "share"),
 	FILEHANDLE => $FILEHANDLE,
        });
     print $FILEHANDLE "\n\n";
 
     create_softlink({parameter_href => $parameter_href,
 		     FILEHANDLE => $FILEHANDLE,
-		     binary => catfile($parameter{conda_path}, "envs", $parameter{conda_environment}, "share", "picard-tools-".$parameter_href->{picardtools}, "picard.jar"),
+		     binary => catfile($parameter_href->{conda_prefix_path}, "share", "picard-tools-".$parameter_href->{picardtools}, "picard.jar"),
 		     softlink => "picard.jar",
 		    });
 
@@ -1260,7 +1288,7 @@ sub sambamba {
     ## Make available from conda environment
     print $FILEHANDLE "## Make available from conda environment\n";
     mv({infile_path => "sambamba_v".$parameter_href->{sambamba},
-	outfile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin"),
+	outfile_path => catdir($parameter_href->{conda_prefix_path}, "bin"),
 	FILEHANDLE => $FILEHANDLE,
        });
     print $FILEHANDLE "\n\n";
@@ -1349,7 +1377,7 @@ sub bedtools {
     ## Make available from conda environment
     print $FILEHANDLE "## Make available from conda environment\n";
     mv({infile_path => catfile(".", "bin", "*"),
-	outfile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin"),
+	outfile_path => catdir($parameter_href->{conda_prefix_path}, "bin"),
 	FILEHANDLE => $FILEHANDLE,
        });
     print $FILEHANDLE "\n\n";
@@ -1423,7 +1451,7 @@ sub vt {
     ## Make available from conda environment
     print $FILEHANDLE "## Make available from conda environment\n";
     mv({infile_path => "vt",
-	outfile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin"),
+	outfile_path => catdir($parameter_href->{conda_prefix_path}, "bin"),
 	FILEHANDLE => $FILEHANDLE,
        });
     print $FILEHANDLE "\n\n";
@@ -1493,7 +1521,7 @@ sub plink2 {
     ## Make available from conda environment
     print $FILEHANDLE "## Make available from conda environment\n";
     mv({infile_path => "plink",
-	outfile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin", "plink2"),
+	outfile_path => catdir($parameter_href->{conda_prefix_path}, "bin", "plink2"),
 	FILEHANDLE => $FILEHANDLE,
        });
     print $FILEHANDLE "\n\n";
@@ -1561,9 +1589,9 @@ sub snpeff {
     print $FILEHANDLE "\n\n";
 
     ## Make available from conda environment
-    if (-d $parameter{conda_path}.q?/envs/?.$parameter_href->{conda_environment}.q?/share/snpEff.?.$parameter_href->{snpeff}) {
+    if (-d catdir($parameter_href->{conda_prefix_path}, "share", "snpEff", $parameter_href->{snpeff}) ) {
 
-	rm({infile_path => $parameter{conda_path}.q?/envs/?.$parameter_href->{conda_environment}.q?/share/snpEff.?.$parameter_href->{snpeff},
+	rm({infile_path => catdir($parameter_href->{conda_prefix_path}, "share", "snpEff", $parameter_href->{snpeff}),
 	    force => 1,
 	    recursive => 1,
 	    FILEHANDLE => $FILEHANDLE,
@@ -1572,20 +1600,20 @@ sub snpeff {
     }
 
     print $FILEHANDLE "## Make available from conda environment\n";
-    mkdir({indirectory_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "share", "snpEff.".$parameter_href->{snpeff}),
+    mkdir({indirectory_path => catdir($parameter_href->{conda_prefix_path}, "share", "snpEff.".$parameter_href->{snpeff}),
 	   parents => 1,
 	   FILEHANDLE => $FILEHANDLE,
 	  });
     print $FILEHANDLE "\n\n";
 
     mv({infile_path => catfile("snpEff", "*.jar"),
-	outfile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "share", "snpEff.".$parameter_href->{snpeff}),
+	outfile_path => catdir($parameter_href->{conda_prefix_path}, "share", "snpEff.".$parameter_href->{snpeff}),
 	FILEHANDLE => $FILEHANDLE,
        });
     print $FILEHANDLE "\n\n";
 
     mv({infile_path => catfile("snpEff", "snpEff.config"),
-	outfile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "share", "snpEff.".$parameter_href->{snpeff}),
+	outfile_path => catdir($parameter_href->{conda_prefix_path}, "share", "snpEff.".$parameter_href->{snpeff}),
 	FILEHANDLE => $FILEHANDLE,
        });
     print $FILEHANDLE "\n\n";
@@ -1600,7 +1628,7 @@ sub snpeff {
 
 	create_softlink({parameter_href => $parameter_href,
 			 FILEHANDLE => $BASHFILEHANDLE,
-			 binary => catfile($parameter{conda_path}, "envs", $parameter{conda_environment}, "share", "snpEff.".$parameter_href->{snpeff}, $binary),
+			 binary => catfile($parameter_href->{conda_prefix_path}, "share", "snpEff.".$parameter_href->{snpeff}, $binary),
 			 softlink => $binary,
 			});
     }
@@ -1610,12 +1638,12 @@ sub snpeff {
 	## Check and if required add the vertebrate mitochondrial codon table to snpeff config
 	check_mt_codon_table({parameter_href => $parameter_href,
 			      FILEHANDLE => $BASHFILEHANDLE,
-			      share_dir => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "share", "snpEff.".$parameter_href->{snpeff}),
+			      share_dir => catdir($parameter_href->{conda_prefix_path}, "share", "snpEff.".$parameter_href->{snpeff}),
 			      config_file => "snpEff.config",
 			      genome_version_ref => \$genome_version,
 			     });
 
-	unless (-d catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "share", "snpEff.".$parameter_href->{snpeff}, "data", $genome_version)) {
+	unless (-d catdir($parameter_href->{conda_prefix_path}, "share", "snpEff.".$parameter_href->{snpeff}, "data", $genome_version)) {
 
 	    ## Write instructions to download snpeff database. This is done by install script to avoid race conditin when doing first analysis run in MIP
 	    snpeff_download({parameter_href => $parameter_href,
@@ -1657,7 +1685,7 @@ sub varianteffectpredictor {
 
     my $pwd = cwd();
 
-    my $miniconda_bin_dir = catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "ensembl-tools-release-".$parameter_href->{varianteffectpredictor});
+    my $miniconda_bin_dir = catdir($parameter_href->{conda_prefix_path}, "ensembl-tools-release-".$parameter_href->{varianteffectpredictor});
 
     if (-d $miniconda_bin_dir) {
 
@@ -1701,7 +1729,7 @@ sub varianteffectpredictor {
     print $FILEHANDLE "\n\n";
 
     ## Move to miniconda environment
-    cd({directory_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}),
+    cd({directory_path => catdir($parameter_href->{conda_prefix_path}),
 	FILEHANDLE => $FILEHANDLE,
        });
     print $FILEHANDLE "\n\n";
@@ -1738,12 +1766,12 @@ sub varianteffectpredictor {
     ## Install VEP
     print $FILEHANDLE "## Install VEP\n";
     print $FILEHANDLE "perl INSTALL.pl ";
-    print $FILEHANDLE "--AUTO ".$parameter{vep_auto_flag};  #a (API), l (FAIDX/htslib), c (cache), f (FASTA)
+    print $FILEHANDLE "--AUTO ".$parameter_href->{vep_auto_flag};  #a (API), l (FAIDX/htslib), c (cache), f (FASTA)
 
-    if ( (defined($parameter{vep_plugin})) && ($parameter{vep_plugin} ne 0)) {
+    if ( (exists($parameter_href->{vep_plugin})) && ($parameter_href->{vep_plugin} ne 0)) {
 
 	print $FILEHANDLE "p ";  #p (plugins)
-	print $FILEHANDLE "-g ".$parameter{vep_plugin}." ";  #Plugins in comma sep string
+	print $FILEHANDLE "-g ".$parameter_href->{vep_plugin}." ";  #Plugins in comma sep string
     }
     else {
 
@@ -1757,7 +1785,7 @@ sub varianteffectpredictor {
     print $FILEHANDLE "--ASSEMBLY ".$parameter_href->{vep_assemblies}[0]." ";
     print $FILEHANDLE "\n\n";
 
-    if ( (scalar( @{$parameter_href->{vep_assemblies}} ) > 1) && ($parameter{vep_auto_flag}=~/c|f/ ) ) {
+    if ( (scalar( @{$parameter_href->{vep_assemblies}} ) > 1) && ($parameter_href->{vep_auto_flag}=~/c|f/ ) ) {
 
 	for (my $assembly_version=1;$assembly_version<scalar(@{$parameter_href->{vep_assemblies}});$assembly_version++) {
 
@@ -1773,7 +1801,7 @@ sub varianteffectpredictor {
 	}
     }
 
-    if ( defined($parameter{vep_plugin}) && ($parameter{vep_plugin}=~/Loftool/) ) {
+    if ( exists($parameter_href->{vep_plugin}) && ($parameter_href->{vep_plugin}=~/Loftool/) ) {
 
 	##Add LofTool required text file
 	print $FILEHANDLE "##Add LofTool required text file\n";
@@ -1786,7 +1814,7 @@ sub varianteffectpredictor {
 	print $FILEHANDLE "\n\n";
     }
 
-    if ( defined($parameter{vep_plugin}) && ($parameter{vep_plugin}=~/Lof/) ) {
+    if ( exists($parameter_href->{vep_plugin}) && ($parameter_href->{vep_plugin}=~/Lof/) ) {
 
 	## Add Lof required perl splice script
 	print $FILEHANDLE "##Add Lof required perl splice script\n";
@@ -1824,7 +1852,7 @@ sub varianteffectpredictor {
 
     ## Clean up
     print $FILEHANDLE "## Clean up\n";
-    rm({infile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "VariantEffectPredictor-".$parameter_href->{varianteffectpredictor}.".zip"),
+    rm({infile_path => catdir($parameter_href->{conda_prefix_path}, "VariantEffectPredictor-".$parameter_href->{varianteffectpredictor}.".zip"),
 	force => 1,
 	FILEHANDLE => $FILEHANDLE,
        });
@@ -1876,7 +1904,7 @@ sub cnvnator {
 	return
     }
 
-    my $miniconda_bin_dir = catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "root");
+    my $miniconda_bin_dir = catdir($parameter_href->{conda_prefix_path}, "root");
 
     if (-d $miniconda_bin_dir) {
 
@@ -1908,35 +1936,36 @@ sub cnvnator {
     print $FILEHANDLE "### Install cnvnator/Root\n";
 
     ## Move to miniconda environment
-    cd({directory_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}),
+    cd({directory_path => catdir($parameter_href->{conda_prefix_path}),
 	FILEHANDLE => $FILEHANDLE,
        });
     print $FILEHANDLE "\n\n";
 
     ## Download
     print $FILEHANDLE "## Download Root\n";
-    Program::Download::Wget::wget({url => "https://root.cern.ch/download/".$parameter{cnvnator_root_binary}, #root_v5.34.34.Linux-slc6-x86_64-gcc4.4.tar.gz", #Currently hardcoded
+    Program::Download::Wget::wget({url => "https://root.cern.ch/download/".$parameter_href->{cnvnator_root_binary}, #root_v5.34.34.Linux-slc6-x86_64-gcc4.4.tar.gz", #Currently hardcoded
 				   FILEHANDLE => $FILEHANDLE,
 				   quiet => $parameter_href->{quiet},
 				   verbose => $parameter_href->{verbose},
-				   outfile_path => $parameter{cnvnator_root_binary},
+				   outfile_path => $parameter_href->{cnvnator_root_binary},
 				  });
     print $FILEHANDLE "\n\n";
 
     ## Extract
     print $FILEHANDLE "## Extract\n";
-    print $FILEHANDLE "tar xvf ".$parameter{cnvnator_root_binary}." ";
+    print $FILEHANDLE "tar xvf ".$parameter_href->{cnvnator_root_binary}." ";
     print $FILEHANDLE "\n\n";
 
-    unless ($ENV{PATH}=~/$parameter{conda_path}\/envs\/$parameter_href->{conda_environment}\/root\/bin/) {
+    my $binary_regexp = catdir($parameter_href->{conda_prefix_path}.q?\\?, "root\\", "bin");
+    unless ($ENV{PATH}=~/$binary_regexp/) {
 
 	## Export path
 	print $FILEHANDLE "## Export path\n";
-	print $FILEHANDLE q?echo 'source ?.$parameter{conda_path}.q?/envs/?.$parameter_href->{conda_environment}.q?/root/bin/thisroot.sh' >> ~/.bashrc?;
+	print $FILEHANDLE q?echo 'source ?.catdir($parameter_href->{conda_prefix_path}, "root", "bin", "thisroot.sh").q?' >> ~/.bashrc?;
 	print $FILEHANDLE "\n\n";
 
 	## Use newly installed root
-	print $FILEHANDLE q?source ?.$parameter{conda_path}.q?/envs/?.$parameter_href->{conda_environment}.q?/root/bin/thisroot.sh ?;
+	print $FILEHANDLE "source ".catdir($parameter_href->{conda_prefix_path}, "root", "bin", "thisroot.sh");
 	print $FILEHANDLE "\n\n";
     }
 
@@ -1999,7 +2028,7 @@ sub cnvnator {
     ## Make available from conda environment
     print $FILEHANDLE "## Make available from conda environment\n";
     mv({infile_path => "cnvnator",
-	outfile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin"),
+	outfile_path => catdir($parameter_href->{conda_prefix_path}, "bin"),
 	FILEHANDLE => $FILEHANDLE,
        });
     print $FILEHANDLE "\n\n";
@@ -2011,14 +2040,14 @@ sub cnvnator {
        });
     print $FILEHANDLE "\n";
     mv({infile_path => "cnvnator2VCF.pl",
-	outfile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin"),
+	outfile_path => catdir($parameter_href->{conda_prefix_path}, "bin"),
 	FILEHANDLE => $FILEHANDLE,
        });
     print $FILEHANDLE "\n\n";
 
     print $FILEHANDLE "## Make executable from conda environment\n";
     print $FILEHANDLE "chmod +x ";
-    print $FILEHANDLE catfile($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin", "cnvnator2VCF.pl");
+    print $FILEHANDLE catfile($parameter_href->{conda_prefix_path}, "bin", "cnvnator2VCF.pl");
     print $FILEHANDLE "\n\n";
 
     ## Remove the temporary install directory
@@ -2073,7 +2102,7 @@ sub tiddit {
 			       });
 
     ## Move to miniconda environment
-    cd({directory_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}),
+    cd({directory_path => catdir($parameter_href->{conda_prefix_path}),
 	FILEHANDLE => $FILEHANDLE,
        });
     print $FILEHANDLE "\n\n";
@@ -2133,11 +2162,11 @@ sub tiddit {
     my $cwd = cwd();
     print $FILEHANDLE "## Make available from conda environment\n";
     print $FILEHANDLE "ln -f -s  ";
-    print $FILEHANDLE catfile($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "TIDDIT-".$parameter_href->{tiddit}, "bin", "TIDDIT")." ";
-    print $FILEHANDLE catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin"), "\n\n";
+    print $FILEHANDLE catfile($parameter_href->{conda_prefix_path}, "TIDDIT-".$parameter_href->{tiddit}, "bin", "TIDDIT")." ";
+    print $FILEHANDLE catdir($parameter_href->{conda_prefix_path}, "bin"), "\n\n";
 
     ## Clean-up
-    rm({infile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "Tiddit-".$parameter_href->{tiddit}.".zip"),
+    rm({infile_path => catdir($parameter_href->{conda_prefix_path}, "Tiddit-".$parameter_href->{tiddit}.".zip"),
 	force => 1,
 	FILEHANDLE => $FILEHANDLE,
        });
@@ -2198,7 +2227,7 @@ sub svdb {
 			       });
 
     ## Move to miniconda environment
-    cd({directory_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}),
+    cd({directory_path => catdir($parameter_href->{conda_prefix_path}),
 	FILEHANDLE => $FILEHANDLE,
        });
     print $FILEHANDLE "\n\n";
@@ -2317,7 +2346,7 @@ sub mip_scripts {
     print $FILEHANDLE "## Create directories\n";
     foreach my $directory (keys %mip_sub_scripts) {
 
-	mkdir({indirectory_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin", $directory),
+	mkdir({indirectory_path => catdir($parameter_href->{conda_prefix_path}, "bin", $directory),
 	       parents => 1,
 	       FILEHANDLE => $FILEHANDLE,
 	      });
@@ -2331,7 +2360,7 @@ sub mip_scripts {
 	    recursive => 1,
 	    force => 1,
 	    infile_path => catdir($Bin, $directory),
-	    outfile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin"),
+	    outfile_path => catdir($parameter_href->{conda_prefix_path}, "bin"),
 	   });
 	print $FILEHANDLE "\n\n";
     }
@@ -2344,11 +2373,11 @@ sub mip_scripts {
 
 	cp({FILEHANDLE => $FILEHANDLE,
 	    infile_path => catfile($Bin, $script),
-	    outfile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin", $script_no_ending),
+	    outfile_path => catdir($parameter_href->{conda_prefix_path}, "bin", $script_no_ending),
 	   });
 	print $FILEHANDLE "\n";
 
-	print $FILEHANDLE "chmod a+x ".catfile($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin", $script_no_ending);
+	print $FILEHANDLE "chmod a+x ".catfile($parameter_href->{conda_prefix_path}, "bin", $script_no_ending);
 	print $FILEHANDLE "\n\n";
     }
 
@@ -2358,11 +2387,11 @@ sub mip_scripts {
 
 	    cp({FILEHANDLE => $FILEHANDLE,
 		infile_path => catfile($Bin, $directory, $script),
-		outfile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin", $directory),
+		outfile_path => catdir($parameter_href->{conda_prefix_path}, "bin", $directory),
 	       });
 	    print $FILEHANDLE "\n";
 
-	    print $FILEHANDLE "chmod a+x ".catfile($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin", $directory, $script);
+	    print $FILEHANDLE "chmod a+x ".catfile($parameter_href->{conda_prefix_path}, "bin", $directory, $script);
 	    print $FILEHANDLE "\n\n";
 	}
     }
@@ -2412,7 +2441,7 @@ sub rhocall {
 
     ## Create the temporary install directory
     create_install_dir({FILEHANDLE => $FILEHANDLE,
-			install_directory => $parameter{rhocall_path},
+			install_directory => $parameter_href->{rhocall_path},
 		       });
 
     ## Downloads files
@@ -2480,10 +2509,13 @@ sub activate_conda_environment {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    ## Activate conda environment
-    print $FILEHANDLE "## Activate conda environment\n";
-    print $FILEHANDLE "source activate ".$parameter_href->{conda_environment}." ";
-    print $FILEHANDLE "\n\n";
+    if (exists($parameter_href->{conda_environment}) && ($parameter_href->{conda_environment}) ) {
+
+	## Activate conda environment
+	print $FILEHANDLE "## Activate conda environment\n";
+	print $FILEHANDLE "source activate ".$parameter_href->{conda_environment}." ";
+	print $FILEHANDLE "\n\n";
+    }
 }
 
 
@@ -2635,18 +2667,18 @@ sub check_conda_bin_file_exists {
 
     if ($program_version) {
 
-	$miniconda_bin_file = catfile($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin", $program_name.$program_version);
+	$miniconda_bin_file = catfile($parameter_href->{conda_prefix_path}, "bin", $program_name.$program_version);
     }
     else {
 
-	$miniconda_bin_file = catfile($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin", $program_name);
+	$miniconda_bin_file = catfile($parameter_href->{conda_prefix_path}, "bin", $program_name);
     }
 
     if (-f $miniconda_bin_file) {
 
 	if ($program_version) {
 
-	    print STDERR q?Found ?.$program_name.q? version ?.$program_version.q? in miniconda directory: ?.catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin"), "\n";
+	    print STDERR q?Found ?.$program_name.q? version ?.$program_version.q? in miniconda directory: ?.catdir($parameter_href->{conda_prefix_path}, "bin"), "\n";
 
 	    if ($parameter_href->{noupdate}) {
 
@@ -2657,7 +2689,7 @@ sub check_conda_bin_file_exists {
 	}
 	else {
 
-	    print STDERR q?Found ?.$program_name.q? in miniconda directory: ?.catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin"), "\n";
+	    print STDERR q?Found ?.$program_name.q? in miniconda directory: ?.catdir($parameter_href->{conda_prefix_path}, "bin"), "\n";
 
 	    if ($parameter_href->{noupdate}) {
 
@@ -2709,7 +2741,7 @@ sub create_softlink {
 
     ## Add softlink
     print $FILEHANDLE "## Move to directory and create softlink\n";
-    cd({directory_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin"),
+    cd({directory_path => catdir($parameter_href->{conda_prefix_path}, "bin"),
 	FILEHANDLE => $FILEHANDLE,
        });
     print $FILEHANDLE "\n";
@@ -2757,7 +2789,7 @@ sub enable_executable {
 
     ## Enable executable
     print $FILEHANDLE "## Enable executable\n";
-    cd({directory_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin"),
+    cd({directory_path => catdir($parameter_href->{conda_prefix_path}, "bin"),
 	FILEHANDLE => $FILEHANDLE,
        });
     print $FILEHANDLE "\n";
@@ -2868,11 +2900,11 @@ sub snpeff_download {
 			       });
 
     print $FILEHANDLE "java -Xmx2g ";
-    print $FILEHANDLE q?-jar ?.catfile($parameter_href->{conda_path}, "envs", $parameter_href->{conda_environment}, "bin", "snpEff.jar")." ";
+    print $FILEHANDLE q?-jar ?.catfile($parameter_href->{conda_prefix_path}, "bin", "snpEff.jar")." ";
     print $FILEHANDLE "download ";
     print $FILEHANDLE " -v ";
     print $FILEHANDLE $$genome_version_ref." ";
-    print $FILEHANDLE q?-c ?.catfile($parameter_href->{conda_path}, "envs", $parameter_href->{conda_environment}, "bin", "snpEff.config")." ";
+    print $FILEHANDLE q?-c ?.catfile($parameter_href->{conda_prefix_path}, "bin", "snpEff.config")." ";
     print $FILEHANDLE "\n\n";
 
     ## Deactivate conda environment

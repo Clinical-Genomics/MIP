@@ -5997,6 +5997,7 @@ sub mpeddy {
 								 call_type => $call_type,
 								 core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
 								 process_time => $active_parameter_href->{module_time}{"p".$program_name},
+								 source_environment_commands_ref => [],
 								});
 
     my ($volume, $directory, $program_info_file) = File::Spec->splitpath($program_info_path);  #Split to enable submission to &sample_info_qc later
