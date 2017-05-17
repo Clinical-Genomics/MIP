@@ -197,11 +197,13 @@ sub vt_uniq {
 
 ##Function : Perl wrapper for writing Vt uniq recipe to $FILEHANDLE or return commands array. Based on Vt v0.5.
 ##Returns  : "@commands"
-##Arguments: $infile_path, $outfile_path, $stderrfile_path, $FILEHANDLE
+##Arguments: $infile_path, $outfile_path, $stderrfile_path, $FILEHANDLE, $append_stderr_info
 ##         : $infile_path         => Infile path to read from
 ##         : $outfile_path        => Outfile path to write to
 ##         : $stderrfile_path     => Stderr file path to write to {OPTIONAL}
 ##         : $FILEHANDLE          => Filehandle to write to
+##         : $append_stderr_info             => Append stderr info to file
+
 
     my ($arg_href) = @_;
 
@@ -210,12 +212,16 @@ sub vt_uniq {
     my $outfile_path;
     my $stderrfile_path;
     my $FILEHANDLE;
+    my $append_stderr_info;
 
     my $tmpl = {
 	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path},
 	outfile_path => { strict_type => 1, store => \$outfile_path },
 	stderrfile_path => { strict_type => 1, store => \$stderrfile_path},
 	FILEHANDLE => { store => \$FILEHANDLE},
+	append_stderr_info => { default => 0,
+				allow => [undef, 0, 1],
+				strict_type => 1, store => \$append_stderr_info},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -236,7 +242,14 @@ sub vt_uniq {
     }
     if ($stderrfile_path) {
 
-	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+	if ($append_stderr_info) {
+
+	    push(@commands, "2>> ".$stderrfile_path);  #Redirect and append stderr output to program specific stderr file
+	}
+	else {
+
+	    push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+	}
     }
     if($FILEHANDLE) {
 	

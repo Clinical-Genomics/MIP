@@ -1560,6 +1560,12 @@ vt_normalize:
   data_type: SCALAR
   default: 1
   type: program_argument
+vt_uniq:
+  associated_program:
+   - pvt
+  data_type: SCALAR
+  default: 1
+  type: program_argument
 vt_missing_alt_allele:
   associated_program:
    - pvt

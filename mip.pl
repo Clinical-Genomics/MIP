@@ -266,6 +266,7 @@ BEGIN {
                -pvt/--pvt VT decompose and normalize (defaults to "1" (=yes))
                  -vtdec/--vt_decompose Split multi allelic records into single records (defaults to "1" (=yes))
                  -vtnor/--vt_normalize Normalize variants (defaults to "1" (=yes))
+                 -vtunq/--vt_uniq Remove variant duplicates (defaults to "1" (=yes))
                  -vtmaa/--vt_missing_alt_allele Remove missing alternative alleles '*' (defaults to "1" (=yes))
                  -vtgmf/--vt_genmod_filter Remove common variants from vcf file (defaults to "1" (=yes))
                  -vtgfr/--vt_genmod_filter_1000g Genmod annotate 1000G reference (defaults to "GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz")
@@ -580,6 +581,7 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'pvt|pvt=n' => \$parameter{pvt}{value},  #VT program
 	   'vtddec|vt_decompose=n' => \$parameter{vt_decompose}{value},  #vt decompose (split multiallelic variants)
 	   'vtdnor|vt_normalize=n' => \$parameter{vt_normalize}{value},  #vt normalize varaints according to genomic reference
+	   'vtunq|vt_uniq=n' => \$parameter{vt_uniq}{value}, 
 	   'vtmaa|vt_missing_alt_allele=n' => \$parameter{vt_missing_alt_allele}{value},  #vt remove '*' entries from vcf
 	   'vtgmf|vt_genmod_filter=n' => \$parameter{vt_genmod_filter}{value},  #vt Remove common variants from vcf
 	   'vtgfr|vt_genmod_filter_1000g:s' => \$parameter{vt_genmod_filter_1000g}{value},  #vt Genmod annotate 1000G reference
@@ -6730,6 +6732,7 @@ sub vt {
 		 outfile_path => $outfile_path_prefix."_".$contig.$outfile_suffix,
 		 decompose => $active_parameter_href->{vt_decompose},
 		 normalize => $active_parameter_href->{vt_normalize},
+		 uniq => $active_parameter_href->{vt_uniq},
 		 sed => 1,
 		 instream => 0,
 		 cmd_break => ";",
@@ -24546,7 +24549,7 @@ sub vt_core {
 
 ##Function : Split multi allelic records into single records and normalize
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_prefix_href, $job_id_href, $infile_path, $outfile_path, $family_id, $FILEHANDLE, $core_number, $decompose, $normalize, $max_af, $calculate_af, $sed, $program, $program_directory, $bgzip, $tabix, $instream, $cmd_break, $xargs_file_name, $contig_ref
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_prefix_href, $job_id_href, $infile_path, $outfile_path, $family_id, $FILEHANDLE, $core_number, $decompose, $normalize, $uniq, $max_af, $calculate_af, $sed, $program, $program_directory, $bgzip, $tabix, $instream, $cmd_break, $xargs_file_name, $contig_ref
 ##         : $parameter_href             => Hash with paremters from yaml file {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -24559,6 +24562,7 @@ sub vt_core {
 ##         : $core_number                => The number of cores to allocate
 ##         : $decompose                  => Vt program decomnpose for splitting multiallelic variants
 ##         : $normalize                  => Vt program normalize for normalizing to reference used in analysis
+##         : $uniq                       => Vt program uniq for removing variant duplication that appear later in file
 ##         : $max_af                     => MIP script for adding MAX_AF to frequency reference used in analysis
 ##         : $calculate_af               => MIP script for adding AF_ to frequency reference used in analysis
 ##         : $sed                        => Sed program for changing vcf #FORMAT field in variant vcfs
@@ -24580,6 +24584,7 @@ sub vt_core {
     my $core_number;
     my $decompose;
     my $normalize;
+    my $uniq;
     my $max_af;
     my $calculate_af;
     my $sed;
@@ -24626,6 +24631,9 @@ sub vt_core {
 	normalize => { default => 0,
 		       allow => [0, 1],
 		       strict_type => 1, store => \$normalize},
+	uniq => { default => 0,
+		  allow => [0, 1],
+		  strict_type => 1, store => \$uniq},
 	max_af => { default => 0,
 		    allow => [0, 1],
 		    strict_type => 1, store => \$max_af},
@@ -24656,7 +24664,7 @@ sub vt_core {
     use Program::Variantcalling::Mip qw(calculate_af max_af);
     use Program::Gnu::Coreutils qw(mv);
     use Program::Htslib qw(bgzip tabix);
-    use Program::Variantcalling::Vt qw(decompose normalize);
+    use Program::Variantcalling::Vt qw(decompose normalize vt_uniq);
 
     my $file_name;
     my $program_info_path;
@@ -24686,7 +24694,7 @@ sub vt_core {
 	my $append_stderr_info;
 	if ( (defined($xargs_file_name)) && (defined($$contig_ref)) ) {  #Write stderr for xargs process
 	    
-	    $stderrfile_path = $xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    $stderrfile_path = $xargs_file_name.".".$$contig_ref.".stderr.txt";  #Redirect xargs output to program specific stderr file
 	    $append_stderr_info = 1;
 	}
 	if ( ! $instream) {  #Use less to initate processing
@@ -24713,7 +24721,7 @@ sub vt_core {
 		       smart_decomposition => 1,
 		      });
 	}
-	if ( ($active_parameter_href->{vt_normalize} > 0) && ($normalize) ) {  #Write stderr for xargs process
+	if ( ($active_parameter_href->{vt_normalize} > 0) && ($normalize) ) {
 
 	    print $FILEHANDLE "| ";  #Pipe
 	    
@@ -24724,6 +24732,16 @@ sub vt_core {
 		       no_fail_inconsistent_reference => 1,
 		       FILEHANDLE => $FILEHANDLE,
 		      });
+	}
+	if ( ($active_parameter_href->{vt_uniq} > 0) && ($uniq) ) {
+
+	    print $FILEHANDLE "| ";  #Pipe
+	    
+	    vt_uniq({infile_path => "-",
+		     stderrfile_path => $stderrfile_path,
+		     append_stderr_info => $append_stderr_info,
+		     FILEHANDLE => $FILEHANDLE,
+		    });
 	}
 	if ( ($active_parameter_href->{psnpeff} > 0) && ($calculate_af) ) {  #$calculate_af should not be set to 1 if reference was not part of snpeff parameter
 
