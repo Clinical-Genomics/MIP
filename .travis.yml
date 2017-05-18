@@ -30,6 +30,6 @@ script:
   - source ~/.bashrc
   - source activate test_environment
   - cd /lib/x86_64-linux-gnu
-  - sudo ln -s $ROOTSYS/lib/*so .
+  - sudo ln -s "$ROOTSYS"/lib/*so .
   - cd -
   - cd t; perl run_tests.t -c ../templates/mip_travis_config.yaml
