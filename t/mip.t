@@ -31,23 +31,23 @@ BEGIN {
 
     $USAGE =
 	basename($0).qq{
-           -c/--config_file YAML config file for analysis parameters (defaults to ../templates/mip_travis_config.yaml")
-           -vb/--verbose Verbose
+           -c/--config_file YAML config file for analysis parameters (defaults to ../templates/mip_config.yaml")
            -h/--help Display this help message   
            -v/--version Display version
+           -vb/--verbose Verbose
         };    
 }
 
 my $verbose = 1;
 my $mip_version = "0.0.1";
 
-my $config_file = catfile(dirname($Bin), "templates", "mip_travis_config.yaml");
+my $config_file = catfile(dirname($Bin), "templates", "mip_config.yaml");
 
 ###User Options
-GetOptions('vb|verbose' => $verbose,
-	   'c|config_file:s' => \$config_file,
+GetOptions('c|config_file:s' => \$config_file,
 	   'h|help' => sub { print STDOUT $USAGE, "\n"; exit;},  #Display help text
 	   'v|version' => sub { print STDOUT "\n".basename($0)." ".$mip_version, "\n\n"; exit;},  #Display version number
+	   'vb|verbose' => $verbose,
     ) or Script::Utils::help({USAGE => $USAGE,
 			      exit_code => 1,
 			     });

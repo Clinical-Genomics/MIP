@@ -14,6 +14,7 @@ use FindBin qw($Bin);  #Find directory of script
 use File::Basename qw(dirname basename);
 use File::Spec::Functions qw(catdir catfile devnull);
 use Getopt::Long;
+use IPC::Cmd qw[can_run run];
 
 ##MIPs lib/
 use lib catdir(dirname($Bin), "lib");
@@ -86,18 +87,22 @@ BEGIN {
 
     $USAGE =
 	basename($0).qq{
+           -c/--config_file YAML config file for analysis parameters (defaults to ../templates/mip_config.yaml")
            -h/--help Display this help message   
            -v/--version Display version
+           -vb/--verbose Verbose
         };    
 }
 
-
-
+my $config_file = catfile(dirname($Bin), "templates", "mip_config.yaml");
+my $verbose = 1;
 my $run_tests_version = "0.0.0";
 
 ###User Options
-GetOptions('h|help' => sub { done_testing(); print STDOUT $USAGE, "\n"; exit;},  #Display help text
+GetOptions('c|config_file:s' => \$config_file,
+	   'h|help' => sub { done_testing(); print STDOUT $USAGE, "\n"; exit;},  #Display help text
 	   'v|version' => sub { done_testing(); print STDOUT "\n".basename($0)." ".$run_tests_version, "\n\n"; exit;},  #Display version number
+	   'vb|verbose' => $verbose,
     ) or done_testing(), Script::Utils::help({USAGE => $USAGE,
 					      exit_code => 1,
 					     });
@@ -111,14 +116,19 @@ test_modules();
 
 mip_scripts();
 
+ok(can_run("prove"), "Checking can run perl prove");
+
+##Run tests files
+my $cmds_ref = ["prove",
+		"mip.t",
+		"::",
+		"-c", $config_file,
+    ];
+my( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
+    run( command => $cmds_ref, verbose => $verbose );
+
 done_testing(); # Reached the end safely
 
-my %args = (verbosity => 1);
-
-my $harness = TAP::Harness->new( \%args );
-my @tests = (catfile(getcwd(), "mip.t"),
-    );
-$harness->runtests(@tests);
 
 ######################
 ####SubRoutines#######
