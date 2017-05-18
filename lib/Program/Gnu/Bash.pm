@@ -58,8 +58,10 @@ sub cd {
     my @commands = qw(cd);  #Stores commands depending on input parameters
 
     ## Indirectory
-    push(@commands, $directory_path);
+    if ($directory_path) {
 
+	push(@commands, $directory_path);
+    }
     if ($stderrfile_path) {
 
 	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
