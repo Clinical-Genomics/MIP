@@ -2605,21 +2605,21 @@ sub analysisrunstatus {
 
 	if (defined($sample_info_href->{vcf_file}{clinical}{path})) {
 
-	    print $FILEHANDLE q?["?.catfile($Bin, "t", "test.t").q?", "test select file"], ?;
+	    print $FILEHANDLE q?["?.catfile($Bin, "t", "mip_analysis.t").q?", "test select file"], ?;
 	}
 
 	if (defined($sample_info_href->{vcf_file}{research}{path})) {
 
-	    print $FILEHANDLE q?["?.catfile($Bin, "t", "test.t").q?", "test research file"], ?;
+	    print $FILEHANDLE q?["?.catfile($Bin, "t", "mip_analysis.t").q?", "test research file"], ?;
 	}
 	if (defined($sample_info_href->{sv_vcf_file}{clinical}{path})) {
 
-	    print $FILEHANDLE q?["?.catfile($Bin, "t", "test.t").q?", "test sv select file"], ?;
+	    print $FILEHANDLE q?["?.catfile($Bin, "t", "mip_analysis.t").q?", "test sv select file"], ?;
 	}
 
 	if (defined($sample_info_href->{sv_vcf_file}{research}{path})) {
 
-	    print $FILEHANDLE q?["?.catfile($Bin, "t", "test.t").q?", "test sv research file"], ?;
+	    print $FILEHANDLE q?["?.catfile($Bin, "t", "mip_analysis.t").q?", "test sv research file"], ?;
 	}
 	print $FILEHANDLE q?)'?;
 	say $FILEHANDLE "\n";
@@ -11239,7 +11239,7 @@ sub cnvnator {
     my $root_file;
     my $phenotype_info = $sample_info_href->{sample}{$$sample_id_ref}{phenotype}; #Alias
 
-    my $perl_vcf_fix = q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my @a = split("\t", $_); pop(@a);print join("\t", @a)."\t".?.$$sample_id_ref.q?, "\n"} else {print $_, "\n"}'?;
+    my $perl_vcf_fix = q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my @a = split("\t", $_); pop(@a);print join("\t", @a)."\t.?.$$sample_id_ref.q?", "\n"} else {print $_, "\n"}'?;
 
     my $perl_add_contigs = q?perl -nae '{print "##contig=<ID=".$F[0].",length=".$F[1].">", "\n"}'?;
 

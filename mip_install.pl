@@ -808,24 +808,6 @@ sub install_bioconda_modules {
 			      });
 	}
     }
-
-    ## Special case to remove perl installation after fastqc install
-    if (exists($parameter_href->{bioconda}{fastqc})) {
-
-	say $FILEHANDLE "## Special case to remove perl installation after fastqc install";
-	print $FILEHANDLE "conda uninstall ";
-	if ($parameter_href->{quiet}) {
-	    
-	    print $FILEHANDLE "--quiet ";  #Do not display progress bar
-	}
-	
-	if (exists($parameter_href->{conda_environment}) && ($parameter_href->{conda_environment}) ) {
-
-	    print $FILEHANDLE "-n ".$parameter_href->{conda_environment}." ";
-	}
-	print $FILEHANDLE "-y ";
-	say $FILEHANDLE "perl", "\n";
-    }
 }
 
 
@@ -2323,7 +2305,7 @@ sub mip_scripts {
     $mip_sub_scripts{"t"} = ["mip_install.t",
 			     "mip.t",
 			     "run_tests.t",
-			     "test.t",
+			     "mip_analysis.t",
 	];
     $mip_sub_scripts{"templates"} = ["mip_config.yaml"];
 

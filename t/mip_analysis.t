@@ -487,11 +487,15 @@ sub read_infile_vcf {
 
 	ok( exists($vcf_header{INFO}{$key}), "Found both header and line field key for: ".$key." with key count: ".$vcf_info_key{$key});
     }
-
-    ## This will fail for Appris tcl etc which is only available in Grch38 - foreach my $key (keys %vep_format_field_column) {
     foreach my $key (keys %vcf_info_csq_key) {
 
 	ok($vcf_info_csq_key{$key}, "Found entry for CSQ field key for: ".$key." with key count: ".$vcf_info_csq_key{$key});
+    }
+    ## This will fail for Appris tcl etc which is only available in Grch38 - foreach my $key (keys %vep_format_field_column) {
+    TODO: {
+	local $TODO = "Check VEP CSQ currently not produced";
+	ok($vcf_info_csq_key{PolyPhen},  "Found entry for CSQ field: Polyphen");
+	ok($vcf_info_csq_key{APPRIS},  "Found entry for CSQ field: APPRIS");
     }
 }
 

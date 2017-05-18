@@ -245,7 +245,7 @@ sub mip_scripts{
     $mip_sub_scripts{"t"} = ["mip_install.t",
 			     "mip.t",
 			     "run_tests.t",
-			     "test.t",
+			     "mip_analysis.t",
 			     
 	];
     $mip_sub_scripts{"templates"} = ["mip_config.yaml",
