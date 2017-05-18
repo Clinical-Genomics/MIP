@@ -20,6 +20,10 @@ use Params::Check qw[check allow last_error];
 use Test::More;
 
 
+## Third party module(s)
+use List::Util qw(any);
+
+
 ##MIPs lib/
 use lib catdir(dirname($Bin), "lib");
 use File::Format::Yaml qw(load_yaml);
@@ -290,7 +294,7 @@ sub read_infile_vcf {
     while (<$FILEHANDLE>) {
 
 	chomp $_;  # Remove newline
-	if($. > 5000) {  #Exit after parsing X lines
+	if($. > 10000) {  #Exit after parsing X lines
 	    last;
 	}
 	if (m/^\s+$/) {	# Avoid blank lines
@@ -487,15 +491,31 @@ sub read_infile_vcf {
 
 	ok( exists($vcf_header{INFO}{$key}), "Found both header and line field key for: ".$key." with key count: ".$vcf_info_key{$key});
     }
-    foreach my $key (keys %vcf_info_csq_key) {
+    foreach my $key (keys %vep_format_field_column) {
 
-	ok($vcf_info_csq_key{$key}, "Found entry for CSQ field key for: ".$key." with key count: ".$vcf_info_csq_key{$key});
-    }
-    ## This will fail for Appris tcl etc which is only available in Grch38 - foreach my $key (keys %vep_format_field_column) {
-    TODO: {
-	local $TODO = "Check VEP CSQ currently not produced";
-	ok($vcf_info_csq_key{PolyPhen},  "Found entry for CSQ field: Polyphen");
-	ok($vcf_info_csq_key{APPRIS},  "Found entry for CSQ field: APPRIS");
+	my @todo_keys = ("PolyPhen",
+			 "APPRIS",
+			 "TSL",
+			 "Existing_variation",
+			 "LoF_flags",
+			 "MOTIF_NAME",
+			 "MOTIF_POS",
+			 "HIGH_INF_POS",
+			 "MOTIF_SCORE_CHANGE",
+	    );
+	if ( any {$_ eq $key} @todo_keys ) {
+
+	    ## This will fail for Appris tcl etc which is only available in Grch38
+	  TODO: {
+	      local $TODO = "Check VEP CSQ currently not produced";
+	
+		  ok($vcf_info_csq_key{$key},  "Found entry for CSQ field key for: ".$key);
+	    }
+	}
+	else {
+
+	    ok($vcf_info_csq_key{$key}, "Found entry for CSQ field key for: ".$key." with key count: ".$vcf_info_csq_key{$key});
+	}
     }
 }
 
