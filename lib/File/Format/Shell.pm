@@ -3,7 +3,7 @@ package File::Format::Shell;
 use strict;
 use warnings;
 use warnings qw( FATAL utf8 );
-use v5.18;  #Require at least perl 5.18
+use v5.10;  #Require at least perl 5.10
 use utf8;  #Allow unicode characters in this script
 use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
@@ -90,7 +90,7 @@ sub create_bash_file {
 	open ($FILEHANDLE, ">", catfile($pwd, $file_name)) or die("Cannot write to '".catfile($pwd, $file_name)."' :".$!."\n");
     }
 
-    say $FILEHANDLE "#!".catfile( dirname( dirname( devnull() ) ) ).catfile("usr", "bin", "env", "bash"), "\n";
+    print $FILEHANDLE "#!".catfile( dirname( dirname( devnull() ) ) ).catfile("usr", "bin", "env", "bash"), "\n\n";
 
     ## Create housekeeping function which removes entire directory when finished
     create_housekeeping_function({directory_remove => $directory_remove,
@@ -113,7 +113,7 @@ sub create_bash_file {
     }
     else {
 
-	say STDERR "Created bash file: '".catfile($pwd, $file_name), "'";
+	print STDERR "Created bash file: '".catfile($pwd, $file_name), "'", "\n";
     }
     return $FILEHANDLE;
 }
@@ -164,12 +164,12 @@ sub create_housekeeping_function {
     use Program::Gnu::Coreutils qw(rm);
 
     ## Create housekeeping function and trap
-    say $FILEHANDLE q?finish() {?, "\n";
+    print $FILEHANDLE q?finish() {?, "\n\n";
 
     if ( (defined($directory_remove)) && ($directory_remove) ) {
 
-	say $FILEHANDLE "\t".q?local directory="$1"?;
-	say $FILEHANDLE "\t".q?## Perform exit housekeeping?;
+	print $FILEHANDLE "\t".q?local directory="$1"?, "\n";
+	print $FILEHANDLE "\t".q?## Perform exit housekeeping?, "\n";
 	print $FILEHANDLE "\t";
 	rm({infile_path => q?"$directory"?,
 	    force => 1,
@@ -189,7 +189,7 @@ sub create_housekeeping_function {
 		       });
     }
 
-    say $FILEHANDLE q?}?;
+    print $FILEHANDLE q?}?, "\n";
 
     ## Enable trap function with trap signal(s)
     enable_trap({FILEHANDLE => $FILEHANDLE,
@@ -243,9 +243,9 @@ sub create_error_trap_function {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     ## Create error handling function and trap
-    say $FILEHANDLE $trap_function_name.q?() {?, "\n";
-    say $FILEHANDLE "\t".q?local program="$1"?;
-    say $FILEHANDLE "\t".q?local return_code="$2"?, "\n";
+    print $FILEHANDLE $trap_function_name.q?() {?, "\n\n";
+    print $FILEHANDLE "\t".q?local program="$1"?, "\n";
+    print $FILEHANDLE "\t".q?local return_code="$2"?, "\n\n";
 
     if ( (defined($job_ids_ref)) && (@$job_ids_ref)
 	&& (defined($$log_file_ref)) && ($$log_file_ref) ) {
@@ -258,10 +258,10 @@ sub create_error_trap_function {
 		       });
     }
 
-    say $FILEHANDLE "\t".q?## Display error message and exit?;
-    say $FILEHANDLE "\t".q?echo "${program}: ${return_code}: Unknown Error - ExitCode=$return_code" 1>&2?;
-    say $FILEHANDLE "\t".q?exit 1?;
-    say $FILEHANDLE q?}?;
+    print $FILEHANDLE "\t".q?## Display error message and exit?, "\n";
+    print $FILEHANDLE "\t".q?echo "${program}: ${return_code}: Unknown Error - ExitCode=$return_code" 1>&2?, "\n";
+    print $FILEHANDLE "\t".q?exit 1?, "\n";
+    print $FILEHANDLE q?}?, "\n";
 
     ## Enable trap function with trap signal(s)
     enable_trap({FILEHANDLE => $FILEHANDLE,
@@ -298,9 +298,9 @@ sub clear_trap {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     ## Clear trap for signal ERR
-    say $FILEHANDLE "\n## Clear trap for signal(s) ".join(" ", @$trap_signals_ref);
-    say $FILEHANDLE "trap - ".join(" ", @$trap_signals_ref);
-    say $FILEHANDLE "trap", "\n";
+    print $FILEHANDLE "\n## Clear trap for signal(s) ".join(" ", @$trap_signals_ref), "\n";
+    print $FILEHANDLE "trap - ".join(" ", @$trap_signals_ref), "\n";
+    print $FILEHANDLE "trap", "\n\n";
 }
 
 
@@ -334,8 +334,8 @@ sub enable_trap {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    say $FILEHANDLE "\n## Enable trap for signal(s) ".join(" ", @$trap_signals_ref)." ";
-    say $FILEHANDLE "trap '".$trap_function."' ".join(" ", @$trap_signals_ref), "\n";
+    print $FILEHANDLE "\n## Enable trap for signal(s) ".join(" ", @$trap_signals_ref), "\n";
+    print $FILEHANDLE "trap '".$trap_function."' ".join(" ", @$trap_signals_ref), "\n\n";
 }
 
 
@@ -399,7 +399,7 @@ sub track_progress {
 	print $FILEHANDLE "\t".join(" ", @command)." ";
 	print $FILEHANDLE q?| ?;
 	print $FILEHANDLE q?perl -nae 'my @headers=(?.join(",", @reformat_sacct_header).q?); if($. == 1) {print "#".join("\t", @headers), "\n"} if ($.>=3 && $F[0]!~/.batch/) {print join("\t", @F), "\n"}' ?;
-	say $FILEHANDLE q?> ?.$$log_file_ref.".status", "\n";
+	print $FILEHANDLE q?> ?.$$log_file_ref.".status", "\n\n";
     }
 }
 
