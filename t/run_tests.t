@@ -51,7 +51,7 @@ BEGIN {
     $perl_module{"File::Path"} = [qw(make_path remove_tree)];
     $perl_module{"File::Spec::Functions"} =  [qw(catfile catdir devnull)];
     $perl_module{FindBin} = [qw($Bin)];
-    $perl_module{"List::Util"} = [qw(any all)];
+    $perl_module{"List::Util"} = [qw(any all uniq)];
     $perl_module{"IPC::Cmd"} = [qw(can_run run)];
     $perl_module{"Modern::Perl"} = [qw(2014)];
     $perl_module{open} = [qw(:encoding(UTF-8) :std)];

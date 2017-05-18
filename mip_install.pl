@@ -2348,7 +2348,7 @@ sub mip_scripts {
     }
 
     ## Copy mip scripts and sub scripts to conda env and make executable
-    print $FILEHANDLE "## Copy mip scripts and subdirectory scripts to conda env and make executable\n\n";
+    print $FILEHANDLE "## Copy mip scripts and subdirectory scripts to conda env and make executable\n";
     foreach my $script (@mip_scripts) {
 
 	my $script_no_ending = fileparse($script, qr/\.[^.]*/);

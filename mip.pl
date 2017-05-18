@@ -24727,7 +24727,7 @@ sub vt_core {
 	    
 	    normalize({infile_path => "-",
 		       stderrfile_path => $stderrfile_path,
-		       append_stderr_info => $append_stderr_info,
+		       append_stderr_info => 1,
 		       referencefile_path => $$human_genome_reference_ref,
 		       no_fail_inconsistent_reference => 1,
 		       FILEHANDLE => $FILEHANDLE,
