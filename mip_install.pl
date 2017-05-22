@@ -151,6 +151,7 @@ $array_parameter{perl_modules}{default} = ["Modern::Perl",  #MIP
 					   "YAML",  #MIP
 					   "Log::Log4perl",  #MIP
 					   "List::Util",  #MIP
+					   "Scalar::Util::Numeric",  #MIP
 					   "Set::IntervalTree",  # MIP/vcfParser.pl
 					   "Net::SSLeay",  # VEP
 					   "LWP::Simple",  # VEP
