@@ -34,7 +34,7 @@ BEGIN {
            -cdp/--conda_path The conda path (Default: "HOME/miniconda")
            -cdu/--conda_update Update conda before installing (Supply flag to enable)
            -bvc/--bioconda Set the module version of the programs that can be installed with bioconda (e.g. 'bwa=0.7.12')
-           -pip/--pip Set the module version of the programs that can be installed with pip (e.g. 'genmod=3.7.0')
+           -pip/--pip Set the module version of the programs that can be installed with pip (e.g. 'genmod=3.7.01')
            -pyv/--python_version Set the env python version (Default: "2.7")
 
            ## SHELL
@@ -58,7 +58,7 @@ BEGIN {
            -rhcp/--rhocall_path Set the path to where to install rhocall (Defaults: "HOME/rhocall")
            -cnvn/--cnvnator Set the cnvnator version (Default: 0.3.3)
            -cnvnr/--cnvnator_root_binary Set the cnvnator root binary (Default: "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz")
-           -tid/--tiddit Set the tiddit version (Default: "1.1.3")
+           -tid/--tiddit Set the tiddit version (Default: "1.1.4")
            -svdb/--svdb Set the svdb version (Default: "1.0.5")
 
            ## Utility
@@ -117,7 +117,7 @@ $parameter{bioconda}{cmake} = "3.3.1";
 $parameter{perl_version} = "5.18.2";
 
 ## PIP
-$parameter{pip}{genmod} = "3.7.0";
+$parameter{pip}{genmod} = "3.7.1";
 $parameter{pip}{variant_integrity} = "0.0.4";
 $parameter{pip}{chanjo} = "4.0.0";
 
@@ -137,7 +137,7 @@ $parameter{rhocall_path} = catdir($ENV{HOME}, "rhocall");
 
 $parameter{cnvnator} = "0.3.3";
 $parameter{cnvnator_root_binary} = "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz";
-$parameter{tiddit} = "1.1.3";
+$parameter{tiddit} = "1.1.4";
 $parameter{svdb} = "1.0.5"; 
 
 ## Define default parameters
