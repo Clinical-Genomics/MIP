@@ -31,7 +31,7 @@ BEGIN {
     $USAGE =
 	basename($0).qq{ [options]
            -env/--conda_environment Conda environment (Default: "")
-           -cdp/--conda_path The conda path (Default: "HOME/miniconda")
+           -cdp/--conda_dir_path The conda directory path (Default: "HOME/miniconda")
            -cdu/--conda_update Update conda before installing (Supply flag to enable)
            -bvc/--bioconda Set the module version of the programs that can be installed with bioconda (e.g. 'bwa=0.7.12')
            -pip/--pip Set the module version of the programs that can be installed with pip (e.g. 'genmod=3.7.01')
@@ -59,7 +59,7 @@ BEGIN {
            -cnvn/--cnvnator Set the cnvnator version (Default: 0.3.3)
            -cnvnr/--cnvnator_root_binary Set the cnvnator root binary (Default: "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz")
            -tid/--tiddit Set the tiddit version (Default: "1.1.4")
-           -svdb/--svdb Set the svdb version (Default: "1.0.5")
+           -svdb/--svdb Set the svdb version (Default: "1.0.6")
 
            ## Utility
            -psh/--prefer_shell Shell will be used for overlapping shell and biconda installations (Supply flag to enable)
@@ -81,7 +81,7 @@ BEGIN {
 my %parameter;
 
 ##Conda
-$parameter{conda_path} = catdir($ENV{HOME}, "miniconda");
+$parameter{conda_dir_path} = catdir($ENV{HOME}, "miniconda");
 $parameter{python_version} = "2.7";
 
 $parameter{bioconda}{bwa} = "0.7.15";
@@ -138,7 +138,7 @@ $parameter{rhocall_path} = catdir($ENV{HOME}, "rhocall");
 $parameter{cnvnator} = "0.3.3";
 $parameter{cnvnator_root_binary} = "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz";
 $parameter{tiddit} = "1.1.4";
-$parameter{svdb} = "1.0.5"; 
+$parameter{svdb} = "1.0.6"; 
 
 ## Define default parameters
 my %array_parameter;
@@ -175,7 +175,7 @@ my $install_version = "1.2.0";
 
 ###User Options
 GetOptions('env|conda_environment:s'  => \$parameter{conda_environment},
-	   'cdp|conda_path:s' => \$parameter{conda_path},
+	   'cdp|conda_dir_path:s' => \$parameter{conda_dir_path},
 	   'cdu|conda_update' => \$parameter{conda_update},
 	   'bcv|bioconda=s' => \%{ $parameter{bioconda} },
 	   'pip|pip=s' => \%{ $parameter{pip} },
@@ -222,11 +222,11 @@ GetOptions('env|conda_environment:s'  => \$parameter{conda_environment},
 ## Update default parameter dependent on other parameters
 if (exists($parameter{conda_environment}) && ($parameter{conda_environment}) ) {
 
-    $parameter{conda_prefix_path} = catdir($parameter{conda_path}, "envs", $parameter{conda_environment});
+    $parameter{conda_prefix_path} = catdir($parameter{conda_dir_path}, "envs", $parameter{conda_environment});
 }
 else {
 
-    $parameter{conda_prefix_path} = $parameter{conda_path};
+    $parameter{conda_prefix_path} = $parameter{conda_dir_path};
 }
 
 if (! $parameter{vep_cache_dir}) {
@@ -583,9 +583,9 @@ sub check_conda {
     }
 
     ## Check Conda path
-    if (! -d $parameter_href->{conda_path}) {
+    if (! -d $parameter_href->{conda_dir_path}) {
 
-	print STDERR "Could not find miniconda directory in: ".catdir($parameter_href->{conda_path}), "\n";
+	print STDERR "Could not find miniconda directory in: ".catdir($parameter_href->{conda_dir_path}), "\n";
 	exit 1;
     }
 
