@@ -13506,7 +13506,7 @@ sub gatk_baserecalibration {
 									     });
     }
 
-    $core_number = floor($active_parameter_href->{node_ram_memory} / 4);  #Division by X according to the java heap
+    $core_number = floor($active_parameter_href->{node_ram_memory} / 6);  #Division by X according to the java heap
     $core_number = check_max_core_number({max_cores_per_node => $active_parameter_href->{max_cores_per_node},
 					  core_number => $core_number
 					 });  #To not exceed maximum
@@ -13522,7 +13522,7 @@ sub gatk_baserecalibration {
 							     core_number => $core_number,
 							     xargs_file_counter => $xargs_file_counter,
 							     first_command => "java",
-							     memory_allocation => "Xmx4g",
+							     memory_allocation => "Xmx6g",
 							     java_use_large_pages => $active_parameter_href->{java_use_large_pages},
 							     temp_directory => $$temp_directory_ref,
 							     java_jar => catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar"),
@@ -13569,7 +13569,7 @@ sub gatk_baserecalibration {
 							     core_number => $core_number,
 							     xargs_file_counter => $xargs_file_counter,
 							     first_command => "java",
-							     memory_allocation => "Xmx4g",
+							     memory_allocation => "Xmx6g",
 							     java_use_large_pages => $active_parameter_href->{java_use_large_pages},
 							     temp_directory => $$temp_directory_ref,
 							     java_jar => catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar"),
