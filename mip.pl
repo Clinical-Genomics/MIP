@@ -368,7 +368,7 @@ eval_parameter_hash({parameter_href => \%parameter,
 		     file_path => catfile($Bin, "definitions", "define_parameters.yaml"),
 		    });
 
-my $mip_version = "v4.0.19";	#Set MIP version
+my $mip_version = "v4.0.20";	#Set MIP version
 
 ## Directories, files, job_ids and sample_info
 my (%infile, %indir_path, %infile_lane_prefix, %lane, %infile_both_strands_prefix, %job_id, %sample_info);
