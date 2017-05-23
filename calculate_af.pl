@@ -24,7 +24,7 @@ use vars qw($USAGE);
 BEGIN {
     $USAGE =
         qq{calculate_af.pl - [vcf]
-               -cak/--af_key_suffixes Key to calculate AF for (AC_af_key_suffix / AN_af_key_suffix)
+               -cak/--af_key_suffixes Key(s) to calculate AF for (AC_af_key_suffix / AN_af_key_suffix)
                -h/--help Display this help message
                -v/--version Display version};
 }
