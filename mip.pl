@@ -381,7 +381,7 @@ eval_parameter_hash({parameter_href => \%parameter,
 		     file_path => catfile($Bin, "definitions", "define_parameters.yaml"),
 		    });
 
-my $mip_version = "v4.0.19";	#Set MIP version
+my $mip_version = "v4.0.20";	#Set MIP version
 
 ## Directories, files, sample_info and job_ids
 my (%infile, %indir_path, %infile_lane_no_ending, %lane, %infile_both_strands_no_ending, %job_id, %sample_info);
@@ -12022,7 +12022,7 @@ sub gatk_baserecalibration {
 									     });
     }
 
-    $core_number = floor($active_parameter_href->{node_ram_memory} / 4);  #Division by X according to the java heap
+    $core_number = floor($active_parameter_href->{node_ram_memory} / 6);  #Division by X according to the java heap
     $core_number = core_number_per_sbatch({active_parameter_href => $active_parameter_href,
 					   core_number => $core_number
 					  });  #To not exceed maximum
@@ -12038,7 +12038,7 @@ sub gatk_baserecalibration {
 							     core_number => $core_number,
 							     xargs_file_counter => $xargs_file_counter,
 							     first_command => "java",
-							     memory_allocation => "Xmx4g",
+							     memory_allocation => "Xmx6g",
 							     java_use_large_pages_ref => \$active_parameter_href->{java_use_large_pages},
 							     java_temporary_directory => $$temp_directory_ref,
 							     java_jar => catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar"),
@@ -12086,7 +12086,7 @@ sub gatk_baserecalibration {
 							     core_number => $core_number,
 							     xargs_file_counter => $xargs_file_counter,
 							     first_command => "java",
-							     memory_allocation => "Xmx4g",
+							     memory_allocation => "Xmx6g",
 							     java_use_large_pages_ref => \$active_parameter_href->{java_use_large_pages},
 							     java_temporary_directory => $$temp_directory_ref,
 							     java_jar => catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar"),
