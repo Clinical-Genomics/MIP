@@ -1,12 +1,12 @@
 #!/usr/bin/env perl
 
+
 use strict;
 use warnings;
 use warnings qw( FATAL utf8 );
 use utf8;
 use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
-
 use Getopt::Long;
 use Params::Check qw[check allow last_error];
 $Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
@@ -16,8 +16,10 @@ use FindBin qw($Bin); #Find directory of script
 use IO::Handle;
 use File::Basename qw(dirname basename fileparse);
 use File::Spec::Functions qw(catfile catdir devnull);
+use Carp;
 
-##MIPs lib/
+
+## MIPs lib/
 use lib catdir($Bin, "lib");  #Add MIPs internal lib
 use File::Format::Shell qw(create_bash_file);
 use Program::Download::Wget qw(wget);
@@ -25,214 +27,193 @@ use Program::Gnu::Bash qw(cd);
 use Program::Gnu::Coreutils qw(cp rm mv mkdir);
 use Script::Utils qw(help set_default_array_parameters);
 
-our $USAGE;
 
-BEGIN {
-    $USAGE =
-	basename($0).qq{ [options]
-           -env/--conda_environment Conda environment (Default: "")
-           -cdp/--conda_dir_path The conda directory path (Default: "HOME/miniconda")
-           -cdu/--conda_update Update conda before installing (Supply flag to enable)
-           -bvc/--bioconda Set the module version of the programs that can be installed with bioconda (e.g. 'bwa=0.7.12')
-           -pip/--pip Set the module version of the programs that can be installed with pip (e.g. 'genmod=3.7.01')
-           -pyv/--python_version Set the env python version (Default: "2.7")
-
-           ## SHELL
-           -pei/--perl_install Install perl (Supply flag to enable)
-           -pev/--perl_version Set the perl version (defaults: "5.18.2")
-           -pevs/--perl_skip_test Skip "tests" in perl installation
-           -pm/--perl_modules Set the perl modules to be installed via cpanm (Default: ["Modern::Perl", "List::Util", "IPC::System::Simple", "Path::Iterator::Rule", "YAML", "Log::Log4perl", "Set::IntervalTree", "Net::SSLeay",P, "LWP::Simple", "LWP::Protocol::https", "Archive::Zip", "Archive::Extract", "DBI","JSON", "DBD::mysql", "CGI", "Sereal::Encoder", "Sereal::Decoder", "Bio::Root::Version", "Module::Build"])
-           -pmf/--perl_modules_force Force installation of perl modules
-           -pic/--picardtools Set the picardtools version (Default: "2.5.9"),
-           -sbb/--sambamba Set the sambamba version (Default: "0.6.6")
-           -bet/--bedtools Set the bedtools version (Default: "2.26.0")
-           -vt/--vt Set the vt version (Default: "0.57")
-           -plk/--plink  Set the plink version (Default: "160224")
-           -snpg/--snpeff_genome_versions Set the snpEff genome version (Default: ["GRCh37.75", "GRCh38.82"])
-           -vep/--varianteffectpredictor Set the VEP version (Default: "88")
-           -vepa/--vep_auto_flag Set the VEP auto installer flags
-	   -vepc/--vep_cache_dir Specify the cache directory to use (whole path; defaults to "~/miniconda/envs/conda_environment/ensembl-tools-release-varianteffectpredictorVersion/cache")
-           -vepa/--vep_assemblies Select the assembly version (Default: ["GRCh37", "GRCh38"])
-           -vepp/--vep_plugin Supply a comma separated list of VEP plugins (Default: "UpDownDistance,LoFtool,Lof")
-           -rhc/--rhocall Set the rhocall version (Default: "0.4")
-           -rhcp/--rhocall_path Set the path to where to install rhocall (Defaults: "HOME/rhocall")
-           -cnvn/--cnvnator Set the cnvnator version (Default: 0.3.3)
-           -cnvnr/--cnvnator_root_binary Set the cnvnator root binary (Default: "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz")
-           -tid/--tiddit Set the tiddit version (Default: "1.1.4")
-           -svdb/--svdb Set the svdb version (Default: "1.0.6")
-
-           ## Utility
-           -psh/--prefer_shell Shell will be used for overlapping shell and biconda installations (Supply flag to enable)
-           -ppd/--print_parameters_default Print the parameter defaults
-           -nup/--noupdate Do not update already installed programs (Supply flag to enable)
-           -sp/--select_programs Install supplied programs e.g. -sp perl -sp bedtools (Default: "")
-           -rd/--reference_dir Reference(s) directory (Default: "")
-           -rd/--reference_genome_versions Reference versions to download ((Default: ["GRCh37", "hg38"]))
-           -q/--quiet Quiet (Supply flag to enable; no output from individual program that has a quiet flag)
-           -h/--help Display this help message
-           -ver/--version Display version
-           -v/--verbose Set verbosity
-        };
-}
-
+our $USAGE = build_usage({});
 
 ### Set parameter default
 
 my %parameter;
 
-##Conda
-$parameter{conda_dir_path} = catdir($ENV{HOME}, "miniconda");
-$parameter{python_version} = "2.7";
+## Conda
+$parameter{ conda_dir_path } = catdir($ENV{ HOME }, "miniconda");
+$parameter{ python_version } = "2.7";
 
-$parameter{bioconda}{bwa} = "0.7.15";
-$parameter{bioconda}{bwakit} = "0.7.12";
-$parameter{bioconda_bwakit_patch} = "-0";  #For correct softlinking in share and bin in conda env
-$parameter{bioconda}{fastqc} = "0.11.5";
-$parameter{bioconda}{cramtools} = "3.0.b47";
-$parameter{bioconda}{samtools} = "1.4.1";
-$parameter{bioconda}{bcftools} = "1.4.1";
-$parameter{bioconda}{snpeff} = "4.3.1";
-$parameter{bioconda_snpeff_patch} = "m-0";  #For correct softlinking in share and bin in conda env
-$parameter{bioconda}{snpsift} = "4.3.1";
-$parameter{bioconda_snpsift_patch} = "m-0";  #For correct softlinking in share and bin in conda env
-$parameter{bioconda}{picard} = "2.9.2";
-$parameter{bioconda_picard_patch} = "-0";  #For correct softlinking in share and bin in conda env
-$parameter{bioconda}{htslib} = "1.4.1";
-$parameter{bioconda}{bedtools} = "2.26.0";
-$parameter{bioconda}{vt} = "2015.11.10";
-$parameter{bioconda}{sambamba} = "0.6.6";
-$parameter{bioconda}{freebayes} = "1.1.0";
-$parameter{bioconda}{delly} = "0.7.7";
-$parameter{bioconda}{manta} = "1.1.0";
-$parameter{bioconda_manta_patch} = "-0";
-$parameter{bioconda}{multiqc} = "0.9.1a0";
-$parameter{bioconda}{peddy} = "0.2.9";
-$parameter{bioconda}{plink2} = "1.90b3.35";
-$parameter{bioconda}{vcfanno} = "0.1.0";
-$parameter{bioconda}{gcc} = "4.8.5";  #Required for CNVnator
-$parameter{bioconda}{cmake} = "3.3.1";
+## Bioconda channel
+$parameter{ bioconda }{ bwa       } = "0.7.15";
+$parameter{ bioconda }{ bwakit    } = "0.7.12";
+$parameter{ bioconda }{ fastqc    } = "0.11.5";
+$parameter{ bioconda }{ cramtools } = "3.0.b47";
+$parameter{ bioconda }{ samtools  } = "1.4.1";
+$parameter{ bioconda }{ bcftools  } = "1.4.1";
+$parameter{ bioconda }{ snpeff    } = "4.3.1";
+$parameter{ bioconda }{ snpsift   } = "4.3.1";
+$parameter{ bioconda }{ picard    } = "2.9.2";
+$parameter{ bioconda }{ htslib    } = "1.4.1";
+$parameter{ bioconda }{ bedtools  } = "2.26.0";
+$parameter{ bioconda }{ vt        } = "2015.11.10";
+$parameter{ bioconda }{ sambamba  } = "0.6.6";
+$parameter{ bioconda }{ freebayes } = "1.1.0";
+$parameter{ bioconda }{ delly     } = "0.7.7";
+$parameter{ bioconda }{ manta     } = "1.1.0";
+$parameter{ bioconda }{ multiqc   } = "0.9.1a0";
+$parameter{ bioconda }{ peddy     } = "0.2.9";
+$parameter{ bioconda }{ plink2    } = "1.90b3.35";
+$parameter{ bioconda }{ vcfanno   } = "0.1.0";
+$parameter{ bioconda }{ gcc       } = "4.8.5";  #Required for CNVnator
+$parameter{ bioconda }{ cmake     } = "3.3.1";
+
+## Bioconda pathes
+# For correct softlinking in share and bin in conda env
+$parameter{ bioconda_bwakit_patch  } = "-0";
+$parameter{ bioconda_snpeff_patch  } = "m-0";
+$parameter{ bioconda_snpsift_patch } = "m-0";
+$parameter{ bioconda_picard_patch  } = "-0";
+$parameter{ bioconda_manta_patch   } = "-0";
 
 
-##Perl Modules
-$parameter{perl_version} = "5.18.2";
+## Perl Modules
+$parameter{ perl_version } = "5.18.2";
+
 
 ## PIP
-$parameter{pip}{genmod} = "3.7.1";
-$parameter{pip}{variant_integrity} = "0.0.4";
-$parameter{pip}{chanjo} = "4.0.0";
+$parameter{ pip }{ genmod            } = "3.7.1";
+$parameter{ pip }{ variant_integrity } = "0.0.4";
+$parameter{ pip }{ chanjo            } = "4.0.0";
+
 
 ## Programs currently installable by SHELL
-$parameter{mip_scripts} = "Your current MIP version";
-$parameter{picardtools} = "2.3.0";
-$parameter{sambamba} = "0.6.1";
-$parameter{bedtools} = "2.25.0";
-$parameter{vt} = "gitRepo";
-$parameter{plink2} = "160316";
-$parameter{snpeff} = "v4_2";
-$parameter{varianteffectpredictor} = "88.8";
-$parameter{vep_auto_flag} = "alcf";
-$parameter{vep_plugin} = "UpDownDistance,LoFtool,Lof";
-$parameter{rhocall} = "0.4";
-$parameter{rhocall_path} = catdir($ENV{HOME}, "rhocall");
-
-$parameter{cnvnator} = "0.3.3";
-$parameter{cnvnator_root_binary} = "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz";
-$parameter{tiddit} = "1.1.4";
-$parameter{svdb} = "1.0.6"; 
+$parameter{ mip_scripts            } = "Your current MIP version";
+$parameter{ picardtools            } = "2.3.0";
+$parameter{ sambamba               } = "0.6.1";
+$parameter{ bedtools               } = "2.25.0";
+$parameter{ vt                     } = "gitRepo";
+$parameter{ plink2                 } = "160316";
+$parameter{ snpeff                 } = "v4_2";
+$parameter{ varianteffectpredictor } = "88.8";
+$parameter{ vep_auto_flag          } = "alcf";
+$parameter{ vep_plugin             } = "UpDownDistance,LoFtool,Lof";
+$parameter{ rhocall                } = "0.4";
+$parameter{ rhocall_path           } = catdir($ENV{HOME}, "rhocall");
+$parameter{ cnvnator               } = "0.3.3";
+$parameter{ cnvnator_root_binary   } = "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz";
+$parameter{ tiddit                 } = "1.1.4";
+$parameter{ svdb                   } = "1.0.6";
 
 ## Define default parameters
 my %array_parameter;
-$array_parameter{vep_assemblies}{default} = ["GRCh37", "GRCh38"];
-$array_parameter{snpeff_genome_versions}{default} = ["GRCh37.75", "GRCh38.86"];  #GRCh38.82 but check current on the snpEff sourceForge
-$array_parameter{reference_genome_versions}{default} = ["GRCh37", "hg38"];
-$array_parameter{perl_modules}{default} = ["Modern::Perl",  #MIP
-					   "IPC::System::Simple",  #MIP
-					   "Path::Iterator::Rule",  #MIP
-					   "YAML",  #MIP
-					   "Log::Log4perl",  #MIP
-					   "List::Util",  #MIP
-					   "Scalar::Util::Numeric",  #MIP
-					   "Set::IntervalTree",  # MIP/vcfParser.pl
-					   "Net::SSLeay",  # VEP
-					   "LWP::Simple",  # VEP
-					   "LWP::Protocol::https",  # VEP
-					   "PerlIO::gzip",  #VEP
-					   "IO::Uncompress::Gunzip",  #VEP
-					   "HTML::Lint",  #VEP
-					   "Archive::Zip",  # VEP
-					   "Archive::Extract",  #VEP
-					   "DBI",  # VEP
-					   "JSON",  # VEP
-					   "DBD::mysql",  # VEP
-					   "CGI",  # VEP
-					   "Sereal::Encoder",  # VEP
-					   "Sereal::Decoder",  # VEP
-					   "Bio::Root::Version",  #VEP
-					   "Module::Build", #VEP
-					   "File::Copy::Recursive", #VEP
-    ];
+
+$array_parameter{ vep_assemblies }{ default } = [
+						 "GRCh37",
+						 "GRCh38",
+						];
+
+# GRCh38.86 but check current on the snpEff sourceForge
+$array_parameter{ snpeff_genome_versions    }{ default } = [
+							    "GRCh37.75",
+							    "GRCh38.86",
+							   ];
+$array_parameter{ reference_genome_versions }{ default } = [
+							    "GRCh37",
+							    "hg38",
+							   ];
+$array_parameter{ perl_modules              }{ default } = [
+							    "Modern::Perl",  # MIP
+							    "IPC::System::Simple",  # MIP
+							    "Path::Iterator::Rule",  # MIP
+							    "YAML",  # MIP
+							    "Log::Log4perl",  # MIP
+							    "List::Util",  # MIP
+							    "Scalar::Util::Numeric",  # MIP
+							    "Set::IntervalTree",  # MIP/vcfParser.pl
+							    "Net::SSLeay",  # VEP
+							    "LWP::Simple",  # VEP
+							    "LWP::Protocol::https",  # VEP
+							    "PerlIO::gzip",  #VEP
+							    "IO::Uncompress::Gunzip",  #VEP
+							    "HTML::Lint",  #VEP
+							    "Archive::Zip",  # VEP
+							    "Archive::Extract",  #VEP
+							    "DBI",  # VEP
+							    "JSON",  # VEP
+							    "DBD::mysql",  # VEP
+							    "CGI",  # VEP
+							    "Sereal::Encoder",  # VEP
+							    "Sereal::Decoder",  # VEP
+							    "Bio::Root::Version",  #VEP
+							    "Module::Build", #VEP
+							    "File::Copy::Recursive", #VEP
+							   ];
 
 my $install_version = "1.2.0";
 
 ###User Options
-GetOptions('env|conda_environment:s'  => \$parameter{conda_environment},
-	   'cdp|conda_dir_path:s' => \$parameter{conda_dir_path},
-	   'cdu|conda_update' => \$parameter{conda_update},
-	   'bcv|bioconda=s' => \%{ $parameter{bioconda} },
-	   'pip|pip=s' => \%{ $parameter{pip} },
-	   'pyv|python_version=s' => \$parameter{python_version},
-	   'pev|perl_version=s' => \$parameter{perl_version},
-	   'pei|perl_install' => \$parameter{perl_install},
-	   'pevs|perl_skip_test' => \$parameter{perl_skip_test},
-	   'pm|perl_modules:s' => \@{ $parameter{perl_modules} },  #Comma separated list
-           'pmf|perl_modules_force' =>  \$parameter{perl_modules_force},
-	   'pic|picardtools:s' => \$parameter{picardtools},
-	   'sbb|sambamba:s' => \$parameter{sambamba},
-	   'bet|bedtools:s' =>\$parameter{bedtools},
-	   'vt|vt:s' => \$parameter{vt},
-	   'plk|plink2:s' => \$parameter{plink2},
-	   'snpg|snpeff_genome_versions:s' => \@{ $parameter{snpeff_genome_versions} },
-	   'vep|varianteffectpredictor:s' => \$parameter{varianteffectpredictor},
-	   'vepai|vep_auto_flag:s' => \$parameter{vep_auto_flag},
-	   'vepc|vep_cache_dir:s' => \$parameter{vep_cache_dir},  #path to vep cache dir
-	   'vepa|vep_assemblies:s' => \@{ $parameter{vep_assemblies} },  #Select assembly version to use
-	   'vepp|vep_plugin:s' => \$parameter{vep_plugin},  #Comma sep string
-	   'rhc|rhocall:s' => \$parameter{rhocall},
-	   'rhcp|rhocall_path:s' => \$parameter{rhocall_path},
-	   'cnv|cnvnator:s' => \$parameter{cnvnator},
-	   'cnvnr|cnvnator_root_binary:s' => \$parameter{cnvnator_root_binary},
-	   'tid|tiddit:s' => \$parameter{tiddit},
-	   'svdb|svdb:s' => \$parameter{svdb},
-	   'psh|prefer_shell' => \$parameter{prefer_shell},  # Shell will be used for overlapping shell and biconda installations
-	   'ppd|print_parameters_default' => sub { print_parameters({parameter_href => \%parameter,
-								     array_parameter_href => \%array_parameter,
-								    }); exit;},  #Display parameter defaults
-	   'nup|noupdate' => \$parameter{noupdate},
-	   'sp|select_programs:s' => \@{ $parameter{select_programs} },  #Comma sep string
-	   'rd|reference_dir:s' => \$parameter{reference_dir},  #MIPs reference directory
-	   'rg|reference_genome_versions:s' => \@{ $parameter{reference_genome_versions} },
-	   'q|quiet' => \$parameter{quiet},
-	   'h|help' => sub { print STDOUT $USAGE, "\n"; exit;},  #Display help text
-	   'ver|version' => sub { print STDOUT "\n".basename($0)." ".$install_version, "\n\n"; exit;},  #Display version number
-	   'v|verbose' => \$parameter{verbose},
-    ) or Script::Utils::help({USAGE => $USAGE,
-			      exit_code => 1,
-			     });
+GetOptions('env|conda_environment:s'        => \$parameter{    conda_environment        },
+	   'cdp|conda_dir_path:s'           => \$parameter{    conda_dir_path           },
+	   'cdu|conda_update'               => \$parameter{    conda_update             },
+	   'bcv|bioconda=s'                 => \%{ $parameter{ bioconda                 } },
+	   'pip|pip=s'                      => \%{ $parameter{ pip                      } },
+	   'pyv|python_version=s'           => \$parameter{    python_version           },
+	   'pev|perl_version=s'             => \$parameter{    perl_version             },
+	   'pei|perl_install'               => \$parameter{    perl_install             },
+	   'pevs|perl_skip_test'            => \$parameter{    perl_skip_test           },
+	   'pm|perl_modules:s'              => \@{ $parameter{ perl_modules             } },  # Comma separated list
+           'pmf|perl_modules_force'         => \$parameter{    perl_modules_force       },
+	   'pic|picardtools:s'              => \$parameter{    picardtools              },
+	   'sbb|sambamba:s'                 => \$parameter{    sambamba                 },
+	   'bet|bedtools:s'                 => \$parameter{    bedtools                 },
+	   'vt|vt:s'                        => \$parameter{    vt                       },
+	   'plk|plink2:s'                   => \$parameter{    plink2                   },
+	   'snpg|snpeff_genome_versions:s'  => \@{ $parameter{ snpeff_genome_versions   } },
+	   'vep|varianteffectpredictor:s'   => \$parameter{ varianteffectpredictor      },
+	   'vepai|vep_auto_flag:s'          => \$parameter{ vep_auto_flag               },
+	   'vepc|vep_cache_dir:s'           => \$parameter{ vep_cache_dir               },    # Path to vep cache dir
+	   'vepa|vep_assemblies:s'          => \@{ $parameter{ vep_assemblies           } },  # Select assembly version to use
+	   'vepp|vep_plugin:s'              => \$parameter{ vep_plugin                  },    # Comma sep string
+	   'rhc|rhocall:s'                  => \$parameter{ rhocall                     },
+	   'rhcp|rhocall_path:s'            => \$parameter{ rhocall_path                },
+	   'cnv|cnvnator:s'                 => \$parameter{ cnvnator                    },
+	   'cnvnr|cnvnator_root_binary:s'   => \$parameter{ cnvnator_root_binary        },
+	   'tid|tiddit:s'                   => \$parameter{ tiddit                      },
+	   'svdb|svdb:s'                    => \$parameter{ svdb                        },
+	   'psh|prefer_shell'               => \$parameter{ prefer_shell                },  # Shell will be used for overlapping shell and biconda installations
+	   'ppd|print_parameters_default'   => sub { print_parameters({ parameter_href       => \%parameter,
+								       array_parameter_href => \%array_parameter,
+								     });
+						    exit;
+						  },  # Display parameter defaults
+	   'nup|noupdate'                   => \$parameter{ noupdate                     },
+	   'sp|select_programs:s'           => \@{ $parameter{ select_programs           } },  #Comma sep string
+	   'rd|reference_dir:s'             => \$parameter{ reference_dir                },  # MIPs reference directory
+	   'rg|reference_genome_versions:s' => \@{ $parameter{ reference_genome_versions } },
+	   'q|quiet'                        => \$parameter{ quiet                        },
+	   'h|help'                         => sub { print STDOUT $USAGE, "\n";
+						     exit;
+						   },  #Display help text
+	   'ver|version'                    => sub { print STDOUT "\n".basename($0)." ".$install_version, "\n\n";
+						     exit; },  #Display version number
+	   'v|verbose'                      => \$parameter{ verbose                      },
+	  ) or croak Script::Utils::help({USAGE     => $USAGE,
+					  exit_code => 1,
+					 });
 
 
 ## Update default parameter dependent on other parameters
-if (exists($parameter{conda_environment}) && ($parameter{conda_environment}) ) {
+if ( (exists $parameter{ conda_environment }) && ($parameter{ conda_environment }) ) {
 
-    $parameter{conda_prefix_path} = catdir($parameter{conda_dir_path}, "envs", $parameter{conda_environment});
+  $parameter{ conda_prefix_path } = catdir($parameter{ conda_dir_path },
+					   "envs",
+					   $parameter{ conda_environment }
+					  );
 }
 else {
 
-    $parameter{conda_prefix_path} = $parameter{conda_dir_path};
+  $parameter{ conda_prefix_path } = $parameter{ conda_dir_path };
 }
 
-if (! $parameter{vep_cache_dir}) {
+if (! $parameter{ vep_cache_dir }) {
 
-    $parameter{vep_cache_dir} = catdir($parameter{conda_prefix_path}, "ensembl-tools-release-".$parameter{varianteffectpredictor}, "cache");  #Cache directory;)
+    # Cache directory
+    $parameter{ vep_cache_dir } = catdir($parameter{ conda_prefix_path }, "ensembl-tools-release-".$parameter{ varianteffectpredictor }, "cache");
 }
 
 
@@ -265,8 +246,8 @@ check_conda({parameter_href => \%parameter,
 if (exists($parameter{conda_environment})) {
 
     ## Check Conda environment
-    if (! -d catdir($parameter{conda_prefix_path})) {
-	
+    if (! -d catdir($parameter{ conda_prefix_path })) {
+
 	## Create Conda environment if required
 	create_conda_environment({parameter_href => \%parameter,
 				  FILEHANDLE => $BASHFILEHANDLE,
@@ -452,6 +433,78 @@ close($BASHFILEHANDLE);
 ###SubRoutines###
 #################
 
+
+sub build_usage {
+
+##build_usage
+
+##Function : Build the USAGE instructions
+##Returns  : ""
+##Arguments: $script_name
+##         : $script_name => Name of the script
+
+  my ($arg_href) = @_;
+
+  ## Default(s)
+  my $script_name;
+
+  my $tmpl = {
+	      script_name => { default => basename($0),
+			       strict_type => 1,
+			       store => \$script_name,
+			     },
+	     };
+
+  check($tmpl, $arg_href, 1) or croak qw[Could not parse arguments!];
+
+    return <<"END_USAGE";
+ $script_name [options]
+    -env/--conda_environment Conda environment (Default: "")
+    -cdp/--conda_dir_path The conda directory path (Default: "HOME/miniconda")
+    -cdu/--conda_update Update conda before installing (Supply flag to enable)
+    -bvc/--bioconda Set the module version of the programs that can be installed with bioconda (e.g. 'bwa=0.7.12')
+    -pip/--pip Set the module version of the programs that can be installed with pip (e.g. 'genmod=3.7.01')
+    -pyv/--python_version Set the env python version (Default: "2.7")
+
+    ## SHELL
+    -pei/--perl_install Install perl (Supply flag to enable)
+    -pev/--perl_version Set the perl version (defaults: "5.18.2")
+    -pevs/--perl_skip_test Skip "tests" in perl installation
+    -pm/--perl_modules Set the perl modules to be installed via cpanm (Default: ["Modern::Perl", "List::Util", "IPC::System::Simple", "Path::Iterator::Rule", "YAML", "Log::Log4perl", "Set::IntervalTree", "Net::SSLeay",P, "LWP::Simple", "LWP::Protocol::https", "Archive::Zip", "Archive::Extract", "DBI","JSON", "DBD::mysql", "CGI", "Sereal::Encoder", "Sereal::Decoder", "Bio::Root::Version", "Module::Build"])
+    -pmf/--perl_modules_force Force installation of perl modules
+    -pic/--picardtools Set the picardtools version (Default: "2.5.9"),
+    -sbb/--sambamba Set the sambamba version (Default: "0.6.6")
+    -bet/--bedtools Set the bedtools version (Default: "2.26.0")
+    -vt/--vt Set the vt version (Default: "0.57")
+    -plk/--plink  Set the plink version (Default: "160224")
+    -snpg/--snpeff_genome_versions Set the snpEff genome version (Default: ["GRCh37.75", "GRCh38.82"])
+    -vep/--varianteffectpredictor Set the VEP version (Default: "88")
+    -vepa/--vep_auto_flag Set the VEP auto installer flags
+    -vepc/--vep_cache_dir Specify the cache directory to use (whole path; defaults to "~/miniconda/envs/conda_environment/ensembl-tools-release-varianteffectpredictorVersion/cache")
+    -vepa/--vep_assemblies Select the assembly version (Default: ["GRCh37", "GRCh38"])
+    -vepp/--vep_plugin Supply a comma separated list of VEP plugins (Default: "UpDownDistance,LoFtool,Lof")
+    -rhc/--rhocall Set the rhocall version (Default: "0.4")
+    -rhcp/--rhocall_path Set the path to where to install rhocall (Defaults: "HOME/rhocall")
+    -cnvn/--cnvnator Set the cnvnator version (Default: 0.3.3)
+    -cnvnr/--cnvnator_root_binary Set the cnvnator root binary (Default: "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz")
+    -tid/--tiddit Set the tiddit version (Default: "1.1.4")
+    -svdb/--svdb Set the svdb version (Default: "1.0.6")
+
+    ## Utility
+    -psh/--prefer_shell Shell will be used for overlapping shell and biconda installations (Supply flag to enable)
+    -ppd/--print_parameters_default Print the parameter defaults
+    -nup/--noupdate Do not update already installed programs (Supply flag to enable)
+    -sp/--select_programs Install supplied programs e.g. -sp perl -sp bedtools (Default: "")
+    -rd/--reference_dir Reference(s) directory (Default: "")
+    -rd/--reference_genome_versions Reference versions to download ((Default: ["GRCh37", "hg38"]))
+    -q/--quiet Quiet (Supply flag to enable; no output from individual program that has a quiet flag)
+    -h/--help Display this help message
+    -ver/--version Display version
+    -v/--verbose Set verbosity
+END_USAGE
+}
+
+
 sub OpenLogFile {
 
 ##OpenLogFile
@@ -534,6 +587,7 @@ sub print_parameters {
 	    print STDOUT $key.": ".join(" ", @{$parameter_href->{$key}}), "\n";
 	}
     }
+    return;
 }
 
 
@@ -599,6 +653,7 @@ sub check_conda {
 	print $FILEHANDLE "conda update -y conda ";
 	print $FILEHANDLE "\n\n";
     }
+    return;
 }
 
 sub create_conda_environment {
@@ -637,6 +692,8 @@ sub create_conda_environment {
     print $FILEHANDLE "pip ";
     print $FILEHANDLE "python=".$parameter_href->{python_version}." ";
     print $FILEHANDLE "\n\n";
+
+    return;
 }
 
 sub install_bioconda_modules {
@@ -809,6 +866,8 @@ sub install_bioconda_modules {
 			      });
 	}
     }
+
+    return;
 }
 
 
@@ -881,6 +940,7 @@ sub perl {
 		      FILEHANDLE => $BASHFILEHANDLE,
 		     });
     }
+    return;
 }
 
 
@@ -1013,6 +1073,8 @@ sub install_perl_cpnam {
     ## Use newly installed perl
     print $FILEHANDLE q?PERL5LIB=~/perl-?.$parameter_href->{perl_version}.q?/lib/perl5?;
     print $FILEHANDLE "\n\n";
+
+    return;
 }
 
 
@@ -1049,6 +1111,8 @@ sub perl_modules {
     }
     print $FILEHANDLE join(" ", @{ $parameter_href->{perl_modules} })." ";
     print $FILEHANDLE "\n\n";
+
+    return;
 }
 
 
@@ -1110,6 +1174,8 @@ sub pip_install {
     ## Deactivate conda environment
     deactivate_conda_environment({FILEHANDLE => $FILEHANDLE,
 				 });
+
+    return;
 }
 
 
@@ -1196,6 +1262,7 @@ sub picardtools {
     remove_install_dir({FILEHANDLE => $FILEHANDLE,
 			pwd => $pwd,
 		       });
+    return;
 }
 
 
@@ -1286,7 +1353,7 @@ sub sambamba {
     remove_install_dir({FILEHANDLE => $FILEHANDLE,
 			pwd => $pwd,
 		       });
-
+    return;
 }
 
 
@@ -1369,6 +1436,7 @@ sub bedtools {
     remove_install_dir({FILEHANDLE => $FILEHANDLE,
 			pwd => $pwd,
 		       });
+    return;
 }
 
 
@@ -1443,6 +1511,7 @@ sub vt {
     remove_install_dir({FILEHANDLE => $FILEHANDLE,
 			pwd => $pwd,
 		       });
+    return;
 }
 
 
@@ -1513,6 +1582,7 @@ sub plink2 {
     remove_install_dir({FILEHANDLE => $FILEHANDLE,
 			pwd => $pwd,
 		       });
+    return;
 }
 
 
@@ -1640,6 +1710,7 @@ sub snpeff {
     remove_install_dir({FILEHANDLE => $FILEHANDLE,
 			pwd => $pwd,
 		       });
+    return;
 }
 
 
@@ -1851,6 +1922,7 @@ sub varianteffectpredictor {
     ## Deactivate conda environment
     deactivate_conda_environment({FILEHANDLE => $FILEHANDLE,
 				 });
+    return;
 }
 
 
@@ -2040,6 +2112,7 @@ sub cnvnator {
     ## Deactivate conda environment
     deactivate_conda_environment({FILEHANDLE => $FILEHANDLE,
 				 });
+    return;
 }
 
 
@@ -2165,6 +2238,7 @@ sub tiddit {
     ## Deactivate conda environment
     deactivate_conda_environment({FILEHANDLE => $FILEHANDLE,
 				 });
+    return;
 }
 
 
@@ -2261,6 +2335,7 @@ sub svdb {
     ## Deactivate conda environment
     deactivate_conda_environment({FILEHANDLE => $FILEHANDLE,
 				 });
+    return;
 }
 
 
@@ -2378,6 +2453,7 @@ sub mip_scripts {
 	    print $FILEHANDLE "\n\n";
 	}
     }
+    return;
 }
 
 
@@ -2466,6 +2542,7 @@ sub rhocall {
     ## Deactivate conda environment
     deactivate_conda_environment({FILEHANDLE => $FILEHANDLE,
 				 });
+    return;
 }
 
 
@@ -2499,6 +2576,7 @@ sub activate_conda_environment {
 	print $FILEHANDLE "source activate ".$parameter_href->{conda_environment}." ";
 	print $FILEHANDLE "\n\n";
     }
+    return;
 }
 
 
@@ -2526,6 +2604,8 @@ sub deactivate_conda_environment {
     print $FILEHANDLE "## Deactivate conda environment\n";
     print $FILEHANDLE "source deactivate ";
     print $FILEHANDLE "\n\n";
+
+    return;
 }
 
 
@@ -2574,6 +2654,8 @@ sub remove_install_dir {
 	FILEHANDLE => $FILEHANDLE,
        });
     print $FILEHANDLE "\n\n";
+
+    return;
 }
 
 sub create_install_dir {
@@ -2614,6 +2696,8 @@ sub create_install_dir {
 	FILEHANDLE => $FILEHANDLE,
        });
     print $FILEHANDLE "\n\n";
+
+    return;
 }
 
 
@@ -2688,6 +2772,7 @@ sub check_conda_bin_file_exists {
 	print STDERR "Writting install instructions for ".$program_name, "\n";
 	return 0;
     }
+    return;
 }
 
 
@@ -2739,6 +2824,8 @@ sub create_softlink {
 	FILEHANDLE => $FILEHANDLE,
        });
     print $FILEHANDLE "\n\n";
+
+    return;
 }
 
 
@@ -2787,6 +2874,8 @@ sub enable_executable {
 	FILEHANDLE => $FILEHANDLE,
        });
     print $FILEHANDLE "\n\n";
+
+    return;
 }
 
 
@@ -2848,6 +2937,7 @@ sub check_mt_codon_table {
 
 	print STDERR  "Found MT.codonTable in ".catfile($share_dir, "snpEff.config").". Skipping addition to snpEff config", "\n";
     }
+    return;
 }
 
 
@@ -2894,6 +2984,7 @@ sub snpeff_download {
     deactivate_conda_environment({FILEHANDLE => $FILEHANDLE,
 				 });
 
+    return;
 }
 
 
@@ -2947,4 +3038,5 @@ sub references {
     ## Deactivate conda environment
     deactivate_conda_environment({FILEHANDLE => $FILEHANDLE,
 				 });
+    return;
 }

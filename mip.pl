@@ -3355,7 +3355,7 @@ sub endvariantannotationblock {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     use Program::Htslib qw(bgzip tabix);
-    use Program::Gnu::Software::Grep qw(grep);
+    use Program::Gnu::Software::Grep qw(gnu_grep);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -3463,13 +3463,13 @@ sub endvariantannotationblock {
 	if ($active_parameter_href->{endvariantannotationblock_remove_genes_file}) {
 
 	    ## Removes contig_names from contigs array if no male or other found
-	    Program::Gnu::Grep::Software::grep({filter_file_path => catfile($$reference_dir_ref, $active_parameter_href->{sv_reformat_remove_genes_file}),
-						infile_path => $outfile_path_prefix.$vcfparser_analysis_type.$outfile_suffix,
-						outfile_path => $outfile_path_prefix.$vcfparser_analysis_type."_filtered".$outfile_suffix,
-						invert_match => 1,
-						FILEHANDLE => $FILEHANDLE,
-					       });
-	    say $FILEHANDLE "\n";
+	  gnu_grep({filter_file_path => catfile($$reference_dir_ref, $active_parameter_href->{sv_reformat_remove_genes_file}),
+		    infile_path => $outfile_path_prefix.$vcfparser_analysis_type.$outfile_suffix,
+		    outfile_path => $outfile_path_prefix.$vcfparser_analysis_type."_filtered".$outfile_suffix,
+		    invert_match => 1,
+		    FILEHANDLE => $FILEHANDLE,
+		   });
+	  say $FILEHANDLE "\n";
 
 	    if ($vcfparser_outfile_counter == 1) {
 
@@ -9342,6 +9342,7 @@ sub sv_reformat {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     use Program::Htslib qw(bgzip tabix);
+    use Program::Gnu::Software::Grep qw( gnu_grep);
 
     my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $xargs_file_name;
@@ -9496,14 +9497,14 @@ sub sv_reformat {
 	if ($active_parameter_href->{sv_reformat_remove_genes_file}) {
 
 	    ## Removes contig_names from contigs array if no male or other found
-	    Program::Gnu::Grep::grep({filter_file_path => catfile($$reference_dir_ref, $active_parameter_href->{sv_reformat_remove_genes_file}),
-				      infile_path => $outfile_path_prefix.$vcfparser_analysis_type.$file_suffix,
-				      outfile_path => $outfile_path_prefix.$vcfparser_analysis_type."_filtered".$file_suffix,
-				      invert_match => 1,
-				      FILEHANDLE => $FILEHANDLE,
-				     });
+	    gnu_grep({filter_file_path => catfile($$reference_dir_ref, $active_parameter_href->{sv_reformat_remove_genes_file}),
+		      infile_path => $outfile_path_prefix.$vcfparser_analysis_type.$file_suffix,
+		      outfile_path => $outfile_path_prefix.$vcfparser_analysis_type."_filtered".$file_suffix,
+		      invert_match => 1,
+		      FILEHANDLE => $FILEHANDLE,
+		     });
 	    say $FILEHANDLE "\n";
-	    
+
 	    if ($vcfparser_outfile_counter == 1) {
 
 		$sample_info_href->{program}{$program_name}{sv_reformat_remove_genes_file}{clinical}{path} = $final_path_prefix.$vcfparser_analysis_type."_filtered".$file_suffix;   #Save filtered file
