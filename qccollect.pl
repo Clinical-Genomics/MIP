@@ -1172,11 +1172,9 @@ sub regexp_to_yaml {
 
     $regexp{sv_varianteffectpredictor}{gencode} = q?perl -nae 'if($_=~/##VEP=/ && $_=~/gencode=\S+\s+(\d+)/) {print $1;last;}' ?; #Collect sv_varianteffectpredictor gencode version
 
-    $regexp{sv_vcfparser}{version} = q?perl -nae 'if($_=~/##Software=<ID=vcfParser.pl,Version=(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect sv_vcfparser version
+    $regexp{sv_vcfparser}{version} = q?perl -nae 'if($_=~/##Software=<ID=vcfParser.pl,Version=(\d+.\d+.\d+)/) {print $1;last;} else { if($_=~/#CHROM/) {last;} }' ?; #Collect sv_vcfparser version
 
-    $regexp{sv_genmod}{version} = q?perl -nae 'if($_=~/##Software=<ID=genmod,Version=(\d+.\d+.\d+|\d+.\d+)/) {print $1;last;}' ?; #Collect SVGenmod version
-
-    $regexp{vcftools}{version} = q?perl -nae 'if($_=~/VCFtools\s-\s(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect VCFTools version
+    $regexp{sv_genmod}{version} = q?perl -nae 'if($_=~/##Software=<ID=genmod,Version=(\d+.\d+.\d+|\d+.\d+)/) {print $1;last;} else { if($_=~/#CHROM/) {last;} } ' ?; #Collect SVGenmod version
 
     $regexp{plink2}{version} = q?perl -nae 'if($_=~/PLINK\s(\S+\s\S+\s\S+\s\S+\s\S+)/) {my $ret = $1;$ret =~s/\s/_/g;print $ret;last;}' ?; #Collect Plink2 version
 
@@ -1187,6 +1185,10 @@ sub regexp_to_yaml {
     $regexp{variant_integrity_father}{fraction_of_common_variants}  = q?perl -nae 'unless ($_=~/^#/) {print $F[1];last;}' ?;
 
     $regexp{variant_integrity_father}{common_variants}  = q?perl -nae 'unless ($_=~/^#/) {print $F[2];last;}' ?;
+
+    $regexp{tiddit}{version}  = q?perl -nae 'if($_=~/^##source=TIDDIT-(\S+)/) { print $1; last; } else { if($_=~/#CHROM/) { last;} }' ?;
+
+    $regexp{svdb}{version}  = q?perl -nae 'if($_=~/^##SVDB_version=(\S+)/) { print $1; last; } else { if($_=~/#CHROM/) { last;} }' ?;
 
     ## Writes a YAML hash to file
     File::Format::Yaml::write_yaml({yaml_href => \%regexp,

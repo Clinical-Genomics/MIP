@@ -81,7 +81,7 @@ exac:
       file_index: ExAC.r0.3.1.sites.vep.vcf.gz.tbi
       outfile: GRCh37_exac_-r0.3.1-.vcf.gz
       outfile_index: GRCh37_exac_-r0.3.1-.vcf.gz.tbi
-      outfile_reformat_command: "less GRCh37_exac_-r0.3.1-.vcf.gz | sed 's/ID=AD,Number=./ID=AD,Number=R/' | vt decompose -s - | calculate_af -cak Adj - | bcftools view -o GRCh37_exac_vt_cal_-r0.3.1-.vcf.gz -O z"
+      outfile_reformat_command: "zcat GRCh37_exac_-r0.3.1-.vcf.gz | sed 's/ID=AD,Number=./ID=AD,Number=R/' | vt decompose -s - | calculate_af -cak Adj - | bcftools view -o GRCh37_exac_vt_cal_-r0.3.1-.vcf.gz -O z"
       outfile_tabix_command: 'tabix -p vcf GRCh37_exac_vt_cal_-r0.3.1-.vcf.gz'
       url_prefix: ftp://ftp.broadinstitute.org/pub/ExAC_release/release0.3.1/
 1000g_all_sv:

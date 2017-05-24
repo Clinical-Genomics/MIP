@@ -11097,6 +11097,13 @@ sub sv_combinevariantcallsets {
 
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
+	sample_info_qc({sample_info_href => $sample_info_href,
+			program_name => "svdb",
+			outdirectory => $outfamily_directory,
+			outfile_ending => $$family_id_ref.$outfile_tag.$call_type.$outfile_suffix,
+			outdata_type => "static"
+		       });
+
 	$sample_info_href->{sv_vcf_file}{ready_vcf}{path} = catfile($outfamily_directory, $$family_id_ref.$outfile_tag.$call_type.$outfile_suffix);
 
 	if ($active_parameter_href->{sv_combinevariantcallsets_bcf_file}) {
@@ -12560,7 +12567,7 @@ sub tiddit {
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => "tiddit",
 			outdirectory => $outfamily_directory,
-			outfile_ending => $outfile_path_prefix.$outfile_suffix,
+			outfile_ending => $outfile_prefix.$outfile_suffix,
 			outdata_type => "static"
 		       });
 
@@ -20185,7 +20192,7 @@ sub program_prerequisites {
     $log->info("Sbatch script ".$program_name." data files will be written to: ".$program_data_directory."\n");
 
 ###Sbatch header
-    open ($FILEHANDLE, ">",$file_name) or $log->logdie("Can't write to '".$file_name."' :".$!."\n");
+    open ($FILEHANDLE, ">", $file_name) or $log->logdie("Can't write to '".$file_name."' :".$!."\n");
 
     say $FILEHANDLE "#! /bin/bash -l";
 
@@ -23438,7 +23445,7 @@ sub xargs_command {
 	  });
     say $FILEHANDLE "\n";
 
-    open ($XARGSFILEHANDLE, ">",$file_name.".".$xargs_file_counter.".xargs") or $log->logdie("Can't write to '".$file_name.".".$xargs_file_counter.".xargs"."' :".$!."\n\n");  #Open XARGSFILEHANDLE
+    open ($XARGSFILEHANDLE, ">", $file_name.".".$xargs_file_counter.".xargs") or $log->logdie("Can't write to '".$file_name.".".$xargs_file_counter.".xargs"."' :".$!."\n\n");  #Open XARGSFILEHANDLE
     return ( ($xargs_file_counter + 1), $xargs_file_name);  #Increment to not overwrite xargs file with next call (if used) and xargs_file_name prefix
 }
 

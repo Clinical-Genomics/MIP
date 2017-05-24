@@ -356,7 +356,7 @@ sub read_feature_file {
     my @headers; #Save headers from rangeFile
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    open($FILEHANDLE, "<".$infile_path) or $log->logdie("Cannot open ".$infile_path.":".$!, "\n");
+    open($FILEHANDLE, "<", $infile_path) or $log->logdie("Cannot open ".$infile_path.":".$!, "\n");
 
     while (<$FILEHANDLE>) {
 
@@ -495,7 +495,7 @@ sub read_infile_vcf {
     
     if ($select_feature_file) {
 	
-	open($FILEHANDLE, ">".$select_outfile_path) or $log->logdie("Cannot open ".$select_outfile_path.":".$!, "\n");
+	open($FILEHANDLE, ">", $select_outfile_path) or $log->logdie("Cannot open ".$select_outfile_path.":".$!, "\n");
     }
     
     while (<>) {
