@@ -10,7 +10,6 @@ use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
 use Carp;
 use English qw(-no_match_vars);
-use autodie qw(:all);
 
 BEGIN {
 
@@ -142,7 +141,7 @@ my $install_script = catfile( dirname($Bin), 'mip_install.pl' );
 
 ## Test execution of install.pl
 # Create array ref for cmd
-my $cmds_ref = [ 'perl', $install_script, '-sp', 'mip_scripts' ];
+my $cmds_ref = [ qw(perl), $install_script, qw(-sp mip_scripts) ];
 if ($conda_dir_path) {
 
     push @{$cmds_ref}, '--conda_dir_path', $conda_dir_path;
@@ -176,26 +175,26 @@ sub build_usage {
 
 ##Function : Build the USAGE instructions
 ##Returns  : ""
-##Arguments: $script_name
-##         : $script_name => Name of the script
+##Arguments: $program_name
+##         : $program_name => Name of the script
 
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $script_name;
+    my $program_name;
 
     my $tmpl = {
-        script_name => {
+        program_name => {
             default     => basename($PROGRAM_NAME),
             strict_type => 1,
-            store       => \$script_name,
+            store       => \$program_name,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     return <<"END_USAGE";
- $script_name [options]
+ $program_name [options]
     -cdp/--conda_dir_path The conda directory path (Default: "HOME/miniconda")
     -vb/--verbose Verbose
     -h/--help Display this help message
