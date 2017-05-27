@@ -6,8 +6,8 @@
 use Modern::Perl '2014';
 use warnings qw( FATAL utf8 );
 use autodie qw(open close :all);
-use 5.018;  #Require at least perl 5.18
-use utf8;  #Allow unicode characters in this script
+use 5.018;    #Require at least perl 5.18
+use utf8;     #Allow unicode characters in this script
 use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
 use Carp;
@@ -384,30 +384,38 @@ sub read_infile_vcf {
 
     while (<$FILEHANDLE>) {
 
-        chomp $_;                          # Remove newline
-        if ( $. > 10000 ) {                #Exit after parsing X lines
+        chomp $_;
+
+        # Exit after parsing X lines
+        if ( $. > 10000 ) {
             last;
         }
-        if (m/^\s+$/xm) {                  # Avoid blank lines
+
+        # Avoid blank lines
+        if (m/^\s+$/) {
             next;
         }
-        if ( $_ =~ /^##(\S+)=/xm ) {       # MetaData
+
+        # MetaData
+        if ( $_ =~ /^##(\S+)=/ ) {
 
             parse_meta_data( \%meta_data, $_ );
 
             if ( $_ =~ /INFO\=\<ID\=([^,]+)/ ) {
 
-                $vcf_header{INFO}{$1} = $1;    #Save to hash
+                $vcf_header{INFO}{$1} = $1;
             }
-            if ( $_ =~ /INFO\=\<ID\=CSQ/ ) {    #Find VEP INFO Field
+
+            # Find VEP INFO Field
+            if ( $_ =~ /INFO\=\<ID\=CSQ/ ) {
 
                 ok(
                     $active_parameter_href->{pvarianteffectpredictor},
                     'VEP: CSQ in header and VEP should have been executed'
                 );
 
-                if ( $_ =~ /Format:\s(\S+)"\>/ )
-                {    #Locate Format within VEP INFO meta line
+                # Locate Format within VEP INFO meta line
+                if ( $_ =~ /Format:\s(\S+)"\>/ ) {
 
                     @vep_format_fields = split /\|/, $1;
 
@@ -415,8 +423,8 @@ sub read_infile_vcf {
                         each(@vep_format_fields) )
                     {
 
-                        $vep_format_field_column{$field} =
-                          $field_index;    #Save the order of VEP features
+                        # Save the order of VEP features
+                        $vep_format_field_column{$field} = $field_index;
                     }
                 }
                 next;
@@ -425,7 +433,8 @@ sub read_infile_vcf {
         }
         if ( $_ =~ /^#CHROM/ ) {
 
-            @vcf_format_columns = split /\t/, $_;    #Split vcf format line
+            # Split vcf format line
+            @vcf_format_columns = split /\t/, $_;
 
             ### Check Header now that we read all
 
@@ -621,8 +630,7 @@ sub read_infile_vcf {
               CSQ_TRANSCRIPT:
                 foreach my $transcript (@transcripts) {
 
-                    my @transcript_effects = split /\|/,
-                      $transcript;                 #Split in "|"
+                    my @transcript_effects = split /\|/, $transcript;
 
                   CSQ_TRANSCRIPT_EFFECTS:
                     foreach my $effect ( keys %vep_format_field_column ) {
