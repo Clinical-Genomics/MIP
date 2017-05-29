@@ -88,7 +88,6 @@ $parameter{plink2}                 = '160316';
 $parameter{snpeff}                 = 'v4_2';
 $parameter{varianteffectpredictor} = '88.8';
 $parameter{vep_auto_flag}          = 'alcf';
-$parameter{vep_plugin}             = 'UpDownDistance,LoFtool,Lof';
 $parameter{rhocall}                = '0.4';
 $parameter{rhocall_path}           = catdir( $ENV{HOME}, 'rhocall' );
 $parameter{cnvnator}               = '0.3.3';
@@ -101,6 +100,7 @@ $parameter{svdb}   = '1.0.6';
 my %array_parameter;
 
 $array_parameter{vep_assemblies}{default} = [qw(GRCh37 GRCh38)];
+$array_parameter{vep_plugins}{default}    = [qw(UpDownDistance LoFtool Lof)];
 
 # GRCh38.86 but check current on the snpEff sourceForge
 $array_parameter{snpeff_genome_versions}{default} =
@@ -159,7 +159,7 @@ GetOptions(
     'vepai|vep_auto_flag:s'         => \$parameter{vep_auto_flag},
     'vepc|vep_cache_dir:s'          => \$parameter{vep_cache_dir},
     'vepa|vep_assemblies:s'         => \@{ $parameter{vep_assemblies} },
-    'vepp|vep_plugin:s'             => \$parameter{vep_plugin},
+    'vepp|vep_plugins:s'            => \@{ $parameter{vep_plugins} },
     'rhc|rhocall:s'                 => \$parameter{rhocall},
     'rhcp|rhocall_path:s'           => \$parameter{rhocall_path},
     'cnv|cnvnator:s'                => \$parameter{cnvnator},
@@ -603,7 +603,7 @@ sub build_usage {
     -vepa/--vep_auto_flag Set the VEP auto installer flags
     -vepc/--vep_cache_dir Specify the cache directory to use (whole path; defaults to "~/miniconda/envs/conda_environment/ensembl-tools-release-varianteffectpredictorVersion/cache")
     -vepa/--vep_assemblies Select the assembly version (Default: ["GRCh37", "GRCh38"])
-    -vepp/--vep_plugin Supply a comma separated list of VEP plugins (Default: "UpDownDistance,LoFtool,Lof")
+    -vepp/--vep_plugins Supply VEP plugins (Default: "UpDownDistance, LoFtool, Lof")
     -rhc/--rhocall Set the rhocall version (Default: "0.4")
     -rhcp/--rhocall_path Set the path to where to install rhocall (Defaults: "HOME/rhocall")
     -cnvn/--cnvnator Set the cnvnator version (Default: 0.3.3)
@@ -648,7 +648,7 @@ sub OpenLogFile {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
@@ -1120,7 +1120,6 @@ sub install_bioconda_modules {
             );
         }
     }
-
     return;
 }
 
@@ -2430,13 +2429,13 @@ sub varianteffectpredictor {
       . $parameter_href->{vep_auto_flag}
       ;    #a (API), l (FAIDX/htslib), c (cache), f (FASTA)
 
-    if (   ( exists( $parameter_href->{vep_plugin} ) )
-        && ( $parameter_href->{vep_plugin} ne 0 ) )
+    if (   ( exists( $parameter_href->{vep_plugins} ) )
+        && ( @{ $parameter_href->{vep_plugins} } ) )
     {
 
         print $FILEHANDLE 'p ';    #p (plugins)
         print $FILEHANDLE '-g '
-          . $parameter_href->{vep_plugin}
+          . join( ',', @{ $parameter_href->{vep_plugins} } )
           . q{ };                  #Plugins in comma sep string
     }
     else {
@@ -2483,81 +2482,81 @@ sub varianteffectpredictor {
         }
     }
 
-    if ( exists( $parameter_href->{vep_plugin} )
-        && ( $parameter_href->{vep_plugin} =~ /Loftool/ ) )
-    {
+    if ( exists( $parameter_href->{vep_plugins} ) ) {
 
-        ##Add LofTool required text file
-        print $FILEHANDLE '##Add LofTool required text file', "\n";
-        Program::Download::Wget::wget(
-            {
-                url =>
+        if ( grep { $_ eq 'LoFtool' } @{ $parameter_href->{vep_plugins} } ) {
+
+            ##Add LofTool required text file
+            print $FILEHANDLE '##Add LofTool required text file', "\n";
+            Program::Download::Wget::wget(
+                {
+                    url =>
 'https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/LoFtool_scores.txt',
-                FILEHANDLE   => $FILEHANDLE,
-                quiet        => $parameter_href->{quiet},
-                verbose      => $parameter_href->{verbose},
-                outfile_path => q{$HOME/.vep/Plugins/LoFtool_scores.txt},
-            }
-        );
-        print $FILEHANDLE "\n\n";
-    }
+                    FILEHANDLE   => $FILEHANDLE,
+                    quiet        => $parameter_href->{quiet},
+                    verbose      => $parameter_href->{verbose},
+                    outfile_path => q{$HOME/.vep/Plugins/LoFtool_scores.txt},
+                }
+            );
+            print $FILEHANDLE "\n\n";
+        }
 
-    if ( exists( $parameter_href->{vep_plugin} )
-        && ( $parameter_href->{vep_plugin} =~ /Lof/ ) )
-    {
+        if ( grep { $_ eq 'Lof' } @{ $parameter_href->{vep_plugins} } ) {
 
-        ## Add Lof required perl splice script
-        print $FILEHANDLE '##Add Lof required perl splice script', "\n";
-        Program::Download::Wget::wget(
-            {
-                url =>
+            ## Add Lof required perl splice script
+            print $FILEHANDLE '##Add Lof required perl splice script', "\n";
+            Program::Download::Wget::wget(
+                {
+                    url =>
 'https://raw.githubusercontent.com/konradjk/loftee/master/splice_module.pl',
-                FILEHANDLE   => $FILEHANDLE,
-                quiet        => $parameter_href->{quiet},
-                verbose      => $parameter_href->{verbose},
-                outfile_path => q{$HOME/.vep/Plugins/splice_module.pl},
-            }
-        );
-        print $FILEHANDLE "\n\n";
+                    FILEHANDLE   => $FILEHANDLE,
+                    quiet        => $parameter_href->{quiet},
+                    verbose      => $parameter_href->{verbose},
+                    outfile_path => q{$HOME/.vep/Plugins/splice_module.pl},
+                }
+            );
+            print $FILEHANDLE "\n\n";
 
-        ## Add Lof optional human_ancestor_fa
-        print $FILEHANDLE '##Add Lof optional human_ancestor_fa', "\n";
-        Program::Download::Wget::wget(
-            {
-                url =>
-                  'https://s3.amazonaws.com/bcbio_nextgen/human_ancestor.fa.gz',
-                FILEHANDLE   => $FILEHANDLE,
-                quiet        => $parameter_href->{quiet},
-                verbose      => $parameter_href->{verbose},
-                outfile_path => catfile(
-                    $parameter_href->{vep_cache_dir},
-                    'human_ancestor.fa.gz'
-                ),
-            }
-        );
-        print $FILEHANDLE "\n\n";
+            ## Add Lof optional human_ancestor_fa
+            print $FILEHANDLE '##Add Lof optional human_ancestor_fa', "\n";
+            Program::Download::Wget::wget(
+                {
+                    url =>
+'https://s3.amazonaws.com/bcbio_nextgen/human_ancestor.fa.gz',
+                    FILEHANDLE   => $FILEHANDLE,
+                    quiet        => $parameter_href->{quiet},
+                    verbose      => $parameter_href->{verbose},
+                    outfile_path => catfile(
+                        $parameter_href->{vep_cache_dir},
+                        'human_ancestor.fa.gz'
+                    ),
+                }
+            );
+            print $FILEHANDLE "\n\n";
 
-        ## Uncompress
-        print $FILEHANDLE 'bgzip -d '
-          . catfile( $parameter_href->{vep_cache_dir}, 'human_ancestor.fa.gz' )
-          . q{ };
-        print $FILEHANDLE "\n\n";
+            ## Uncompress
+            print $FILEHANDLE 'bgzip -d '
+              . catfile( $parameter_href->{vep_cache_dir},
+                'human_ancestor.fa.gz' )
+              . q{ };
+            print $FILEHANDLE "\n\n";
 
-        ## Add Lof optional human_ancestor_fa
-        Program::Download::Wget::wget(
-            {
-                url =>
+            ## Add Lof optional human_ancestor_fa index
+            Program::Download::Wget::wget(
+                {
+                    url =>
 'https://s3.amazonaws.com/bcbio_nextgen/human_ancestor.fa.gz.fai',
-                FILEHANDLE   => $FILEHANDLE,
-                quiet        => $parameter_href->{quiet},
-                verbose      => $parameter_href->{verbose},
-                outfile_path => catfile(
-                    $parameter_href->{vep_cache_dir},
-                    'human_ancestor.fa.fai'
-                ),
-            }
-        );
-        print $FILEHANDLE "\n\n";
+                    FILEHANDLE   => $FILEHANDLE,
+                    quiet        => $parameter_href->{quiet},
+                    verbose      => $parameter_href->{verbose},
+                    outfile_path => catfile(
+                        $parameter_href->{vep_cache_dir},
+                        'human_ancestor.fa.fai'
+                    ),
+                }
+            );
+            print $FILEHANDLE "\n\n";
+        }
     }
 
     ## Clean up
