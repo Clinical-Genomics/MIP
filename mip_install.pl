@@ -16,9 +16,10 @@ use IO::Handle;
 use File::Basename qw(dirname basename fileparse);
 use File::Spec::Functions qw(catfile catdir devnull);
 use Carp;
+use English qw(-no_match_vars);
 
 ## MIPs lib/
-use lib catdir( $Bin, "lib" );        #Add MIPs internal lib
+use lib catdir( $Bin, 'lib' );        #Add MIPs internal lib
 use File::Format::Shell qw(create_bash_file);
 use Program::Download::Wget qw(wget);
 use Program::Gnu::Bash qw(cd);
@@ -32,119 +33,121 @@ our $USAGE = build_usage( {} );
 my %parameter;
 
 ## Conda
-$parameter{conda_dir_path} = catdir( $ENV{HOME}, "miniconda" );
-$parameter{python_version} = "2.7";
+$parameter{conda_dir_path} = catdir( $ENV{HOME}, 'miniconda' );
+$parameter{python_version} = '2.7';
 
 ## Bioconda channel
-$parameter{bioconda}{bwa}       = "0.7.15";
-$parameter{bioconda}{bwakit}    = "0.7.12";
-$parameter{bioconda}{fastqc}    = "0.11.5";
-$parameter{bioconda}{cramtools} = "3.0.b47";
-$parameter{bioconda}{samtools}  = "1.4.1";
-$parameter{bioconda}{bcftools}  = "1.4.1";
-$parameter{bioconda}{snpeff}    = "4.3.1";
-$parameter{bioconda}{snpsift}   = "4.3.1";
-$parameter{bioconda}{picard}    = "2.9.2";
-$parameter{bioconda}{htslib}    = "1.4.1";
-$parameter{bioconda}{bedtools}  = "2.26.0";
-$parameter{bioconda}{vt}        = "2015.11.10";
-$parameter{bioconda}{sambamba}  = "0.6.6";
-$parameter{bioconda}{freebayes} = "1.1.0";
-$parameter{bioconda}{delly}     = "0.7.7";
-$parameter{bioconda}{manta}     = "1.1.0";
-$parameter{bioconda}{multiqc}   = "0.9.1a0";
-$parameter{bioconda}{peddy}     = "0.2.9";
-$parameter{bioconda}{plink2}    = "1.90b3.35";
-$parameter{bioconda}{vcfanno}   = "0.1.0";
-$parameter{bioconda}{gcc}       = "4.8.5";        #Required for CNVnator
-$parameter{bioconda}{cmake}     = "3.3.1";
+$parameter{bioconda}{bwa}       = '0.7.15';
+$parameter{bioconda}{bwakit}    = '0.7.12';
+$parameter{bioconda}{fastqc}    = '0.11.5';
+$parameter{bioconda}{cramtools} = '3.0.b47';
+$parameter{bioconda}{samtools}  = '1.4.1';
+$parameter{bioconda}{bcftools}  = '1.4.1';
+$parameter{bioconda}{snpeff}    = '4.3.1';
+$parameter{bioconda}{snpsift}   = '4.3.1';
+$parameter{bioconda}{picard}    = '2.9.2';
+$parameter{bioconda}{htslib}    = '1.4.1';
+$parameter{bioconda}{bedtools}  = '2.26.0';
+$parameter{bioconda}{vt}        = '2015.11.10';
+$parameter{bioconda}{sambamba}  = '0.6.6';
+$parameter{bioconda}{freebayes} = '1.1.0';
+$parameter{bioconda}{delly}     = '0.7.7';
+$parameter{bioconda}{manta}     = '1.1.0';
+$parameter{bioconda}{multiqc}   = '0.9.1a0';
+$parameter{bioconda}{peddy}     = '0.2.9';
+$parameter{bioconda}{plink2}    = '1.90b3.35';
+$parameter{bioconda}{vcfanno}   = '0.1.0';
+
+# Required for CNVnator
+$parameter{bioconda}{gcc}   = '4.8.5';
+$parameter{bioconda}{cmake} = '3.3.1';
 
 ## Bioconda pathes
 # For correct softlinking in share and bin in conda env
-$parameter{bioconda_bwakit_patch}  = "-0";
-$parameter{bioconda_snpeff_patch}  = "m-0";
-$parameter{bioconda_snpsift_patch} = "m-0";
-$parameter{bioconda_picard_patch}  = "-0";
-$parameter{bioconda_manta_patch}   = "-0";
+$parameter{bioconda_bwakit_patch}  = '-0';
+$parameter{bioconda_snpeff_patch}  = 'm-0';
+$parameter{bioconda_snpsift_patch} = 'm-0';
+$parameter{bioconda_picard_patch}  = '-0';
+$parameter{bioconda_manta_patch}   = '-0';
 
 ## Perl Modules
-$parameter{perl_version} = "5.18.2";
+$parameter{perl_version} = '5.18.2';
 
 ## PIP
-$parameter{pip}{genmod}            = "3.7.1";
-$parameter{pip}{variant_integrity} = "0.0.4";
-$parameter{pip}{chanjo}            = "4.0.0";
+$parameter{pip}{genmod}            = '3.7.1';
+$parameter{pip}{variant_integrity} = '0.0.4';
+$parameter{pip}{chanjo}            = '4.0.0';
 
 ## Programs currently installable by SHELL
-$parameter{mip_scripts}            = "Your current MIP version";
-$parameter{picardtools}            = "2.3.0";
-$parameter{sambamba}               = "0.6.1";
-$parameter{bedtools}               = "2.25.0";
-$parameter{vt}                     = "gitRepo";
-$parameter{plink2}                 = "160316";
-$parameter{snpeff}                 = "v4_2";
-$parameter{varianteffectpredictor} = "88.8";
-$parameter{vep_auto_flag}          = "alcf";
-$parameter{vep_plugin}             = "UpDownDistance,LoFtool,Lof";
-$parameter{rhocall}                = "0.4";
-$parameter{rhocall_path}           = catdir( $ENV{HOME}, "rhocall" );
-$parameter{cnvnator}               = "0.3.3";
+$parameter{mip_scripts}            = 'Your current MIP version';
+$parameter{picardtools}            = '2.3.0';
+$parameter{sambamba}               = '0.6.1';
+$parameter{bedtools}               = '2.25.0';
+$parameter{vt}                     = 'gitRepo';
+$parameter{plink2}                 = '160316';
+$parameter{snpeff}                 = 'v4_2';
+$parameter{varianteffectpredictor} = '88.8';
+$parameter{vep_auto_flag}          = 'alcf';
+$parameter{vep_plugin}             = 'UpDownDistance,LoFtool,Lof';
+$parameter{rhocall}                = '0.4';
+$parameter{rhocall_path}           = catdir( $ENV{HOME}, 'rhocall' );
+$parameter{cnvnator}               = '0.3.3';
 $parameter{cnvnator_root_binary} =
-  "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz";
-$parameter{tiddit} = "1.1.4";
-$parameter{svdb}   = "1.0.6";
+  'root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz';
+$parameter{tiddit} = '1.1.5';
+$parameter{svdb}   = '1.0.6';
 
 ## Define default parameters
 my %array_parameter;
 
-$array_parameter{vep_assemblies}{default} = [ "GRCh37", "GRCh38", ];
+$array_parameter{vep_assemblies}{default} = [qw(GRCh37 GRCh38)];
 
 # GRCh38.86 but check current on the snpEff sourceForge
 $array_parameter{snpeff_genome_versions}{default} =
-  [ "GRCh37.75", "GRCh38.86", ];
-$array_parameter{reference_genome_versions}{default} = [ "GRCh37", "hg38", ];
-$array_parameter{perl_modules}{default} = [
-    "Modern::Perl",              # MIP
-    "IPC::System::Simple",       # MIP
-    "Path::Iterator::Rule",      # MIP
-    "YAML",                      # MIP
-    "Log::Log4perl",             # MIP
-    "List::Util",                # MIP
-    "Scalar::Util::Numeric",     # MIP
-    "Set::IntervalTree",         # MIP/vcfParser.pl
-    "Net::SSLeay",               # VEP
-    "LWP::Simple",               # VEP
-    "LWP::Protocol::https",      # VEP
-    "PerlIO::gzip",              # VEP
-    "IO::Uncompress::Gunzip",    # VEP
-    "HTML::Lint",                # VEP
-    "Archive::Zip",              # VEP
-    "Archive::Extract",          # VEP
-    "DBI",                       # VEP
-    "JSON",                      # VEP
-    "DBD::mysql",                # VEP
-    "CGI",                       # VEP
-    "Sereal::Encoder",           # VEP
-    "Sereal::Decoder",           # VEP
-    "Bio::Root::Version",        # VEP
-    "Module::Build",             # VEP
-    "File::Copy::Recursive",     # VEP
+  [qw(GRCh37.75 GRCh38.86)];
+$array_parameter{reference_genome_versions}{default} = [qw(GRCh37 hg38)];
+$array_parameter{perl_modules}{default}              = [
+    'Modern::Perl',              # MIP
+    'IPC::System::Simple',       # MIP
+    'Path::Iterator::Rule',      # MIP
+    'YAML',                      # MIP
+    'Log::Log4perl',             # MIP
+    'List::Util',                # MIP
+    'Scalar::Util::Numeric',     # MIP
+    'Set::IntervalTree',         # MIP/vcfParser.pl
+    'Net::SSLeay',               # VEP
+    'LWP::Simple',               # VEP
+    'LWP::Protocol::https',      # VEP
+    'PerlIO::gzip',              # VEP
+    'IO::Uncompress::Gunzip',    # VEP
+    'HTML::Lint',                # VEP
+    'Archive::Zip',              # VEP
+    'Archive::Extract',          # VEP
+    'DBI',                       # VEP
+    'JSON',                      # VEP
+    'DBD::mysql',                # VEP
+    'CGI',                       # VEP
+    'Sereal::Encoder',           # VEP
+    'Sereal::Decoder',           # VEP
+    'Bio::Root::Version',        # VEP
+    'Module::Build',             # VEP
+    'File::Copy::Recursive',     # VEP
 ];
 
-my $install_version = "1.2.0";
+my $VERSION = '1.2.0';
 
 ###User Options
 GetOptions(
-    'env|conda_environment:s' => \$parameter{conda_environment},
-    'cdp|conda_dir_path:s'    => \$parameter{conda_dir_path},
-    'cdu|conda_update'        => \$parameter{conda_update},
-    'bcv|bioconda=s'          => \%{ $parameter{bioconda} },
-    'pip|pip=s'               => \%{ $parameter{pip} },
-    'pyv|python_version=s'    => \$parameter{python_version},
-    'pev|perl_version=s'      => \$parameter{perl_version},
-    'pei|perl_install'        => \$parameter{perl_install},
-    'pevs|perl_skip_test'     => \$parameter{perl_skip_test},
-    'pm|perl_modules:s'       => \@{ $parameter{perl_modules} },
+    'env|conda_environment:s'       => \$parameter{conda_environment},
+    'cdp|conda_dir_path:s'          => \$parameter{conda_dir_path},
+    'cdu|conda_update'              => \$parameter{conda_update},
+    'bcv|bioconda=s'                => \%{ $parameter{bioconda} },
+    'pip|pip=s'                     => \%{ $parameter{pip} },
+    'pyv|python_version=s'          => \$parameter{python_version},
+    'pev|perl_version=s'            => \$parameter{perl_version},
+    'pei|perl_install'              => \$parameter{perl_install},
+    'pevs|perl_skip_test'           => \$parameter{perl_skip_test},
+    'pm|perl_modules:s'             => \@{ $parameter{perl_modules} },
     'pmf|perl_modules_force'        => \$parameter{perl_modules_force},
     'pic|picardtools:s'             => \$parameter{picardtools},
     'sbb|sambamba:s'                => \$parameter{sambamba},
@@ -155,16 +158,16 @@ GetOptions(
     'vep|varianteffectpredictor:s'  => \$parameter{varianteffectpredictor},
     'vepai|vep_auto_flag:s'         => \$parameter{vep_auto_flag},
     'vepc|vep_cache_dir:s'          => \$parameter{vep_cache_dir},
-    'vepa|vep_assemblies:s' => \@{ $parameter{vep_assemblies} },
-    'vepp|vep_plugin:s'   => \$parameter{vep_plugin},
-    'rhc|rhocall:s'       => \$parameter{rhocall},
-    'rhcp|rhocall_path:s' => \$parameter{rhocall_path},
-    'cnv|cnvnator:s'      => \$parameter{cnvnator},
-    'cnvnr|cnvnator_root_binary:s' => \$parameter{cnvnator_root_binary},
-    'tid|tiddit:s'                 => \$parameter{tiddit},
-    'svdb|svdb:s'                  => \$parameter{svdb},
-    'psh|prefer_shell'             => \$parameter{prefer_shell},
-    'ppd|print_parameters_default' => sub {
+    'vepa|vep_assemblies:s'         => \@{ $parameter{vep_assemblies} },
+    'vepp|vep_plugin:s'             => \$parameter{vep_plugin},
+    'rhc|rhocall:s'                 => \$parameter{rhocall},
+    'rhcp|rhocall_path:s'           => \$parameter{rhocall_path},
+    'cnv|cnvnator:s'                => \$parameter{cnvnator},
+    'cnvnr|cnvnator_root_binary:s'  => \$parameter{cnvnator_root_binary},
+    'tid|tiddit:s'                  => \$parameter{tiddit},
+    'svdb|svdb:s'                   => \$parameter{svdb},
+    'psh|prefer_shell'              => \$parameter{prefer_shell},
+    'ppd|print_parameters_default'  => sub {
         print_parameters(
             {
                 parameter_href       => \%parameter,
@@ -175,7 +178,7 @@ GetOptions(
     },    # Display parameter defaults
     'nup|noupdate'         => \$parameter{noupdate},
     'sp|select_programs:s' => \@{ $parameter{select_programs} },
-    'rd|reference_dir:s' => \$parameter{reference_dir},
+    'rd|reference_dir:s'   => \$parameter{reference_dir},
     'rg|reference_genome_versions:s' =>
       \@{ $parameter{reference_genome_versions} },
     'q|quiet' => \$parameter{quiet},
@@ -184,7 +187,7 @@ GetOptions(
         exit;
     },    #Display help text
     'ver|version' => sub {
-        print STDOUT "\n" . basename($0) . " " . $install_version, "\n\n";
+        print STDOUT "\n" . basename($PROGRAM_NAME) . q{ } . $VERSION, "\n\n";
         exit;
     },    #Display version number
     'v|verbose' => \$parameter{verbose},
@@ -202,7 +205,7 @@ if (   ( exists $parameter{conda_environment} )
 {
 
     $parameter{conda_prefix_path} = catdir( $parameter{conda_dir_path},
-        "envs", $parameter{conda_environment} );
+        'envs', $parameter{conda_environment} );
 }
 else {
 
@@ -213,8 +216,8 @@ if ( !$parameter{vep_cache_dir} ) {
 
     # Cache directory
     $parameter{vep_cache_dir} = catdir( $parameter{conda_prefix_path},
-        "ensembl-tools-release-" . $parameter{varianteffectpredictor},
-        "cache" );
+        'ensembl-tools-release-' . $parameter{varianteffectpredictor},
+        'cache' );
 }
 
 ## Set default for array parameters
@@ -235,12 +238,12 @@ Script::Utils::set_default_array_parameters(
 ## Create bash file for writing install instructions
 my $BASHFILEHANDLE = File::Format::Shell::create_bash_file(
     {
-        file_name        => "mip.sh",
-        directory_remove => ".MIP",
+        file_name        => 'mip.sh',
+        directory_remove => '.MIP',
     }
 );
-print STDOUT "Will write install instructions to '"
-  . catfile( cwd(), "mip.sh" ), "'\n";
+print STDOUT q{Will write install instructions to '}
+  . catfile( cwd(), 'mip.sh' ), "'\n";
 
 ## Check existance of conda environment
 check_conda(
@@ -275,7 +278,7 @@ install_bioconda_modules(
 
 if ( @{ $parameter{select_programs} } ) {
 
-    if ( ( grep { $_ eq "perl" } @{ $parameter{select_programs} } ) )
+    if ( ( grep { $_ eq 'perl' } @{ $parameter{select_programs} } ) )
     {    #If element is part of array
 
         perl(
@@ -307,7 +310,7 @@ if ( $parameter{prefer_shell} ) {
 
     if ( @{ $parameter{select_programs} } ) {
 
-        if ( ( grep { $_ eq "picardtools" } @{ $parameter{select_programs} } ) )
+        if ( ( grep { $_ eq 'picardtools' } @{ $parameter{select_programs} } ) )
         {    #If element is part of array
 
             picardtools(
@@ -317,7 +320,7 @@ if ( $parameter{prefer_shell} ) {
                 }
             );
         }
-        if ( ( grep { $_ eq "sambamba" } @{ $parameter{select_programs} } ) )
+        if ( ( grep { $_ eq 'sambamba' } @{ $parameter{select_programs} } ) )
         {    #If element is part of array
 
             sambamba(
@@ -327,7 +330,7 @@ if ( $parameter{prefer_shell} ) {
                 }
             );
         }
-        if ( ( grep { $_ eq "bedtools" } @{ $parameter{select_programs} } ) )
+        if ( ( grep { $_ eq 'bedtools' } @{ $parameter{select_programs} } ) )
         {    #If element is part of array
 
             bedtools(
@@ -337,7 +340,7 @@ if ( $parameter{prefer_shell} ) {
                 }
             );
         }
-        if ( ( grep { $_ eq "vt" } @{ $parameter{select_programs} } ) )
+        if ( ( grep { $_ eq 'vt' } @{ $parameter{select_programs} } ) )
         {    #If element is part of array
 
             vt(
@@ -347,7 +350,7 @@ if ( $parameter{prefer_shell} ) {
                 }
             );
         }
-        if ( ( grep { $_ eq "snpeff" } @{ $parameter{select_programs} } ) )
+        if ( ( grep { $_ eq 'snpeff' } @{ $parameter{select_programs} } ) )
         {    #If element is part of array
 
             snpeff(
@@ -357,7 +360,7 @@ if ( $parameter{prefer_shell} ) {
                 }
             );
         }
-        if ( ( grep { $_ eq "plink2" } @{ $parameter{select_programs} } ) )
+        if ( ( grep { $_ eq 'plink2' } @{ $parameter{select_programs} } ) )
         {    #If element is part of array
 
             plink2(
@@ -367,7 +370,7 @@ if ( $parameter{prefer_shell} ) {
                 }
             );
         }
-        if ( ( grep { $_ eq "rhocall" } @{ $parameter{select_programs} } ) )
+        if ( ( grep { $_ eq 'rhocall' } @{ $parameter{select_programs} } ) )
         {    #If element is part of array
 
             rhocall(
@@ -433,7 +436,7 @@ if ( $parameter{prefer_shell} ) {
 
 if ( @{ $parameter{select_programs} } ) {
 
-    if ( ( grep { $_ eq "mip_scripts" } @{ $parameter{select_programs} } ) )
+    if ( ( grep { $_ eq 'mip_scripts' } @{ $parameter{select_programs} } ) )
     {    #If element is part of array
 
         mip_scripts(
@@ -445,7 +448,7 @@ if ( @{ $parameter{select_programs} } ) {
     }
     if (
         (
-            grep { $_ eq "varianteffectpredictor" }
+            grep { $_ eq 'varianteffectpredictor' }
             @{ $parameter{select_programs} }
         )
       )
@@ -458,7 +461,7 @@ if ( @{ $parameter{select_programs} } ) {
             }
         );
     }
-    if ( ( grep { $_ eq "cnvnator" } @{ $parameter{select_programs} } ) )
+    if ( ( grep { $_ eq 'cnvnator' } @{ $parameter{select_programs} } ) )
     {    #If element is part of array
 
         cnvnator(
@@ -468,7 +471,7 @@ if ( @{ $parameter{select_programs} } ) {
             }
         );
     }
-    if ( ( grep { $_ eq "tiddit" } @{ $parameter{select_programs} } ) )
+    if ( ( grep { $_ eq 'tiddit' } @{ $parameter{select_programs} } ) )
     {    #If element is part of array
 
         tiddit(
@@ -478,7 +481,7 @@ if ( @{ $parameter{select_programs} } ) {
             }
         );
     }
-    if ( ( grep { $_ eq "svdb" } @{ $parameter{select_programs} } ) )
+    if ( ( grep { $_ eq 'svdb' } @{ $parameter{select_programs} } ) )
     {    #If element is part of array
 
         svdb(
@@ -650,8 +653,11 @@ sub OpenLogFile {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Open batch file
-    open( $FILEHANDLE, ">", catfile($file_name) )
-      or die( "Cannot write to '" . catfile($file_name) . "' :" . $! . "\n" );
+    open( $FILEHANDLE, '>', catfile($file_name) )
+      or croak( q{Cannot write to '}
+          . catfile($file_name) . q{' :}
+          . $OS_ERROR
+          . "\n" );
 
     return $FILEHANDLE;
 }
@@ -689,7 +695,7 @@ sub print_parameters {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     ## Set default for array parameters
     Script::Utils::set_default_array_parameters(
@@ -703,27 +709,27 @@ sub print_parameters {
 
         if ( ref( $parameter_href->{$key} ) !~ /ARRAY|HASH/ ) {
 
-            print STDOUT $key . " ";
+            print STDOUT $key . q{ };
             if ( $parameter_href->{$key} ) {
 
                 print $parameter_href->{$key}, "\n";
             }
             else {    ##Boolean value
 
-                print "0", "\n";
+                print '0', "\n";
             }
         }
         elsif ( ref( $parameter_href->{$key} ) =~ /HASH/ ) {
 
             foreach my $program ( keys %{ $parameter_href->{$key} } ) {
 
-                print STDOUT $key . " " . $program . ": "
+                print STDOUT $key . q{ } . $program . q{: }
                   . $parameter_href->{$key}{$program}, "\n";
             }
         }
         elsif ( ref( $parameter_href->{$key} ) =~ /ARRAY/ ) {
 
-            print STDOUT $key . ": "
+            print STDOUT $key . q{: }
               . join( " ", @{ $parameter_href->{$key} } ), "\n";
         }
     }
@@ -757,17 +763,17 @@ sub check_conda {
         FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
-    my $program = "conda";
+    my $program = 'conda';
 
     if ( $ENV{PATH} =~ /conda/ ) {
 
-        print STDERR "Program check: " . $program . " installed\n";
+        print STDERR 'Program check: ' . $program . " installed\n";
     }
     else {
 
-        print STDERR "Could not detect " . $program . " in your PATH\n";
+        print STDERR 'Could not detect ' . $program . " in your PATH\n";
         exit 1;
     }
 
@@ -778,8 +784,8 @@ sub check_conda {
 
     if ($ret) {
 
-        print STDOUT "Found activated conda env: " . $ret . "\n";
-        print STDOUT "Please exit conda env: " . $ret
+        print STDOUT 'Found activated conda env: ' . $ret . "\n";
+        print STDOUT 'Please exit conda env: ' . $ret
           . " with 'source deactivate' before executing install script\n";
         exit 1;
     }
@@ -787,18 +793,18 @@ sub check_conda {
     ## Check Conda path
     if ( !-d $parameter_href->{conda_dir_path} ) {
 
-        print STDERR "Could not find miniconda directory in: "
+        print STDERR 'Could not find miniconda directory in: '
           . catdir( $parameter_href->{conda_dir_path} ), "\n";
         exit 1;
     }
 
-    print STDERR "Writting install instructions for Conda packages\n";
+    print STDERR 'Writting install instructions for Conda packages', "\n";
 
     ## Update Conda
     if ( $parameter_href->{conda_update} ) {
 
-        print $FILEHANDLE "### Update Conda\n";
-        print $FILEHANDLE "conda update -y conda ";
+        print $FILEHANDLE '### Update Conda', "\n";
+        print $FILEHANDLE 'conda update -y conda ';
         print $FILEHANDLE "\n\n";
     }
     return;
@@ -831,21 +837,21 @@ sub create_conda_environment {
         FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     ## Create conda environment
-    print $FILEHANDLE "### Creating Conda Environment and install: "
+    print $FILEHANDLE '### Creating Conda Environment and install: '
       . $parameter_href->{conda_environment}, "\n";
-    print $FILEHANDLE "conda create ";
+    print $FILEHANDLE 'conda create ';
 
     if ( $parameter_href->{quiet} ) {
 
-        print $FILEHANDLE "--quiet ";    #Do not display progress bar
+        print $FILEHANDLE '--quiet ';    #Do not display progress bar
     }
-    print $FILEHANDLE "-n " . $parameter_href->{conda_environment} . " ";
-    print $FILEHANDLE "-y ";
-    print $FILEHANDLE "pip ";
-    print $FILEHANDLE "python=" . $parameter_href->{python_version} . " ";
+    print $FILEHANDLE '-n ' . $parameter_href->{conda_environment} . q{ };
+    print $FILEHANDLE '-y ';
+    print $FILEHANDLE 'pip ';
+    print $FILEHANDLE 'python=' . $parameter_href->{python_version} . q{ };
     print $FILEHANDLE "\n\n";
 
     return;
@@ -878,41 +884,41 @@ sub install_bioconda_modules {
         FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     if ( exists( $parameter_href->{conda_environment} )
         && ( $parameter_href->{conda_environment} ) )
     {
 
         ## Install into conda environment using bioconda channel
-        print $FILEHANDLE "### Installing into Conda environment: "
+        print $FILEHANDLE '### Installing into Conda environment: '
           . $parameter_href->{conda_environment}, "\n";
     }
     else {
 
-        print $FILEHANDLE "### Installing into Conda main environment", "\n";
+        print $FILEHANDLE '### Installing into Conda main environment', "\n";
     }
-    print $FILEHANDLE "conda install ";
+    print $FILEHANDLE 'conda install ';
 
     if ( $parameter_href->{quiet} ) {
 
-        print $FILEHANDLE "--quiet ";    #Do not display progress bar
+        print $FILEHANDLE '--quiet ';    #Do not display progress bar
     }
 
     if ( exists( $parameter_href->{conda_environment} )
         && ( $parameter_href->{conda_environment} ) )
     {
 
-        print $FILEHANDLE "-n " . $parameter_href->{conda_environment} . " ";
+        print $FILEHANDLE '-n ' . $parameter_href->{conda_environment} . q{ };
     }
-    print $FILEHANDLE "-y ";
-    print $FILEHANDLE "-c bioconda ";
+    print $FILEHANDLE '-y ';
+    print $FILEHANDLE '-c bioconda ';
 
     ## Install all bioconda packages
     foreach my $program ( keys %{ $parameter_href->{bioconda} } ) {
 
-        print $FILEHANDLE $program . "="
-          . $parameter_href->{bioconda}{$program} . " ";
+        print $FILEHANDLE $program . '='
+          . $parameter_href->{bioconda}{$program} . q{ };
     }
 
     print $FILEHANDLE "\n\n";
@@ -920,15 +926,15 @@ sub install_bioconda_modules {
     ## Custom
     foreach my $program ( keys %{ $parameter_href->{bioconda} } ) {
 
-        if ( $program eq "bwakit" ) {
+        if ( $program eq 'bwakit' ) {
 
             ## Define binaries
             my @bwakit_binaries = (
-                "k8",                "seqtk",
-                "bwa-postalt.js",    "run-HLA",
-                "typeHLA.sh",        "fermi2",
-                "fermi2.pl",         "ropebwt2",
-                "typeHLA-selctg.js", "typeHLA.js"
+                'k8',                'seqtk',
+                'bwa-postalt.js',    'run-HLA',
+                'typeHLA.sh',        'fermi2',
+                'fermi2.pl',         'ropebwt2',
+                'typeHLA-selctg.js', 'typeHLA.js'
             );
 
             foreach my $binary (@bwakit_binaries) {
@@ -939,8 +945,8 @@ sub install_bioconda_modules {
                         FILEHANDLE     => $BASHFILEHANDLE,
                         binary         => catfile(
                             $parameter_href->{conda_prefix_path},
-                            "share",
-                            "bwakit-"
+                            'share',
+                            'bwakit-'
                               . $parameter_href->{bioconda}{bwakit}
                               . $parameter_href->{bioconda_bwakit_patch},
                             $binary
@@ -957,19 +963,19 @@ sub install_bioconda_modules {
                     force       => 1,
                     infile_path => catdir(
                         $parameter_href->{conda_prefix_path},
-                        "share",
-                        "bwakit-"
+                        'share',
+                        'bwakit-'
                           . $parameter_href->{bioconda}{bwakit}
                           . $parameter_href->{bioconda_bwakit_patch},
-                        "resource-human-HLA"
+                        'resource-human-HLA'
                     ),
                     outfile_path =>
-                      catdir( $parameter_href->{conda_prefix_path}, "bin" ),
+                      catdir( $parameter_href->{conda_prefix_path}, 'bin' ),
                 }
             );
             print $BASHFILEHANDLE "\n\n";
         }
-        if ( $program eq "picard" ) {
+        if ( $program eq 'picard' ) {
 
             create_softlink(
                 {
@@ -977,20 +983,20 @@ sub install_bioconda_modules {
                     FILEHANDLE     => $BASHFILEHANDLE,
                     binary         => catfile(
                         $parameter_href->{conda_prefix_path},
-                        "share",
-                        "picard-"
+                        'share',
+                        'picard-'
                           . $parameter_href->{bioconda}{picard}
                           . $parameter_href->{bioconda_picard_patch},
-                        "picard.jar"
+                        'picard.jar'
                     ),
-                    softlink => "picard.jar",
+                    softlink => 'picard.jar',
                 }
             );
         }
-        if ( $program eq "snpeff" ) {
+        if ( $program eq 'snpeff' ) {
 
             ## Define binaries
-            my @snpeff_binaries = ( "snpEff.jar", "snpEff.config", );
+            my @snpeff_binaries = qw(snpEff.jar snpEff.config);
 
             foreach my $binary (@snpeff_binaries) {
 
@@ -1000,8 +1006,8 @@ sub install_bioconda_modules {
                         FILEHANDLE     => $BASHFILEHANDLE,
                         binary         => catfile(
                             $parameter_href->{conda_prefix_path},
-                            "share",
-                            "snpeff-"
+                            'share',
+                            'snpeff-'
                               . $parameter_href->{bioconda}{snpeff}
                               . $parameter_href->{bioconda_snpeff_patch},
                             $binary
@@ -1022,12 +1028,12 @@ sub install_bioconda_modules {
                         FILEHANDLE     => $BASHFILEHANDLE,
                         share_dir      => catdir(
                             $parameter_href->{conda_prefix_path},
-                            "share",
-                            "snpeff-"
+                            'share',
+                            'snpeff-'
                               . $parameter_href->{bioconda}{snpeff}
                               . $parameter_href->{bioconda_snpeff_patch}
                         ),
-                        config_file        => "snpEff.config",
+                        config_file        => 'snpEff.config',
                         genome_version_ref => \$genome_version,
                     }
                 );
@@ -1035,11 +1041,11 @@ sub install_bioconda_modules {
                 unless (
                     -d catdir(
                         $parameter_href->{conda_prefix_path},
-                        "share",
-                        "snpeff-"
+                        'share',
+                        'snpeff-'
                           . $parameter_href->{bioconda}{snpeff}
                           . $parameter_href->{bioconda_snpeff_patch},
-                        "data",
+                        'data',
                         $genome_version
                     )
                   )
@@ -1056,10 +1062,10 @@ sub install_bioconda_modules {
                 }
             }
         }
-        if ( $program eq "snpsift" ) {
+        if ( $program eq 'snpsift' ) {
 
             ## Define binaries
-            my @snpsift_binaries = ( "SnpSift.jar", );
+            my @snpsift_binaries = qw(SnpSift.jar);
 
             foreach my $binary (@snpsift_binaries) {
 
@@ -1069,8 +1075,8 @@ sub install_bioconda_modules {
                         FILEHANDLE     => $BASHFILEHANDLE,
                         binary         => catfile(
                             $parameter_href->{conda_prefix_path},
-                            "share",
-                            "snpsift-"
+                            'share',
+                            'snpsift-'
                               . $parameter_href->{bioconda}{snpsift}
                               . $parameter_href->{bioconda_snpsift_patch},
                             $binary
@@ -1080,9 +1086,9 @@ sub install_bioconda_modules {
                 );
             }
         }
-        if ( $program eq "manta" ) {
+        if ( $program eq 'manta' ) {
 
-            my @manta_binaries = ( "configManta.py", "configManta.py.ini", );
+            my @manta_binaries = qw(configManta.py configManta.py.ini);
 
             foreach my $binary (@manta_binaries) {
 
@@ -1092,11 +1098,11 @@ sub install_bioconda_modules {
                         FILEHANDLE     => $BASHFILEHANDLE,
                         binary         => catfile(
                             $parameter_href->{conda_prefix_path},
-                            "share",
-                            "manta-"
+                            'share',
+                            'manta-'
                               . $parameter_href->{bioconda}{manta}
                               . $parameter_href->{bioconda_manta_patch},
-                            "bin",
+                            'bin',
                             $binary
                         ),
                         softlink => $binary,
@@ -1145,7 +1151,7 @@ sub perl {
         FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     my $pwd = cwd();
 
@@ -1153,10 +1159,10 @@ sub perl {
 
         if ( $parameter_href->{noupdate} ) {
 
-            print STDERR "Found perl-"
+            print STDERR 'Found perl-'
               . $parameter_href->{perl_version}
-              . ". in your path", "\n";
-            print STDERR q?Skipping writting installation for perl-?
+              . ' in your path', "\n";
+            print STDERR 'Skipping writting installation for perl-'
               . $parameter_href->{perl_version}, "\n";
         }
         else {
@@ -1164,10 +1170,10 @@ sub perl {
             if ( $parameter_href->{perl_install} ) {
 
                 ## Removing specific Perl version
-                print $FILEHANDLE "### Removing specific perl version\n";
+                print $FILEHANDLE '### Removing specific perl version', "\n";
                 rm(
                     {
-                        infile_path => q?$HOME/perl-?
+                        infile_path => '$HOME/perl-'
                           . $parameter_href->{perl_version},
                         force      => 1,
                         recursive  => 1,
@@ -1252,14 +1258,14 @@ sub install_perl_cpnam {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     my $pwd = cwd();
 
-    print STDERR "Writting install instructions for perl and Cpanm\n";
+    print STDERR 'Writting install instructions for perl and Cpanm', "\n";
 
     ## Install specific perl version
-    print $FILEHANDLE "### Install specific perl version\n";
+    print $FILEHANDLE '### Install specific perl version', "\n";
 
     ## Move to Home
     print $FILEHANDLE '## Move to $HOME', "\n";
@@ -1272,83 +1278,83 @@ sub install_perl_cpnam {
     print $FILEHANDLE "\n\n";
 
     ## Download
-    print $FILEHANDLE "## Download perl\n";
+    print $FILEHANDLE '## Download perl', "\n";
     Program::Download::Wget::wget(
         {
-            url => "http://www.cpan.org/src/5.0/perl-"
+            url => 'http://www.cpan.org/src/5.0/perl-'
               . $parameter_href->{perl_version}
-              . ".tar.gz",
+              . '.tar.gz',
             FILEHANDLE   => $FILEHANDLE,
             quiet        => $parameter_href->{quiet},
             verbose      => $parameter_href->{verbose},
-            outfile_path => "perl-"
+            outfile_path => 'perl-'
               . $parameter_href->{perl_version}
-              . ".tar.gz",
+              . '.tar.gz',
         }
     );
     print $FILEHANDLE "\n\n";
 
     ## Extract
-    print $FILEHANDLE "## Extract\n";
+    print $FILEHANDLE '## Extract', "\n";
     print $FILEHANDLE "tar xzf perl-"
       . $parameter_href->{perl_version}
       . ".tar.gz";
     print $FILEHANDLE "\n\n";
 
     ## Move to perl directory
-    print $FILEHANDLE "## Move to perl directory\n";
+    print $FILEHANDLE '## Move to perl directory', "\n";
     cd(
         {
-            directory_path => "perl-" . $parameter_href->{perl_version},
+            directory_path => 'perl-' . $parameter_href->{perl_version},
             FILEHANDLE     => $FILEHANDLE,
         }
     );
     print $FILEHANDLE "\n\n";
 
     ## Configure
-    print $FILEHANDLE "## Configure\n";
-    print $FILEHANDLE q?./Configure -des -Dprefix=$HOME/perl-?
+    print $FILEHANDLE '## Configure', "\n";
+    print $FILEHANDLE './Configure -des -Dprefix=$HOME/perl-'
       . $parameter_href->{perl_version}, "\n";
-    print $FILEHANDLE "make", "\n";
+    print $FILEHANDLE 'make', "\n";
 
     if ( !$parameter_href->{perl_skip_test} ) {
 
-        print $FILEHANDLE "make test", "\n";
+        print $FILEHANDLE 'make test', "\n";
     }
-    print $FILEHANDLE "make install", "\n\n";
+    print $FILEHANDLE 'make install', "\n\n";
 
     if ($path) {
 
         ## Export path
-        print $FILEHANDLE "## Export path\n";
-        print $FILEHANDLE q?echo 'export PATH=$HOME/perl-?
+        print $FILEHANDLE '## Export path', "\n";
+        print $FILEHANDLE q{echo 'export PATH=$HOME/perl-}
           . $parameter_href->{perl_version}
-          . q?/:$PATH' >> ~/.bashrc?;
+          . q{/:$PATH' >> ~/.bashrc};
         print $FILEHANDLE "\n\n";
-        print $FILEHANDLE q?export PATH=$HOME/perl-?
+        print $FILEHANDLE 'export PATH=$HOME/perl-'
           . $parameter_href->{perl_version}
-          . q?/:$PATH?;    #Use newly installed perl
+          . '/:$PATH';    #Use newly installed perl
         print $FILEHANDLE "\n\n";
     }
 
     ## Remove tar file
-    print $FILEHANDLE "## Remove tar file\n";
+    print $FILEHANDLE '## Remove tar file', "\n";
     cd( { FILEHANDLE => $FILEHANDLE, } );
 
-    print $FILEHANDLE "&& ";
+    print $FILEHANDLE '&& ';
 
     rm(
         {
-            infile_path => "perl-"
+            infile_path => 'perl-'
               . $parameter_href->{perl_version}
-              . ".tar.gz",
+              . '.tar.gz',
             FILEHANDLE => $FILEHANDLE,
         }
     );
     print $FILEHANDLE "\n\n";
 
     ## Move to back
-    print $FILEHANDLE "## Move to original working directory\n";
+    print $FILEHANDLE '## Move to original working directory', "\n";
     cd(
         {
             directory_path => $pwd,
@@ -1357,45 +1363,45 @@ sub install_perl_cpnam {
     );
     print $FILEHANDLE "\n\n";
 
-    print $FILEHANDLE q?echo 'eval `perl -I ~/perl-?
+    print $FILEHANDLE q{echo 'eval `perl -I ~/perl-}
       . $parameter_href->{perl_version}
-      . q?/lib/perl5/ -Mlocal::lib=~/perl-?
+      . q{/lib/perl5/ -Mlocal::lib=~/perl-}
       . $parameter_href->{perl_version}
-      . q?/`' >> ~/.bash_profile ?;    #Add at start-up
+      . q{/`' >> ~/.bash_profile };    #Add at start-up
     print $FILEHANDLE "\n\n";
     print $FILEHANDLE
-      q?echo 'export PERL_UNICODE=SAD' >> ~/.bash_profile ?;    #Add at start-up
+      q{echo 'export PERL_UNICODE=SAD' >> ~/.bash_profile };    #Add at start-up
     print $FILEHANDLE "\n\n";
 
     ## Install perl modules via cpanm
-    print $FILEHANDLE "## Install cpanm\n";
+    print $FILEHANDLE '## Install cpanm', "\n";
     Program::Download::Wget::wget(
         {
-            url          => "http://cpanmin.us",
+            url          => 'http://cpanmin.us',
             FILEHANDLE   => $FILEHANDLE,
             quiet        => $parameter_href->{quiet},
             verbose      => $parameter_href->{verbose},
-            outfile_path => "-",
+            outfile_path => '-',
         }
     );
-    print $FILEHANDLE q? | perl - -l $HOME/perl-?
+    print $FILEHANDLE q{ | perl - -l $HOME/perl-}
       . $parameter_href->{perl_version}
-      . q?/bin App::cpanminus --local-lib=~/perl-?
+      . q{/bin App::cpanminus --local-lib=~/perl-}
       . $parameter_href->{perl_version}
-      . q?/ local::lib ?;
+      . q{/ local::lib };
     print $FILEHANDLE "\n\n";
 
     ## Use newly installed perl
-    print $FILEHANDLE q?eval `perl -I ~/perl-?
+    print $FILEHANDLE q{eval `perl -I ~/perl-}
       . $parameter_href->{perl_version}
-      . q?/lib/perl5/ -Mlocal::lib=~/perl-?
-      . $parameter_href->{perl_version} . q?/` ?;
+      . q{/lib/perl5/ -Mlocal::lib=~/perl-}
+      . $parameter_href->{perl_version} . q{/` };
     print $FILEHANDLE "\n\n";
 
     ## Use newly installed perl
-    print $FILEHANDLE q?PERL5LIB=~/perl-?
+    print $FILEHANDLE q{PERL5LIB=~/perl-}
       . $parameter_href->{perl_version}
-      . q?/lib/perl5?;
+      . q{/lib/perl5};
     print $FILEHANDLE "\n\n";
 
     return;
@@ -1428,17 +1434,17 @@ sub perl_modules {
         FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     ## Install perl modules via cpanm
-    print $FILEHANDLE "## Install perl modules via cpanm\n";
-    print $FILEHANDLE "cpanm ";
+    print $FILEHANDLE '## Install perl modules via cpanm', "\n";
+    print $FILEHANDLE 'cpanm ';
 
     if ( $parameter_href->{perl_modules_force} ) {
 
-        print $FILEHANDLE "--force ";
+        print $FILEHANDLE '--force ';
     }
-    print $FILEHANDLE join( " ", @{ $parameter_href->{perl_modules} } ) . " ";
+    print $FILEHANDLE join( q{ }, @{ $parameter_href->{perl_modules} } ) . q{ };
     print $FILEHANDLE "\n\n";
 
     return;
@@ -1471,21 +1477,21 @@ sub pip_install {
         FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
-    print STDERR "Writting install instructions for pip packages\n";
+    print STDERR 'Writting install instructions for pip packages', "\n";
 
     ## Install PIP packages in conda environment
     if ( exists( $parameter_href->{conda_environment} )
         && ( $parameter_href->{conda_environment} ) )
     {
 
-        print $FILEHANDLE "### Install PIP packages in conda environment: "
+        print $FILEHANDLE '### Install PIP packages in conda environment: '
           . $parameter_href->{conda_environment}, "\n";
     }
     else {
 
-        print $FILEHANDLE "### Install PIP packages in conda main environment",
+        print $FILEHANDLE '### Install PIP packages in conda main environment',
           "\n";
     }
     ## Activate conda environment
@@ -1497,19 +1503,19 @@ sub pip_install {
     );
 
     ## Install PIP packages
-    print $FILEHANDLE "## Install PIP packages\n";
-    print $FILEHANDLE "pip install ";
+    print $FILEHANDLE '## Install PIP packages', "\n";
+    print $FILEHANDLE 'pip install ';
 
     if ( $parameter_href->{quiet} ) {
 
-        print $FILEHANDLE "--quiet ";    #Do not display progress bar
+        print $FILEHANDLE '--quiet ';    #Do not display progress bar
     }
 
     ## Install all PIP packages
     foreach my $program ( keys %{ $parameter_href->{pip} } ) {
 
-        print $FILEHANDLE $program . "=="
-          . $parameter_href->{pip}{$program} . " ";
+        print $FILEHANDLE $program . '=='
+          . $parameter_href->{pip}{$program} . q{ };
     }
     print $FILEHANDLE "\n\n";
 
@@ -1546,7 +1552,7 @@ sub picardtools {
         FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     my $pwd = cwd();
 
@@ -1555,7 +1561,7 @@ sub picardtools {
         check_conda_bin_file_exists(
             {
                 parameter_href => $parameter_href,
-                program_name   => "picard.jar",
+                program_name   => 'picard.jar',
             }
         )
       )
@@ -1565,39 +1571,39 @@ sub picardtools {
     }
 
     ## Install picard
-    print $FILEHANDLE "### Install Picard\n";
+    print $FILEHANDLE '### Install Picard', "\n";
 
     ## Create the temporary install directory
     create_install_dir( { FILEHANDLE => $FILEHANDLE, } );
 
     ## Download
-    print $FILEHANDLE "## Download Picard\n";
+    print $FILEHANDLE '## Download Picard', "\n";
     Program::Download::Wget::wget(
         {
-            url => "https://github.com/broadinstitute/picard/releases/download/"
+            url => 'https://github.com/broadinstitute/picard/releases/download/'
               . $parameter_href->{picardtools}
-              . "/picard-tools-"
-              . $parameter_href->{picardtools} . ".zip",
+              . '/picard-tools-'
+              . $parameter_href->{picardtools} . '.zip',
             FILEHANDLE   => $FILEHANDLE,
             quiet        => $parameter_href->{quiet},
             verbose      => $parameter_href->{verbose},
-            outfile_path => "picard-tools-"
-              . $parameter_href->{picardtools} . ".zip",
+            outfile_path => 'picard-tools-'
+              . $parameter_href->{picardtools} . '.zip',
         }
     );
     print $FILEHANDLE "\n\n";
 
     ## Extract
-    print $FILEHANDLE "## Extract\n";
-    print $FILEHANDLE "unzip picard-tools-"
-      . $parameter_href->{picardtools} . ".zip";
+    print $FILEHANDLE '## Extract', "\n";
+    print $FILEHANDLE 'unzip picard-tools-'
+      . $parameter_href->{picardtools} . '.zip';
     print $FILEHANDLE "\n\n";
 
     ## Make available from conda environment
     if (
         -d catdir(
-            $parameter_href->{conda_prefix_path}, "share",
-            "picard-tools-" . $parameter_href->{picardtools}
+            $parameter_href->{conda_prefix_path}, 'share',
+            'picard-tools-' . $parameter_href->{picardtools}
         )
       )
     {
@@ -1605,8 +1611,8 @@ sub picardtools {
         rm(
             {
                 infile_path => catdir(
-                    $parameter_href->{conda_prefix_path}, "share",
-                    "picard-tools-" . $parameter_href->{picardtools}
+                    $parameter_href->{conda_prefix_path}, 'share',
+                    'picard-tools-' . $parameter_href->{picardtools}
                 ),
                 force      => 1,
                 recursive  => 1,
@@ -1616,12 +1622,12 @@ sub picardtools {
         print $FILEHANDLE "\n\n";
     }
 
-    print $FILEHANDLE "## Make available from conda environment\n";
+    print $FILEHANDLE '## Make available from conda environment', "\n";
     mv(
         {
-            infile_path => "picard-tools-" . $parameter_href->{picardtools},
+            infile_path => 'picard-tools-' . $parameter_href->{picardtools},
             outfile_path =>
-              catdir( $parameter_href->{conda_prefix_path}, "share" ),
+              catdir( $parameter_href->{conda_prefix_path}, 'share' ),
             FILEHANDLE => $FILEHANDLE,
         }
     );
@@ -1633,10 +1639,10 @@ sub picardtools {
             FILEHANDLE     => $FILEHANDLE,
             binary         => catfile(
                 $parameter_href->{conda_prefix_path},
-                "share", "picard-tools-" . $parameter_href->{picardtools},
-                "picard.jar"
+                'share', 'picard-tools-' . $parameter_href->{picardtools},
+                'picard.jar'
             ),
-            softlink => "picard.jar",
+            softlink => 'picard.jar',
         }
     );
 
@@ -1677,7 +1683,7 @@ sub sambamba {
         FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     my $pwd = cwd();
 
@@ -1686,7 +1692,7 @@ sub sambamba {
         check_conda_bin_file_exists(
             {
                 parameter_href  => $parameter_href,
-                program_name    => "sambamba",
+                program_name    => 'sambamba',
                 program_version => $parameter_href->{sambamba},
             }
         )
@@ -1696,57 +1702,60 @@ sub sambamba {
     }
 
     ## Install sambamba
-    print $FILEHANDLE "### Install sambamba\n";
+    print $FILEHANDLE '### Install sambamba', "\n";
 
     ## Create the temporary install directory
     create_install_dir( { FILEHANDLE => $FILEHANDLE, } );
 
     ## Download
-    print $FILEHANDLE "## Download sambamba release\n";
+    print $FILEHANDLE '## Download sambamba release', "\n";
     Program::Download::Wget::wget(
         {
-            url =>
-"https://github.com/lomereiter/sambamba/releases/download/v?.$parameter_href->{sambamba}.q?/sambamba_v?.$parameter_href->{sambamba}.q?_linux.tar.bz2",
+            url => 'https://github.com/lomereiter/sambamba/releases/download/v'
+              . q?$parameter_href->{sambamba}?
+              . '/sambamba_v'
+              . q?$parameter_href->{sambamba}?
+              . '_linux.tar.bz2',
             FILEHANDLE   => $FILEHANDLE,
             quiet        => $parameter_href->{quiet},
             verbose      => $parameter_href->{verbose},
-            outfile_path => "sambamba_v"
+            outfile_path => 'sambamba_v'
               . $parameter_href->{sambamba}
-              . "_linux.tar.bz2",
+              . '_linux.tar.bz2',
         }
     );
     print $FILEHANDLE "\n\n";
 
     ## Decompress
-    print $FILEHANDLE "## Decompress sambamba file\n";
-    print $FILEHANDLE "bzip2 ";
-    print $FILEHANDLE "-f ";    #Force
-    print $FILEHANDLE "-d ";    #Decompress
-    print $FILEHANDLE "sambamba_v"
+    print $FILEHANDLE '## Decompress sambamba file', "\n";
+    print $FILEHANDLE 'bzip2 ';
+    print $FILEHANDLE '-f ';    #Force
+    print $FILEHANDLE '-d ';    #Decompress
+    print $FILEHANDLE 'sambamba_v'
       . $parameter_href->{sambamba}
-      . "_linux.tar.bz2";
+      . '_linux.tar.bz2';
     print $FILEHANDLE "\n\n";
 
     ## Extract files
-    print $FILEHANDLE "## Extract files\n";
-    print $FILEHANDLE "tar xvf sambamba_v"
+    print $FILEHANDLE '## Extract files', "\n";
+    print $FILEHANDLE 'tar xvf sambamba_v'
       . $parameter_href->{sambamba}
-      . "_linux.tar";
+      . '_linux.tar';
     print $FILEHANDLE "\n\n";
 
     ## Make executable
-    print $FILEHANDLE "## Make executable\n";
-    print $FILEHANDLE "chmod 755 ";
-    print $FILEHANDLE "sambamba_v" . $parameter_href->{sambamba};
+    print $FILEHANDLE '## Make executable', "\n";
+    print $FILEHANDLE 'chmod 755 ';
+    print $FILEHANDLE 'sambamba_v' . $parameter_href->{sambamba};
     print $FILEHANDLE "\n\n";
 
     ## Make available from conda environment
-    print $FILEHANDLE "## Make available from conda environment\n";
+    print $FILEHANDLE '## Make available from conda environment', "\n";
     mv(
         {
-            infile_path => "sambamba_v" . $parameter_href->{sambamba},
+            infile_path => 'sambamba_v' . $parameter_href->{sambamba},
             outfile_path =>
-              catdir( $parameter_href->{conda_prefix_path}, "bin" ),
+              catdir( $parameter_href->{conda_prefix_path}, 'bin' ),
             FILEHANDLE => $FILEHANDLE,
         }
     );
@@ -1756,8 +1765,8 @@ sub sambamba {
         {
             parameter_href => $parameter_href,
             FILEHANDLE     => $BASHFILEHANDLE,
-            binary   => "sambamba_v" . $parameter_href->{bioconda}{sambamba},
-            softlink => "sambamba",
+            binary   => 'sambamba_v' . $parameter_href->{bioconda}{sambamba},
+            softlink => 'sambamba',
         }
     );
 
@@ -1798,7 +1807,7 @@ sub bedtools {
         FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     my $pwd = cwd();
 
@@ -1807,7 +1816,7 @@ sub bedtools {
         check_conda_bin_file_exists(
             {
                 parameter_href => $parameter_href,
-                program_name   => "bedtools",
+                program_name   => 'bedtools',
             }
         )
       )
@@ -1819,59 +1828,59 @@ sub bedtools {
     my $bedtools_main_version = substr( $parameter_href->{bedtools}, 0, 1 );
 
     ## Install bedtools
-    print $FILEHANDLE "### Install bedtools\n";
+    print $FILEHANDLE '### Install bedtools', "\n";
 
     ## Create the temporary install directory
     create_install_dir( { FILEHANDLE => $FILEHANDLE, } );
 
     ## Download
-    print $FILEHANDLE "## Download bedtools\n";
+    print $FILEHANDLE '## Download bedtools', "\n";
     Program::Download::Wget::wget(
         {
-            url => "https://github.com/arq5x/bedtools"
+            url => 'https://github.com/arq5x/bedtools'
               . $bedtools_main_version
-              . "/releases/download/v"
+              . '/releases/download/v'
               . $parameter_href->{bedtools}
-              . "/bedtools-"
+              . '/bedtools-'
               . $parameter_href->{bedtools}
-              . ".tar.gz",
+              . '.tar.gz',
             FILEHANDLE   => $FILEHANDLE,
             quiet        => $parameter_href->{quiet},
             verbose      => $parameter_href->{verbose},
-            outfile_path => "bedtools-"
+            outfile_path => 'bedtools-'
               . $parameter_href->{bedtools}
-              . ".tar.gz",
+              . '.tar.gz',
         }
     );
     print $FILEHANDLE "\n\n";
 
     ## Extract
-    print $FILEHANDLE "## Extract\n";
-    print $FILEHANDLE "tar xvf bedtools-"
+    print $FILEHANDLE '## Extract', "\n";
+    print $FILEHANDLE 'tar xvf bedtools-'
       . $parameter_href->{bedtools}
-      . ".tar.gz";
+      . '.tar.gz';
     print $FILEHANDLE "\n\n";
 
     ## Move to bedtools directory
-    print $FILEHANDLE "## Move to bedtools directory\n";
+    print $FILEHANDLE '## Move to bedtools directory', "\n";
     cd(
         {
-            directory_path => "bedtools" . $bedtools_main_version,
+            directory_path => 'bedtools' . $bedtools_main_version,
             FILEHANDLE     => $FILEHANDLE,
         }
     );
     print $FILEHANDLE "\n\n";
 
-    print $FILEHANDLE "make";
+    print $FILEHANDLE 'make';
     print $FILEHANDLE "\n\n";
 
     ## Make available from conda environment
-    print $FILEHANDLE "## Make available from conda environment\n";
+    print $FILEHANDLE '## Make available from conda environment', "\n";
     mv(
         {
-            infile_path => catfile( ".", "bin", "*" ),
+            infile_path => catfile(qw(. bin * )),
             outfile_path =>
-              catdir( $parameter_href->{conda_prefix_path}, "bin" ),
+              catdir( $parameter_href->{conda_prefix_path}, 'bin' ),
             FILEHANDLE => $FILEHANDLE,
         }
     );
@@ -1914,7 +1923,7 @@ sub vt {
         FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     my $pwd = cwd();
 
@@ -1923,7 +1932,7 @@ sub vt {
         check_conda_bin_file_exists(
             {
                 parameter_href => $parameter_href,
-                program_name   => "vt",
+                program_name   => 'vt',
             }
         )
       )
@@ -1933,40 +1942,40 @@ sub vt {
     }
 
     ## Install vt
-    print $FILEHANDLE "### Install VT\n";
+    print $FILEHANDLE '### Install VT', "\n";
 
     ## Create the temporary install directory
     create_install_dir( { FILEHANDLE => $FILEHANDLE, } );
 
     ## Download
-    print $FILEHANDLE "## Download VT\n";
+    print $FILEHANDLE '## Download VT', "\n";
 
-    print $FILEHANDLE "git clone https://github.com/atks/vt.git ";
+    print $FILEHANDLE 'git clone https://github.com/atks/vt.git ';
     print $FILEHANDLE "\n\n";
 
     ## Move to vt directory
-    print $FILEHANDLE "## Move to vt directory\n";
+    print $FILEHANDLE '## Move to vt directory', "\n";
     cd(
         {
-            directory_path => "vt",
+            directory_path => 'vt',
             FILEHANDLE     => $FILEHANDLE,
         }
     );
     print $FILEHANDLE "\n\n";
 
     ## Configure
-    print $FILEHANDLE "## Configure\n";
-    print $FILEHANDLE "make", "\n";
-    print $FILEHANDLE "make test";
+    print $FILEHANDLE '## Configure', "\n";
+    print $FILEHANDLE 'make',         "\n";
+    print $FILEHANDLE 'make test';
     print $FILEHANDLE "\n\n";
 
     ## Make available from conda environment
-    print $FILEHANDLE "## Make available from conda environment\n";
+    print $FILEHANDLE '## Make available from conda environment', "\n";
     mv(
         {
-            infile_path => "vt",
+            infile_path => 'vt',
             outfile_path =>
-              catdir( $parameter_href->{conda_prefix_path}, "bin" ),
+              catdir( $parameter_href->{conda_prefix_path}, 'bin' ),
             FILEHANDLE => $FILEHANDLE,
         }
     );
@@ -2009,7 +2018,7 @@ sub plink2 {
         FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     my $pwd = cwd();
 
@@ -2018,7 +2027,7 @@ sub plink2 {
         check_conda_bin_file_exists(
             {
                 parameter_href => $parameter_href,
-                program_name   => "plink",
+                program_name   => 'plink',
             }
         )
       )
@@ -2028,42 +2037,42 @@ sub plink2 {
     }
 
     ## Install Plink
-    print $FILEHANDLE "### Install Plink\n";
+    print $FILEHANDLE '### Install Plink', "\n";
 
     ## Create the temporary install directory
     create_install_dir( { FILEHANDLE => $FILEHANDLE, } );
 
     ## Download
-    print $FILEHANDLE "## Download Plink\n";
+    print $FILEHANDLE '## Download Plink', "\n";
     Program::Download::Wget::wget(
         {
-            url => "https://www.cog-genomics.org/static/bin/plink"
+            url => 'https://www.cog-genomics.org/static/bin/plink'
               . $parameter_href->{plink2}
-              . "/plink_linux_x86_64.zip",
+              . '/plink_linux_x86_64.zip',
             FILEHANDLE   => $FILEHANDLE,
             quiet        => $parameter_href->{quiet},
             verbose      => $parameter_href->{verbose},
-            outfile_path => "plink-"
+            outfile_path => 'plink-'
               . $parameter_href->{plink2}
-              . "-x86_64.zip",
+              . '-x86_64.zip',
         }
     );
     print $FILEHANDLE "\n\n";
 
     ## Extract
-    print $FILEHANDLE "## Extract\n";
-    print $FILEHANDLE "unzip plink-"
+    print $FILEHANDLE '## Extract', "\n";
+    print $FILEHANDLE 'unzip plink-'
       . $parameter_href->{plink2}
-      . "-x86_64.zip";
+      . '-x86_64.zip';
     print $FILEHANDLE "\n\n";
 
     ## Make available from conda environment
-    print $FILEHANDLE "## Make available from conda environment\n";
+    print $FILEHANDLE '## Make available from conda environment', "\n";
     mv(
         {
-            infile_path => "plink",
+            infile_path => 'plink',
             outfile_path =>
-              catdir( $parameter_href->{conda_prefix_path}, "bin", "plink2" ),
+              catdir( $parameter_href->{conda_prefix_path}, qw(bin plink2) ),
             FILEHANDLE => $FILEHANDLE,
         }
     );
@@ -2106,7 +2115,7 @@ sub snpeff {
         FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     my $pwd = cwd();
 
@@ -2115,7 +2124,7 @@ sub snpeff {
         check_conda_bin_file_exists(
             {
                 parameter_href => $parameter_href,
-                program_name   => "snpEff.jar",
+                program_name   => 'snpEff.jar',
             }
         )
       )
@@ -2125,36 +2134,36 @@ sub snpeff {
     }
 
     ## Install snpeff
-    print $FILEHANDLE "### Install snpeff\n";
+    print $FILEHANDLE '### Install snpeff', "\n";
 
     ## Create the temporary install directory
     create_install_dir( { FILEHANDLE => $FILEHANDLE, } );
 
     ## Download
-    print $FILEHANDLE "## Download snpeff\n";
+    print $FILEHANDLE '## Download snpeff', "\n";
     Program::Download::Wget::wget(
         {
-            url => "http://sourceforge.net/projects/snpeff/files/snpEff_"
+            url => 'http://sourceforge.net/projects/snpeff/files/snpEff_'
               . $parameter_href->{snpeff}
-              . "_core.zip/download",
+              . '_core.zip/download',
             FILEHANDLE   => $FILEHANDLE,
             quiet        => $parameter_href->{quiet},
             verbose      => $parameter_href->{verbose},
-            outfile_path => "snpEff_" . $parameter_href->{snpeff} . "_core.zip",
+            outfile_path => 'snpEff_' . $parameter_href->{snpeff} . '_core.zip',
         }
     );
     print $FILEHANDLE "\n\n";
 
     ## Extract
-    print $FILEHANDLE "## Extract\n";
-    print $FILEHANDLE "unzip snpEff_" . $parameter_href->{snpeff} . "_core.zip";
+    print $FILEHANDLE '## Extract', "\n";
+    print $FILEHANDLE 'unzip snpEff_' . $parameter_href->{snpeff} . '_core.zip';
     print $FILEHANDLE "\n\n";
 
     ## Make available from conda environment
     if (
         -d catdir(
-            $parameter_href->{conda_prefix_path}, "share",
-            "snpEff",                             $parameter_href->{snpeff}
+            $parameter_href->{conda_prefix_path}, 'share',
+            'snpEff',                             $parameter_href->{snpeff}
         )
       )
     {
@@ -2163,7 +2172,7 @@ sub snpeff {
             {
                 infile_path => catdir(
                     $parameter_href->{conda_prefix_path},
-                    "share", "snpEff", $parameter_href->{snpeff}
+                    'share', 'snpEff', $parameter_href->{snpeff}
                 ),
                 force      => 1,
                 recursive  => 1,
@@ -2173,12 +2182,12 @@ sub snpeff {
         print $FILEHANDLE "\n\n";
     }
 
-    print $FILEHANDLE "## Make available from conda environment\n";
+    print $FILEHANDLE '## Make available from conda environment', "\n";
     mkdir(
         {
             indirectory_path => catdir(
-                $parameter_href->{conda_prefix_path}, "share",
-                "snpEff." . $parameter_href->{snpeff}
+                $parameter_href->{conda_prefix_path}, 'share',
+                'snpEff.' . $parameter_href->{snpeff}
             ),
             parents    => 1,
             FILEHANDLE => $FILEHANDLE,
@@ -2188,10 +2197,10 @@ sub snpeff {
 
     mv(
         {
-            infile_path  => catfile( "snpEff", "*.jar" ),
+            infile_path  => catfile(qw(snpEff *.jar)),
             outfile_path => catdir(
-                $parameter_href->{conda_prefix_path}, "share",
-                "snpEff." . $parameter_href->{snpeff}
+                $parameter_href->{conda_prefix_path}, 'share',
+                'snpEff.' . $parameter_href->{snpeff}
             ),
             FILEHANDLE => $FILEHANDLE,
         }
@@ -2200,10 +2209,10 @@ sub snpeff {
 
     mv(
         {
-            infile_path  => catfile( "snpEff", "snpEff.config" ),
+            infile_path  => catfile(qw(snpEff snpEff.config)),
             outfile_path => catdir(
-                $parameter_href->{conda_prefix_path}, "share",
-                "snpEff." . $parameter_href->{snpeff}
+                $parameter_href->{conda_prefix_path}, 'share',
+                'snpEff.' . $parameter_href->{snpeff}
             ),
             FILEHANDLE => $FILEHANDLE,
         }
@@ -2211,7 +2220,7 @@ sub snpeff {
     print $FILEHANDLE "\n\n";
 
     ## Define binaries
-    my @snpeff_binaries = ( "snpEff.jar", "SnpSift.jar", "snpEff.config", );
+    my @snpeff_binaries = qw(snpEff.jar SnpSift.jar snpEff.config);
 
     foreach my $binary (@snpeff_binaries) {
 
@@ -2220,8 +2229,8 @@ sub snpeff {
                 parameter_href => $parameter_href,
                 FILEHANDLE     => $BASHFILEHANDLE,
                 binary         => catfile(
-                    $parameter_href->{conda_prefix_path},  "share",
-                    "snpEff." . $parameter_href->{snpeff}, $binary
+                    $parameter_href->{conda_prefix_path},  'share',
+                    'snpEff.' . $parameter_href->{snpeff}, $binary
                 ),
                 softlink => $binary,
             }
@@ -2238,18 +2247,18 @@ sub snpeff {
                 parameter_href => $parameter_href,
                 FILEHANDLE     => $BASHFILEHANDLE,
                 share_dir      => catdir(
-                    $parameter_href->{conda_prefix_path}, "share",
-                    "snpEff." . $parameter_href->{snpeff}
+                    $parameter_href->{conda_prefix_path}, 'share',
+                    'snpEff.' . $parameter_href->{snpeff}
                 ),
-                config_file        => "snpEff.config",
+                config_file        => 'snpEff.config',
                 genome_version_ref => \$genome_version,
             }
         );
 
         unless (
             -d catdir(
-                $parameter_href->{conda_prefix_path},  "share",
-                "snpEff." . $parameter_href->{snpeff}, "data",
+                $parameter_href->{conda_prefix_path},  'share',
+                'snpEff.' . $parameter_href->{snpeff}, 'data',
                 $genome_version
             )
           )
@@ -2303,28 +2312,29 @@ sub varianteffectpredictor {
         FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     my $pwd = cwd();
 
     my $miniconda_bin_dir = catdir( $parameter_href->{conda_prefix_path},
-        "ensembl-tools-release-" . $parameter_href->{varianteffectpredictor} );
+        'ensembl-tools-release-' . $parameter_href->{varianteffectpredictor} );
 
     if ( -d $miniconda_bin_dir ) {
 
-        print STDERR q?Found varianteffectpredictor in miniconda directory: ?
+        print STDERR 'Found varianteffectpredictor in miniconda directory: '
           . $miniconda_bin_dir, "\n";
 
         if ( $parameter_href->{noupdate} ) {
 
             print STDERR
-"Skipping writting installation process for varianteffectpredictor\n";
+'Skipping writting installation process for varianteffectpredictor',
+              "\n";
             return;
         }
         else {
 
             ## Removing varianteffectpredictor
-            print $FILEHANDLE "### Removing varianteffectpredictor\n";
+            print $FILEHANDLE '### Removing varianteffectpredictor', "\n";
             rm(
                 {
                     infile_path => $miniconda_bin_dir,
@@ -2338,12 +2348,12 @@ sub varianteffectpredictor {
     }
     else {
 
-        print STDERR
-          "Writting install instructions for varianteffectpredictor\n";
+        print STDERR 'Writting install instructions for varianteffectpredictor',
+          "\n";
     }
 
     ## Install VEP
-    print $FILEHANDLE "### Install varianteffectpredictor\n";
+    print $FILEHANDLE '### Install varianteffectpredictor', "\n";
 
     ## Activate conda environment
     activate_conda_environment(
@@ -2373,28 +2383,28 @@ sub varianteffectpredictor {
     print $FILEHANDLE "\n\n";
 
     ## Download
-    print $FILEHANDLE "## Download VEP\n";
+    print $FILEHANDLE '## Download VEP', "\n";
     Program::Download::Wget::wget(
         {
-            url => "https://github.com/Ensembl/ensembl-tools/archive/release/"
-              . $parameter_href->{varianteffectpredictor} . ".zip",
+            url => 'https://github.com/Ensembl/ensembl-tools/archive/release/'
+              . $parameter_href->{varianteffectpredictor} . '.zip',
             FILEHANDLE   => $FILEHANDLE,
             quiet        => $parameter_href->{quiet},
             verbose      => $parameter_href->{verbose},
-            outfile_path => "VariantEffectPredictor-"
-              . $parameter_href->{varianteffectpredictor} . ".zip",
+            outfile_path => 'VariantEffectPredictor-'
+              . $parameter_href->{varianteffectpredictor} . '.zip',
         }
     );
     print $FILEHANDLE "\n\n";
 
     ## Extract
-    print $FILEHANDLE "## Extract\n";
-    print $FILEHANDLE "unzip VariantEffectPredictor-"
-      . $parameter_href->{varianteffectpredictor} . ".zip";
+    print $FILEHANDLE '## Extract', "\n";
+    print $FILEHANDLE 'unzip VariantEffectPredictor-'
+      . $parameter_href->{varianteffectpredictor} . '.zip';
     print $FILEHANDLE "\n\n";
 
     ## Move to VariantEffectPredictor directory
-    print $FILEHANDLE "## Move to VariantEffectPredictor directory\n";
+    print $FILEHANDLE '## Move to VariantEffectPredictor directory', "\n";
 
     ## Needed since VEP only uses major version to name the zip file
     my $vep_install_version = $parameter_href->{varianteffectpredictor};
@@ -2405,8 +2415,8 @@ sub varianteffectpredictor {
     cd(
         {
             directory_path => catdir(
-                "ensembl-tools-release-" . $vep_install_version, "scripts",
-                "variant_effect_predictor"
+                'ensembl-tools-release-' . $vep_install_version, 'scripts',
+                'variant_effect_predictor'
             ),
             FILEHANDLE => $FILEHANDLE,
         }
@@ -2414,9 +2424,9 @@ sub varianteffectpredictor {
     print $FILEHANDLE "\n\n";
 
     ## Install VEP
-    print $FILEHANDLE "## Install VEP\n";
-    print $FILEHANDLE "perl INSTALL.pl ";
-    print $FILEHANDLE "--AUTO "
+    print $FILEHANDLE '## Install VEP', "\n";
+    print $FILEHANDLE 'perl INSTALL.pl ';
+    print $FILEHANDLE '--AUTO '
       . $parameter_href->{vep_auto_flag}
       ;    #a (API), l (FAIDX/htslib), c (cache), f (FASTA)
 
@@ -2424,24 +2434,24 @@ sub varianteffectpredictor {
         && ( $parameter_href->{vep_plugin} ne 0 ) )
     {
 
-        print $FILEHANDLE "p ";    #p (plugins)
-        print $FILEHANDLE "-g "
+        print $FILEHANDLE 'p ';    #p (plugins)
+        print $FILEHANDLE '-g '
           . $parameter_href->{vep_plugin}
-          . " ";                   #Plugins in comma sep string
+          . q{ };                  #Plugins in comma sep string
     }
     else {
 
-        print $FILEHANDLE " ";     #Add whitespace if no plugins
+        print $FILEHANDLE q{ };    #Add whitespace if no plugins
     }
 
-    print $FILEHANDLE "-c "
+    print $FILEHANDLE '-c '
       . $parameter_href->{vep_cache_dir}
-      . " ";                       #Cache directory
-    print $FILEHANDLE "-s homo_sapiens ";
+      . q{ };                      #Cache directory
+    print $FILEHANDLE '-s homo_sapiens ';
 
     ## Only install first assembly version since VEP install cannot handle multiple versions at the same time
-    print $FILEHANDLE "--ASSEMBLY "
-      . $parameter_href->{vep_assemblies}[0] . " ";
+    print $FILEHANDLE '--ASSEMBLY '
+      . $parameter_href->{vep_assemblies}[0] . q{ };
     print $FILEHANDLE "\n\n";
 
     if (   ( scalar( @{ $parameter_href->{vep_assemblies} } ) > 1 )
@@ -2457,18 +2467,18 @@ sub varianteffectpredictor {
         {
 
             print $FILEHANDLE
-              "## Install additional VEP cache assembly version\n";
-            print $FILEHANDLE "perl INSTALL.pl ";
-            print $FILEHANDLE "--AUTO cf "
+              '## Install additional VEP cache assembly version', "\n";
+            print $FILEHANDLE 'perl INSTALL.pl ';
+            print $FILEHANDLE '--AUTO cf '
               ;    #a (API), l (FAIDX/htslib), c (cache), f (FASTA), p (plugins)
-            print $FILEHANDLE "-c "
+            print $FILEHANDLE '-c '
               . $parameter_href->{vep_cache_dir}
-              . " ";    #Cache directory
-            print $FILEHANDLE "-s homo_sapiens ";
+              . q{ };    #Cache directory
+            print $FILEHANDLE '-s homo_sapiens ';
 
             ## Only install first assembly version since VEP install cannot handle multiple versions at the same time
-            print $FILEHANDLE "--ASSEMBLY "
-              . $parameter_href->{vep_assemblies}[$assembly_version] . " ";
+            print $FILEHANDLE '--ASSEMBLY '
+              . $parameter_href->{vep_assemblies}[$assembly_version] . q{ };
             print $FILEHANDLE "\n\n";
         }
     }
@@ -2478,15 +2488,15 @@ sub varianteffectpredictor {
     {
 
         ##Add LofTool required text file
-        print $FILEHANDLE "##Add LofTool required text file\n";
+        print $FILEHANDLE '##Add LofTool required text file', "\n";
         Program::Download::Wget::wget(
             {
                 url =>
-"https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/LoFtool_scores.txt",
+'https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/LoFtool_scores.txt',
                 FILEHANDLE   => $FILEHANDLE,
                 quiet        => $parameter_href->{quiet},
                 verbose      => $parameter_href->{verbose},
-                outfile_path => q?$HOME/.vep/Plugins/LoFtool_scores.txt?,
+                outfile_path => q{$HOME/.vep/Plugins/LoFtool_scores.txt},
             }
         );
         print $FILEHANDLE "\n\n";
@@ -2497,53 +2507,53 @@ sub varianteffectpredictor {
     {
 
         ## Add Lof required perl splice script
-        print $FILEHANDLE "##Add Lof required perl splice script\n";
+        print $FILEHANDLE '##Add Lof required perl splice script', "\n";
         Program::Download::Wget::wget(
             {
                 url =>
-"https://raw.githubusercontent.com/konradjk/loftee/master/splice_module.pl",
+'https://raw.githubusercontent.com/konradjk/loftee/master/splice_module.pl',
                 FILEHANDLE   => $FILEHANDLE,
                 quiet        => $parameter_href->{quiet},
                 verbose      => $parameter_href->{verbose},
-                outfile_path => q?$HOME/.vep/Plugins/splice_module.pl?,
+                outfile_path => q{$HOME/.vep/Plugins/splice_module.pl},
             }
         );
         print $FILEHANDLE "\n\n";
 
         ## Add Lof optional human_ancestor_fa
-        print $FILEHANDLE "##Add Lof optional human_ancestor_fa\n";
+        print $FILEHANDLE '##Add Lof optional human_ancestor_fa', "\n";
         Program::Download::Wget::wget(
             {
                 url =>
-                  "https://s3.amazonaws.com/bcbio_nextgen/human_ancestor.fa.gz",
+                  'https://s3.amazonaws.com/bcbio_nextgen/human_ancestor.fa.gz',
                 FILEHANDLE   => $FILEHANDLE,
                 quiet        => $parameter_href->{quiet},
                 verbose      => $parameter_href->{verbose},
                 outfile_path => catfile(
                     $parameter_href->{vep_cache_dir},
-                    "human_ancestor.fa.gz"
+                    'human_ancestor.fa.gz'
                 ),
             }
         );
         print $FILEHANDLE "\n\n";
 
         ## Uncompress
-        print $FILEHANDLE "bgzip -d "
-          . catfile( $parameter_href->{vep_cache_dir}, "human_ancestor.fa.gz" )
-          . " ";
+        print $FILEHANDLE 'bgzip -d '
+          . catfile( $parameter_href->{vep_cache_dir}, 'human_ancestor.fa.gz' )
+          . q{ };
         print $FILEHANDLE "\n\n";
 
         ## Add Lof optional human_ancestor_fa
         Program::Download::Wget::wget(
             {
                 url =>
-"https://s3.amazonaws.com/bcbio_nextgen/human_ancestor.fa.gz.fai",
+'https://s3.amazonaws.com/bcbio_nextgen/human_ancestor.fa.gz.fai',
                 FILEHANDLE   => $FILEHANDLE,
                 quiet        => $parameter_href->{quiet},
                 verbose      => $parameter_href->{verbose},
                 outfile_path => catfile(
                     $parameter_href->{vep_cache_dir},
-                    "human_ancestor.fa.fai"
+                    'human_ancestor.fa.fai'
                 ),
             }
         );
@@ -2551,13 +2561,13 @@ sub varianteffectpredictor {
     }
 
     ## Clean up
-    print $FILEHANDLE "## Clean up\n";
+    print $FILEHANDLE '## Clean up', "\n";
     rm(
         {
             infile_path => catdir(
                 $parameter_href->{conda_prefix_path},
-                "VariantEffectPredictor-"
-                  . $parameter_href->{varianteffectpredictor} . ".zip"
+                'VariantEffectPredictor-'
+                  . $parameter_href->{varianteffectpredictor} . '.zip'
             ),
             force      => 1,
             FILEHANDLE => $FILEHANDLE,
@@ -2566,7 +2576,7 @@ sub varianteffectpredictor {
     print $FILEHANDLE "\n\n";
 
     ## Go back to subroutine origin
-    print $FILEHANDLE "## Moving back to original working directory\n";
+    print $FILEHANDLE '## Moving back to original working directory', "\n";
     cd(
         {
             directory_path => $pwd,
@@ -2607,7 +2617,7 @@ sub cnvnator {
         FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     my $pwd = cwd();
 
@@ -2616,7 +2626,7 @@ sub cnvnator {
         check_conda_bin_file_exists(
             {
                 parameter_href => $parameter_href,
-                program_name   => "cnvnator",
+                program_name   => 'cnvnator',
             }
         )
       )
@@ -2626,22 +2636,23 @@ sub cnvnator {
     }
 
     my $miniconda_bin_dir =
-      catdir( $parameter_href->{conda_prefix_path}, "root" );
+      catdir( $parameter_href->{conda_prefix_path}, 'root' );
 
     if ( -d $miniconda_bin_dir ) {
 
-        print STDERR q?Found Root in miniconda directory: ?
-          . $miniconda_bin_dir, "\n";
+        print STDERR 'Found Root in miniconda directory: ' . $miniconda_bin_dir,
+          "\n";
 
         if ( $parameter_href->{noupdate} ) {
 
-            print STDERR "Skipping writting installation process for Root\n";
+            print STDERR 'Skipping writting installation process for Root',
+              "\n";
             return;
         }
         else {
 
             ## Removing Root
-            print $FILEHANDLE "### Removing Root\n";
+            print $FILEHANDLE '### Removing Root', "\n";
             rm(
                 {
                     infile_path => $miniconda_bin_dir,
@@ -2655,11 +2666,11 @@ sub cnvnator {
     }
     else {
 
-        print STDERR "Writting install instructions for Root\n";
+        print STDERR 'Writting install instructions for Root', "\n";
     }
 
     ## Install Root
-    print $FILEHANDLE "### Install cnvnator/Root\n";
+    print $FILEHANDLE '### Install cnvnator/Root', "\n";
 
     ## Move to miniconda environment
     cd(
@@ -2671,10 +2682,10 @@ sub cnvnator {
     print $FILEHANDLE "\n\n";
 
     ## Download
-    print $FILEHANDLE "## Download Root\n";
+    print $FILEHANDLE '## Download Root', "\n";
     Program::Download::Wget::wget(
         {
-            url => "https://root.cern.ch/download/"
+            url => 'https://root.cern.ch/download/'
               . $parameter_href->{cnvnator_root_binary}
             , #root_v5.34.34.Linux-slc6-x86_64-gcc4.4.tar.gz", #Currently hardcoded
             FILEHANDLE   => $FILEHANDLE,
@@ -2686,32 +2697,32 @@ sub cnvnator {
     print $FILEHANDLE "\n\n";
 
     ## Extract
-    print $FILEHANDLE "## Extract\n";
-    print $FILEHANDLE "tar xvf "
-      . $parameter_href->{cnvnator_root_binary} . " ";
+    print $FILEHANDLE '## Extract', "\n";
+    print $FILEHANDLE 'tar xvf '
+      . $parameter_href->{cnvnator_root_binary} . q{ };
     print $FILEHANDLE "\n\n";
 
     my $binary_regexp =
-      catdir( $parameter_href->{conda_prefix_path} . q?\\?, "root\\", "bin" );
+      catdir( $parameter_href->{conda_prefix_path} . qw(\\root\\bin) );
     unless ( $ENV{PATH} =~ /$binary_regexp/ ) {
 
         ## Export path
         print $FILEHANDLE "## Export path\n";
-        print $FILEHANDLE q?echo 'source ?
+        print $FILEHANDLE q{echo 'source }
           . catdir( $parameter_href->{conda_prefix_path},
-            "root", "bin", "thisroot.sh" )
-          . q?' >> ~/.bashrc?;
+            qw(root bin thisroot.sh) )
+          . q{' >> ~/.bashrc};
         print $FILEHANDLE "\n\n";
 
         ## Use newly installed root
-        print $FILEHANDLE "source "
+        print $FILEHANDLE 'source '
           . catdir( $parameter_href->{conda_prefix_path},
-            "root", "bin", "thisroot.sh" );
+            qw(root bin thisroot.sh) );
         print $FILEHANDLE "\n\n";
     }
 
     ## Go back to subroutine origin
-    print $FILEHANDLE "## Moving back to original working directory\n";
+    print $FILEHANDLE '## Moving back to original working directory', "\n";
     cd(
         {
             directory_path => $pwd,
@@ -2721,7 +2732,7 @@ sub cnvnator {
     print $FILEHANDLE "\n\n";
 
     ## Install CNVNator
-    print $FILEHANDLE "### Install cnvnator\n";
+    print $FILEHANDLE '### Install cnvnator', "\n";
 
     ## Activate conda environment
     activate_conda_environment(
@@ -2735,33 +2746,33 @@ sub cnvnator {
     create_install_dir( { FILEHANDLE => $FILEHANDLE, } );
 
     ## Download
-    print $FILEHANDLE "## Download CNVNator\n";
+    print $FILEHANDLE '## Download CNVNator', "\n";
     Program::Download::Wget::wget(
         {
-            url => "https://github.com/abyzovlab/CNVnator/releases/download/v"
+            url => 'https://github.com/abyzovlab/CNVnator/releases/download/v'
               . $parameter_href->{cnvnator}
-              . "/CNVnator_v"
-              . $parameter_href->{cnvnator} . ".zip",
+              . '/CNVnator_v'
+              . $parameter_href->{cnvnator} . '.zip',
             FILEHANDLE   => $FILEHANDLE,
             quiet        => $parameter_href->{quiet},
             verbose      => $parameter_href->{verbose},
-            outfile_path => "CNVnator_v" . $parameter_href->{cnvnator} . ".zip",
+            outfile_path => 'CNVnator_v' . $parameter_href->{cnvnator} . '.zip',
         }
     );
     print $FILEHANDLE "\n\n";
 
     ## Extract
-    print $FILEHANDLE "## Extract\n";
-    print $FILEHANDLE "unzip CNVnator_v" . $parameter_href->{cnvnator} . ".zip";
+    print $FILEHANDLE '## Extract', "\n";
+    print $FILEHANDLE 'unzip CNVnator_v' . $parameter_href->{cnvnator} . '.zip';
     print $FILEHANDLE "\n\n";
 
     ## Move to CNVnator directory
-    print $FILEHANDLE "## Move to CNVnator directory\n";
+    print $FILEHANDLE '## Move to CNVnator directory', "\n";
     cd(
         {
             directory_path => catdir(
-                "CNVnator_v" . $parameter_href->{cnvnator}, "src",
-                "samtools"
+                'CNVnator_v' . $parameter_href->{cnvnator}, 'src',
+                'samtools'
             ),
             FILEHANDLE => $FILEHANDLE,
         }
@@ -2769,58 +2780,58 @@ sub cnvnator {
     print $FILEHANDLE "\n\n";
 
     ## Configure
-    print $FILEHANDLE "## Configure CNVnator samTools specific version\n";
-    print $FILEHANDLE "./configure --without-curses", "\n";
-    print $FILEHANDLE "make ";
+    print $FILEHANDLE '## Configure CNVnator samTools specific version', "\n";
+    print $FILEHANDLE './configure --without-curses',                    "\n";
+    print $FILEHANDLE 'make ';
     print $FILEHANDLE "\n\n";
 
-    print $FILEHANDLE "## Move to CNVnator directory\n";
+    print $FILEHANDLE '## Move to CNVnator directory', "\n";
     cd(
         {
-            directory_path => "..",
+            directory_path => '..',
             FILEHANDLE     => $FILEHANDLE,
         }
     );
     print $FILEHANDLE "\n";
 
-    print $FILEHANDLE "make OMP=no";
+    print $FILEHANDLE 'make OMP=no';
     print $FILEHANDLE "\n\n";
 
     ## Make available from conda environment
-    print $FILEHANDLE "## Make available from conda environment\n";
+    print $FILEHANDLE '## Make available from conda environment', "\n";
     mv(
         {
-            infile_path => "cnvnator",
+            infile_path => 'cnvnator',
             outfile_path =>
-              catdir( $parameter_href->{conda_prefix_path}, "bin" ),
+              catdir( $parameter_href->{conda_prefix_path}, 'bin' ),
             FILEHANDLE => $FILEHANDLE,
         }
     );
     print $FILEHANDLE "\n\n";
 
     ## Make available from conda environment
-    print $FILEHANDLE "## Make available from conda environment\n";
+    print $FILEHANDLE '## Make available from conda environment', "\n";
     cd(
         {
-            directory_path => "..",
+            directory_path => '..',
             FILEHANDLE     => $FILEHANDLE,
         }
     );
     print $FILEHANDLE "\n";
     mv(
         {
-            infile_path => "cnvnator2VCF.pl",
+            infile_path => 'cnvnator2VCF.pl',
             outfile_path =>
-              catdir( $parameter_href->{conda_prefix_path}, "bin" ),
+              catdir( $parameter_href->{conda_prefix_path}, 'bin' ),
             FILEHANDLE => $FILEHANDLE,
         }
     );
     print $FILEHANDLE "\n\n";
 
-    print $FILEHANDLE "## Make executable from conda environment\n";
-    print $FILEHANDLE "chmod +x ";
-    print $FILEHANDLE catfile( $parameter_href->{conda_prefix_path}, "bin",
-        "cnvnator2VCF.pl" );
+    print $FILEHANDLE '## Make executable from conda environment', "\n";
+    print $FILEHANDLE 'chmod +x ';
+    print $FILEHANDLE catfile( $parameter_href->{conda_prefix_path},
+        qw(bin cnvnator2VCF.pl) );
     print $FILEHANDLE "\n\n";
 
     ## Remove the temporary install directory
@@ -2862,7 +2873,7 @@ sub tiddit {
         FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     my $pwd = cwd();
 
@@ -2871,7 +2882,7 @@ sub tiddit {
         check_conda_bin_file_exists(
             {
                 parameter_href => $parameter_href,
-                program_name   => "TIDDIT",
+                program_name   => 'TIDDIT',
             }
         )
       )
@@ -2881,7 +2892,7 @@ sub tiddit {
     }
 
     ## Install tiddit
-    print $FILEHANDLE "### Install tiddit\n";
+    print $FILEHANDLE '### Install tiddit', "\n";
 
     ## Activate conda environment
     activate_conda_environment(
@@ -2901,39 +2912,39 @@ sub tiddit {
     print $FILEHANDLE "\n\n";
 
     ## Download
-    print $FILEHANDLE "## Download Tiddit\n";
+    print $FILEHANDLE '## Download Tiddit', "\n";
     Program::Download::Wget::wget(
         {
-            url => "https://github.com/J35P312/TIDDIT/archive/"
-              . $parameter_href->{tiddit} . ".zip",
+            url => 'https://github.com/J35P312/TIDDIT/archive/'
+              . $parameter_href->{tiddit} . '.zip',
             FILEHANDLE   => $FILEHANDLE,
             quiet        => $parameter_href->{quiet},
             verbose      => $parameter_href->{verbose},
-            outfile_path => "TIDDIT-" . $parameter_href->{tiddit} . ".zip",
+            outfile_path => 'TIDDIT-' . $parameter_href->{tiddit} . '.zip',
         }
     );
 
     print $FILEHANDLE "\n\n";
 
     ## Extract
-    print $FILEHANDLE "## Extract\n";
+    print $FILEHANDLE '## Extract', "\n";
     rm(
         {
-            infile_path => "TIDDIT-" . $parameter_href->{tiddit},
+            infile_path => 'TIDDIT-' . $parameter_href->{tiddit},
             force       => 1,
             recursive   => 1,
             FILEHANDLE  => $FILEHANDLE,
         }
     );
     print $FILEHANDLE "\n\n";
-    print $FILEHANDLE "unzip TIDDIT-" . $parameter_href->{tiddit} . ".zip",
+    print $FILEHANDLE 'unzip TIDDIT-' . $parameter_href->{tiddit} . '.zip',
       "\n\n";
 
     ## Move to Tiddit directory
-    print $FILEHANDLE "## Move to Tiddit directory\n";
+    print $FILEHANDLE '## Move to Tiddit directory', "\n";
     cd(
         {
-            directory_path => "TIDDIT-" . $parameter_href->{tiddit},
+            directory_path => 'TIDDIT-' . $parameter_href->{tiddit},
             FILEHANDLE     => $FILEHANDLE,
         }
     );
@@ -2941,7 +2952,7 @@ sub tiddit {
 
     mkdir(
         {
-            indirectory_path => "build",
+            indirectory_path => 'build',
             parents          => 1,
             FILEHANDLE       => $FILEHANDLE,
         }
@@ -2950,37 +2961,37 @@ sub tiddit {
 
     cd(
         {
-            directory_path => "build",
+            directory_path => 'build',
             FILEHANDLE     => $FILEHANDLE,
         }
     );
     print $FILEHANDLE "\n\n";
 
     ## Configure
-    print $FILEHANDLE "## Configure\n";
-    print $FILEHANDLE "cmake .. ", "\n\n";
+    print $FILEHANDLE '## Configure', "\n";
+    print $FILEHANDLE 'cmake .. ',    "\n\n";
 
-    print $FILEHANDLE "make", "\n\n";
+    print $FILEHANDLE 'make', "\n\n";
 
     cd(
         {
-            directory_path => catdir( "..", "bin" ),
+            directory_path => catdir(qw(.. bin)),
             FILEHANDLE     => $FILEHANDLE,
         }
     );
     print $FILEHANDLE "\n\n";
-    print $FILEHANDLE "chmod a+x TIDDIT", "\n\n";
+    print $FILEHANDLE 'chmod a+x TIDDIT', "\n\n";
 
     ## Make available from conda environment
     my $cwd = cwd();
-    print $FILEHANDLE "## Make available from conda environment\n";
-    print $FILEHANDLE "ln -f -s  ";
+    print $FILEHANDLE '## Make available from conda environment', "\n";
+    print $FILEHANDLE 'ln -f -s ';
     print $FILEHANDLE catfile(
         $parameter_href->{conda_prefix_path},
-        "TIDDIT-" . $parameter_href->{tiddit},
-        "bin", "TIDDIT"
-    ) . " ";
-    print $FILEHANDLE catdir( $parameter_href->{conda_prefix_path}, "bin" ),
+        'TIDDIT-' . $parameter_href->{tiddit},
+        qw(bin TIDDIT)
+    ) . q{ };
+    print $FILEHANDLE catdir( $parameter_href->{conda_prefix_path}, 'bin' ),
       "\n\n";
 
     ## Clean-up
@@ -2988,7 +2999,7 @@ sub tiddit {
         {
             infile_path => catdir(
                 $parameter_href->{conda_prefix_path},
-                "Tiddit-" . $parameter_href->{tiddit} . ".zip"
+                'Tiddit-' . $parameter_href->{tiddit} . '.zip'
             ),
             force      => 1,
             FILEHANDLE => $FILEHANDLE,
@@ -2997,7 +3008,7 @@ sub tiddit {
     print $FILEHANDLE "\n\n";
 
     ## Go back to subroutine origin
-    print $FILEHANDLE "## Moving back to original working directory\n";
+    print $FILEHANDLE '## Moving back to original working directory', "\n";
     cd(
         {
             directory_path => $pwd,
@@ -3038,7 +3049,7 @@ sub svdb {
         FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     my $pwd = cwd();
 
@@ -3047,7 +3058,7 @@ sub svdb {
         check_conda_bin_file_exists(
             {
                 parameter_href => $parameter_href,
-                program_name   => "svdb",
+                program_name   => 'svdb',
             }
         )
       )
@@ -3057,7 +3068,7 @@ sub svdb {
     }
 
     ## Install svdb
-    print $FILEHANDLE "### Install svdb\n";
+    print $FILEHANDLE '### Install svdb', "\n";
 
     ## Activate conda environment
     activate_conda_environment(
@@ -3077,25 +3088,25 @@ sub svdb {
     print $FILEHANDLE "\n\n";
 
     ## Download
-    print $FILEHANDLE "## Download Svdb\n";
+    print $FILEHANDLE '## Download Svdb', "\n";
     Program::Download::Wget::wget(
         {
-            url => "https://github.com/J35P312/SVDB/archive/"
-              . $parameter_href->{svdb} . ".zip",
+            url => 'https://github.com/J35P312/SVDB/archive/'
+              . $parameter_href->{svdb} . '.zip',
             FILEHANDLE   => $FILEHANDLE,
             quiet        => $parameter_href->{quiet},
             verbose      => $parameter_href->{verbose},
-            outfile_path => "SVDB-" . $parameter_href->{svdb} . ".zip",
+            outfile_path => 'SVDB-' . $parameter_href->{svdb} . '.zip',
         }
     );
 
     print $FILEHANDLE "\n\n";
 
     ## Clean-up
-    print $FILEHANDLE "## Clean-up\n";
+    print $FILEHANDLE '## Clean-up', "\n";
     rm(
         {
-            infile_path => "SVDB-" . $parameter_href->{svdb},
+            infile_path => 'SVDB-' . $parameter_href->{svdb},
             force       => 1,
             recursive   => 1,
             FILEHANDLE  => $FILEHANDLE,
@@ -3104,26 +3115,26 @@ sub svdb {
     print $FILEHANDLE "\n\n";
 
     ## Extract
-    print $FILEHANDLE "## Extract\n";
-    print $FILEHANDLE "unzip SVDB-" . $parameter_href->{svdb} . ".zip", "\n\n";
+    print $FILEHANDLE '## Extract', "\n";
+    print $FILEHANDLE 'unzip SVDB-' . $parameter_href->{svdb} . '.zip', "\n\n";
 
     ## Move to Svdb directory
-    print $FILEHANDLE "## Move to Svdb directory\n";
+    print $FILEHANDLE '## Move to Svdb directory', "\n";
     cd(
         {
-            directory_path => "SVDB-" . $parameter_href->{svdb},
+            directory_path => 'SVDB-' . $parameter_href->{svdb},
             FILEHANDLE     => $FILEHANDLE,
         }
     );
     print $FILEHANDLE "\n\n";
 
     ## Install
-    print $FILEHANDLE "## Install\n";
-    print $FILEHANDLE "pip install . ";
+    print $FILEHANDLE '## Install', "\n";
+    print $FILEHANDLE 'pip install . ';
     print $FILEHANDLE "\n\n";
 
     ## Go back to subroutine origin
-    print $FILEHANDLE "## Moving back to original working directory\n";
+    print $FILEHANDLE '## Moving back to original working directory', "\n";
     cd(
         {
             directory_path => $pwd,
@@ -3164,32 +3175,32 @@ sub mip_scripts {
         FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     my $pwd = cwd();
 
     ## Define MIP scripts and yaml files
     my @mip_scripts = (
-        "calculate_af.pl", "download_reference.pl",
-        "mip_install.pl",  "max_af.pl",
-        "mip.pl",          "qccollect.pl",
-        "vcfparser.pl",    "covplots_genome.R"
+        'calculate_af.pl', 'download_reference.pl',
+        'mip_install.pl',  'max_af.pl',
+        'mip.pl',          'qccollect.pl',
+        'vcfparser.pl',    'covplots_genome.R'
     );
-    my %mip_sub_scripts;
-    $mip_sub_scripts{"definitions"} =
-      [ "define_download_references.yaml", "define_parameters.yaml", ];
-    $mip_sub_scripts{"t"} =
-      [ "mip_install.t", "mip.t", "run_tests.t", "mip_analysis.t", ];
-    $mip_sub_scripts{"templates"} = ["mip_config.yaml"];
 
-    my @mip_directories = ( "lib", "t", );
+    my %mip_sub_scripts;
+    $mip_sub_scripts{definitions} =
+      [qw(define_download_references.yaml define_parameters.yaml)];
+    $mip_sub_scripts{t} = [qw(mip_install.t mip.t run_tests.t mip_analysis.t)];
+    $mip_sub_scripts{templates} = [qw(mip_config.yaml)];
+
+    my @mip_directories = qw(lib t);
 
     ## Check if the binary of the program being installed already exists
     if (
         check_conda_bin_file_exists(
             {
                 parameter_href => $parameter_href,
-                program_name   => "mip.pl",
+                program_name   => 'mip.pl',
             }
         )
       )
@@ -3199,17 +3210,17 @@ sub mip_scripts {
     }
 
     ## Install mip_scripts
-    print $FILEHANDLE "### Install mip_scripts\n";
+    print $FILEHANDLE '### Install mip_scripts', "\n";
 
     ## Create directories
-    print $FILEHANDLE "## Create directories\n";
+    print $FILEHANDLE '## Create directories', "\n";
     foreach my $directory ( keys %mip_sub_scripts ) {
 
         mkdir(
             {
                 indirectory_path => catdir(
                     $parameter_href->{conda_prefix_path},
-                    "bin", $directory
+                    'bin', $directory
                 ),
                 parents    => 1,
                 FILEHANDLE => $FILEHANDLE,
@@ -3218,7 +3229,7 @@ sub mip_scripts {
         print $FILEHANDLE "\n\n";
     }
     ## Copy directory to conda env
-    print $FILEHANDLE "## Copy directory to conda env\n\n";
+    print $FILEHANDLE '## Copy directory to conda env', "\n\n";
     foreach my $directory (@mip_directories) {
 
         cp(
@@ -3228,7 +3239,7 @@ sub mip_scripts {
                 force       => 1,
                 infile_path => catdir( $Bin, $directory ),
                 outfile_path =>
-                  catdir( $parameter_href->{conda_prefix_path}, "bin" ),
+                  catdir( $parameter_href->{conda_prefix_path}, 'bin' ),
             }
         );
         print $FILEHANDLE "\n\n";
@@ -3236,7 +3247,8 @@ sub mip_scripts {
 
     ## Copy mip scripts and sub scripts to conda env and make executable
     print $FILEHANDLE
-"## Copy mip scripts and subdirectory scripts to conda env and make executable\n";
+'## Copy mip scripts and subdirectory scripts to conda env and make executable',
+      "\n";
     foreach my $script (@mip_scripts) {
 
         my $script_no_ending = fileparse( $script, qr/\.[^.]*/ );
@@ -3246,16 +3258,16 @@ sub mip_scripts {
                 FILEHANDLE   => $FILEHANDLE,
                 infile_path  => catfile( $Bin, $script ),
                 outfile_path => catdir(
-                    $parameter_href->{conda_prefix_path}, "bin",
+                    $parameter_href->{conda_prefix_path}, 'bin',
                     $script_no_ending
                 ),
             }
         );
         print $FILEHANDLE "\n";
 
-        print $FILEHANDLE "chmod a+x "
+        print $FILEHANDLE 'chmod a+x '
           . catfile( $parameter_href->{conda_prefix_path},
-            "bin", $script_no_ending );
+            'bin', $script_no_ending );
         print $FILEHANDLE "\n\n";
     }
 
@@ -3268,16 +3280,16 @@ sub mip_scripts {
                     FILEHANDLE   => $FILEHANDLE,
                     infile_path  => catfile( $Bin, $directory, $script ),
                     outfile_path => catdir(
-                        $parameter_href->{conda_prefix_path}, "bin",
+                        $parameter_href->{conda_prefix_path}, 'bin',
                         $directory
                     ),
                 }
             );
             print $FILEHANDLE "\n";
 
-            print $FILEHANDLE "chmod a+x "
+            print $FILEHANDLE 'chmod a+x '
               . catfile( $parameter_href->{conda_prefix_path},
-                "bin", $directory, $script );
+                'bin', $directory, $script );
             print $FILEHANDLE "\n\n";
         }
     }
@@ -3311,7 +3323,7 @@ sub rhocall {
         FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     my $pwd = cwd();
 
@@ -3320,7 +3332,7 @@ sub rhocall {
         check_conda_bin_file_exists(
             {
                 parameter_href => $parameter_href,
-                program_name   => "rhocall",
+                program_name   => 'rhocall',
             }
         )
       )
@@ -3338,7 +3350,7 @@ sub rhocall {
     );
 
     ## Install rhocall
-    print $FILEHANDLE "### Install rhocall\n";
+    print $FILEHANDLE '### Install rhocall', "\n";
 
     ## Create the temporary install directory
     create_install_dir(
@@ -3349,43 +3361,43 @@ sub rhocall {
     );
 
     ## Downloads files
-    print $FILEHANDLE "## Download rhocall\n";
+    print $FILEHANDLE '## Download rhocall', "\n";
     Program::Download::Wget::wget(
         {
-            url => "https://github.com/dnil/rhocall/archive/"
-              . $parameter_href->{rhocall} . ".zip",
+            url => 'https://github.com/dnil/rhocall/archive/'
+              . $parameter_href->{rhocall} . '.zip',
             FILEHANDLE   => $FILEHANDLE,
             quiet        => $parameter_href->{quiet},
             verbose      => $parameter_href->{verbose},
-            outfile_path => "rhocall-" . $parameter_href->{rhocall} . ".zip",
+            outfile_path => 'rhocall-' . $parameter_href->{rhocall} . '.zip',
         }
     );
     print $FILEHANDLE "\n\n";
 
     ## Extract
-    print $FILEHANDLE "## Extract\n";
-    print $FILEHANDLE "unzip rhocall-" . $parameter_href->{rhocall} . ".zip";
+    print $FILEHANDLE '## Extract', "\n";
+    print $FILEHANDLE 'unzip rhocall-' . $parameter_href->{rhocall} . '.zip';
     print $FILEHANDLE "\n\n";
 
     ## Move to rhocall directory
-    print $FILEHANDLE "## Move to rhocall directory\n";
+    print $FILEHANDLE '## Move to rhocall directory', "\n";
     cd(
         {
-            directory_path => "rhocall-" . $parameter_href->{rhocall},
+            directory_path => 'rhocall-' . $parameter_href->{rhocall},
             FILEHANDLE     => $FILEHANDLE,
         }
     );
     print $FILEHANDLE "\n\n";
 
     ## Configure
-    print $FILEHANDLE "## Configure\n";
-    print $FILEHANDLE "pip install numpy Cython",        "\n";
-    print $FILEHANDLE "pip install -r requirements.txt", "\n";
-    print $FILEHANDLE "pip install -e .";
+    print $FILEHANDLE '## Configure',                    "\n";
+    print $FILEHANDLE 'pip install numpy Cython',        "\n";
+    print $FILEHANDLE 'pip install -r requirements.txt', "\n";
+    print $FILEHANDLE 'pip install -e .';
     print $FILEHANDLE "\n\n";
 
     ## Go back to subroutine origin
-    print $FILEHANDLE "## Moving back to original working directory\n";
+    print $FILEHANDLE '## Moving back to original working directory', "\n";
     cd(
         {
             directory_path => $pwd,
@@ -3426,16 +3438,16 @@ sub activate_conda_environment {
         FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     if ( exists( $parameter_href->{conda_environment} )
         && ( $parameter_href->{conda_environment} ) )
     {
 
         ## Activate conda environment
-        print $FILEHANDLE "## Activate conda environment\n";
-        print $FILEHANDLE "source activate "
-          . $parameter_href->{conda_environment} . " ";
+        print $FILEHANDLE '## Activate conda environment', "\n";
+        print $FILEHANDLE 'source activate '
+          . $parameter_href->{conda_environment} . q{ };
         print $FILEHANDLE "\n\n";
     }
     return;
@@ -3458,11 +3470,11 @@ sub deactivate_conda_environment {
     my $tmpl =
       { FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE }, };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     ## Deactivate conda environment
-    print $FILEHANDLE "## Deactivate conda environment\n";
-    print $FILEHANDLE "source deactivate ";
+    print $FILEHANDLE '## Deactivate conda environment', "\n";
+    print $FILEHANDLE 'source deactivate ';
     print $FILEHANDLE "\n\n";
 
     return;
@@ -3493,17 +3505,17 @@ sub remove_install_dir {
         pwd =>
           { required => 1, defined => 1, strict_type => 1, store => \$pwd },
         install_directory => {
-            default     => ".MIP",
+            default     => '.MIP',
             allow       => qr/^\.\S+$/,
             strict_type => 1,
             store       => \$install_directory
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     ## Go back to subroutine origin
-    print $FILEHANDLE "## Moving back to original working directory\n";
+    print $FILEHANDLE '## Moving back to original working directory', "\n";
     cd(
         {
             directory_path => $pwd,
@@ -3513,7 +3525,7 @@ sub remove_install_dir {
     print $FILEHANDLE "\n\n";
 
     ## Clean up
-    print $FILEHANDLE "## Clean up\n";
+    print $FILEHANDLE '## Clean up', "\n";
     rm(
         {
             infile_path => $install_directory,
@@ -3548,16 +3560,16 @@ sub create_install_dir {
     my $tmpl = {
         FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
         install_directory => {
-            default     => ".MIP",
+            default     => '.MIP',
             strict_type => 1,
             store       => \$install_directory
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     ## Create temp install directory
-    print $FILEHANDLE "## Create temp install directory\n";
+    print $FILEHANDLE '## Create temp install directory', "\n";
     mkdir(
         {
             indirectory_path => $install_directory,
@@ -3619,63 +3631,63 @@ sub check_conda_bin_file_exists {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     my $miniconda_bin_file;
 
     if ($program_version) {
 
         $miniconda_bin_file = catfile( $parameter_href->{conda_prefix_path},
-            "bin", $program_name . $program_version );
+            'bin', $program_name . $program_version );
     }
     else {
 
         $miniconda_bin_file =
-          catfile( $parameter_href->{conda_prefix_path}, "bin", $program_name );
+          catfile( $parameter_href->{conda_prefix_path}, 'bin', $program_name );
     }
 
     if ( -f $miniconda_bin_file ) {
 
         if ($program_version) {
 
-            print STDERR q?Found ?
+            print STDERR 'Found '
               . $program_name
-              . q? version ?
+              . ' version '
               . $program_version
-              . q? in miniconda directory: ?
-              . catdir( $parameter_href->{conda_prefix_path}, "bin" ), "\n";
+              . ' in miniconda directory: '
+              . catdir( $parameter_href->{conda_prefix_path}, 'bin' ), "\n";
 
             if ( $parameter_href->{noupdate} ) {
 
-                print STDERR q?Skipping writting installation process for ?
-                  . $program_name . q? ?
+                print STDERR 'Skipping writting installation process for '
+                  . $program_name . q{ }
                   . $program_version, "\n";
                 return 1;
             }
-            print STDERR "Writting install instructions for " . $program_name,
+            print STDERR 'Writting install instructions for ' . $program_name,
               "\n";
         }
         else {
 
-            print STDERR q?Found ?
+            print STDERR 'Found '
               . $program_name
-              . q? in miniconda directory: ?
-              . catdir( $parameter_href->{conda_prefix_path}, "bin" ), "\n";
+              . ' in miniconda directory: '
+              . catdir( $parameter_href->{conda_prefix_path}, 'bin' ), "\n";
 
             if ( $parameter_href->{noupdate} ) {
 
-                print STDERR q?Skipping writting installation process for ?
+                print STDERR 'Skipping writting installation process for '
                   . $program_name, "\n";
                 return 1;
             }
-            print STDERR "Writting install instructions for " . $program_name,
+            print STDERR 'Writting install instructions for ' . $program_name,
               "\n";
         }
         return 0;
     }
     else {
 
-        print STDERR "Writting install instructions for " . $program_name, "\n";
+        print STDERR 'Writting install instructions for ' . $program_name, "\n";
         return 0;
     }
     return;
@@ -3720,27 +3732,27 @@ sub create_softlink {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     my $pwd = cwd();
 
     ## Add softlink
-    print $FILEHANDLE "## Move to directory and create softlink\n";
+    print $FILEHANDLE '## Move to directory and create softlink', "\n";
     cd(
         {
             directory_path =>
-              catdir( $parameter_href->{conda_prefix_path}, "bin" ),
+              catdir( $parameter_href->{conda_prefix_path}, 'bin' ),
             FILEHANDLE => $FILEHANDLE,
         }
     );
     print $FILEHANDLE "\n";
 
-    print $FILEHANDLE "ln -f -s ";
-    print $FILEHANDLE $binary . " " . $softlink;
+    print $FILEHANDLE 'ln -f -s ';
+    print $FILEHANDLE $binary . q{ } . $softlink;
     print $FILEHANDLE "\n\n";
 
     ## Move to back
-    print $FILEHANDLE "## Move to original working directory\n";
+    print $FILEHANDLE '## Move to original working directory', "\n";
     cd(
         {
             directory_path => $pwd,
@@ -3783,27 +3795,27 @@ sub enable_executable {
           { required => 1, defined => 1, strict_type => 1, store => \$binary },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     my $pwd = cwd();
 
     ## Enable executable
-    print $FILEHANDLE "## Enable executable\n";
+    print $FILEHANDLE '## Enable executable', "\n";
     cd(
         {
             directory_path =>
-              catdir( $parameter_href->{conda_prefix_path}, "bin" ),
+              catdir( $parameter_href->{conda_prefix_path}, 'bin' ),
             FILEHANDLE => $FILEHANDLE,
         }
     );
     print $FILEHANDLE "\n";
 
-    print $FILEHANDLE "chmod a+x ";
-    print $FILEHANDLE $binary . q? ?;
+    print $FILEHANDLE 'chmod a+x ';
+    print $FILEHANDLE $binary . q{ };
     print $FILEHANDLE "\n\n";
 
     ## Move to back
-    print $FILEHANDLE "## Move to original working directory\n";
+    print $FILEHANDLE '## Move to original working directory', "\n";
     cd(
         {
             directory_path => $pwd,
@@ -3867,7 +3879,7 @@ sub check_mt_codon_table {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     my $pwd = cwd();
     my $detect_regexp =
@@ -3888,19 +3900,19 @@ sub check_mt_codon_table {
     }
     if ( !$ret ) {    #No MT.codonTable in config
 
-        print $FILEHANDLE q?## Adding ?
+        print $FILEHANDLE '## Adding '
           . $$genome_version_ref
-          . q?.MT.codonTable : Vertebrate_Mitochondrial to ?
+          . '.MT.codonTable : Vertebrate_Mitochondrial to '
           . $share_dir
           . $config_file, "\n";
 
         ## Add MT.codon Table to config
-        print $FILEHANDLE $add_regexp . " "
-          . catfile( $share_dir, $config_file ) . " > "
-          . catfile( $share_dir, $config_file . ".tmp" ), "\n";
+        print $FILEHANDLE $add_regexp . q{ }
+          . catfile( $share_dir, $config_file ) . ' > '
+          . catfile( $share_dir, $config_file . '.tmp' ), "\n";
         mv(
             {
-                infile_path  => catfile( $share_dir, $config_file . ".tmp" ),
+                infile_path  => catfile( $share_dir, $config_file . '.tmp' ),
                 outfile_path => catfile( $share_dir, $config_file ),
                 FILEHANDLE   => $FILEHANDLE,
             }
@@ -3910,9 +3922,9 @@ sub check_mt_codon_table {
     }
     else {
 
-        print STDERR "Found MT.codonTable in "
-          . catfile( $share_dir, "snpEff.config" )
-          . ". Skipping addition to snpEff config", "\n";
+        print STDERR 'Found MT.codonTable in '
+          . catfile( $share_dir, 'snpEff.config' )
+          . '. Skipping addition to snpEff config', "\n";
     }
     return;
 }
@@ -3953,7 +3965,7 @@ sub snpeff_download {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     ## Activate conda environment
     activate_conda_environment(
@@ -3963,16 +3975,16 @@ sub snpeff_download {
         }
     );
 
-    print $FILEHANDLE "java -Xmx2g ";
-    print $FILEHANDLE q?-jar ?
-      . catfile( $parameter_href->{conda_prefix_path}, "bin", "snpEff.jar" )
-      . " ";
-    print $FILEHANDLE "download ";
-    print $FILEHANDLE " -v ";
-    print $FILEHANDLE $$genome_version_ref . " ";
-    print $FILEHANDLE q?-c ?
-      . catfile( $parameter_href->{conda_prefix_path}, "bin", "snpEff.config" )
-      . " ";
+    print $FILEHANDLE 'java -Xmx2g ';
+    print $FILEHANDLE '-jar '
+      . catfile( $parameter_href->{conda_prefix_path}, 'bin', 'snpEff.jar' )
+      . q{ };
+    print $FILEHANDLE 'download ';
+    print $FILEHANDLE ' -v ';
+    print $FILEHANDLE $$genome_version_ref . q{ };
+    print $FILEHANDLE '-c '
+      . catfile( $parameter_href->{conda_prefix_path}, 'bin', 'snpEff.config' )
+      . q{ };
     print $FILEHANDLE "\n\n";
 
     ## Deactivate conda environment
@@ -4008,7 +4020,7 @@ sub references {
         FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     my $pwd = cwd();
 
@@ -4020,25 +4032,25 @@ sub references {
         }
     );
 
-    print STDERR "Writting install instructions for references\n";
+    print STDERR 'Writting install instructions for references', "\n";
 
-    print $FILEHANDLE "download_reference ";
-    print $FILEHANDLE "--reference_dir "
-      . $parameter_href->{reference_dir} . " ";
+    print $FILEHANDLE 'download_reference ';
+    print $FILEHANDLE '--reference_dir '
+      . $parameter_href->{reference_dir} . q{ };
 
-    print $FILEHANDLE "--reference_genome_versions "
-      . join( " --reference_genome_versions ",
+    print $FILEHANDLE '--reference_genome_versions '
+      . join( ' --reference_genome_versions ',
         @{ $parameter_href->{reference_genome_versions} } )
-      . " ";
+      . q{ };
     print $FILEHANDLE "\n\n";
 
     ##Launch bash
-    print $FILEHANDLE "bash download_reference.sh", "\n\n";
+    print $FILEHANDLE 'bash download_reference.sh', "\n\n";
 
     ##Cleanup
     rm(
         {
-            infile_path => "download_reference.sh",
+            infile_path => 'download_reference.sh',
             FILEHANDLE  => $FILEHANDLE,
         }
     );
