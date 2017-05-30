@@ -1,26 +1,50 @@
 #!/usr/bin/env perl
 
-use Modern::Perl '2014';
+use Modern::Perl '2014';  #CPAN
 use warnings qw( FATAL utf8 );
-use autodie;
+use autodie qw(open close :all);    #CPAN
 use v5.18;  #Require at least perl 5.18
 use utf8;  #Allow unicode characters in this script
 use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
 
+use Cwd;
+use FindBin qw($Bin);  #Find directory of script
+use File::Basename qw(basename);
+use File::Spec::Functions qw(catdir catfile devnull);
 use Getopt::Long;
 use Params::Check qw[check allow last_error];
 $Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
 use IO::File;
+
+## Third party module(s)
 use Set::IntervalTree; #CPAN
+
+##MIPs lib/
+use lib catdir($Bin, "lib");
+use MIP_log::Log4perl qw(initiate_logger);
+use Check::Check_modules qw(check_modules);
+use Script::Utils qw(help);
 
 our $USAGE;
 
 BEGIN {
 
+    my @modules = ("Modern::Perl",
+		   "autodie",
+		   "Set::IntervalTree",
+		   "Log::Log4perl",
+		   "MIP_log::Log4perl",
+	);
+
+    ## Evaluate that all modules required are installed
+    Check::Check_modules::check_modules({modules_ref => \@modules,
+					 program_name => $0,
+					});
+
     $USAGE =
-	qq{vcfparser.pl infile.vcf > outfile.vcf
-           -pvep/--parse_vep Parse VEP transcript specific entries (Default: 0 (=no))
+	basename($0).qq{ infile.vcf [OPTIONS] > outfile.vcf
+           -pvep/--parse_vep Parse VEP transcript specific entries (Supply flag to enable)
            -rf/--range_feature_file (tsv)
            -rf_ac/--range_feature_annotation_columns
            -sf/--select_feature_file (tsv)
@@ -28,18 +52,26 @@ BEGIN {
            -sf_ac/--select_feature_annotation_columns
            -sof/--select_outfile (vcf)
            -pad/--padding (Default: "5000" nucleotides)
-           -peg/--per_gene Output most severe consequence transcript (Default: 0 (=no))
+           -peg/--per_gene Output most severe consequence transcript (Supply flag to enable)
            -wst/--write_software_tag (Default: "1")
+           -l/--log_file Log file (Default: "vcfparser.log")
            -h/--help Display this help message
            -v/--version Display version
         };
 }
 
-my ($infile, $parse_vep, $range_feature_file, $select_feature_file, $select_feature_matching_column, $select_outfile, $write_software_tag, $padding, $per_gene) = ("", 0, "", "", "", "", 1, 5000, 0);
+my ($infile, $select_feature_file, $select_feature_matching_column, $range_feature_file, $select_outfile);
+
+##Scalar parameters with defaults
+my ($write_software_tag, $padding, $log_file) = (1, 5000, 0, catfile(cwd(), "vcfparser.log"));
+
+##Boolean
+my ($parse_vep, $per_gene);
+
 my (@range_feature_annotation_columns, @select_feature_annotation_columns);
 my (%consequence_severity, %range_data, %select_data, %snpeff_cmd, %tree, %meta_data);
 
-my $vcfparser_version = "1.2.8";
+my $vcfparser_version = "1.2.10";
 
 ## Enables cmd "vcfparser.pl" to print usage help
 if(!@ARGV) {
@@ -54,40 +86,47 @@ elsif ( (defined($ARGV)) && ($ARGV[0]!~/^-/) ) { #Collect potential infile - oth
 }
 
 ###User Options
-GetOptions('pvep|parse_vep:s' => \$parse_vep,
-	   'rf|rangeFeatures:s' => \$range_feature_file,
+GetOptions('pvep|parse_vep' => \$parse_vep,
+	   'rf|range_feature_file:s' => \$range_feature_file,
 	   'rf_ac|range_feature_annotation_columns:s'  => \@range_feature_annotation_columns, #Comma separated list
-	   'sf|selectFeatures:s' => \$select_feature_file,
+	   'sf|select_feature_file:s' => \$select_feature_file,
 	   'sf_mc|select_feature_matching_column:n' => \$select_feature_matching_column,
 	   'sf_ac|select_feature_annotation_columns:s'  => \@select_feature_annotation_columns, #Comma separated list
 	   'sof|select_outfile:s' => \$select_outfile,
 	   'wst|write_software_tag:n' => \$write_software_tag,
 	   'pad|padding:n' => \$padding,
-	   'peg|per_gene:n' => \$per_gene,  
+	   'peg|per_gene' => \$per_gene,
+	   'l|log_file:s' => \$log_file,
 	   'h|help' => sub { say STDOUT $USAGE; exit;},  #Display help text
-	   'v|version' => sub { say STDOUT "\nvcfparser.pl ".$vcfparser_version, "\n"; exit;},  #Display version number
-    )  or help({USAGE => $USAGE,
-		exit_code => 1,
-	       });
+	   'v|version' => sub { say STDOUT "\n".basename($0)." ".$vcfparser_version, "\n"; exit;},  #Display version number
+    )  or Script::Utils::help({USAGE => $USAGE,
+			       exit_code => 1,
+			      });
+
+## Creates log object
+my $log = MIP_log::Log4perl::initiate_logger({file_path_ref => \$log_file,
+					      log_name => "Vcfparser",
+					     });
+
 
 ## Basic flag option check
 if ( (!@range_feature_annotation_columns) && ($range_feature_file) ) {
 
-    say STDOUT "\n".$USAGE;
-    say STDERR "\n", "Need to specify which feature column(s) to use with range feature file: ".$range_feature_file." when annotating variants by using flag -rf_ac","\n";
-    exit;
+    $log->info($USAGE);
+    $log->fatal("Need to specify which feature column(s) to use with range feature file: ".$range_feature_file." when annotating variants by using flag -rf_ac","\n");
+    exit 1;
 }
 if ( (!$select_feature_matching_column) && ($select_feature_file) ) {
 
-    say STDOUT "\n".$USAGE;
-    say STDERR "\n", "Need to specify which feature column to use with select feature file: ".$select_feature_file." when selecting variants by using flag -sf_mc","\n";
-    exit;
+    $log->info($USAGE);
+    $log->fatal("Need to specify which feature column to use with select feature file: ".$select_feature_file." when selecting variants by using flag -sf_mc","\n");
+    exit 1;
 }
 if ( (!$select_outfile) && ($select_feature_file) ) {
 
-    say STDOUT "\n".$USAGE;
-    say STDERR "\n", "Need to specify which a select outfile to use when selecting variants by using flag -sof","\n";
-    exit;
+    $log->info($USAGE);
+    $log->fatal("Need to specify which a select outfile to use when selecting variants by using flag -sof","\n");
+    exit 1;
 }
 
 @range_feature_annotation_columns = split(/,/,join(',',@range_feature_annotation_columns)); #Enables comma separated annotation columns on cmd
@@ -311,11 +350,15 @@ sub read_feature_file {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object now that log_file has been set
+    my $log = Log::Log4perl->get_logger("Vcfparser");
+
     my @headers; #Save headers from rangeFile
 
-    open(RRF, "<".$infile_path) or die "Cannot open ".$infile_path.":".$!, "\n";
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    open($FILEHANDLE, "<", $infile_path) or $log->logdie("Cannot open ".$infile_path.":".$!, "\n");
 
-    while (<RRF>) {
+    while (<$FILEHANDLE>) {
 
 	chomp $_; #Remove newline
 
@@ -366,8 +409,8 @@ sub read_feature_file {
 	    }
 	}
     }
-    close(RRF);
-    say STDERR "Finished reading ".$range_file_key." file: ".$infile_path;
+    close($FILEHANDLE);
+    $log->info("Finished reading ".$range_file_key." file: ".$infile_path);
 }
 
 
@@ -422,15 +465,15 @@ sub read_infile_vcf {
 	tree_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$tree_href},
 	range_feature_annotation_columns_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$range_feature_annotation_columns_ref},
 	select_feature_annotation_columns_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$select_feature_annotation_columns_ref},
-	select_outfile_path => { required => 1, defined => 1, strict_type => 1, store => \$select_outfile_path},
+	select_outfile_path => { strict_type => 1, store => \$select_outfile_path},
 	vcfparser_version => { required => 1, defined => 1, strict_type => 1, store => \$vcfparser_version},
 	select_feature_file => { default => 0,
 				 strict_type => 1, store => \$select_feature_file},
 	per_gene => { default => 0,
-		      allow => [0, 1],
+		      allow => [undef, 0, 1],
 		      strict_type => 1, store => \$per_gene},
 	parse_vep => { default => 0,
-		       allow => [0, 1],
+		       allow => [undef, 0, 1],
 		       strict_type => 1, store => \$parse_vep},
 	write_software_tag => { default => 1,
 				allow => [0, 1],
@@ -439,17 +482,20 @@ sub read_infile_vcf {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object now that log_file has been set
+    my $log = Log::Log4perl->get_logger("Vcfparser");
+
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle for select file
+
     my @vep_format_fields;
     my %vep_format_field_column;
     my %vcf_header;
 
     my @vcf_format_columns;  #Catch #vcf header #CHROM line
     
-    my $WOSFTSV;  #Select feature file filehandle
-
     if ($select_feature_file) {
 	
-	open($WOSFTSV, ">".$select_outfile_path) or die "Cannot open ".$select_outfile_path.":".$!, "\n";
+	open($FILEHANDLE, ">", $select_outfile_path) or $log->logdie("Cannot open ".$select_outfile_path.":".$!, "\n");
     }
     
     while (<>) {
@@ -495,9 +541,9 @@ sub read_infile_vcf {
 		    
 		    @vep_format_fields = split(/\|/, $1);
 		    
-		    for (my $field_counter=0;$field_counter<scalar(@vep_format_fields);$field_counter++) {
-			
-			$vep_format_field_column{$vep_format_fields[$field_counter]} = $field_counter; #Save the order of VEP features
+		    while (my ($field_index, $field) = each (@vep_format_fields) ) {
+
+			$vep_format_field_column{$field} = $field_index; #Save the order of VEP features
 		    }
 		}
 		if ($parse_vep) {
@@ -538,10 +584,10 @@ sub read_infile_vcf {
 		
 		write_meta_data({meta_data_href => $meta_data_href,
 				 FILEHANDLE => *STDOUT,
-				 SELECTFILEHANDLE => $WOSFTSV,
+				 SELECTFILEHANDLE => $FILEHANDLE,
 				});
 		say STDOUT $_;  #Write #CHROM header line
-		say $WOSFTSV $_;  #Write #CHROM header line
+		say $FILEHANDLE $_;  #Write #CHROM header line
 	    }
 	    else {
 		
@@ -565,25 +611,25 @@ sub read_infile_vcf {
 	    ##Check that we have an INFO field
 	    unless ($line_elements[7]) {
 		
-		say STDERR "No INFO field at line number: ".$.;
-		say STDERR "Displaying malformed line: ".$_;
+		$log->fatal("No INFO field at line number: ".$.);
+		$log->fatal("Displaying malformed line: ".$_);
 		exit 1;
 	    }
 	    
 	    ##Add line elements to record hash
-	    for (my $line_elements_counter=0;$line_elements_counter<scalar(@line_elements);$line_elements_counter++) {  #Parse line elements
-		
-		$record{ $vcf_format_columns[$line_elements_counter] } = $line_elements[$line_elements_counter];
+	    while (my ($element_index, $element) = each (@line_elements) ) {
+
+		$record{ $vcf_format_columns[$element_index] } = $element;  #Link vcf format headers to the line elements
 	    }
 	    
-	    my @temps = split(/;/, $record{INFO});  #Add INFO elements to temps
+	    my @info_elements = split(/;/, $record{INFO});  #Add INFO elements
 	    
 	    ## Collect key value pairs in INFO field
-	    foreach my $key_value (@temps) {
+	    foreach my $element (@info_elements) {
 		
-		my @pairs = split(/=/, $key_value);
+		my @key_value_pairs = split("=", $element);  #key index = 0 and value index = 1
 		
-		$record{INFO_key_value}{$pairs[0]} = $pairs[1];
+		$record{INFO_key_value}{$key_value_pairs[0]} = $key_value_pairs[1];
 	    }
 
 	    for my $database (keys % {$snpeff_cmd_href->{present}{database}}) { #Note that the vcf should only contain 1 database entry
@@ -655,18 +701,18 @@ sub read_infile_vcf {
 		  
 		    if ($record{select_transcripts}) {
 
-			print $WOSFTSV $record{ $vcf_format_columns[$line_elements_counter] }."\t";
+			print $FILEHANDLE $record{ $vcf_format_columns[$line_elements_counter] }."\t";
 		    }
 		    print STDOUT $record{ $vcf_format_columns[$line_elements_counter] }."\t";
 		}
 
 		if ($line_elements_counter == 7) {
 
-		    if (! $parse_vep) {
+		    if ( ! $parse_vep) {
 
 			if ($record{select_transcripts}) {
 			    
-			    print $WOSFTSV $record{ $vcf_format_columns[$line_elements_counter] };
+			    print $FILEHANDLE $record{ $vcf_format_columns[$line_elements_counter] };
 			}
 			print STDOUT $record{ $vcf_format_columns[$line_elements_counter] };
 		    }
@@ -687,14 +733,14 @@ sub read_infile_vcf {
 					}
 					if ($record{select_transcripts}) {
 					    
-					    print $WOSFTSV $key."=".join(",", @{ $record{select_transcripts} });
+					    print $FILEHANDLE $key."=".join(",", @{ $record{select_transcripts} });
 					}
 				    }
 				    else {
 					
 					if ($record{select_transcripts}) {
 					    
-					    print $WOSFTSV $key."=".$record{INFO_key_value}{$key};
+					    print $FILEHANDLE $key."=".$record{INFO_key_value}{$key};
 					}
 					print STDOUT $key."=".$record{INFO_key_value}{$key};
 				    }
@@ -703,7 +749,7 @@ sub read_infile_vcf {
 				    
 				    if ($record{select_transcripts}) {
 					
-					print $WOSFTSV $key;
+					print $FILEHANDLE $key;
 				    }
 				    print STDOUT $key;
 				}
@@ -720,14 +766,14 @@ sub read_infile_vcf {
 					}
 					if ($record{select_transcripts}) {
 					    
-					    print $WOSFTSV ";".$key."=".join(",", @{ $record{select_transcripts} });
+					    print $FILEHANDLE ";".$key."=".join(",", @{ $record{select_transcripts} });
 					}
 				    }
 				    else {
 					
 					if ($record{select_transcripts}) {
 					    
-					    print $WOSFTSV ";".$key."=".$record{INFO_key_value}{$key};
+					    print $FILEHANDLE ";".$key."=".$record{INFO_key_value}{$key};
 					}
 					print STDOUT ";".$key."=".$record{INFO_key_value}{$key};
 				    }
@@ -736,7 +782,7 @@ sub read_infile_vcf {
 				    
 				    if ($record{select_transcripts}) {			    
 					
-					print $WOSFTSV ";".$key;
+					print $FILEHANDLE ";".$key;
 				    }
 				    print STDOUT ";".$key;
 				}
@@ -749,7 +795,7 @@ sub read_infile_vcf {
 			
 			if ($record{select_transcripts}) {
 			    
-			    print $WOSFTSV ";".$key."=".$record{INFO_addition}{$key};
+			    print $FILEHANDLE ";".$key."=".$record{INFO_addition}{$key};
 			}
 			print STDOUT ";".$key."=".$record{INFO_addition}{$key};
 		    }
@@ -757,7 +803,7 @@ sub read_infile_vcf {
 			
 			foreach my $key (keys %{ $record{INFO_addition_select_feature} }) {
 			    
-			    print $WOSFTSV ";".$key."=".$record{INFO_addition_select_feature}{$key};
+			    print $FILEHANDLE ";".$key."=".$record{INFO_addition_select_feature}{$key};
 			}
 		    }
 		    foreach my $key (keys %{ $record{INFO_addition_range_feature} }) {
@@ -767,7 +813,7 @@ sub read_infile_vcf {
 		    
 		    if ($record{select_transcripts}) {
 
-			print $WOSFTSV "\t";
+			print $FILEHANDLE "\t";
 		    }
 		    print STDOUT "\t";
 		}
@@ -775,23 +821,23 @@ sub read_infile_vcf {
 		    
 		    if ($record{select_transcripts}) {
 			
-			print $WOSFTSV $record{ $vcf_format_columns[$line_elements_counter] }."\t";
+			print $FILEHANDLE $record{ $vcf_format_columns[$line_elements_counter] }."\t";
 		    }
 		    print STDOUT $record{ $vcf_format_columns[$line_elements_counter] }."\t";
 		}
 	    }
 	    if ($record{select_transcripts}) {
 		
-		print $WOSFTSV "\n";
+		print $FILEHANDLE "\n";
 	    }
 	    print STDOUT "\n";
 	}
     }
     if ($select_feature_file) {
 	
-	close($WOSFTSV);
+	close($FILEHANDLE);
     }
-    say STDERR "Finished Processing VCF";
+    $log->info("Finished Processing VCF\n");
 }
 
 sub parse_vep_csq {
@@ -827,7 +873,7 @@ sub parse_vep_csq {
 	consequence_href  => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$consequence_href},
 	consequence_severity_href  => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$consequence_severity_href},
 	per_gene => { default => 0,
-		      allow => [0, 1],
+		      allow => [undef, 0, 1],
 		      strict_type => 1, store => \$per_gene},
     };
     
@@ -1947,31 +1993,4 @@ sub check_terms {
 	    exit 1;
 	}
     }
-}
-
-sub help {
-
-##help
-
-##Function : Print help text and exit with supplied exit code
-##Returns  : ""
-##Arguments: $USAGE, $exit_code
-##         : $USAGE     => Help text
-##         : $exit_code => Exit code
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $USAGE;
-    my $exit_code;
-
-    my $tmpl = {
-	USAGE => {required => 1, defined => 1, strict_type => 1, store => \$USAGE},
-	exit_code => { default => 0, strict_type => 1, store => \$exit_code},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    say STDOUT $USAGE;
-    exit $exit_code;
 }

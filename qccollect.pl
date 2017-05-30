@@ -1,8 +1,8 @@
 #!/usr/bin/env perl
 
-use Modern::Perl '2014';
+use Modern::Perl '2014';    #CPAN
 use warnings qw( FATAL utf8 );
-use autodie;
+use autodie qw(open close :all);    #CPAN
 use v5.18;  #Require at least perl 5.18
 use utf8;  #Allow unicode characters in this script
 use open qw( :encoding(UTF-8) :std );
@@ -11,84 +11,118 @@ use charnames qw( :full :short );
 ##Collects MPS QC from MIP. Loads information on files to examine and values to extract from in YAML format and outputs exracted metrics in YAML format.
 #Copyright 2013 Henrik Stranneheim
 
-use Pod::Usage;
-use Pod::Text;
+use Cwd;
+use Cwd qw(abs_path);  #Import absolute path function
+use File::Basename qw(dirname basename);
+use File::Spec::Functions qw(catdir catfile devnull);
+use FindBin qw($Bin);  #Find directory of script
 use Getopt::Long;
-use POSIX;
 use Params::Check qw[check allow last_error];
 $Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
+use Pod::Usage;
+use Pod::Text;
+use POSIX;
 
-## Third party module(s)
-use YAML;
+##MIPs lib/
+use lib catdir($Bin, "lib");
+use File::Format::Yaml qw(load_yaml write_yaml);
+use MIP_log::Log4perl qw(initiate_logger);
+use Check::Check_modules qw(check_modules);
+use Script::Utils qw(help);
 
 our $USAGE;
 
 BEGIN {
+
+    my @modules = ("Modern::Perl",
+		   "autodie",
+		   "YAML",
+		   "File::Format::Yaml",
+		   "Log::Log4perl",
+		   "MIP_log::Log4perl",
+	);
+
+    ## Evaluate that all modules required are installed
+    Check::Check_modules::check_modules({modules_ref => \@modules,
+					 program_name => "qccollect",
+					});
+
     $USAGE =
-        qq{qccollect.pl -si [sample_info.yaml] -r [regexp.yaml] -o [outfile]
+        basename($0).qq{ -si [sample_info.yaml] -r [regexp.yaml] -o [outfile]
                -si/--sample_info_file Sample info file (YAML format, Supply whole path, mandatory)
                -r/--regexp_file Regular expression file (YAML format, Supply whole path, mandatory)
                -o/--outfile The data file output (Supply whole path, defaults to "qcmetrics.yaml")
                -preg/--print_regexp Print the regexp used at CMMS switch (defaults to "0" (=no))
                -prego/--print_regexp_outfile Regexp YAML outfile (defaults to "qc_regexp.yaml")
                -ske/--skip_evaluation Skip evaluation step
+               -l/--log_file Log file (Default: "qccollect.log")
                -h/--help Display this help message
                -v/--version Display version};
 }
+
 my ($sample_info_file, $regexp_file, $print_regexp, $skip_evaluation);
-my ($outfile, $print_regexp_outfile) = ("qcmetrics.yaml", "qc_regexp.yaml");
+
+##Scalar parameters with defaults
+my ($outfile, $print_regexp_outfile, $log_file) = ("qcmetrics.yaml", "qc_regexp.yaml", catfile(cwd(), "qccollect.log"));
+
 my (%qc_data, %evaluate_metric);
 my %qc_header; #Save header(s) in each outfile
 my %qc_program_data; #Save data in each outfile
 
-my $qccollect_version = "2.0.2";
+my $qccollect_version = "2.0.3";
 
+###User Options
 GetOptions('si|sample_info_file:s' => \$sample_info_file,
 	   'r|regexp_file:s' => \$regexp_file,
 	   'o|outfile:s'  => \$outfile,
 	   'preg|print_regexp:n' => \$print_regexp,
 	   'prego|print_regexp_outfile:s' => \$print_regexp_outfile,
 	   'ske|skip_evaluation' => \$skip_evaluation,
+	   'l|log_file:s' => \$log_file,
 	   'h|help' => sub { say STDOUT $USAGE; exit;},  #Display help text
-	   'v|version' => sub { say STDOUT "\nqccollect.pl ".$qccollect_version, "\n"; exit;},  #Display version number
-    )  or help({USAGE => $USAGE,
-		exit_code => 1,
-	       });
+	   'v|version' => sub { say STDOUT "\n".basename($0)." ".$qccollect_version, "\n"; exit;},  #Display version number
+    ) or Script::Utils::help({USAGE => $USAGE,
+			       exit_code => 1,
+			      });
+
+## Creates log object
+my $log = MIP_log::Log4perl::initiate_logger({file_path_ref => \$log_file,
+					      log_name => "Qccollect",
+					     });
 
 if ($print_regexp) {
 
     ## Write default regexp to YAML
     regexp_to_yaml({print_regexp_outfile => $print_regexp_outfile,
 		   });
-    print STDOUT "Wrote regexp YAML file to: ".$print_regexp_outfile, "\n";
+    $log->info("Wrote regexp YAML file to: ".$print_regexp_outfile, "\n");
     exit;
 }
 
 if (! $sample_info_file) {
 
-    print STDERR "\n";
-    print STDOUT $USAGE, "\n";
-    print STDERR "Must supply a '-sample_info_file' (supply whole path)", "\n\n";
+    $log->info($USAGE);
+    $log->fatal("Must supply a '-sample_info_file' (supply whole path)", "\n\n");
     exit;
 }
 if (! $regexp_file) {
 
-    print STDERR "\n";
-    print STDOUT $USAGE, "\n";
-    print STDERR "Must supply a '-regexp_file' (supply whole path)", "\n\n";
+    $log->info($USAGE);
+    $log->fatal("Must supply a '-regexp_file' (supply whole path)", "\n\n");
     exit;
 }
 
 ####MAIN
 
 ## Loads a YAML file into an arbitrary hash and returns it
-my %sample_info = load_yaml({yaml_file => $sample_info_file,
-			    });
+my %sample_info = File::Format::Yaml::load_yaml({yaml_file => $sample_info_file,
+						});
+$log->info("Loaded: ".$sample_info_file, "\n");
 
 ## Loads a YAML file into an arbitrary hash and returns it
-my %regexp = load_yaml({yaml_file => $regexp_file,
-		       });
-
+my %regexp = File::Format::Yaml::load_yaml({yaml_file => $regexp_file,
+					   });
+$log->info("Loaded: ".$regexp_file, "\n");
 
 ## Extracts all qcdata on sample_id level using information in %sample_info and %regexp
 sample_qc({sample_info_href => \%sample_info,
@@ -113,7 +147,7 @@ $qc_data{program}{qccollect}{regexp_file} = $regexp_file;
 
 foreach my $sample_id (keys %{ $sample_info{sample} }) {
 
-    ## Defines programs, etrics and thresholds to evaluate
+    ## Defines programs, metrics and thresholds to evaluate
     define_evaluate_metric({sample_info_href => \%sample_info,
 			    sample_id => $sample_id,
 			   });
@@ -128,9 +162,10 @@ if(! $skip_evaluation) {
 }
 
 ## Writes a YAML hash to file
-write_yaml({yaml_href => \%qc_data,
-	    yaml_file_path_ref => \$outfile,
-	   });
+File::Format::Yaml::write_yaml({yaml_href => \%qc_data,
+				yaml_file_path_ref => \$outfile,
+			       });
+$log->info("Wrote: ".$outfile, "\n");
 
 ####SubRoutines
 
@@ -517,35 +552,36 @@ sub define_evaluate_metric {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    $evaluate_metric{$sample_id}{mosaik_aligner}{total_aligned}{threshold} = 95;
-    $evaluate_metric{$sample_id}{mosaik_aligner}{uniquely_aligned_mates}{threshold} = 90;
-    $evaluate_metric{$sample_id}{bamstats}{percentage_mapped_reads}{threshold} = 0.95;
-    $evaluate_metric{$sample_id}{calculatehsmetrics}{PCT_TARGET_BASES_10X}{threshold} = 0.95;
-    $evaluate_metric{$sample_id}{collectmultiplemetrics}{PCT_PF_READS_ALIGNED}{threshold} = 0.95;
-    $evaluate_metric{$sample_id}{calculatehsmetrics}{PCT_ADAPTER}{threshold} = 0.0001;
+    $evaluate_metric{$sample_id}{bamstats}{percentage_mapped_reads}{lt} = 95;
+    $evaluate_metric{$sample_id}{collecthsmetrics}{PCT_TARGET_BASES_10X}{lt} = 0.95;
+    $evaluate_metric{$sample_id}{collectmultiplemetrics}{PCT_PF_READS_ALIGNED}{lt} = 0.95;
+    $evaluate_metric{$sample_id}{collectmultiplemetrics}{PCT_ADAPTER}{gt} = 0.0005;
+    $evaluate_metric{$sample_id}{markduplicates}{fraction_duplicates}{gt} = 0.2;
 
     if (exists($sample_info_href->{sample}{$sample_id}{expected_coverage})) {
 
-	$evaluate_metric{$sample_id}{calculatehsmetrics}{MEAN_TARGET_COVERAGE}{threshold} = $sample_info_href->{sample}{$sample_id}{expected_coverage};
+	$evaluate_metric{$sample_id}{collecthsmetrics}{MEAN_TARGET_COVERAGE}{lt} = $sample_info_href->{sample}{$sample_id}{expected_coverage};
     }
 
     $evaluate_metric{variant_integrity_mendel}{fraction_of_errors}{gt} = 0.06;
     $evaluate_metric{variant_integrity_father}{fraction_of_common_variants}{lt} = 0.55;
 
-    if ($sample_info{sample}{$sample_id}{analysis_type} eq "wes") {
+    if ($sample_info{analysis_type}{$sample_id} eq "wes") {
 
-	$evaluate_metric{$sample_id}{calculatehsmetrics}{PCT_TARGET_BASES_30X}{threshold} = 0.90;
+	$evaluate_metric{$sample_id}{collecthsmetrics}{PCT_TARGET_BASES_30X}{lt} = 0.90;
     }
 }
+
+
 sub evaluate_qc_parameters {
 
 ##evaluate_qc_parameters
 
-##Function  : Evaluate parameters to detect parameters falling below threshold
-##Returns   : ""
-##Arguments : $qc_data_href, $evaluate_metric_href
-##          : $qc_data_href         => QCData hash {REF}
-##          : $evaluate_metric_href => HAsh for metrics to evaluate
+##Function : Evaluate parameters to detect parameters falling below threshold
+##Returns  : ""
+##Arguments: $qc_data_href, $evaluate_metric_href
+##         : $qc_data_href         => QCData hash {REF}
+##         : $evaluate_metric_href => HAsh for metrics to evaluate
 
     my ($arg_href) = @_;
 
@@ -560,42 +596,30 @@ sub evaluate_qc_parameters {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    my $status;
-
   PROGRAM:
     for my $program ( keys %{$qc_data_href->{program}} ) {
 
-	if (defined($evaluate_metric_href->{$program})) { #Program to be evaluated
+	if (exists($evaluate_metric_href->{$program})) { #Program to be evaluated
 
 	  METRIC:
 	    for my $metric ( keys %{$qc_data_href->{program}{$program}} ) {
 
-		if (defined($evaluate_metric_href->{$program}{$metric})) { #metric to be evaluated
+	      FAMILY_LEVEL:
+		if (exists($evaluate_metric_href->{$program}{$metric})) { #metric to be evaluated
 
-		    if ($evaluate_metric_href->{$program}{$metric}{gt}) {
+		    check_metric({qc_data_href => $qc_data_href,
+				  reference_metric_href => $evaluate_metric_href->{$program}{$metric},
+				  program => $program,
+				  metric => $metric,
+				  qc_metric_value => $qc_data_href->{program}{$program}{$metric},
+				 });
 
-			if ($qc_data_href->{program}{$program}{$metric} > $evaluate_metric_href->{$program}{$metric}{gt}) { #Determine status - if greater than add to hash. otherwise PASS and do not include
-
-			    $status = "FAILED:".$program."_".$metric.":".$qc_data_href->{program}{$program}{$metric};
-			    push(@{$qc_data_href->{evaluation}{$program}}, $status);
-			}
-		    }
-		    if ($evaluate_metric_href->{$program}{$metric}{lt}) {
-
-			if ($qc_data_href->{program}{$program}{$metric} < $evaluate_metric_href->{$program}{$metric}{lt}) { #Determine status - if lower than add to hash. otherwise PASS and do not include
-
-			    $status = "FAILED:".$program."_".$metric.":".$qc_data_href->{program}{$program}{$metric};
-			    push(@{$qc_data_href->{evaluation}{$program}}, $status);
-			}
-		    }
-		    last;
 		}
 	    }
 	}
     }
 
-    ## Sample level evaluation
-  SAMPLE_ID:
+  SAMPLE_LEVEL:
     for my $sample_id ( keys %{$qc_data_href->{sample}} ) {
 
       INFILE:
@@ -605,7 +629,7 @@ sub evaluate_qc_parameters {
 
 		if ($qc_data_href->{sample}{$sample_id}{$infile} ne "PASS") {
 
-		    $status = "Status:".$infile.":".$qc_data_href->{sample}{$sample_id}{$infile};
+		    my $status = "Status:".$infile.":".$qc_data_href->{sample}{$sample_id}{$infile};
 		    push(@{$qc_data_href->{evaluation}{$infile}}, $status); #Add to QC data at family level
 		}
 		next;
@@ -622,45 +646,97 @@ sub evaluate_qc_parameters {
 	  PROGRAM:
 	    for my $program ( keys %{$qc_data_href->{sample}{$sample_id}{$infile}} ) {
 
-		if (defined($evaluate_metric_href->{$sample_id}{$program})) { #Program to be evaluated
+		if (exists($evaluate_metric_href->{$sample_id}{$program})) { #Program to be evaluated
 
 		  METRIC:
 		    for my $metric ( keys %{$evaluate_metric_href->{$sample_id}{$program}}) { #Metric to be evaluated
 
-			if (defined($qc_data_href->{sample}{$sample_id}{$infile}{$program}{$metric})) {
+			if (exists($qc_data_href->{sample}{$sample_id}{$infile}{$program}{$metric})) {
 
-			    if ($qc_data_href->{sample}{$sample_id}{$infile}{$program}{$metric} < $evaluate_metric_href->{$sample_id}{$program}{$metric}{threshold}) { #Determine status - if below add to hash. otherwise PASS and do not include
-
-				$status = "FAILED:".$sample_id."_".$program."_".$metric.":".$qc_data_href->{sample}{$sample_id}{$infile}{$program}{$metric};
-				push(@{$qc_data_href->{evaluation}{$program}}, $status);
-			    }
-			    last;
+			    check_metric({qc_data_href => $qc_data_href,
+					  reference_metric_href => $evaluate_metric_href->{$sample_id}{$program}{$metric},
+					  program => $program,
+					  metric => $metric,
+					  qc_metric_value => $qc_data_href->{sample}{$sample_id}{$infile}{$program}{$metric},
+					 });
 			}
 			else {
 
-			    for my $key ( keys %{$qc_data_href->{sample}{$sample_id}{$infile}{$program}} ) {
+			    if (exists($qc_data_href->{sample}{$sample_id}{$infile}{$program}{header}) ) {
+			    
+				for my $data_header ( keys %{$qc_data_href->{sample}{$sample_id}{$infile}{$program}{header}} ) {
 
-				if ($key eq "header") {
-
-				    for my $data_header ( keys %{$qc_data_href->{sample}{$sample_id}{$infile}{$program}{$key}} ) {
-
-					if (defined($qc_data_href->{sample}{$sample_id}{$infile}{$program}{$key}{$data_header}{$metric})) {
-
-					    if ($qc_data_href->{sample}{$sample_id}{$infile}{$program}{$key}{$data_header}{$metric} < $evaluate_metric_href->{$sample_id}{$program}{$metric}{threshold}) { #Determine status - if below add to hash. otherwise PASS and do not include
-
-						$status = "FAILED:".$sample_id."_".$program."_".$metric.":".$qc_data_href->{sample}{$sample_id}{$infile}{$program}{$key}{$data_header}{$metric};
-						push(@{$qc_data_href->{evaluation}{$program}}, $status);
-					    }
-					    next; #Metric go to next section
-					}
+				    if (exists($qc_data_href->{sample}{$sample_id}{$infile}{$program}{header}{$data_header}{$metric})) {
+					
+					check_metric({qc_data_href => $qc_data_href,
+						      reference_metric_href => $evaluate_metric_href->{$sample_id}{$program}{$metric},
+						      program => $program,
+						      metric => $metric,
+						      qc_metric_value => $qc_data_href->{sample}{$sample_id}{$infile}{$program}{header}{$data_header}{$metric},
+						     });
 				    }
-				    last; #Metric found no need to continue
 				}
 			    }
 			}
 		    }
 		}
 	    }
+	}
+    }
+}
+
+
+sub check_metric {
+
+##check_metric
+
+##Function : Check and add result of check if below threshold 
+##Returns  : ""
+##Arguments: $qc_data_href, $reference_metric_href, $program, $metric, $qc_metric_value
+##         : $qc_data_href           => QCData hash {REF}
+##         : $reference_metric_href  => Metrics to evaluate
+##         : $program                => The program to examine
+##         : $metric                 => Metric to evaluate
+##         : $qc_metric_value        => Qc metric value
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    
+    ## Flatten argument(s)
+    my $qc_data_href;
+    my $reference_metric_href;
+    my $program;
+    my $metric;
+    my $qc_metric_value;
+
+    my $tmpl = { 
+	qc_data_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$qc_data_href},
+	reference_metric_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$reference_metric_href},
+	program => { required => 1, defined => 1, strict_type => 1, store => \$program},
+	metric => { required => 1, defined => 1, strict_type => 1, store => \$metric},
+	qc_metric_value => { required => 1, defined => 1, strict_type => 1, store => \$qc_metric_value},
+    };
+     
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    my $status = "FAILED:";
+
+    if (exists($reference_metric_href->{lt}) ) {
+	
+	if ($qc_metric_value < $reference_metric_href->{lt}) {  #Determine status - if lower than add to hash. otherwise PASS and do not include
+
+	    $status .= $program."_".$metric.":".$qc_metric_value;
+	    push(@{$qc_data_href->{evaluation}{$program}}, $status);
+	}
+    }
+
+    if (exists($reference_metric_href->{gt}) ) {
+	
+	if ($qc_metric_value > $reference_metric_href->{gt}) {  #Determine status - if greater than add to hash. otherwise PASS and do not include
+
+	    $status .= $program."_".$metric.":".$qc_metric_value;
+	    push(@{$qc_data_href->{evaluation}{$program}}, $status);
 	}
     }
 }
@@ -894,65 +970,6 @@ sub plink_gender_check {
     return;
 }
 
-sub write_yaml {
-
-##write_yaml
-
-##Function : Writes a YAML hash to file
-##Returns  : ""
-##Arguments: $yaml_href, $yaml_file_path_ref
-##         : $yaml_href          => The hash to dump {REF}
-##         : $yaml_file_path_ref => The yaml file to write to {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $yaml_href;
-    my $yaml_file_path_ref;
-
-    my $tmpl = {
-	yaml_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$yaml_href},
-	yaml_file_path_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$yaml_file_path_ref},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    open (my $YAML, ">", $$yaml_file_path_ref) or die "can't open ".$$yaml_file_path_ref.": $!\n";
-    say $YAML Dump( $yaml_href );
-    close($YAML);
-}
-
-sub load_yaml {
-
-##load_yaml
-
-##Function : Loads a YAML file into an arbitrary hash and returns it.
-##Returns  : %yaml_hash
-##Arguments: $yaml_file
-##         : $yaml_file => The yaml file to load
-
-    my ($arg_href) = @_;
-
-    ##Flatten argument(s)
-    my $yaml_file;
-
-    my $tmpl = {
-	yaml_file => { required => 1, defined => 1, strict_type => 1, store => \$yaml_file},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    my %yaml;
-
-    open (my $YAML, "<", $yaml_file) or die "can't open ".$yaml_file.":".$!, "\n";
-
-    %yaml = %{ YAML::LoadFile($yaml_file) };  #Load hashreference as hash
-
-    close($YAML);
-
-    return %yaml;
-}
-
 
 sub regexp_to_yaml {
 
@@ -1039,9 +1056,9 @@ sub regexp_to_yaml {
 
     $regexp{markduplicates}{fraction_duplicates} = q?perl -nae 'if($_=~/Fraction Duplicates\: (\S+)/) {print $1;}' ?; #Collect fraction duplicates
 
-    $regexp{calculatehsmetrics}{header_info}{header} = q?perl -nae' if ($_ =~/^BAIT_SET/ ) {print $_;last;}' ?; #Note return whole line (header)
+    $regexp{collecthsmetrics}{header_info}{header} = q?perl -nae' if ($_ =~/^BAIT_SET/ ) {print $_;last;}' ?; #Note return whole line (header)
 
-    $regexp{calculatehsmetrics}{header_info}{data} = q?perl -nae' if ( ($. ==8) && ($_ =~/(\S+)/) ) {print $_;last;}' ?; #Note return whole line and only look at line 8, where the data action is
+    $regexp{collecthsmetrics}{header_info}{data} = q?perl -nae' if ( ($. ==8) && ($_ =~/(\S+)/) ) {print $_;last;}' ?; #Note return whole line and only look at line 8, where the data action is
 
     $regexp{collectmultiplemetrics}{header_info}{header} = q?perl -nae' if ($_ =~/^CATEGORY/ ) {print $_;last;}' ?; #Note return whole line (header)
 
@@ -1095,7 +1112,7 @@ sub regexp_to_yaml {
 
     $regexp{variantevalexome} = $regexp{variantevalall};
 
-    $regexp{genmod}{version} = q?perl -nae 'if($_=~/##Software=<ID=genmod,Version=(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect Genmod version
+    $regexp{genmod}{version} = q?perl -nae 'if($_=~/##Software=<ID=genmod,Version=(\d+.\d+.\d+|\d+.\d+)/) {print $1;last;}' ?; #Collect Genmod version
 
     $regexp{snpeff}{version} = q?perl -nae 'if($_=~/##SnpSiftVersion=\"(.+),/) {my $ret=$1; $ret=~s/\s/_/g;print $ret;last;}' ?; #Collect SnpEff version
 
@@ -1155,11 +1172,9 @@ sub regexp_to_yaml {
 
     $regexp{sv_varianteffectpredictor}{gencode} = q?perl -nae 'if($_=~/##VEP=/ && $_=~/gencode=\S+\s+(\d+)/) {print $1;last;}' ?; #Collect sv_varianteffectpredictor gencode version
 
-    $regexp{sv_vcfparser}{version} = q?perl -nae 'if($_=~/##Software=<ID=vcfParser.pl,Version=(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect sv_vcfparser version
+    $regexp{sv_vcfparser}{version} = q?perl -nae 'if($_=~/##Software=<ID=vcfParser.pl,Version=(\d+.\d+.\d+)/) {print $1;last;} else { if($_=~/#CHROM/) {last;} }' ?; #Collect sv_vcfparser version
 
-    $regexp{sv_genmod}{version} = q?perl -nae 'if($_=~/##Software=<ID=genmod,Version=(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect SVGenmod version
-
-    $regexp{vcftools}{version} = q?perl -nae 'if($_=~/VCFtools\s-\s(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect VCFTools version
+    $regexp{sv_genmod}{version} = q?perl -nae 'if($_=~/##Software=<ID=genmod,Version=(\d+.\d+.\d+|\d+.\d+)/) {print $1;last;} else { if($_=~/#CHROM/) {last;} } ' ?; #Collect SVGenmod version
 
     $regexp{plink2}{version} = q?perl -nae 'if($_=~/PLINK\s(\S+\s\S+\s\S+\s\S+\s\S+)/) {my $ret = $1;$ret =~s/\s/_/g;print $ret;last;}' ?; #Collect Plink2 version
 
@@ -1171,39 +1186,13 @@ sub regexp_to_yaml {
 
     $regexp{variant_integrity_father}{common_variants}  = q?perl -nae 'unless ($_=~/^#/) {print $F[2];last;}' ?;
 
-#$regexp{}{} = ;
+    $regexp{tiddit}{version}  = q?perl -nae 'if($_=~/^##source=TIDDIT-(\S+)/) { print $1; last; } else { if($_=~/#CHROM/) { last;} }' ?;
+
+    $regexp{svdb}{version}  = q?perl -nae 'if($_=~/^##SVDB_version=(\S+)/) { print $1; last; } else { if($_=~/#CHROM/) { last;} }' ?;
 
     ## Writes a YAML hash to file
-    write_yaml({yaml_href => \%regexp,
-		yaml_file_path_ref => \$print_regexp_outfile,
-	       });
-
-}
-
-
-sub help {
-
-##help
-
-##Function : Print help text and exit with supplied exit code
-##Returns  : ""
-##Arguments: $USAGE, $exit_code
-##         : $USAGE    => Help text
-##         : $exit_code => Exit code
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $USAGE;
-    my $exit_code;
-
-    my $tmpl = {
-	USAGE => {required => 1, defined => 1, strict_type => 1, store => \$USAGE},
-	exit_code => { default => 0, strict_type => 1, store => \$exit_code},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    say STDOUT $USAGE;
-    exit $exit_code;
+    File::Format::Yaml::write_yaml({yaml_href => \%regexp,
+				    yaml_file_path_ref => \$print_regexp_outfile,
+				   });
+    
 }

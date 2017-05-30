@@ -1,8 +1,17 @@
 language: perl
 perl:
   - "5.18"
-  
+sudo: required
+ 
 install:
+##Install SSL
+  - sudo apt-get update
+  - sudo apt-get install libssl1.0.0 libssl-dev libcrypto++9 libcrypto++-dev
+  - cd /lib/x86_64-linux-gnu
+  - sudo ln -s libssl.so.1.0.0 libssl.so.10
+  - sudo ln -s libcrypto.so.1.0.0 libcrypto.so.10
+  - cd -
+
 ## Install conda
   - wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
   - bash miniconda.sh -b -p $HOME/miniconda
@@ -14,5 +23,13 @@ install:
 
 script:
 ## Run MIP install script
-  - perl install.pl -env test_environment -pei --perl_skip_test --perl_modules_force -vep 85 --vep_auto_flag al --vep_plugin 0
+  - cd t; prove mip_install.t; cd -
+  - perl mip_install.pl -env test_environment  --quiet -pei --perl_skip_test --perl_modules_force -vep 87 --vep_auto_flag al --vep_plugin 0 --cnvnator_root_binary root_v5.34.34.Linux-ubuntu12-x86_64-gcc4.6.tar.gz
   - bash mip.sh
+  - source ~/.bash_profile
+  - source ~/.bashrc
+  - source activate test_environment
+  - cd /lib/x86_64-linux-gnu
+  - sudo ln -s "$ROOTSYS"/lib/*so .
+  - cd -
+  - cd t; perl run_tests.t -c ../templates/mip_travis_config.yaml

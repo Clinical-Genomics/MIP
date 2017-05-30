@@ -43,24 +43,6 @@ project_id:
    - mip
   data_type: SCALAR
   type: mip
-email:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  mandatory: no
-  type: mip
-email_type:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: F
-  type: mip
-core_processor_number:
-  associated_program: 
-   - mip
-  data_type: SCALAR
-  default: 16
-  type: mip
 config_file:
   associated_program:
    - mip
@@ -87,6 +69,38 @@ config_file_analysis:
   default: 0
   type: path
   update_path: absolute_path
+supported_capture_kit:
+  associated_program:
+   - mip
+  data_type: HASH
+  default:
+    nimblegen_seqcapezexome.v2: genome_reference_source_version_nimblegen_seqcapezexome_targets_-v2-.bed
+    nimblegen_seqcapezexome.v3: genome_reference_source_version_nimblegen_seqcapezexome_targets_-v3-.bed
+    agilent_sureselect.v2: genome_reference_source_version_agilent_sureselect_targets_-v2-.bed
+    agilent_sureselect.v3: genome_reference_source_version_agilent_sureselect_targets_-v3-.bed
+    agilent_sureselect.v4: genome_reference_source_version_agilent_sureselect_targets_-v4-.bed
+    agilent_sureselect.v5: genome_reference_source_version_agilent_sureselect_targets_-v5-.bed
+    agilent_sureselect_cre.v1: genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed
+    agilent_sureselect_focusedexome.v1: genome_reference_source_version_agilent_sureselect_targets_focusedexome_-v1-.bed
+    latest: genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed
+  type: mip
+decompose_normalize_references:
+  associated_program:
+   - mip
+  data_type: ARRAY
+  default:
+   - gatk_realigner_indel_known_sites
+   - gatk_baserecalibration_known_sites
+   - gatk_haplotypecaller_snp_known_set
+   - gatk_variantrecalibration_resource_snv
+   - gatk_variantrecalibration_resource_indel
+   - vt_genmod_filter_1000g
+   - sv_vcfanno_config_file
+   - gatk_varianteval_gold
+   - gatk_varianteval_dbsnp
+   - snpsift_annotation_files
+  element_separator: ,
+  type: mip
 pedigree_file:
   associated_program:
    - mip
@@ -94,12 +108,6 @@ pedigree_file:
   data_type: SCALAR
   type: path
   update_path: absolute_path
-source_environment_commands:
-  associated_program:
-   - mip
-  element_separator: " "
-  data_type: ARRAY
-  type: mip
 sample_ids:
   associated_program:
    - mip
@@ -137,13 +145,6 @@ sample_info_file:
   exists_check: file
   type: path
   update_path: absolute_path
-script_dir:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  exists_check: directory
-  type: path
-  update_path: absolute_path
 reference_dir:
   associated_program:
    - mip
@@ -157,31 +158,13 @@ dry_run_all:
   data_type: SCALAR
   default: 0
   type: mip
-node_ram_memory:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 128
-  type: mip
-slurm_quality_of_service:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: normal
-  type: mip
-temp_directory:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: /scratch/$SLURM_JOB_ID
-  type: path
 genomic_set:
   associated_program:
    - mip
   build_file: no_auto_build
   data_type: SCALAR
-  default: nouser_info
   exists_check: file
+  mandatory: no
   reference: reference_dir
   type: path
 reduce_io:
@@ -202,6 +185,196 @@ print_program_mode:
   data_type: SCALAR
   default: 2
   type: mip
+## HumanGenomeReference
+human_genome_reference:
+  associated_program:
+   - mip
+   - pbwa_mem
+   - pbwa_aln
+   - pbwa_sampe
+   - pgatk_realigner
+   - pgatk_baserecalibration
+   - pgatk_haplotypecaller
+   - pgatk_genotypegvcfs
+   - psamtools_mpileup
+   - pgatk_variantrecalibration
+   - pgatk_phasebytransmission
+   - pgatk_readbackedphasing
+   - pgatk_variantevalall
+   - pgatk_variantevalexome
+   - pannovar
+   - ppicardtools_collecthsmetrics
+   - ppicardtools_collectmultiplemetrics
+  build_file: yes_auto_build
+  data_type: SCALAR
+  default: GRCh37_homo_sapiens_-d5-.fasta
+  exists_check: file
+  reference: reference_dir
+  type: path
+####Bash
+bash_set_errexit:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: mip
+bash_set_nounset:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 0
+  type: mip
+bash_set_pipefail:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: mip
+module_time:
+  associated_program:
+   - mip
+  data_type: HASH
+  default:
+    psplit_fastq_file: 10
+    pgzip_fastq: 2
+    pfastqc: 10
+    pmadeline: 1
+    pbwa_mem: 30
+    ppicardtools_mergesamfiles: 20
+    pmarkduplicates: 20
+    pgatk_realigner: 20
+    pgatk_baserecalibration: 20
+    psambamba_depth: 10
+    pchanjo_sexcheck: 2
+    ppicardtools_collectmultiplemetrics: 10
+    ppicardtools_collecthsmetrics: 10
+    pbedtools_genomecov: 15
+    pgatk_haplotypecaller: 30
+    pgatk_genotypegvcfs: 10
+    pgatk_variantrecalibration: 10
+    pfreebayes: 20
+    psamtools_mpileup: 20
+    pgatk_combinevariantcallsets: 2
+    pprepareforvariantannotationblock: 5
+    prhocall: 5
+    pvt: 10
+    pvarianteffectpredictor: 10
+    pvcfparser: 5
+    psnpeff: 10
+    prankvariant: 10
+    pendvariantannotationblock: 2
+    ppeddy: 1
+    pplink: 1
+    pvariant_integrity: 1
+    pevaluation: 1
+    pgatk_variantevalall: 2
+    pgatk_variantevalexome: 2
+    ptiddit: 10
+    pmanta: 10
+    pdelly_call: 10
+    pdelly_reformat: 5
+    pcnvnator: 5
+    psv_combinevariantcallsets: 2
+    psv_varianteffectpredictor: 10
+    psv_vcfparser: 2
+    psv_rankvariant: 2
+    psv_reformat: 1
+    pqccollect: 1
+    pmultiqc: 1
+    premoveredundantfiles: 1
+    panalysisrunstatus: 1
+    psacct: 1
+  type: mip
+module_core_number:
+  associated_program:
+   - mip
+  data_type: HASH
+  default:
+    psplit_fastq_file: 4
+    pgzip_fastq: 0
+    pfastqc: 0
+    pmadeline: 1
+    pbwa_mem: 16
+    ppicardtools_mergesamfiles: 16
+    pmarkduplicates: 16
+    pgatk_realigner: 16
+    pgatk_baserecalibration: 16
+    psambamba_depth: 2
+    pchanjo_sexcheck: 1
+    ppicardtools_collectmultiplemetrics: 2
+    ppicardtools_collecthsmetrics: 2
+    pbedtools_genomecov: 1
+    pgatk_haplotypecaller: 16
+    pgatk_genotypegvcfs: 4
+    pgatk_variantrecalibration: 16
+    pfreebayes: 16
+    psamtools_mpileup: 16
+    pgatk_combinevariantcallsets: 1
+    pendvariantannotationblock: 1
+    ppeddy: 4
+    pplink: 1
+    pvariant_integrity: 1
+    pevaluation: 1
+    pgatk_variantevalall: 1
+    pgatk_variantevalexome: 1
+    pdelly_call: 16
+    pdelly_reformat: 16
+    pcnvnator: 16
+    pmanta: 16
+    psv_combinevariantcallsets: 1
+    psv_varianteffectpredictor: 16
+    psv_vcfparser: 16
+    psv_rankvariant: 16
+    psv_reformat: 1
+    pqccollect: 1
+    pmultiqc: 1
+    premoveredundantfiles: 1
+    panalysisrunstatus: 1
+    psacct: 1
+  type: mip
+max_cores_per_node:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 16
+  type: mip
+node_ram_memory:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 128
+  type: mip
+temp_directory:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: /scratch/$SLURM_JOB_ID
+  type: path
+email:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  mandatory: no
+  type: mip
+email_type:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: F
+  type: mip
+slurm_quality_of_service:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: normal
+  type: mip
+source_environment_commands:
+  associated_program:
+   - mip
+  element_separator: " "
+  data_type: ARRAY
+  mandatory: no
+  type: mip
 ###Programs
 ## GZip
 psplit_fastq_file:
@@ -211,9 +384,10 @@ psplit_fastq_file:
   data_type: SCALAR
   default: 0
   file_tag: nofile_tag
+  infile_suffix: ".fastq"
+  outfile_suffix: ".fastq.gz"
   program_name_path:
    - pigz
-   - unpigz
    - split
   type: program
 split_fastq_file_read_batch:
@@ -229,6 +403,7 @@ pgzip_fastq:
   data_type: SCALAR
   default: 1
   file_tag: nofile_tag
+  infile_suffix: ".fastq"
   program_name_path:
    - gzip
   type: program
@@ -240,6 +415,7 @@ pfastqc:
   data_type: SCALAR
   default: 1
   file_tag: nofile_tag
+  infile_suffix: ".fastq"
   program_name_path:
    - fastqc
   type: program
@@ -254,79 +430,6 @@ pmadeline:
   program_name_path:
    - madeline2
   type: program
-## Mosaik
-pmosaik_build:
-  associated_program:
-   - mip
-  chain: MAIN
-  data_type: SCALAR
-  default: 0
-  file_tag: nofile_tag
-  program_name_path:
-   - MosaikBuild
-  file_endings:
-   - .dat
-  remove_redundant_file: yes
-  remove_redundant_file_setting: single
-  type: program
-mosaik_build_median_frag_length:
-  associated_program:
-   - pmosaik_build
-  data_type: SCALAR
-  default: 375
-  type: program_argument
-pmosaik_aligner:
-  associated_program:
-   - mip
-  chain: MAIN
-  data_type: SCALAR
-  default: 0
-  file_tag: _sorted
-  outdir_name: mosaik
-  program_name_path:
-   - MosaikAligner
-  program_type: aligners
-  file_endings:
-   - .stat
-   - .bam
-  remove_redundant_file: yes
-  remove_redundant_file_setting: single
-  type: program
-mosaik_align_reference:
-  associated_program:
-   - pmosaik_aligner
-  build_file: yes_auto_build
-  data_type: SCALAR
-  default: not_set_yet
-  exists_check: file
-  type: program_argument
-mosaik_align_neural_network_pe_file:
-  associated_program:
-   - pmosaik_aligner
-  build_file: yes_auto_build
-  data_type: SCALAR
-  default: 2.1.78.pe.ann
-  exists_check: file
-  reference: reference_dir
-  type: path
-mosaik_align_neural_network_se_file:
-  associated_program:
-   - pmosaik_aligner
-  build_file: yes_auto_build
-  data_type: SCALAR
-  default: 2.1.78.se.ann
-  exists_check: file
-  reference: reference_dir
-  type: path
-mosaik_jump_db_stub:
-  associated_program:
-   - pmosaik_aligner
-  build_file: yes_auto_build
-  data_type: SCALAR
-  default: not_set_yet
-  exists_check: file
-  reference: reference_dir
-  type: path
 ## BWA
 pbwa_mem:
   associated_program:
@@ -335,6 +438,7 @@ pbwa_mem:
   data_type: SCALAR
   default: 1
   file_tag: _sorted
+  outfile_suffix: ".bam"
   outdir_name: bwa
   program_name_path:
    - bwa
@@ -471,7 +575,7 @@ picardtools_mergesamfiles_previous_bams:
   data_type: ARRAY
   mandatory: no
   type: path
-ppicardtools_markduplicates:
+pmarkduplicates:
   associated_program:
    - mip
   chain: MAIN
@@ -485,35 +589,33 @@ ppicardtools_markduplicates:
   remove_redundant_file: yes
   remove_redundant_file_setting: merged
   type: program
-psambamba_markduplicates:
+markduplicates_picardtools_markduplicates:
   associated_program:
-   - mip
-  chain: MAIN
+   - pmarkduplicates
+  data_type: SCALAR
+  default: 1
+  type: program_argument
+markduplicates_sambamba_markdup:
+  associated_program:
+   - pmarkduplicates
   data_type: SCALAR
   default: 0
-  file_tag: _md
-  program_name_path:
-   - sambamba
-  file_endings:
-   - .bam
-  remove_redundant_file: yes
-  remove_redundant_file_setting: merged
-  type: program
-sambamba_markdup_hash_table_size:
-  associated_program:
-   - psambamba_markduplicates
-  data_type: SCALAR
-  default: 500000
   type: program_argument
-sambamba_markdup_overflow_list_size:
+markduplicates_sambamba_markdup_hash_table_size:
   associated_program:
-   - psambamba_markduplicates
+   - pmarkduplicates
   data_type: SCALAR
-  default: 500000
+  default: 262144
   type: program_argument
-sambamba_markdup_io_buffer_size:
+markduplicates_sambamba_markdup_overflow_list_size:
   associated_program:
-   - psambamba_markduplicates
+   - pmarkduplicates
+  data_type: SCALAR
+  default: 200000
+  type: program_argument
+markduplicates_sambamba_markdup_io_buffer_size:
+  associated_program:
+   - pmarkduplicates
   data_type: SCALAR
   default: 2048
   type: program_argument
@@ -536,8 +638,10 @@ gatk_realigner_indel_known_sites:
   element_separator: ,
   data_type: ARRAY
   default:
-   - 1000G_phase1.indels.b37.vcf
-   - Mills_and_1000G_gold_standard.indels.b37.vcf
+   - GRCh37_1000g_indels_-phase1-.vcf
+   - GRCh37_mills_and_1000g_indels_-gold_standard-.vcf
+  exists_check: file
+  reference: reference_dir
   type: path
 pgatk_baserecalibration:
   associated_program:
@@ -568,15 +672,19 @@ gatk_baserecalibration_known_sites:
   element_separator: ,
   data_type: ARRAY
   default:
-   - dbsnp_138.b37.vcf
-   - 1000G_phase1.indels.b37.vcf
-   - Mills_and_1000G_gold_standard.indels.b37.vcf
+   - GRCh37_dbsnp_-138-.vcf
+   - GRCh37_1000g_indels_-phase1-.vcf
+   - GRCh37_mills_and_1000g_indels_-gold_standard-.vcf
+  exists_check: file
+  reference: reference_dir
   type: path
-gatk_baserecalibration_over_clipped_read:
+gatk_baserecalibration_read_filters:
   associated_program:
    - pgatk_baserecalibration
-  data_type: SCALAR
-  default: 1
+  element_separator: ,
+  data_type: ARRAY
+  default:
+   - OverclippedRead
   type: program_argument
 gatk_baserecalibration_disable_indel_qual:
   associated_program:
@@ -600,21 +708,37 @@ gatk_baserecalibration_static_quantized_quals:
 pchanjo_sexcheck:
   associated_program:
    - mip
-  chain: CoverageReportGender
+  chain: coverage_report_gender
   data_type: SCALAR
   default: 1
-  file_tag: .sexcheck
+  file_tag: _sex
+  outfile_suffix: ".tsv"
+  program_name_path:
+   - chanjo
   type: program
+chanjo_sexcheck_log_level:
+  associated_program:
+   - pchanjo_sexcheck
+  data_type: SCALAR
+  default: DEBUG
+  type: program_argument
 psambamba_depth:
   associated_program:
    - mip
-  chain: CoverageReport
+  chain: coverage_report
   data_type: SCALAR
   default: 1
   file_tag: _coverage
+  outfile_suffix: ".bed"
   program_name_path:
    - sambamba
   type: program
+sambamba_depth_mode:
+  associated_program:
+   - psambamba_depth
+  data_type: SCALAR
+  default: region
+  type: program_argument
 sambamba_depth_cutoffs:
   associated_program:
    - psambamba_depth
@@ -630,7 +754,6 @@ sambamba_depth_cutoffs:
 sambamba_depth_bed:
   associated_program:
    - psambamba_depth
-  build_file: yes_auto_downLoad
   data_type: SCALAR
   default: CCDS.current.bed
   exists_check: file
@@ -660,19 +783,19 @@ sambamba_depth_quality_control:
   data_type: SCALAR
   default: 1
   type: program_argument
-pgenomecoveragebed:
+pbedtools_genomecov:
   associated_program:
    - mip
   chain: CoverageQCGCovBed
   data_type: SCALAR
   default: 0
-  file_tag: _genomeCoverageBed
+  file_tag: _genomecov
   program_name_path:
    - bedtools
   type: program
-genomecoveragebed_max_coverage:
+bedtools_genomecov_max_coverage:
   associated_program:
-   - pgenomecoveragebed
+   - pbedtools_genomecov
   data_type: SCALAR
   default: 30
   type: program_argument
@@ -684,13 +807,13 @@ ppicardtools_collectmultiplemetrics:
   default: 1
   file_tag: nofile_tag
   type: program
-ppicardtools_calculatehsmetrics:
+ppicardtools_collecthsmetrics:
   associated_program:
    - mip
   chain: CoverageQCPTCHSM
   data_type: SCALAR
   default: 1
-  file_tag: _CalculateHsMetrics
+  file_tag: _collecthsmetrics
   type: program
 prcovplots:
   associated_program:
@@ -706,7 +829,7 @@ pcnvnator:
    - mip
   chain: SVCNV
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _cnvnator
   program_name_path:
    - cnvnator
@@ -714,6 +837,7 @@ pcnvnator:
    - bcftools
    - samtools
   outdir_name: cnvnator
+  outfile_suffix: ".vcf"
   program_type: structural_variant_callers
   type: program
 cnv_bin_size:
@@ -722,22 +846,36 @@ cnv_bin_size:
   data_type: SCALAR
   default: 1000
   type: program_argument
-pdelly:
+pdelly_call:
   associated_program:
    - mip
   chain: SVDEL
   data_type: SCALAR
-  default: 0
-  file_tag: _delly
+  default: 1
+  file_tag: _dellycall
+  program_name_path:
+   - delly
+  outdir_name: delly
+  outfile_suffix: ".bcf"
+  type: program
+pdelly_reformat:
+  associated_program:
+   - mip
+  chain: SVDEL
+  data_type: SCALAR
+  default: 1
+  file_tag: _dellyreformat
   program_name_path:
    - delly
    - bcftools
   outdir_name: delly
+  outfile_suffix: ".vcf"
   program_type: structural_variant_callers
   type: program
 delly_types:
   associated_program:
-   - pdelly
+   - pdelly_call
+   - pdelly_reformat
   element_separator: ,
   data_type: ARRAY
   default:
@@ -746,6 +884,16 @@ delly_types:
    - INV
    - INS
   type: program_argument
+delly_exclude_file:
+  associated_program:
+   - pdelly_call
+   - pdelly_reformat
+  build_file: no_auto_build
+  data_type: SCALAR
+  default: hg19_human_excl_-0.7.6-.tsv
+  exists_check: file
+  reference: reference_dir
+  type: path
 pmanta:
   associated_program:
    - mip
@@ -756,23 +904,26 @@ pmanta:
   program_name_path:
    - configManta.py
   outdir_name: manta
+  outfile_suffix: ".vcf"
   program_type: structural_variant_callers
   type: program
-pfindtranslocations:
+ptiddit:
   associated_program:
    - mip
-  chain: SVFT
+  chain: SVTIDDIT
   data_type: SCALAR
-  default: 0
-  file_tag: _findt
+  default: 1
+  file_tag: _tiddit
   program_name_path:
-   - FindTranslocations
-  outdir_name: findtranslocations
+   - TIDDIT
+   - svdb
+  outdir_name: tiddit
+  outfile_suffix: ".vcf"
   program_type: structural_variant_callers
   type: program
-findtranslocations_minimum_supporting_pairs:
+tiddit_minimum_number_supporting_pairs:
   associated_program:
-   - pfindtranslocations
+   - ptiddit
   data_type: SCALAR
   default: 6
   type: program_argument
@@ -783,9 +934,11 @@ psv_combinevariantcallsets:
   data_type: SCALAR
   default: 1
   file_tag: _comb_
+  outfile_suffix: ".vcf"
   program_name_path:
    - vt
    - bcftools
+   - svdb
   type: program
 sv_vt_decompose:
   associated_program:
@@ -793,12 +946,32 @@ sv_vt_decompose:
   data_type: SCALAR
   default: 1
   type: program_argument
+sv_svdb_merge_prioritize:
+  associated_program:
+   - psv_combinevariantcallsets
+  data_type: SCALAR
+  mandatory: no
+  type: program_argument
 sv_bcftools_view_filter:
   associated_program:
    - psv_combinevariantcallsets
   data_type: SCALAR
   default: 1
   type: program_argument
+sv_svdb_query:
+  associated_program:
+   - psv_combinevariantcallsets
+  data_type: SCALAR
+  default: 1
+  type: program_argument
+sv_svdb_query_db_files:
+  associated_program:
+   - psv_combinevariantcallsets
+  build_file: no_auto_build
+  data_type: HASH
+  exists_check: file
+  reference: reference_dir
+  type: path
 sv_vcfanno:
   associated_program:
    - psv_combinevariantcallsets
@@ -821,6 +994,15 @@ sv_vcfanno_config:
   exists_check: file
   reference: reference_dir
   type: path
+sv_vcfanno_config_file:
+  associated_program:
+   - psv_combinevariantcallsets
+  build_file: no_auto_build
+  data_type: SCALAR
+  default: GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz
+  exists_check: file
+  reference: reference_dir
+  type: path
 sv_vcfannotation_header_lines_file:
   associated_program:
    - psv_combinevariantcallsets
@@ -840,7 +1022,7 @@ sv_genmod_filter_1000g:
    - psv_combinevariantcallsets
   build_file: no_auto_build
   data_type: SCALAR
-  default: ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz
+  default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz
   exists_check: file
   reference: reference_dir
   type: path
@@ -873,8 +1055,8 @@ sv_vep_features:
    - hgvs
    - symbol
    - numbers
-   - sift
-   - polyphen
+   - "sift p"
+   - "polyphen p"
    - humdiv
    - domains
    - protein
@@ -886,6 +1068,10 @@ sv_vep_features:
    - canonical
    - per_gene
    - appris
+   - cache
+   - force_overwrite
+   - no_progress
+   - offline
   type: program_argument
 sv_vep_plugins:
   associated_program:
@@ -1000,7 +1186,7 @@ psv_reformat:
   chain: SV
   data_type: SCALAR
   default: 1
-  file_tag: nofile_tag
+  file_tag: ""
   program_name_path:
    - grep
   type: program
@@ -1034,6 +1220,7 @@ psamtools_mpileup:
   program_type: variant_callers
   file_endings:
    - .vcf
+  outfile_suffix: ".vcf"
   remove_redundant_file: yes
   remove_redundant_file_setting: family
   type: program
@@ -1052,6 +1239,7 @@ pfreebayes:
   program_type: variant_callers
   file_endings:
    - .vcf
+  outfile_suffix: ".vcf"
   remove_redundant_file: yes
   remove_redundant_file_setting: family
   type: program
@@ -1062,9 +1250,10 @@ pgatk_haplotypecaller:
   chain: MAIN
   data_type: SCALAR
   default: 1
-  file_tag: _gvcf
+  file_tag: _haptc
   file_endings:
    - .vcf
+  outfile_suffix: ".g.vcf"
   remove_redundant_file: yes
   remove_redundant_file_setting: merged
   type: program
@@ -1098,13 +1287,12 @@ gatk_haplotypecaller_annotation:
 gatk_haplotypecaller_snp_known_set:
   associated_program:
    - pgatk_haplotypecaller
-  build_file: yes_auto_downLoad
   data_type: SCALAR
-  default: dbsnp_138.b37.vcf
+  default: GRCh37_dbsnp_-138-.vcf
   exists_check: file
   reference: reference_dir
   type: path
-gatk_haplotypecaller_soft_clipped_bases:
+gatk_haplotypecaller_no_soft_clipped_bases:
   associated_program:
    - pgatk_haplotypecaller
   data_type: SCALAR
@@ -1114,16 +1302,16 @@ gatk_haplotypecaller_pcr_indel_model:
   associated_program:
    - pgatk_haplotypecaller
   data_type: SCALAR
-  default: None
+  default: NONE
   type: program_argument
 picardtools_path:
   associated_program:
-   - pmosaik_aligner
    - pbwa_mem
    - ppicardtools_mergesamfiles
-   - ppicardtools_markduplicates
-   - ppicardtools_calculatehsmetrics
+   - pmarkduplicates
+   - ppicardtools_collecthsmetrics
    - ppicardtools_collectmultiplemetrics
+   - pdelly_reformat
   data_type: SCALAR
   exists_check: directory
   type: path
@@ -1138,6 +1326,7 @@ pgatk_genotypegvcfs:
   file_tag: _
   file_endings:
    - .vcf
+  outfile_suffix: ".vcf"
   remove_redundant_file: yes
   remove_redundant_file_setting: family
   type: program
@@ -1174,51 +1363,42 @@ pgatk_variantrecalibration:
   program_type: variant_callers
   file_endings:
    - .vcf
+  outfile_suffix: ".vcf"
   remove_redundant_file: yes
   remove_redundant_file_setting: family
   type: program
-gatk_variantrecalibration_training_set_hapmap:
+gatk_variantrecalibration_annotations:
   associated_program:
    - pgatk_variantrecalibration
-  build_file: yes_auto_downLoad
-  data_type: SCALAR
-  default: hapmap_3.3.b37.sites.vcf
+  element_separator: ,
+  data_type: ARRAY
+  default:
+   - QD
+   - MQRankSum
+   - ReadPosRankSum
+   - FS
+   - SOR
+   - DP
+  type: program_argument
+gatk_variantrecalibration_resource_snv:
+  associated_program:
+   - pgatk_variantrecalibration
+  data_type: HASH
+  default:
+     GRCh37_dbsnp_-138-.vcf: "dbsnp,known=true,training=false,truth=false,prior=2.0"
+     GRCh37_hapmap_-3.3-.vcf: "hapmap,VCF,known=false,training=true,truth=true,prior=15.0"
+     GRCh37_1000g_omni_-2.5-.vcf: "omni,VCF,known=false,training=true,truth=false,prior=12.0"
+     GRCh37_1000g_snps_high_confidence_-phase1-.vcf: "1000G,known=false,training=true,truth=false,prior=10.0"
   exists_check: file
   reference: reference_dir
   type: path
-gatk_variantrecalibration_training_set_dbsnp:
+gatk_variantrecalibration_resource_indel:
   associated_program:
    - pgatk_variantrecalibration
-  build_file: yes_auto_downLoad
-  data_type: SCALAR
-  default: dbsnp_138.b37.vcf
-  exists_check: file
-  reference: reference_dir
-  type: path
-gatk_variantrecalibration_training_set_1000gsnp:
-  associated_program:
-   - pgatk_variantrecalibration
-  build_file: yes_auto_downLoad
-  data_type: SCALAR
-  default: 1000G_phase1.snps.high_confidence.b37.vcf
-  exists_check: file
-  reference: reference_dir
-  type: path
-gatk_variantrecalibration_training_set_1000g_omni:
-  associated_program:
-   - pgatk_variantrecalibration
-  build_file: yes_auto_downLoad
-  data_type: SCALAR
-  default: 1000G_omni2.5.b37.sites.vcf
-  exists_check: file
-  reference: reference_dir
-  type: path
-gatk_variantrecalibration_training_set_mills:
-  associated_program:
-   - pgatk_variantrecalibration
-  build_file: yes_auto_downLoad
-  data_type: SCALAR
-  default: Mills_and_1000G_gold_standard.indels.b37.vcf
+  data_type: HASH
+  default:
+     GRCh37_dbsnp_-138-.vcf: "dbsnp,known=true,training=false,truth=false,prior=2.0"
+     GRCh37_mills_and_1000g_indels_-gold_standard-.vcf: "mills,VCF,known=true,training=true,truth=true,prior=12.0"
   exists_check: file
   reference: reference_dir
   type: path
@@ -1269,7 +1449,7 @@ gatk_calculategenotypeposteriors_support_set:
    - pgatk_variantrecalibration
   build_file: no_auto_build
   data_type: SCALAR
-  default: 1000G_phase3_v4_20130502.sites.vcf
+  default: GRCh37_1000g_sites_-phase3_v4_2013-05-02-.vcf.gz
   exists_check: file
   reference: reference_dir
   type: path
@@ -1282,9 +1462,17 @@ pgatk_combinevariantcallsets:
   file_tag: comb_
   file_endings:
    - .vcf
+  outfile_suffix: ".vcf"
   remove_redundant_file: yes
   remove_redundant_file_setting: family
   type: program
+gatk_combinevariants_genotype_merge_option:
+  associated_program:
+   - pgatk_combinevariantcallsets
+  data_type: SCALAR
+  default: PRIORITIZE
+  mandatory: no
+  type: program_argument
 gatk_combinevariants_prioritize_caller:
   associated_program:
    - pgatk_combinevariantcallsets
@@ -1314,7 +1502,34 @@ pprepareforvariantannotationblock:
   data_type: SCALAR
   default: 1
   file_tag: nofile_tag
+  outfile_suffix: ".vcf.gz"
   type: program
+##rhocall
+prhocall:
+  associated_program:
+   - mip
+  chain: MAIN
+  data_type: SCALAR
+  default: 1
+  file_tag: rhocall_
+  program_name_path:
+   - rhocall
+   - bcftools
+  file_endings:
+   - .vcf
+  outfile_suffix: ".vcf"
+  remove_redundant_file: yes
+  remove_redundant_file_setting: variant_annotation
+  type: program
+rhocall_frequency_file:
+  associated_program:
+   - prhocall
+  build_file: no_auto_build
+  data_type: SCALAR
+  default: GRCh37_anon_swegen_snp_-2016-10-19-.tab.gz
+  exists_check: file
+  reference: reference_dir
+  type: path
 ##VT
 pvt:
   associated_program:
@@ -1330,6 +1545,7 @@ pvt:
    - tabix
   file_endings:
    - .vcf
+  outfile_suffix: ".vcf"
   remove_redundant_file: yes
   remove_redundant_file_setting: variant_annotation
   type: program
@@ -1340,6 +1556,12 @@ vt_decompose:
   default: 1
   type: program_argument
 vt_normalize:
+  associated_program:
+   - pvt
+  data_type: SCALAR
+  default: 1
+  type: program_argument
+vt_uniq:
   associated_program:
    - pvt
   data_type: SCALAR
@@ -1362,7 +1584,7 @@ vt_genmod_filter_1000g:
    - pvt
   build_file: no_auto_build
   data_type: SCALAR
-  default: ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz
+  default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz
   exists_check: file
   reference: reference_dir
   type: path
@@ -1407,6 +1629,7 @@ pgatk_variantevalall:
   data_type: SCALAR
   default: 1
   file_tag: nofile_tag
+  outfile_suffix: ".varianteval"
   type: program
 pgatk_variantevalexome:
   associated_program:
@@ -1415,6 +1638,7 @@ pgatk_variantevalexome:
   data_type: SCALAR
   default: 1
   file_tag: nofile_tag
+  outfile_suffix: ".varianteval"
   program_name_path:
    - bedtools
   type: program
@@ -1422,9 +1646,8 @@ gatk_varianteval_dbsnp:
   associated_program:
    - pgatk_variantevalall
    - pgatk_variantevalexome
-  build_file: yes_auto_downLoad
   data_type: SCALAR
-  default: dbsnp_138.b37.excluding_sites_after_129.vcf
+  default: GRCh37_dbsnp_-138_esa_129-.vcf
   exists_check: file
   reference: reference_dir
   type: path
@@ -1432,9 +1655,8 @@ gatk_varianteval_gold:
   associated_program:
    - pgatk_variantevalall
    - pgatk_variantevalexome
-  build_file: yes_auto_downLoad
   data_type: SCALAR
-  default: Mills_and_1000G_gold_standard.indels.b37.vcf
+  default: GRCh37_mills_and_1000g_indels_-gold_standard-.vcf
   exists_check: file
   reference: reference_dir
   type: path
@@ -1456,14 +1678,12 @@ gatk_disable_auto_index_and_file_lock:
 ## GATK FTP Bundle Download version. Needed for all programs that download the human genome reference
 gatk_bundle_download_version:
   associated_program:
-   - pmosaik_aligner
    - pbwa_mem
    - pbwa_aln
    - pbwa_sampe
    - pgatk_realigner
    - pgatk_baserecalibration
    - pcnvnator
-   - pdelly
    - pgatk_haplotypecaller
    - pgatk_genotypegvcfs
    - psamtools_mpileup
@@ -1473,7 +1693,7 @@ gatk_bundle_download_version:
    - pgatk_variantevalall
    - pgatk_variantevalexome
    - pannovar
-   - ppicardtools_calculatehsmetrics
+   - ppicardtools_collecthsmetrics
    - ppicardtools_collectmultiplemetrics
   data_type: SCALAR
   default: 2.8
@@ -1488,6 +1708,7 @@ pvarianteffectpredictor:
   file_tag: vep_
   file_endings:
    - .vcf
+  outfile_suffix: ".vcf"
   remove_redundant_file: yes
   remove_redundant_file_setting: variant_annotation
   type: program
@@ -1520,8 +1741,8 @@ vep_features:
    - hgvs
    - symbol
    - numbers
-   - sift
-   - polyphen
+   - "sift p"
+   - "polyphen p"
    - humdiv
    - domains
    - protein
@@ -1532,6 +1753,10 @@ vep_features:
    - tsl
    - canonical
    - appris
+   - cache
+   - force_overwrite
+   - no_progress
+   - offline
   type: program_argument
 vep_plugins:
   associated_program:
@@ -1553,6 +1778,7 @@ pvcfparser:
   file_tag: parsed_
   file_endings:
    - .vcf
+  outfile_suffix: ".vcf"
   remove_redundant_file: yes
   remove_redundant_file_setting: variant_annotation
   type: program
@@ -1667,6 +1893,7 @@ psnpeff:
   file_tag: snpeff_
   file_endings:
    - .vcf
+  outfile_suffix: ".vcf"
   remove_redundant_file: yes
   remove_redundant_file_setting: variant_annotation
   type: program
@@ -1695,10 +1922,10 @@ snpsift_annotation_files:
   build_file: yes_auto_build
   data_type: HASH
   default:
-     ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz: AF
-     ExAC.r0.3.sites.vep.vcf.gz: AF
-     anon-SweGen_STR_NSPHS_1000samples_snp_freq_hg19.vcf.gz: AF
-     anon-SweGen_STR_NSPHS_1000samples_indel_freq_hg19.vcf.gz: AF
+     GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz: AF
+     GRCh37_exac_reheader_-r0.3.1-.vcf.gz: AF
+     GRCh37_anon-swegen_snp_-1000samples-.vcf.gz: AF
+     GRCh37_anon-swegen_indel_-1000samples-.vcf.gz: AF
   exists_check: file
   reference: reference_dir
   type: path
@@ -1708,10 +1935,10 @@ snpsift_annotation_outinfo_key:
   build_file: yes_auto_build
   data_type: HASH
   default:
-     ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz: 1000G
-     ExAC.r0.3.sites.vep.vcf.gz: EXAC
-     anon-SweGen_STR_NSPHS_1000samples_snp_freq_hg19.vcf.gz: SWEREF
-     anon-SweGen_STR_NSPHS_1000samples_indel_freq_hg19.vcf.gz: SWEREF
+     GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz: 1000G
+     GRCh37_exac_reheader_-r0.3.1-.vcf.gz: EXAC
+     GRCh37_anon-swegen_snp_-1000samples-.vcf.gz: SWEREF
+     GRCh37_anon-swegen_indel_-1000samples-.vcf.gz: SWEREF
   exists_check: file
   reference: reference_dir
   type: path
@@ -1719,7 +1946,7 @@ snpsift_dbnsfp_file:
   associated_program:
    - psnpeff
   data_type: SCALAR
-  default: dbNSFP2.9.txt.gz
+  default: GRCh37_dbnsfp_-v2.9-.txt.gz
   exists_check: file
   reference: reference_dir
   type: path
@@ -1732,13 +1959,9 @@ snpsift_dbnsfp_annotations:
    - SIFT_pred
    - Polyphen2_HDIV_pred
    - Polyphen2_HVAR_pred
-   - LRT_pred
-   - MutationTaster_pred
    - GERP++_NR
    - GERP++_RS
    - phastCons100way_vertebrate
-   - 1000Gp1_AF
-   - ESP6500_AA_F
   type: path
 ## java large pages - effects all modules using java
 java_use_large_pages:
@@ -1774,22 +1997,58 @@ gatk_path:
    - pgatk_variantevalall
    - pgatk_variantevalexome
    - pvarianteffectpredictor
-   - pRankVariants
+   - prankvariant
   data_type: SCALAR
   exists_check: directory
   type: path
   update_path: absolute_path
-## SampleCheck
-psamplecheck:
+gatk_logging_level:
+  associated_program:
+   - pgatk_realigner
+   - pgatk_baserecalibration
+   - pgatk_haplotypecaller
+   - pgatk_genotypegvcfs
+   - psamtools_mpileup
+   - pgatk_variantrecalibration
+   - pgatk_combinevariantcallsets
+   - pgatk_phasebytransmission
+   - pgatk_readbackedphasing
+   - pcnvnator
+   - pgatk_variantevalall
+   - pgatk_variantevalexome
+   - pvarianteffectpredictor
+   - prankvariant
+  data_type: SCALAR
+  default: INFO
+  type: program_argument
+## Case_check
+ppeddy:
   associated_program:
    - mip
-  chain: IDQC
+  chain: PEDDYQC
+  data_type: SCALAR
+  default: 0
+  file_tag: nofile_tag
+  type: program
+pplink:
+  associated_program:
+   - mip
+  chain: PLINKQC
   data_type: SCALAR
   default: 1
   file_tag: nofile_tag
   program_name_path:
-   - vcftools
    - plink2
+  type: program
+pvariant_integrity:
+  associated_program:
+   - mip
+  chain: VIQC
+  data_type: SCALAR
+  default: 1
+  file_tag: nofile_tag
+  program_name_path:
+   - variant_integrity
   type: program
 pevaluation:
   associated_program:
@@ -1812,7 +2071,7 @@ nist_high_confidence_call_set:
   associated_program:
    - pevaluation
   build_file: no_auto_build
-  default: NISTIntgratedCalls.v2.19.vcf
+  default: GRCh37_nist_hg001_-na12878_v2.19-.vcf
   data_type: SCALAR
   exists_check: file
   reference: reference_dir
@@ -1821,7 +2080,7 @@ nist_high_confidence_call_set_bed:
   associated_program:
    - pevaluation
   build_file: no_auto_build
-  default: NISTIntgratedCalls.v2.19.bed
+  default: GRCh37_nist_hg001_-na12878_v2.19-.bed
   data_type: SCALAR
   exists_check: file
   reference: reference_dir
@@ -1834,6 +2093,7 @@ prankvariant:
   data_type: SCALAR
   default: 1
   file_tag: ranked_
+  outfile_suffix: ".vcf"
   type: program
 genmod_annotate_regions:
   associated_program:
@@ -1867,7 +2127,7 @@ genmod_models_whole_gene:
 genmod_models_family_type:
   associated_program:
    - prankvariant
-   - psamplecheck
+   - pvariant_integrity
   data_type: SCALAR
   default: ped
   type: program_argument
@@ -1895,6 +2155,7 @@ pendvariantannotationblock:
   data_type: SCALAR
   default: 1
   file_tag: nofile_tag
+  outfile_suffix: ".vcf"
   program_name_path:
    - grep
   type: program
@@ -1981,34 +2242,27 @@ psacct:
   default: 1
   file_tag: nofile_tag
   type: program
-## HumanGenomeReference
-human_genome_reference:
+sacct_format_fields:
   associated_program:
-   - pbwa_mem
-   - pbwa_aln
-   - pbwa_sampe
-   - pgatk_realigner
-   - pgatk_baserecalibration
-   - pgatk_haplotypecaller
-   - pgatk_genotypegvcfs
-   - psamtools_mpileup
-   - pgatk_variantrecalibration
-   - pgatk_phasebytransmission
-   - pgatk_readbackedphasing
-   - pgatk_variantevalall
-   - pgatk_variantevalexome
-   - pannovar
-   - ppicardtools_calculatehsmetrics
-   - ppicardtools_collectmultiplemetrics
-  build_file: yes_auto_downLoad
-  data_type: SCALAR
-  default: Homo_sapiens.GRCh37.d5.fasta
-  exists_check: file
-  reference: reference_dir
-  type: path
+   - psacct
+  data_type: ARRAY
+  default:
+   - jobid
+   - "jobname%50"
+   - account
+   - partition
+   - alloccpus
+   - TotalCPU
+   - elapsed
+   - start
+   - end
+   - state
+   - exitcode
+  element_separator: ,
+  type: program_argument
 exome_target_bed:
   associated_program:
-   - ppicardtools_calculatehsmetrics
+   - ppicardtools_collecthsmetrics
    - pgatk_realigner
    - pgatk_baserecalibration
    - pgatk_haplotypecaller

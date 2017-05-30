@@ -1,6 +1,0 @@
-#Chromosome	Gene_start	Gene_stop	HGNC_symbol	Disease_group_pathway	Protein_name	Symptoms	Biochemistry	Imaging	Disease_trivial_name	Trivial_name_short	Genetic_disease_model	OMIM_gene	OMIM_morbid	Gene_locus	Clinical_db_genome_build	UniProt_id	Ensembl_gene_id	Ensemble_transcript_id	Reduced_penetrance	Clinical_db_gene_annotation	Disease_associated_transcript
-12	103230663	103352188	PAH	Amino acid metabolism	Phenylalanine hydroxylase				PKU,HPA	#NA	AR	612349	261600	q23.2	GRCh37.p8	PAH	ENSG00000171759	ENST00000553106		IEM	NM_000277.1
-11	112097088	112140678	PTS	Amino acid metabolism	6-pyruvoyl-tetrahydrobiopterin synthase				PKU,HPA	#NA	AR	612719	261640	q23.1	GRCh37.p8	PTS	ENSG00000150787	ENST00000280362		IEM	NM_000317.2
-4	17461884	17513857	QDPR	Amino acid metabolism	dihydrypteridine reductase				PKU,HPA	#NA	AR	612676	261630	p15.32	GRCh37.p8	QDPR	ENSG00000151552	ENST00000281243		IEM	NM_000320.2
-10	72642037	72648541	PCBD1	Amino acid metabolism	pterin-4a-carbinolamine dehydratase				PKU,HPA	#NA	AR	126090	264070	q22.1	GRCh37.p8	PCBD1	ENSG00000166228	ENST00000299299		IEM	NM_000281.2
-2	73114489	73119287	SPR	Amino acid metabolism	sepiapterin reductase				PKU,HPA	#NA	AR	182125	612716	p13.2	GRCh37.p8	SPR	ENSG00000116096	ENST00000234454		IEM	NM_003124.4
