@@ -52,8 +52,13 @@ sub gnu_grep {
     my $filter_file_path;
 
     my $tmpl = {
+        infile_path => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$infile_path
+        },
         FILEHANDLE       => { store       => \$FILEHANDLE },
-        infile_path      => { strict_type => 1, store => \$infile_path },
         outfile_path     => { strict_type => 1, store => \$outfile_path },
         stderrfile_path  => { strict_type => 1, store => \$stderrfile_path },
         filter_file_path => { strict_type => 1, store => \$filter_file_path },
@@ -81,6 +86,7 @@ sub gnu_grep {
     }
 
     ## Infile
+
     push @commands, $infile_path;
 
     ## Outfile
