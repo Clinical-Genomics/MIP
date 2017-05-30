@@ -72,11 +72,63 @@ BEGIN {
     }
 }
 
-use MIP::Gnu::Software::Gnu_grep;
+use MIP::Gnu::Software::Gnu_grep qw(gnu_grep);
+use MIP::Test::Commands qw(generate_call);
+
 
 diag(
 "Test Gnu_grep $MIP::Gnu::Software::Gnu_grep::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
+
+
+## Base parameters
+my %base_parameters = (outfile_path => {
+					input => 'outfile.test',
+					expected_output => '> outfile.test',
+				       },
+		       stderrfile_path => {
+					input => 'stderrfile.test',
+					expected_output => '2> stderrfile.test',
+				       },
+		      );
+
+my %required_parameters = (infile_path => {
+					  input => 'infile.test',
+					  expected_output => 'infile.test',
+					 },
+			 );
+
+## Specific parameters
+my %specific_parameter = (
+			  invert_match => {
+					   input => 1,
+					   expected_output => '--invert-match',
+					  },
+			  filter_file_path => {
+					       input => 'test_file',
+					       expected_output => '--file=test_file',
+					      },
+			 );
+
+my @parameters = (\%base_parameters, \%specific_parameter);
+
+foreach my $parameter_hash (@parameters) {
+
+  my @commands = generate_call({parameter_href => $parameter_hash,
+				required_parameters_href => \%required_parameters,
+				module_function_cref => \&gnu_grep,
+				function_base_command => 'grep',
+			       });
+}
+
+my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
+#close STDOUT;
+my $variable;
+open($FILEHANDLE, ">", \$variable)
+  or die "Can't open STDOUT: $!";
+gnu_grep({filter_file_path => 1,
+	  FILEHANDLE => $FILEHANDLE,
+	 });
 
 done_testing();
 
