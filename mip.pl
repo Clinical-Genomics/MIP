@@ -4613,7 +4613,7 @@ sub endvariantannotationblock {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use Program::Htslib qw(bgzip tabix);
-    use Program::Gnu::Software::Grep qw(gnu_grep);
+    use MIP::Gnu::Software::Gnu_grep qw(gnu_grep);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $consensus_analysis_type =
@@ -14090,7 +14090,7 @@ sub sv_reformat {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use Program::Htslib qw(bgzip tabix);
-    use Program::Gnu::Software::Grep qw( gnu_grep);
+    use MIP::Gnu::Software::Gnu_grep qw( gnu_grep);
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};

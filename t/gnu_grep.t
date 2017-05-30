@@ -23,7 +23,6 @@ use Test::More;
 use lib catdir( dirname($Bin), 'lib' );
 use Script::Utils qw( help );
 
-
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
@@ -57,7 +56,7 @@ BEGIN {
 ##Modules with import
     my %perl_module;
 
-    $perl_module{'Script::Utils'}                 = [qw(help)];
+    $perl_module{'Script::Utils'} = [qw(help)];
 
     while ( my ( $module, $module_import ) = each %perl_module ) {
 
@@ -75,7 +74,9 @@ BEGIN {
 
 use MIP::Gnu::Software::Gnu_grep;
 
-diag( "Test Gnu_grep $MIP::Gnu::Software::Gnu_grep::VERSION, Perl $^V, $EXECUTABLE_NAME" );
+diag(
+"Test Gnu_grep $MIP::Gnu::Software::Gnu_grep::VERSION, Perl $^V, $EXECUTABLE_NAME"
+);
 
 done_testing();
 

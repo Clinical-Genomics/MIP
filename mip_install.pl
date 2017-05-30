@@ -601,14 +601,14 @@ sub build_usage {
     -snpg/--snpeff_genome_versions Set the snpEff genome version (Default: ["GRCh37.75", "GRCh38.82"])
     -vep/--varianteffectpredictor Set the VEP version (Default: "88")
     -vepa/--vep_auto_flag Set the VEP auto installer flags
-    -vepc/--vep_cache_dir Specify the cache directory to use (whole path; defaults to "~/miniconda/envs/conda_environment/ensembl-tools-release-varianteffectpredictorVersion/cache")
+    -vepc/--vep_cache_dir Specify the cache directory to use (whole path; defaults to "[--conda_dir_path]/ensembl-tools-release-varianteffectpredictorVersion/cache")
     -vepa/--vep_assemblies Select the assembly version (Default: ["GRCh37", "GRCh38"])
     -vepp/--vep_plugins Supply VEP plugins (Default: "UpDownDistance, LoFtool, Lof")
     -rhc/--rhocall Set the rhocall version (Default: "0.4")
     -rhcp/--rhocall_path Set the path to where to install rhocall (Defaults: "HOME/rhocall")
     -cnvn/--cnvnator Set the cnvnator version (Default: 0.3.3)
     -cnvnr/--cnvnator_root_binary Set the cnvnator root binary (Default: "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz")
-    -tid/--tiddit Set the tiddit version (Default: "1.1.4")
+    -tid/--tiddit Set the tiddit version (Default: "1.1.5")
     -svdb/--svdb Set the svdb version (Default: "1.0.6")
 
     ## Utility
