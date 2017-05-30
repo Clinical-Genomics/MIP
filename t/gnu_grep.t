@@ -110,25 +110,39 @@ my %specific_parameter = (
 					      },
 			 );
 
+my $module_function_cref = \&gnu_grep;
+
+
+#my @keys = keys %required_parameters;
+#my @values = map { ($required_parameters{$_}{input}) } @keys; # ($required_parameters{infile_path}{input});
+#say STDERR @keys;
+#say STDERR @values;
+#my @c = $module_function_cref->({@keys => @values});
+#my $module_function_cref = \&gnu_grep;
+#my @c = $module_function_cref->();
+
+#say STDERR @c;
+#exit;
+
 my @parameters = (\%base_parameters, \%specific_parameter);
 
-foreach my $parameter_hash (@parameters) {
+foreach my $parameter_href (@parameters) {
 
-  my @commands = generate_call({parameter_href => $parameter_hash,
+  my @commands = generate_call({parameter_href => $parameter_href,
 				required_parameters_href => \%required_parameters,
-				module_function_cref => \&gnu_grep,
+				module_function_cref => $module_function_cref,
 				function_base_command => 'grep',
 			       });
 }
 
-my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
+#my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 #close STDOUT;
-my $variable;
-open($FILEHANDLE, ">", \$variable)
-  or die "Can't open STDOUT: $!";
-gnu_grep({filter_file_path => 1,
-	  FILEHANDLE => $FILEHANDLE,
-	 });
+#my $variable;
+#open($FILEHANDLE, ">", \$variable)
+ # or die "Can't open STDOUT: $!";
+#gnu_grep({filter_file_path => 1,
+#	  FILEHANDLE => $FILEHANDLE,
+#	 });
 
 done_testing();
 

@@ -24,7 +24,6 @@ BEGIN {
 
 use Params::Check qw[check allow last_error];
 $Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
-
 sub gnu_grep {
 
 ##gnu_grep
@@ -52,7 +51,7 @@ sub gnu_grep {
     my $filter_file_path;
 
     my $tmpl = {
-        infile_path      => {  strict_type => 1, store => \$infile_path },
+        infile_path      => { strict_type => 1, store => \$infile_path },
         FILEHANDLE       => { store       => \$FILEHANDLE },
         outfile_path     => { strict_type => 1, store => \$outfile_path },
         stderrfile_path  => { strict_type => 1, store => \$stderrfile_path },
@@ -96,11 +95,11 @@ sub gnu_grep {
     }
     if ($FILEHANDLE) {
 
-      say STDERR $commands[2];
         my $SPACE = q{ };
         print {$FILEHANDLE} join( $SPACE, @commands ) . $SPACE;
     }
     return @commands;
 }
+
 
 1;
