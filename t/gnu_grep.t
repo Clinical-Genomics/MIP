@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-###Copyright 2016 Henrik Stranneheim
+###Copyright 2017 Henrik Stranneheim
 
 use Modern::Perl '2014';
 use warnings qw( FATAL utf8 );
@@ -23,6 +23,7 @@ use Test::More;
 use lib catdir( dirname($Bin), 'lib' );
 use Script::Utils qw( help );
 
+
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
@@ -30,9 +31,10 @@ our $VERSION = '0.0.0';
 
 ###User Options
 GetOptions(
-    'h|help' => sub { print {*STDOUT} $USAGE, "\n"; exit; }
+    'h|help' => sub { done_testing(); print {*STDOUT} $USAGE, "\n"; exit; }
     ,    #Display help text
     'v|version' => sub {
+        done_testing();
         print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION,
           "\n\n";
         exit;
@@ -40,6 +42,7 @@ GetOptions(
     'vb|verbose' => $VERBOSE,
   )
   or (
+    done_testing(),
     Script::Utils::help(
         {
             USAGE     => $USAGE,
@@ -47,6 +50,32 @@ GetOptions(
         }
     )
   );
+
+BEGIN {
+
+### Check all internal dependency modules and imports
+##Modules with import
+    my %perl_module;
+
+    $perl_module{'Script::Utils'}                 = [qw(help)];
+
+    while ( my ( $module, $module_import ) = each %perl_module ) {
+
+        use_ok( $module, @{$module_import} ) or BAIL_OUT "Can't load $module";
+    }
+
+##Modules
+    my @modules = ('MIP::Gnu::Software::Gnu_grep');
+
+    for my $module (@modules) {
+
+        require_ok($module) or BAIL_OUT "Can't load $module";
+    }
+}
+
+use MIP::Gnu::Software::Gnu_grep;
+
+diag( "Test Gnu_grep $MIP::Gnu::Software::Gnu_grep::VERSION, Perl $^V, $EXECUTABLE_NAME" );
 
 done_testing();
 
