@@ -17113,7 +17113,7 @@ sub cnvnator {
       $sample_info_href->{sample}{$$sample_id_ref}{phenotype};    #Alias
 
     my $perl_vcf_fix =
-q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my @a = split("\t", $_); pop(@a);print join("\t", @a)."\t".?
+q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my @a = split("\t", $_); pop(@a);print join("\t", @a)."\t?
       . $$sample_id_ref
       . q?", "\n"} else {print $_, "\n"}'?;
 
