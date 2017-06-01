@@ -20,7 +20,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = '1.00';
+    our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw(test_function);
@@ -120,7 +120,7 @@ sub test_function {
                 );
             }
 
-            ## Special case for test fo FILEHANDLE. Does not return @commands
+            ## Special case for test of FILEHANDLE. Does not return @commands
             if ( $argument eq 'FILEHANDLE' ) {
 
                 _test_write_to_file(
@@ -139,7 +139,7 @@ sub test_function {
         }
         else {
 
-            ## Special case for test fo FILEHANDLE. Does not return @commands
+            ## Special case for test of FILEHANDLE. Does not return @commands
             if ( $argument eq 'FILEHANDLE' ) {
 
                 _test_write_to_file(
