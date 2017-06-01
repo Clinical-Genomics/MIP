@@ -95,6 +95,10 @@ my %base_arguments = (
         input           => 'stderrfile.test',
         expected_output => '2> stderrfile.test',
     },
+    append_stderr_info => {
+        input           => 1,
+        expected_output => '2>> stderrfile.test',
+    },
     FILEHANDLE => {
         input           => undef,
         expected_output => $function_base_command,
@@ -111,10 +115,6 @@ my %required_arguments = (
 
 ## Specific arguments
 my %specific_argument = (
-    append_stderr_info => {
-        input           => 1,
-        expected_output => '2>> stderrfile.test',
-    },
     fields_format_ref => {
         inputs_ref      => [qw(jobid jobname%50 account)],
         expected_output => '--format=jobid,jobname%50,account',
