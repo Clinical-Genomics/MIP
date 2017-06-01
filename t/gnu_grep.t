@@ -1,8 +1,8 @@
 #!/usr/bin/env perl
 
-####Copyright 2017 Henrik Stranneheim
+#### Copyright 2017 Henrik Stranneheim
 
-use Modern::Perl '2014';
+use Modern::Perl qw(2014);
 use warnings qw(FATAL utf8);
 use autodie;
 use 5.018;    #Require at least perl 5.18
@@ -15,7 +15,7 @@ use Params::Check qw(check allow last_error);
 
 use FindBin qw($Bin);    #Find directory of script
 use File::Basename qw(dirname basename);
-use File::Spec::Functions qw(catdir catfile devnull);
+use File::Spec::Functions qw(catdir);
 use Getopt::Long;
 use Test::More;
 
@@ -30,8 +30,11 @@ our $VERSION = '0.0.0';
 
 ###User Options
 GetOptions(
-    'h|help' => sub { done_testing(); print {*STDOUT} $USAGE, "\n"; exit; }
-    ,    #Display help text
+    'h|help' => sub {
+        done_testing();
+        print {*STDOUT} $USAGE, "\n";
+        exit;
+    },    #Display help text
     'v|version' => sub {
         done_testing();
         print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION,
@@ -60,7 +63,8 @@ BEGIN {
 
     while ( my ( $module, $module_import ) = each %perl_module ) {
 
-        use_ok( $module, @{$module_import} ) or BAIL_OUT "Can't load $module";
+        use_ok( $module, @{$module_import} )
+          or BAIL_OUT 'Cannot load ' . $module;
     }
 
 ##Modules
@@ -68,7 +72,7 @@ BEGIN {
 
     for my $module (@modules) {
 
-        require_ok($module) or BAIL_OUT "Can't load $module";
+        require_ok($module) or BAIL_OUT 'Cannot load ' . $module;
     }
 }
 
