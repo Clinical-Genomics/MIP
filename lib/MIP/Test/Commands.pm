@@ -240,7 +240,7 @@ sub _test_base_command {
 
     check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
 
-    unless ( $base_command eq $expected_base_command ) {
+    if ( $base_command ne $expected_base_command ) {
 
         ok(
             $base_command eq $expected_base_command,
@@ -291,13 +291,14 @@ sub _test_write_to_file {
 
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
+
     ## Add new FILEHANDLE to args
     push @{$args_ref}, 'FILEHANDLE', $FILEHANDLE;
 
     # For storing info to write
     my $file_content;
 
-## Store file content in memory by using referenced variable
+    ## Store file content in memory by using referenced variable
     open $FILEHANDLE, '>', \$file_content
       or croak 'Cannot write to ' . $file_content . ': ' . $OS_ERROR;
 
@@ -305,7 +306,7 @@ sub _test_write_to_file {
 
     close $FILEHANDLE;
 
-## Perform test
+    ## Perform test
     ok( $file_content =~ /^$base_command/x, 'Write commands to file' );
 
     return;
