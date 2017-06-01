@@ -1,2 +1,3 @@
 gnu_grep.t
+gnu_cd.t
 slurm.t

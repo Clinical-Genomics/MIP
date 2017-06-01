@@ -30,17 +30,19 @@ sub gnu_grep {
 
 ##Function : Perl wrapper for writing grep recipe to already open $FILEHANDLE or return commands array. Based on grep 2.6.3
 ##Returns  : "@commands"
-##Arguments: $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $filter_file_path, $invert_match
-##         : $FILEHANDLE       => Filehandle to write to
-##         : $infile_path      => Infile path
-##         : $outfile_path     => Outfile path
-##         : $stderrfile_path  => Stderrfile path
-##         : $filter_file_path => Obtain patterns from file, one per line
-##         : $invert_match     => Invert the sense of matching, to select non-matching lines
+##Arguments: $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $filter_file_path, $append_stderr_info, $invert_match
+##         : $FILEHANDLE         => Filehandle to write to
+##         : $infile_path        => Infile path
+##         : $outfile_path       => Outfile path
+##         : $stderrfile_path    => Stderrfile path
+##         : $append_stderr_info => Append stderr info to file
+##         : $filter_file_path   => Obtain patterns from file, one per line
+##         : $invert_match       => Invert the sense of matching, to select non-matching lines
 
     my ($arg_href) = @_;
 
     ## Default(s)
+    my $append_stderr_info;
     my $invert_match;
 
     ## Flatten argument(s)
@@ -61,6 +63,12 @@ sub gnu_grep {
         outfile_path     => { strict_type => 1, store => \$outfile_path },
         stderrfile_path  => { strict_type => 1, store => \$stderrfile_path },
         filter_file_path => { strict_type => 1, store => \$filter_file_path },
+	append_stderr_info => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$append_stderr_info
+        },
         invert_match => {
             default     => 0,
             allow       => [ 0, 1 ],
@@ -98,8 +106,16 @@ sub gnu_grep {
     }
     if ($stderrfile_path) {
 
-        # Redirect stderr output to program specific stderr file
-        push @commands, '2> ' . $stderrfile_path;
+        if ($append_stderr_info) {
+
+            # Redirect and append stderr output to program specific stderr file
+            push @commands, '2>> ' . $stderrfile_path;
+        }
+        else {
+
+            # Redirect stderr output to program specific stderr file
+            push @commands, '2> ' . $stderrfile_path;
+        }
     }
     if ($FILEHANDLE) {
 
