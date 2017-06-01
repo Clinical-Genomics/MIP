@@ -1,9 +1,9 @@
 #!/usr/bin/env perl
 
-###Copyright 2017 Henrik Stranneheim
+####Copyright 2017 Henrik Stranneheim
 
 use Modern::Perl '2014';
-use warnings qw( FATAL utf8 );
+use warnings qw(FATAL utf8);
 use autodie;
 use 5.018;    #Require at least perl 5.18
 use utf8;
@@ -11,17 +11,17 @@ use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
 use Carp;
 use English qw(-no_match_vars);
-use Params::Check qw[check allow last_error];
+use Params::Check qw(check allow last_error);
 
-use FindBin qw( $Bin );    #Find directory of script
-use File::Basename qw( dirname basename );
-use File::Spec::Functions qw( catdir catfile devnull );
+use FindBin qw($Bin);    #Find directory of script
+use File::Basename qw(dirname basename);
+use File::Spec::Functions qw(catdir catfile devnull);
 use Getopt::Long;
 use Test::More;
 
-##MIPs lib/
+## MIPs lib/
 use lib catdir( dirname($Bin), 'lib' );
-use Script::Utils qw( help );
+use Script::Utils qw(help);
 
 our $USAGE = build_usage( {} );
 
@@ -73,14 +73,16 @@ BEGIN {
 }
 
 use MIP::Gnu::Software::Gnu_grep qw(gnu_grep);
-use MIP::Test::Commands qw(generate_call);
+use MIP::Test::Commands qw(test_function);
 
 diag(
 "Test Gnu_grep $MIP::Gnu::Software::Gnu_grep::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
-## Base parameters
-my %base_parameters = (
+## Base arguments
+my $function_base_command = 'grep';
+
+my %base_arguments = (
     outfile_path => {
         input           => 'outfile.test',
         expected_output => '> outfile.test',
@@ -89,17 +91,21 @@ my %base_parameters = (
         input           => 'stderrfile.test',
         expected_output => '2> stderrfile.test',
     },
+    FILEHANDLE => {
+        input           => undef,
+        expected_output => $function_base_command,
+    },
 );
 
-my %required_parameters = (
+my %required_arguments = (
     infile_path => {
         input           => 'infile.test',
         expected_output => 'infile.test',
     },
 );
 
-## Specific parameters
-my %specific_parameter = (
+## Specific arguments
+my %specific_argument = (
     invert_match => {
         input           => 1,
         expected_output => '--invert-match',
@@ -113,37 +119,20 @@ my %specific_parameter = (
 ## Coderef - enables generalized use of generate call
 my $module_function_cref = \&gnu_grep;
 
-## Test both base and function specific parameters
-my @parameters = ( \%base_parameters, \%specific_parameter );
+## Test both base and function specific arguments
+my @arguments = ( \%base_arguments, \%specific_argument );
 
-foreach my $parameter_href (@parameters) {
+foreach my $argument_href (@arguments) {
 
-    my @commands = generate_call(
+    my @commands = test_function(
         {
-            parameter_href           => $parameter_href,
-            required_parameters_href => \%required_parameters,
-            module_function_cref     => $module_function_cref,
-            function_base_command    => 'grep',
+            argument_href           => $argument_href,
+            required_arguments_href => \%required_arguments,
+            module_function_cref    => $module_function_cref,
+            function_base_command   => $function_base_command,
         }
     );
 }
-
-## Test writing to file
-my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-## Store file in memory
-my $variable;
-
-open $FILEHANDLE, '>', \$variable or croak q{Can't open STDOUT: } . $OS_ERROR;
-gnu_grep(
-    {
-        infile_path => 'infile.test',
-        FILEHANDLE  => $FILEHANDLE,
-    }
-);
-close $FILEHANDLE;
-
-ok( $variable =~ /infile.test/x, 'Test write commands to file' );
 
 done_testing();
 
@@ -173,7 +162,7 @@ sub build_usage {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
 
     return <<"END_USAGE";
  $program_name [options]
