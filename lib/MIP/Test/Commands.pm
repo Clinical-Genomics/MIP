@@ -198,6 +198,7 @@ sub _build_call {
         push @keys,   $argument;
         push @values, $input_value;
     }
+
     ## Build arguments to submit to function
     my @args;
     while ( my ( $key_index, $key ) = each @keys ) {
