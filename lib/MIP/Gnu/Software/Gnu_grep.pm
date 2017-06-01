@@ -2,7 +2,7 @@ package MIP::Gnu::Software::Gnu_grep;
 
 use strict;
 use warnings;
-use warnings qw( FATAL utf8 );
+use warnings qw(FATAL utf8);
 use utf8;    #Allow unicode characters in this script
 use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
@@ -19,7 +19,6 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw(gnu_grep);
-
 }
 
 use Params::Check qw[check allow last_error];
@@ -72,6 +71,8 @@ sub gnu_grep {
 
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
+    my $SPACE = q{ };
+
     ## grep
     my @commands = qw(grep);    #Stores commands depending on input parameters
 
@@ -101,7 +102,6 @@ sub gnu_grep {
     }
     if ($FILEHANDLE) {
 
-        my $SPACE = q{ };
         print {$FILEHANDLE} join( $SPACE, @commands ) . $SPACE;
     }
     return @commands;
