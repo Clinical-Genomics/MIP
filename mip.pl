@@ -25490,7 +25490,7 @@ sub gzip_fastq {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use Program::Compression::Gzip qw(gzip);
-    use Program::Gnu::Bash qw(cd);
+    use MIP::Gnu::Bash qw(gnu_cd);
 
     ## Filehandles
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
@@ -27288,7 +27288,7 @@ sub build_human_genome_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use Program::Gnu::Bash qw(cd);
+    use MIP::Gnu::Bash qw(gnu_cd);
     use Program::Gnu::Coreutils qw(rm);
     use Program::Compression::Gzip qw(gzip);
     use Language::Java qw(core);
@@ -27321,7 +27321,7 @@ sub build_human_genome_prerequisites {
     }
 
     ## Move to reference directory
-    cd(
+    gnu_cd(
         {
             directory_path => $$reference_dir_ref,
             FILEHANDLE     => $FILEHANDLE,

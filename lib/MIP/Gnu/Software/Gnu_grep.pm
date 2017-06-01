@@ -15,7 +15,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = '1.00';
+    our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw(gnu_grep);
@@ -73,8 +73,9 @@ sub gnu_grep {
 
     my $SPACE = q{ };
 
-    ## grep
-    my @commands = qw(grep);    #Stores commands depending on input parameters
+    ### grep
+    ## Stores commands depending on input parameters
+    my @commands = qw(grep);
 
     ## Options
     if ($invert_match) {

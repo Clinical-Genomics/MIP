@@ -22,7 +22,7 @@ use English qw(-no_match_vars);
 use lib catdir( $Bin, 'lib' );        #Add MIPs internal lib
 use File::Format::Shell qw(create_bash_file);
 use Program::Download::Wget qw(wget);
-use Program::Gnu::Bash qw(cd);
+use MIP::Gnu::Bash qw(gnu_cd);
 use Program::Gnu::Coreutils qw(cp rm mv mkdir);
 use Script::Utils qw(help set_default_array_parameters);
 
@@ -1268,7 +1268,7 @@ sub install_perl_cpnam {
 
     ## Move to Home
     print $FILEHANDLE '## Move to $HOME', "\n";
-    cd(
+    gnu_cd(
         {
             directory_path => q?$HOME?,
             FILEHANDLE     => $FILEHANDLE,
@@ -1302,7 +1302,7 @@ sub install_perl_cpnam {
 
     ## Move to perl directory
     print $FILEHANDLE '## Move to perl directory', "\n";
-    cd(
+    gnu_cd(
         {
             directory_path => 'perl-' . $parameter_href->{perl_version},
             FILEHANDLE     => $FILEHANDLE,
@@ -1338,7 +1338,7 @@ sub install_perl_cpnam {
 
     ## Remove tar file
     print $FILEHANDLE '## Remove tar file', "\n";
-    cd( { FILEHANDLE => $FILEHANDLE, } );
+    gnu_cd( { FILEHANDLE => $FILEHANDLE, } );
 
     print $FILEHANDLE '&& ';
 
@@ -1354,7 +1354,7 @@ sub install_perl_cpnam {
 
     ## Move to back
     print $FILEHANDLE '## Move to original working directory', "\n";
-    cd(
+    gnu_cd(
         {
             directory_path => $pwd,
             FILEHANDLE     => $FILEHANDLE,
@@ -1862,7 +1862,7 @@ sub bedtools {
 
     ## Move to bedtools directory
     print $FILEHANDLE '## Move to bedtools directory', "\n";
-    cd(
+    gnu_cd(
         {
             directory_path => 'bedtools' . $bedtools_main_version,
             FILEHANDLE     => $FILEHANDLE,
@@ -1954,7 +1954,7 @@ sub vt {
 
     ## Move to vt directory
     print $FILEHANDLE '## Move to vt directory', "\n";
-    cd(
+    gnu_cd(
         {
             directory_path => 'vt',
             FILEHANDLE     => $FILEHANDLE,
@@ -2373,7 +2373,7 @@ sub varianteffectpredictor {
     print $FILEHANDLE "\n\n";
 
     ## Move to miniconda environment
-    cd(
+    gnu_cd(
         {
             directory_path => catdir( $parameter_href->{conda_prefix_path} ),
             FILEHANDLE     => $FILEHANDLE,
@@ -2411,7 +2411,7 @@ sub varianteffectpredictor {
 
         $vep_install_version = $1;
     }
-    cd(
+    gnu_cd(
         {
             directory_path => catdir(
                 'ensembl-tools-release-' . $vep_install_version, 'scripts',
@@ -2576,7 +2576,7 @@ sub varianteffectpredictor {
 
     ## Go back to subroutine origin
     print $FILEHANDLE '## Moving back to original working directory', "\n";
-    cd(
+    gnu_cd(
         {
             directory_path => $pwd,
             FILEHANDLE     => $FILEHANDLE,
@@ -2672,7 +2672,7 @@ sub cnvnator {
     print $FILEHANDLE '### Install cnvnator/Root', "\n";
 
     ## Move to miniconda environment
-    cd(
+    gnu_cd(
         {
             directory_path => catdir( $parameter_href->{conda_prefix_path} ),
             FILEHANDLE     => $FILEHANDLE,
@@ -2722,7 +2722,7 @@ sub cnvnator {
 
     ## Go back to subroutine origin
     print $FILEHANDLE '## Moving back to original working directory', "\n";
-    cd(
+    gnu_cd(
         {
             directory_path => $pwd,
             FILEHANDLE     => $FILEHANDLE,
@@ -2767,7 +2767,7 @@ sub cnvnator {
 
     ## Move to CNVnator directory
     print $FILEHANDLE '## Move to CNVnator directory', "\n";
-    cd(
+    gnu_cd(
         {
             directory_path => catdir(
                 'CNVnator_v' . $parameter_href->{cnvnator}, 'src',
@@ -2785,7 +2785,7 @@ sub cnvnator {
     print $FILEHANDLE "\n\n";
 
     print $FILEHANDLE '## Move to CNVnator directory', "\n";
-    cd(
+    gnu_cd(
         {
             directory_path => '..',
             FILEHANDLE     => $FILEHANDLE,
@@ -2810,7 +2810,7 @@ sub cnvnator {
 
     ## Make available from conda environment
     print $FILEHANDLE '## Make available from conda environment', "\n";
-    cd(
+    gnu_cd(
         {
             directory_path => '..',
             FILEHANDLE     => $FILEHANDLE,
@@ -2902,7 +2902,7 @@ sub tiddit {
     );
 
     ## Move to miniconda environment
-    cd(
+    gnu_cd(
         {
             directory_path => catdir( $parameter_href->{conda_prefix_path} ),
             FILEHANDLE     => $FILEHANDLE,
@@ -2941,7 +2941,7 @@ sub tiddit {
 
     ## Move to Tiddit directory
     print $FILEHANDLE '## Move to Tiddit directory', "\n";
-    cd(
+    gnu_cd(
         {
             directory_path => 'TIDDIT-' . $parameter_href->{tiddit},
             FILEHANDLE     => $FILEHANDLE,
@@ -2958,7 +2958,7 @@ sub tiddit {
     );
     print $FILEHANDLE "\n\n";
 
-    cd(
+    gnu_cd(
         {
             directory_path => 'build',
             FILEHANDLE     => $FILEHANDLE,
@@ -2972,7 +2972,7 @@ sub tiddit {
 
     print $FILEHANDLE 'make', "\n\n";
 
-    cd(
+    gnu_cd(
         {
             directory_path => catdir(qw(.. bin)),
             FILEHANDLE     => $FILEHANDLE,
@@ -3008,7 +3008,7 @@ sub tiddit {
 
     ## Go back to subroutine origin
     print $FILEHANDLE '## Moving back to original working directory', "\n";
-    cd(
+    gnu_cd(
         {
             directory_path => $pwd,
             FILEHANDLE     => $FILEHANDLE,
@@ -3078,7 +3078,7 @@ sub svdb {
     );
 
     ## Move to miniconda environment
-    cd(
+    gnu_cd(
         {
             directory_path => catdir( $parameter_href->{conda_prefix_path} ),
             FILEHANDLE     => $FILEHANDLE,
@@ -3119,7 +3119,7 @@ sub svdb {
 
     ## Move to Svdb directory
     print $FILEHANDLE '## Move to Svdb directory', "\n";
-    cd(
+    gnu_cd(
         {
             directory_path => 'SVDB-' . $parameter_href->{svdb},
             FILEHANDLE     => $FILEHANDLE,
@@ -3134,7 +3134,7 @@ sub svdb {
 
     ## Go back to subroutine origin
     print $FILEHANDLE '## Moving back to original working directory', "\n";
-    cd(
+    gnu_cd(
         {
             directory_path => $pwd,
             FILEHANDLE     => $FILEHANDLE,
@@ -3380,7 +3380,7 @@ sub rhocall {
 
     ## Move to rhocall directory
     print $FILEHANDLE '## Move to rhocall directory', "\n";
-    cd(
+    gnu_cd(
         {
             directory_path => 'rhocall-' . $parameter_href->{rhocall},
             FILEHANDLE     => $FILEHANDLE,
@@ -3397,7 +3397,7 @@ sub rhocall {
 
     ## Go back to subroutine origin
     print $FILEHANDLE '## Moving back to original working directory', "\n";
-    cd(
+    gnu_cd(
         {
             directory_path => $pwd,
             FILEHANDLE     => $FILEHANDLE,
@@ -3515,7 +3515,7 @@ sub remove_install_dir {
 
     ## Go back to subroutine origin
     print $FILEHANDLE '## Moving back to original working directory', "\n";
-    cd(
+    gnu_cd(
         {
             directory_path => $pwd,
             FILEHANDLE     => $FILEHANDLE,
@@ -3578,7 +3578,7 @@ sub create_install_dir {
     );
     print $FILEHANDLE "\n\n";
 
-    cd(
+    gnu_cd(
         {
             directory_path => $install_directory,
             FILEHANDLE     => $FILEHANDLE,
@@ -3737,7 +3737,7 @@ sub create_softlink {
 
     ## Add softlink
     print $FILEHANDLE '## Move to directory and create softlink', "\n";
-    cd(
+    gnu_cd(
         {
             directory_path =>
               catdir( $parameter_href->{conda_prefix_path}, 'bin' ),
@@ -3752,7 +3752,7 @@ sub create_softlink {
 
     ## Move to back
     print $FILEHANDLE '## Move to original working directory', "\n";
-    cd(
+    gnu_cd(
         {
             directory_path => $pwd,
             FILEHANDLE     => $FILEHANDLE,
@@ -3800,7 +3800,7 @@ sub enable_executable {
 
     ## Enable executable
     print $FILEHANDLE '## Enable executable', "\n";
-    cd(
+    gnu_cd(
         {
             directory_path =>
               catdir( $parameter_href->{conda_prefix_path}, 'bin' ),
@@ -3815,7 +3815,7 @@ sub enable_executable {
 
     ## Move to back
     print $FILEHANDLE '## Move to original working directory', "\n";
-    cd(
+    gnu_cd(
         {
             directory_path => $pwd,
             FILEHANDLE     => $FILEHANDLE,
