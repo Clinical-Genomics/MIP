@@ -68,7 +68,7 @@ BEGIN {
     }
 
 ##Modules
-    my @modules = ('MIP::Gnu::Software::Gnu_grep');
+    my @modules = ('MIP::Workloadmanager::Slurm');
 
     for my $module (@modules) {
 
@@ -76,20 +76,20 @@ BEGIN {
     }
 }
 
-use MIP::Gnu::Software::Gnu_grep qw(gnu_grep);
+use MIP::Workloadmanager::Slurm qw(sacct);
 use MIP::Test::Commands qw(test_function);
 
 diag(
-"Test Gnu_grep $MIP::Gnu::Software::Gnu_grep::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test Slurm $MIP::Workloadmanager::Slurm::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments
-my $function_base_command = 'grep';
+my $function_base_command = 'sacct';
 
 my %base_arguments = (
-    outfile_path => {
+    stdoutfile_path => {
         input           => 'outfile.test',
-        expected_output => '> outfile.test',
+        expected_output => '1> outfile.test',
     },
     stderrfile_path => {
         input           => 'stderrfile.test',
@@ -103,30 +103,30 @@ my %base_arguments = (
 
 ## Can be duplicated with %base and/or %specific to enable testing of each individual argument
 my %required_arguments = (
-    infile_path => {
-        input           => 'infile.test',
-        expected_output => 'infile.test',
+    stderrfile_path => {
+        input           => 'stderrfile.test',
+        expected_output => '2> stderrfile.test',
     },
 );
 
 ## Specific arguments
 my %specific_argument = (
-    invert_match => {
+    append_stderr_info => {
         input           => 1,
-        expected_output => '--invert-match',
+        expected_output => '2>> stderrfile.test',
     },
-    filter_file_path => {
-        input           => 'test_file',
-        expected_output => '--file=test_file',
+    fields_format_ref => {
+        inputs_ref      => [qw(jobid jobname%50 account)],
+        expected_output => '--format=jobid,jobname%50,account',
     },
-    infile_path => {
-        input           => 'infile.test',
-        expected_output => 'infile.test',
+    job_ids_ref => {
+        inputs_ref      => [qw(1 12 23)],
+        expected_output => '--jobs 1,12,23',
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&gnu_grep;
+my $module_function_cref = \&sacct;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_arguments, \%specific_argument );

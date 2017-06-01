@@ -3108,7 +3108,7 @@ sub msacct {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use Workloadmanager::Slurm qw(sacct);
+    use MIP::Workloadmanager::Slurm qw(sacct);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 

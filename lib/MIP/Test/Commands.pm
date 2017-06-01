@@ -1,5 +1,7 @@
 package MIP::Test::Commands;
 
+#### Copyright 2017 Henrik Stranneheim
+
 use strict;
 use warnings;
 use warnings qw(FATAL utf8);
@@ -22,7 +24,6 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw(test_function);
-
 }
 
 use Params::Check qw[check allow last_error];
@@ -76,8 +77,20 @@ sub test_function {
   ARGUMENT:
     foreach my $argument ( keys %{$argument_href} ) {
 
-        ## Parameter to test in this loop
-        my $input_value = $argument_href->{$argument}{input};
+        ### Parameter to test in this loop check if array ref or scalar
+        my $input_value;
+        my $input_values_ref;
+
+        ## SCALAR
+        if ( exists $argument_href->{$argument}{input} ) {
+
+            $input_value = $argument_href->{$argument}{input};
+        }
+        ## ARRAY
+        elsif ( exists $argument_href->{$argument}{inputs_ref} ) {
+
+            $input_values_ref = $argument_href->{$argument}{inputs_ref};
+        }
 
         ## Store commands from module function
         my @commands;
@@ -85,14 +98,29 @@ sub test_function {
         ## Some functions have mandatory arguments
         if ( %{$required_arguments_href} ) {
 
-            my @args = _build_call(
-                {
-                    required_arguments_href => $required_arguments_href,
-                    argument                => $argument,
-                    input_value             => $input_value,
-                }
-            );
+            my @args;
+            if ($input_values_ref) {
 
+                @args = _build_call(
+                    {
+                        required_arguments_href => $required_arguments_href,
+                        argument                => $argument,
+                        input_values_ref        => $input_values_ref,
+                    }
+                );
+            }
+            else {
+
+                @args = _build_call(
+                    {
+                        required_arguments_href => $required_arguments_href,
+                        argument                => $argument,
+                        input_value             => $input_value,
+                    }
+                );
+            }
+
+            ## Special case for test fo FILEHANDLE. Does not return @commands
             if ( $argument eq 'FILEHANDLE' ) {
 
                 _test_write_to_file(
@@ -104,12 +132,14 @@ sub test_function {
                 );
             }
             else {
+
                 ## Submit arguments to coderef sub
                 @commands = $module_function_cref->( {@args} );
             }
         }
         else {
 
+            ## Special case for test fo FILEHANDLE. Does not return @commands
             if ( $argument eq 'FILEHANDLE' ) {
 
                 _test_write_to_file(
@@ -121,9 +151,20 @@ sub test_function {
                 );
             }
             else {
-                ## Submit arguments to coderef sub
-                @commands =
-                  $module_function_cref->( { $argument => $input_value, } );
+
+                ## Array
+                if ($input_values_ref) {
+
+                    @commands =
+                      $module_function_cref->(
+                        { $argument => $input_values_ref, } );
+                }
+                else {
+
+                    ## Submit arguments to coderef sub
+                    @commands =
+                      $module_function_cref->( { $argument => $input_value, } );
+                }
             }
         }
 
@@ -165,6 +206,7 @@ sub _build_call {
 
     ## Flatten argument(s)
     my $required_arguments_href;
+    my $input_values_ref;
     my $argument;
     my $input_value;
 
@@ -175,6 +217,11 @@ sub _build_call {
             default     => {},
             strict_type => 1,
             store       => \$required_arguments_href
+        },
+        input_values_ref => {
+            default     => [],
+            strict_type => 1,
+            store       => \$input_values_ref
         },
         argument => {
             strict_type => 1,
@@ -193,10 +240,16 @@ sub _build_call {
     my @values =
       map { ( $required_arguments_href->{$_}{input} ) } @keys;
 
-    ## Combine the specific and required argument keys and values to test
+    ### Combine the specific and required argument keys and values to test
+    ## SCALAR
     if ( $argument && $input_value ) {
         push @keys,   $argument;
         push @values, $input_value;
+    }
+    ## ARRAY
+    elsif ( $argument && @{$input_values_ref} ) {
+        push @keys,   $argument;
+        push @values, $input_values_ref;
     }
 
     ## Build arguments to submit to function
