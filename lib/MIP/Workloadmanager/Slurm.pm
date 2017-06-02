@@ -20,6 +20,7 @@ use File::Spec::Functions qw(catdir);
 ## MIPs lib/
 use lib catdir( dirname($Bin), 'lib' );
 use MIP::Unix::Standard_streams qw(unix_standard_streams);
+use MIP::Unix::Write_to_file qw(unix_write_to_file);
 
 BEGIN {
 
@@ -96,10 +97,13 @@ sub slurm_sacct {
             stderrfile_path_append => $stderrfile_path_append,
         }
       );
-    if ($FILEHANDLE) {
-
-        print {$FILEHANDLE} join( $SPACE, @commands ) . $SPACE;
-    }
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
     return @commands;
 }
 

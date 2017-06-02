@@ -8,6 +8,16 @@ use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
 use Carp;
 use autodie;
+use Params::Check qw[check allow last_error];
+$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
+
+use FindBin qw($Bin);                 #Find directory of script
+use File::Basename qw(dirname);
+use File::Spec::Functions qw(catdir);
+
+## MIPs lib/
+use lib catdir( dirname($Bin), 'lib' );
+use MIP::Unix::Write_to_file qw(unix_write_to_file);
 
 BEGIN {
 
@@ -19,11 +29,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw(unix_standard_streams);
-
 }
-
-use Params::Check qw[check allow last_error];
-$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 
 sub unix_standard_streams {
 
@@ -32,9 +38,9 @@ sub unix_standard_streams {
 ##Function : Perl wrapper for writing unix standard_streams recipe to already open $FILEHANDLE or return commands array.
 ##Returns  : "@commands"
 ##Arguments: $stdoutfile_path, $stderrfile_path, stderrfile_path_append, $FILEHANDLE
-##         : $stdoutfile_path        => Directory path
+##         : $stdoutfile_path        => Stdoutfile path
 ##         : $stderrfile_path        => Stderrfile path
-##         : $stderrfile_path_append => Append stderr info to file
+##         : $stderrfile_path_append => Append stderr info to file path
 ##         : $FILEHANDLE             => Filehandle to write to
 
     my ($arg_href) = @_;
@@ -79,10 +85,10 @@ sub unix_standard_streams {
         # Redirect and append stderr output to program specific stderr file
         push @commands, '2>> ' . $stderrfile_path_append;
     }
-    if ($FILEHANDLE) {
-
-        print {$FILEHANDLE} join( $SPACE, @commands ) . $SPACE;
-    }
+    unix_write_to_file({commands_ref => \@commands,
+			separator => $SPACE,
+			FILEHANDLE => $FILEHANDLE,
+		       });
     return @commands;
 }
 
