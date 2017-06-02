@@ -1,6 +1,6 @@
 # Summary
 
 * [Introduction](README.md)
-* [documentation](README.md)
-   * [mip-code](documentation/mip-code.md)
+* [Documentation](Documentation/README.md)
+    * [MIP Code](Documentation/Mip-code.md)
 
