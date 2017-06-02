@@ -2,8 +2,7 @@
 
 [![Build Status](https://travis-ci.org/henrikstranneheim/MIP.svg?branch=develop)](https://travis-ci.org/henrikstranneheim/MIP)
 
-MIP enables identification of potential disease causing variants from sequencing  
-data.
+MIP enables identification of potential disease causing variants from sequencing data.
 
 # ![DOI](https://zenodo.org/badge/4091/henrikstranneheim/MIP.png)
 
@@ -18,14 +17,12 @@ PMID:25495354
 
 ## Overview
 
-MIP performs whole genome or target region analysis of sequenced single-end and/or paired-end  
-reads from the Illumina plattform in fastq\(.gz\) format to generate annotated  
-ranked potential disease causing variants.
+MIP performs whole genome or target region analysis of sequenced single-end and/or paired-end reads from the Illumina plattform in fastq\(.gz\) format to generate annotated ranked potential disease causing variants.
 
-MIP performs QC, alignment, coverage analysis, variant discovery and  
-annotation, sample checks as well as ranking the found variants according to disease potential  
-with a minimum of manual intervention. MIP is compatible with Scout for visualization of  
-identified variants.
+MIP performs QC, alignment, coverage analysis, variant discovery and annotation, sample checks as well as ranking the found variants according to disease potential with a minimum of manual intervention. MIP is compatible with Scout for visualization of  
+identified variants. MIP analyses snv, indels and SV.
+
+MIP has been in use in the clinical production at the Clinical Genomics facility at Science for Life Laboratory since 2014.
 
 ## Example Usage
 
@@ -37,25 +34,27 @@ mip --family_id [family_id] --pbwa_mem 1 --config_file [mip_config.yaml] --pedig
 
 * Installation
   * Simple automated install of all programs using conda/SHELL via supplied install script
+  * Downloads and prepares references in the installation process
 * Autonomous
   * Checks that all dependencies are fulfilled before launching
-  * Builds/Prepares/downloads references and/or files missing before launching
+  * Builds and prepares references and/or files missing before launching
   * Decompose and normalise reference\(s\) and variant vcf\(s\)
-  * Splits and merges files for samples and families when relevant
+  * Splits and merges files/contigs for samples and families when relevant
 * Automatic
   * A minimal amount of hands-on time
-    * Tracks and executes all module without manual intervention
-    * Creates internal queues at nodes to optimize processing
-    * Minimal IO between nodes and login node
+  * Tracks and executes all module without manual intervention
+  * Creates internal queues at nodes to optimize processing
+  * Minimal IO between nodes and login node
 * Flexible:
   * Design your own workflow by turning on/off relevant modules 
   * Restart an analysis from anywhere in your workflow
   * Process one, or multiple samples using the module\(s\) of your choice
-  * Supply parameters on the command line, in a pedigree file or via config files
+  * Supply parameters on the command line, in a pedigree.yaml file or via config files
   * Simulate your analysis before performing it
   * Redirect each modules analysis process to a temporary directory \(@nodes or @login\)
   * Limit a run to a specific set of genomic intervals
-  * Use multiple variant callers and annotation programs
+  * Use multiple variant callers for both snv, indels and SV
+  * Use multiple annotation programs
   * Optionally split data into clinical variants and research variants
 * Fast
   * Analyses an exome trio in approximately 4 h
@@ -66,7 +65,7 @@ mip --family_id [family_id] --pbwa_mem 1 --config_file [mip_config.yaml] --pedig
   * Recreate your analysis from the MIP log or generated config files
   * Logs sample meta-data and sequence meta-data
   * Logs version numbers of softwares and databases
-  * Checks sample integrity \(sex and relationship\)
+  * Checks sample integrity \(sex, contamination,duplications, ancestry, inbreeding and relationship\)
   * Test data output existens and integrity using automated tests
 * Annotation
   * Gene annotation
@@ -76,13 +75,13 @@ mip --family_id [family_id] --pbwa_mem 1 --config_file [mip_config.yaml] --pedig
   * Annotate all alleles for a position
     * Split multi-allelic records into single records to ease annotation
     * Left align and trim variants to normalise them prior to annotation
-    * Annotate coverage across genetic regions
-    * Extracts QC-metrics and stores them in YAML format
+  * Extracts QC-metrics and stores them in YAML format
+  * Annotate coverage across genetic regions via Sambamba and Chanjo
 * Standardized
   * Use standard formats whenever possible
 * Visualization
   * Ranks variants according to pathogenic potential
-  * Output is directly compatibel with Scout
+  * Output is directly compatibel with [Scout](https://github.com/Clinical-Genomics/scout)
 
 ## Getting Started
 
@@ -102,7 +101,7 @@ installation.
    $ cd MIP
    ```
 
-   After this you can decide whether to make MIP an "executable" by either adding the install directory to the `$PATH` in e.g.  "`~/.bash_profile`" or move all the files from this directory to somewhere already in your path like "`~/usr/bin`".   
+   After this you can decide whether to make MIP an "executable" by either adding the install directory to the `$PATH` in e.g.  "`~/.bash_profile`" or move all the files from this directory to somewhere already in your path like "`~/usr/bin`".  
    Remember to make the file\(s\) executable by `chmod +x file`.
 
 2. Create the install instructions for MIP
@@ -119,7 +118,7 @@ installation.
    $ bash mip.sh
    ```
 
-   This will install all the dependencies of MIP and other modules included in MIP into a conda environment \(defaults to "mip"\).   
+   This will install all the dependencies of MIP and other modules included in MIP into a conda environment \(defaults to "mip"\).  
    However a fresh version of perl and cpanm is installed outside of the conda environment, but are activated through bashrc and  bash\_profile.
 
    **NOTE**: This will add the following lines to bashrc and bash\_profile if the install perl version is not found in your path:
@@ -186,7 +185,7 @@ and these to your python `virtualenvironment`:
 MIP is called from the command line and takes input from the command line  
 \(precedence\), a config file \(yaml-format\) or falls back on defaults where applicable.
 
-Lists are supplied as comma separated input, repeated flag entries on the command line or   
+Lists are supplied as comma separated input, repeated flag entries on the command line or  
 in the config using the yaml format for arrays.  
 Only flags that will actually be used needs to be specified and MIP will check that all  
 required parameters are set before submitting to SLURM.
