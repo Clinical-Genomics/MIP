@@ -2,5 +2,5 @@
 
 * [Introduction](README.md)
 * [Documentation](Documentation/README.md)
-    * [MIP Code](Documentation/Mip-code.md)
+    * [MIP API](Documentation/Mip-api.md)
 

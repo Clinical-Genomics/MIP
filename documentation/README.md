@@ -1,2 +1,2 @@
-# MIP Documentation
+# MIP API
 
