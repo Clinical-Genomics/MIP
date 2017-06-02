@@ -86,7 +86,15 @@ diag(
 ## Base arguments
 my $function_base_command = '1> stdoutfile.test';
 
-my %base_arguments = (
+## Can be duplicated with %base and/or %specific to enable testing of each individual argument
+my %required_argument = (
+    stdoutfile_path => {
+        input           => 'stdoutfile.test',
+        expected_output => '1> stdoutfile.test',
+    },
+);
+
+my %specific_argument = (
     stdoutfile_path => {
         input           => 'stdoutfile.test',
         expected_output => '1> stdoutfile.test',
@@ -105,37 +113,20 @@ my %base_arguments = (
     },
 );
 
-## Can be duplicated with %base and/or %specific to enable testing of each individual argument
-my %required_arguments = (
-    stdoutfile_path => {
-        input           => 'stdoutfile.test',
-        expected_output => '1> stdoutfile.test',
-    },
-);
-
-## Specific arguments
-my %specific_argument = (
-
-    #    directory_path => {
-    #        input           => catdir(qw(dir test)),
-    #        expected_output => catdir(qw(dir test)),
-    #    },
-);
-
 ## Coderef - enables generalized use of generate call
 my $module_function_cref = \&unix_standard_streams;
 
 ## Test both base and function specific arguments
-my @arguments = ( \%base_arguments, \%specific_argument );
+my @arguments = ( \%specific_argument );
 
 foreach my $argument_href (@arguments) {
 
     my @commands = test_function(
         {
-            argument_href           => $argument_href,
-            required_arguments_href => \%required_arguments,
-            module_function_cref    => $module_function_cref,
-            function_base_command   => $function_base_command,
+            argument_href          => $argument_href,
+            required_argument_href => \%required_argument,
+            module_function_cref   => $module_function_cref,
+            function_base_command  => $function_base_command,
         }
     );
 }

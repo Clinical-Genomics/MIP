@@ -86,7 +86,7 @@ diag(
 ## Base arguments
 my $function_base_command = 'sacct';
 
-my %base_arguments = (
+my %base_argument = (
     stdoutfile_path => {
         input           => 'outfile.test',
         expected_output => '1> outfile.test',
@@ -121,7 +121,7 @@ my %specific_argument = (
 my $module_function_cref = \&slurm_sacct;
 
 ## Test both base and function specific arguments
-my @arguments = ( \%base_arguments, \%specific_argument );
+my @arguments = ( \%base_argument, \%specific_argument );
 
 foreach my $argument_href (@arguments) {
 

@@ -84,7 +84,7 @@ diag("Test gnu_cd $MIP::Gnu::Bash::VERSION, Perl $^V, $EXECUTABLE_NAME");
 ## Base arguments
 my $function_base_command = 'cd';
 
-my %base_arguments = (
+my %base_argument = (
     stderrfile_path => {
         input           => 'stderrfile.test',
         expected_output => '2> stderrfile.test',
@@ -111,7 +111,7 @@ my %specific_argument = (
 my $module_function_cref = \&gnu_cd;
 
 ## Test both base and function specific arguments
-my @arguments = ( \%base_arguments, \%specific_argument );
+my @arguments = ( \%base_argument, \%specific_argument );
 
 foreach my $argument_href (@arguments) {
 

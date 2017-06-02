@@ -35,17 +35,17 @@ sub test_function {
 
 ##Function : Test module function by generating arguments and testing output
 ##Returns  : "@commands"
-##Arguments: $argument_href, $required_arguments_href, $module_function_cref, $function_base_command
-##         : $argument_href           => Parameters to submit to module method
-##         : $required_arguments_href => Required arguments
-##         : $module_function_cref    => Module method to test
-##         : $function_base_command   => Function base command
+##Arguments: $argument_href, $required_argument_href, $module_function_cref, $function_base_command
+##         : $argument_href          => Parameters to submit to module method
+##         : $required_argument_href => Required arguments
+##         : $module_function_cref   => Module method to test
+##         : $function_base_command  => Function base command
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $argument_href;
-    my $required_arguments_href;
+    my $required_argument_href;
     my $function_base_command;
     my $module_function_cref;
 
@@ -57,10 +57,10 @@ sub test_function {
             strict_type => 1,
             store       => \$argument_href
         },
-        required_arguments_href => {
+        required_argument_href => {
             default     => {},
             strict_type => 1,
-            store       => \$required_arguments_href
+            store       => \$required_argument_href
         },
         function_base_command => {
             required    => 1,
@@ -96,14 +96,14 @@ sub test_function {
         my @commands;
 
         ## Some functions have mandatory arguments
-        if ( %{$required_arguments_href} ) {
+        if ( %{$required_argument_href} ) {
 
             my @args;
             if ($input_values_ref) {
 
                 @args = _build_call(
                     {
-                        required_arguments_href => $required_arguments_href,
+                        required_argument_href => $required_argument_href,
                         argument                => $argument,
                         input_values_ref        => $input_values_ref,
                     }
@@ -113,7 +113,7 @@ sub test_function {
 
                 @args = _build_call(
                     {
-                        required_arguments_href => $required_arguments_href,
+                        required_argument_href => $required_argument_href,
                         argument                => $argument,
                         input_value             => $input_value,
                     }
@@ -197,26 +197,26 @@ sub _build_call {
 
 ##Function : Build arguments to function
 ##Returns  : "@arguments"
-##Arguments: $required_arguments_href, argument, input_value
-##         : $required_arguments_href => Required arguments
-##         : $argument                => Argument key to test
-##         : $input_value             => Argument value to test
+##Arguments: $required_argument_href, argument, input_value
+##         : $required_argument_href => Required arguments
+##         : $argument               => Argument key to test
+##         : $input_value            => Argument value to test
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $required_arguments_href;
+    my $required_argument_href;
     my $input_values_ref;
     my $argument;
     my $input_value;
 
     my $tmpl = {
-        required_arguments_href => {
+        required_argument_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$required_arguments_href
+            store       => \$required_argument_href
         },
         input_values_ref => {
             default     => [],
@@ -236,9 +236,9 @@ sub _build_call {
     check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
 
     ## Collect required keys and values to generate args
-    my @keys = keys %{$required_arguments_href};
+    my @keys = keys %{$required_argument_href};
     my @values =
-      map { ( $required_arguments_href->{$_}{input} ) } @keys;
+      map { ( $required_argument_href->{$_}{input} ) } @keys;
 
     ### Combine the specific and required argument keys and values to test
     ## SCALAR
