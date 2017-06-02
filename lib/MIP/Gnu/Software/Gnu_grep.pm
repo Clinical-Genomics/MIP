@@ -8,6 +8,16 @@ use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
 use Carp;
 use autodie;
+use Params::Check qw[check allow last_error];
+$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
+
+use FindBin qw($Bin);  #Find directory of script
+use File::Basename qw(dirname);
+use File::Spec::Functions qw(catdir);
+
+## MIPs lib/
+use lib catdir( dirname($Bin), 'lib' );
+use MIP::Unix::Standard_streams qw(unix_standard_streams);
 
 BEGIN {
 
@@ -21,28 +31,25 @@ BEGIN {
     our @EXPORT_OK = qw(gnu_grep);
 }
 
-use Params::Check qw[check allow last_error];
-$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
-
 sub gnu_grep {
 
 ##gnu_grep
 
 ##Function : Perl wrapper for writing grep recipe to already open $FILEHANDLE or return commands array. Based on grep 2.6.3
 ##Returns  : "@commands"
-##Arguments: $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $filter_file_path, $append_stderr_info, $invert_match
-##         : $FILEHANDLE         => Filehandle to write to
-##         : $infile_path        => Infile path
-##         : $outfile_path       => Outfile path
-##         : $stderrfile_path    => Stderrfile path
-##         : $append_stderr_info => Append stderr info to file
-##         : $filter_file_path   => Obtain patterns from file, one per line
-##         : $invert_match       => Invert the sense of matching, to select non-matching lines
+##Arguments: $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $filter_file_path, $stderrfile_path_append, $invert_match
+##         : $FILEHANDLE             => Filehandle to write to
+##         : $infile_path            => Infile path
+##         : $outfile_path           => Outfile path
+##         : $stderrfile_path        => Stderrfile path
+##         : $stderrfile_path_append => Append stderr info to file
+##         : $filter_file_path       => Obtain patterns from file, one per line
+##         : $invert_match           => Invert the sense of matching, to select non-matching lines
 
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $append_stderr_info;
+    my $stderrfile_path_append;
     my $invert_match;
 
     ## Flatten argument(s)
@@ -63,12 +70,8 @@ sub gnu_grep {
         outfile_path     => { strict_type => 1, store => \$outfile_path },
         stderrfile_path  => { strict_type => 1, store => \$stderrfile_path },
         filter_file_path => { strict_type => 1, store => \$filter_file_path },
-	append_stderr_info => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$append_stderr_info
-        },
+		stderrfile_path_append =>
+		{ strict_type => 1, store => \$stderrfile_path_append },
         invert_match => {
             default     => 0,
             allow       => [ 0, 1 ],
@@ -103,20 +106,12 @@ sub gnu_grep {
     if ($outfile_path) {
 
         push @commands, '> ' . $outfile_path;
-    }
-    if ($stderrfile_path) {
+      }
 
-        if ($append_stderr_info) {
+    push @commands, unix_standard_streams({stderrfile_path => $stderrfile_path,
+					   stderrfile_path_append => $stderrfile_path_append,
+					  });
 
-            # Redirect and append stderr output to program specific stderr file
-            push @commands, '2>> ' . $stderrfile_path;
-        }
-        else {
-
-            # Redirect stderr output to program specific stderr file
-            push @commands, '2> ' . $stderrfile_path;
-        }
-    }
     if ($FILEHANDLE) {
 
         print {$FILEHANDLE} join( $SPACE, @commands ) . $SPACE;

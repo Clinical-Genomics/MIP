@@ -80,23 +80,19 @@ use MIP::Gnu::Software::Gnu_grep qw(gnu_grep);
 use MIP::Test::Commands qw(test_function);
 
 diag(
-"Test Gnu_grep $MIP::Gnu::Software::Gnu_grep::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test gnu_grep $MIP::Gnu::Software::Gnu_grep::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments
 my $function_base_command = 'grep';
 
 my %base_arguments = (
-    outfile_path => {
-        input           => 'outfile.test',
-        expected_output => '> outfile.test',
-    },
     stderrfile_path => {
         input           => 'stderrfile.test',
         expected_output => '2> stderrfile.test',
     },
-    append_stderr_info => {
-        input           => 1,
+    stderrfile_path_append => {
+        input           => 'stderrfile.test',
         expected_output => '2>> stderrfile.test',
     },
     FILEHANDLE => {
@@ -110,10 +106,6 @@ my %required_arguments = (
     infile_path => {
         input           => 'infile.test',
         expected_output => 'infile.test',
-    },
-    stderrfile_path => {
-        input           => 'stderrfile.test',
-        expected_output => '2> stderrfile.test',
     },
 );
 
@@ -130,6 +122,10 @@ my %specific_argument = (
     infile_path => {
         input           => 'infile.test',
         expected_output => 'infile.test',
+    },
+    outfile_path => {
+        input           => 'outfile.test',
+        expected_output => '> outfile.test',
     },
 );
 

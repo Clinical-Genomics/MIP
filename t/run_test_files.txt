@@ -1,3 +1,4 @@
+unix_standard_streams.t
 gnu_grep.t
 gnu_cd.t
-slurm.t
+slurm_sacct.t

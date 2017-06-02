@@ -361,7 +361,7 @@ sub _test_write_to_file {
     close $FILEHANDLE;
 
     ## Perform test
-    ok( $file_content =~ /^$base_command/x, 'Write commands to file' );
+    ok( $file_content =~ /^$base_command/, 'Write commands to file' );
 
     return;
 }

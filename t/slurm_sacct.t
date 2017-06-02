@@ -68,7 +68,7 @@ BEGIN {
     }
 
 ##Modules
-    my @modules = ('MIP::Gnu::Bash');
+    my @modules = ('MIP::Workloadmanager::Slurm');
 
     for my $module (@modules) {
 
@@ -76,20 +76,26 @@ BEGIN {
     }
 }
 
-use MIP::Gnu::Bash qw(gnu_cd);
+use MIP::Workloadmanager::Slurm qw(slurm_sacct);
 use MIP::Test::Commands qw(test_function);
 
-diag("Test gnu_cd $MIP::Gnu::Bash::VERSION, Perl $^V, $EXECUTABLE_NAME");
+diag(
+"Test slurm_sacct $MIP::Workloadmanager::Slurm::VERSION, Perl $^V, $EXECUTABLE_NAME"
+);
 
 ## Base arguments
-my $function_base_command = 'cd';
+my $function_base_command = 'sacct';
 
 my %base_arguments = (
+    stdoutfile_path => {
+        input           => 'outfile.test',
+        expected_output => '1> outfile.test',
+    },
     stderrfile_path => {
         input           => 'stderrfile.test',
         expected_output => '2> stderrfile.test',
     },
-    stderrfile_path_append => {
+		      stderrfile_path_append => {
         input           => 'stderrfile.test',
         expected_output => '2>> stderrfile.test',
     },
@@ -101,14 +107,18 @@ my %base_arguments = (
 
 ## Specific arguments
 my %specific_argument = (
-    directory_path => {
-        input           => catdir(qw(dir test)),
-        expected_output => catdir(qw(dir test)),
+    fields_format_ref => {
+        inputs_ref      => [qw(jobid jobname%50 account)],
+        expected_output => '--format=jobid,jobname%50,account',
+    },
+    job_ids_ref => {
+        inputs_ref      => [qw(1 12 23)],
+        expected_output => '--jobs 1,12,23',
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&gnu_cd;
+my $module_function_cref = \&slurm_sacct;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_arguments, \%specific_argument );
@@ -117,9 +127,9 @@ foreach my $argument_href (@arguments) {
 
     my @commands = test_function(
         {
-            argument_href         => $argument_href,
-            module_function_cref  => $module_function_cref,
-            function_base_command => $function_base_command,
+            argument_href           => $argument_href,
+            module_function_cref    => $module_function_cref,
+            function_base_command   => $function_base_command,
         }
     );
 }

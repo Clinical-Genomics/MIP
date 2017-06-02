@@ -68,7 +68,7 @@ BEGIN {
     }
 
 ##Modules
-    my @modules = ('MIP::Workloadmanager::Slurm');
+    my @modules = ('MIP::Unix::Standard_streams');
 
     for my $module (@modules) {
 
@@ -76,27 +76,27 @@ BEGIN {
     }
 }
 
-use MIP::Workloadmanager::Slurm qw(sacct);
+use MIP::Unix::Standard_streams qw(unix_standard_streams);
 use MIP::Test::Commands qw(test_function);
 
 diag(
-"Test Slurm $MIP::Workloadmanager::Slurm::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test unix_standard_streams $MIP::Unix::Standard_streams::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments
-my $function_base_command = 'sacct';
+my $function_base_command = '1> stdoutfile.test';
 
 my %base_arguments = (
     stdoutfile_path => {
-        input           => 'outfile.test',
-        expected_output => '1> outfile.test',
+        input           => 'stdoutfile.test',
+        expected_output => '1> stdoutfile.test',
     },
     stderrfile_path => {
         input           => 'stderrfile.test',
         expected_output => '2> stderrfile.test',
     },
-    append_stderr_info => {
-        input           => 1,
+    stderrfile_path_append => {
+        input           => 'stderrfile.test',
         expected_output => '2>> stderrfile.test',
     },
     FILEHANDLE => {
@@ -107,26 +107,23 @@ my %base_arguments = (
 
 ## Can be duplicated with %base and/or %specific to enable testing of each individual argument
 my %required_arguments = (
-    stderrfile_path => {
-        input           => 'stderrfile.test',
-        expected_output => '2> stderrfile.test',
+    stdoutfile_path => {
+        input           => 'stdoutfile.test',
+        expected_output => '1> stdoutfile.test',
     },
 );
 
 ## Specific arguments
 my %specific_argument = (
-    fields_format_ref => {
-        inputs_ref      => [qw(jobid jobname%50 account)],
-        expected_output => '--format=jobid,jobname%50,account',
-    },
-    job_ids_ref => {
-        inputs_ref      => [qw(1 12 23)],
-        expected_output => '--jobs 1,12,23',
-    },
+
+    #    directory_path => {
+    #        input           => catdir(qw(dir test)),
+    #        expected_output => catdir(qw(dir test)),
+    #    },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&sacct;
+my $module_function_cref = \&unix_standard_streams;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_arguments, \%specific_argument );

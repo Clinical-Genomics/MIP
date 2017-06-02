@@ -3,8 +3,8 @@ package File::Format::Shell;
 use strict;
 use warnings;
 use warnings qw( FATAL utf8 );
-use v5.10;  #Require at least perl 5.10
-use utf8;  #Allow unicode characters in this script
+use v5.10;    #Require at least perl 5.10
+use utf8;     #Allow unicode characters in this script
 use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
 
@@ -21,24 +21,22 @@ BEGIN {
     our @EXPORT = qw();
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = ("create_bash_file",
-		      "create_housekeeping_function",
-		      "create_error_trap_function",
-		      "enable_trap",
-		      "clear_trap",
-		      "track_progress",
-	);
+    our @EXPORT_OK = (
+        "create_bash_file",           "create_housekeeping_function",
+        "create_error_trap_function", "enable_trap",
+        "clear_trap",                 "track_progress",
+    );
 }
 
 use Cwd;
-use FindBin qw($Bin); #Find directory of script
+use FindBin qw($Bin);    #Find directory of script
 use File::Basename qw(dirname basename);
 use File::Spec::Functions qw(catfile catdir devnull);
 use Params::Check qw[check allow last_error];
-$Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
+$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 
 ##MIPs lib/
-use lib catdir($Bin, "lib");  #Add MIPs internal lib
+use lib catdir( $Bin, "lib" );        #Add MIPs internal lib
 
 sub create_bash_file {
 
@@ -62,62 +60,92 @@ sub create_bash_file {
     ## Flatten argument(s)
     my $file_name;
     my $directory_remove;
-    my $log;    
+    my $log;
 
     my $tmpl = {
-	file_name => { required => 1, defined => 1, strict_type => 1, store => \$file_name},
-	log => { store => \$log},
-	directory_remove => { allow => qr/^\.\S+$/,
-			      strict_type => 1, store => \$directory_remove},
-	trap_signals_ref => { default => ["ERR"],
-			      strict_type => 1, store => \$trap_signals_ref},
-	trap_function => { default => "error",
-			   strict_type => 1, store => \$trap_function},
+        file_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$file_name
+        },
+        log              => { store => \$log },
+        directory_remove => {
+            allow       => qr/^\.\S+$/,
+            strict_type => 1,
+            store       => \$directory_remove
+        },
+        trap_signals_ref => {
+            default     => ["ERR"],
+            strict_type => 1,
+            store       => \$trap_signals_ref
+        },
+        trap_function => {
+            default     => "error",
+            strict_type => 1,
+            store       => \$trap_function
+        },
     };
-    
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $pwd = cwd();
+    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+
+    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
+    my $pwd        = cwd();
 
     ## Open batch file with supplied log
-    if ( (defined($log)) && ($log) ) {
-	
-	open ($FILEHANDLE, ">", catfile($pwd, $file_name)) or $log->logdie("Cannot write to '".catfile($pwd, $file_name)."' :".$!."\n");
+    if ( ( defined($log) ) && ($log) ) {
+
+        open( $FILEHANDLE, ">", catfile( $pwd, $file_name ) )
+          or $log->logdie( "Cannot write to '"
+              . catfile( $pwd, $file_name ) . "' :"
+              . $!
+              . "\n" );
     }
     else {
 
-	open ($FILEHANDLE, ">", catfile($pwd, $file_name)) or die("Cannot write to '".catfile($pwd, $file_name)."' :".$!."\n");
+        open( $FILEHANDLE, ">", catfile( $pwd, $file_name ) )
+          or die( "Cannot write to '"
+              . catfile( $pwd, $file_name ) . "' :"
+              . $!
+              . "\n" );
     }
 
-    print $FILEHANDLE "#!".catfile( dirname( dirname( devnull() ) ) ).catfile("usr", "bin", "env", "bash"), "\n\n";
+    print $FILEHANDLE "#!"
+      . catfile( dirname( dirname( devnull() ) ) )
+      . catfile( "usr", "bin", "env", "bash" ), "\n\n";
 
     ## Create housekeeping function which removes entire directory when finished
-    create_housekeeping_function({directory_remove => $directory_remove,
-				  FILEHANDLE => $FILEHANDLE,
-				 });
+    create_housekeeping_function(
+        {
+            directory_remove => $directory_remove,
+            FILEHANDLE       => $FILEHANDLE,
+        }
+    );
 
     ## Create debug trap
-    enable_trap({FILEHANDLE => $FILEHANDLE,
-		 trap_signals_ref => ["DEBUG"],
-		 trap_function => q?previous_command="$BASH_COMMAND"?,
-		});
+    enable_trap(
+        {
+            FILEHANDLE       => $FILEHANDLE,
+            trap_signals_ref => ["DEBUG"],
+            trap_function    => q?previous_command="$BASH_COMMAND"?,
+        }
+    );
 
     ## Create error handling function and trap
-    create_error_trap_function({FILEHANDLE => $FILEHANDLE,
-			       });
+    create_error_trap_function( { FILEHANDLE => $FILEHANDLE, } );
 
-    if ( (defined($log)) && ($log) ) {
+    if ( ( defined($log) ) && ($log) ) {
 
-	$log->info("Created bash file: '".catfile($pwd, $file_name), "'\n");
+        $log->info( "Created bash file: '" . catfile( $pwd, $file_name ),
+            "'\n" );
     }
     else {
 
-	print STDERR "Created bash file: '".catfile($pwd, $file_name), "'", "\n";
+        print STDERR "Created bash file: '" . catfile( $pwd, $file_name ), "'",
+          "\n";
     }
     return $FILEHANDLE;
 }
-
 
 sub create_housekeeping_function {
 
@@ -148,56 +176,79 @@ sub create_housekeeping_function {
     my $directory_remove;
 
     my $tmpl = {
-	job_ids_ref  => { default => [], strict_type => 1, store => \$job_ids_ref},
-	sacct_format_fields_ref => { default => [], strict_type => 1, store => \$sacct_format_fields_ref},
-	log_file_ref => { default => \$$, strict_type => 1, store => \$log_file_ref},
-	FILEHANDLE => { required => 1, store => \$FILEHANDLE},
-	directory_remove => {strict_type => 1, store => \$directory_remove},
-	trap_signals_ref => { default => ["EXIT", "TERM", "INT"],
-			      strict_type => 1, store => \$trap_signals_ref},
-	trap_function => { default => "finish",
-			   strict_type => 1, store => \$trap_function},
+        job_ids_ref =>
+          { default => [], strict_type => 1, store => \$job_ids_ref },
+        sacct_format_fields_ref => {
+            default     => [],
+            strict_type => 1,
+            store       => \$sacct_format_fields_ref
+        },
+        log_file_ref =>
+          { default => \$$, strict_type => 1, store => \$log_file_ref },
+        FILEHANDLE       => { required    => 1, store => \$FILEHANDLE },
+        directory_remove => { strict_type => 1, store => \$directory_remove },
+        trap_signals_ref => {
+            default     => [ "EXIT", "TERM", "INT" ],
+            strict_type => 1,
+            store       => \$trap_signals_ref
+        },
+        trap_function => {
+            default     => "finish",
+            strict_type => 1,
+            store       => \$trap_function
+        },
     };
-    
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use Program::Gnu::Coreutils qw(rm);
 
     ## Create housekeeping function and trap
     print $FILEHANDLE q?finish() {?, "\n\n";
 
-    if ( (defined($directory_remove)) && ($directory_remove) ) {
+    if ( ( defined($directory_remove) ) && ($directory_remove) ) {
 
-	print $FILEHANDLE "\t".q?local directory="$1"?, "\n";
-	print $FILEHANDLE "\t".q?## Perform exit housekeeping?, "\n";
-	print $FILEHANDLE "\t";
-	rm({infile_path => q?"$directory"?,
-	    force => 1,
-	    recursive => 1,
-	    FILEHANDLE => $FILEHANDLE,
-	   });
-	print $FILEHANDLE "\n\n";
+        print $FILEHANDLE "\t" . q?local directory="$1"?,         "\n";
+        print $FILEHANDLE "\t" . q?## Perform exit housekeeping?, "\n";
+        print $FILEHANDLE "\t";
+        rm(
+            {
+                infile_path => q?"$directory"?,
+                force       => 1,
+                recursive   => 1,
+                FILEHANDLE  => $FILEHANDLE,
+            }
+        );
+        print $FILEHANDLE "\n\n";
     }
-    if ( (defined($job_ids_ref)) && (@$job_ids_ref)
-	&& (defined($$log_file_ref)) && ($$log_file_ref) ) {
+    if (   ( defined($job_ids_ref) )
+        && (@$job_ids_ref)
+        && ( defined($$log_file_ref) )
+        && ($$log_file_ref) )
+    {
 
-	## Output SLURM info on each job via sacct command and write to log file(.status)
-	track_progress({job_ids_ref => \@{ $job_ids_ref },
-			sacct_format_fields_ref => \@{ $sacct_format_fields_ref },
-			FILEHANDLE => $FILEHANDLE,
-			log_file_ref => $log_file_ref,
-		       });
+        ## Output SLURM info on each job via sacct command and write to log file(.status)
+        track_progress(
+            {
+                job_ids_ref             => \@{$job_ids_ref},
+                sacct_format_fields_ref => \@{$sacct_format_fields_ref},
+                FILEHANDLE              => $FILEHANDLE,
+                log_file_ref            => $log_file_ref,
+            }
+        );
     }
 
     print $FILEHANDLE q?}?, "\n";
 
     ## Enable trap function with trap signal(s)
-    enable_trap({FILEHANDLE => $FILEHANDLE,
-		 trap_signals_ref => \@{ $trap_signals_ref },
-		 trap_function => $trap_function,
-		});
+    enable_trap(
+        {
+            FILEHANDLE       => $FILEHANDLE,
+            trap_signals_ref => \@{$trap_signals_ref},
+            trap_function    => $trap_function,
+        }
+    );
 }
-
 
 sub create_error_trap_function {
 
@@ -228,48 +279,73 @@ sub create_error_trap_function {
     my $trap_function_call;
 
     my $tmpl = {
-	job_ids_ref  => { default => [], strict_type => 1, store => \$job_ids_ref},
-	sacct_format_fields_ref => { default => [], strict_type => 1, store => \$sacct_format_fields_ref},
-	log_file_ref => { default => \$$, strict_type => 1, store => \$log_file_ref},
-	FILEHANDLE => { required => 1, store => \$FILEHANDLE},
-	trap_function_call => { default => q{$(error "$previous_command" "$?")},
-				strict_type => 1, store => \$trap_function_call},
-	trap_signals_ref => { default => ["ERR"],
-			      strict_type => 1, store => \$trap_signals_ref},
-	trap_function_name => { default => "error",
-				strict_type => 1, store => \$trap_function_name},
+        job_ids_ref =>
+          { default => [], strict_type => 1, store => \$job_ids_ref },
+        sacct_format_fields_ref => {
+            default     => [],
+            strict_type => 1,
+            store       => \$sacct_format_fields_ref
+        },
+        log_file_ref =>
+          { default => \$$, strict_type => 1, store => \$log_file_ref },
+        FILEHANDLE         => { required => 1, store => \$FILEHANDLE },
+        trap_function_call => {
+            default     => q{$(error "$previous_command" "$?")},
+            strict_type => 1,
+            store       => \$trap_function_call
+        },
+        trap_signals_ref => {
+            default     => ["ERR"],
+            strict_type => 1,
+            store       => \$trap_signals_ref
+        },
+        trap_function_name => {
+            default     => "error",
+            strict_type => 1,
+            store       => \$trap_function_name
+        },
     };
-    
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Create error handling function and trap
-    print $FILEHANDLE $trap_function_name.q?() {?, "\n\n";
-    print $FILEHANDLE "\t".q?local program="$1"?, "\n";
-    print $FILEHANDLE "\t".q?local return_code="$2"?, "\n\n";
+    print $FILEHANDLE $trap_function_name . q?() {?, "\n\n";
+    print $FILEHANDLE "\t" . q?local program="$1"?,     "\n";
+    print $FILEHANDLE "\t" . q?local return_code="$2"?, "\n\n";
 
-    if ( (defined($job_ids_ref)) && (@$job_ids_ref)
-	&& (defined($$log_file_ref)) && ($$log_file_ref) ) {
+    if (   ( defined($job_ids_ref) )
+        && (@$job_ids_ref)
+        && ( defined($$log_file_ref) )
+        && ($$log_file_ref) )
+    {
 
-	## Output SLURM info on each job via sacct command and write to log file(.status)
-	track_progress({job_ids_ref => \@{ $job_ids_ref },
-			sacct_format_fields_ref => \@{ $sacct_format_fields_ref },
-			FILEHANDLE => $FILEHANDLE,
-			log_file_ref => $log_file_ref,
-		       });
+        ## Output SLURM info on each job via sacct command and write to log file(.status)
+        track_progress(
+            {
+                job_ids_ref             => \@{$job_ids_ref},
+                sacct_format_fields_ref => \@{$sacct_format_fields_ref},
+                FILEHANDLE              => $FILEHANDLE,
+                log_file_ref            => $log_file_ref,
+            }
+        );
     }
 
-    print $FILEHANDLE "\t".q?## Display error message and exit?, "\n";
-    print $FILEHANDLE "\t".q?echo "${program}: ${return_code}: Unknown Error - ExitCode=$return_code" 1>&2?, "\n";
-    print $FILEHANDLE "\t".q?exit 1?, "\n";
+    print $FILEHANDLE "\t" . q?## Display error message and exit?, "\n";
+    print $FILEHANDLE "\t"
+      . q?echo "${program}: ${return_code}: Unknown Error - ExitCode=$return_code" 1>&2?,
+      "\n";
+    print $FILEHANDLE "\t" . q?exit 1?, "\n";
     print $FILEHANDLE q?}?, "\n";
 
     ## Enable trap function with trap signal(s)
-    enable_trap({FILEHANDLE => $FILEHANDLE,
-		 trap_signals_ref => \@{ $trap_signals_ref },
-		 trap_function => $trap_function_call,
-		});
+    enable_trap(
+        {
+            FILEHANDLE       => $FILEHANDLE,
+            trap_signals_ref => \@{$trap_signals_ref},
+            trap_function    => $trap_function_call,
+        }
+    );
 }
-
 
 sub clear_trap {
 
@@ -290,19 +366,22 @@ sub clear_trap {
     my $FILEHANDLE;
 
     my $tmpl = {
-	FILEHANDLE => { required => 1, store => \$FILEHANDLE},
-	trap_signals_ref => { default => ["ERR"],
-			      strict_type => 1, store => \$trap_signals_ref},
+        FILEHANDLE       => { required => 1, store => \$FILEHANDLE },
+        trap_signals_ref => {
+            default     => ["ERR"],
+            strict_type => 1,
+            store       => \$trap_signals_ref
+        },
     };
 
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Clear trap for signal ERR
-    print $FILEHANDLE "\n## Clear trap for signal(s) ".join(" ", @$trap_signals_ref), "\n";
-    print $FILEHANDLE "trap - ".join(" ", @$trap_signals_ref), "\n";
+    print $FILEHANDLE "\n## Clear trap for signal(s) "
+      . join( " ", @$trap_signals_ref ), "\n";
+    print $FILEHANDLE "trap - " . join( " ", @$trap_signals_ref ), "\n";
     print $FILEHANDLE "trap", "\n\n";
 }
-
 
 sub enable_trap {
 
@@ -325,19 +404,27 @@ sub enable_trap {
     my $FILEHANDLE;
 
     my $tmpl = {
-	FILEHANDLE => { required => 1, store => \$FILEHANDLE},
-	trap_signals_ref => { default => ["ERR"],
-			      strict_type => 1, store => \$trap_signals_ref},
-	trap_function => { default => "error",
-			   strict_type => 1, store => \$trap_function},
+        FILEHANDLE       => { required => 1, store => \$FILEHANDLE },
+        trap_signals_ref => {
+            default     => ["ERR"],
+            strict_type => 1,
+            store       => \$trap_signals_ref
+        },
+        trap_function => {
+            default     => "error",
+            strict_type => 1,
+            store       => \$trap_function
+        },
     };
 
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    print $FILEHANDLE "\n## Enable trap for signal(s) ".join(" ", @$trap_signals_ref), "\n";
-    print $FILEHANDLE "trap '".$trap_function."' ".join(" ", @$trap_signals_ref), "\n\n";
+    print $FILEHANDLE "\n## Enable trap for signal(s) "
+      . join( " ", @$trap_signals_ref ), "\n";
+    print $FILEHANDLE "trap '"
+      . $trap_function . "' "
+      . join( " ", @$trap_signals_ref ), "\n\n";
 }
-
 
 sub track_progress {
 
@@ -362,46 +449,49 @@ sub track_progress {
     my $FILEHANDLE;
 
     my $tmpl = {
-	job_ids_ref  => { default => [], strict_type => 1, store => \$job_ids_ref},
-	sacct_format_fields_ref => { default => ["jobid",
-						 "jobname%50",
-						 "account",
-						 "partition",
-						 "alloccpus",
-						 "TotalCPU",
-						 "elapsed",
-						 "start",
-						 "end",
-						 "state",
-						 "exitcode"],
-				     strict_type => 1, store => \$sacct_format_fields_ref},
-	log_file_ref => { default => \$$, strict_type => 1, store => \$log_file_ref},
-	FILEHANDLE => { store => \$FILEHANDLE},
+        job_ids_ref =>
+          { default => [], strict_type => 1, store => \$job_ids_ref },
+        sacct_format_fields_ref => {
+            default => [
+                "jobid",     "jobname%50", "account", "partition",
+                "alloccpus", "TotalCPU",   "elapsed", "start",
+                "end",       "state",      "exitcode"
+            ],
+            strict_type => 1,
+            store       => \$sacct_format_fields_ref
+        },
+        log_file_ref =>
+          { default => \$$, strict_type => 1, store => \$log_file_ref },
+        FILEHANDLE => { store => \$FILEHANDLE },
     };
 
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use MIP::Workloadmanager::Slurm qw(sacct);
+    use MIP::Workloadmanager::Slurm qw(slurm_sacct);
 
     if (@$job_ids_ref) {
 
-	## Copy array
-	my @reformat_sacct_header = @{ $sacct_format_fields_ref };
+        ## Copy array
+        my @reformat_sacct_header = @{$sacct_format_fields_ref};
 
-	## Remove "%digits" from headers
-	foreach my $element (@reformat_sacct_header) {
+        ## Remove "%digits" from headers
+        foreach my $element (@reformat_sacct_header) {
 
-	    $element =~ s/%\d+//g;
-	}
-	my @command = sacct({fields_format_ref => \@{ $sacct_format_fields_ref },
-			     job_ids_ref => \@{ $job_ids_ref },
-			    });
-	print $FILEHANDLE "\t".join(" ", @command)." ";
-	print $FILEHANDLE q?| ?;
-	print $FILEHANDLE q?perl -nae 'my @headers=(?.join(",", @reformat_sacct_header).q?); if($. == 1) {print "#".join("\t", @headers), "\n"} if ($.>=3 && $F[0]!~/.batch/) {print join("\t", @F), "\n"}' ?;
-	print $FILEHANDLE q?> ?.$$log_file_ref.".status", "\n\n";
+            $element =~ s/%\d+//g;
+        }
+        my @command = slurm_sacct(
+            {
+                fields_format_ref => \@{$sacct_format_fields_ref},
+                job_ids_ref       => \@{$job_ids_ref},
+            }
+        );
+        print $FILEHANDLE "\t" . join( " ", @command ) . " ";
+        print $FILEHANDLE q?| ?;
+        print $FILEHANDLE q?perl -nae 'my @headers=(?
+          . join( ",", @reformat_sacct_header )
+          . q?); if($. == 1) {print "#".join("\t", @headers), "\n"} if ($.>=3 && $F[0]!~/.batch/) {print join("\t", @F), "\n"}' ?;
+        print $FILEHANDLE q?> ? . $$log_file_ref . ".status", "\n\n";
     }
 }
-
 
 1;

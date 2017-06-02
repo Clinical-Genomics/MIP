@@ -3108,7 +3108,7 @@ sub msacct {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use MIP::Workloadmanager::Slurm qw(sacct);
+    use MIP::Workloadmanager::Slurm qw(slurm_sacct);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -3131,7 +3131,7 @@ sub msacct {
         }
     );
 
-    sacct(
+    slurm_sacct(
         {
             fields_format_ref =>
               \@{ $active_parameter_href->{sacct_format_fields} },
@@ -25490,7 +25490,6 @@ sub gzip_fastq {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use Program::Compression::Gzip qw(gzip);
-    use MIP::Gnu::Bash qw(gnu_cd);
 
     ## Filehandles
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle

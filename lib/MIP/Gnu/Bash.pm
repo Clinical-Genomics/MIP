@@ -8,6 +8,16 @@ use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
 use Carp;
 use autodie;
+use Params::Check qw[check allow last_error];
+$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
+
+use FindBin qw($Bin);                 #Find directory of script
+use File::Basename qw(dirname);
+use File::Spec::Functions qw(catdir);
+
+## MIPs lib/
+use lib catdir( dirname($Bin), 'lib' );
+use MIP::Unix::Standard_streams qw(unix_standard_streams);
 
 BEGIN {
 
@@ -22,41 +32,32 @@ BEGIN {
 
 }
 
-use Params::Check qw[check allow last_error];
-$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
-
 sub gnu_cd {
 
 ##gnu_cd
 
 ##Function : Perl wrapper for writing cd recipe to already open $FILEHANDLE or return commands array. Based on cd 4.0
 ##Returns  : "@commands"
-##Arguments: $FILEHANDLE, $directory_path, $stderrfile_path, append_stderr_info
-##         : $FILEHANDLE      => Filehandle to write to
-##         : $directory_path  => Directory path
-##         : $stderrfile_path => Stderrfile path
-##         : $append_stderr_info => Append stderr info to file
+##Arguments: $FILEHANDLE, $directory_path, $stderrfile_path, $stderrfile_path_append
+##         : $FILEHANDLE             => Filehandle to write to
+##         : $directory_path         => Directory path
+##         : $stderrfile_path        => Stderrfile path
+##         : $stderrfile_path_append => Append stderr info to file
 
     my ($arg_href) = @_;
-
-    ## Default(s)
-    my $append_stderr_info;
 
     ## Flatten argument(s)
     my $FILEHANDLE;
     my $directory_path;
     my $stderrfile_path;
+    my $stderrfile_path_append;
 
     my $tmpl = {
         FILEHANDLE      => { store       => \$FILEHANDLE },
         directory_path  => { strict_type => 1, store => \$directory_path },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-	append_stderr_info => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$append_stderr_info
-        },
+        stderrfile_path_append =>
+          { strict_type => 1, store => \$stderrfile_path_append },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
@@ -72,19 +73,15 @@ sub gnu_cd {
 
         push @commands, $directory_path;
     }
-    if ($stderrfile_path) {
 
-        if ($append_stderr_info) {
-
-            # Redirect and append stderr output to program specific stderr file
-            push @commands, '2>> ' . $stderrfile_path;
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
         }
-        else {
+      );
 
-            # Redirect stderr output to program specific stderr file
-            push @commands, '2> ' . $stderrfile_path;
-        }
-    }
     if ($FILEHANDLE) {
 
         print {$FILEHANDLE} join( $SPACE, @commands ) . $SPACE;
