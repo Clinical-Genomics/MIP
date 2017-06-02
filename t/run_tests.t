@@ -122,7 +122,8 @@ mip_scripts();
 ok( can_run('prove'), 'Checking can run perl prove' );
 
 ##Run tests files using run_test_files.txt manifest
-my $cmds_ref = [ qw(prove - < run_test_files.txt), ];
+my $cmds_ref =
+  [ qw(prove - < ), catdir( dirname($Bin), qw(t config run_test_files.txt) ), ];
 my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
   run( command => $cmds_ref, verbose => $VERBOSE );
 

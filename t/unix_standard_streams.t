@@ -116,7 +116,7 @@ my %specific_argument = (
 ## Coderef - enables generalized use of generate call
 my $module_function_cref = \&unix_standard_streams;
 
-## Test both base and function specific arguments
+## Test both arguments
 my @arguments = ( \%specific_argument );
 
 foreach my $argument_href (@arguments) {
