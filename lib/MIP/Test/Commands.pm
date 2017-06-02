@@ -14,6 +14,9 @@ use autodie;
 use Test::More;
 use List::Util qw(any);
 
+## CPAN
+use List::MoreUtils qw(zip);
+
 BEGIN {
 
     use base qw(Exporter);
@@ -252,12 +255,9 @@ sub _build_call {
         push @values, $input_values_ref;
     }
 
-    ## Build arguments to submit to function
-    my @args;
-    while ( my ( $key_index, $key ) = each @keys ) {
+    ## Interleave arrays to build arguments for submission to function
+    my @args = zip(@keys, @values);
 
-        push @args, $keys[$key_index], $values[$key_index];
-    }
     return @args;
 }
 
