@@ -104,7 +104,7 @@ eval_parameter_hash(
     }
 );
 
-our $VERSION = "v5.0.1";    #Set MIP version
+our $VERSION = "v5.0.2";    #Set MIP version
 
 ## Directories, files, job_ids and sample_info
 my ( %infile, %indir_path, %infile_lane_prefix, %lane,
@@ -3010,7 +3010,7 @@ sub build_usage {
       -evabrgf/--endvariantannotationblock_remove_genes_file Remove variants in hgnc_ids (defaults to "")
 
     ###Utility
-    -pped/--ppeddy QC for familial-relationships and sexes (defaults to "0" (=yes) )
+    -pped/--ppeddy QC for familial-relationships and sexes (defaults to "1" (=yes) )
     -pplink/--pplink QC for samples gender and relationship (defaults to "1" (=yes) )
     -pvai/--pvariant_integrity QC for samples relationship (defaults to "1" (=yes) )
     -pevl/--pevaluation Compare concordance with NIST data set (defaults to "0" (=no) )
@@ -8855,6 +8855,7 @@ sub mpeddy {
       {file_tag};
     my $infile_prefix = $$family_id_ref . $infile_tag . $call_type;
     my $file_path_prefix = catfile( $$temp_directory_ref, $infile_prefix );
+    my $outfile_path_prefix = catfile( $outfamily_directory, $$family_id_ref );
 
     ### Assign suffix
     ## Return the current infile vcf compression suffix for this jobid chain_vcf_data
@@ -8912,7 +8913,7 @@ sub mpeddy {
         {
             infile_path => $file_path_prefix . $suffix,
             outfile_prefix_path =>
-              catfile( $outfamily_directory, $$family_id_ref ),
+              $outfile_path_prefix,
             family_file_path => $family_file,
             FILEHANDLE       => $FILEHANDLE,
         }
@@ -8923,17 +8924,21 @@ sub mpeddy {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        ## Collect QC metadata info for later use
-        sample_info_qc(
-            {
-                sample_info_href => $sample_info_href,
-                program_name     => "peddy",
-                outdirectory     => $outfamily_directory,
-                outfile_ending   => $$family_id_ref . ".csv",
-                outdata_type     => "infile_dependent"
-            }
-        );
-    }
+      my %peddy_output = (ped_check => 'csv',
+			  sex_check => 'csv',
+			  peddy => 'ped',
+			 );
+
+    PEDDY_OUTPUT_FILES:
+      while ( my ( $file_key, $suffix ) =
+	      each %peddy_output )
+	{
+
+	  my $outfile_suffix = '.' . $file_key . '.' . $suffix;
+	  ## Collect QC metadata info for later use
+	$sample_info_href->{program}{$program_name}{$file_key}{path} = $outfile_path_prefix . $outfile_suffix;
+      }
+  }
 
     close($FILEHANDLE);
 

@@ -2027,7 +2027,7 @@ ppeddy:
    - mip
   chain: PEDDYQC
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: nofile_tag
   type: program
 pplink:
