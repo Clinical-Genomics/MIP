@@ -68,7 +68,7 @@ BEGIN {
     }
 
 ##Modules
-    my @modules = ('MIP::Gnu::Software::Gnu_grep');
+    my @modules = ('MIP::Workloadmanager::Slurm');
 
     for my $module (@modules) {
 
@@ -76,22 +76,26 @@ BEGIN {
     }
 }
 
-use MIP::Gnu::Software::Gnu_grep qw(gnu_grep);
+use MIP::Workloadmanager::Slurm qw(slurm_sacct);
 use MIP::Test::Commands qw(test_function);
 
 diag(
-"Test gnu_grep $MIP::Gnu::Software::Gnu_grep::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test slurm_sacct $MIP::Workloadmanager::Slurm::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments
-my $function_base_command = 'grep';
+my $function_base_command = 'sacct';
 
 my %base_argument = (
+    stdoutfile_path => {
+        input           => 'outfile.test',
+        expected_output => '1> outfile.test',
+    },
     stderrfile_path => {
         input           => 'stderrfile.test',
         expected_output => '2> stderrfile.test',
     },
-    stderrfile_path_append => {
+		      stderrfile_path_append => {
         input           => 'stderrfile.test',
         expected_output => '2>> stderrfile.test',
     },
@@ -101,36 +105,20 @@ my %base_argument = (
     },
 );
 
-## Can be duplicated with %base and/or %specific to enable testing of each individual argument
-my %required_argument = (
-    infile_path => {
-        input           => 'infile.test',
-        expected_output => 'infile.test',
-    },
-);
-
 ## Specific arguments
 my %specific_argument = (
-    invert_match => {
-        input           => 1,
-        expected_output => '--invert-match',
+    fields_format_ref => {
+        inputs_ref      => [qw(jobid jobname%50 account)],
+        expected_output => '--format=jobid,jobname%50,account',
     },
-    filter_file_path => {
-        input           => 'test_file',
-        expected_output => '--file=test_file',
-    },
-    infile_path => {
-        input           => 'infile.test',
-        expected_output => 'infile.test',
-    },
-    outfile_path => {
-        input           => 'outfile.test',
-        expected_output => '> outfile.test',
+    job_ids_ref => {
+        inputs_ref      => [qw(1 12 23)],
+        expected_output => '--jobs 1,12,23',
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&gnu_grep;
+my $module_function_cref = \&slurm_sacct;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
@@ -139,10 +127,9 @@ foreach my $argument_href (@arguments) {
 
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
+            argument_href           => $argument_href,
+            module_function_cref    => $module_function_cref,
+            function_base_command   => $function_base_command,
         }
     );
 }

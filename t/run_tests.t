@@ -121,9 +121,15 @@ mip_scripts();
 
 ok( can_run('prove'), 'Checking can run perl prove' );
 
-##Run tests files
-my $cmds_ref = [ qw(prove mip.t :: -c ), $config_file ];
+##Run tests files using run_test_files.txt manifest
+my $cmds_ref =
+  [ qw(prove - < ), catdir( dirname($Bin), qw(t config run_test_files.txt) ), ];
 my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
+  run( command => $cmds_ref, verbose => $VERBOSE );
+
+## Test MIP execuation
+$cmds_ref = [ qw(prove mip.t :: -c ), $config_file ];
+( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
   run( command => $cmds_ref, verbose => $VERBOSE );
 
 done_testing();    # Reached the end safely
