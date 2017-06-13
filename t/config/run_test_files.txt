@@ -1,5 +1,6 @@
 unix_standard_streams.t
+unix_write_to_file.t
 gnu_grep.t
 gnu_cd.t
-slurm_sacct.t
 gnu_sed.t
+slurm_sacct.t
