@@ -104,7 +104,7 @@ eval_parameter_hash(
     }
 );
 
-our $VERSION = "v5.0.2";    #Set MIP version
+our $VERSION = "v5.0.3";    #Set MIP version
 
 ## Directories, files, job_ids and sample_info
 my ( %infile, %indir_path, %infile_lane_prefix, %lane,
@@ -290,6 +290,7 @@ GetOptions(
     'prcp|prcovplots=n'           => \$parameter{prcovplots}{value},
     'pcnv|pcnvnator=n'            => \$parameter{pcnvnator}{value},
     'cnvhbs|cnv_bin_size=n'       => \$parameter{cnv_bin_size}{value},
+	   'cnvrld|cnv_root_ld_lib=s'       => \$parameter{cnv_root_ld_lib}{value},
     'pdelc|pdelly_call=n'         => \$parameter{pdelly_call}{value},
     'pdel|pdelly_reformat=n'      => \$parameter{pdelly_reformat}{value},
     'deltyp|delly_types:s'        => \@{ $parameter{delly_types}{value} },
@@ -2857,6 +2858,7 @@ sub build_usage {
     ###Structural variant callers
     -pcnv/--pcnvnator Structural variant calling using CNVnator (defaults to "1" (=yes))
       -cnvhbs/--cnv_bin_size CNVnator bin size (defaults to "1000")
+      -cnvrld/--cnv_root_ld_lib Root ld library path (defaults to "")
     -pdelc/--pdelly_call Structural variant calling using Delly (defaults to "1" (=yes))
     -pdel/--pdelly_reformat Merge, regenotype and filter using Delly (defaults to "1" (=yes))
       -deltyp/--delly_types Type of SV to call (defaults to "DEL,DUP,INV,TRA"; comma sep)
@@ -17124,6 +17126,13 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
 
     my $perl_add_contigs =
       q?perl -nae '{print "##contig=<ID=".$F[0].",length=".$F[1].">", "\n"}'?;
+
+    ##Special fix to accomodate outdated versions of .so libraries required by root
+    if (exists $active_parameter_href->{cnv_root_ld_lib}) {
+
+      say $FILEHANDLE 'LD_LIBRARY_PATH=' . $active_parameter_href->{cnv_root_ld_lib} . '/:$LD_LIBRARY_PATH';
+      say $FILEHANDLE 'export LD_LIBRARY_PATH', "\n";
+    }
 
     ## Add contigs to vcfheader
     print $FILEHANDLE $perl_add_contigs . " ";

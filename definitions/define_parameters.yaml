@@ -846,6 +846,12 @@ cnv_bin_size:
   data_type: SCALAR
   default: 1000
   type: program_argument
+cnv_root_ld_lib:
+  associated_program:
+   - pcnvnator
+  data_type: SCALAR
+  mandatory: no
+  type: program_argument
 pdelly_call:
   associated_program:
    - mip
