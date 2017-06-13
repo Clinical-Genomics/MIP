@@ -9970,7 +9970,7 @@ sub vt {
                 decompose       => $active_parameter_href->{vt_decompose},
                 normalize       => $active_parameter_href->{vt_normalize},
                 uniq            => $active_parameter_href->{vt_uniq},
-                sed             => 1,
+                gnu_sed             => 1,
                 instream        => 0,
                 cmd_break       => ";",
                 xargs_file_name => $xargs_file_name,
@@ -37999,7 +37999,7 @@ sub vt_core {
 
 ##Function : Split multi allelic records into single records and normalize
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_prefix_href, $job_id_href, $infile_path, $outfile_path, $family_id, $FILEHANDLE, $core_number, $decompose, $normalize, $uniq, $max_af, $calculate_af, $sed, $program, $program_directory, $bgzip, $tabix, $instream, $cmd_break, $xargs_file_name, $contig_ref
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_prefix_href, $job_id_href, $infile_path, $outfile_path, $family_id, $FILEHANDLE, $core_number, $decompose, $normalize, $uniq, $max_af, $calculate_af, $gnu_sed, $program, $program_directory, $bgzip, $tabix, $instream, $cmd_break, $xargs_file_name, $contig_ref
 ##         : $parameter_href             => Hash with paremters from yaml file {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -38015,7 +38015,7 @@ sub vt_core {
 ##         : $uniq                       => Vt program uniq for removing variant duplication that appear later in file
 ##         : $max_af                     => MIP script for adding MAX_AF to frequency reference used in analysis
 ##         : $calculate_af               => MIP script for adding AF_ to frequency reference used in analysis
-##         : $sed                        => Sed program for changing vcf #FORMAT field in variant vcfs
+##         : $gnu_sed                        => Sed program for changing vcf #FORMAT field in variant vcfs
 ##         : $program                    => The program name
 ##         : $program_directory          => Program directory to write to in sbatch script
 ##         : $bgzip                      => Compress output from vt using bgzip
@@ -38037,7 +38037,7 @@ sub vt_core {
     my $uniq;
     my $max_af;
     my $calculate_af;
-    my $sed;
+    my $gnu_sed;
     my $program;
     my $program_directory;
     my $bgzip;
@@ -38145,11 +38145,11 @@ sub vt_core {
             strict_type => 1,
             store       => \$calculate_af
         },
-        sed => {
+        gnu_sed => {
             default     => 0,
             allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$sed
+            store       => \$gnu_sed
         },
         program => { default => "vt", strict_type => 1, store => \$program },
         program_directory =>
@@ -38179,7 +38179,7 @@ sub vt_core {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use Program::Gnu::Software::Less qw(less);
-    use Program::Gnu::Software::Sed qw(sed);
+    use MIP::Gnu::Software::Gnu_sed qw(gnu_sed);
     use Program::Variantcalling::Mip qw(calculate_af max_af);
     use Program::Gnu::Coreutils qw(mv);
     use Program::Htslib qw(bgzip tabix);
@@ -38238,12 +38238,12 @@ sub vt_core {
                 }
             );
         }
-        if ($sed)
+        if ($gnu_sed)
         {    #Replace #FORMAT field prior to smart decomposition (variant vcfs)
 
             print $FILEHANDLE "| ";    #Pipe
 
-            sed(
+            gnu_sed(
                 {
                     script     => q?'s/ID=AD,Number=./ID=AD,Number=R/'?,
                     FILEHANDLE => $FILEHANDLE,
