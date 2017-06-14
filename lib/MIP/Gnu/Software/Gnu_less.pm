@@ -39,11 +39,11 @@ sub gnu_less {
 ##Function : Perl wrapper for writing less recipe to already open $FILEHANDLE or return commands array. Based on less 436
 ##Returns  : "@commands"
 ##Arguments: $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $stderrfile_path_append
-##         : $FILEHANDLE       => Filehandle to write to
-##         : $infile_path      => Infile path
-##         : $outfile_path     => Outfile path
-##         : $stderrfile_path  => Stderrfile path
-##         : $stderrfile_path_append => Append stderrinfo to file
+##         : $FILEHANDLE                => Filehandle to write to
+##         : $infile_path               => Infile path
+##         : $outfile_path              => Outfile path
+##         : $stderrfile_path           => Stderrfile path
+##         : $stderrfile_path_append    => Append stderrinfo to file
 
     my ($arg_href) = @_;
 
@@ -55,12 +55,25 @@ sub gnu_less {
     my $stderrfile_path_append;
 
     my $tmpl = {
-        FILEHANDLE      => { store       => \$FILEHANDLE },
-        infile_path     => { strict_type => 1, store => \$infile_path },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
+        FILEHANDLE => {
+            store => \$FILEHANDLE
+        },
+        infile_path => {
+            strict_type => 1,
+            store       => \$infile_path
+        },
+        outfile_path => {
+            strict_type => 1,
+            store       => \$outfile_path
+        },
+        stderrfile_path => {
+            strict_type => 1,
+            store       => \$stderrfile_path
+        },
+        stderrfile_path_append => {
+            strict_type => 1,
+            store       => \$stderrfile_path_append
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
