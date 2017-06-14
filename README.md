@@ -98,7 +98,7 @@ Clone the official git repository
 $ git clone https://github.com/henrikstranneheim/MIP.git
 $ cd MIP
 ```
-####*Optional*
+#### *Optional*
 Test conda and mip_install
 ```
 $ cd t; prove mip_install.t
@@ -111,26 +111,26 @@ $ perl mip_install.pl
 ```
 This will generate a batch script "mip.sh" for the install in your working directory. Use ``--help`` to see
 parameters that can be used in the installation process. 
-####*Conda* 
+#### *Conda* 
 You can decide to install in the conda default environment or use a conda environment with ``--env [env_name]``.
 If you have installed conda in another location than the default you have to supply the path to the location
 using ``--conda_dir_path [conda_directory_path]``.
-####*Perl*
+#### *Perl*
 MIP requires perl version (>=5.18) and the installation process will upgrade the perl version to at least 5.18 for the user
 if you enable ``--perl_install``. Cpanm will be installed if you install a new perl version and used to download required 
 perl modules. Currently MIP does not use the conda perl installation, but installs perl and cpanm outside of conda.
-#####*NOTE*
+##### *NOTE*
 This will add the following lines to bashrc and bash_profile if the install perl version is not found in your path:
 ``` 
 'export PATH=$HOME/perl-PERLVERSION/:$PATH' >> ~/.bashrc
 'eval `perl -I ~/perl-PERLVERSION/lib/perl5/ -Mlocal::lib=~/perl-PERLVERSION/`' >> ~/.bash_profile
 'export PERL_UNICODE=SAD' >> ~/.bash_profile
 ```
-####*References*
+#### *References*
 MIP requires many references depending on what modules in MIP you decide to run. MIP ships with a download script
 that will attempt to download references that are available in public repositories. This feature can be enables with
 by supplying a ``--reference_dir [reference_dir]`` in the installation process.
-#####*NOTE*
+##### *NOTE*
 Some references are quite large and will take time to download. You might want to run this using screen or tmux.
 
 3. Run the bash script
