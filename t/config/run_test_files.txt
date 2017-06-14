@@ -3,3 +3,4 @@ gnu_grep.t
 gnu_cd.t
 slurm_sacct.t
 gnu_sed.t
+gnu_less.t
