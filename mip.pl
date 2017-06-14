@@ -38178,7 +38178,7 @@ sub vt_core {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use Program::Gnu::Software::Less qw(less);
+    use MIP::Gnu::Software::Gnu_less qw(gnu_less);
     use MIP::Gnu::Software::Gnu_sed qw(gnu_sed);
     use Program::Variantcalling::Mip qw(calculate_af max_af);
     use Program::Gnu::Coreutils qw(mv);
@@ -38229,9 +38229,9 @@ sub vt_core {
               ;    #Redirect xargs output to program specific stderr file
             $append_stderr_info = 1;
         }
-        if ( !$instream ) {    #Use less to initate processing
+        if ( !$instream ) {    #Use gnu_less to initate processing
 
-            less(
+            gnu_less(
                 {
                     infile_path => $infile_path,
                     FILEHANDLE  => $FILEHANDLE,

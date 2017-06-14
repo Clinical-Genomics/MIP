@@ -3,4 +3,5 @@ unix_write_to_file.t
 gnu_grep.t
 gnu_cd.t
 gnu_sed.t
+gnu_less.t
 slurm_sacct.t
