@@ -113,6 +113,7 @@ $array_parameter{perl_modules}{default}              = [
     'YAML',                      # MIP
     'Log::Log4perl',             # MIP
     'List::Util',                # MIP
+    'List::MoreUtils',           # MIP
     'Scalar::Util::Numeric',     # MIP
     'Set::IntervalTree',         # MIP/vcfParser.pl
     'Net::SSLeay',               # VEP
@@ -134,7 +135,7 @@ $array_parameter{perl_modules}{default}              = [
     'File::Copy::Recursive',     # VEP
 ];
 
-my $VERSION = '1.2.1';
+my $VERSION = '1.2.2';
 
 ###User Options
 GetOptions(
