@@ -17,13 +17,21 @@ use List::Util qw(any);
 ## CPAN
 use List::MoreUtils qw(zip);
 
+use FindBin qw($Bin);    #Find directory of script
+use File::Basename qw(dirname);
+use File::Spec::Functions qw(catdir);
+
+## MIPs lib/
+use lib catdir( dirname($Bin), 'lib' );
+use MIP::Test::Writefile qw(test_write_to_file);
+
 BEGIN {
 
     use base qw(Exporter);
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw(test_function);
@@ -107,8 +115,8 @@ sub test_function {
                 @args = _build_call(
                     {
                         required_argument_href => $required_argument_href,
-                        argument                => $argument,
-                        input_values_ref        => $input_values_ref,
+                        argument               => $argument,
+                        input_values_ref       => $input_values_ref,
                     }
                 );
             }
@@ -117,8 +125,8 @@ sub test_function {
                 @args = _build_call(
                     {
                         required_argument_href => $required_argument_href,
-                        argument                => $argument,
-                        input_value             => $input_value,
+                        argument               => $argument,
+                        input_value            => $input_value,
                     }
                 );
             }
@@ -126,7 +134,7 @@ sub test_function {
             ## Special case for test of FILEHANDLE. Does not return @commands
             if ( $argument eq 'FILEHANDLE' ) {
 
-                _test_write_to_file(
+                test_write_to_file(
                     {
                         args_ref             => \@args,
                         module_function_cref => $module_function_cref,
@@ -145,7 +153,7 @@ sub test_function {
             ## Special case for test of FILEHANDLE. Does not return @commands
             if ( $argument eq 'FILEHANDLE' ) {
 
-                _test_write_to_file(
+                test_write_to_file(
                     {
                         args_ref => [ $argument, $input_value ],
                         module_function_cref => $module_function_cref,
@@ -256,7 +264,7 @@ sub _build_call {
     }
 
     ## Interleave arrays to build arguments for submission to function
-    my @args = zip(@keys, @values);
+    my @args = zip( @keys, @values );
 
     return @args;
 }
@@ -302,67 +310,6 @@ sub _test_base_command {
         );
         exit 1;
     }
-    return;
-}
-
-sub _test_write_to_file {
-
-## _test_write_to_file
-
-##Function : Test of writing to file using supplied FILEHANDLE
-##Returns  : ""
-##Arguments: $module_function_cref, $args_ref, $base_command
-##         : $module_function_cref => Module method to test
-##         : $args_ref             => Arguments to function call
-##         : $base_command         => First word in command line usually name of executable
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $module_function_cref;
-    my $args_ref;
-    my $base_command;
-
-    my $tmpl = {
-        module_function_cref =>
-          { required => 1, defined => 1, store => \$module_function_cref },
-        args_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$args_ref
-        },
-        base_command => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$base_command
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
-
-    # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
-
-    ## Add new FILEHANDLE to args
-    push @{$args_ref}, 'FILEHANDLE', $FILEHANDLE;
-
-    # For storing info to write
-    my $file_content;
-
-    ## Store file content in memory by using referenced variable
-    open $FILEHANDLE, '>', \$file_content
-      or croak 'Cannot write to ' . $file_content . ': ' . $OS_ERROR;
-
-    $module_function_cref->( { @{$args_ref} } );
-
-    close $FILEHANDLE;
-
-    ## Perform test
-    ok( $file_content =~ /^$base_command/, 'Write commands to file' );
-
     return;
 }
 
