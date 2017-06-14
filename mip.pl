@@ -104,7 +104,7 @@ eval_parameter_hash(
     }
 );
 
-our $VERSION = "v5.0.3";    #Set MIP version
+our $VERSION = "v5.0.4";    #Set MIP version
 
 ## Directories, files, job_ids and sample_info
 my ( %infile, %indir_path, %infile_lane_prefix, %lane,
@@ -9239,8 +9239,9 @@ sub mplink {
     );
     say $FILEHANDLE "\n";
 
+    # Only perform if more than 1 sample
     if ( scalar( @{ $active_parameter_href->{sample_ids} } ) > 1 )
-    {    #Only perform if more than 1 sample
+      {
 
         say $FILEHANDLE "## Calculate inbreeding coefficients per family";
         plink(
@@ -9315,14 +9316,16 @@ sub mplink {
 
         $sex_check_min_F = "0.2 0.75";
     }
+    my $extract_file;
+    if ( scalar( @{ $active_parameter_href->{sample_ids} } ) > 1 ) {
 
+      $extract_file = catfile($$temp_directory_ref, $$family_id_ref . '_data.prune.in');
+    }
     plink(
         {
             check_sex       => 1,
             sex_check_min_F => $sex_check_min_F,
-            extract_file    => catfile(
-                $$temp_directory_ref, $$family_id_ref . "_data.prune.in"
-            ),
+            extract_file    => $extract_file,
             read_freqfile_path =>
               catfile( $$temp_directory_ref, $$family_id_ref . "_data.frqx" ),
             binary_fileset_prefix => catfile(
