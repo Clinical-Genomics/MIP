@@ -31,8 +31,8 @@ sub unix_write_to_file {
 ##Returns  : ""
 ##Arguments: $commands_ref, $FILEHANDLE, $separator
 ##         : $commands_ref => Commands to write to file
-##         : $FILEHANDLE => Filehandle to write to
-##         : $separator  => Separator to use when writing
+##         : $FILEHANDLE   => Filehandle to write to
+##         : $separator    => Separator to use when writing
 
     my ($arg_href) = @_;
 
