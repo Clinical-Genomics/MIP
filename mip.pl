@@ -104,7 +104,7 @@ eval_parameter_hash(
     }
 );
 
-our $VERSION = "v5.0.3";    #Set MIP version
+our $VERSION = "v5.0.4";    #Set MIP version
 
 ## Directories, files, job_ids and sample_info
 my ( %infile, %indir_path, %infile_lane_prefix, %lane,
@@ -290,7 +290,7 @@ GetOptions(
     'prcp|prcovplots=n'           => \$parameter{prcovplots}{value},
     'pcnv|pcnvnator=n'            => \$parameter{pcnvnator}{value},
     'cnvhbs|cnv_bin_size=n'       => \$parameter{cnv_bin_size}{value},
-	   'cnvrld|cnv_root_ld_lib=s'       => \$parameter{cnv_root_ld_lib}{value},
+    'cnvrld|cnv_root_ld_lib=s'    => \$parameter{cnv_root_ld_lib}{value},
     'pdelc|pdelly_call=n'         => \$parameter{pdelly_call}{value},
     'pdel|pdelly_reformat=n'      => \$parameter{pdelly_reformat}{value},
     'deltyp|delly_types:s'        => \@{ $parameter{delly_types}{value} },
@@ -8855,8 +8855,8 @@ sub mpeddy {
     my $infile_tag =
       $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}
       {file_tag};
-    my $infile_prefix = $$family_id_ref . $infile_tag . $call_type;
-    my $file_path_prefix = catfile( $$temp_directory_ref, $infile_prefix );
+    my $infile_prefix       = $$family_id_ref . $infile_tag . $call_type;
+    my $file_path_prefix    = catfile( $$temp_directory_ref, $infile_prefix );
     my $outfile_path_prefix = catfile( $outfamily_directory, $$family_id_ref );
 
     ### Assign suffix
@@ -8913,11 +8913,10 @@ sub mpeddy {
     ## peddy
     peddy(
         {
-            infile_path => $file_path_prefix . $suffix,
-            outfile_prefix_path =>
-              $outfile_path_prefix,
-            family_file_path => $family_file,
-            FILEHANDLE       => $FILEHANDLE,
+            infile_path         => $file_path_prefix . $suffix,
+            outfile_prefix_path => $outfile_path_prefix,
+            family_file_path    => $family_file,
+            FILEHANDLE          => $FILEHANDLE,
         }
     );
     say $FILEHANDLE "\n";
@@ -8926,21 +8925,21 @@ sub mpeddy {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-      my %peddy_output = (ped_check => 'csv',
-			  sex_check => 'csv',
-			  peddy => 'ped',
-			 );
+        my %peddy_output = (
+            ped_check => 'csv',
+            sex_check => 'csv',
+            peddy     => 'ped',
+        );
 
-    PEDDY_OUTPUT_FILES:
-      while ( my ( $file_key, $suffix ) =
-	      each %peddy_output )
-	{
+      PEDDY_OUTPUT_FILES:
+        while ( my ( $file_key, $suffix ) = each %peddy_output ) {
 
-	  my $outfile_suffix = '.' . $file_key . '.' . $suffix;
-	  ## Collect QC metadata info for later use
-	$sample_info_href->{program}{$program_name}{$file_key}{path} = $outfile_path_prefix . $outfile_suffix;
-      }
-  }
+            my $outfile_suffix = '.' . $file_key . '.' . $suffix;
+            ## Collect QC metadata info for later use
+            $sample_info_href->{program}{$program_name}{$file_key}{path} =
+              $outfile_path_prefix . $outfile_suffix;
+        }
+    }
 
     close($FILEHANDLE);
 
@@ -9239,8 +9238,8 @@ sub mplink {
     );
     say $FILEHANDLE "\n";
 
-    if ( scalar( @{ $active_parameter_href->{sample_ids} } ) > 1 )
-    {    #Only perform if more than 1 sample
+    # Only perform if more than 1 sample
+    if ( scalar( @{ $active_parameter_href->{sample_ids} } ) > 1 ) {
 
         say $FILEHANDLE "## Calculate inbreeding coefficients per family";
         plink(
@@ -9315,14 +9314,17 @@ sub mplink {
 
         $sex_check_min_F = "0.2 0.75";
     }
+    my $extract_file;
+    if ( scalar( @{ $active_parameter_href->{sample_ids} } ) > 1 ) {
 
+        $extract_file =
+          catfile( $$temp_directory_ref, $$family_id_ref . '_data.prune.in' );
+    }
     plink(
         {
             check_sex       => 1,
             sex_check_min_F => $sex_check_min_F,
-            extract_file    => catfile(
-                $$temp_directory_ref, $$family_id_ref . "_data.prune.in"
-            ),
+            extract_file    => $extract_file,
             read_freqfile_path =>
               catfile( $$temp_directory_ref, $$family_id_ref . "_data.frqx" ),
             binary_fileset_prefix => catfile(
@@ -17128,10 +17130,12 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
       q?perl -nae '{print "##contig=<ID=".$F[0].",length=".$F[1].">", "\n"}'?;
 
     ##Special fix to accomodate outdated versions of .so libraries required by root
-    if (exists $active_parameter_href->{cnv_root_ld_lib}) {
+    if ( exists $active_parameter_href->{cnv_root_ld_lib} ) {
 
-      say $FILEHANDLE 'LD_LIBRARY_PATH=' . $active_parameter_href->{cnv_root_ld_lib} . '/:$LD_LIBRARY_PATH';
-      say $FILEHANDLE 'export LD_LIBRARY_PATH', "\n";
+        say $FILEHANDLE 'LD_LIBRARY_PATH='
+          . $active_parameter_href->{cnv_root_ld_lib}
+          . '/:$LD_LIBRARY_PATH';
+        say $FILEHANDLE 'export LD_LIBRARY_PATH', "\n";
     }
 
     ## Add contigs to vcfheader
