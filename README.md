@@ -139,7 +139,7 @@ $ bash mip.sh
 ```
 This will install all the dependencies of MIP and other modules included in MIP into a conda environment. 
 However a fresh version of perl and cpanm is installed, if enabled, outside of the conda environment, but are activated through bashrc and bash_profile.
-####*Optional*
+#### *Optional*
 Make sure to activate your conda environment if that option was used above.
     Test Perl modules and MIP
 ```
@@ -148,6 +148,7 @@ $ cd -
 ```
 
 4. Run MIP
+
 *Conda default environment*
 ``` 
 $ mip
