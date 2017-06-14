@@ -65,9 +65,9 @@ $parameter{bioconda}{cmake} = '3.3.1';
 ## Bioconda pathes
 # For correct softlinking in share and bin in conda env
 $parameter{bioconda_bwakit_patch}  = '-0';
-$parameter{bioconda_snpeff_patch}  = 'm-0';
-$parameter{bioconda_snpsift_patch} = 'm-0';
-$parameter{bioconda_picard_patch}  = '-0';
+$parameter{bioconda_snpeff_patch}  = 'p-1';
+$parameter{bioconda_snpsift_patch} = 'p-0';
+$parameter{bioconda_picard_patch}  = '-1';
 $parameter{bioconda_manta_patch}   = '-0';
 
 ## Perl Modules
@@ -134,7 +134,7 @@ $array_parameter{perl_modules}{default}              = [
     'File::Copy::Recursive',     # VEP
 ];
 
-my $VERSION = '1.2.0';
+my $VERSION = '1.2.1';
 
 ###User Options
 GetOptions(
