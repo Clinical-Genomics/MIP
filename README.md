@@ -105,7 +105,7 @@ $ cd t; prove mip_install.t
 $ cd -
 ```
 
-1. Create the install instructions for MIP
+2. Create the install instructions for MIP
 ```
 $ perl mip_install.pl
 ```
@@ -133,7 +133,7 @@ by supplying a ``--reference_dir [reference_dir]`` in the installation process.
 #####*NOTE*
 Some references are quite large and will take time to download. You might want to run this using screen or tmux.
 
-1. Run the bash script
+3. Run the bash script
 ```
 $ bash mip.sh
 ```
@@ -147,7 +147,7 @@ $ cd t; prove run_tests.t
 $ cd -
 ```
 
-1. Run MIP
+4. Run MIP
 *Conda default environment*
 ``` 
 $ mip
