@@ -104,7 +104,7 @@ eval_parameter_hash(
     }
 );
 
-our $VERSION = "v5.0.4";    #Set MIP version
+our $VERSION = "v5.0.5";    #Set MIP version
 
 ## Directories, files, job_ids and sample_info
 my ( %infile, %indir_path, %infile_lane_prefix, %lane,
@@ -5405,8 +5405,8 @@ sub rankvariant {
                         FILEHANDLE          => $XARGSFILEHANDLE,
                     }
                 );
-                say $XARGSFILEHANDLE "\n";
             }
+            say $XARGSFILEHANDLE "\n";
         }
 
         if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
@@ -14864,7 +14864,7 @@ sub sv_rankvariant {
             }
         );
 
-        ## Process per contig
+      CONTIG:
         foreach my $contig (@contigs_size_ordered) {
 
             ## Get parameters
@@ -14876,20 +14876,23 @@ sub sv_rankvariant {
                   . $vcfparser_analysis_type
                   . $file_suffix );    #InFile
 
+            # Update endings with contig info
             if (   ( $consensus_analysis_type eq "wgs" )
                 || ( $consensus_analysis_type eq "mixed" ) )
-            {                          #Update endings with contig info
+            {
 
                 $genmod_file_ending_stub = $infile_prefix . "_" . $contig;
                 $genmod_outfile_path_prefix =
                   $outfile_path_prefix . "_" . $contig;
                 $genmod_xargs_file_name = $xargs_file_name . "." . $contig;
-                $genmod_indata          = catfile( $$temp_directory_ref,
+
+                # Infile
+                $genmod_indata = catfile( $$temp_directory_ref,
                         $genmod_file_ending_stub
                       . $vcfparser_analysis_type
-                      . $file_suffix );    #InFile
+                      . $file_suffix );
             }
-            $genmod_module = "";           #Restart for next contig
+            $genmod_module = "";    #Restart for next contig
 
             ## Genmod Annotate
             $genmod_module = "_annotate";
@@ -14900,13 +14903,14 @@ sub sv_rankvariant {
                 && ( @{ $parameter_href->{dynamic_parameter}{unaffected} } eq
                     @{ $active_parameter_href->{sample_ids} } )
               )
-            {                              #Only unaffected
+            {                       #Only unaffected
 
                 ## Write to outputFile - last genmod module
+                # Outfile
                 $genmod_outfile_path =
                     $genmod_outfile_path_prefix
                   . $vcfparser_analysis_type
-                  . $file_suffix;          #OutFile
+                  . $file_suffix;
             }
             else {
 
@@ -15025,15 +15029,16 @@ sub sv_rankvariant {
                         FILEHANDLE          => $XARGSFILEHANDLE,
                     }
                 );
-                say $XARGSFILEHANDLE "\n";
             }
+            say $XARGSFILEHANDLE "\n";
 
+            # Update endings with contig info
             if (   ( $consensus_analysis_type eq "wes" )
                 || ( $consensus_analysis_type eq "rapid" ) )
-            {    #Update endings with contig info
+            {
 
-                last
-                  ; #Only perform once for exome samples to avoid risking contigs lacking variants throwing errors
+# Only perform once for exome samples to avoid risking contigs lacking variants throwing errors
+                last;
             }
         }
 
