@@ -5,3 +5,4 @@ gnu_cd.t
 gnu_sed.t
 gnu_less.t
 slurm_sacct.t
+slurm_sbatch.t

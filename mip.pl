@@ -5065,7 +5065,7 @@ sub rankvariant {
     use Program::Variantcalling::Genmod qw(annotate models score compound);
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -9972,7 +9972,7 @@ sub vt {
                 decompose       => $active_parameter_href->{vt_decompose},
                 normalize       => $active_parameter_href->{vt_normalize},
                 uniq            => $active_parameter_href->{vt_uniq},
-                gnu_sed             => 1,
+                gnu_sed         => 1,
                 instream        => 0,
                 cmd_break       => ";",
                 xargs_file_name => $xargs_file_name,
@@ -14629,7 +14629,7 @@ sub sv_rankvariant {
     use Program::Variantcalling::Genmod qw(annotate models score compound);
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -24399,7 +24399,7 @@ sub variantannotationblock {
     my $time = 80;
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     ## Filehandles
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
@@ -24810,7 +24810,7 @@ sub bamcalibrationblock {
     my $time        = 80;
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     ## Filehandles
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
@@ -26036,7 +26036,7 @@ sub build_annovar_prerequisites {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
     $parameter_href->{annovar_build_reference}{build_file} =
@@ -26515,7 +26515,7 @@ sub build_ptchs_metric_prerequisites {
     use Program::Interval::Picardtools qw(intervallisttools);
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my $file_name;
 
@@ -26876,7 +26876,7 @@ sub build_bwa_prerequisites {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
     my $random_integer =
@@ -27311,7 +27311,7 @@ sub build_human_genome_prerequisites {
     use Language::Java qw(core);
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my $file_name;
     my $submit_switch;
@@ -27600,7 +27600,7 @@ sub read_yaml_pedigree_file {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     ## Defines which values are allowed
     my %allowed_values = (
@@ -28261,7 +28261,7 @@ sub submit_job {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my $sample_id_chain_key;
     my $sample_id_parallel_chain_key;
@@ -28956,29 +28956,31 @@ sub submit_jobs_to_sbatch {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my $job_ids_return;
     my $job_id;
 
-    if ($job_ids) {    #Current submission should use dependencies
+    use MIP::Workloadmanager::Slurm qw(slurm_sbatch);
 
-        $job_ids_return =
-          `sbatch --dependency=$job_dependency_type$job_ids $sbatch_file_name`
-          ; #Supply with dependency of previous jobs that this one is dependent on
-        ($job_id) = ( $job_ids_return =~ /Submitted batch job (\d+)/ )
-          ;    #Just submitted job_id
+# Supply with potential dependency of previous jobs that this one is dependent on
+    my $cmd = join q{ },
+      slurm_sbatch(
+        {
+            infile_path     => $sbatch_file_name,
+            dependency_type => $job_dependency_type,
+            job_ids_string  => $job_ids,
+        }
+      );
 
-    }
-    else {     #No dependencies
+    # Submit job to system
+    $job_ids_return = `$cmd`;
 
-        $job_ids_return =
-          `sbatch $sbatch_file_name`;    #No jobs have been run: submit
-        ($job_id) = ( $job_ids_return =~ /Submitted batch job (\d+)/ )
-          ;                              #Just submitted job_id
-    }
-    if ( $job_ids_return !~ /\d+/ )
-    {  #Catch errors since, propper sbatch submission should only return numbers
+    # Just submitted job_id
+    ($job_id) = ( $job_ids_return =~ /Submitted batch job (\d+)/ );
+
+    # Catch errors since, propper sbatch submission should only return numbers
+    if ( $job_ids_return !~ /\d+/ ) {
 
         $log->fatal( $job_ids_return . "\n" );
         $log->fatal("MIP: Aborting run.\n");
@@ -29132,7 +29134,7 @@ sub collect_infiles {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     $log->info("Reads from platform:\n");
 
@@ -29324,7 +29326,7 @@ sub infiles_reformat {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my $uncompressed_file_counter = 0
       ; #Used to decide later if any inputfiles needs to be compressed before starting analysis
@@ -29523,7 +29525,7 @@ sub check_sample_id_match {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my %seen = ( $infile_sample_id => 1 );    #Add input as first increment
 
@@ -29584,7 +29586,7 @@ sub get_run_info {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my $fastq_header_regexp =
 q?perl -nae 'chomp($_); if($_=~/^(@\w+):(\w+):(\w+):(\w+)\S+\s(\w+):\w+:\w+:(\w+)/) {print $1." ".$2." ".$3." ".$4." ".$5." ".$6."\n";} if($.=1) {last;}' ?;
@@ -29936,7 +29938,7 @@ sub detect_interleaved {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my $interleaved_regexp =
 q?perl -nae 'chomp($_); if( ($_=~/^@\S+:\w+:\w+:\w+\S+\s(\w+):\w+:\w+:\w+/) && ($.==5) ) {print $1."\n";last;} elsif ($.==6) {last;}' ?;
@@ -30115,7 +30117,7 @@ sub add_to_active_parameter {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my $element_separator_ref =
       \$parameter_href->{$parameter_name}{element_separator};
@@ -30601,7 +30603,7 @@ sub check_parameter_files {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -31505,7 +31507,7 @@ sub program_prerequisites {
     use Program::Gnu::Coreutils qw(echo);
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     ### Sbatch script names and directory creation
 
@@ -31899,7 +31901,7 @@ sub sample_info_qc {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     unless ( defined($sample_id) ) {
 
@@ -32164,7 +32166,7 @@ sub check_pedigree_members {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my %command;
 
@@ -32286,7 +32288,7 @@ sub write_cmd_mip_log {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my $cmd_line = $$script_ref . " ";
 
@@ -32461,7 +32463,7 @@ sub determine_nr_of_rapid_nodes {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my $number_nodes         = 0;  #Nodes to allocate
     my $read_position_weight = 1;  #Scales the read_start and read_stop position
@@ -32546,7 +32548,7 @@ sub check_unique_ids {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my %seen;    #Hash to test duplicate sample_ids later
 
@@ -32768,7 +32770,7 @@ sub parse_human_genome_reference {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     if ( $$human_genome_reference_ref =~ /GRCh(\d+\.\d+|\d+)_homo_sapiens_/ )
     {    #Used to change capture kit genome reference version later
@@ -32941,7 +32943,7 @@ sub check_existance {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     if ( $item_type_to_check eq "directory" ) {
 
@@ -33161,7 +33163,7 @@ sub check_target_bed_file_exist {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     if ( $file !~ /.bed$/ ) {
 
@@ -33228,7 +33230,7 @@ sub compare_array_elements {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     if ( scalar(@$elements_ref) != scalar(@$array_queries_ref) ) {
 
@@ -33793,7 +33795,7 @@ sub collect_select_file_contigs {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my $pquery_seq_dict =
 q?perl -nae 'if ($_=~/contig\=(\w+)/) {print $1, ",";} if($_=~/#CHROM/) {last;}' ?;
@@ -33863,7 +33865,7 @@ sub size_sort_select_file_contigs {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my @sorted_contigs;
 
@@ -34119,7 +34121,7 @@ sub print_supported_annovar_table_names {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     if ( $active_parameter_href->{log_file} ) {
 
@@ -35063,7 +35065,7 @@ sub create_fam_file {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my @fam_headers =
       ( "#family_id", "sample_id", "father", "mother", "sex", "phenotype" );
@@ -35210,7 +35212,7 @@ sub check_annovar_tables {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my $path;
 
@@ -35974,7 +35976,7 @@ sub check_email_address {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     $$email_ref =~
       /[ |\t|\r|\n]*\"?([^\"]+\"?@[^ <>\t]+\.[^ <>\t][^ <>\t]+)[ |\t|\r|\n]*/;
@@ -36314,7 +36316,7 @@ sub xargs_command {
     use Language::Java qw(core);
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my $xargs_file_name;
 
@@ -36862,7 +36864,7 @@ sub collect_gene_panels {
     if ( defined($aggregate_gene_panel_file) ) {
 
         ## Retrieve logger object
-        my $log = Log::Log4perl->get_logger("MIP");
+        my $log = Log::Log4perl->get_logger('MIP');
 
         my %gene_panel;    #Collect each gene panel features
         my %header = (
@@ -37051,7 +37053,7 @@ sub check_command_in_path {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my %seen;    #Track program paths that have already been checked
 
@@ -37974,7 +37976,7 @@ sub check_vep_directories {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     if ( $$vep_directory_path_ref =~ /ensembl-tools-release-(\d+)/ ) {
 
@@ -38493,7 +38495,7 @@ sub check_vt_for_references {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my %seen;    #Avoid checking the same reference multiple times
 
@@ -38653,7 +38655,7 @@ sub check_vt {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my %vt_regexp;
 
@@ -39353,7 +39355,7 @@ sub detect_trio {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my %trio;
 
@@ -39554,7 +39556,7 @@ sub check_prioritize_variant_callers {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my @priority_calls =
       split( ",", $active_parameter_href->{$$parameter_names_ref} );
@@ -39764,7 +39766,7 @@ sub check_aligner {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my %aligner;
 
@@ -40134,7 +40136,7 @@ sub check_program_mode {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my @allowed_values = ( 0, 1, 2 );
 
@@ -40323,7 +40325,7 @@ sub check_sample_id_in_parameter_path {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     foreach my $parameter_name (@$parameter_names_ref)
     {    #Lopp through all hash parameters supplied
@@ -40420,7 +40422,7 @@ sub check_sample_id_in_parameter {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     foreach my $parameter_name (@$parameter_names_ref)
     {    #Lopp through all hash parameters supplied
@@ -40514,7 +40516,7 @@ sub get_exom_target_bed_file {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my %seen;
 
@@ -41248,7 +41250,7 @@ sub check_founder_id {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
   SAMPLE:
     foreach my $pedigree_sample_href ( @{ $pedigree_href->{samples} } ) {
@@ -41449,7 +41451,7 @@ sub check_vcfanno_toml {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     open( $FILEHANDLE, "<", $vcfanno_file_toml )
       or
@@ -41515,7 +41517,7 @@ sub check_snpsift_keys {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     foreach my $file ( keys %$snpsift_annotation_outinfo_key_href ) {
 
@@ -41572,7 +41574,7 @@ sub check_key_exists_in_hash {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     foreach my $key ( keys %$query_href ) {
 
@@ -41627,7 +41629,7 @@ sub check_element_exists_in_hash {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     foreach my $element (@$queryies) {
 
@@ -41738,7 +41740,7 @@ sub get_file_suffix {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my $file_suffix;
 
@@ -41816,7 +41818,7 @@ sub update_program_mode {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     if ( $$consensus_analysis_type_ref ne "wgs" ) {
 
@@ -42145,7 +42147,7 @@ sub CheckTemplateFilesPaths {
     my $parameter_name = $_[1];
 
     ## Retrieve logger object now that log_file has been set
-    my $log = Log::Log4perl->get_logger("MIP");
+    my $log = Log::Log4perl->get_logger('MIP');
 
     open( my $TF, "<", $$file_name_ref )
       or $log->logdie( "Can't open '" . $$file_name_ref . "':" . $! . "\n" );
