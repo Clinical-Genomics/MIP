@@ -31508,17 +31508,19 @@ sub program_prerequisites {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use File::Format::Shell
-      qw(create_housekeeping_function create_error_trap_function enable_trap);
+      qw(build_shebang create_housekeeping_function create_error_trap_function enable_trap);
     use Program::Gnu::Coreutils qw(echo);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger('MIP');
 
     ### Sbatch script names and directory creation
+    # For holding commands to write with proper indention in bash
+    my @commands;
+    my $file_name_end = '.sh';
 
-    my @commands;   #For holding commands to write with proper indention in bash
-    my $file_name_end = ".sh";
-    my $file_name;    #The sbatch script - to be created filename
+    # The sbatch script - to be created filename
+    my $file_name;
     my $file_name_tracker;
 
     my $program_data_directory =
@@ -31591,25 +31593,22 @@ sub program_prerequisites {
           . $program_data_directory
           . "\n" );
 
-###Sbatch header
-    open( $FILEHANDLE, ">", $file_name )
+    ## Script file
+    open( $FILEHANDLE, '>', $file_name )
       or $log->logdie( "Can't write to '" . $file_name . "' :" . $! . "\n" );
 
-    say $FILEHANDLE "#! /bin/bash -l";
+    # Build bash shebang line
+    build_shebang(
+        {
+            FILEHANDLE  => $FILEHANDLE,
+            login_shell => 1,
+            errexit     => $set_errexit,
+            nounset     => $set_nounset,
+            pipefail    => $set_pipefail,
+        }
+    );
 
-    if ($set_errexit) {
-
-        say $FILEHANDLE
-          "set -e";    #Halt script if command has non-zero exit code (e)
-    }
-    if ($set_nounset) {
-
-        say $FILEHANDLE "set -u";  #Halt script if variable is uninitialised (u)
-    }
-    if ($set_pipefail) {
-
-        say $FILEHANDLE "set -o pipefail";    #Detect errors within pipes
-    }
+    # Sbatch header
     say $FILEHANDLE "#SBATCH -A " . $active_parameter_href->{project_id};
     say $FILEHANDLE "#SBATCH -n " . $core_number;
     say $FILEHANDLE "#SBATCH -t " . $process_time . ":00:00";
@@ -31655,8 +31654,8 @@ sub program_prerequisites {
     );
     say $FILEHANDLE "\n";
 
-    if ($sleep)
-    { #Let the process sleep for a random couple of seconds (0-60) to avoid race conditions in mainly conda sourcing activate
+# Let the process sleep for a random couple of seconds (0-60) to avoid race conditions in mainly conda sourcing activate
+    if ($sleep) {
 
         say $FILEHANDLE "sleep " . int( rand(60) );
     }
@@ -31667,7 +31666,7 @@ sub program_prerequisites {
         say $FILEHANDLE "##Activate environment";
         say $FILEHANDLE join( ' ', @{$source_environment_commands_ref} ), "\n";
     }
-    if ( defined($temp_directory) )
+    if ( defined $temp_directory )
     {    #Not all programs need a temporary directory
 
         say $FILEHANDLE "## Create temporary directory";
@@ -31724,8 +31723,9 @@ sub program_prerequisites {
             }
         );
     }
-    return ( $file_name, $file_info_path . $file_name_tracker )
-      ;    #Return filen name, file path for stdout/stderr for QC check later
+
+    # Return filen name, file path for stdout/stderr for QC check later
+    return ( $file_name, $file_info_path . $file_name_tracker );
 }
 
 sub add_merged_infile_name {

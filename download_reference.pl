@@ -76,7 +76,7 @@ $parameter{reference_dir} = cwd();
 my %array_parameter;
 $array_parameter{reference_genome_versions}{default} = [ "GRCh37", "hg38" ];
 
-my $download_reference_version = '0.0.2';
+my $download_reference_version = '0.0.3';
 
 ###User Options
 GetOptions(
@@ -130,19 +130,19 @@ update_to_absolute_path( { parameter_href => \%parameter, } );
 ###MAIN###
 ##########
 
+my $bash_file_path = catfile( cwd(), "download_reference.sh" );
+
 ## Create bash file for writing install instructions
 my $BASHFILEHANDLE = File::Format::Shell::create_bash_file(
     {
-        file_name        => "download_reference.sh",
+        file_name        => $bash_file_path,
         directory_remove => ".download_reference",
         log              => $log,
+        errexit          => 1,
+        nounset          => 1,
     }
 );
-$log->info(
-    "Will write install instructions to '"
-      . catfile( cwd(), "download_reference.sh" ),
-    "'\n"
-);
+$log->info( "Will write install instructions to '" . $bash_file_path, "'\n" );
 
 references(
     {
@@ -150,6 +150,8 @@ references(
         FILEHANDLE     => $BASHFILEHANDLE,
     }
 );
+
+close($BASHFILEHANDLE);
 
 ###SubRoutines###
 

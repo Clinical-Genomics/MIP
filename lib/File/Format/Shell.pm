@@ -7,12 +7,13 @@ use v5.10;    #Require at least perl 5.10
 use utf8;     #Allow unicode characters in this script
 use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
+use Carp;
 
 BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Inherit from Exporter to export functions and variables
     our @ISA = qw(Exporter);
@@ -22,9 +23,10 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = (
-        "create_bash_file",           "create_housekeeping_function",
-        "create_error_trap_function", "enable_trap",
-        "clear_trap",                 "track_progress",
+        'create_bash_file',             'build_shebang',
+        'create_housekeeping_function', 'create_error_trap_function',
+        'enable_trap',                  'clear_trap',
+        'track_progress',
     );
 }
 
@@ -36,7 +38,7 @@ use Params::Check qw[check allow last_error];
 $Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 
 ##MIPs lib/
-use lib catdir( $Bin, "lib" );        #Add MIPs internal lib
+use lib catdir( $Bin, 'lib' );        #Add MIPs internal lib
 
 sub create_bash_file {
 
@@ -44,18 +46,26 @@ sub create_bash_file {
 
 ##Function : Create bash file with header
 ##Returns  : "$FILEHANDLE"
-##Arguments: $file_name, $directory_remove, $log, $trap_signals_ref, $trap_function
+##Arguments: $file_name, $directory_remove, $log, $trap_signals_ref, $trap_function, $login_shell, $errexit, $nounset, $pipefail
 ##         : $file_name        => File name
 ##         : $directory_remove => Directory to remove when caught by trap function
 ##         : $log              => Log object to write to
 ##         : $trap_signals_ref => Array with signals to clear trap for {REF}
 ##         : $trap_function    => Trap function argument
+##         : $login_shell      => Invoked as a login shell. Reinitilize bashrc and bash_profile
+##         : $errexit          => Halt script if command has non-zero exit code (-e)
+##         : $nounset          => Halt script if variable is uninitialised (-u)
+##         : $pipefail         => Detect errors within pipes (-o pipefaile)
 
     my ($arg_href) = @_;
 
     ## Default(s)
     my $trap_signals_ref;
     my $trap_function;
+    my $login_shell;
+    my $errexit;
+    my $nounset;
+    my $pipefail;
 
     ## Flatten argument(s)
     my $file_name;
@@ -76,43 +86,69 @@ sub create_bash_file {
             store       => \$directory_remove
         },
         trap_signals_ref => {
-            default     => ["ERR"],
+            default     => ['ERR'],
             strict_type => 1,
             store       => \$trap_signals_ref
         },
         trap_function => {
-            default     => "error",
+            default     => 'error',
             strict_type => 1,
             store       => \$trap_function
         },
+        login_shell => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$login_shell
+        },
+        errexit => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$errexit
+        },
+        nounset => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$nounset
+        },
+        pipefail => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$pipefail
+        },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-    my $pwd        = cwd();
 
     ## Open batch file with supplied log
-    if ( ( defined($log) ) && ($log) ) {
+    if ( ( defined $log ) && ($log) ) {
 
-        open( $FILEHANDLE, ">", catfile( $pwd, $file_name ) )
-          or $log->logdie( "Cannot write to '"
-              . catfile( $pwd, $file_name ) . "' :"
-              . $!
-              . "\n" );
+        open( $FILEHANDLE, '>', catfile($file_name) )
+          or $log->logdie(
+            "Cannot write to '" . catfile($file_name) . "' :" . $! . "\n" );
     }
     else {
 
-        open( $FILEHANDLE, ">", catfile( $pwd, $file_name ) )
-          or die( "Cannot write to '"
-              . catfile( $pwd, $file_name ) . "' :"
-              . $!
-              . "\n" );
+        open( $FILEHANDLE, '>', catfile($file_name) )
+          or
+          die( "Cannot write to '" . catfile($file_name) . "' :" . $! . "\n" );
     }
 
-    print $FILEHANDLE "#!"
-      . catfile( dirname( dirname( devnull() ) ) )
-      . catfile( "usr", "bin", "env", "bash" ), "\n\n";
+    # Build bash shebang line
+    build_shebang(
+        {
+            FILEHANDLE  => $FILEHANDLE,
+            login_shell => $login_shell,
+            errexit     => $errexit,
+            nounset     => $nounset,
+            pipefail    => $pipefail,
+        }
+    );
 
     ## Create housekeeping function which removes entire directory when finished
     create_housekeeping_function(
@@ -136,15 +172,90 @@ sub create_bash_file {
 
     if ( ( defined($log) ) && ($log) ) {
 
-        $log->info( "Created bash file: '" . catfile( $pwd, $file_name ),
-            "'\n" );
+        $log->info( "Created bash file: '" . catfile($file_name), "'\n" );
     }
     else {
 
-        print STDERR "Created bash file: '" . catfile( $pwd, $file_name ), "'",
-          "\n";
+        print STDERR "Created bash file: '" . catfile($file_name), "'", "\n";
     }
     return $FILEHANDLE;
+}
+
+sub build_shebang {
+
+##build_shebang
+
+##Function : Build bash shebang line
+##Returns  : ""
+##Arguments: $FILEHANDLE, $bash_bin_path, $login_shell, $errexit, $nounset, $pipefail
+##         : $FILEHANDLE    => Filehandle to write to
+##         : $bash_bin_path => Location of bash bin
+##         : $login_shell   => Invoked as a login shell (-l). Reinitilize bashrc and bash_profile
+##         : $errexit       => Halt script if command has non-zero exit code (-e)
+##         : $nounset       => Halt script if variable is uninitialised (-u)
+##         : $pipefail      => Detect errors within pipes (-o pipefaile)
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $bash_bin_path;
+    my $login_shell;
+    my $errexit;
+    my $nounset;
+    my $pipefail;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+
+    my $tmpl = {
+        FILEHANDLE    => { required => 1, store => \$FILEHANDLE },
+        bash_bin_path => {
+            default =>
+              catfile( dirname( dirname( devnull() ) ), qw(usr bin env bash) ),
+            allow       => qr/^\S+$/,
+            strict_type => 1,
+            store       => \$bash_bin_path
+        },
+        login_shell => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$login_shell
+        },
+        errexit => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$errexit
+        },
+        nounset => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$nounset
+        },
+        pipefail => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$pipefail
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
+
+    # Build shebang
+    print $FILEHANDLE '#!';
+    print $FILEHANDLE $bash_bin_path;
+    print $FILEHANDLE "\n";
+
+    # Set flags
+    print $FILEHANDLE "set -l\n"          if ($login_shell);
+    print $FILEHANDLE "set -e\n"          if ($errexit);
+    print $FILEHANDLE "set -u\n"          if ($nounset);
+    print $FILEHANDLE "set -o pipefail\n" if ($pipefail);
+    print $FILEHANDLE "\n";
+    return;
 }
 
 sub create_housekeeping_function {
