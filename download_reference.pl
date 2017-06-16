@@ -138,8 +138,8 @@ my $BASHFILEHANDLE = File::Format::Shell::create_bash_file(
         file_name        => $bash_file_path,
         directory_remove => ".download_reference",
         log              => $log,
-        errexit          => 1,
-        nounset          => 1,
+        set_errexit      => 1,
+        set_nounset      => 1,
     }
 );
 $log->info( "Will write install instructions to '" . $bash_file_path, "'\n" );

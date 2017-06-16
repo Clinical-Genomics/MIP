@@ -31509,6 +31509,7 @@ sub program_prerequisites {
 
     use File::Format::Shell
       qw(build_shebang create_housekeeping_function create_error_trap_function enable_trap);
+    use MIP::Workloadmanager::Slurm qw(slurm_build_sbatch_header);
     use Program::Gnu::Coreutils qw(echo);
 
     ## Retrieve logger object
@@ -31600,49 +31601,34 @@ sub program_prerequisites {
     # Build bash shebang line
     build_shebang(
         {
-            FILEHANDLE  => $FILEHANDLE,
-            login_shell => 1,
-            errexit     => $set_errexit,
-            nounset     => $set_nounset,
-            pipefail    => $set_pipefail,
+            FILEHANDLE      => $FILEHANDLE,
+            set_login_shell => 1,
+            set_errexit     => $set_errexit,
+            set_nounset     => $set_nounset,
+            set_pipefail    => $set_pipefail,
         }
     );
 
-    # Sbatch header
-    say $FILEHANDLE "#SBATCH -A " . $active_parameter_href->{project_id};
-    say $FILEHANDLE "#SBATCH -n " . $core_number;
-    say $FILEHANDLE "#SBATCH -t " . $process_time . ":00:00";
-    say $FILEHANDLE "#SBATCH --qos=" . $slurm_quality_of_service;
-    say $FILEHANDLE "#SBATCH -J "
-      . $program_name . "_"
-      . $directory_id
-      . $call_type;
-    say $FILEHANDLE "#SBATCH -e "
-      . $file_info_path
-      . $file_name_tracker
-      . ".stderr.txt";
-    say $FILEHANDLE "#SBATCH -o "
-      . $file_info_path
-      . $file_name_tracker
-      . ".stdout.txt";
+    ### Sbatch header
+    ## Get parameters
+    my $job_name        = $program_name . '_' . $directory_id . $call_type;
+    my $stderrfile_path = $file_info_path . $file_name_tracker . '.stderr.txt';
+    my $stdoutfile_path = $file_info_path . $file_name_tracker . ".stdout.txt";
 
-    if ( exists( $active_parameter_href->{email} ) ) {
-
-        if ( $email_type =~ /B/i ) {
-
-            say $FILEHANDLE "#SBATCH --mail-type=BEGIN";
+    my @sbatch_headers = slurm_build_sbatch_header(
+        {
+            project_id               => $active_parameter_href->{project_id},
+            core_number              => $core_number,
+            process_time             => $process_time . ":00:00",
+            slurm_quality_of_service => $slurm_quality_of_service,
+            job_name                 => $job_name,
+            stderrfile_path          => $stderrfile_path,
+            stdoutfile_path          => $stdoutfile_path,
+            email                    => $active_parameter_href->{email},
+            email_type               => $email_type,
+            FILEHANDLE               => $FILEHANDLE,
         }
-        if ( $email_type =~ /E/i ) {
-
-            say $FILEHANDLE "#SBATCH --mail-type=END";
-        }
-        if ( $email_type =~ /F/i ) {
-
-            say $FILEHANDLE "#SBATCH --mail-type=FAIL";
-        }
-        say $FILEHANDLE "#SBATCH --mail-user="
-          . $active_parameter_href->{email}, "\n";
-    }
+    );
 
     say $FILEHANDLE q?readonly PROGNAME=$(basename "$0")?, "\n";
 

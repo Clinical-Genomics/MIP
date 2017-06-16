@@ -241,8 +241,8 @@ my $BASHFILEHANDLE = File::Format::Shell::create_bash_file(
     {
         file_name        => catfile( cwd(), 'mip.sh' ),
         directory_remove => '.MIP',
-        errexit          => 1,
-        nounset          => 1,
+        set_errexit      => 1,
+        set_nounset      => 1,
     }
 );
 print STDOUT q{Will write install instructions to '}

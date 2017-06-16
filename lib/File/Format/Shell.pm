@@ -46,26 +46,26 @@ sub create_bash_file {
 
 ##Function : Create bash file with header
 ##Returns  : "$FILEHANDLE"
-##Arguments: $file_name, $directory_remove, $log, $trap_signals_ref, $trap_function, $login_shell, $errexit, $nounset, $pipefail
+##Arguments: $file_name, $directory_remove, $log, $trap_signals_ref, $trap_function, $set_login_shell, $set_errexit, $set_nounset, $set_pipefail
 ##         : $file_name        => File name
 ##         : $directory_remove => Directory to remove when caught by trap function
 ##         : $log              => Log object to write to
 ##         : $trap_signals_ref => Array with signals to clear trap for {REF}
 ##         : $trap_function    => Trap function argument
-##         : $login_shell      => Invoked as a login shell. Reinitilize bashrc and bash_profile
-##         : $errexit          => Halt script if command has non-zero exit code (-e)
-##         : $nounset          => Halt script if variable is uninitialised (-u)
-##         : $pipefail         => Detect errors within pipes (-o pipefaile)
+##         : $set_login_shell  => Invoked as a login shell. Reinitilize bashrc and bash_profile
+##         : $set_errexit      => Halt script if command has non-zero exit code (-e)
+##         : $set_nounset      => Halt script if variable is uninitialised (-u)
+##         : $set_pipefail     => Detect errors within pipes (-o pipefail)
 
     my ($arg_href) = @_;
 
     ## Default(s)
     my $trap_signals_ref;
     my $trap_function;
-    my $login_shell;
-    my $errexit;
-    my $nounset;
-    my $pipefail;
+    my $set_login_shell;
+    my $set_errexit;
+    my $set_nounset;
+    my $set_pipefail;
 
     ## Flatten argument(s)
     my $file_name;
@@ -95,29 +95,29 @@ sub create_bash_file {
             strict_type => 1,
             store       => \$trap_function
         },
-        login_shell => {
+        set_login_shell => {
             default     => 0,
             allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$login_shell
+            store       => \$set_login_shell
         },
-        errexit => {
+        set_errexit => {
             default     => 0,
             allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$errexit
+            store       => \$set_errexit
         },
-        nounset => {
+        set_nounset => {
             default     => 0,
             allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$nounset
+            store       => \$set_nounset
         },
-        pipefail => {
+        set_pipefail => {
             default     => 0,
             allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$pipefail
+            store       => \$set_pipefail
         },
     };
 
@@ -142,11 +142,11 @@ sub create_bash_file {
     # Build bash shebang line
     build_shebang(
         {
-            FILEHANDLE  => $FILEHANDLE,
-            login_shell => $login_shell,
-            errexit     => $errexit,
-            nounset     => $nounset,
-            pipefail    => $pipefail,
+            FILEHANDLE      => $FILEHANDLE,
+            set_login_shell => $set_login_shell,
+            set_errexit     => $set_errexit,
+            set_nounset     => $set_nounset,
+            set_pipefail    => $set_pipefail,
         }
     );
 
@@ -187,22 +187,22 @@ sub build_shebang {
 
 ##Function : Build bash shebang line
 ##Returns  : ""
-##Arguments: $FILEHANDLE, $bash_bin_path, $login_shell, $errexit, $nounset, $pipefail
-##         : $FILEHANDLE    => Filehandle to write to
-##         : $bash_bin_path => Location of bash bin
-##         : $login_shell   => Invoked as a login shell (-l). Reinitilize bashrc and bash_profile
-##         : $errexit       => Halt script if command has non-zero exit code (-e)
-##         : $nounset       => Halt script if variable is uninitialised (-u)
-##         : $pipefail      => Detect errors within pipes (-o pipefaile)
+##Arguments: $FILEHANDLE, $bash_bin_path, $set_login_shell, $set_errexit, $set_nounset, $set_pipefail
+##         : $FILEHANDLE      => Filehandle to write to
+##         : $bash_bin_path   => Location of bash bin
+##         : $set_login_shell => Invoked as a login shell (-l). Reinitilize bashrc and bash_profile
+##         : $set_errexit     => Halt script if command has non-zero exit code (-e)
+##         : $set_nounset     => Halt script if variable is uninitialised (-u)
+##         : $set_pipefail    => Detect errors within pipes (-o pipefail)
 
     my ($arg_href) = @_;
 
     ## Default(s)
     my $bash_bin_path;
-    my $login_shell;
-    my $errexit;
-    my $nounset;
-    my $pipefail;
+    my $set_login_shell;
+    my $set_errexit;
+    my $set_nounset;
+    my $set_pipefail;
 
     ## Flatten argument(s)
     my $FILEHANDLE;
@@ -216,29 +216,29 @@ sub build_shebang {
             strict_type => 1,
             store       => \$bash_bin_path
         },
-        login_shell => {
+        set_login_shell => {
             default     => 0,
             allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$login_shell
+            store       => \$set_login_shell
         },
-        errexit => {
+        set_errexit => {
             default     => 0,
             allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$errexit
+            store       => \$set_errexit
         },
-        nounset => {
+        set_nounset => {
             default     => 0,
             allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$nounset
+            store       => \$set_nounset
         },
-        pipefail => {
+        set_pipefail => {
             default     => 0,
             allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$pipefail
+            store       => \$set_pipefail
         },
     };
 
@@ -250,10 +250,10 @@ sub build_shebang {
     print $FILEHANDLE "\n";
 
     # Set flags
-    print $FILEHANDLE "set -l\n"          if ($login_shell);
-    print $FILEHANDLE "set -e\n"          if ($errexit);
-    print $FILEHANDLE "set -u\n"          if ($nounset);
-    print $FILEHANDLE "set -o pipefail\n" if ($pipefail);
+    print $FILEHANDLE "set -l\n"          if ($set_login_shell);
+    print $FILEHANDLE "set -e\n"          if ($set_errexit);
+    print $FILEHANDLE "set -u\n"          if ($set_nounset);
+    print $FILEHANDLE "set -o pipefail\n" if ($set_pipefail);
     print $FILEHANDLE "\n";
     return;
 }
