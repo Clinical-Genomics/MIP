@@ -2898,7 +2898,7 @@ sub build_usage {
       -svravwg/--sv_genmod_models_whole_gene Allow compound pairs in intronic regions (defaults to "0" (=yes))
       -svravrpf/--sv_genmod_models_reduced_penetrance_file File containg genes with reduced penetrance (defaults to "")
       -svravrm/--sv_rank_model_file Rank model config file (defaults to "")
-    -psvre/psv_reformat Concatenating files (defaults to "1" (=yes))
+    -psvre/--psv_reformat Concatenating files (defaults to "1" (=yes))
       -svrevbf/--sv_rankvariant_binary_file Produce binary file from the rank variant chromosome sorted vcfs (defaults to "1" (=yes))
       -svrergf/--sv_reformat_remove_genes_file Remove variants in hgnc_ids (defaults to "")
 
@@ -2958,7 +2958,7 @@ sub build_usage {
     ###Annotation
     -ppvab/--pprepareforvariantannotationblock Prepare for variant annotation block by copying and splitting files per contig (Mandatory)
     -prhc/--prhocall Rhocall performs annotation of variants in autozygosity regions (defaults to "1" (=yes))
-    -rhcf/--rhocall_frequency_file Frequency file for bcftools roh calculation (defaults to "GRCh37_anon_swegen_snp_-2016-10-19-.tab.gz", tab sep)
+      -rhcf/--rhocall_frequency_file Frequency file for bcftools roh calculation (defaults to "GRCh37_anon_swegen_snp_-2016-10-19-.tab.gz", tab sep)
     -pvt/--pvt VT decompose and normalize (defaults to "1" (=yes))
       -vtdec/--vt_decompose Split multi allelic records into single records (defaults to "1" (=yes))
       -vtnor/--vt_normalize Normalize variants (defaults to "1" (=yes))
