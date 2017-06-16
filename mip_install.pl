@@ -135,7 +135,7 @@ $array_parameter{perl_modules}{default}              = [
     'File::Copy::Recursive',     # VEP
 ];
 
-my $VERSION = '1.2.2';
+my $VERSION = '1.2.3';
 
 ###User Options
 GetOptions(
@@ -239,8 +239,10 @@ Script::Utils::set_default_array_parameters(
 ## Create bash file for writing install instructions
 my $BASHFILEHANDLE = File::Format::Shell::create_bash_file(
     {
-        file_name        => 'mip.sh',
+        file_name        => catfile( cwd(), 'mip.sh' ),
         directory_remove => '.MIP',
+        set_errexit      => 1,
+        set_nounset      => 1,
     }
 );
 print STDOUT q{Will write install instructions to '}
