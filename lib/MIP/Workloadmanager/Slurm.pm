@@ -190,14 +190,14 @@ sub slurm_build_sbatch_header {
 
 ##Function : Perl wrapper for writing SLURM sbatch header recipe to already open $FILEHANDLE or return commands array. Based on SLURM 2.6.0.
 ##Returns  : "@commands"
-##Arguments: $project_id, $slurm_quality_of_service, $stderrfile_path, $stdoutfile_path, $FILEHANDLE, $core_number, $process_time, $job_name, $email, $email_type
+##Arguments: $project_id, $slurm_quality_of_service, $stderrfile_path, $stdoutfile_path, $FILEHANDLE, $core_number, $process_time, $job_name, $email, $email_types_ref
 ##         : $project_id               => Project id
 ##         : $slurm_quality_of_service => Quality of service for the job
 ##         : $job_name                 => Specify a name for the job allocation
 ##         : $stderrfile_path          => Stderrfile path
 ##         : $stdoutfile_path          => Stdoutfile path
 ##         : $email                    => User to receive email notification
-##         : $email_type               => When to send email for event
+##         : $email_types_ref              => When to send email for event
 ##         : $FILEHANDLE               => Filehandle to write to
 ##         : $core_number              => Core number to allocate
 ##         : $process_time             => Time limit
@@ -207,6 +207,7 @@ sub slurm_build_sbatch_header {
     ## Default(s)
     my $core_number;
     my $process_time;
+    my $email_types_ref;
 
     ## Flatten argument(s)
     my $project_id;
@@ -215,8 +216,9 @@ sub slurm_build_sbatch_header {
     my $stderrfile_path;
     my $stdoutfile_path;
     my $email;
-    my $email_type;
     my $FILEHANDLE;
+
+    use MIP::Check::Parameter qw(check_allowed_array_values);
 
     my $tmpl = {
         project_id => {
@@ -231,7 +233,22 @@ sub slurm_build_sbatch_header {
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
         stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
         email           => { strict_type => 1, store => \$email },
-        email_type      => { strict_type => 1, store => \$email_type },
+        email_types_ref => {
+            default => ['FAIL'],
+            allow   => [
+                sub {
+                    check_allowed_array_values(
+                        {
+                            allowed_values_ref =>
+                              [qw(NONE BEGIN END FAIL REQUEUE ALL)],
+                            values_ref => $arg_href->{email_types_ref},
+                        }
+                    );
+                }
+            ],
+            strict_type => 1,
+            store       => \$email_types_ref
+        },
         FILEHANDLE  => { store => \$FILEHANDLE },
         core_number => {
             default     => 1,
@@ -240,7 +257,7 @@ sub slurm_build_sbatch_header {
             store       => \$core_number
         },
         process_time => {
-            default     => "1:00:00",
+            default     => '1:00:00',
             allow       => qr/^\d+:\d+:\d+$/,
             strict_type => 1,
             store       => \$process_time
@@ -287,17 +304,9 @@ sub slurm_build_sbatch_header {
     }
     if ($email) {
 
-        if ( $email_type =~ /B/i ) {
+        if ( @{$email_types_ref} ) {
 
-            push @commands, '--mail-type=BEGIN';
-        }
-        if ( $email_type =~ /E/i ) {
-
-            push @commands, '--mail-type=END';
-        }
-        if ( $email_type =~ /F/i ) {
-
-            push @commands, '--mail-type=FAIL';
+            push @commands, '--mail-type=' . join q{,}, @{$email_types_ref};
         }
         push @commands, '--mail-user=' . $email;
     }

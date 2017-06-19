@@ -356,11 +356,14 @@ email:
   data_type: SCALAR
   mandatory: no
   type: mip
-email_type:
+email_types:
   associated_program:
    - mip
-  data_type: SCALAR
-  default: F
+  element_separator: ","
+  data_type: ARRAY
+  mandatory: no
+  default: 
+   - FAIL
   type: mip
 slurm_quality_of_service:
   associated_program:

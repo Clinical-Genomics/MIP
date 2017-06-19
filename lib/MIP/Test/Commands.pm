@@ -46,11 +46,12 @@ sub test_function {
 
 ##Function : Test module function by generating arguments and testing output
 ##Returns  : "@commands"
-##Arguments: $argument_href, $required_argument_href, $module_function_cref, $function_base_command
+##Arguments: $argument_href, $required_argument_href, $module_function_cref, $function_base_command, do_test_base_command
 ##         : $argument_href          => Parameters to submit to module method
 ##         : $required_argument_href => Required arguments
 ##         : $module_function_cref   => Module method to test
 ##         : $function_base_command  => Function base command
+##         : $do_test_base_command   => Perform test of base command
 
     my ($arg_href) = @_;
 
@@ -59,6 +60,7 @@ sub test_function {
     my $required_argument_href;
     my $function_base_command;
     my $module_function_cref;
+    my $do_test_base_command;
 
     my $tmpl = {
         argument_href => {
@@ -73,15 +75,19 @@ sub test_function {
             strict_type => 1,
             store       => \$required_argument_href
         },
+      module_function_cref =>
+          { required => 1, defined => 1, store => \$module_function_cref },
         function_base_command => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$function_base_command
         },
-        module_function_cref =>
-          { required => 1, defined => 1, store => \$module_function_cref },
-    };
+		do_test_base_command => { default => 1,
+					  allow => [0, 1],
+					  strict_type => 1,
+					  store       => \$do_test_base_command},
+	       };
 
     check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
 
@@ -186,13 +192,16 @@ sub test_function {
 
         if (@commands) {
 
+	  if($do_test_base_command) {
+
             ## Test function_base_command
             _test_base_command(
-                {
-                    base_command          => $commands[0],
-                    expected_base_command => $function_base_command,
-                }
-            );
+			       {
+				base_command          => $commands[0],
+				expected_base_command => $function_base_command,
+			       }
+			      );
+	  }
 
             ## Test argument
             ok( ( any { $_ eq $expected_return } @commands ),

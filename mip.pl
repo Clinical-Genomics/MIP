@@ -217,7 +217,7 @@ GetOptions(
     'bsu|bash_set_nounset:s'   => \$parameter{bash_set_nounset}{value},
     'bsp|bash_set_pipefail:s'  => \$parameter{bash_set_pipefail}{value},
     'em|email:s'               => \$parameter{email}{value},
-    'emt|email_type:s'         => \$parameter{email_type}{value},
+    'emt|email_types:s'         => \@ {$parameter{email_types}{value} },
     'mcn|module_core_number:s' => \%{ $parameter{module_core_number}{value} },
     'mot|module_time:s'        => \%{ $parameter{module_time}{value} },
     'mcn|max_cores_per_node=n' => \$parameter{max_cores_per_node}{value},
@@ -2801,7 +2801,7 @@ sub build_usage {
     -nrm/--node_ram_memory The RAM memory size of the node(s) in GigaBytes (Defaults to 24)
     -tmd/--temp_directory Set the temporary directory for all programs (defaults to "/scratch/SLURM_JOB_ID";supply whole path)
     -em/--email E-mail (defaults to "")
-    -emt/--email_type E-mail type (defaults to F (=FAIL);Options: B (=BEGIN) and/or F (=FAIL) and/or E=(END))
+    -emt/--email_types E-mail type (defaults to FAIL (=FAIL);Options: BEGIN (=BEGIN) and/or F (=FAIL) and/or END=(END))
     -qos/--slurm_quality_of_service SLURM quality of service command in sbatch scripts (defaults to "normal")
     -sen/--source_environment_commands Source environment command in sbatch scripts (defaults to "")
 
@@ -31339,7 +31339,7 @@ sub program_prerequisites {
 
 ##Function : Creates program directories (info & programData & programScript), program script filenames and writes sbatch header.
 ##Returns  : Path to stdout
-##Arguments: $active_parameter_href, $job_id_href, $FILEHANDLE, $directory_id, $program_directory, $program_name, $call_type, $outdata_dir, $outscript_dir, $temp_directory, $email_type, $source_environment_commands_ref, $slurm_quality_of_service, $core_number, $process_time, $error_trap, $set_errexit, $set_nounset, $set_pipefail, $sleep
+##Arguments: $active_parameter_href, $job_id_href, $FILEHANDLE, $directory_id, $program_directory, $program_name, $call_type, $outdata_dir, $outscript_dir, $temp_directory, $email_types_ref, $source_environment_commands_ref, $slurm_quality_of_service, $core_number, $process_time, $error_trap, $set_errexit, $set_nounset, $set_pipefail, $sleep
 ##         : $active_parameter_href           => The active parameters for this analysis hash {REF}
 ##         : $job_id_href                     => The job_id hash {REF}
 ##         : $FILEHANDLE                      => FILEHANDLE to write to
@@ -31351,7 +31351,7 @@ sub program_prerequisites {
 ##         : $outdata_dir                     => The MIP out data directory {Optional}
 ##         : $outscript_dir                   => The MIP out script directory {Optional}
 ##         : $temp_directory                  => Temporary directory for program {Optional}
-##         : $email_type                      => The email type
+##         : $email_types_ref                 => The email type
 ##         : $slurm_quality_of_service        => SLURM quality of service priority {Optional}
 ##         : $core_number                     => The number of cores to allocate {Optional}
 ##         : $process_time                    => Allowed process time (Hours) {Optional}
@@ -31367,7 +31367,7 @@ sub program_prerequisites {
     my $outdata_dir;
     my $outscript_dir;
     my $temp_directory;
-    my $email_type;
+    my $email_types_ref;
     my $source_environment_commands_ref;
     my $slurm_quality_of_service;
     my $core_number;
@@ -31443,10 +31443,10 @@ sub program_prerequisites {
             strict_type => 1,
             store       => \$temp_directory
         },
-        email_type => {
-            default     => $arg_href->{active_parameter_href}{email_type},
+        email_types_ref => {
+            default     => $arg_href->{active_parameter_href}{email_types},
             strict_type => 1,
-            store       => \$email_type
+            store       => \$email_types_ref
         },
         source_environment_commands_ref => {
             default =>
@@ -31602,6 +31602,7 @@ sub program_prerequisites {
     build_shebang(
         {
             FILEHANDLE      => $FILEHANDLE,
+	 bash_bin_path => catfile( dirname( dirname( devnull() ) ), qw(bin bash) ),
             set_login_shell => 1,
             set_errexit     => $set_errexit,
             set_nounset     => $set_nounset,
@@ -31625,7 +31626,7 @@ sub program_prerequisites {
             stderrfile_path          => $stderrfile_path,
             stdoutfile_path          => $stdoutfile_path,
             email                    => $active_parameter_href->{email},
-            email_type               => $email_type,
+            email_types_ref               => $email_types_ref,
             FILEHANDLE               => $FILEHANDLE,
         }
     );
