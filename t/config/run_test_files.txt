@@ -6,3 +6,4 @@ gnu_sed.t
 gnu_less.t
 slurm_sacct.t
 slurm_sbatch.t
+slurm_build_sbatch_header.t
