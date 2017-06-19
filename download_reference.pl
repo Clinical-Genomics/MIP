@@ -153,7 +153,8 @@ sub references {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    use Program::Gnu::Bash qw(cd);
+    use MIP::Gnu::Bash qw(gnu_cd);
+    use MIP::Gnu:Coreutils qw (gnu_mkdir);
 
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger("Download_reference");
@@ -161,14 +162,14 @@ sub references {
     my $pwd = cwd();
 
     print $FILEHANDLE "## Create reference directory\n";
-    Program::Gnu::Coreutils::mkdir({indirectory_path => $parameter_href->{reference_dir},
+    gnu_mkdir({indirectory_path => $parameter_href->{reference_dir},
 				    parents => 1,
 				    FILEHANDLE => $FILEHANDLE,
 				   });
     print $FILEHANDLE "\n\n";
 
     ## Since all commands should assume working directory to be the reference directory
-    cd({directory_path => $parameter_href->{reference_dir},
+    gnu_cd({directory_path => $parameter_href->{reference_dir},
 	FILEHANDLE => $FILEHANDLE,
        });
     print $FILEHANDLE "\n\n";

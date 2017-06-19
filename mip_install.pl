@@ -23,7 +23,7 @@ use lib catdir( $Bin, 'lib' );        #Add MIPs internal lib
 use File::Format::Shell qw(create_bash_file);
 use Program::Download::Wget qw(wget);
 use MIP::Gnu::Bash qw(gnu_cd);
-use Program::Gnu::Coreutils qw(cp rm mv mkdir);
+use MIP::Gnu::Coreutils qw(gnu_cp gnu_rm gnu_mv gnu_mkdir);
 use Script::Utils qw(help set_default_array_parameters);
 
 our $USAGE = build_usage( {} );
@@ -956,7 +956,7 @@ sub install_bioconda_modules {
                 );
             }
 
-            cp(
+            gnu_cp(
                 {
                     FILEHANDLE  => $BASHFILEHANDLE,
                     recursive   => 1,
@@ -1170,7 +1170,7 @@ sub perl {
 
                 ## Removing specific Perl version
                 print $FILEHANDLE '### Removing specific perl version', "\n";
-                rm(
+                gnu_rm(
                     {
                         infile_path => '$HOME/perl-'
                           . $parameter_href->{perl_version},
@@ -1342,7 +1342,7 @@ sub install_perl_cpnam {
 
     print $FILEHANDLE '&& ';
 
-    rm(
+    gnu_rm(
         {
             infile_path => 'perl-'
               . $parameter_href->{perl_version}
@@ -1607,7 +1607,7 @@ sub picardtools {
       )
     {
 
-        rm(
+        gnu_rm(
             {
                 infile_path => catdir(
                     $parameter_href->{conda_prefix_path}, 'share',
@@ -1622,7 +1622,7 @@ sub picardtools {
     }
 
     print $FILEHANDLE '## Make available from conda environment', "\n";
-    mv(
+    gnu_mv(
         {
             infile_path => 'picard-tools-' . $parameter_href->{picardtools},
             outfile_path =>
@@ -1750,7 +1750,7 @@ sub sambamba {
 
     ## Make available from conda environment
     print $FILEHANDLE '## Make available from conda environment', "\n";
-    mv(
+    gnu_mv(
         {
             infile_path => 'sambamba_v' . $parameter_href->{sambamba},
             outfile_path =>
@@ -1875,7 +1875,7 @@ sub bedtools {
 
     ## Make available from conda environment
     print $FILEHANDLE '## Make available from conda environment', "\n";
-    mv(
+    gnu_mv(
         {
             infile_path => catfile(qw(. bin * )),
             outfile_path =>
@@ -1970,7 +1970,7 @@ sub vt {
 
     ## Make available from conda environment
     print $FILEHANDLE '## Make available from conda environment', "\n";
-    mv(
+    gnu_mv(
         {
             infile_path => 'vt',
             outfile_path =>
@@ -2067,7 +2067,7 @@ sub plink2 {
 
     ## Make available from conda environment
     print $FILEHANDLE '## Make available from conda environment', "\n";
-    mv(
+    gnu_mv(
         {
             infile_path => 'plink',
             outfile_path =>
@@ -2167,7 +2167,7 @@ sub snpeff {
       )
     {
 
-        rm(
+        gnu_rm(
             {
                 infile_path => catdir(
                     $parameter_href->{conda_prefix_path},
@@ -2182,7 +2182,7 @@ sub snpeff {
     }
 
     print $FILEHANDLE '## Make available from conda environment', "\n";
-    mkdir(
+    gnu_mkdir(
         {
             indirectory_path => catdir(
                 $parameter_href->{conda_prefix_path}, 'share',
@@ -2194,7 +2194,7 @@ sub snpeff {
     );
     print $FILEHANDLE "\n\n";
 
-    mv(
+    gnu_mv(
         {
             infile_path  => catfile(qw(snpEff *.jar)),
             outfile_path => catdir(
@@ -2206,7 +2206,7 @@ sub snpeff {
     );
     print $FILEHANDLE "\n\n";
 
-    mv(
+    gnu_mv(
         {
             infile_path  => catfile(qw(snpEff snpEff.config)),
             outfile_path => catdir(
@@ -2334,7 +2334,7 @@ sub varianteffectpredictor {
 
             ## Removing varianteffectpredictor
             print $FILEHANDLE '### Removing varianteffectpredictor', "\n";
-            rm(
+            gnu_rm(
                 {
                     infile_path => $miniconda_bin_dir,
                     force       => 1,
@@ -2363,7 +2363,7 @@ sub varianteffectpredictor {
     );
 
     ##Make sure that the cache directory exists
-    mkdir(
+    gnu_mkdir(
         {
             indirectory_path => $parameter_href->{vep_cache_dir},
             parents          => 1,
@@ -2561,7 +2561,7 @@ sub varianteffectpredictor {
 
     ## Clean up
     print $FILEHANDLE '## Clean up', "\n";
-    rm(
+    gnu_rm(
         {
             infile_path => catdir(
                 $parameter_href->{conda_prefix_path},
@@ -2652,7 +2652,7 @@ sub cnvnator {
 
             ## Removing Root
             print $FILEHANDLE '### Removing Root', "\n";
-            rm(
+            gnu_rm(
                 {
                     infile_path => $miniconda_bin_dir,
                     force       => 1,
@@ -2798,7 +2798,7 @@ sub cnvnator {
 
     ## Make available from conda environment
     print $FILEHANDLE '## Make available from conda environment', "\n";
-    mv(
+    gnu_mv(
         {
             infile_path => 'cnvnator',
             outfile_path =>
@@ -2817,7 +2817,7 @@ sub cnvnator {
         }
     );
     print $FILEHANDLE "\n";
-    mv(
+    gnu_mv(
         {
             infile_path => 'cnvnator2VCF.pl',
             outfile_path =>
@@ -2927,7 +2927,7 @@ sub tiddit {
 
     ## Extract
     print $FILEHANDLE '## Extract', "\n";
-    rm(
+    gnu_rm(
         {
             infile_path => 'TIDDIT-' . $parameter_href->{tiddit},
             force       => 1,
@@ -2949,7 +2949,7 @@ sub tiddit {
     );
     print $FILEHANDLE "\n\n";
 
-    mkdir(
+    gnu_mkdir(
         {
             indirectory_path => 'build',
             parents          => 1,
@@ -2994,7 +2994,7 @@ sub tiddit {
       "\n\n";
 
     ## Clean-up
-    rm(
+    gnu_rm(
         {
             infile_path => catdir(
                 $parameter_href->{conda_prefix_path},
@@ -3103,7 +3103,7 @@ sub svdb {
 
     ## Clean-up
     print $FILEHANDLE '## Clean-up', "\n";
-    rm(
+    gnu_rm(
         {
             infile_path => 'SVDB-' . $parameter_href->{svdb},
             force       => 1,
@@ -3215,7 +3215,7 @@ sub mip_scripts {
     print $FILEHANDLE '## Create directories', "\n";
     foreach my $directory ( keys %mip_sub_scripts ) {
 
-        mkdir(
+        gnu_mkdir(
             {
                 indirectory_path => catdir(
                     $parameter_href->{conda_prefix_path},
@@ -3231,7 +3231,7 @@ sub mip_scripts {
     print $FILEHANDLE '## Copy directory to conda env', "\n\n";
     foreach my $directory (@mip_directories) {
 
-        cp(
+        gnu_cp(
             {
                 FILEHANDLE  => $FILEHANDLE,
                 recursive   => 1,
@@ -3252,7 +3252,7 @@ sub mip_scripts {
 
         my $script_no_ending = fileparse( $script, qr/\.[^.]*/ );
 
-        cp(
+        gnu_cp(
             {
                 FILEHANDLE   => $FILEHANDLE,
                 infile_path  => catfile( $Bin, $script ),
@@ -3274,7 +3274,7 @@ sub mip_scripts {
 
         foreach my $script ( @{ $mip_sub_scripts{$directory} } ) {
 
-            cp(
+            gnu_cp(
                 {
                     FILEHANDLE   => $FILEHANDLE,
                     infile_path  => catfile( $Bin, $directory, $script ),
@@ -3525,7 +3525,7 @@ sub remove_install_dir {
 
     ## Clean up
     print $FILEHANDLE '## Clean up', "\n";
-    rm(
+    gnu_rm(
         {
             infile_path => $install_directory,
             force       => 1,
@@ -3569,7 +3569,7 @@ sub create_install_dir {
 
     ## Create temp install directory
     print $FILEHANDLE '## Create temp install directory', "\n";
-    mkdir(
+    gnu_    mkdir(
         {
             indirectory_path => $install_directory,
             parents          => 1,
@@ -3909,7 +3909,7 @@ sub check_mt_codon_table {
         print $FILEHANDLE $add_regexp . q{ }
           . catfile( $share_dir, $config_file ) . ' > '
           . catfile( $share_dir, $config_file . '.tmp' ), "\n";
-        mv(
+        gnu_mv(
             {
                 infile_path  => catfile( $share_dir, $config_file . '.tmp' ),
                 outfile_path => catfile( $share_dir, $config_file ),
@@ -4047,7 +4047,7 @@ sub references {
     print $FILEHANDLE 'bash download_reference.sh', "\n\n";
 
     ##Cleanup
-    rm(
+    gnu_rm(
         {
             infile_path => 'download_reference.sh',
             FILEHANDLE  => $FILEHANDLE,
