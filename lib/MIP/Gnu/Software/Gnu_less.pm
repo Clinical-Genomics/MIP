@@ -86,11 +86,12 @@ sub gnu_less {
     ## Options
 
     ## Infile
-    push @commands, $infile_path;
-
+    if ($infile_path) {
+        push @commands, $infile_path;
+    }
+    
     ## Outfile
     if ($outfile_path) {
-
         push @commands, '> ' . $outfile_path;
     }
 

@@ -101,15 +101,7 @@ my %base_argument = (
     },
 );
 
-## Can be duplicated with %base and/or %specific to enable testing of each individual argument
-my %required_argument = (
-    infile_path => {
-        input           => 'infile.test',
-        expected_output => 'infile.test',
-    },
-);
-
-## Specific arguments
+#   # Specific arguments
 my %specific_argument = (
     infile_path => {
         input           => 'infile.test',
@@ -131,7 +123,6 @@ foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
             argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
             module_function_cref   => $module_function_cref,
             function_base_command  => $function_base_command,
         }
