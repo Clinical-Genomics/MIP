@@ -4085,7 +4085,7 @@ sub evaluation {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use Program::Gnu::Coreutils qw(cat);
+    use MIP::Gnu::Coreutils qw(gnu_cat);
     use Language::Java qw(core);
     use Program::Variantcalling::Gatk
       qw(selectvariants leftalignandtrimvariants);
@@ -4227,7 +4227,7 @@ q?perl -nae 'unless($_=~/NC_007605/ || $_=~/hs37d5/ || $_=~/GL\d+/) {print $_}' 
     print $FILEHANDLE "> " . $genome_dict_file_path . " ";
     say $FILEHANDLE "\n";
 
-    cat(
+    gnu_cat(
         {
             infile_paths_ref => [
                 $genome_dict_file_path,
@@ -5626,7 +5626,7 @@ sub gatk_variantevalexome {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use Language::Java qw(core);
-    use Program::Gnu::Coreutils qw(cat sort);
+    use MIP::Gnu::Coreutils qw(gnu_cat gnu_sort);
     use Program::Variantcalling::Bedtools qw(intersectbed);
     use Program::Variantcalling::Gatk qw(varianteval);
 
@@ -5822,7 +5822,7 @@ sub gatk_variantevalexome {
 
         ## Merge orphans and selectfiles
         say $FILEHANDLE "## Merge orphans and selectfile(s)";
-        cat(
+        gnu_cat(
             {
                 infile_paths_ref => [
                     catfile(
@@ -5858,7 +5858,7 @@ sub gatk_variantevalexome {
 
         ## Sort combined file
         say $FILEHANDLE "## Sort combined file";
-        Program::Gnu::Coreutils::sort(
+        gnu_sort(
             {
                 keys_ref    => [ "1,1", "2,2n" ],
                 infile_path => catfile(
@@ -5886,7 +5886,7 @@ sub gatk_variantevalexome {
     print $FILEHANDLE q?perl -ne ' if ($_=~/^#/) {print $_;}' ?;
     print $FILEHANDLE $file_path_prefix . $infile_suffix . " ";    #InFile
     print $FILEHANDLE "| ";                                        #Pipe
-    cat(
+    gnu_cat(
         {
             infile_paths_ref => [
                 "-",
@@ -7065,7 +7065,7 @@ sub annovar {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use Program::Gnu::Coreutils qw(mv);
+    use MIP::Gnu::Coreutils qw(gnu_mv);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
@@ -7316,7 +7316,7 @@ sub annovar {
               . ".stderr.txt "
               ;    #Redirect xargs output to program specific stderr file
             print $XARGSFILEHANDLE "; ";
-            mv(
+            gnu_mv(
                 {
                     infile_path => catfile(
                         $$temp_directory_ref,
@@ -9826,7 +9826,7 @@ sub vt {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use Program::Gnu::Coreutils qw(mv);
+    use MIP::Gnu::Coreutils qw(gnu_mv);
     use Program::Variantcalling::Genmod qw(annotate filter);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
@@ -10072,7 +10072,7 @@ sub vt {
             print $XARGSFILEHANDLE "; ";
         }
 
-        mv(
+        gnu_mv(
             {
                 infile_path => $outfile_path_prefix . "_"
                   . $contig
@@ -11234,7 +11234,7 @@ sub gatk_variantrecalibration {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use Program::Gnu::Coreutils qw(mv);
+    use MIP::Gnu::Coreutils qw(gnu_mv);
     use Language::Java qw(core);
     use Program::Variantcalling::Bcftools qw(norm);
     use Program::Variantcalling::Gatk
@@ -11714,7 +11714,7 @@ sub gatk_variantrecalibration {
         say $FILEHANDLE "\n";
 
         ## Change name of file to accomodate downstream
-        mv(
+        gnu_mv(
             {
                 infile_path => $outfile_path_prefix
                   . "_refined"
@@ -11742,7 +11742,7 @@ sub gatk_variantrecalibration {
     say $FILEHANDLE "\n";
 
     ## Change name of file to accomodate downstream
-    mv(
+    gnu_mv(
         {
             infile_path => $outfile_path_prefix
               . "_normalized"
@@ -12088,7 +12088,7 @@ sub gatk_concatenate_genotypegvcfs {
             say $FILEHANDLE "\n";
 
             ## Move to original filename
-            mv(
+            gnu_mv(
                 {
                     infile_path => $outfile_path_prefix
                       . "_incnonvariantloci"
@@ -16618,7 +16618,7 @@ sub sv_combinevariantcallsets {
     }
     if ( $active_parameter_href->{sv_svdb_query} > 0 ) {
 
-        use Program::Gnu::Coreutils qw(mv);
+        use MIP::Gnu::Coreutils qw(gnu_mv);
 
         my $infile_path =
           $merged_file_path_prefix . $alt_file_tag . $outfile_suffix;
@@ -16660,7 +16660,7 @@ sub sv_combinevariantcallsets {
         }
 
         ## Rename to remove outfile_tracker
-        mv(
+        gnu_mv(
             {
                 infile_path => $merged_file_path_prefix
                   . $alt_file_tag
@@ -17518,7 +17518,7 @@ sub delly_reformat {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use Program::Gnu::Coreutils qw(mv);
+    use MIP::Gnu::Coreutils qw(gnu_mv);
     use Program::Variantcalling::Delly qw(call merge filter);
     use Program::Variantcalling::Bcftools qw(merge index);
 
@@ -20582,7 +20582,7 @@ sub gatk_baserecalibration {
 
     use Program::Alignment::Gatk qw(baserecalibrator printreads);
     use Program::Alignment::Picardtools qw(gatherbamfiles);
-    use Program::Gnu::Coreutils qw(rm);
+    use MIP::Gnu::Coreutils qw(gnu_rm);
     use Language::Java qw(core);
 
     my $core_number =
@@ -20953,7 +20953,7 @@ sub gatk_baserecalibration {
     say $FILEHANDLE "wait", "\n";
 
     ## Remove concatenated BAM file at temporary directory
-    rm(
+    gnu_rm(
         {
             infile_path => $outfile_path_prefix
               . substr( $infile_suffix, 0, 2 ) . "*",
@@ -21609,7 +21609,7 @@ sub pmarkduplicates {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use Program::Alignment::Sambamba qw(flagstat);
-    use Program::Gnu::Coreutils qw(cat);
+    use MIP::Gnu::Coreutils qw(gnu_cat);
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -21834,7 +21834,7 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
     }
 
     ## Concatenate all metric files
-    cat(
+    gnu_cat(
         {
             infile_paths_ref => [ $outfile_path_prefix . "_*_metric" ],
             outfile_path     => $outfile_path_prefix . "_metric_all",
@@ -22098,7 +22098,7 @@ sub picardtools_mergesamfiles {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use Program::Alignment::Picardtools qw(mergesamfiles);
-    use Program::Gnu::Coreutils qw(mv);
+    use MIP::Gnu::Coreutils qw(gnu_mv);
     use Program::Alignment::Samtools qw(index);
 
     my $core_number =
@@ -22301,7 +22301,7 @@ sub picardtools_mergesamfiles {
             {
 
                 ## Rename
-                mv(
+                gnu_mv(
                     {
                         infile_path => catfile(
                             $$temp_directory_ref,
@@ -23476,7 +23476,7 @@ sub picardtools_mergerapidreads {
     say $FILEHANDLE "wait", "\n";
 
     ## Remove temp directory
-    rm(
+    gnu_rm(
         {
             infile_path => $active_parameter_href->{temp_directory},
             force       => 1,
@@ -25230,7 +25230,7 @@ sub mfastqc {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use Program::Gnu::Coreutils qw(cp);
+    use MIP::Gnu::Coreutils qw(gnu_cp);
     use Program::Qc::Fastqc qw (fastqc);
 
     my $core_number =
@@ -25367,7 +25367,7 @@ sub mfastqc {
         my $file_at_lane_level =
           fileparse( $infile, qr/$infile_suffix|$infile_suffix\.gz/ );
 
-        cp(
+        gnu_cp(
             {
                 FILEHANDLE  => $FILEHANDLE,
                 recursive   => 1,
@@ -25739,7 +25739,7 @@ sub split_fastq_file {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use Program::Gnu::Coreutils qw(cp rm mv split);
+    use MIP::Gnu::Coreutils qw(gnu_cp gnu_rm gnu_mv gnu_split gnu_mkdir);
     use Program::Compression::Pigz qw(pigz);
 
     my $core_number =
@@ -25830,7 +25830,7 @@ sub split_fastq_file {
         );
         print $FILEHANDLE "| ";    #Pipe
 
-        Program::Gnu::Coreutils::split(
+        gnu_split(
             {
                 infile_path      => "-",
                 lines            => ( $sequence_read_batch * 4 ),
@@ -25843,7 +25843,7 @@ sub split_fastq_file {
         say $FILEHANDLE "\n";
 
         ## Remove original files
-        rm(
+        gnu_rm(
             {
                 infile_path => $file_path,
                 force       => 1,
@@ -25886,7 +25886,7 @@ q?for ((file_counter=0; file_counter<${#splitted_files[@]}; file_counter++)); do
         say $FILEHANDLE "\n";
 
         ## Copies files from temporary folder to source
-        cp(
+        gnu_cp(
             {
                 FILEHANDLE => $FILEHANDLE,
                 infile_path =>
@@ -25897,7 +25897,7 @@ q?for ((file_counter=0; file_counter<${#splitted_files[@]}; file_counter++)); do
         say $FILEHANDLE "\n";
 
         ## Move original file to not be included in subsequent analysis
-        Program::Gnu::Coreutils::mkdir(
+        gnu_mkdir(
             {
                 indirectory_path => $infile_path,
                 parents          => 1,
@@ -25906,7 +25906,7 @@ q?for ((file_counter=0; file_counter<${#splitted_files[@]}; file_counter++)); do
         );
         say $FILEHANDLE "\n";
 
-        mv(
+        gnu_mv(
             {
                 infile_path  => $infile_path,
                 outfile_path => catfile(
@@ -26040,6 +26040,8 @@ sub build_annovar_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Gnu::Coreutils qw(gnu_mkdir);
+    
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger('MIP');
 
@@ -26070,7 +26072,7 @@ sub build_annovar_prerequisites {
           . "\n" );
 
     say $FILEHANDLE "## Make temporary download directory\n";
-    Program::Gnu::Coreutils::mkdir(
+    gnu_mkdir(
         {
             indirectory_path => $annovar_temporary_directory,
             parents          => 1,
@@ -26515,7 +26517,7 @@ sub build_ptchs_metric_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use Program::Gnu::Coreutils qw(rm cat);
+    use MIP::Gnu::Coreutils qw(gnu_rm gnu_cat);
     use Language::Java qw(core);
     use Program::Interval::Picardtools qw(intervallisttools);
 
@@ -26588,7 +26590,7 @@ sub build_ptchs_metric_prerequisites {
 
         say $FILEHANDLE
           "## Add target file to headers from sequence dictionary";
-        cat(
+          gnu_cat(
             {
                 infile_paths_ref => [
                     $exome_target_bed_file_random . ".dict",
@@ -26725,7 +26727,7 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
         );
         foreach my $file (@temp_files) {
 
-            rm(
+            gnu_rm(
                 {
                     infile_path => $file,
                     force       => 1,
@@ -27311,7 +27313,7 @@ sub build_human_genome_prerequisites {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Gnu::Bash qw(gnu_cd);
-    use Program::Gnu::Coreutils qw(rm);
+    use MIP::Gnu::Coreutils qw(gnu_rm);
     use Program::Compression::Gzip qw(gzip);
     use Language::Java qw(core);
 
@@ -27489,7 +27491,7 @@ sub build_human_genome_prerequisites {
                 );
 
                 ## Remove softLink
-                rm(
+                gnu_rm(
                     {
                         infile_path => $human_genome_reference_temp_file,
                         force       => 1,
@@ -31510,7 +31512,7 @@ sub program_prerequisites {
     use File::Format::Shell
       qw(build_shebang create_housekeeping_function create_error_trap_function enable_trap);
     use MIP::Workloadmanager::Slurm qw(slurm_build_sbatch_header);
-    use Program::Gnu::Coreutils qw(echo);
+    use MIP::Gnu::Coreutils qw(gnu_echo gnu_mkdir);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger('MIP');
@@ -31634,7 +31636,7 @@ sub program_prerequisites {
 
     say $FILEHANDLE q?readonly PROGNAME=$(basename "$0")?, "\n";
 
-    echo(
+    gnu_echo(
         {
             strings_ref => [q?Running on: $(hostname)?],
             FILEHANDLE  => $FILEHANDLE,
@@ -31663,7 +31665,7 @@ sub program_prerequisites {
           . $temp_directory;                   #Assign batch variable
         $temp_directory =
           q?"$TEMP_DIRECTORY"?;    #Update perl scalar to bash variable
-        Program::Gnu::Coreutils::mkdir(
+        gnu_mkdir(
             {
                 indirectory_path => $temp_directory,
                 parents          => 1,
@@ -33279,7 +33281,7 @@ sub check_exist_and_move_file {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use Program::Gnu::Coreutils qw(rm mv);
+    use MIP::Gnu::Coreutils qw(gnu_rm gnu_mv);
 
     print $FILEHANDLE "[ -s "
       . $$intended_file_path_ref
@@ -33287,14 +33289,14 @@ sub check_exist_and_move_file {
     print $FILEHANDLE "&& ";
 
     ## If other processes already has created file, remove temp file
-    rm(
+    gnu_rm(
         {
             infile_path => $$temporary_file_path_ref,
             FILEHANDLE  => $FILEHANDLE,
         }
     );
     print $FILEHANDLE "|| ";    #File has not been created by other processes
-    mv(
+    gnu_mv(
         {
             infile_path  => $$temporary_file_path_ref,
             outfile_path => $$intended_file_path_ref,
@@ -34225,7 +34227,7 @@ sub check_most_complete_and_remove_file {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use Program::Gnu::Coreutils qw(rm);
+    use MIP::Gnu::Coreutils qw(gnu_rm);
 
     if ( ( defined($$most_complete_ref) ) && ( defined($$file_path_ref) ) )
     {    #Not to disturb first dry_run of analysis
@@ -34242,7 +34244,7 @@ sub check_most_complete_and_remove_file {
             );
 
             ##Print removal of file to sbatch script
-            rm(
+            gnu_rm(
                 {
                     infile_path => $file_name,
                     force       => 1,
@@ -34263,7 +34265,7 @@ sub check_most_complete_and_remove_file {
         );
 
         ##Print removal of file to sbatch script
-        rm(
+        gnu_rm(
             {
                 infile_path => $file_name,
                 force       => 1,
@@ -35120,12 +35122,12 @@ sub create_fam_file {
 
                 say $FILEHANDLE "#Generating '.fam' file";
 
-                use Program::Gnu::Coreutils qw(echo);
+                use MIP::Gnu::Coreutils qw(gnu_echo);
 
                 ## Get parameters
                 my @strings = map { $_ . q?\n? } @pedigree_lines;
 
-                echo(
+                gnu_echo(
                     {
                         strings_ref           => \@strings,
                         outfile_path          => $fam_file_path,
@@ -35676,13 +35678,13 @@ sub migrate_file {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use Program::Gnu::Coreutils qw(cp);
+    use MIP::Gnu::Coreutils qw(gnu_cp);
 
     ## Split relative infile_path to file(s)
     my ( $infile_path_volume, $infile_path_directory, $infile_path_file_name )
       = File::Spec->splitpath($infile_path);
 
-    cp(
+    gnu_cp(
         {
             FILEHANDLE      => $FILEHANDLE,
             preserve        => 1,
@@ -35770,7 +35772,7 @@ sub remove_files {
         );
 
         ## Remove file
-        rm(
+        gnu_rm(
             {
                 infile_path => catfile( $indirectory, $file . $file_ending ),
                 FILEHANDLE  => $FILEHANDLE,
@@ -35843,7 +35845,7 @@ sub remove_contig_files {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use Program::Gnu::Coreutils qw(rm);
+    use MIP::Gnu::Coreutils qw(gnu_rm);
 
     my $core_counter = 1;
 
@@ -35861,7 +35863,7 @@ sub remove_contig_files {
             }
         );
 
-        rm(
+        gnu_rm(
             {
                 infile_path => catfile(
                     $indirectory, $file_name . "_" . $element . $file_ending
@@ -36304,7 +36306,7 @@ sub xargs_command {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use Program::Gnu::Coreutils qw(cat);
+    use MIP::Gnu::Coreutils qw(gnu_cat);
     use Program::Gnu::Findutils qw(xargs);
     use Language::Java qw(core);
 
@@ -36320,7 +36322,7 @@ sub xargs_command {
     }
 
     ## Read xargs command file
-    cat(
+    gnu_cat(
         {
             infile_paths_ref =>
               [ $file_name . "." . $xargs_file_counter . ".xargs" ],
@@ -38180,7 +38182,7 @@ sub vt_core {
     use MIP::Gnu::Software::Gnu_less qw(gnu_less);
     use MIP::Gnu::Software::Gnu_sed qw(gnu_sed);
     use Program::Variantcalling::Mip qw(calculate_af max_af);
-    use Program::Gnu::Coreutils qw(mv);
+    use MIP::Gnu::Coreutils qw(gnu_mv);
     use Program::Htslib qw(bgzip tabix);
     use Program::Variantcalling::Vt qw(decompose normalize vt_uniq);
 
@@ -38353,7 +38355,7 @@ sub vt_core {
             print $FILEHANDLE $cmd_break;
 
             ## Move index in place
-            mv(
+            gnu_mv(
                 {
                     infile_path => $outfile_path
                       . "_splitted_"
@@ -38366,7 +38368,7 @@ sub vt_core {
         }
 
         ## Move processed reference to original place
-        mv(
+        gnu_mv(
             {
                 infile_path  => $outfile_path . "_splitted_" . $random_integer,
                 outfile_path => $outfile_path,
@@ -39854,7 +39856,7 @@ sub rename_vcf_samples {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use Program::Gnu::Coreutils qw(printf);
+    use MIP::Gnu::Coreutils qw(gnu_printf);
     use Program::Variantcalling::Bcftools qw(view reheader);
 
     ## Create new sample names file
@@ -39866,7 +39868,7 @@ sub rename_vcf_samples {
         $format_string .= $sample_id . q?\n?;
     }
     $format_string .= q?"?;
-    Program::Gnu::Coreutils::printf(
+    gnu_printf(
         {
             format_string => $format_string,
             outfile_path  => catfile( $$temp_directory_ref, "sample_name.txt" ),
@@ -41879,7 +41881,7 @@ sub prepare_gatk_target_intervals {
       $arg_href->{target_interval_file_list_ref};
     my $temp_directory_ref = $arg_href->{temp_directory_ref};
 
-    use Program::Gnu::Coreutils qw(mv);
+    use MIP::Gnu::Coreutils qw(gnu_mv);
 
     if (   ( $$analysis_type_ref eq "wes" )
         || ( $$analysis_type_ref eq "rapid" ) )
@@ -41905,7 +41907,7 @@ sub prepare_gatk_target_intervals {
             $target_interval_path .= ".intervals";
 
             ## Add the by GATK required ".interval" ending
-            mv(
+            gnu_mv(
                 {
                     infile_path => catfile(
                         $$temp_directory_ref, $$target_interval_file_list_ref
