@@ -30,8 +30,12 @@ BEGIN {
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
       qw(gnu_cp gnu_rm gnu_mv gnu_mkdir gnu_cat gnu_echo gnu_split gnu_sort gnu_printf);
-
 }
+
+## Constants
+my $SPACE = q{ };
+my $COMMA = q{,};
+my $EMPTY_STR = q{};
 
 sub gnu_cp {
 
@@ -123,9 +127,6 @@ sub gnu_cp {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
-
-    my $SPACE = q{ };
-    my $COMMA = q{,};
 
     ## gnu_cp
     # Stores commands depending on input parameters
@@ -244,8 +245,6 @@ sub gnu_mv {
 
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
-    my $SPACE = q{ };
-
     ## gnu_mv
     # Stores commands depending on input parameters
     my @commands = qw(gnu_mv);
@@ -350,8 +349,6 @@ sub gnu_rm {
 
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
-    my $SPACE = q{ };
-
     ## gnu_rm
     # Stores commands depending on input parameters
     my @commands = qw(gnu_rm);
@@ -451,8 +448,6 @@ sub gnu_mkdir {
 
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
-    my $SPACE = q{ };
-
     ## gnu_mkdir
     # Stores commands depending on input parametersr
     my @commands = qw(gnu_mkdir);
@@ -537,8 +532,6 @@ sub gnu_cat {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
-
-    my $SPACE = q{ };
 
     ## gnu_cat
     # Stores commands depending on input parameters
@@ -635,9 +628,6 @@ sub gnu_echo {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
-
-    my $SPACE = q{ }; 
-    my $EMPTY_STR = q{};
 
     ## Echo
     my @commands = qw(gnu_echo);  #Stores commands depending on input parameters
@@ -766,8 +756,6 @@ sub gnu_split {
 
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
-    my $SPACE = q{ };
-
     ## gnu_split
     # Stores commands depending on input parameters
     my @commands = qw(gnu_split);
@@ -779,9 +767,6 @@ sub gnu_split {
 
     if ($numeric_suffixes) {
         push @commands, '--numeric-suffixes';
-    }
-
-    if ($numeric_suffixes) {
         push @commands, '--suffix-length=' . $numeric_suffixes;
     }
 
@@ -880,8 +865,6 @@ sub gnu_sort {
 
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
-    my $SPACE = q{ };
-
     ## gnu_sort
     # Stores commands depending on input parameters
     my @commands = qw(gnu_sort);
@@ -972,8 +955,6 @@ sub gnu_printf {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
-
-    my $SPACE = q{ };
 
     ## gnu_printf
     # Stores commands depending on input parametersf
