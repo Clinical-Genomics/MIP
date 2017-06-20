@@ -89,7 +89,7 @@ sub gnu_less {
     if ($infile_path) {
         push @commands, $infile_path;
     }
-    
+
     ## Outfile
     if ($outfile_path) {
         push @commands, '> ' . $outfile_path;

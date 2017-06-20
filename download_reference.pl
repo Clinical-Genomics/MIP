@@ -7,22 +7,23 @@ use v5.18;    #Require at least perl 5.18
 use utf8;
 use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
+use English qw(-no_match_vars);
+use Params::Check qw[check allow last_error];
+$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 
 use Cwd;
 use Cwd qw(abs_path);
 use File::Basename qw(dirname basename);
 use File::Spec::Functions qw(catfile catdir devnull);
-use FindBin qw($Bin);    #Find directory of script
+use FindBin qw($Bin);                 #Find directory of script
 use Getopt::Long;
 use IO::Handle;
-use Params::Check qw[check allow last_error];
-$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 
 ## Third party module(s)
 use List::Util qw(any);
 
 ##MIPs lib/
-use lib catdir( $Bin, "lib" );
+use lib catdir( $Bin, 'lib' );
 use Check::Check_modules qw(check_modules);
 use File::Format::Shell qw(create_bash_file);
 use File::Format::Yaml qw(load_yaml);
@@ -33,18 +34,16 @@ our $USAGE;
 
 BEGIN {
 
-    my @modules = (
-        "Modern::Perl",  "autodie",
-        "YAML",          "File::Format::Yaml",
-        "Log::Log4perl", "MIP_log::Log4perl",
-        "Script::Utils",
+    my @modules = qw(Modern::Perl autodie YAML
+      File::Format::Yaml Log::Log4perl
+      MIP_log::Log4perl Script::Utils
     );
 
     ## Evaluate that all modules required are installed
     Check::Check_modules::check_modules(
         {
             modules_ref  => \@modules,
-            program_name => "download_reference",
+            program_name => 'download_reference',
         }
     );
 
@@ -65,7 +64,7 @@ BEGIN {
 my %parameter = load_yaml(
     {
         yaml_file =>
-          catfile( $Bin, "definitions", "define_download_references.yaml" ),
+          catfile( $Bin, qw(definitions define_download_references.yaml) ),
     }
 );
 
@@ -74,7 +73,7 @@ $parameter{reference_dir} = cwd();
 
 ## Define default parameters
 my %array_parameter;
-$array_parameter{reference_genome_versions}{default} = [ "GRCh37", "hg38" ];
+$array_parameter{reference_genome_versions}{default} = [qw(GRCh37 hg38)];
 
 my $download_reference_version = '0.0.3';
 
@@ -105,7 +104,7 @@ GetOptions(
 my $log = MIP_log::Log4perl::initiate_logger(
     {
         file_path_ref => \$parameter{log_file},
-        log_name      => "Download_reference",
+        log_name      => 'Download_reference',
     }
 );
 check_user_reference(
@@ -130,36 +129,49 @@ update_to_absolute_path( { parameter_href => \%parameter, } );
 ###MAIN###
 ##########
 
-my $bash_file_path = catfile( cwd(), "download_reference.sh" );
+# Create anonymous filehandle
+my $FILEHANDLE = IO::Handle->new();
+
+# Downloads instruction file
+my $bash_file_path = catfile( cwd(), 'download_reference.sh' );
+
+open $FILEHANDLE, '>', $bash_file_path
+  or $log->logdie(
+    q{Cannot write to '} . $bash_file_path . q{' :} . $OS_ERROR . "\n" );
 
 ## Create bash file for writing install instructions
-my $BASHFILEHANDLE = File::Format::Shell::create_bash_file(
+File::Format::Shell::create_bash_file(
     {
-        file_name        => $bash_file_path,
-        directory_remove => ".download_reference",
-        log              => $log,
-        set_errexit      => 1,
-        set_nounset      => 1,
+        file_name   => $bash_file_path,
+        FILEHANDLE  => $FILEHANDLE,
+        remove_dir  => catfile( cwd(), '.download_reference' ),
+        log         => $log,
+        set_errexit => 1,
+        set_nounset => 1,
     }
 );
-$log->info( "Will write install instructions to '" . $bash_file_path, "'\n" );
+$log->info( q{Will write install instructions to '} . $bash_file_path,
+    q{'}, "\n" );
 
-references(
+## Build install references recipe in bash file
+build_reference_install_recipe(
     {
         parameter_href => \%parameter,
-        FILEHANDLE     => $BASHFILEHANDLE,
+        FILEHANDLE     => $FILEHANDLE,
     }
 );
 
-close($BASHFILEHANDLE);
+close($FILEHANDLE);
 
+#################
 ###SubRoutines###
+#################
 
-sub references {
+sub build_reference_install_recipe {
 
-##references
+##build_reference_install_recipe
 
-##Function : Install references
+##Function : Build install references recipe in bash file
 ##Returns  : ""
 ##Arguments: $parameter_href, $FILEHANDLE, $verbose
 ##         : $parameter_href => Holds all parameters
@@ -196,11 +208,11 @@ sub references {
     use MIP::Gnu::Bash qw(gnu_cd);
 
     ## Retrieve logger object now that log_file has been set
-    my $log = Log::Log4perl->get_logger("Download_reference");
+    my $log = Log::Log4perl->get_logger('Download_reference');
 
     my $pwd = cwd();
 
-    print $FILEHANDLE "## Create reference directory\n";
+    print $FILEHANDLE q{## Create reference directory}, "\n";
     Program::Gnu::Coreutils::mkdir(
         {
             indirectory_path => $parameter_href->{reference_dir},
@@ -227,7 +239,7 @@ sub references {
         ## Remodel depending on if "--reference" was used or not as the user info is stored as a scalar per reference_id while yaml is stored as arrays per reference_id
 
         my @reference_versions;
-        if ( ref($versions_ref) eq "ARRAY" ) {
+        if ( ref($versions_ref) eq 'ARRAY' ) {
 
             @reference_versions = @$versions_ref;
         }
@@ -274,20 +286,19 @@ sub references {
                     if ( !-f $outfile_path ) {
 
                         $log->warn(
-                            "Cannot find reference file:" . $outfile_path,
+                            'Cannot find reference file:' . $outfile_path,
                             "\n" );
                         $log->warn(
-                            "Will try to download: "
+                            'Will try to download: '
                               . $reference_id
-                              . " version: "
+                              . ' version: '
                               . $reference_version,
                             "\n"
                         );
 
                         ## Potential download files
-                        my @file_keys = (
-                            "file",       "file_check",
-                            "file_index", "file_index_check"
+                        my @file_keys = qw(file file_check
+                          file_index file_index_check
                         );
 
                       REFERENCE_FILES:
@@ -297,7 +308,7 @@ sub references {
                             if ( exists( $reference_href->{$key} ) ) {
 
                                 my $file    = $reference_href->{$key};
-                                my $outfile = $reference_href->{ "out" . $key };
+                                my $outfile = $reference_href->{ 'out' . $key };
                                 my $outfile_path =
                                   catfile( $parameter_href->{reference_dir},
                                     $outfile );
@@ -320,9 +331,9 @@ sub references {
                                         FILEHANDLE     => $FILEHANDLE,
                                         outfile_path   => $outfile_path,
                                         file_decompress =>
-                                          $reference_href->{ "out"
+                                          $reference_href->{ 'out'
                                               . $key
-                                              . "_decompress" },
+                                              . '_decompress' },
                                     }
                                 );
 
@@ -332,9 +343,9 @@ sub references {
                                         FILEHANDLE         => $FILEHANDLE,
                                         outfile_path       => $outfile_path,
                                         outfile_path_check => $outfile_path,
-                                        check_method => $reference_href->{ "out"
+                                        check_method => $reference_href->{ 'out'
                                               . $key
-                                              . "_method" },
+                                              . '_method' },
                                     }
                                 );
                             }
@@ -395,6 +406,7 @@ sub references {
         }
     );
     print $FILEHANDLE "\n\n";
+    return;
 }
 
 sub download {
@@ -447,8 +459,8 @@ sub download {
         file_id =>
           { required => 1, defined => 1, strict_type => 1, store => \$file_id },
         program => {
-            default     => "wget",
-            allow       => ["wget"],
+            default     => 'wget',
+            allow       => ['wget'],
             strict_type => 1,
             store       => \$program
         },
@@ -468,9 +480,9 @@ sub download {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Download
-    print $FILEHANDLE "## Download " . $file_id, "\n";
+    print $FILEHANDLE q{## Download } . $file_id, "\n";
 
-    if ( $program eq "wget" ) {
+    if ( $program eq 'wget' ) {
 
         use Program::Download::Wget qw(wget);
 
@@ -485,6 +497,7 @@ sub download {
         );
         say $FILEHANDLE "\n";
     }
+    return;
 }
 
 sub remove_file_ending {
@@ -572,35 +585,37 @@ sub decompress_file {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    if ( defined($outfile_path) ) {
+    my $SPACE = q{ };
 
-        if ( ( defined($file_decompress) ) && ( $file_decompress eq "gzip" ) ) {
+    if ( defined $outfile_path ) {
+
+        if ( ( defined $file_decompress ) && ( $file_decompress eq 'gzip' ) ) {
 
             ## Removes ".file_ending" in filename.FILENDING(.gz)
             my $outfile_path_no_ending = remove_file_ending(
                 {
                     file_name_ref => \$outfile_path,
-                    file_ending   => ".gz",
+                    file_ending   => '.gz',
                 }
             );
 
-            print $FILEHANDLE "gzip ";
-            print $FILEHANDLE "-f ";
-            print $FILEHANDLE "--quiet ";
-            print $FILEHANDLE "-d ";
-            print $FILEHANDLE "-c ";
-            print $FILEHANDLE $outfile_path . " ";
-            print $FILEHANDLE "> " . $outfile_path_no_ending, "\n\n";
+            print $FILEHANDLE 'gzip ';
+            print $FILEHANDLE '-f ';
+            print $FILEHANDLE '--quiet ';
+            print $FILEHANDLE '-d ';
+            print $FILEHANDLE '-c ';
+            print $FILEHANDLE $outfile_path . $SPACE;
+            print $FILEHANDLE '> ' . $outfile_path_no_ending, "\n\n";
         }
 
-        if ( ( defined($file_decompress) ) && ( $file_decompress eq "unzip" ) )
-        {
+        if ( ( defined $file_decompress ) && ( $file_decompress eq 'unzip' ) ) {
 
-            print $FILEHANDLE "unzip ";
-            print $FILEHANDLE "-d " . $parameter_href->{reference_dir} . " ";
+            print $FILEHANDLE 'unzip ';
+            print $FILEHANDLE '-d ' . $parameter_href->{reference_dir} . $SPACE;
             print $FILEHANDLE $outfile_path, "\n\n";
         }
     }
+    return;
 }
 
 sub check_file {
@@ -640,13 +655,13 @@ sub check_file {
 
     use Program::Gnu::Coreutils qw(rm);
 
-    if ( ( defined($check_method) ) && ( $check_method eq "md5sum" ) ) {
+    if ( ( defined $check_method ) && ( $check_method eq 'md5sum' ) ) {
 
         ## Removes ".file_ending" in filename.FILENDING(.gz)
         my $outfile_path_no_ending = remove_file_ending(
             {
                 file_name_ref => \$outfile_path,
-                file_ending   => ".md5",
+                file_ending   => '.md5',
             }
         );
         if ( defined($outfile_path_no_ending) ) {
@@ -655,14 +670,14 @@ sub check_file {
                 q?perl -nae 'print $F[0]."  ?
               . $outfile_path_no_ending . q?" ' ?
               . $outfile_path_check;
-            print $FILEHANDLE $perl_regexp . " > md5sum_check.txt", "\n\n";
-            print $FILEHANDLE "md5sum ";
-            print $FILEHANDLE "-c md5sum_check.txt", "\n\n";
+            print $FILEHANDLE $perl_regexp . q{ > md5sum_check.txt}, "\n\n";
+            print $FILEHANDLE 'md5sum ';
+            print $FILEHANDLE '-c md5sum_check.txt', "\n\n";
 
             ## Clean-up
             rm(
                 {
-                    infile_path => "md5sum_check.txt",
+                    infile_path => 'md5sum_check.txt',
                     force       => 1,
                     FILEHANDLE  => $FILEHANDLE,
                 }
@@ -670,6 +685,7 @@ sub check_file {
             print $FILEHANDLE "\n\n";
         }
     }
+    return;
 }
 
 sub update_to_absolute_path {
@@ -701,13 +717,13 @@ sub update_to_absolute_path {
     use File::Parse::Parse qw(find_absolute_path);
 
     ## Retrieve logger object now that log_file has been set
-    my $log = Log::Log4perl->get_logger("Download_reference");
+    my $log = Log::Log4perl->get_logger('Download_reference');
 
     foreach my $parameter_name ( @{ $parameter_href->{absolute_paths} } ) {
 
         if ( defined( $parameter{$parameter_name} ) ) {
 
-            if ( ref( $parameter_href->{$parameter_name} ) eq "ARRAY" )
+            if ( ref( $parameter_href->{$parameter_name} ) eq 'ARRAY' )
             {    #Array reference
 
                 foreach my $parameter_value (
@@ -724,7 +740,7 @@ sub update_to_absolute_path {
                     );
                 }
             }
-            elsif ( ref( $parameter_href->{$parameter_name} ) eq "HASH" )
+            elsif ( ref( $parameter_href->{$parameter_name} ) eq 'HASH' )
             {    #Hash reference
 
                 foreach my $key ( keys %{ $parameter_href->{$parameter_name} } )
@@ -755,6 +771,7 @@ sub update_to_absolute_path {
             }
         }
     }
+    return;
 }
 
 sub check_user_reference {
@@ -796,21 +813,21 @@ sub check_user_reference {
 
         if ( !exists( $reference_ref->{$reference_id} ) ) {
 
-            $log->fatal( "Cannot find reference key:" . $reference_id, "\n" );
+            $log->fatal( q{Cannot find reference key:} . $reference_id, "\n" );
             exit;
         }
         elsif ( !any { $_ eq $version } @{ $reference_ref->{$reference_id} } )
         {    #If element is part of array
 
             $log->fatal(
-                "Cannot find version key: "
+                q{Cannot find version key: }
                   . $version
-                  . " reference key:"
+                  . q{ reference key:}
                   . $reference_id,
                 "\n"
             );
             exit;
         }
     }
-
+    return;
 }

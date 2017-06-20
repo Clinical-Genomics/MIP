@@ -27,7 +27,7 @@ sub unix_write_to_file {
 
 ##unix_write_to_file
 
-##Function : Perl wrapper for writing unix write to file recipe to already open $FILEHANDLE or return commands array.
+##Function : Perl wrapper for writing unix write to file recipe to already open $FILEHANDLE.
 ##Returns  : ""
 ##Arguments: $commands_ref, $FILEHANDLE, $separator
 ##         : $commands_ref => Commands to write to file
@@ -62,9 +62,23 @@ sub unix_write_to_file {
     check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
 
     ### Write to file helper module
-    if ($FILEHANDLE) {
+    if ( ($FILEHANDLE) && ( @{$commands_ref} ) ) {
 
-        print {$FILEHANDLE} join( $separator, @{$commands_ref} ) . $separator;
+        # Write each element in line
+        if ( $separator ne q{\n} ) {
+
+            print {$FILEHANDLE} join( $separator, @{$commands_ref} )
+              . $separator;
+        }
+        else {    # Write each command per line
+
+          LINES:
+            foreach my $line ( @{$commands_ref} ) {
+
+                say {$FILEHANDLE} $line;
+            }
+            print {$FILEHANDLE} "\n";
+        }
     }
     return;
 }

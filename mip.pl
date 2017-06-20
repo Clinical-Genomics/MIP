@@ -217,7 +217,7 @@ GetOptions(
     'bsu|bash_set_nounset:s'   => \$parameter{bash_set_nounset}{value},
     'bsp|bash_set_pipefail:s'  => \$parameter{bash_set_pipefail}{value},
     'em|email:s'               => \$parameter{email}{value},
-    'emt|email_types:s'         => \@ {$parameter{email_types}{value} },
+    'emt|email_types:s'        => \@{ $parameter{email_types}{value} },
     'mcn|module_core_number:s' => \%{ $parameter{module_core_number}{value} },
     'mot|module_time:s'        => \%{ $parameter{module_time}{value} },
     'mcn|max_cores_per_node=n' => \$parameter{max_cores_per_node}{value},
@@ -31601,8 +31601,9 @@ sub program_prerequisites {
     # Build bash shebang line
     build_shebang(
         {
-            FILEHANDLE      => $FILEHANDLE,
-	 bash_bin_path => catfile( dirname( dirname( devnull() ) ), qw(bin bash) ),
+            FILEHANDLE => $FILEHANDLE,
+            bash_bin_path =>
+              catfile( dirname( dirname( devnull() ) ), qw(bin bash) ),
             set_login_shell => 1,
             set_errexit     => $set_errexit,
             set_nounset     => $set_nounset,
@@ -31626,7 +31627,7 @@ sub program_prerequisites {
             stderrfile_path          => $stderrfile_path,
             stdoutfile_path          => $stdoutfile_path,
             email                    => $active_parameter_href->{email},
-            email_types_ref               => $email_types_ref,
+            email_types_ref          => $email_types_ref,
             FILEHANDLE               => $FILEHANDLE,
         }
     );
@@ -31678,7 +31679,7 @@ sub program_prerequisites {
                   \@{ $active_parameter_href->{sacct_format_fields} },
                 log_file_ref     => \$active_parameter_href->{log_file},
                 FILEHANDLE       => $FILEHANDLE,
-                directory_remove => $temp_directory,
+                remove_dir       => $temp_directory,
                 trap_signals_ref => [ "EXIT", "TERM", "INT" ],
                 trap_function    => q?$(finish ? . $temp_directory . q?)?,
             }

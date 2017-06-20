@@ -15,7 +15,7 @@ use Params::Check qw(check allow last_error);
 
 use FindBin qw($Bin);    #Find directory of script
 use File::Basename qw(dirname basename);
-use File::Spec::Functions qw(catdir);
+use File::Spec::Functions qw(catfile catdir devnull);
 use Getopt::Long;
 use Test::More;
 
@@ -72,7 +72,7 @@ BEGIN {
     }
 
 ##Modules
-    my @modules = ('MIP::Workloadmanager::Slurm');
+    my @modules = ('File::Format::Shell');
 
     for my $module (@modules) {
 
@@ -80,83 +80,65 @@ BEGIN {
     }
 }
 
-use MIP::Workloadmanager::Slurm qw(slurm_build_sbatch_header);
+use File::Format::Shell qw(build_shebang);
 
 my $NEWLINE = q{\n};
 
 diag(
-"Test slurm_build_sbatch_header $MIP::Workloadmanager::Slurm::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test build_shebang $File::Format::Shell::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments
-my $sbatch_shebang = '#SBATCH ';
+my $batch_shebang = q{#!};
 
 my %base_argument = (
     FILEHANDLE => {
         input           => undef,
-        expected_output => $sbatch_shebang,
+        expected_output => $batch_shebang,
     },
 );
+
+my $bash_bin_path = catfile( dirname( dirname( devnull() ) ), qw(usr bin env bash) );
 
 ## Specific arguments
 my %argument = (
-    project_id => {
-        input           => 'project_id_test',
-        expected_output => '--account=project_id_test',
+		bash_bin_path => {
+        input           => $bash_bin_path,
+        expected_output => $batch_shebang . $bash_bin_path,
     },
-    core_number => {
-        input           => '8',
-        expected_output => '--ntasks=8',
+    set_login_shell => {
+        input           => 1,
+        expected_output => 'set -l',
     },
-    process_time => {
-        input           => '1:00:00',
-        expected_output => '--time=1:00:00',
+    set_errexit => {
+        input           => 1,
+        expected_output => 'set -e',
     },
-    slurm_quality_of_service => {
-        input           => 'high',
-        expected_output => '--qos=high',
+    set_nounset => {
+        input           => 1,
+        expected_output => 'set -u',
     },
-    job_name => {
-        input           => 'test_job_name',
-        expected_output => '--job-name=test_job_name',
-    },
-    stdoutfile_path => {
-        input           => 'outfile.test',
-        expected_output => '--output=outfile.test',
-    },
-    stderrfile_path => {
-        input           => 'stderrfile.test',
-        expected_output => '--error=stderrfile.test',
-    },
-    email => {
-        input           => 'test.testsson@test.com',
-        expected_output => '--mail-user=test.testsson@test.com',
-    },
-    email_types_ref => {
-        inputs_ref      => [ 'BEGIN', 'FAIL', 'END' ],
-        expected_output => '--mail-type=BEGIN,FAIL,END',
+    set_pipefail => {
+        input           => 1,
+        expected_output => 'set -o pipefail',
     },
 );
 
-my @commands = slurm_build_sbatch_header(
+my @commands = build_shebang(
     {
-        project_id               => $argument{project_id}{input},
-        slurm_quality_of_service => $argument{slurm_quality_of_service}{input},
-        job_name                 => $argument{job_name}{input},
-        stderrfile_path          => $argument{stderrfile_path}{input},
-        stdoutfile_path          => $argument{stdoutfile_path}{input},
-        email                    => $argument{email}{input},
-        email_types_ref          => $argument{email_types_ref}{inputs_ref},
-        process_time             => $argument{process_time}{input},
-        core_number              => $argument{core_number}{input},
+     bash_bin_path               => $argument{bash_bin_path}{input},
+     set_login_shell => $argument{set_login_shell}{input},
+     set_errexit                 => $argument{set_errexit}{input},
+     set_nounset          => $argument{set_nounset}{input},
+     set_pipefail          => $argument{set_pipefail}{input},
     }
 );
 
 ## Testing return of commands
 foreach my $key ( keys %argument ) {
 
-    # Add sbatch shebang to all expected outputs
-    my $expected_output = $sbatch_shebang . $argument{$key}{expected_output};
+  # Alias expeceted output
+    my $expected_output = $argument{$key}{expected_output};
 
     ok( ( any { $_ eq $expected_output } @commands ), 'Argument: ' . $key );
 }
@@ -165,21 +147,21 @@ foreach my $key ( keys %argument ) {
 
 # Fake arguments
 my @args = (
-    project_id => 1,
+    bash_bin_path => $bash_bin_path,
     FILEHANDLE => undef,
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&slurm_build_sbatch_header;
+my $module_function_cref = \&build_shebang;
 
-my $function_base_command = '#SBATCH ';
+my $function_base_command = $batch_shebang . $bash_bin_path,;
 
 test_write_to_file(
     {
         args_ref             => \@args,
         module_function_cref => $module_function_cref,
         base_command         => $function_base_command,
-        separator            => $NEWLINE,
+     separator => $NEWLINE,
     }
 );
 

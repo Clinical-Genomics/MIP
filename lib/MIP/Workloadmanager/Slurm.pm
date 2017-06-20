@@ -190,17 +190,18 @@ sub slurm_build_sbatch_header {
 
 ##Function : Perl wrapper for writing SLURM sbatch header recipe to already open $FILEHANDLE or return commands array. Based on SLURM 2.6.0.
 ##Returns  : "@commands"
-##Arguments: $project_id, $slurm_quality_of_service, $stderrfile_path, $stdoutfile_path, $FILEHANDLE, $core_number, $process_time, $job_name, $email, $email_types_ref
+##Arguments: $project_id, $slurm_quality_of_service, $stderrfile_path, $stdoutfile_path, $FILEHANDLE, $core_number, $process_time, $job_name, $email, $email_types_ref, $separator
 ##         : $project_id               => Project id
 ##         : $slurm_quality_of_service => Quality of service for the job
 ##         : $job_name                 => Specify a name for the job allocation
 ##         : $stderrfile_path          => Stderrfile path
 ##         : $stdoutfile_path          => Stdoutfile path
 ##         : $email                    => User to receive email notification
-##         : $email_types_ref              => When to send email for event
 ##         : $FILEHANDLE               => Filehandle to write to
 ##         : $core_number              => Core number to allocate
 ##         : $process_time             => Time limit
+##         : $email_types_ref          => When to send email for event
+##         : $separator                => Separator to use when writing
 
     my ($arg_href) = @_;
 
@@ -208,6 +209,7 @@ sub slurm_build_sbatch_header {
     my $core_number;
     my $process_time;
     my $email_types_ref;
+    my $separator;
 
     ## Flatten argument(s)
     my $project_id;
@@ -217,6 +219,9 @@ sub slurm_build_sbatch_header {
     my $stdoutfile_path;
     my $email;
     my $FILEHANDLE;
+
+    ## Constants
+    my $NEWLINE = q{\n};
 
     use MIP::Check::Parameter qw(check_allowed_array_values);
 
@@ -262,11 +267,18 @@ sub slurm_build_sbatch_header {
             strict_type => 1,
             store       => \$process_time
         },
+        separator => {
+            default     => $NEWLINE,
+            strict_type => 1,
+            store       => \$separator
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
 
-    ## build sbatch header
+    use MIP::Unix::Write_to_file qw(unix_write_to_file);
+
+    ## Build sbatch header
     my @commands;    #Stores commands depending on input parameters
 
     ## Options
@@ -291,17 +303,19 @@ sub slurm_build_sbatch_header {
         push @commands, '--job-name=' . $job_name;
     }
 
+    # Stderror
     if ($stderrfile_path) {
 
-        # Stderror filename
         push @commands, '--error=' . $stderrfile_path;
     }
 
+    # Stdout
     if ($stdoutfile_path) {
 
-        # Stdout filename
         push @commands, '--output=' . $stdoutfile_path;
     }
+
+    # Email and email_types
     if ($email) {
 
         if ( @{$email_types_ref} ) {
@@ -314,15 +328,13 @@ sub slurm_build_sbatch_header {
     ## Add sbatch shebang
     @commands = map { '#SBATCH ' . $_ } @commands;
 
-    if ($FILEHANDLE) {
-
-      HEADER_LINES:
-        foreach my $header_line (@commands) {
-
-            say $FILEHANDLE $header_line;
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $separator,
+            FILEHANDLE   => $FILEHANDLE,
         }
-        print $FILEHANDLE "\n";
-    }
+    );
     return @commands;
 }
 

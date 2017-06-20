@@ -34,10 +34,11 @@ sub test_write_to_file {
 
 ##Function : Test of writing to file using anonymous FILEHANDLE
 ##Returns  : ""
-##Arguments: $module_function_cref, $args_ref, $base_command
+##Arguments: $module_function_cref, $args_ref, $base_command, $separator
 ##         : $module_function_cref => Module method to test
 ##         : $args_ref             => Arguments to function call
 ##         : $base_command         => First word in command line usually name of executable
+##         : $separator            => Separator to use when writing
 
     my ($arg_href) = @_;
 
@@ -45,6 +46,7 @@ sub test_write_to_file {
     my $module_function_cref;
     my $args_ref;
     my $base_command;
+    my $separator;
 
     my $tmpl = {
         module_function_cref =>
@@ -62,6 +64,11 @@ sub test_write_to_file {
             strict_type => 1,
             store       => \$base_command
         },
+        separator => {
+            default     => q{ },
+            strict_type => 1,
+            store       => \$separator
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
@@ -69,7 +76,7 @@ sub test_write_to_file {
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    ## Add new FILEHANDLE to args
+    # Add new FILEHANDLE to args
     push @{$args_ref}, 'FILEHANDLE', $FILEHANDLE;
 
     # For storing info to write
@@ -84,7 +91,8 @@ sub test_write_to_file {
     close $FILEHANDLE;
 
     ## Perform test
-    ok( $file_content =~ /^$base_command/, 'Write commands to file' );
+    ok( $file_content =~ /^$base_command/,
+        q{Write commands with '} . $separator . q{' to file} );
 
     return;
 }

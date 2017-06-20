@@ -88,15 +88,25 @@ diag(
 ## Coderef - enables generalized use of generate call
 my $module_function_cref = \&unix_write_to_file;
 
-## Set upp test commands
-my @commands = ( 'commands_ref', ['test'] );
-
 ## Test
+# In line test
+my @commands = ( 'commands_ref', [ 'test', 'in-line' ] );
+test_write_to_file(
+    {
+        args_ref             => \@commands,
+        base_command         => 'test in-line',
+        module_function_cref => $module_function_cref,
+    }
+);
+
+# Per line test
+@commands = ( 'commands_ref', [ 'test', 'per-line' ] );
 test_write_to_file(
     {
         args_ref             => \@commands,
         base_command         => 'test',
         module_function_cref => $module_function_cref,
+        separator            => q{\n},
     }
 );
 

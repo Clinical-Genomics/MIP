@@ -2,53 +2,49 @@ package File::Format::Shell;
 
 use strict;
 use warnings;
-use warnings qw( FATAL utf8 );
-use v5.10;    #Require at least perl 5.10
+use warnings qw(FATAL utf8);
+use 5.018;    #Require at least perl 5.18
 use utf8;     #Allow unicode characters in this script
 use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
 use Carp;
-
-BEGIN {
-    require Exporter;
-
-    # Set the version for version checking
-    our $VERSION = 1.01;
-
-    # Inherit from Exporter to export functions and variables
-    our @ISA = qw(Exporter);
-
-    # Functions and variables which are exported by default
-    our @EXPORT = qw();
-
-    # Functions and variables which can be optionally exported
-    our @EXPORT_OK = (
-        'create_bash_file',             'build_shebang',
-        'create_housekeeping_function', 'create_error_trap_function',
-        'enable_trap',                  'clear_trap',
-        'track_progress',
-    );
-}
+use English qw(-no_match_vars);
+use Params::Check qw(check allow last_error);
+$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 
 use Cwd;
-use FindBin qw($Bin);    #Find directory of script
+use FindBin qw($Bin);                 #Find directory of script
 use File::Basename qw(dirname basename);
 use File::Spec::Functions qw(catfile catdir devnull);
-use Params::Check qw[check allow last_error];
-$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 
 ##MIPs lib/
 use lib catdir( $Bin, 'lib' );        #Add MIPs internal lib
+
+BEGIN {
+
+    use base qw(Exporter);
+    require Exporter;
+
+    # Set the version for version checking
+    our $VERSION = 1.02;
+
+    # Functions and variables which can be optionally exported
+    our @EXPORT_OK = qw(create_bash_file build_shebang
+      create_housekeeping_function create_error_trap_function
+      enable_trap clear_trap track_progress
+    );
+}
 
 sub create_bash_file {
 
 ##create_bash_file
 
 ##Function : Create bash file with header
-##Returns  : "$FILEHANDLE"
-##Arguments: $file_name, $directory_remove, $log, $trap_signals_ref, $trap_function, $set_login_shell, $set_errexit, $set_nounset, $set_pipefail
+##Returns  : ""
+##Arguments: $file_name, $FILEHANDLE, $remove_dir, $log, $trap_signals_ref, $trap_function, $set_login_shell, $set_errexit, $set_nounset, $set_pipefail
 ##         : $file_name        => File name
-##         : $directory_remove => Directory to remove when caught by trap function
+##         : $FILEHANDLE       => Filehandle to write to
+##         : $remove_dir       => Directory to remove when caught by trap function
 ##         : $log              => Log object to write to
 ##         : $trap_signals_ref => Array with signals to clear trap for {REF}
 ##         : $trap_function    => Trap function argument
@@ -69,7 +65,8 @@ sub create_bash_file {
 
     ## Flatten argument(s)
     my $file_name;
-    my $directory_remove;
+    my $FILEHANDLE;
+    my $remove_dir;
     my $log;
 
     my $tmpl = {
@@ -79,11 +76,12 @@ sub create_bash_file {
             strict_type => 1,
             store       => \$file_name
         },
-        log              => { store => \$log },
-        directory_remove => {
-            allow       => qr/^\.\S+$/,
+        FILEHANDLE => { required => 1, store => \$FILEHANDLE },
+        log        => { store    => \$log },
+        remove_dir => {
+            allow       => qr/^\S+$/x,
             strict_type => 1,
-            store       => \$directory_remove
+            store       => \$remove_dir
         },
         trap_signals_ref => {
             default     => ['ERR'],
@@ -123,23 +121,7 @@ sub create_bash_file {
 
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    ## Open batch file with supplied log
-    if ( ( defined $log ) && ($log) ) {
-
-        open( $FILEHANDLE, '>', catfile($file_name) )
-          or $log->logdie(
-            "Cannot write to '" . catfile($file_name) . "' :" . $! . "\n" );
-    }
-    else {
-
-        open( $FILEHANDLE, '>', catfile($file_name) )
-          or
-          die( "Cannot write to '" . catfile($file_name) . "' :" . $! . "\n" );
-    }
-
-    # Build bash shebang line
+    ## Build bash shebang line
     build_shebang(
         {
             FILEHANDLE      => $FILEHANDLE,
@@ -153,8 +135,9 @@ sub create_bash_file {
     ## Create housekeeping function which removes entire directory when finished
     create_housekeeping_function(
         {
-            directory_remove => $directory_remove,
-            FILEHANDLE       => $FILEHANDLE,
+            remove_dir    => $remove_dir,
+            trap_function => q{$(finish "} . $remove_dir . q{")},
+            FILEHANDLE    => $FILEHANDLE,
         }
     );
 
@@ -162,38 +145,40 @@ sub create_bash_file {
     enable_trap(
         {
             FILEHANDLE       => $FILEHANDLE,
-            trap_signals_ref => ["DEBUG"],
-            trap_function    => q?previous_command="$BASH_COMMAND"?,
+            trap_signals_ref => ['DEBUG'],
+            trap_function    => q{previous_command="$BASH_COMMAND"},
         }
     );
 
     ## Create error handling function and trap
     create_error_trap_function( { FILEHANDLE => $FILEHANDLE, } );
 
-    if ( ( defined($log) ) && ($log) ) {
+    if ( ( defined $log ) && ($log) ) {
 
-        $log->info( "Created bash file: '" . catfile($file_name), "'\n" );
+        $log->info( q{Created bash file: '} . catfile($file_name), q{'}, "\n" );
     }
     else {
 
-        print STDERR "Created bash file: '" . catfile($file_name), "'", "\n";
+        print {*STDERR} q{Created bash file: '} . catfile($file_name), q{'},
+          "\n";
     }
-    return $FILEHANDLE;
+    return;
 }
 
 sub build_shebang {
 
 ##build_shebang
 
-##Function : Build bash shebang line
-##Returns  : ""
-##Arguments: $FILEHANDLE, $bash_bin_path, $set_login_shell, $set_errexit, $set_nounset, $set_pipefail
+##Function : Build bash shebang line. Returns "@commands" or writes to already opened filehandle.
+##Returns  : "@commands"
+##Arguments: $FILEHANDLE, $bash_bin_path, $set_login_shell, $set_errexit, $set_nounset, $set_pipefail, $separator
 ##         : $FILEHANDLE      => Filehandle to write to
 ##         : $bash_bin_path   => Location of bash bin
 ##         : $set_login_shell => Invoked as a login shell (-l). Reinitilize bashrc and bash_profile
 ##         : $set_errexit     => Halt script if command has non-zero exit code (-e)
 ##         : $set_nounset     => Halt script if variable is uninitialised (-u)
 ##         : $set_pipefail    => Detect errors within pipes (-o pipefail)
+##         : $separator       => Separator to use when writing
 
     my ($arg_href) = @_;
 
@@ -203,12 +188,16 @@ sub build_shebang {
     my $set_errexit;
     my $set_nounset;
     my $set_pipefail;
+    my $separator;
 
     ## Flatten argument(s)
     my $FILEHANDLE;
 
+    ## Constants
+    my $NEWLINE = q{\n};
+
     my $tmpl = {
-        FILEHANDLE    => { required => 1, store => \$FILEHANDLE },
+        FILEHANDLE    => { store => \$FILEHANDLE },
         bash_bin_path => {
             default =>
               catfile( dirname( dirname( devnull() ) ), qw(usr bin env bash) ),
@@ -240,22 +229,48 @@ sub build_shebang {
             strict_type => 1,
             store       => \$set_pipefail
         },
+        separator => {
+            default     => $NEWLINE,
+            strict_type => 1,
+            store       => \$separator
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
 
-    # Build shebang
-    print $FILEHANDLE '#!';
-    print $FILEHANDLE $bash_bin_path;
-    print $FILEHANDLE "\n";
+    use MIP::Unix::Write_to_file qw(unix_write_to_file);
+
+    ## Build shebang
+    my @commands;    #Stores commands depending on input parameters
+
+    push @commands, q{#!} . $bash_bin_path;
 
     # Set flags
-    print $FILEHANDLE "set -l\n"          if ($set_login_shell);
-    print $FILEHANDLE "set -e\n"          if ($set_errexit);
-    print $FILEHANDLE "set -u\n"          if ($set_nounset);
-    print $FILEHANDLE "set -o pipefail\n" if ($set_pipefail);
-    print $FILEHANDLE "\n";
-    return;
+    if ($set_login_shell) {
+
+        push @commands, q{set -l};
+    }
+    if ($set_errexit) {
+
+        push @commands, q{set -e};
+    }
+    if ($set_nounset) {
+
+        push @commands, q{set -u};
+    }
+    if ($set_pipefail) {
+
+        push @commands, q{set -o pipefail};
+    }
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $separator,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+    return @commands;
 }
 
 sub create_housekeeping_function {
@@ -264,12 +279,12 @@ sub create_housekeeping_function {
 
 ##Function : Create housekeeping function which removes entire directory when finished
 ##Returns  : ""
-##Arguments: $job_ids_ref, $sacct_format_fields_ref, $log_file_ref, $FILEHANDLE, $directory_remove, $trap_signals_ref, $trap_function
+##Arguments: $job_ids_ref, $sacct_format_fields_ref, $log_file_ref, $FILEHANDLE, $remove_dir, $trap_signals_ref, $trap_function
 ##         : $job_ids_ref             => Job ids
 ##         : $sacct_format_fields_ref => Format and fields of sacct output
 ##         : $log_file_ref            => Log file to write job_id progress to {REF}
 ##         : $FILEHANDLE              => Filehandle to write to
-##         : $directory_remove        => Directory to remove when caught by trap function
+##         : $remove_dir              => Directory to remove when caught by trap function
 ##         : $trap_signals_ref        => Array with signals to enable trap for {REF}
 ##         : $trap_function           => The trap function argument
 
@@ -284,7 +299,7 @@ sub create_housekeeping_function {
     my $sacct_format_fields_ref;
     my $log_file_ref;
     my $FILEHANDLE;
-    my $directory_remove;
+    my $remove_dir;
 
     my $tmpl = {
         job_ids_ref =>
@@ -297,48 +312,49 @@ sub create_housekeeping_function {
         log_file_ref =>
           { default => \$$, strict_type => 1, store => \$log_file_ref },
         FILEHANDLE       => { required    => 1, store => \$FILEHANDLE },
-        directory_remove => { strict_type => 1, store => \$directory_remove },
+        remove_dir       => { strict_type => 1, store => \$remove_dir },
         trap_signals_ref => {
-            default     => [ "EXIT", "TERM", "INT" ],
+            default     => [qw(EXIT TERM INT)],
             strict_type => 1,
             store       => \$trap_signals_ref
         },
         trap_function => {
-            default     => "finish",
+            default     => 'finish',
             strict_type => 1,
             store       => \$trap_function
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     use Program::Gnu::Coreutils qw(rm);
 
     ## Create housekeeping function and trap
-    print $FILEHANDLE q?finish() {?, "\n\n";
+    print {$FILEHANDLE} q?finish() {?, "\n\n";
 
-    if ( ( defined($directory_remove) ) && ($directory_remove) ) {
+    if ( ( defined $remove_dir ) && ($remove_dir) ) {
 
-        print $FILEHANDLE "\t" . q?local directory="$1"?,         "\n";
-        print $FILEHANDLE "\t" . q?## Perform exit housekeeping?, "\n";
-        print $FILEHANDLE "\t";
+        print {$FILEHANDLE} "\t" . q{local directory="$1"},         "\n";
+        print {$FILEHANDLE} "\t" . q{## Perform exit housekeeping}, "\n";
+        print {$FILEHANDLE} "\t";
         rm(
             {
-                infile_path => q?"$directory"?,
+                infile_path => q{"$directory"},
                 force       => 1,
                 recursive   => 1,
                 FILEHANDLE  => $FILEHANDLE,
             }
         );
-        print $FILEHANDLE "\n\n";
+        print {$FILEHANDLE} "\n\n";
     }
-    if (   ( defined($job_ids_ref) )
-        && (@$job_ids_ref)
-        && ( defined($$log_file_ref) )
-        && ($$log_file_ref) )
+    if (   ( defined $job_ids_ref )
+        && ( @{$job_ids_ref} )
+        && ( defined ${$log_file_ref} )
+        && ( ${$log_file_ref} ) )
     {
 
-        ## Output SLURM info on each job via sacct command and write to log file(.status)
+        ## Output SLURM info on each job via sacct command
+        ## and write to log file(.status)
         track_progress(
             {
                 job_ids_ref             => \@{$job_ids_ref},
@@ -349,7 +365,7 @@ sub create_housekeeping_function {
         );
     }
 
-    print $FILEHANDLE q?}?, "\n";
+    print {$FILEHANDLE} q?}?, "\n";
 
     ## Enable trap function with trap signal(s)
     enable_trap(
@@ -359,6 +375,7 @@ sub create_housekeeping_function {
             trap_function    => $trap_function,
         }
     );
+    return;
 }
 
 sub create_error_trap_function {
@@ -406,31 +423,32 @@ sub create_error_trap_function {
             store       => \$trap_function_call
         },
         trap_signals_ref => {
-            default     => ["ERR"],
+            default     => ['ERR'],
             strict_type => 1,
             store       => \$trap_signals_ref
         },
         trap_function_name => {
-            default     => "error",
+            default     => 'error',
             strict_type => 1,
             store       => \$trap_function_name
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     ## Create error handling function and trap
-    print $FILEHANDLE $trap_function_name . q?() {?, "\n\n";
-    print $FILEHANDLE "\t" . q?local program="$1"?,     "\n";
-    print $FILEHANDLE "\t" . q?local return_code="$2"?, "\n\n";
+    print {$FILEHANDLE} $trap_function_name . q?() {?, "\n\n";
+    print {$FILEHANDLE} "\t" . q{local program="$1"},     "\n";
+    print {$FILEHANDLE} "\t" . q{local return_code="$2"}, "\n\n";
 
-    if (   ( defined($job_ids_ref) )
-        && (@$job_ids_ref)
-        && ( defined($$log_file_ref) )
-        && ($$log_file_ref) )
+    if (   ( defined $job_ids_ref )
+        && ( @{$job_ids_ref} )
+        && ( defined ${$log_file_ref} )
+        && ( ${$log_file_ref} ) )
     {
 
-        ## Output SLURM info on each job via sacct command and write to log file(.status)
+        ## Output SLURM info on each job via sacct command
+        ## and write to log file(.status)
         track_progress(
             {
                 job_ids_ref             => \@{$job_ids_ref},
@@ -441,12 +459,12 @@ sub create_error_trap_function {
         );
     }
 
-    print $FILEHANDLE "\t" . q?## Display error message and exit?, "\n";
-    print $FILEHANDLE "\t"
+    print {$FILEHANDLE} "\t" . q{## Display error message and exit}, "\n";
+    print {$FILEHANDLE} "\t"
       . q?echo "${program}: ${return_code}: Unknown Error - ExitCode=$return_code" 1>&2?,
       "\n";
-    print $FILEHANDLE "\t" . q?exit 1?, "\n";
-    print $FILEHANDLE q?}?, "\n";
+    print {$FILEHANDLE} "\t" . q{exit 1}, "\n";
+    print {$FILEHANDLE} q?}?, "\n";
 
     ## Enable trap function with trap signal(s)
     enable_trap(
@@ -456,6 +474,7 @@ sub create_error_trap_function {
             trap_function    => $trap_function_call,
         }
     );
+    return;
 }
 
 sub clear_trap {
@@ -479,19 +498,22 @@ sub clear_trap {
     my $tmpl = {
         FILEHANDLE       => { required => 1, store => \$FILEHANDLE },
         trap_signals_ref => {
-            default     => ["ERR"],
+            default     => ['ERR'],
             strict_type => 1,
             store       => \$trap_signals_ref
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak(qw[Could not parse arguments!]);
+
+    my $SPACE = q{ };
 
     ## Clear trap for signal ERR
-    print $FILEHANDLE "\n## Clear trap for signal(s) "
-      . join( " ", @$trap_signals_ref ), "\n";
-    print $FILEHANDLE "trap - " . join( " ", @$trap_signals_ref ), "\n";
-    print $FILEHANDLE "trap", "\n\n";
+    print {$FILEHANDLE} "\n## Clear trap for signal(s) "
+      . join( $SPACE, @{$trap_signals_ref} ), "\n";
+    print {$FILEHANDLE} q{trap - } . join( $SPACE, @{$trap_signals_ref} ), "\n";
+    print {$FILEHANDLE} 'trap', "\n\n";
+    return;
 }
 
 sub enable_trap {
@@ -517,24 +539,27 @@ sub enable_trap {
     my $tmpl = {
         FILEHANDLE       => { required => 1, store => \$FILEHANDLE },
         trap_signals_ref => {
-            default     => ["ERR"],
+            default     => ['ERR'],
             strict_type => 1,
             store       => \$trap_signals_ref
         },
         trap_function => {
-            default     => "error",
+            default     => 'error',
             strict_type => 1,
             store       => \$trap_function
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
-    print $FILEHANDLE "\n## Enable trap for signal(s) "
-      . join( " ", @$trap_signals_ref ), "\n";
-    print $FILEHANDLE "trap '"
-      . $trap_function . "' "
-      . join( " ", @$trap_signals_ref ), "\n\n";
+    my $SPACE = q{ };
+
+    print {$FILEHANDLE} "\n## Enable trap for signal(s) "
+      . join( $SPACE, @{$trap_signals_ref} ), "\n";
+    print {$FILEHANDLE} q{trap '}
+      . $trap_function . q{' }
+      . join( $SPACE, @{$trap_signals_ref} ), "\n\n";
+    return;
 }
 
 sub track_progress {
@@ -564,9 +589,9 @@ sub track_progress {
           { default => [], strict_type => 1, store => \$job_ids_ref },
         sacct_format_fields_ref => {
             default => [
-                "jobid",     "jobname%50", "account", "partition",
-                "alloccpus", "TotalCPU",   "elapsed", "start",
-                "end",       "state",      "exitcode"
+                'jobid',     'jobname%50', 'account', 'partition',
+                'alloccpus', 'TotalCPU',   'elapsed', 'start',
+                'end',       'state',      'exitcode'
             ],
             strict_type => 1,
             store       => \$sacct_format_fields_ref
@@ -576,11 +601,14 @@ sub track_progress {
         FILEHANDLE => { store => \$FILEHANDLE },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     use MIP::Workloadmanager::Slurm qw(slurm_sacct);
 
-    if (@$job_ids_ref) {
+    my $SPACE = q{ };
+    my $COMMA = q{,};
+
+    if ( @{$job_ids_ref} ) {
 
         ## Copy array
         my @reformat_sacct_header = @{$sacct_format_fields_ref};
@@ -596,13 +624,15 @@ sub track_progress {
                 job_ids_ref       => \@{$job_ids_ref},
             }
         );
-        print $FILEHANDLE "\t" . join( " ", @command ) . " ";
-        print $FILEHANDLE q?| ?;
-        print $FILEHANDLE q?perl -nae 'my @headers=(?
-          . join( ",", @reformat_sacct_header )
-          . q?); if($. == 1) {print "#".join("\t", @headers), "\n"} if ($.>=3 && $F[0]!~/.batch/) {print join("\t", @F), "\n"}' ?;
-        print $FILEHANDLE q?> ? . $$log_file_ref . ".status", "\n\n";
+        print {$FILEHANDLE} "\t" . join( $SPACE, @command ) . $SPACE;
+        print {$FILEHANDLE} q{| };
+        print {$FILEHANDLE} q{perl -nae 'my @headers=(}
+          . join( $COMMA, @reformat_sacct_header ) . q?); ?
+          . q?if($. == 1) {print "#".join("\t", @headers), "\n"} ?
+          . q?if ($.>=3 && $F[0]!~/.batch/) {print join("\t", @F), "\n"}' ?;
+        print {$FILEHANDLE} q{> } . ${$log_file_ref} . q{.status}, "\n\n";
     }
+    return;
 }
 
 1;
