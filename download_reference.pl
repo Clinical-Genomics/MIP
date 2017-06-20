@@ -72,7 +72,7 @@ $parameter{reference_dir} = cwd();
 my %array_parameter;
 $array_parameter{reference_genome_versions}{default} = ["GRCh37", "hg38"];
 
-my $download_reference_version = "0.0.1";
+my $download_reference_version = "0.0.2";
 
 
 ###User Options
@@ -470,7 +470,7 @@ sub check_file {
      
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    use Program::Gnu::Coreutils qw(rm);
+    use MIP::Gnu::Coreutils qw(gnu_rm);
 
     if( (defined($check_method)) && ($check_method eq "md5sum") ) {
 

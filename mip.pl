@@ -1,4 +1,4 @@
-!/usr/bin/env perl
+#!/usr/bin/env perl
 
 ###Master script for analysing paired end reads from the Illumina plattform in fastq(.gz) format to annotated ranked disease causing variants. The program performs QC, aligns reads using BWA, performs variant discovery and annotation as well as ranking the found variants according to disease potential.
 
@@ -104,7 +104,7 @@ eval_parameter_hash(
     }
 );
 
-our $VERSION = "v5.0.2";    #Set MIP version
+our $VERSION = "v5.0.3";    #Set MIP version
 
 ## Directories, files, job_ids and sample_info
 my ( %infile, %indir_path, %infile_lane_prefix, %lane,
@@ -26022,7 +26022,7 @@ sub build_annovar_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use MIP::Gnu::Coreutils qw(gnu_mkdir)
+    use MIP::Gnu::Coreutils qw(gnu_mkdir);
     
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger("MIP");
@@ -35670,7 +35670,7 @@ sub migrate_file {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use Program::Gnu::Coreutils qw(gnu_cp);
+    use MIP::Gnu::Coreutils qw(gnu_cp);
 
     ## Split relative infile_path to file(s)
     my ( $infile_path_volume, $infile_path_directory, $infile_path_file_name )

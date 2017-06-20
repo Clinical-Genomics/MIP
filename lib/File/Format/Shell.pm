@@ -12,7 +12,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Inherit from Exporter to export functions and variables
     our @ISA = qw(Exporter);
@@ -201,7 +201,7 @@ sub create_housekeeping_function {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use Program::Gnu::Coreutils qw(rm);
+    use MIP::Gnu::Coreutils qw(gnu_rm);
 
     ## Create housekeeping function and trap
     print $FILEHANDLE q?finish() {?, "\n\n";
@@ -211,7 +211,7 @@ sub create_housekeeping_function {
         print $FILEHANDLE "\t" . q?local directory="$1"?,         "\n";
         print $FILEHANDLE "\t" . q?## Perform exit housekeeping?, "\n";
         print $FILEHANDLE "\t";
-        rm(
+        gnu_rm(
             {
                 infile_path => q?"$directory"?,
                 force       => 1,

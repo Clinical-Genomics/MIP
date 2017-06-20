@@ -158,7 +158,7 @@ sub gnu_cp {
     push @commands, $outfile_path;
 
     push @commands,
-      unix_standard_stream(
+      unix_standard_streams(
         {
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
@@ -264,7 +264,7 @@ sub gnu_mv {
 
     #Redirect stderr output to program specific stderr file
     push @commands,
-      unix_standard_stream(
+      unix_standard_streams(
         {
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
@@ -373,7 +373,7 @@ sub gnu_rm {
     push @commands, $infile_path;
 
     push @commands,
-      unix_standard_stream(
+      unix_standard_streams(
         {
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
@@ -414,6 +414,7 @@ sub gnu_mkdir {
     ## Flatten argument(s)
     my $indirectory_path;
     my $stderrfile_path;
+    my $stderrfile_path_append;
     my $FILEHANDLE;
 
     my $tmpl = {
@@ -429,7 +430,7 @@ sub gnu_mkdir {
         },
         stderrfile_path_append => {
             strict_type => 1,
-            store = \$stderrfile_path_append
+            store => \$stderrfile_path_append
         },
         FILEHANDLE => {
             store => \$FILEHANDLE
@@ -470,7 +471,7 @@ sub gnu_mkdir {
     push @commands, $indirectory_path;
 
     push @commands,
-      unix_standard_stream(
+      unix_standard_streams(
         {
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
@@ -552,7 +553,7 @@ sub gnu_cat {
     }
 
     push @commands,
-      unix_standard_stream(
+      unix_standard_streams(
         {
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
@@ -659,7 +660,7 @@ sub gnu_echo {
     }
 
     push @commands,
-      unix_standard_stream(
+      unix_standard_streams(
         {
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
@@ -800,7 +801,7 @@ sub gnu_split {
     }
 
     push @commands,
-      unix_standard_stream(
+      unix_standard_streams(
         {
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
@@ -901,7 +902,7 @@ sub gnu_sort {
     }
 
     push @commands,
-      unix_standard_stream(
+      unix_standard_streams(
         {
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
@@ -992,7 +993,7 @@ sub gnu_printf {
 
     #Redirect stdout to program specific stdout file
     push @commands,
-      unix_standard_stream(
+      unix_standard_streams(
         {
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
