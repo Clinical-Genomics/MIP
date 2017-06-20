@@ -28,6 +28,7 @@ BEGIN {
     # Set the version for version checking
     our $VERSION = 1.02;
 
+
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw(create_bash_file build_shebang
       create_housekeeping_function create_error_trap_function
@@ -327,7 +328,7 @@ sub create_housekeeping_function {
 
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
-    use Program::Gnu::Coreutils qw(rm);
+    use MIP::Gnu::Coreutils qw(gnu_rm);
 
     ## Create housekeeping function and trap
     print {$FILEHANDLE} $trap_function_name . q?() {?, "\n\n";
@@ -337,7 +338,8 @@ sub create_housekeeping_function {
         say   {$FILEHANDLE} "\t" . q{local directory="$1"};
         say   {$FILEHANDLE} "\t" . q{## Perform exit housekeeping};
         print {$FILEHANDLE} "\t";
-        rm(
+
+        gnu_rm(
             {
                 infile_path => q{"$directory"},
                 force       => 1,

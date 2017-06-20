@@ -209,6 +209,7 @@ sub build_reference_install_recipe {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Gnu::Bash qw(gnu_cd);
+    use MIP::Gnu:Coreutils qw (gnu_mkdir);
 
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger('Download_reference');
@@ -216,7 +217,7 @@ sub build_reference_install_recipe {
     my $pwd = cwd();
 
     print $FILEHANDLE q{## Create reference directory}, "\n";
-    Program::Gnu::Coreutils::mkdir(
+    gnu_mkdir(
         {
             indirectory_path => $parameter_href->{reference_dir},
             parents          => 1,
@@ -656,7 +657,7 @@ sub check_file {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use Program::Gnu::Coreutils qw(rm);
+    use MIP::Gnu::Coreutils qw(gnu_rm);
 
     if ( ( defined $check_method ) && ( $check_method eq 'md5sum' ) ) {
 
