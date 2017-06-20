@@ -35,29 +35,29 @@ BEGIN {
     );
 }
 
+## Constants
+my $SPACE = q{ };
+my $COMMA = q{,};
+
 sub create_bash_file {
 
 ##create_bash_file
 
 ##Function : Create bash file with header
 ##Returns  : ""
-##Arguments: $file_name, $FILEHANDLE, $remove_dir, $log, $trap_signals_ref, $trap_function, $set_login_shell, $set_errexit, $set_nounset, $set_pipefail
-##         : $file_name        => File name
-##         : $FILEHANDLE       => Filehandle to write to
-##         : $remove_dir       => Directory to remove when caught by trap function
-##         : $log              => Log object to write to
-##         : $trap_signals_ref => Array with signals to clear trap for {REF}
-##         : $trap_function    => Trap function argument
-##         : $set_login_shell  => Invoked as a login shell. Reinitilize bashrc and bash_profile
-##         : $set_errexit      => Halt script if command has non-zero exit code (-e)
-##         : $set_nounset      => Halt script if variable is uninitialised (-u)
-##         : $set_pipefail     => Detect errors within pipes (-o pipefail)
+##Arguments: $file_name, $FILEHANDLE, $remove_dir, $log, $set_login_shell, $set_errexit, $set_nounset, $set_pipefail
+##         : $file_name          => File name
+##         : $FILEHANDLE         => Filehandle to write to
+##         : $remove_dir         => Directory to remove when caught by trap function
+##         : $log                => Log object to write to
+##         : $set_login_shell    => Invoked as a login shell. Reinitilize bashrc and bash_profile
+##         : $set_errexit        => Halt script if command has non-zero exit code (-e)
+##         : $set_nounset        => Halt script if variable is uninitialised (-u)
+##         : $set_pipefail       => Detect errors within pipes (-o pipefail)
 
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $trap_signals_ref;
-    my $trap_function;
     my $set_login_shell;
     my $set_errexit;
     my $set_nounset;
@@ -82,16 +82,6 @@ sub create_bash_file {
             allow       => qr/^\S+$/x,
             strict_type => 1,
             store       => \$remove_dir
-        },
-        trap_signals_ref => {
-            default     => ['ERR'],
-            strict_type => 1,
-            store       => \$trap_signals_ref
-        },
-        trap_function => {
-            default     => 'error',
-            strict_type => 1,
-            store       => \$trap_function
         },
         set_login_shell => {
             default     => 0,
@@ -135,18 +125,18 @@ sub create_bash_file {
     ## Create housekeeping function which removes entire directory when finished
     create_housekeeping_function(
         {
-            remove_dir    => $remove_dir,
-            trap_function => q{$(finish "} . $remove_dir . q{")},
-            FILEHANDLE    => $FILEHANDLE,
+            remove_dir         => $remove_dir,
+            trap_function_name => 'finish',
+            FILEHANDLE         => $FILEHANDLE,
         }
     );
 
     ## Create debug trap
     enable_trap(
         {
-            FILEHANDLE       => $FILEHANDLE,
-            trap_signals_ref => ['DEBUG'],
-            trap_function    => q{previous_command="$BASH_COMMAND"},
+            FILEHANDLE         => $FILEHANDLE,
+            trap_signals_ref   => ['DEBUG'],
+            trap_function_call => q{previous_command="$BASH_COMMAND"},
         }
     );
 
@@ -279,20 +269,22 @@ sub create_housekeeping_function {
 
 ##Function : Create housekeeping function which removes entire directory when finished
 ##Returns  : ""
-##Arguments: $job_ids_ref, $sacct_format_fields_ref, $log_file_ref, $FILEHANDLE, $remove_dir, $trap_signals_ref, $trap_function
+##Arguments: $job_ids_ref, $sacct_format_fields_ref, $log_file_ref, $FILEHANDLE, $remove_dir, $trap_function_call, $trap_signals_ref, $trap_function_name
 ##         : $job_ids_ref             => Job ids
 ##         : $sacct_format_fields_ref => Format and fields of sacct output
 ##         : $log_file_ref            => Log file to write job_id progress to {REF}
 ##         : $FILEHANDLE              => Filehandle to write to
 ##         : $remove_dir              => Directory to remove when caught by trap function
+##         : $trap_function_call      => Trap function call
 ##         : $trap_signals_ref        => Array with signals to enable trap for {REF}
-##         : $trap_function           => The trap function argument
+##         : $trap_function_name      => The trap function argument
 
     my ($arg_href) = @_;
 
     ## Default(s)
     my $trap_signals_ref;
-    my $trap_function;
+    my $trap_function_name;
+    my $trap_function_call;
 
     ## Flatten argument(s)
     my $job_ids_ref;
@@ -311,17 +303,25 @@ sub create_housekeeping_function {
         },
         log_file_ref =>
           { default => \$$, strict_type => 1, store => \$log_file_ref },
-        FILEHANDLE       => { required    => 1, store => \$FILEHANDLE },
-        remove_dir       => { strict_type => 1, store => \$remove_dir },
+        FILEHANDLE         => { required    => 1, store => \$FILEHANDLE },
+        remove_dir         => { strict_type => 1, store => \$remove_dir },
+        trap_function_call => {
+            default => q{$(}
+              . $arg_href->{trap_function_name}
+              . $SPACE
+              . $arg_href->{remove_dir} . q{)},
+            strict_type => 1,
+            store       => \$trap_function_call
+        },
         trap_signals_ref => {
             default     => [qw(EXIT TERM INT)],
             strict_type => 1,
             store       => \$trap_signals_ref
         },
-        trap_function => {
+        trap_function_name => {
             default     => 'finish',
             strict_type => 1,
-            store       => \$trap_function
+            store       => \$trap_function_name
         },
     };
 
@@ -330,12 +330,12 @@ sub create_housekeeping_function {
     use Program::Gnu::Coreutils qw(rm);
 
     ## Create housekeeping function and trap
-    print {$FILEHANDLE} q?finish() {?, "\n\n";
+    print {$FILEHANDLE} $trap_function_name . q?() {?, "\n\n";
 
     if ( ( defined $remove_dir ) && ($remove_dir) ) {
 
-        print {$FILEHANDLE} "\t" . q{local directory="$1"},         "\n";
-        print {$FILEHANDLE} "\t" . q{## Perform exit housekeeping}, "\n";
+        say   {$FILEHANDLE} "\t" . q{local directory="$1"};
+        say   {$FILEHANDLE} "\t" . q{## Perform exit housekeeping};
         print {$FILEHANDLE} "\t";
         rm(
             {
@@ -345,7 +345,7 @@ sub create_housekeeping_function {
                 FILEHANDLE  => $FILEHANDLE,
             }
         );
-        print {$FILEHANDLE} "\n\n";
+        say {$FILEHANDLE} "\n";
     }
     if (   ( defined $job_ids_ref )
         && ( @{$job_ids_ref} )
@@ -365,14 +365,14 @@ sub create_housekeeping_function {
         );
     }
 
-    print {$FILEHANDLE} q?}?, "\n";
+    say {$FILEHANDLE} q?}?;
 
     ## Enable trap function with trap signal(s)
     enable_trap(
         {
-            FILEHANDLE       => $FILEHANDLE,
-            trap_signals_ref => \@{$trap_signals_ref},
-            trap_function    => $trap_function,
+            FILEHANDLE         => $FILEHANDLE,
+            trap_signals_ref   => \@{$trap_signals_ref},
+            trap_function_call => $trap_function_call,
         }
     );
     return;
@@ -469,9 +469,9 @@ sub create_error_trap_function {
     ## Enable trap function with trap signal(s)
     enable_trap(
         {
-            FILEHANDLE       => $FILEHANDLE,
-            trap_signals_ref => \@{$trap_signals_ref},
-            trap_function    => $trap_function_call,
+            FILEHANDLE         => $FILEHANDLE,
+            trap_signals_ref   => \@{$trap_signals_ref},
+            trap_function_call => $trap_function_call,
         }
     );
     return;
@@ -506,8 +506,6 @@ sub clear_trap {
 
     check( $tmpl, $arg_href, 1 ) or croak(qw[Could not parse arguments!]);
 
-    my $SPACE = q{ };
-
     ## Clear trap for signal ERR
     print {$FILEHANDLE} "\n## Clear trap for signal(s) "
       . join( $SPACE, @{$trap_signals_ref} ), "\n";
@@ -522,16 +520,16 @@ sub enable_trap {
 
 ##Function : Enable trap function with trap signal(s).
 ##Returns  : ""
-##Arguments: $FILEHANDLE, $trap_signals_ref, $trap_function
-##         : $FILEHANDLE       => The FILEHANDLE to write to
-##         : $trap_signals_ref => Array with signals to enable trap for {REF}
-##         : $trap_function    => The trap function argument
+##Arguments: $FILEHANDLE, $trap_signals_ref, $trap_function_call
+##         : $FILEHANDLE         => The FILEHANDLE to write to
+##         : $trap_signals_ref   => Array with signals to enable trap for {REF}
+##         : $trap_function_call => The trap function argument
 
     my ($arg_href) = @_;
 
     ## Default(s)
     my $trap_signals_ref;
-    my $trap_function;
+    my $trap_function_call;
 
     ## Flatten argument(s)
     my $FILEHANDLE;
@@ -543,21 +541,19 @@ sub enable_trap {
             strict_type => 1,
             store       => \$trap_signals_ref
         },
-        trap_function => {
+        trap_function_call => {
             default     => 'error',
             strict_type => 1,
-            store       => \$trap_function
+            store       => \$trap_function_call
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
-    my $SPACE = q{ };
-
     print {$FILEHANDLE} "\n## Enable trap for signal(s) "
       . join( $SPACE, @{$trap_signals_ref} ), "\n";
     print {$FILEHANDLE} q{trap '}
-      . $trap_function . q{' }
+      . $trap_function_call . q{' }
       . join( $SPACE, @{$trap_signals_ref} ), "\n\n";
     return;
 }
@@ -604,9 +600,6 @@ sub track_progress {
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     use MIP::Workloadmanager::Slurm qw(slurm_sacct);
-
-    my $SPACE = q{ };
-    my $COMMA = q{,};
 
     if ( @{$job_ids_ref} ) {
 

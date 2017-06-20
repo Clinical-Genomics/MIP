@@ -31681,7 +31681,8 @@ sub program_prerequisites {
                 FILEHANDLE       => $FILEHANDLE,
                 remove_dir       => $temp_directory,
                 trap_signals_ref => [ "EXIT", "TERM", "INT" ],
-                trap_function    => q?$(finish ? . $temp_directory . q?)?,
+                trap_function_name => 'finish',
+	     trap_function_call => q{$(finish } . $temp_directory . q{)},
             }
         );
     }
@@ -31693,7 +31694,7 @@ sub program_prerequisites {
             {
                 FILEHANDLE       => $FILEHANDLE,
                 trap_signals_ref => ["DEBUG"],
-                trap_function    => q?previous_command="$BASH_COMMAND"?,
+                trap_function_call    => q?previous_command="$BASH_COMMAND"?,
             }
         );
 

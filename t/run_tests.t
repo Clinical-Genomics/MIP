@@ -16,7 +16,7 @@ use FindBin qw( $Bin );    #Find directory of script
 use File::Basename qw( dirname basename );
 use File::Spec::Functions qw( catdir catfile devnull );
 use Getopt::Long;
-use IPC::Cmd qw[ can_run run ];
+use IPC::Cmd qw(can_run run);
 
 ##MIPs lib/
 use lib catdir( dirname($Bin), 'lib' );

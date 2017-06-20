@@ -139,12 +139,15 @@ open $FILEHANDLE, '>', $bash_file_path
   or $log->logdie(
     q{Cannot write to '} . $bash_file_path . q{' :} . $OS_ERROR . "\n" );
 
+# Install directory
+my $temp_dir = catdir( cwd(), '.download_reference' );
+
 ## Create bash file for writing install instructions
 File::Format::Shell::create_bash_file(
     {
         file_name   => $bash_file_path,
         FILEHANDLE  => $FILEHANDLE,
-        remove_dir  => catfile( cwd(), '.download_reference' ),
+        remove_dir  => $temp_dir,
         log         => $log,
         set_errexit => 1,
         set_nounset => 1,

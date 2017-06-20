@@ -98,11 +98,12 @@ my %base_argument = (
     },
 );
 
-my $bash_bin_path = catfile( dirname( dirname( devnull() ) ), qw(usr bin env bash) );
+my $bash_bin_path =
+  catfile( dirname( dirname( devnull() ) ), qw(usr bin env bash) );
 
 ## Specific arguments
 my %argument = (
-		bash_bin_path => {
+    bash_bin_path => {
         input           => $bash_bin_path,
         expected_output => $batch_shebang . $bash_bin_path,
     },
@@ -126,18 +127,18 @@ my %argument = (
 
 my @commands = build_shebang(
     {
-     bash_bin_path               => $argument{bash_bin_path}{input},
-     set_login_shell => $argument{set_login_shell}{input},
-     set_errexit                 => $argument{set_errexit}{input},
-     set_nounset          => $argument{set_nounset}{input},
-     set_pipefail          => $argument{set_pipefail}{input},
+        bash_bin_path   => $argument{bash_bin_path}{input},
+        set_login_shell => $argument{set_login_shell}{input},
+        set_errexit     => $argument{set_errexit}{input},
+        set_nounset     => $argument{set_nounset}{input},
+        set_pipefail    => $argument{set_pipefail}{input},
     }
 );
 
 ## Testing return of commands
 foreach my $key ( keys %argument ) {
 
-  # Alias expeceted output
+    # Alias expeceted output
     my $expected_output = $argument{$key}{expected_output};
 
     ok( ( any { $_ eq $expected_output } @commands ), 'Argument: ' . $key );
@@ -148,7 +149,7 @@ foreach my $key ( keys %argument ) {
 # Fake arguments
 my @args = (
     bash_bin_path => $bash_bin_path,
-    FILEHANDLE => undef,
+    FILEHANDLE    => undef,
 );
 
 ## Coderef - enables generalized use of generate call
@@ -161,7 +162,7 @@ test_write_to_file(
         args_ref             => \@args,
         module_function_cref => $module_function_cref,
         base_command         => $function_base_command,
-     separator => $NEWLINE,
+        separator            => $NEWLINE,
     }
 );
 
