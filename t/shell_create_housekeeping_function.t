@@ -27,7 +27,7 @@ use List::Util qw(any);
 ## MIPs lib/
 use lib catdir( dirname($Bin), 'lib' );
 use Script::Utils qw(help);
-use Program::Gnu::Coreutils qw(rm);
+use MIP::Gnu::Coreutils qw(gnu_mkdir gnu_rm);
 
 our $USAGE = build_usage( {} );
 
@@ -66,7 +66,7 @@ BEGIN {
     my %perl_module;
 
     $perl_module{'Script::Utils'}           = [qw(help)];
-    $perl_module{'Program::Gnu::Coreutils'} = [qw(rm)];
+    $perl_module{'MIP::Gnu::Coreutils'} = [qw(gnu_mkdir gnu_rm)];
 
     while ( my ( $module, $module_import ) = each %perl_module ) {
 
@@ -201,7 +201,7 @@ sub _build_test_file_recipe {
     );
 
     # Create dir to test removal later
-    Program::Gnu::Coreutils::mkdir(
+    gnu_mkdir(
         {
             indirectory_path => $temp_dir,
             parents          => 1,
@@ -220,7 +220,7 @@ sub _build_test_file_recipe {
     );
 
     # Remove batch file to make clean exit
-    rm(
+    gnu_rm(
         {
             infile_path => $bash_file_path,
             FILEHANDLE  => $FILEHANDLE,

@@ -130,7 +130,7 @@ sub gnu_cp {
 
     ## gnu_cp
     # Stores commands depending on input parameters
-    my @commands = qw(gnu_cp);
+    my @commands = qw(cp);
 
     # Preserve the specified attributes
     if ( @{$preserve_attributes_ref} ) {
@@ -247,7 +247,7 @@ sub gnu_mv {
 
     ## gnu_mv
     # Stores commands depending on input parameters
-    my @commands = qw(gnu_mv);
+    my @commands = qw(mv);
 
     if ($force) {
         push @commands, '--force';
@@ -351,7 +351,7 @@ sub gnu_rm {
 
     ## gnu_rm
     # Stores commands depending on input parameters
-    my @commands = qw(gnu_rm);
+    my @commands = qw(rm);
 
     if ($recursive) {
         push @commands, '--recursive';
@@ -450,7 +450,7 @@ sub gnu_mkdir {
 
     ## gnu_mkdir
     # Stores commands depending on input parametersr
-    my @commands = qw(gnu_mkdir);
+    my @commands = qw(mkdir);
 
     # Make parent directories as needed
     if ($parents) {
@@ -535,7 +535,7 @@ sub gnu_cat {
 
     ## gnu_cat
     # Stores commands depending on input parameters
-    my @commands = qw(gnu_cat);
+    my @commands = qw(cat);
 
     ## Infiles
     push @commands, join $SPACE, @{$infile_paths_ref};
@@ -630,7 +630,7 @@ sub gnu_echo {
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     ## Echo
-    my @commands = qw(gnu_echo);  #Stores commands depending on input parameters
+    my @commands = qw(echo);  #Stores commands depending on input parameters
 
     ##Options
     if ($enable_interpretation) {
@@ -758,7 +758,7 @@ sub gnu_split {
 
     ## gnu_split
     # Stores commands depending on input parameters
-    my @commands = qw(gnu_split);
+    my @commands = qw(split);
 
     ## Options
     if ($lines) {
@@ -867,7 +867,7 @@ sub gnu_sort {
 
     ## gnu_sort
     # Stores commands depending on input parameters
-    my @commands = qw(gnu_sort);
+    my @commands = qw(sort);
 
     ## Options
     if ( @{$keys_ref} ) {
