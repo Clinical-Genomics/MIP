@@ -31,7 +31,7 @@ use MIP::Gnu::Coreutils qw(gnu_mkdir gnu_rm);
 
 our $USAGE = build_usage( {} );
 
-my $VERBOSE = 1;
+my $VERBOSE = 0;
 our $VERSION = '1.0.0';
 
 ###User Options
@@ -83,12 +83,12 @@ BEGIN {
     }
 }
 
-use File::Format::Shell qw(build_shebang create_housekeeping_function);
+use File::Format::Shell qw(build_shebang enable_trap create_error_trap_function);
 
 my $NEWLINE = q{\n};
 
 diag(
-"Test create_housekeeping_function $File::Format::Shell::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test create_error_trap_function $File::Format::Shell::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 # Create anonymous filehandle
@@ -98,7 +98,7 @@ my $FILEHANDLE = IO::Handle->new();
 my $bash_file_path = catfile( cwd(), 'test_download_reference.sh' );
 
 # Install directory
-my $temp_dir = catdir( cwd(), '.test_download_reference' );
+my $temp_dir = catdir( cwd(), qw(test_dir .test_download_reference));
 
 # Open filehandle
 open $FILEHANDLE, '>', $bash_file_path
@@ -124,8 +124,8 @@ my $cmds_ref = [ 'bash', $bash_file_path ];
 my ( $success, $error_message, $full_buf_ref, $stdout_buf_ref, $stderr_buf_ref ) =
   run( command => $cmds_ref, verbose => $VERBOSE );
 
-## Testing housekeeping function
-ok( !-d $temp_dir, q{Performed housekeeping} );
+## Testing error trap function
+ok($stderr_buf_ref->[1] =~/[:] Unknown Error - ExitCode[=]/, q{Performed error trap} );
 
 done_testing();
 
@@ -200,21 +200,18 @@ sub _build_test_file_recipe {
         }
     );
 
-    # Create dir to test removal later
-    gnu_mkdir(
+    enable_trap(
         {
-            indirectory_path => $temp_dir,
-            parents          => 1,
-            FILEHANDLE       => $FILEHANDLE,
+            FILEHANDLE         => $FILEHANDLE,
+            trap_signals_ref   => ['DEBUG'],
+            trap_function_call => q{previous_command="$BASH_COMMAND"},
         }
     );
-    say {$FILEHANDLE} "\n";
 
     # Create housekeeping fucntion to remove temp_dir
-    create_housekeeping_function(
+    create_error_trap_function(
         {
-            remove_dir         => $temp_dir,
-            trap_function_name => 'finish',
+            trap_function_name => 'error',
             FILEHANDLE         => $FILEHANDLE,
         }
     );
@@ -226,5 +223,16 @@ sub _build_test_file_recipe {
             FILEHANDLE  => $FILEHANDLE,
         }
     );
+
+    # Create dir to test removal later
+    gnu_mkdir(
+        {
+            indirectory_path => $temp_dir,
+            parents          => 0,
+            FILEHANDLE       => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} "\n";
+
     return;
 }

@@ -47,14 +47,14 @@ sub create_bash_file {
 ##Function : Create bash file with header
 ##Returns  : ""
 ##Arguments: $file_name, $FILEHANDLE, $remove_dir, $log, $set_login_shell, $set_errexit, $set_nounset, $set_pipefail
-##         : $file_name          => File name
-##         : $FILEHANDLE         => Filehandle to write to
-##         : $remove_dir         => Directory to remove when caught by trap function
-##         : $log                => Log object to write to
-##         : $set_login_shell    => Invoked as a login shell. Reinitilize bashrc and bash_profile
-##         : $set_errexit        => Halt script if command has non-zero exit code (-e)
-##         : $set_nounset        => Halt script if variable is uninitialised (-u)
-##         : $set_pipefail       => Detect errors within pipes (-o pipefail)
+##         : $file_name       => File name
+##         : $FILEHANDLE      => Filehandle to write to
+##         : $remove_dir      => Directory to remove when caught by trap function
+##         : $log             => Log object to write to
+##         : $set_login_shell => Invoked as a login shell. Reinitilize bashrc and bash_profile
+##         : $set_errexit     => Halt script if command has non-zero exit code (-e)
+##         : $set_nounset     => Halt script if variable is uninitialised (-u)
+##         : $set_pipefail    => Detect errors within pipes (-o pipefail)
 
     my ($arg_href) = @_;
 
@@ -331,7 +331,7 @@ sub create_housekeeping_function {
     use MIP::Gnu::Coreutils qw(gnu_rm);
 
     ## Create housekeeping function and trap
-    print {$FILEHANDLE} $trap_function_name . q?() {?, "\n\n";
+    say {$FILEHANDLE} $trap_function_name . q?() {?, "\n";
 
     if ( ( defined $remove_dir ) && ($remove_dir) ) {
 
@@ -439,9 +439,9 @@ sub create_error_trap_function {
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     ## Create error handling function and trap
-    print {$FILEHANDLE} $trap_function_name . q?() {?, "\n\n";
-    print {$FILEHANDLE} "\t" . q{local program="$1"},     "\n";
-    print {$FILEHANDLE} "\t" . q{local return_code="$2"}, "\n\n";
+    say {$FILEHANDLE} $trap_function_name . q?() {?, "\n";
+    say {$FILEHANDLE} "\t" . q{local program="$1"}, "\n";
+    say {$FILEHANDLE} "\t" . q{local return_code="$2"}, "\n";
 
     if (   ( defined $job_ids_ref )
         && ( @{$job_ids_ref} )
@@ -461,12 +461,11 @@ sub create_error_trap_function {
         );
     }
 
-    print {$FILEHANDLE} "\t" . q{## Display error message and exit}, "\n";
-    print {$FILEHANDLE} "\t"
-      . q?echo "${program}: ${return_code}: Unknown Error - ExitCode=$return_code" 1>&2?,
-      "\n";
-    print {$FILEHANDLE} "\t" . q{exit 1}, "\n";
-    print {$FILEHANDLE} q?}?, "\n";
+    say {$FILEHANDLE} "\t" . q{## Display error message and exit};
+    say {$FILEHANDLE} "\t"
+      . q?echo "${program}: ${return_code}: Unknown Error - ExitCode=$return_code" 1>&2?;
+    say {$FILEHANDLE} "\t" . q{exit 1};
+    say {$FILEHANDLE} q?}?;
 
     ## Enable trap function with trap signal(s)
     enable_trap(
@@ -508,11 +507,19 @@ sub clear_trap {
 
     check( $tmpl, $arg_href, 1 ) or croak(qw[Could not parse arguments!]);
 
+    use MIP::Gnu::Bash qw(gnu_trap);
+
     ## Clear trap for signal ERR
     print {$FILEHANDLE} "\n## Clear trap for signal(s) "
       . join( $SPACE, @{$trap_signals_ref} ), "\n";
-    print {$FILEHANDLE} q{trap - } . join( $SPACE, @{$trap_signals_ref} ), "\n";
-    print {$FILEHANDLE} 'trap', "\n\n";
+
+    gnu_trap({trap_signals_ref => $trap_signals_ref,
+	      trap_function_call => '-',
+	      FILEHANDLE => $FILEHANDLE,
+	     });
+    gnu_trap({FILEHANDLE => $FILEHANDLE,
+	     });
+    say {$FILEHANDLE} "\n";
     return;
 }
 
@@ -552,11 +559,16 @@ sub enable_trap {
 
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
+    use MIP::Gnu::Bash qw(gnu_trap);
+
     print {$FILEHANDLE} "\n## Enable trap for signal(s) "
       . join( $SPACE, @{$trap_signals_ref} ), "\n";
-    print {$FILEHANDLE} q{trap '}
-      . $trap_function_call . q{' }
-      . join( $SPACE, @{$trap_signals_ref} ), "\n\n";
+
+    gnu_trap({trap_signals_ref => $trap_signals_ref,
+	      trap_function_call => $trap_function_call,
+	      FILEHANDLE => $FILEHANDLE,
+	     });
+    say {$FILEHANDLE} "\n";
     return;
 }
 
@@ -623,9 +635,9 @@ sub track_progress {
         print {$FILEHANDLE} q{| };
         print {$FILEHANDLE} q{perl -nae 'my @headers=(}
           . join( $COMMA, @reformat_sacct_header ) . q?); ?
-          . q?if($. == 1) {print "#".join("\t", @headers), "\n"} ?
-          . q?if ($.>=3 && $F[0]!~/.batch/) {print join("\t", @F), "\n"}' ?;
-        print {$FILEHANDLE} q{> } . ${$log_file_ref} . q{.status}, "\n\n";
+          . q?if($. == 1) {print "#".join("\t", @headers), "\n"} ? #Write header line
+          . q?if ($.>=3 && $F[0]!~/.batch/) {print join("\t", @F), "\n"}' ?; # Write individual job line - skip line beginning with (.batch)
+        print {$FILEHANDLE} q{> } . ${$log_file_ref} . q{.status}, "\n\n"; #Write to log_file.status
     }
     return;
 }
