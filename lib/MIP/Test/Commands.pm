@@ -75,7 +75,7 @@ sub test_function {
             strict_type => 1,
             store       => \$required_argument_href
         },
-      module_function_cref =>
+        module_function_cref =>
           { required => 1, defined => 1, store => \$module_function_cref },
         function_base_command => {
             required    => 1,
@@ -83,11 +83,13 @@ sub test_function {
             strict_type => 1,
             store       => \$function_base_command
         },
-		do_test_base_command => { default => 1,
-					  allow => [0, 1],
-					  strict_type => 1,
-					  store       => \$do_test_base_command},
-	       };
+        do_test_base_command => {
+            default     => 1,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$do_test_base_command
+        },
+    };
 
     check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
 
@@ -192,16 +194,16 @@ sub test_function {
 
         if (@commands) {
 
-	  if($do_test_base_command) {
+            if ($do_test_base_command) {
 
-            ## Test function_base_command
-            _test_base_command(
-			       {
-				base_command          => $commands[0],
-				expected_base_command => $function_base_command,
-			       }
-			      );
-	  }
+                ## Test function_base_command
+                _test_base_command(
+                    {
+                        base_command          => $commands[0],
+                        expected_base_command => $function_base_command,
+                    }
+                );
+            }
 
             ## Test argument
             ok( ( any { $_ eq $expected_return } @commands ),
@@ -256,9 +258,31 @@ sub _build_call {
     check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
 
     ## Collect required keys and values to generate args
-    my @keys = keys %{$required_argument_href};
-    my @values =
-      map { ( $required_argument_href->{$_}{input} ) } @keys;
+    my @keys;
+    my @values;
+    my @possible_input_names = qw(input inputs_ref);
+
+  REQUIRED_ARGUMENT:
+    foreach my $required_argument ( keys %{$required_argument_href} ) {
+
+        # Add required_argument
+        push @keys, $required_argument;
+
+        # Add value
+      POSSIBLE_INPUT_NAMES:
+        foreach my $input_name (@possible_input_names) {
+
+            ## SCALAR or ARRAY_ref
+            if (
+                exists $required_argument_href->{$required_argument}
+                {$input_name} )
+            {
+
+                push @values,
+                  $required_argument_href->{$required_argument}{$input_name};
+            }
+        }
+    }
 
     ### Combine the specific and required argument keys and values to test
     ## SCALAR
