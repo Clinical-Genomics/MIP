@@ -3544,7 +3544,7 @@ sub create_install_dir {
 
     ## Create temp install directory
     print $FILEHANDLE '## Create temp install directory', "\n";
-    gnu_    mkdir(
+    gnu_mkdir(
         {
             indirectory_path => $install_directory,
             parents          => 1,
