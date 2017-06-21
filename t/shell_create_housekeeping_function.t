@@ -65,7 +65,7 @@ BEGIN {
     ## Modules with import
     my %perl_module;
 
-    $perl_module{'Script::Utils'}           = [qw(help)];
+    $perl_module{'Script::Utils'}       = [qw(help)];
     $perl_module{'MIP::Gnu::Coreutils'} = [qw(gnu_mkdir gnu_rm)];
 
     while ( my ( $module, $module_import ) = each %perl_module ) {
@@ -94,11 +94,11 @@ diag(
 # Create anonymous filehandle
 my $FILEHANDLE = IO::Handle->new();
 
-# Downloads instruction file
-my $bash_file_path = catfile( cwd(), 'test_download_reference.sh' );
+# Create housekeeping function test sbatch file
+my $bash_file_path = catfile( cwd(), 'test_create_housekeeping_function.sh' );
 
 # Install directory
-my $temp_dir = catdir( cwd(), '.test_download_reference' );
+my $temp_dir = catdir( cwd(), '.test_create_housekeeping_function' );
 
 # Open filehandle
 open $FILEHANDLE, '>', $bash_file_path
@@ -121,8 +121,8 @@ ok( -e $bash_file_path, 'Create bash' );
 ok( can_run('bash'), 'Checking can run bash binary' );
 
 my $cmds_ref = [ 'bash', $bash_file_path ];
-my ( $success, $error_message, $full_buf_ref, $stdout_buf_ref, $stderr_buf_ref ) =
-  run( command => $cmds_ref, verbose => $VERBOSE );
+my ( $success, $error_message, $full_buf_ref, $stdout_buf_ref, $stderr_buf_ref )
+  = run( command => $cmds_ref, verbose => $VERBOSE );
 
 ## Testing housekeeping function
 ok( !-d $temp_dir, q{Performed housekeeping} );

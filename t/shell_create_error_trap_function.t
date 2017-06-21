@@ -94,11 +94,11 @@ diag(
 # Create anonymous filehandle
 my $FILEHANDLE = IO::Handle->new();
 
-# Downloads instruction file
-my $bash_file_path = catfile( cwd(), 'test_download_reference.sh' );
+# Shell create error trap file
+my $bash_file_path = catfile( cwd(), 'test_create_error_trap_function.sh' );
 
-# Install directory
-my $temp_dir = catdir( cwd(), qw(test_dir .test_download_reference));
+# Temporary directory
+my $temp_dir = catdir( cwd(), qw(test_dir .test_create_error_trap_function));
 
 # Open filehandle
 open $FILEHANDLE, '>', $bash_file_path

@@ -18,13 +18,14 @@ use File::Basename qw(dirname basename);
 use File::Spec::Functions qw(catdir);
 use Getopt::Long;
 use Test::More;
+use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), 'lib' );
 use Script::Utils qw(help);
 
 ##Constants
-my $APOSTROPHE = q{'};
+Readonly my $SINGLE_QUOTE => q{'};
 
 our $USAGE = build_usage( {} );
 
@@ -110,7 +111,7 @@ my %specific_argument = (
     },
     trap_function_call => {
         input           => q{error()},
-        expected_output => $APOSTROPHE . q{error()} . $APOSTROPHE,
+        expected_output => $SINGLE_QUOTE . q{error()} . $SINGLE_QUOTE,
     },
 );
 
