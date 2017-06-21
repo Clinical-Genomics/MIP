@@ -33,8 +33,8 @@ BEGIN {
 }
 
 ## Constants
-my $SPACE = q{ };
-my $COMMA = q{,};
+my $SPACE     = q{ };
+my $COMMA     = q{,};
 my $EMPTY_STR = q{};
 
 sub gnu_cp {
@@ -427,7 +427,7 @@ sub gnu_mkdir {
         },
         stderrfile_path_append => {
             strict_type => 1,
-            store => \$stderrfile_path_append
+            store       => \$stderrfile_path_append
         },
         FILEHANDLE => {
             store => \$FILEHANDLE
@@ -630,7 +630,7 @@ sub gnu_echo {
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     ## Echo
-    my @commands = qw(echo);  #Stores commands depending on input parameters
+    my @commands = qw(echo);    #Stores commands depending on input parameters
 
     ##Options
     if ($enable_interpretation) {
@@ -767,7 +767,10 @@ sub gnu_split {
 
     if ($numeric_suffixes) {
         push @commands, '--numeric-suffixes';
-        push @commands, '--suffix-length=' . $numeric_suffixes;
+    }
+
+    if ($suffix_length) {
+        push @commands, '--suffix-length=' . $suffix_length;
     }
 
     if ($quiet) {
