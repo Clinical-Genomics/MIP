@@ -16,6 +16,7 @@ $Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 use FindBin qw($Bin);                 #Find directory of script
 use File::Basename qw(dirname);
 use File::Spec::Functions qw(catdir);
+use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), 'lib' );
@@ -31,8 +32,13 @@ BEGIN {
     our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(slurm_sacct slurm_sbatch slurm_build_sbatch_header);
+    our @EXPORT_OK =
+      qw(slurm_sacct slurm_reformat_sacct_output slurm_sbatch slurm_build_sbatch_header);
 }
+
+## Constants
+Readonly my $SPACE => q{ };
+Readonly my $COMMA => q{,};
 
 sub slurm_sacct {
 
@@ -72,9 +78,6 @@ sub slurm_sacct {
 
     check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
 
-    my $SPACE = q{ };
-    my $COMMA = q{,};
-
     ## sacct
     my @commands = qw(sacct);    #Stores commands depending on input parameters
 
@@ -103,6 +106,73 @@ sub slurm_sacct {
         }
     );
     return @commands;
+}
+
+sub slurm_reformat_sacct_output {
+
+##slurm_reformat_sacct_output
+
+##Function : Removes ".batch" lines in sacct output.
+##Returns  : ""
+##Arguments: $commands_ref, reformat_sacct_headers_ref, $log_file_path_ref, $FILEHANDLE
+##         : $commands_ref               => Commands to stream to perl oneliner
+##         : $reformat_sacct_headers_ref => Reformated sacct headers
+##         : $log_file_path_ref          => The log file {REF}
+##         : $FILEHANDLE                 => Sbatch filehandle to write to
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $commands_ref;
+    my $reformat_sacct_headers_ref;
+    my $FILEHANDLE;
+    my $log_file_path_ref;
+
+    my $tmpl = {
+        commands_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => [],
+            strict_type => 1,
+            store       => \$commands_ref
+        },
+        reformat_sacct_headers_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => [],
+            strict_type => 1,
+            store       => \$reformat_sacct_headers_ref
+        },
+        log_file_path_ref =>
+          { default => \$$, strict_type => 1, store => \$log_file_path_ref },
+        FILEHANDLE => { required => 1, store => \$FILEHANDLE },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
+
+    #Stream to
+    print {$FILEHANDLE} "\t" . join( $SPACE, @{$commands_ref} ) . $SPACE;
+
+    # Pipe
+    print {$FILEHANDLE} q{| };
+
+    #Execute perl
+    print {$FILEHANDLE} q?perl -nae '?;
+
+    # Define reformated sacct headers
+    print {$FILEHANDLE} q?my @headers=(?
+      . join( $COMMA, @{$reformat_sacct_headers_ref} ) . q?); ?;
+
+    #Write header line
+    print {$FILEHANDLE} q?if($. == 1) {print "#".join("\t", @headers), "\n"} ?;
+
+    # Write individual job line - skip line containing (.batch)
+    print {$FILEHANDLE}
+      q?if ($.>=3 && $F[0]!~/.batch/) {print join("\t", @F), "\n"}' ?;
+
+    #Write to log_file.status
+    print {$FILEHANDLE} q{> } . ${$log_file_path_ref} . q{.status}, "\n\n";
+    return;
 }
 
 sub slurm_sbatch {
@@ -150,8 +220,6 @@ sub slurm_sbatch {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
-
-    my $SPACE = q{ };
 
     ## sbatch
     my @commands = qw(sbatch);    #Stores commands depending on input parameters

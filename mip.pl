@@ -26041,7 +26041,7 @@ sub build_annovar_prerequisites {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Gnu::Coreutils qw(gnu_mkdir);
-    
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger('MIP');
 
@@ -26590,7 +26590,7 @@ sub build_ptchs_metric_prerequisites {
 
         say $FILEHANDLE
           "## Add target file to headers from sequence dictionary";
-          gnu_cat(
+        gnu_cat(
             {
                 infile_paths_ref => [
                     $exome_target_bed_file_random . ".dict",
@@ -31679,12 +31679,12 @@ sub program_prerequisites {
                 job_ids_ref => \@{ $job_id_href->{PAN}{PAN} },
                 sacct_format_fields_ref =>
                   \@{ $active_parameter_href->{sacct_format_fields} },
-                log_file_ref     => \$active_parameter_href->{log_file},
-                FILEHANDLE       => $FILEHANDLE,
-                remove_dir       => $temp_directory,
-                trap_signals_ref => [ "EXIT", "TERM", "INT" ],
+                log_file_path_ref  => \$active_parameter_href->{log_file},
+                FILEHANDLE         => $FILEHANDLE,
+                remove_dir         => $temp_directory,
+                trap_signals_ref   => [ "EXIT", "TERM", "INT" ],
                 trap_function_name => 'finish',
-	     trap_function_call => q{$(finish } . $temp_directory . q{)},
+                trap_function_call => q{$(finish } . $temp_directory . q{)},
             }
         );
     }
@@ -31694,9 +31694,9 @@ sub program_prerequisites {
         ## Create debug trap
         enable_trap(
             {
-                FILEHANDLE       => $FILEHANDLE,
-                trap_signals_ref => ["DEBUG"],
-                trap_function_call    => q?previous_command="$BASH_COMMAND"?,
+                FILEHANDLE         => $FILEHANDLE,
+                trap_signals_ref   => ["DEBUG"],
+                trap_function_call => q?previous_command="$BASH_COMMAND"?,
             }
         );
 
@@ -31706,7 +31706,7 @@ sub program_prerequisites {
                 job_ids_ref => \@{ $job_id_href->{PAN}{PAN} },
                 sacct_format_fields_ref =>
                   \@{ $active_parameter_href->{sacct_format_fields} },
-                log_file_ref       => \$active_parameter_href->{log_file},
+                log_file_path_ref  => \$active_parameter_href->{log_file},
                 FILEHANDLE         => $FILEHANDLE,
                 trap_signals_ref   => ["ERR"],
                 trap_function_name => "error",
