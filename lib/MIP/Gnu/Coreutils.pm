@@ -630,7 +630,8 @@ sub gnu_echo {
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     ## Echo
-    my @commands = qw(echo);    #Stores commands depending on input parameters
+    # Stores commands depending on input parameters
+    my @commands = qw(echo);    
 
     ##Options
     if ($enable_interpretation) {
@@ -890,6 +891,7 @@ sub gnu_sort {
     push @commands,
       unix_standard_streams(
         {
+            stdoutfile_path        => $stdoutfile_path,
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
         }
