@@ -30,7 +30,7 @@ use MIP::Test::Writefile qw(test_write_to_file);
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '0.0.0';
+our $VERSION = '1.0.0';
 
 ###User Options
 GetOptions(
@@ -72,7 +72,7 @@ BEGIN {
     }
 
 ##Modules
-    my @modules = ('MIP::Language::Shell');
+    my @modules = ('MIP::Gnu::Bash');
 
     for my $module (@modules) {
 
@@ -80,13 +80,11 @@ BEGIN {
     }
 }
 
-use MIP::Language::Shell qw(build_shebang);
+use MIP::Gnu::Bash qw(gnu_set);
 
 my $NEWLINE = q{\n};
 
-diag(
-"Test build_shebang $MIP::Language::Shell::VERSION, Perl $^V, $EXECUTABLE_NAME"
-);
+diag("Test gnu_set $MIP::Gnu::Bash::VERSION, Perl $^V, $EXECUTABLE_NAME");
 
 ## Base arguments
 my $batch_shebang = q{#!};
@@ -94,7 +92,7 @@ my $batch_shebang = q{#!};
 my %base_argument = (
     FILEHANDLE => {
         input           => undef,
-        expected_output => $batch_shebang,
+        expected_output => q{set},
     },
 );
 
@@ -103,20 +101,25 @@ my $bash_bin_path =
 
 ## Specific arguments
 my %argument = (
-    bash_bin_path => {
-        input           => $bash_bin_path,
-        expected_output => $batch_shebang . $bash_bin_path . q{ --login},
-    },
-    invoke_login_shell => {
+    set_errexit => {
         input           => 1,
-        expected_output => $batch_shebang . $bash_bin_path . q{ --login},
+        expected_output => 'set -e',
+    },
+    set_nounset => {
+        input           => 1,
+        expected_output => 'set -u',
+    },
+    set_pipefail => {
+        input           => 1,
+        expected_output => 'set -o pipefail',
     },
 );
 
-my @commands = build_shebang(
+my @commands = gnu_set(
     {
-        bash_bin_path   => $argument{bash_bin_path}{input},
-        invoke_login_shell => $argument{invoke_login_shell}{input},
+        set_errexit  => $argument{set_errexit}{input},
+        set_nounset  => $argument{set_nounset}{input},
+        set_pipefail => $argument{set_pipefail}{input},
     }
 );
 
@@ -133,14 +136,14 @@ foreach my $key ( keys %argument ) {
 
 # Fake arguments
 my @args = (
-    bash_bin_path => $bash_bin_path,
-    FILEHANDLE    => undef,
+    set_errexit => $argument{set_errexit}{input},
+    FILEHANDLE  => undef,
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&build_shebang;
+my $module_function_cref = \&gnu_set;
 
-my $function_base_command = $batch_shebang . $bash_bin_path,;
+my $function_base_command = q{set};
 
 test_write_to_file(
     {

@@ -79,6 +79,7 @@ BEGIN {
 }
 
 use MIP::Language::Shell qw(build_shebang);
+use MIP::Gnu::Bash qw(gnu_set);
 use MIP::Workloadmanager::Slurm qw(slurm_reformat_sacct_output);
 use MIP::Test::Commands qw(test_function);
 
@@ -244,10 +245,14 @@ sub _build_test_file_recipe {
     build_shebang(
         {
             FILEHANDLE  => $FILEHANDLE,
-            set_errexit => 1,
-            set_nounset => 1,
         }
     );
+
+    ## Set shell attributes
+    gnu_set({FILEHANDLE         => $FILEHANDLE,
+	     set_errexit        => 1,
+	     set_nounset        => 1,
+	    });
 
     slurm_reformat_sacct_output(
         {

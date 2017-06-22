@@ -46,20 +46,20 @@ sub create_bash_file {
 
 ##Function : Create bash file with header
 ##Returns  : ""
-##Arguments: $file_name, $FILEHANDLE, $remove_dir, $log, $set_login_shell, $set_errexit, $set_nounset, $set_pipefail
-##         : $file_name       => File name
-##         : $FILEHANDLE      => Filehandle to write to
-##         : $remove_dir      => Directory to remove when caught by trap function
-##         : $log             => Log object to write to
-##         : $set_login_shell => Invoked as a login shell. Reinitilize bashrc and bash_profile
-##         : $set_errexit     => Halt script if command has non-zero exit code (-e)
-##         : $set_nounset     => Halt script if variable is uninitialised (-u)
-##         : $set_pipefail    => Detect errors within pipes (-o pipefail)
+##Arguments: $file_name, $FILEHANDLE, $remove_dir, $log, $invoke_login_shell, $set_errexit, $set_nounset, $set_pipefail
+##         : $file_name          => File name
+##         : $FILEHANDLE         => Filehandle to write to
+##         : $remove_dir         => Directory to remove when caught by trap function
+##         : $log                => Log object to write to
+##         : $invoke_login_shell => Invoked as a login shell. Reinitilize bashrc and bash_profile
+##         : $set_errexit        => Halt script if command has non-zero exit code (-e)
+##         : $set_nounset        => Halt script if variable is uninitialised (-u)
+##         : $set_pipefail       => Detect errors within pipes (-o pipefail)
 
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $set_login_shell;
+    my $invoke_login_shell;
     my $set_errexit;
     my $set_nounset;
     my $set_pipefail;
@@ -84,11 +84,11 @@ sub create_bash_file {
             strict_type => 1,
             store       => \$remove_dir
         },
-        set_login_shell => {
+        invoke_login_shell => {
             default     => 0,
             allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$set_login_shell
+            store       => \$invoke_login_shell
         },
         set_errexit => {
             default     => 0,
@@ -112,14 +112,23 @@ sub create_bash_file {
 
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
+    use MIP::Gnu::Bash qw(gnu_set);
+
     ## Build bash shebang line
     build_shebang(
         {
-            FILEHANDLE      => $FILEHANDLE,
-            set_login_shell => $set_login_shell,
-            set_errexit     => $set_errexit,
-            set_nounset     => $set_nounset,
-            set_pipefail    => $set_pipefail,
+            FILEHANDLE         => $FILEHANDLE,
+            invoke_login_shell => $invoke_login_shell,
+        }
+    );
+
+    ## Set shell attributes
+    gnu_set(
+        {
+            FILEHANDLE   => $FILEHANDLE,
+            set_errexit  => $set_errexit,
+            set_nounset  => $set_nounset,
+            set_pipefail => $set_pipefail,
         }
     );
 
@@ -162,23 +171,17 @@ sub build_shebang {
 
 ##Function : Build bash shebang line. Returns "@commands" or writes to already opened filehandle.
 ##Returns  : "@commands"
-##Arguments: $FILEHANDLE, $bash_bin_path, $set_login_shell, $set_errexit, $set_nounset, $set_pipefail, $separator
-##         : $FILEHANDLE      => Filehandle to write to
-##         : $bash_bin_path   => Location of bash bin
-##         : $set_login_shell => Invoked as a login shell (-l). Reinitilize bashrc and bash_profile
-##         : $set_errexit     => Halt script if command has non-zero exit code (-e)
-##         : $set_nounset     => Halt script if variable is uninitialised (-u)
-##         : $set_pipefail    => Detect errors within pipes (-o pipefail)
-##         : $separator       => Separator to use when writing
+##Arguments: $FILEHANDLE, $bash_bin_path, $invoke_login_shell, $separator
+##         : $FILEHANDLE         => Filehandle to write to
+##         : $bash_bin_path      => Location of bash bin
+##         : $invoke_login_shell => Invoked as a login shell (-l). Reinitilize bashrc and bash_profile
+##         : $separator          => Separator to use when writing
 
     my ($arg_href) = @_;
 
     ## Default(s)
     my $bash_bin_path;
-    my $set_login_shell;
-    my $set_errexit;
-    my $set_nounset;
-    my $set_pipefail;
+    my $invoke_login_shell;
     my $separator;
 
     ## Flatten argument(s)
@@ -196,29 +199,11 @@ sub build_shebang {
             strict_type => 1,
             store       => \$bash_bin_path
         },
-        set_login_shell => {
+        invoke_login_shell => {
             default     => 0,
             allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$set_login_shell
-        },
-        set_errexit => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$set_errexit
-        },
-        set_nounset => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$set_nounset
-        },
-        set_pipefail => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$set_pipefail
+            store       => \$invoke_login_shell
         },
         separator => {
             default     => $NEWLINE,
@@ -232,26 +217,13 @@ sub build_shebang {
     use MIP::Unix::Write_to_file qw(unix_write_to_file);
 
     ## Build shebang
-    my @commands;    #Stores commands depending on input parameters
+    my @commands =
+      ( q{#!} . $bash_bin_path ); #Stores commands depending on input parameters
 
-    push @commands, q{#!} . $bash_bin_path;
+    ##Invoke as login shell
+    if ($invoke_login_shell) {
 
-    # Set flags
-    if ($set_login_shell) {
-
-        push @commands, q{set -l};
-    }
-    if ($set_errexit) {
-
-        push @commands, q{set -e};
-    }
-    if ($set_nounset) {
-
-        push @commands, q{set -u};
-    }
-    if ($set_pipefail) {
-
-        push @commands, q{set -o pipefail};
+        $commands[0] .= q{ --login};
     }
 
     unix_write_to_file(
