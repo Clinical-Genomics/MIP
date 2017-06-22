@@ -12,7 +12,6 @@ use Carp;
 use English qw(-no_match_vars);
 use autodie;
 use Test::More;
-use List::Util qw(any);
 use Params::Check qw[check allow last_error];
 $Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 
@@ -29,8 +28,7 @@ use lib catdir( dirname($Bin), 'lib' );
 use MIP::Test::Writefile qw(test_write_to_file);
 
 ## Constants
-Readonly my $SINGLE_QUOTE => q{'};
-Readonly my $SPACE        => q{ };
+Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -209,25 +207,25 @@ sub test_function {
                 );
             }
 
-            ## Test argument
-            my $test_result = ok( ( any { $_ eq $expected_return } @commands ),
-                'Argument: ' . $argument );
+            # Remap to hash
+            my %is_argument = map { $_ => $_ } @commands;
 
-            # Croak bad test result
-            if ( !$test_result ) {
+            if ( exists $is_argument{$expected_return} ) {
 
-                say STDERR q{#}
-                  . $SPACE x 21
-                  . q{got: }
-                  . $SINGLE_QUOTE
-                  . join( " ", @commands )
-                  . $SINGLE_QUOTE;
+                is( $is_argument{$expected_return},
+                    $expected_return, 'Argument: ' . $argument );
+            }
+            else {
+
+                is(
+                    join( $SPACE, @commands ),
+                    $expected_return,
+                    'Argument: ' . $argument
+                );
+
                 say STDERR q{#}
                   . $SPACE x 3
-                  . q{expected cmd argument: }
-                  . $SINGLE_QUOTE
-                  . $expected_return
-                  . $SINGLE_QUOTE;
+                  . q{Command line does not contain expected argument.};
             }
         }
     }
