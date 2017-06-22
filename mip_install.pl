@@ -115,6 +115,7 @@ $array_parameter{perl_modules}{default}              = [
     'Log::Log4perl',             # MIP
     'List::Util',                # MIP
     'List::MoreUtils',           # MIP
+    'Readonly',                  # MIP
     'Scalar::Util::Numeric',     # MIP
     'Set::IntervalTree',         # MIP/vcfParser.pl
     'Net::SSLeay',               # VEP
