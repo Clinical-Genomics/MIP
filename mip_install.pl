@@ -33,6 +33,10 @@ our $USAGE = build_usage( {} );
 
 my %parameter;
 
+##Bash
+$parameter{bash_set_errexit} = 0;
+$parameter{bash_set_nounset} = 0;
+
 ## Conda
 $parameter{conda_dir_path} = catdir( $ENV{HOME}, 'miniconda' );
 $parameter{python_version} = '2.7';
@@ -141,6 +145,8 @@ my $VERSION = '1.2.5';
 
 ###User Options
 GetOptions(
+    'see|bash_set_errexit'          => \$parameter{bash_set_errexit},
+    'snu|bash_set_nounset'          => \$parameter{bash_set_nounset},
     'env|conda_environment:s'       => \$parameter{conda_environment},
     'cdp|conda_dir_path:s'          => \$parameter{conda_dir_path},
     'cdu|conda_update'              => \$parameter{conda_update},
@@ -251,7 +257,8 @@ create_bash_file(
         file_name   => $file_name_path,
         FILEHANDLE  => $FILEHANDLE,
         remove_dir  => catfile( cwd(), '.MIP' ),
-        set_errexit => 1,
+        set_errexit => $parameter{bash_set_errexit},
+        set_nounset => $parameter{bash_set_nounset},
     }
 );
 
