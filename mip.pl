@@ -31512,6 +31512,7 @@ sub program_prerequisites {
     use MIP::Language::Shell
       qw(build_shebang create_housekeeping_function create_error_trap_function enable_trap);
     use MIP::Workloadmanager::Slurm qw(slurm_build_sbatch_header);
+    use MIP::Gnu::Bash qw(gnu_set);
     use MIP::Gnu::Coreutils qw(gnu_echo gnu_mkdir);
 
     ## Retrieve logger object
@@ -31606,10 +31607,17 @@ sub program_prerequisites {
             FILEHANDLE => $FILEHANDLE,
             bash_bin_path =>
               catfile( dirname( dirname( devnull() ) ), qw(bin bash) ),
-            set_login_shell => 1,
-            set_errexit     => $set_errexit,
-            set_nounset     => $set_nounset,
-            set_pipefail    => $set_pipefail,
+            invoke_login_shell => 1,
+        }
+    );
+
+    ## Set shell attributes
+    gnu_set(
+        {
+            FILEHANDLE   => $FILEHANDLE,
+            set_errexit  => $set_errexit,
+            set_nounset  => $set_nounset,
+            set_pipefail => $set_pipefail,
         }
     );
 

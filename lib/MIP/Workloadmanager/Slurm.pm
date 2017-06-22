@@ -347,7 +347,8 @@ sub slurm_build_sbatch_header {
     use MIP::Unix::Write_to_file qw(unix_write_to_file);
 
     ## Build sbatch header
-    my @commands;    #Stores commands depending on input parameters
+    # Stores commands depending on input parameters
+    my @commands;
 
     ## Options
     # Account allocation
@@ -394,7 +395,7 @@ sub slurm_build_sbatch_header {
     }
 
     ## Add sbatch shebang
-    @commands = map { '#SBATCH ' . $_ } @commands;
+    @commands = map { q{#SBATCH } . $_ } @commands;
 
     unix_write_to_file(
         {

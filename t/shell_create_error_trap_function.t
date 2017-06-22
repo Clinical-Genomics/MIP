@@ -84,6 +84,7 @@ BEGIN {
 }
 
 use MIP::Language::Shell qw(build_shebang enable_trap create_error_trap_function);
+use MIP::Gnu::Bash qw(gnu_set);
 
 my $NEWLINE = q{\n};
 
@@ -195,10 +196,14 @@ sub _build_test_file_recipe {
     build_shebang(
         {
             FILEHANDLE  => $FILEHANDLE,
-            set_errexit => 1,
-            set_nounset => 1,
         }
     );
+
+    ## Set shell attributes
+    gnu_set({FILEHANDLE         => $FILEHANDLE,
+	     set_errexit        => 1,
+	     set_nounset        => 1,
+	    });
 
     enable_trap(
         {

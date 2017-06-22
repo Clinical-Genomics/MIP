@@ -29,13 +29,14 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(gnu_cd gnu_trap);
+    our @EXPORT_OK = qw(gnu_cd gnu_trap gnu_set);
 
 }
 
 ## Constants
 my $SPACE      = q{ };
 my $APOSTROPHE = q{'};
+my $NEWLINE    = q{\n};
 
 sub gnu_cd {
 
@@ -175,6 +176,109 @@ sub gnu_trap {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+    return @commands;
+}
+
+sub gnu_set {
+
+##gnu_set
+
+##Function : Perl wrapper for writing set recipe to already open $FILEHANDLE or return commands array. Based on set 4.0
+##Returns  : "@commands"
+##Arguments: $FILEHANDLE, $stderrfile_path, $stderrfile_path_append, $set_errexit, $set_nounset, $set_pipefail, $separator
+##         : $FILEHANDLE             => Filehandle to write to
+##         : $stderrfile_path        => Stderrfile path
+##         : $stderrfile_path_append => Append stderr info to file
+##         : $set_errexit            => Halt script if command has non-zero exit code (-e)
+##         : $set_nounset            => Halt script if variable is uninitialised (-u)
+##         : $set_pipefail           => Detect errors within pipes (-o pipefail)
+##         : $separator              => Separator to use when writing
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $set_errexit;
+    my $set_nounset;
+    my $set_pipefail;
+    my $separator;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+
+    my $tmpl = {
+        FILEHANDLE      => { store       => \$FILEHANDLE },
+        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+        stderrfile_path_append =>
+          { strict_type => 1, store => \$stderrfile_path_append },
+        set_errexit => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$set_errexit
+        },
+        set_nounset => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$set_nounset
+        },
+        set_pipefail => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$set_pipefail
+        },
+        separator => {
+            default     => $NEWLINE,
+            strict_type => 1,
+            store       => \$separator
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
+
+    use MIP::Unix::Write_to_file qw(unix_write_to_file);
+
+    ### set
+    ##Stores commands depending on input parameters
+    my @commands;
+
+    ## Options
+
+    # Set flags
+    if ($set_errexit) {
+
+        push @commands, q{-e};
+    }
+    if ($set_nounset) {
+
+        push @commands, q{-u};
+    }
+    if ($set_pipefail) {
+
+        push @commands, q{-o pipefail};
+    }
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+        }
+      );
+
+    ## Add set to each element
+    @commands = map { q{set } . $_ } @commands;
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $NEWLINE,
             FILEHANDLE   => $FILEHANDLE,
         }
     );
