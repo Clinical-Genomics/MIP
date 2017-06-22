@@ -78,7 +78,7 @@ BEGIN {
     }
 }
 
-use File::Format::Shell qw(build_shebang);
+use MIP::Language::Shell qw(build_shebang);
 use MIP::Workloadmanager::Slurm qw(slurm_reformat_sacct_output);
 use MIP::Test::Commands qw(test_function);
 

@@ -72,7 +72,7 @@ BEGIN {
     }
 
 ##Modules
-    my @modules = ('File::Format::Shell');
+    my @modules = ('MIP::Language::Shell');
 
     for my $module (@modules) {
 
@@ -80,12 +80,12 @@ BEGIN {
     }
 }
 
-use File::Format::Shell qw(build_shebang);
+use MIP::Language::Shell qw(build_shebang);
 
 my $NEWLINE = q{\n};
 
 diag(
-"Test build_shebang $File::Format::Shell::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test build_shebang $MIP::Language::Shell::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments

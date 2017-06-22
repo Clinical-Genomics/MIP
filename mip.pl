@@ -31509,7 +31509,7 @@ sub program_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use File::Format::Shell
+    use MIP::Language::Shell
       qw(build_shebang create_housekeeping_function create_error_trap_function enable_trap);
     use MIP::Workloadmanager::Slurm qw(slurm_build_sbatch_header);
     use MIP::Gnu::Coreutils qw(gnu_echo gnu_mkdir);

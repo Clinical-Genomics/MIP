@@ -25,7 +25,7 @@ use List::Util qw(any);
 ##MIPs lib/
 use lib catdir( $Bin, 'lib' );
 use Check::Check_modules qw(check_modules);
-use File::Format::Shell qw(create_bash_file);
+use MIP::Language::Shell qw(create_bash_file);
 use File::Format::Yaml qw(load_yaml);
 use MIP_log::Log4perl qw(initiate_logger);
 use Script::Utils qw(help set_default_array_parameters);
@@ -143,7 +143,7 @@ open $FILEHANDLE, '>', $bash_file_path
 my $temp_dir = catdir( cwd(), '.download_reference' );
 
 ## Create bash file for writing install instructions
-File::Format::Shell::create_bash_file(
+create_bash_file(
     {
         file_name   => $bash_file_path,
         FILEHANDLE  => $FILEHANDLE,
@@ -209,7 +209,7 @@ sub build_reference_install_recipe {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Gnu::Bash qw(gnu_cd);
-    use MIP::Gnu:Coreutils qw (gnu_mkdir);
+    use MIP::Gnu::Coreutils qw(gnu_mkdir);
 
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger('Download_reference');
@@ -679,7 +679,7 @@ sub check_file {
             print $FILEHANDLE '-c md5sum_check.txt', "\n\n";
 
             ## Clean-up
-            rm(
+            gnu_rm(
                 {
                     infile_path => 'md5sum_check.txt',
                     force       => 1,

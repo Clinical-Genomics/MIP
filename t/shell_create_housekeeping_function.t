@@ -75,7 +75,7 @@ BEGIN {
     }
 
     ## Modules
-    my @modules = ('File::Format::Shell');
+    my @modules = ('MIP::Language::Shell');
 
     for my $module (@modules) {
 
@@ -83,12 +83,12 @@ BEGIN {
     }
 }
 
-use File::Format::Shell qw(build_shebang create_housekeeping_function);
+use MIP::Language::Shell qw(build_shebang create_housekeeping_function);
 
 my $NEWLINE = q{\n};
 
 diag(
-"Test create_housekeeping_function $File::Format::Shell::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test create_housekeeping_function $MIP::Language::Shell::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 # Create anonymous filehandle
