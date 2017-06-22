@@ -13,11 +13,14 @@ use English qw(-no_match_vars);
 use autodie;
 use Test::More;
 use List::Util qw(any);
+use Params::Check qw[check allow last_error];
+$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 
 ## CPAN
 use List::MoreUtils qw(zip);
+use Readonly;
 
-use FindBin qw($Bin);    #Find directory of script
+use FindBin qw($Bin);                 #Find directory of script
 use File::Basename qw(dirname);
 use File::Spec::Functions qw(catdir);
 
@@ -25,20 +28,21 @@ use File::Spec::Functions qw(catdir);
 use lib catdir( dirname($Bin), 'lib' );
 use MIP::Test::Writefile qw(test_write_to_file);
 
+## Constants
+Readonly my $SINGLE_QUOTE => q{'};
+Readonly my $SPACE        => q{ };
+
 BEGIN {
 
     use base qw(Exporter);
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw(test_function);
 }
-
-use Params::Check qw[check allow last_error];
-$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 
 sub test_function {
 
@@ -206,8 +210,25 @@ sub test_function {
             }
 
             ## Test argument
-            ok( ( any { $_ eq $expected_return } @commands ),
+            my $test_result = ok( ( any { $_ eq $expected_return } @commands ),
                 'Argument: ' . $argument );
+
+            # Croak bad test result
+            if ( !$test_result ) {
+
+                say STDERR q{#}
+                  . $SPACE x 21
+                  . q{got: }
+                  . $SINGLE_QUOTE
+                  . join( " ", @commands )
+                  . $SINGLE_QUOTE;
+                say STDERR q{#}
+                  . $SPACE x 3
+                  . q{expected cmd argument: }
+                  . $SINGLE_QUOTE
+                  . $expected_return
+                  . $SINGLE_QUOTE;
+            }
         }
     }
     return;
@@ -337,10 +358,8 @@ sub _test_base_command {
 
     if ( $base_command ne $expected_base_command ) {
 
-        ok(
-            $base_command eq $expected_base_command,
-            'Argument: ' . $expected_base_command
-        );
+        is( $base_command, $expected_base_command,
+            'Argument: ' . $expected_base_command );
         exit 1;
     }
     return;
