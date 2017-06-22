@@ -137,7 +137,7 @@ $array_parameter{perl_modules}{default}              = [
     'File::Copy::Recursive',     # VEP
 ];
 
-my $VERSION = '1.2.4';
+my $VERSION = '1.2.5';
 
 ###User Options
 GetOptions(
@@ -252,7 +252,6 @@ create_bash_file(
         FILEHANDLE  => $FILEHANDLE,
         remove_dir  => catfile( cwd(), '.MIP' ),
         set_errexit => 1,
-        set_nounset => 1,
     }
 );
 
