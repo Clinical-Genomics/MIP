@@ -16,6 +16,7 @@ use Cwd;
 use FindBin qw($Bin);                 #Find directory of script
 use File::Basename qw(dirname basename);
 use File::Spec::Functions qw(catfile catdir devnull);
+use Readonly;
 
 ##MIPs lib/
 use lib catdir( $Bin, 'lib' );        #Add MIPs internal lib
@@ -28,7 +29,6 @@ BEGIN {
     # Set the version for version checking
     our $VERSION = 1.02;
 
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw(create_bash_file build_shebang
       create_housekeeping_function create_error_trap_function
@@ -37,8 +37,8 @@ BEGIN {
 }
 
 ## Constants
-my $SPACE = q{ };
-my $COMMA = q{,};
+Readonly my $SPACE => q{ };
+Readonly my $COMMA => q{,};
 
 sub create_bash_file {
 
@@ -47,14 +47,14 @@ sub create_bash_file {
 ##Function : Create bash file with header
 ##Returns  : ""
 ##Arguments: $file_name, $FILEHANDLE, $remove_dir, $log, $set_login_shell, $set_errexit, $set_nounset, $set_pipefail
-##         : $file_name          => File name
-##         : $FILEHANDLE         => Filehandle to write to
-##         : $remove_dir         => Directory to remove when caught by trap function
-##         : $log                => Log object to write to
-##         : $set_login_shell    => Invoked as a login shell. Reinitilize bashrc and bash_profile
-##         : $set_errexit        => Halt script if command has non-zero exit code (-e)
-##         : $set_nounset        => Halt script if variable is uninitialised (-u)
-##         : $set_pipefail       => Detect errors within pipes (-o pipefail)
+##         : $file_name       => File name
+##         : $FILEHANDLE      => Filehandle to write to
+##         : $remove_dir      => Directory to remove when caught by trap function
+##         : $log             => Log object to write to
+##         : $set_login_shell => Invoked as a login shell. Reinitilize bashrc and bash_profile
+##         : $set_errexit     => Halt script if command has non-zero exit code (-e)
+##         : $set_nounset     => Halt script if variable is uninitialised (-u)
+##         : $set_pipefail    => Detect errors within pipes (-o pipefail)
 
     my ($arg_href) = @_;
 
@@ -270,10 +270,10 @@ sub create_housekeeping_function {
 
 ##Function : Create housekeeping function which removes entire directory when finished
 ##Returns  : ""
-##Arguments: $job_ids_ref, $sacct_format_fields_ref, $log_file_ref, $FILEHANDLE, $remove_dir, $trap_function_call, $trap_signals_ref, $trap_function_name
+##Arguments: $job_ids_ref, $sacct_format_fields_ref, $log_file_path_ref, $FILEHANDLE, $remove_dir, $trap_function_call, $trap_signals_ref, $trap_function_name
 ##         : $job_ids_ref             => Job ids
 ##         : $sacct_format_fields_ref => Format and fields of sacct output
-##         : $log_file_ref            => Log file to write job_id progress to {REF}
+##         : $log_file_path_ref       => Log file to write job_id progress to {REF}
 ##         : $FILEHANDLE              => Filehandle to write to
 ##         : $remove_dir              => Directory to remove when caught by trap function
 ##         : $trap_function_call      => Trap function call
@@ -290,7 +290,7 @@ sub create_housekeeping_function {
     ## Flatten argument(s)
     my $job_ids_ref;
     my $sacct_format_fields_ref;
-    my $log_file_ref;
+    my $log_file_path_ref;
     my $FILEHANDLE;
     my $remove_dir;
 
@@ -302,8 +302,8 @@ sub create_housekeeping_function {
             strict_type => 1,
             store       => \$sacct_format_fields_ref
         },
-        log_file_ref =>
-          { default => \$$, strict_type => 1, store => \$log_file_ref },
+        log_file_path_ref =>
+          { default => \$$, strict_type => 1, store => \$log_file_path_ref },
         FILEHANDLE         => { required    => 1, store => \$FILEHANDLE },
         remove_dir         => { strict_type => 1, store => \$remove_dir },
         trap_function_call => {
@@ -331,7 +331,7 @@ sub create_housekeeping_function {
     use MIP::Gnu::Coreutils qw(gnu_rm);
 
     ## Create housekeeping function and trap
-    print {$FILEHANDLE} $trap_function_name . q?() {?, "\n\n";
+    say {$FILEHANDLE} $trap_function_name . q?() {?, "\n";
 
     if ( ( defined $remove_dir ) && ($remove_dir) ) {
 
@@ -351,8 +351,8 @@ sub create_housekeeping_function {
     }
     if (   ( defined $job_ids_ref )
         && ( @{$job_ids_ref} )
-        && ( defined ${$log_file_ref} )
-        && ( ${$log_file_ref} ) )
+        && ( defined ${$log_file_path_ref} )
+        && ( ${$log_file_path_ref} ) )
     {
 
         ## Output SLURM info on each job via sacct command
@@ -362,7 +362,7 @@ sub create_housekeeping_function {
                 job_ids_ref             => \@{$job_ids_ref},
                 sacct_format_fields_ref => \@{$sacct_format_fields_ref},
                 FILEHANDLE              => $FILEHANDLE,
-                log_file_ref            => $log_file_ref,
+                log_file_path_ref       => $log_file_path_ref,
             }
         );
     }
@@ -386,10 +386,10 @@ sub create_error_trap_function {
 
 ##Function : Create error handling function and trap
 ##Returns  : ""
-##Arguments: $job_ids_ref, sacct_format_fields_ref, $log_file_ref, $FILEHANDLE, $trap_function_call, $trap_signals_ref, $trap_function_name
+##Arguments: $job_ids_ref, sacct_format_fields_ref, $log_file_path_ref, $FILEHANDLE, $trap_function_call, $trap_signals_ref, $trap_function_name
 ##         : $job_ids_ref             => Job ids
 ##         : $sacct_format_fields_ref => Format and fields of sacct output
-##         : $log_file_ref            => Log file to write job_id progress to {REF}
+##         : $log_file_path_ref       => Log file to write job_id progress to {REF}
 ##         : $FILEHANDLE              => Filehandle to write to
 ##         : $trap_function_call      => Trap function call
 ##         : $trap_signals_ref        => Array with signals to enable trap for {REF}
@@ -404,7 +404,7 @@ sub create_error_trap_function {
     ## Flatten argument(s)
     my $job_ids_ref;
     my $sacct_format_fields_ref;
-    my $log_file_ref;
+    my $log_file_path_ref;
     my $FILEHANDLE;
     my $trap_function_call;
 
@@ -416,8 +416,8 @@ sub create_error_trap_function {
             strict_type => 1,
             store       => \$sacct_format_fields_ref
         },
-        log_file_ref =>
-          { default => \$$, strict_type => 1, store => \$log_file_ref },
+        log_file_path_ref =>
+          { default => \$$, strict_type => 1, store => \$log_file_path_ref },
         FILEHANDLE         => { required => 1, store => \$FILEHANDLE },
         trap_function_call => {
             default     => q{$(error "$previous_command" "$?")},
@@ -439,14 +439,14 @@ sub create_error_trap_function {
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     ## Create error handling function and trap
-    print {$FILEHANDLE} $trap_function_name . q?() {?, "\n\n";
-    print {$FILEHANDLE} "\t" . q{local program="$1"},     "\n";
-    print {$FILEHANDLE} "\t" . q{local return_code="$2"}, "\n\n";
+    say {$FILEHANDLE} $trap_function_name . q?() {?, "\n";
+    say {$FILEHANDLE} "\t" . q{local program="$1"},     "\n";
+    say {$FILEHANDLE} "\t" . q{local return_code="$2"}, "\n";
 
     if (   ( defined $job_ids_ref )
         && ( @{$job_ids_ref} )
-        && ( defined ${$log_file_ref} )
-        && ( ${$log_file_ref} ) )
+        && ( defined ${$log_file_path_ref} )
+        && ( ${$log_file_path_ref} ) )
     {
 
         ## Output SLURM info on each job via sacct command
@@ -456,17 +456,16 @@ sub create_error_trap_function {
                 job_ids_ref             => \@{$job_ids_ref},
                 sacct_format_fields_ref => \@{$sacct_format_fields_ref},
                 FILEHANDLE              => $FILEHANDLE,
-                log_file_ref            => $log_file_ref,
+                log_file_path_ref       => $log_file_path_ref,
             }
         );
     }
 
-    print {$FILEHANDLE} "\t" . q{## Display error message and exit}, "\n";
-    print {$FILEHANDLE} "\t"
-      . q?echo "${program}: ${return_code}: Unknown Error - ExitCode=$return_code" 1>&2?,
-      "\n";
-    print {$FILEHANDLE} "\t" . q{exit 1}, "\n";
-    print {$FILEHANDLE} q?}?, "\n";
+    say {$FILEHANDLE} "\t" . q{## Display error message and exit};
+    say {$FILEHANDLE} "\t"
+      . q?echo "${program}: ${return_code}: Unknown Error - ExitCode=$return_code" 1>&2?;
+    say {$FILEHANDLE} "\t" . q{exit 1};
+    say {$FILEHANDLE} q?}?;
 
     ## Enable trap function with trap signal(s)
     enable_trap(
@@ -508,11 +507,21 @@ sub clear_trap {
 
     check( $tmpl, $arg_href, 1 ) or croak(qw[Could not parse arguments!]);
 
+    use MIP::Gnu::Bash qw(gnu_trap);
+
     ## Clear trap for signal ERR
     print {$FILEHANDLE} "\n## Clear trap for signal(s) "
       . join( $SPACE, @{$trap_signals_ref} ), "\n";
-    print {$FILEHANDLE} q{trap - } . join( $SPACE, @{$trap_signals_ref} ), "\n";
-    print {$FILEHANDLE} 'trap', "\n\n";
+
+    gnu_trap(
+        {
+            trap_signals_ref   => $trap_signals_ref,
+            trap_function_call => '-',
+            FILEHANDLE         => $FILEHANDLE,
+        }
+    );
+    gnu_trap( { FILEHANDLE => $FILEHANDLE, } );
+    say {$FILEHANDLE} "\n";
     return;
 }
 
@@ -552,11 +561,19 @@ sub enable_trap {
 
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
+    use MIP::Gnu::Bash qw(gnu_trap);
+
     print {$FILEHANDLE} "\n## Enable trap for signal(s) "
       . join( $SPACE, @{$trap_signals_ref} ), "\n";
-    print {$FILEHANDLE} q{trap '}
-      . $trap_function_call . q{' }
-      . join( $SPACE, @{$trap_signals_ref} ), "\n\n";
+
+    gnu_trap(
+        {
+            trap_signals_ref   => $trap_signals_ref,
+            trap_function_call => $trap_function_call,
+            FILEHANDLE         => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} "\n";
     return;
 }
 
@@ -566,10 +583,10 @@ sub track_progress {
 
 ##Function : Output SLURM info on each job via sacct command and write to log file(.status)
 ##Returns  : ""
-##Arguments: $job_ids_ref, $sacct_format_fields_ref, $log_file_ref, $FILEHANDLE
+##Arguments: $job_ids_ref, $sacct_format_fields_ref, $log_file_path_ref, $FILEHANDLE
 ##         : $job_ids_ref             => Job ids
 ##         : $sacct_format_fields_ref => Format and fields of sacct output
-##         : $log_file_ref            => The log file {REF}
+##         : $log_file_path_ref       => The log file {REF}
 ##         : $FILEHANDLE              => Sbatch filehandle to write to
 
     my ($arg_href) = @_;
@@ -579,7 +596,7 @@ sub track_progress {
 
     ## Flatten argument(s)
     my $job_ids_ref;
-    my $log_file_ref;
+    my $log_file_path_ref;
     my $FILEHANDLE;
 
     my $tmpl = {
@@ -594,38 +611,40 @@ sub track_progress {
             strict_type => 1,
             store       => \$sacct_format_fields_ref
         },
-        log_file_ref =>
-          { default => \$$, strict_type => 1, store => \$log_file_ref },
+        log_file_path_ref =>
+          { default => \$$, strict_type => 1, store => \$log_file_path_ref },
         FILEHANDLE => { store => \$FILEHANDLE },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
-    use MIP::Workloadmanager::Slurm qw(slurm_sacct);
+    use MIP::Workloadmanager::Slurm qw(slurm_sacct slurm_reformat_sacct_output);
 
     if ( @{$job_ids_ref} ) {
 
         ## Copy array
-        my @reformat_sacct_header = @{$sacct_format_fields_ref};
+        my @reformat_sacct_headers = @{$sacct_format_fields_ref};
 
         ## Remove "%digits" from headers
-        foreach my $element (@reformat_sacct_header) {
+        foreach my $element (@reformat_sacct_headers) {
 
             $element =~ s/%\d+//g;
         }
-        my @command = slurm_sacct(
+        my @commands = slurm_sacct(
             {
                 fields_format_ref => \@{$sacct_format_fields_ref},
                 job_ids_ref       => \@{$job_ids_ref},
             }
         );
-        print {$FILEHANDLE} "\t" . join( $SPACE, @command ) . $SPACE;
-        print {$FILEHANDLE} q{| };
-        print {$FILEHANDLE} q{perl -nae 'my @headers=(}
-          . join( $COMMA, @reformat_sacct_header ) . q?); ?
-          . q?if($. == 1) {print "#".join("\t", @headers), "\n"} ?
-          . q?if ($.>=3 && $F[0]!~/.batch/) {print join("\t", @F), "\n"}' ?;
-        print {$FILEHANDLE} q{> } . ${$log_file_ref} . q{.status}, "\n\n";
+
+        slurm_reformat_sacct_output(
+            {
+                commands_ref               => \@commands,
+                reformat_sacct_headers_ref => \@reformat_sacct_headers,
+                log_file_path_ref          => $log_file_path_ref,
+                FILEHANDLE                 => $FILEHANDLE,
+            }
+        );
     }
     return;
 }

@@ -21,7 +21,7 @@ use File::Spec::Functions qw(catfile catdir devnull);
 
 ## MIPs lib/
 use lib catdir( $Bin, 'lib' );        #Add MIPs internal lib
-use File::Format::Shell qw(create_bash_file);
+use MIP::Language::Shell qw(create_bash_file);
 use Program::Download::Wget qw(wget);
 use MIP::Gnu::Bash qw(gnu_cd);
 use MIP::Gnu::Coreutils qw(gnu_cp gnu_rm gnu_mv gnu_mkdir);
@@ -245,7 +245,7 @@ open $FILEHANDLE, '>', $file_name_path
   croak( q{Cannot write to '} . $file_name_path . q{' :} . $OS_ERROR . "\n" );
 
 ## Create bash file for writing install instructions
-File::Format::Shell::create_bash_file(
+create_bash_file(
     {
         file_name   => $file_name_path,
         FILEHANDLE  => $FILEHANDLE,

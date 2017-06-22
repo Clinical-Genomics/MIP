@@ -15,17 +15,17 @@ use Params::Check qw(check allow last_error);
 
 use FindBin qw($Bin);    #Find directory of script
 use File::Basename qw(dirname basename);
-use File::Spec::Functions qw(catfile catdir devnull);
+use File::Spec::Functions qw(catdir);
 use Getopt::Long;
 use Test::More;
-
-## Third party module(s)
-use List::Util qw(any);
+use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), 'lib' );
 use Script::Utils qw(help);
-use MIP::Test::Writefile qw(test_write_to_file);
+
+##Constants
+Readonly my $SINGLE_QUOTE => q{'};
 
 our $USAGE = build_usage( {} );
 
@@ -72,7 +72,7 @@ BEGIN {
     }
 
 ##Modules
-    my @modules = ('MIP::Language::Shell');
+    my @modules = ('MIP::Gnu::Bash');
 
     for my $module (@modules) {
 
@@ -80,91 +80,57 @@ BEGIN {
     }
 }
 
-use MIP::Language::Shell qw(build_shebang);
+use MIP::Gnu::Bash qw(gnu_trap);
+use MIP::Test::Commands qw(test_function);
 
-my $NEWLINE = q{\n};
-
-diag(
-"Test build_shebang $MIP::Language::Shell::VERSION, Perl $^V, $EXECUTABLE_NAME"
-);
+diag("Test gnu_trap $MIP::Gnu::Bash::VERSION, Perl $^V, $EXECUTABLE_NAME");
 
 ## Base arguments
-my $batch_shebang = q{#!};
+my $function_base_command = 'trap';
 
 my %base_argument = (
+    stderrfile_path => {
+        input           => 'stderrfile.test',
+        expected_output => '2> stderrfile.test',
+    },
+    stderrfile_path_append => {
+        input           => 'stderrfile.test',
+        expected_output => '2>> stderrfile.test',
+    },
     FILEHANDLE => {
         input           => undef,
-        expected_output => $batch_shebang,
+        expected_output => $function_base_command,
     },
 );
-
-my $bash_bin_path =
-  catfile( dirname( dirname( devnull() ) ), qw(usr bin env bash) );
 
 ## Specific arguments
-my %argument = (
-    bash_bin_path => {
-        input           => $bash_bin_path,
-        expected_output => $batch_shebang . $bash_bin_path,
+my %specific_argument = (
+    trap_signals_ref => {
+        inputs_ref      => [qw(ERR EXIT TERM INT DEBUG)],
+        expected_output => q{ERR EXIT TERM INT DEBUG},
     },
-    set_login_shell => {
-        input           => 1,
-        expected_output => 'set -l',
+    trap_function_call => {
+        input           => q{error()},
+        expected_output => $SINGLE_QUOTE . q{error()} . $SINGLE_QUOTE,
     },
-    set_errexit => {
-        input           => 1,
-        expected_output => 'set -e',
-    },
-    set_nounset => {
-        input           => 1,
-        expected_output => 'set -u',
-    },
-    set_pipefail => {
-        input           => 1,
-        expected_output => 'set -o pipefail',
-    },
-);
-
-my @commands = build_shebang(
-    {
-        bash_bin_path   => $argument{bash_bin_path}{input},
-        set_login_shell => $argument{set_login_shell}{input},
-        set_errexit     => $argument{set_errexit}{input},
-        set_nounset     => $argument{set_nounset}{input},
-        set_pipefail    => $argument{set_pipefail}{input},
-    }
-);
-
-## Testing return of commands
-foreach my $key ( keys %argument ) {
-
-    # Alias expeceted output
-    my $expected_output = $argument{$key}{expected_output};
-
-    ok( ( any { $_ eq $expected_output } @commands ), 'Argument: ' . $key );
-}
-
-## Testing write to file
-
-# Fake arguments
-my @args = (
-    bash_bin_path => $bash_bin_path,
-    FILEHANDLE    => undef,
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&build_shebang;
+my $module_function_cref = \&gnu_trap;
 
-my $function_base_command = $batch_shebang . $bash_bin_path,;
+## Test both base and function specific arguments
+my @arguments = ( \%base_argument, \%specific_argument );
 
-test_write_to_file(
-    {
-        args_ref             => \@args,
-        module_function_cref => $module_function_cref,
-        base_command         => $function_base_command,
-        separator            => $NEWLINE,
-    }
-);
+foreach my $argument_href (@arguments) {
+
+    my @commands = test_function(
+        {
+            argument_href         => $argument_href,
+            module_function_cref  => $module_function_cref,
+            function_base_command => $function_base_command,
+        }
+    );
+}
 
 done_testing();
 
