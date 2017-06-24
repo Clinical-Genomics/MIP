@@ -29983,63 +29983,6 @@ q?perl -nae 'chomp($_); if( ($_=~/^@\w+-\w+:\w+:\w+:\w+:\w+:\w+:\w+\/(\w+)/) && 
     return;
 }
 
-sub check_file_name_exists {
-
-##check_file_name_exists
-
-##Function : Check if a file with with a filename consisting of $file_path_ref.$file_counter.$file_ending_ref exist. If so bumps the version number and return new filename and sbatch version number.
-##Returns  : "$file_name, $file_name_tracker"
-##Arguments: $file_path_ref, $file_ending_ref
-##         : $file_path_ref   => The file path {REF}
-##         : $file_ending_ref => The file ending {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_path_ref;
-    my $file_ending_ref;
-
-    my $tmpl = {
-        file_path_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$file_path_ref
-        },
-        file_ending_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$file_ending_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    my $file_name;    #Temp filename
-    my $file_name_tracker =
-      0;    #Nr of sbatch scripts with identical filenames i.e. version number
-
-    for ( my $file_counter = 0 ; $file_counter < 9999 ; $file_counter++ )
-    {       #Number of possible files with the same name
-
-        $file_name =
-            $$file_path_ref
-          . $file_counter
-          . $$file_ending_ref;    #Filename, filenr and fileending
-        $file_name_tracker =
-          $file_counter;          #Nr of sbatch scripts with identical filenames
-
-        unless ( -f $file_name ) {    #File exists
-
-            last;                     #No file exists
-        }
-    }
-    return ( $file_name, $file_name_tracker );
-}
-
 sub add_to_active_parameter {
 
 ##add_to_active_parameter
@@ -31514,6 +31457,7 @@ sub program_prerequisites {
     use MIP::Workloadmanager::Slurm qw(slurm_build_sbatch_header);
     use MIP::Gnu::Bash qw(gnu_set);
     use MIP::Gnu::Coreutils qw(gnu_echo gnu_mkdir);
+    use MIP::Check::File qw(check_file_version_exist);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger('MIP');
@@ -31577,11 +31521,12 @@ sub program_prerequisites {
         $log->info("Dry run:\n");
     }
 
-    ## Check if a file with with a filename consisting of $file_path_ref.$file_counter.$file_ending_ref exist. If so bumps the version number and return new filename and sbatch version number.
-    ( $file_name, $file_name_tracker ) = check_file_name_exists(
+    ## Check if a file with with a filename consisting of
+    ## $file_path_prefix_ref.$file_counter.$file_path_suffix_ref exist
+    ( $file_name, $file_name_tracker ) = check_file_version_exist(
         {
-            file_path_ref   => \$file_name,
-            file_ending_ref => \$file_name_end,
+            file_path_prefix_ref   => \$file_name,
+            file_path_suffix_ref => \$file_name_end,
         }
     );
 
@@ -31652,7 +31597,7 @@ sub program_prerequisites {
     );
     say $FILEHANDLE "\n";
 
-# Let the process sleep for a random couple of seconds (0-60) to avoid race conditions in mainly conda sourcing activate
+    # Let the process sleep for a random couple of seconds (0-60) to avoid race conditions in mainly conda sourcing activate
     if ($sleep) {
 
         say $FILEHANDLE "sleep " . int( rand(60) );

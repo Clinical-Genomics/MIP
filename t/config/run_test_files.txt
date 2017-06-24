@@ -1,5 +1,6 @@
 unix_standard_streams.t
 unix_write_to_file.t
+file_check_file_version_exist.t
 gnu_cat.t
 gnu_cd.t
 gnu_cp.t
