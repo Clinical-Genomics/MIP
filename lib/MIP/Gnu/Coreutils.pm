@@ -25,7 +25,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -981,6 +981,7 @@ sub gnu_printf {
     push @commands,
       unix_standard_streams(
         {
+            stdoutfile_path        => $stdoutfile_path,
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
         }
