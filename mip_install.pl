@@ -6,24 +6,25 @@ use warnings qw( FATAL utf8 );
 use utf8;
 use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
-use Getopt::Long;
+use Carp;
+use English qw(-no_match_vars);
 use Params::Check qw[check allow last_error];
 $Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
+
+use Getopt::Long;
 use Cwd;
 use Cwd qw(abs_path);
 use FindBin qw($Bin);                 #Find directory of script
 use IO::Handle;
 use File::Basename qw(dirname basename fileparse);
 use File::Spec::Functions qw(catfile catdir devnull);
-use Carp;
-use English qw(-no_match_vars);
 
 ## MIPs lib/
 use lib catdir( $Bin, 'lib' );        #Add MIPs internal lib
-use File::Format::Shell qw(create_bash_file);
+use MIP::Language::Shell qw(create_bash_file);
 use Program::Download::Wget qw(wget);
 use MIP::Gnu::Bash qw(gnu_cd);
-use Program::Gnu::Coreutils qw(cp rm mv mkdir);
+use MIP::Gnu::Coreutils qw(gnu_cp gnu_rm gnu_mv gnu_mkdir);
 use Script::Utils qw(help set_default_array_parameters);
 
 our $USAGE = build_usage( {} );
@@ -31,6 +32,10 @@ our $USAGE = build_usage( {} );
 ### Set parameter default
 
 my %parameter;
+
+##Bash
+$parameter{bash_set_errexit} = 0;
+$parameter{bash_set_nounset} = 0;
 
 ## Conda
 $parameter{conda_dir_path} = catdir( $ENV{HOME}, 'miniconda' );
@@ -113,6 +118,8 @@ $array_parameter{perl_modules}{default}              = [
     'YAML',                      # MIP
     'Log::Log4perl',             # MIP
     'List::Util',                # MIP
+    'List::MoreUtils',           # MIP
+    'Readonly',                  # MIP
     'Scalar::Util::Numeric',     # MIP
     'Set::IntervalTree',         # MIP/vcfParser.pl
     'Net::SSLeay',               # VEP
@@ -134,10 +141,12 @@ $array_parameter{perl_modules}{default}              = [
     'File::Copy::Recursive',     # VEP
 ];
 
-my $VERSION = '1.2.1';
+my $VERSION = '1.2.5';
 
 ###User Options
 GetOptions(
+    'see|bash_set_errexit'          => \$parameter{bash_set_errexit},
+    'snu|bash_set_nounset'          => \$parameter{bash_set_nounset},
     'env|conda_environment:s'       => \$parameter{conda_environment},
     'cdp|conda_dir_path:s'          => \$parameter{conda_dir_path},
     'cdu|conda_update'              => \$parameter{conda_update},
@@ -232,24 +241,34 @@ Script::Utils::set_default_array_parameters(
 ###MAIN###
 ##########
 
-#my $LOGFILEHANDLE = &OpenLogFile({file_name => "MIP_installation.log",
-#				 });
+# Create anonymous filehandle
+my $FILEHANDLE = IO::Handle->new();
+
+# Installation instruction file
+my $file_name_path = catfile( cwd(), 'mip.sh' );
+
+open $FILEHANDLE, '>', $file_name_path
+  or
+  croak( q{Cannot write to '} . $file_name_path . q{' :} . $OS_ERROR . "\n" );
 
 ## Create bash file for writing install instructions
-my $BASHFILEHANDLE = File::Format::Shell::create_bash_file(
+create_bash_file(
     {
-        file_name        => 'mip.sh',
-        directory_remove => '.MIP',
+        file_name   => $file_name_path,
+        FILEHANDLE  => $FILEHANDLE,
+        remove_dir  => catfile( cwd(), '.MIP' ),
+        set_errexit => $parameter{bash_set_errexit},
+        set_nounset => $parameter{bash_set_nounset},
     }
 );
-print STDOUT q{Will write install instructions to '}
-  . catfile( cwd(), 'mip.sh' ), "'\n";
+
+print STDOUT q{Will write install instructions to '} . $file_name_path, "'\n";
 
 ## Check existance of conda environment
 check_conda(
     {
         parameter_href => \%parameter,
-        FILEHANDLE     => $BASHFILEHANDLE,
+        FILEHANDLE     => $FILEHANDLE,
     }
 );
 
@@ -262,7 +281,7 @@ if ( exists( $parameter{conda_environment} ) ) {
         create_conda_environment(
             {
                 parameter_href => \%parameter,
-                FILEHANDLE     => $BASHFILEHANDLE,
+                FILEHANDLE     => $FILEHANDLE,
             }
         );
     }
@@ -272,7 +291,7 @@ if ( exists( $parameter{conda_environment} ) ) {
 install_bioconda_modules(
     {
         parameter_href => \%parameter,
-        FILEHANDLE     => $BASHFILEHANDLE,
+        FILEHANDLE     => $FILEHANDLE,
     }
 );
 
@@ -284,7 +303,7 @@ if ( @{ $parameter{select_programs} } ) {
         perl(
             {
                 parameter_href => \%parameter,
-                FILEHANDLE     => $BASHFILEHANDLE,
+                FILEHANDLE     => $FILEHANDLE,
             }
         );
     }
@@ -294,7 +313,7 @@ else {
     perl(
         {
             parameter_href => \%parameter,
-            FILEHANDLE     => $BASHFILEHANDLE,
+            FILEHANDLE     => $FILEHANDLE,
         }
     );
 }
@@ -302,7 +321,7 @@ else {
 pip_install(
     {
         parameter_href => \%parameter,
-        FILEHANDLE     => $BASHFILEHANDLE,
+        FILEHANDLE     => $FILEHANDLE,
     }
 );
 
@@ -316,7 +335,7 @@ if ( $parameter{prefer_shell} ) {
             picardtools(
                 {
                     parameter_href => \%parameter,
-                    FILEHANDLE     => $BASHFILEHANDLE,
+                    FILEHANDLE     => $FILEHANDLE,
                 }
             );
         }
@@ -326,7 +345,7 @@ if ( $parameter{prefer_shell} ) {
             sambamba(
                 {
                     parameter_href => \%parameter,
-                    FILEHANDLE     => $BASHFILEHANDLE,
+                    FILEHANDLE     => $FILEHANDLE,
                 }
             );
         }
@@ -336,7 +355,7 @@ if ( $parameter{prefer_shell} ) {
             bedtools(
                 {
                     parameter_href => \%parameter,
-                    FILEHANDLE     => $BASHFILEHANDLE,
+                    FILEHANDLE     => $FILEHANDLE,
                 }
             );
         }
@@ -346,7 +365,7 @@ if ( $parameter{prefer_shell} ) {
             vt(
                 {
                     parameter_href => \%parameter,
-                    FILEHANDLE     => $BASHFILEHANDLE,
+                    FILEHANDLE     => $FILEHANDLE,
                 }
             );
         }
@@ -356,7 +375,7 @@ if ( $parameter{prefer_shell} ) {
             snpeff(
                 {
                     parameter_href => \%parameter,
-                    FILEHANDLE     => $BASHFILEHANDLE,
+                    FILEHANDLE     => $FILEHANDLE,
                 }
             );
         }
@@ -366,7 +385,7 @@ if ( $parameter{prefer_shell} ) {
             plink2(
                 {
                     parameter_href => \%parameter,
-                    FILEHANDLE     => $BASHFILEHANDLE,
+                    FILEHANDLE     => $FILEHANDLE,
                 }
             );
         }
@@ -376,7 +395,7 @@ if ( $parameter{prefer_shell} ) {
             rhocall(
                 {
                     parameter_href => \%parameter,
-                    FILEHANDLE     => $BASHFILEHANDLE,
+                    FILEHANDLE     => $FILEHANDLE,
                 }
             );
         }
@@ -386,49 +405,49 @@ if ( $parameter{prefer_shell} ) {
         picardtools(
             {
                 parameter_href => \%parameter,
-                FILEHANDLE     => $BASHFILEHANDLE,
+                FILEHANDLE     => $FILEHANDLE,
             }
         );
 
         sambamba(
             {
                 parameter_href => \%parameter,
-                FILEHANDLE     => $BASHFILEHANDLE,
+                FILEHANDLE     => $FILEHANDLE,
             }
         );
 
         bedtools(
             {
                 parameter_href => \%parameter,
-                FILEHANDLE     => $BASHFILEHANDLE,
+                FILEHANDLE     => $FILEHANDLE,
             }
         );
 
         vt(
             {
                 parameter_href => \%parameter,
-                FILEHANDLE     => $BASHFILEHANDLE,
+                FILEHANDLE     => $FILEHANDLE,
             }
         );
 
         snpeff(
             {
                 parameter_href => \%parameter,
-                FILEHANDLE     => $BASHFILEHANDLE,
+                FILEHANDLE     => $FILEHANDLE,
             }
         );
 
         plink2(
             {
                 parameter_href => \%parameter,
-                FILEHANDLE     => $BASHFILEHANDLE,
+                FILEHANDLE     => $FILEHANDLE,
             }
         );
 
         rhocall(
             {
                 parameter_href => \%parameter,
-                FILEHANDLE     => $BASHFILEHANDLE,
+                FILEHANDLE     => $FILEHANDLE,
             }
         );
     }
@@ -442,7 +461,7 @@ if ( @{ $parameter{select_programs} } ) {
         mip_scripts(
             {
                 parameter_href => \%parameter,
-                FILEHANDLE     => $BASHFILEHANDLE,
+                FILEHANDLE     => $FILEHANDLE,
             }
         );
     }
@@ -457,7 +476,7 @@ if ( @{ $parameter{select_programs} } ) {
         varianteffectpredictor(
             {
                 parameter_href => \%parameter,
-                FILEHANDLE     => $BASHFILEHANDLE,
+                FILEHANDLE     => $FILEHANDLE,
             }
         );
     }
@@ -467,7 +486,7 @@ if ( @{ $parameter{select_programs} } ) {
         cnvnator(
             {
                 parameter_href => \%parameter,
-                FILEHANDLE     => $BASHFILEHANDLE,
+                FILEHANDLE     => $FILEHANDLE,
             }
         );
     }
@@ -477,7 +496,7 @@ if ( @{ $parameter{select_programs} } ) {
         tiddit(
             {
                 parameter_href => \%parameter,
-                FILEHANDLE     => $BASHFILEHANDLE,
+                FILEHANDLE     => $FILEHANDLE,
             }
         );
     }
@@ -487,7 +506,7 @@ if ( @{ $parameter{select_programs} } ) {
         svdb(
             {
                 parameter_href => \%parameter,
-                FILEHANDLE     => $BASHFILEHANDLE,
+                FILEHANDLE     => $FILEHANDLE,
             }
         );
     }
@@ -497,41 +516,41 @@ else {
     mip_scripts(
         {
             parameter_href => \%parameter,
-            FILEHANDLE     => $BASHFILEHANDLE,
+            FILEHANDLE     => $FILEHANDLE,
         }
     );
 
     varianteffectpredictor(
         {
             parameter_href => \%parameter,
-            FILEHANDLE     => $BASHFILEHANDLE,
+            FILEHANDLE     => $FILEHANDLE,
         }
     );
 
     rhocall(
         {
             parameter_href => \%parameter,
-            FILEHANDLE     => $BASHFILEHANDLE,
+            FILEHANDLE     => $FILEHANDLE,
         }
     );
     cnvnator(
         {
             parameter_href => \%parameter,
-            FILEHANDLE     => $BASHFILEHANDLE,
+            FILEHANDLE     => $FILEHANDLE,
         }
     );
 
     tiddit(
         {
             parameter_href => \%parameter,
-            FILEHANDLE     => $BASHFILEHANDLE,
+            FILEHANDLE     => $FILEHANDLE,
         }
     );
 
     svdb(
         {
             parameter_href => \%parameter,
-            FILEHANDLE     => $BASHFILEHANDLE,
+            FILEHANDLE     => $FILEHANDLE,
         }
     );
 }
@@ -541,12 +560,12 @@ if ( exists( $parameter{reference_dir} ) && ( $parameter{reference_dir} ) ) {
     references(
         {
             parameter_href => \%parameter,
-            FILEHANDLE     => $BASHFILEHANDLE,
+            FILEHANDLE     => $FILEHANDLE,
         }
     );
 }
 
-close($BASHFILEHANDLE);
+close($FILEHANDLE);
 
 #close($LOGFILEHANDLE);
 
@@ -623,43 +642,6 @@ sub build_usage {
     -ver/--version Display version
     -v/--verbose Set verbosity
 END_USAGE
-}
-
-sub OpenLogFile {
-
-##OpenLogFile
-
-##Function : Open log file
-##Returns  : ""
-##Arguments: $file_name
-##         : $file_name => File name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_name;
-
-    my $tmpl = {
-        file_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$file_name
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
-
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    ## Open batch file
-    open( $FILEHANDLE, '>', catfile($file_name) )
-      or croak( q{Cannot write to '}
-          . catfile($file_name) . q{' :}
-          . $OS_ERROR
-          . "\n" );
-
-    return $FILEHANDLE;
 }
 
 sub print_parameters {
@@ -942,7 +924,7 @@ sub install_bioconda_modules {
                 create_softlink(
                     {
                         parameter_href => $parameter_href,
-                        FILEHANDLE     => $BASHFILEHANDLE,
+                        FILEHANDLE     => $FILEHANDLE,
                         binary         => catfile(
                             $parameter_href->{conda_prefix_path},
                             'share',
@@ -956,9 +938,9 @@ sub install_bioconda_modules {
                 );
             }
 
-            cp(
+            gnu_cp(
                 {
-                    FILEHANDLE  => $BASHFILEHANDLE,
+                    FILEHANDLE  => $FILEHANDLE,
                     recursive   => 1,
                     force       => 1,
                     infile_path => catdir(
@@ -973,14 +955,14 @@ sub install_bioconda_modules {
                       catdir( $parameter_href->{conda_prefix_path}, 'bin' ),
                 }
             );
-            print $BASHFILEHANDLE "\n\n";
+            print $FILEHANDLE "\n\n";
         }
         if ( $program eq 'picard' ) {
 
             create_softlink(
                 {
                     parameter_href => $parameter_href,
-                    FILEHANDLE     => $BASHFILEHANDLE,
+                    FILEHANDLE     => $FILEHANDLE,
                     binary         => catfile(
                         $parameter_href->{conda_prefix_path},
                         'share',
@@ -1003,7 +985,7 @@ sub install_bioconda_modules {
                 create_softlink(
                     {
                         parameter_href => $parameter_href,
-                        FILEHANDLE     => $BASHFILEHANDLE,
+                        FILEHANDLE     => $FILEHANDLE,
                         binary         => catfile(
                             $parameter_href->{conda_prefix_path},
                             'share',
@@ -1025,7 +1007,7 @@ sub install_bioconda_modules {
                 check_mt_codon_table(
                     {
                         parameter_href => $parameter_href,
-                        FILEHANDLE     => $BASHFILEHANDLE,
+                        FILEHANDLE     => $FILEHANDLE,
                         share_dir      => catdir(
                             $parameter_href->{conda_prefix_path},
                             'share',
@@ -1055,7 +1037,7 @@ sub install_bioconda_modules {
                     snpeff_download(
                         {
                             parameter_href     => $parameter_href,
-                            FILEHANDLE         => $BASHFILEHANDLE,
+                            FILEHANDLE         => $FILEHANDLE,
                             genome_version_ref => \$genome_version,
                         }
                     );
@@ -1072,7 +1054,7 @@ sub install_bioconda_modules {
                 create_softlink(
                     {
                         parameter_href => $parameter_href,
-                        FILEHANDLE     => $BASHFILEHANDLE,
+                        FILEHANDLE     => $FILEHANDLE,
                         binary         => catfile(
                             $parameter_href->{conda_prefix_path},
                             'share',
@@ -1095,7 +1077,7 @@ sub install_bioconda_modules {
                 create_softlink(
                     {
                         parameter_href => $parameter_href,
-                        FILEHANDLE     => $BASHFILEHANDLE,
+                        FILEHANDLE     => $FILEHANDLE,
                         binary         => catfile(
                             $parameter_href->{conda_prefix_path},
                             'share',
@@ -1114,7 +1096,7 @@ sub install_bioconda_modules {
             enable_executable(
                 {
                     parameter_href => $parameter_href,
-                    FILEHANDLE     => $BASHFILEHANDLE,
+                    FILEHANDLE     => $FILEHANDLE,
                     binary         => q?configManta.py?,
                 }
             );
@@ -1170,7 +1152,7 @@ sub perl {
 
                 ## Removing specific Perl version
                 print $FILEHANDLE '### Removing specific perl version', "\n";
-                rm(
+                gnu_rm(
                     {
                         infile_path => '$HOME/perl-'
                           . $parameter_href->{perl_version},
@@ -1184,7 +1166,7 @@ sub perl {
                 install_perl_cpnam(
                     {
                         parameter_href => $parameter_href,
-                        FILEHANDLE     => $BASHFILEHANDLE,
+                        FILEHANDLE     => $FILEHANDLE,
                     }
                 );
             }
@@ -1192,7 +1174,7 @@ sub perl {
             perl_modules(
                 {
                     parameter_href => $parameter_href,
-                    FILEHANDLE     => $BASHFILEHANDLE,
+                    FILEHANDLE     => $FILEHANDLE,
                 }
             );
         }
@@ -1204,7 +1186,7 @@ sub perl {
             install_perl_cpnam(
                 {
                     parameter_href => $parameter_href,
-                    FILEHANDLE     => $BASHFILEHANDLE,
+                    FILEHANDLE     => $FILEHANDLE,
                     path           => 1,
                 }
             );
@@ -1213,7 +1195,7 @@ sub perl {
         perl_modules(
             {
                 parameter_href => $parameter_href,
-                FILEHANDLE     => $BASHFILEHANDLE,
+                FILEHANDLE     => $FILEHANDLE,
             }
         );
     }
@@ -1342,7 +1324,7 @@ sub install_perl_cpnam {
 
     print $FILEHANDLE '&& ';
 
-    rm(
+    gnu_rm(
         {
             infile_path => 'perl-'
               . $parameter_href->{perl_version}
@@ -1607,7 +1589,7 @@ sub picardtools {
       )
     {
 
-        rm(
+        gnu_rm(
             {
                 infile_path => catdir(
                     $parameter_href->{conda_prefix_path}, 'share',
@@ -1622,7 +1604,7 @@ sub picardtools {
     }
 
     print $FILEHANDLE '## Make available from conda environment', "\n";
-    mv(
+    gnu_mv(
         {
             infile_path => 'picard-tools-' . $parameter_href->{picardtools},
             outfile_path =>
@@ -1750,7 +1732,7 @@ sub sambamba {
 
     ## Make available from conda environment
     print $FILEHANDLE '## Make available from conda environment', "\n";
-    mv(
+    gnu_mv(
         {
             infile_path => 'sambamba_v' . $parameter_href->{sambamba},
             outfile_path =>
@@ -1763,7 +1745,7 @@ sub sambamba {
     create_softlink(
         {
             parameter_href => $parameter_href,
-            FILEHANDLE     => $BASHFILEHANDLE,
+            FILEHANDLE     => $FILEHANDLE,
             binary   => 'sambamba_v' . $parameter_href->{bioconda}{sambamba},
             softlink => 'sambamba',
         }
@@ -1875,7 +1857,7 @@ sub bedtools {
 
     ## Make available from conda environment
     print $FILEHANDLE '## Make available from conda environment', "\n";
-    mv(
+    gnu_mv(
         {
             infile_path => catfile(qw(. bin * )),
             outfile_path =>
@@ -1970,7 +1952,7 @@ sub vt {
 
     ## Make available from conda environment
     print $FILEHANDLE '## Make available from conda environment', "\n";
-    mv(
+    gnu_mv(
         {
             infile_path => 'vt',
             outfile_path =>
@@ -2067,7 +2049,7 @@ sub plink2 {
 
     ## Make available from conda environment
     print $FILEHANDLE '## Make available from conda environment', "\n";
-    mv(
+    gnu_mv(
         {
             infile_path => 'plink',
             outfile_path =>
@@ -2167,7 +2149,7 @@ sub snpeff {
       )
     {
 
-        rm(
+        gnu_rm(
             {
                 infile_path => catdir(
                     $parameter_href->{conda_prefix_path},
@@ -2182,7 +2164,7 @@ sub snpeff {
     }
 
     print $FILEHANDLE '## Make available from conda environment', "\n";
-    mkdir(
+    gnu_mkdir(
         {
             indirectory_path => catdir(
                 $parameter_href->{conda_prefix_path}, 'share',
@@ -2194,7 +2176,7 @@ sub snpeff {
     );
     print $FILEHANDLE "\n\n";
 
-    mv(
+    gnu_mv(
         {
             infile_path  => catfile(qw(snpEff *.jar)),
             outfile_path => catdir(
@@ -2206,7 +2188,7 @@ sub snpeff {
     );
     print $FILEHANDLE "\n\n";
 
-    mv(
+    gnu_mv(
         {
             infile_path  => catfile(qw(snpEff snpEff.config)),
             outfile_path => catdir(
@@ -2226,7 +2208,7 @@ sub snpeff {
         create_softlink(
             {
                 parameter_href => $parameter_href,
-                FILEHANDLE     => $BASHFILEHANDLE,
+                FILEHANDLE     => $FILEHANDLE,
                 binary         => catfile(
                     $parameter_href->{conda_prefix_path},  'share',
                     'snpEff.' . $parameter_href->{snpeff}, $binary
@@ -2244,7 +2226,7 @@ sub snpeff {
         check_mt_codon_table(
             {
                 parameter_href => $parameter_href,
-                FILEHANDLE     => $BASHFILEHANDLE,
+                FILEHANDLE     => $FILEHANDLE,
                 share_dir      => catdir(
                     $parameter_href->{conda_prefix_path}, 'share',
                     'snpEff.' . $parameter_href->{snpeff}
@@ -2267,7 +2249,7 @@ sub snpeff {
             snpeff_download(
                 {
                     parameter_href     => $parameter_href,
-                    FILEHANDLE         => $BASHFILEHANDLE,
+                    FILEHANDLE         => $FILEHANDLE,
                     genome_version_ref => \$genome_version,
                 }
             );
@@ -2334,7 +2316,7 @@ sub varianteffectpredictor {
 
             ## Removing varianteffectpredictor
             print $FILEHANDLE '### Removing varianteffectpredictor', "\n";
-            rm(
+            gnu_rm(
                 {
                     infile_path => $miniconda_bin_dir,
                     force       => 1,
@@ -2363,7 +2345,7 @@ sub varianteffectpredictor {
     );
 
     ##Make sure that the cache directory exists
-    mkdir(
+    gnu_mkdir(
         {
             indirectory_path => $parameter_href->{vep_cache_dir},
             parents          => 1,
@@ -2561,7 +2543,7 @@ sub varianteffectpredictor {
 
     ## Clean up
     print $FILEHANDLE '## Clean up', "\n";
-    rm(
+    gnu_rm(
         {
             infile_path => catdir(
                 $parameter_href->{conda_prefix_path},
@@ -2652,7 +2634,7 @@ sub cnvnator {
 
             ## Removing Root
             print $FILEHANDLE '### Removing Root', "\n";
-            rm(
+            gnu_rm(
                 {
                     infile_path => $miniconda_bin_dir,
                     force       => 1,
@@ -2798,7 +2780,7 @@ sub cnvnator {
 
     ## Make available from conda environment
     print $FILEHANDLE '## Make available from conda environment', "\n";
-    mv(
+    gnu_mv(
         {
             infile_path => 'cnvnator',
             outfile_path =>
@@ -2817,7 +2799,7 @@ sub cnvnator {
         }
     );
     print $FILEHANDLE "\n";
-    mv(
+    gnu_mv(
         {
             infile_path => 'cnvnator2VCF.pl',
             outfile_path =>
@@ -2927,7 +2909,7 @@ sub tiddit {
 
     ## Extract
     print $FILEHANDLE '## Extract', "\n";
-    rm(
+    gnu_rm(
         {
             infile_path => 'TIDDIT-' . $parameter_href->{tiddit},
             force       => 1,
@@ -2949,7 +2931,7 @@ sub tiddit {
     );
     print $FILEHANDLE "\n\n";
 
-    mkdir(
+    gnu_mkdir(
         {
             indirectory_path => 'build',
             parents          => 1,
@@ -2994,7 +2976,7 @@ sub tiddit {
       "\n\n";
 
     ## Clean-up
-    rm(
+    gnu_rm(
         {
             infile_path => catdir(
                 $parameter_href->{conda_prefix_path},
@@ -3103,7 +3085,7 @@ sub svdb {
 
     ## Clean-up
     print $FILEHANDLE '## Clean-up', "\n";
-    rm(
+    gnu_rm(
         {
             infile_path => 'SVDB-' . $parameter_href->{svdb},
             force       => 1,
@@ -3215,7 +3197,7 @@ sub mip_scripts {
     print $FILEHANDLE '## Create directories', "\n";
     foreach my $directory ( keys %mip_sub_scripts ) {
 
-        mkdir(
+        gnu_mkdir(
             {
                 indirectory_path => catdir(
                     $parameter_href->{conda_prefix_path},
@@ -3231,7 +3213,7 @@ sub mip_scripts {
     print $FILEHANDLE '## Copy directory to conda env', "\n\n";
     foreach my $directory (@mip_directories) {
 
-        cp(
+        gnu_cp(
             {
                 FILEHANDLE  => $FILEHANDLE,
                 recursive   => 1,
@@ -3252,7 +3234,7 @@ sub mip_scripts {
 
         my $script_no_ending = fileparse( $script, qr/\.[^.]*/ );
 
-        cp(
+        gnu_cp(
             {
                 FILEHANDLE   => $FILEHANDLE,
                 infile_path  => catfile( $Bin, $script ),
@@ -3274,7 +3256,7 @@ sub mip_scripts {
 
         foreach my $script ( @{ $mip_sub_scripts{$directory} } ) {
 
-            cp(
+            gnu_cp(
                 {
                     FILEHANDLE   => $FILEHANDLE,
                     infile_path  => catfile( $Bin, $directory, $script ),
@@ -3525,7 +3507,7 @@ sub remove_install_dir {
 
     ## Clean up
     print $FILEHANDLE '## Clean up', "\n";
-    rm(
+    gnu_rm(
         {
             infile_path => $install_directory,
             force       => 1,
@@ -3569,7 +3551,7 @@ sub create_install_dir {
 
     ## Create temp install directory
     print $FILEHANDLE '## Create temp install directory', "\n";
-    mkdir(
+    gnu_mkdir(
         {
             indirectory_path => $install_directory,
             parents          => 1,
@@ -3909,7 +3891,7 @@ sub check_mt_codon_table {
         print $FILEHANDLE $add_regexp . q{ }
           . catfile( $share_dir, $config_file ) . ' > '
           . catfile( $share_dir, $config_file . '.tmp' ), "\n";
-        mv(
+        gnu_mv(
             {
                 infile_path  => catfile( $share_dir, $config_file . '.tmp' ),
                 outfile_path => catfile( $share_dir, $config_file ),
@@ -4047,7 +4029,7 @@ sub references {
     print $FILEHANDLE 'bash download_reference.sh', "\n\n";
 
     ##Cleanup
-    rm(
+    gnu_rm(
         {
             infile_path => 'download_reference.sh',
             FILEHANDLE  => $FILEHANDLE,
