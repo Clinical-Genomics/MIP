@@ -18,6 +18,7 @@ use File::Basename qw(dirname basename);
 use File::Spec::Functions qw(catdir);
 use Getopt::Long;
 use Test::More;
+use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), 'lib' );
@@ -77,6 +78,9 @@ use MIP::Test::Commands qw(test_function);
 
 diag("Test gnu_echo $MIP::Gnu::Coreutils::VERSION, Perl $^V, $EXECUTABLE_NAME");
 
+## Constants 
+Readonly my $DOUBLE_QUOTE => q{"};
+
 ## Base arguments
 my $function_base_command = 'echo';
 
@@ -98,16 +102,16 @@ my %base_argument = (
 ## Can be duplicated with %base and/or %specific to enable testing of each individual argument
 my %required_argument = (
     strings_ref => {
-        inputs_ref      => [qw(string.test)],
-        expected_output => '"string.test"',
+        inputs_ref      => [q{This is my test string}],
+        expected_output => $DOUBLE_QUOTE . q{This is my test string} . $DOUBLE_QUOTE,
     },
 );
 
 ## Specific arguments
 my %specific_argument = (
     strings_ref => {
-        inputs_ref      => [qw(string.test)],
-        expected_output => '"string.test"',
+        inputs_ref      => [q{This is my test string}],
+        expected_output => $DOUBLE_QUOTE . q{This is my test string} . $DOUBLE_QUOTE,
     },
     outfile_path => {
         input           => 'outfile.test',
