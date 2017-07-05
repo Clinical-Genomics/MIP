@@ -13,6 +13,7 @@ gnu_printf.t
 gnu_rm.t
 gnu_sed.t
 gnu_set.t
+gnu_sleep.t
 gnu_sort.t
 gnu_split.t
 gnu_trap.t
