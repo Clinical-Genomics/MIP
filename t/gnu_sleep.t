@@ -72,14 +72,14 @@ BEGIN {
     }
 }
 
-use MIP::Gnu::Coreutils qw(gnu_printf);
+use MIP::Gnu::Coreutils qw(gnu_sleep);
 use MIP::Test::Commands qw(test_function);
 
-diag("Test gnu_printf $MIP::Gnu::Coreutils::VERSION, Perl $^V, $EXECUTABLE_NAME"
-);
+diag(
+    "Test gnu_sleep $MIP::Gnu::Coreutils::VERSION, Perl $^V, $EXECUTABLE_NAME");
 
 ## Base arguments
-my $function_base_command = 'printf';
+my $function_base_command = 'sleep';
 
 my %base_argument = (
     stdoutfile_path => {
@@ -104,14 +104,14 @@ my %base_argument = (
 
 ## Specific arguments
 my %specific_argument = (
-    format_string => {
-        input           => 'string.test',
-        expected_output => 'string.test',
+    seconds_to_sleep => {
+        input           => 1,
+        expected_output => 1,
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&gnu_printf;
+my $module_function_cref = \&gnu_sleep;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

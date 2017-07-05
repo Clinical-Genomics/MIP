@@ -31303,7 +31303,7 @@ sub program_prerequisites {
 ##         : $error_trap                      => Error trap switch {Optional}
 ##         : $set_errexit                     => Bash set -e {Optional}
 ##         : $set_nounset                     => BAsh set -u {Optional}
-##         : $set_pipefail                        => Pipe fail switch {Optional}
+##         : $set_pipefail                    => Pipe fail switch {Optional}
 ##         : $sleep                           => Sleep for X seconds {Optional}
 
     my ($arg_href) = @_;
@@ -31337,6 +31337,8 @@ sub program_prerequisites {
     my $program_directory;
     my $program_name;
     my $call_type;
+
+    use MIP::Check::Parameter qw(check_allowed_array_values);
 
     my $tmpl = {
         active_parameter_href => {
@@ -31389,7 +31391,18 @@ sub program_prerequisites {
             store       => \$temp_directory
         },
         email_types_ref => {
-            default     => $arg_href->{active_parameter_href}{email_types},
+            default => $arg_href->{active_parameter_href}{email_types},
+            allow   => [
+                sub {
+                    check_allowed_array_values(
+                        {
+                            allowed_values_ref =>
+                              [qw(NONE BEGIN END FAIL REQUEUE ALL)],
+                            values_ref => $arg_href->{email_types_ref},
+                        }
+                    );
+                }
+            ],
             strict_type => 1,
             store       => \$email_types_ref
         },
@@ -31452,12 +31465,15 @@ sub program_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use Readonly;
     use MIP::Language::Shell
       qw(build_shebang create_housekeeping_function create_error_trap_function enable_trap);
     use MIP::Workloadmanager::Slurm qw(slurm_build_sbatch_header);
     use MIP::Gnu::Bash qw(gnu_set);
-    use MIP::Gnu::Coreutils qw(gnu_echo gnu_mkdir);
+    use MIP::Gnu::Coreutils qw(gnu_echo gnu_mkdir gnu_sleep);
     use MIP::Check::File qw(check_file_version_exist);
+
+    Readonly my $SPACE => q{ };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger('MIP');
@@ -31465,86 +31481,80 @@ sub program_prerequisites {
     ### Sbatch script names and directory creation
     # For holding commands to write with proper indention in bash
     my @commands;
-    my $file_name_end = '.sh';
+    my $file_name_end = q{.sh};
 
     # The sbatch script - to be created filename
     my $file_name;
     my $file_name_tracker;
 
+    ## Directories
     my $program_data_directory =
       catdir( $outdata_dir, $directory_id, $program_directory );
-    my $file_name_path =
-      catfile( $outscript_dir, $directory_id, $program_directory,
-        $program_name . "_" . $directory_id . $call_type )
-      . ".";
-    my $dry_run_file_name_path =
-      catfile( $outscript_dir, $directory_id, $program_directory,
-        "dry_run_" . $program_name . "_" . $directory_id . $call_type )
-      . ".";
-    my $file_info_path =
-      catfile( $outdata_dir, $directory_id, $program_directory, "info",
-        $program_name . "_" . $directory_id . $call_type )
-      . ".";
-    my $dry_run_file_info_path =
-      catfile( $outdata_dir, $directory_id, $program_directory, "info",
-        "dry_run_" . $program_name . "_" . $directory_id . $call_type )
-      . ".";
+    my $program_info_directory = catdir( $program_data_directory, 'info' );
+    my $program_script_directory =
+      catdir( $outscript_dir, $directory_id, $program_directory );
 
     ## Create directories
-    make_path(
-        catfile( $outdata_dir, $directory_id, $program_directory, "info" )
-        ,    #Creates the outaligner_dir folder and info data file directory
-        $program_data_directory
-        , #Creates the outaligner_dir folder and if supplied the program data file directory
-        catfile( $outscript_dir, $directory_id, $program_directory )
-        ,    #Creates the outaligner_dir folder script file directory
-    );
+    make_path( $program_info_directory, $program_data_directory,
+        $program_script_directory );
+
+    ## File
+    my $file_name_suffix =
+      $program_name . q{_} . $directory_id . $call_type . q{.};
+    my $file_name_path =
+      catfile( $program_script_directory, $file_name_suffix );
+    my $dry_run_file_name_path =
+      catfile( $program_script_directory, q{dry_run_} . $file_name_suffix );
+    my $file_info_path = catfile( $program_info_directory, $file_name_suffix );
+    my $dry_run_file_info_path =
+      catfile( $program_info_directory, q{dry_run_} . $file_name_suffix );
 
     ## Set paths depending on dry run or not
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
+    if (   ( $active_parameter_href->{ 'p' . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
         $file_name = $file_name_path;
     }
-    elsif ( $active_parameter_href->{ "p" . $program_name } == 2 )
-    {        #Dry run single program
+    elsif ( $active_parameter_href->{ 'p' . $program_name } == 2 )
+    {    #Dry run single program
 
         $file_name      = $dry_run_file_name_path;
         $file_info_path = $dry_run_file_info_path;
-        $log->info("Dry run:\n");
+        $log->info( q{Dry run:}, "\n" );
     }
     else {    #Dry run
 
         $file_name      = $dry_run_file_name_path;
         $file_info_path = $dry_run_file_info_path;
-        $log->info("Dry run:\n");
+        $log->info( q{Dry run:}, "\n" );
     }
 
     ## Check if a file with with a filename consisting of
     ## $file_path_prefix_ref.$file_counter.$file_path_suffix_ref exist
     ( $file_name, $file_name_tracker ) = check_file_version_exist(
         {
-            file_path_prefix_ref   => \$file_name,
+            file_path_prefix_ref => \$file_name,
             file_path_suffix_ref => \$file_name_end,
         }
     );
 
 ###Info and Log
-    $log->info( "Creating sbatch script for "
+    $log->info( q{Creating sbatch script for }
           . $program_name
-          . " and writing script file(s) to: "
+          . q{ and writing script file(s) to: }
           . $file_name
           . "\n" );
-    $log->info( "Sbatch script "
+    $log->info( q{Sbatch script }
           . $program_name
-          . " data files will be written to: "
+          . q{ data files will be written to: }
           . $program_data_directory
           . "\n" );
 
     ## Script file
-    open( $FILEHANDLE, '>', $file_name )
-      or $log->logdie( "Can't write to '" . $file_name . "' :" . $! . "\n" );
+    open( $FILEHANDLE, q{>}, $file_name )
+      or $log->logdie(
+        q{Can't write to '} . $file_name . q{' :} . $OS_ERROR . "\n" );
 
     # Build bash shebang line
     build_shebang(
@@ -31568,9 +31578,9 @@ sub program_prerequisites {
 
     ### Sbatch header
     ## Get parameters
-    my $job_name        = $program_name . '_' . $directory_id . $call_type;
-    my $stderrfile_path = $file_info_path . $file_name_tracker . '.stderr.txt';
-    my $stdoutfile_path = $file_info_path . $file_name_tracker . ".stdout.txt";
+    my $job_name        = $program_name . q{_} . $directory_id . $call_type;
+    my $stderrfile_path = $file_info_path . $file_name_tracker . q{.stderr.txt};
+    my $stdoutfile_path = $file_info_path . $file_name_tracker . q{.stdout.txt};
 
     my @sbatch_headers = slurm_build_sbatch_header(
         {
@@ -31587,37 +31597,50 @@ sub program_prerequisites {
         }
     );
 
-    say $FILEHANDLE q?readonly PROGNAME=$(basename "$0")?, "\n";
+    say $FILEHANDLE q{readonly PROGNAME=$(basename "$0")}, "\n";
 
     gnu_echo(
         {
-            strings_ref => [q?Running on: $(hostname)?],
+            strings_ref => [q{Running on: $(hostname)}],
             FILEHANDLE  => $FILEHANDLE,
         }
     );
     say $FILEHANDLE "\n";
 
-    # Let the process sleep for a random couple of seconds (0-60) to avoid race conditions in mainly conda sourcing activate
+# Let the process sleep for a random couple of seconds (0-60) to avoid race conditions in mainly conda sourcing activate
     if ($sleep) {
 
-        say $FILEHANDLE "sleep " . int( rand(60) );
+        gnu_sleep(
+            {
+                seconds_to_sleep => int rand 60,
+                FILEHANDLE       => $FILEHANDLE,
+            }
+        );
+        say $FILEHANDLE "\n";
     }
     if (   ($source_environment_commands_ref)
         && (@$source_environment_commands_ref) )
     {
 
-        say $FILEHANDLE "##Activate environment";
-        say $FILEHANDLE join( ' ', @{$source_environment_commands_ref} ), "\n";
+        say $FILEHANDLE q{##Activate environment};
+        say $FILEHANDLE join( $SPACE, @{$source_environment_commands_ref} ),
+          "\n";
     }
-    if ( defined $temp_directory )
-    {    #Not all programs need a temporary directory
 
-        say $FILEHANDLE "## Create temporary directory";
-        $temp_directory =~ s/(\$\w+)/"$1"/g;   #Quote any bash variables in path
-        say $FILEHANDLE q?readonly TEMP_DIRECTORY=?
-          . $temp_directory;                   #Assign batch variable
-        $temp_directory =
-          q?"$TEMP_DIRECTORY"?;    #Update perl scalar to bash variable
+    # Not all programs need a temporary directory
+    if ( defined $temp_directory ) {
+
+        say $FILEHANDLE q{## Create temporary directory};
+
+        # Quote any bash variables in path
+        $temp_directory =~ s/(\$\w+)/"$1"/g;
+
+        # Assign batch variable
+        say $FILEHANDLE q{readonly TEMP_DIRECTORY=} . $temp_directory;
+
+        # Update perl scalar to bash variable
+        $temp_directory = q{"$TEMP_DIRECTORY"};
+
         gnu_mkdir(
             {
                 indirectory_path => $temp_directory,
@@ -39825,8 +39848,9 @@ sub rename_vcf_samples {
     gnu_printf(
         {
             format_string => $format_string,
-            outfile_path  => catfile( $$temp_directory_ref, "sample_name.txt" ),
-            FILEHANDLE    => $FILEHANDLE,
+            stdoutfile_path =>
+              catfile( $$temp_directory_ref, "sample_name.txt" ),
+            FILEHANDLE => $FILEHANDLE,
         }
     );
     say $FILEHANDLE "\n";
