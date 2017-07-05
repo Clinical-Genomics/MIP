@@ -10,6 +10,7 @@ use Carp;
 use autodie;
 use Params::Check qw[check allow last_error];
 $Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
+use Readonly;
 
 use FindBin qw($Bin);                 #Find directory of script
 use File::Basename qw(dirname);
@@ -33,9 +34,9 @@ BEGIN {
 }
 
 ## Constants
-my $SPACE     = q{ };
-my $COMMA     = q{,};
-my $EMPTY_STR = q{};
+Readonly my $SPACE     => q{ };
+Readonly my $COMMA     => q{,};
+Readonly my $EMPTY_STR => q{};
 
 sub gnu_cp {
 
