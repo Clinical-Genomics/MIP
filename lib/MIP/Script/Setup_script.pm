@@ -34,6 +34,8 @@ BEGIN {
 
 ##Constant
 Readonly my $EMPTY_STR => q{};
+Readonly my $SPACE     => q{ };
+
 
 sub setup_script {
 
@@ -230,7 +232,6 @@ sub setup_script {
     use MIP::Check::File qw(check_file_version_exist);
 
     ##Constants
-    Readonly my $SPACE                => q{ };
     Readonly my $MAX_SECONDS_TO_SLEEP => 60;
 
     ## Retrieve logger object
