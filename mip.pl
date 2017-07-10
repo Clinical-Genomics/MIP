@@ -3110,6 +3110,7 @@ sub msacct {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use MIP::Workloadmanager::Slurm qw(slurm_sacct);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
@@ -3118,7 +3119,7 @@ sub msacct {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -3243,13 +3244,15 @@ sub analysisrunstatus {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
     ## Filehandles
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -3594,6 +3597,8 @@ sub removeredundantfiles {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $xargs_file_name;
 
@@ -3602,7 +3607,7 @@ sub removeredundantfiles {
     my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -3734,6 +3739,7 @@ sub mmultiqc {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Qc::Multiqc qw(multiqc);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
@@ -3742,7 +3748,7 @@ sub mmultiqc {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -3883,6 +3889,7 @@ sub mqccollect {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Qc::Mip qw(qccollect);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
@@ -3892,7 +3899,7 @@ sub mqccollect {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -4085,6 +4092,7 @@ sub evaluation {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use MIP::Gnu::Coreutils qw(gnu_cat);
     use Language::Java qw(core);
     use Program::Variantcalling::Gatk
@@ -4099,7 +4107,7 @@ sub evaluation {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -4638,8 +4646,10 @@ sub endvariantannotationblock {
 
         $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
 
+        use MIP::Script::Setup_script qw(setup_script);
+
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = program_prerequisites(
+        ( $file_name, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -5101,8 +5111,10 @@ sub rankvariant {
 
         $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
+        use MIP::Script::Setup_script qw(setup_script);
+
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = program_prerequisites(
+        ( $file_name, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -5625,6 +5637,7 @@ sub gatk_variantevalexome {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Language::Java qw(core);
     use MIP::Gnu::Coreutils qw(gnu_cat gnu_sort);
     use Program::Variantcalling::Bedtools qw(intersectbed);
@@ -5636,7 +5649,7 @@ sub gatk_variantevalexome {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -6140,6 +6153,7 @@ sub gatk_variantevalall {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Language::Java qw(core);
     use Program::Variantcalling::Gatk qw(varianteval);
 
@@ -6149,7 +6163,7 @@ sub gatk_variantevalall {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -6489,8 +6503,10 @@ sub snpeff {
 
         $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
 
+        use MIP::Script::Setup_script qw(setup_script);
+
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = program_prerequisites(
+        ( $file_name, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -7079,8 +7095,10 @@ sub annovar {
 
         $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
 
+        use MIP::Script::Setup_script qw(setup_script);
+
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = program_prerequisites(
+        ( $file_name, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -7557,8 +7575,10 @@ sub mvcfparser {
 
         $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
 
+        use MIP::Script::Setup_script qw(setup_script);
+
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = program_prerequisites(
+        ( $file_name, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -8021,8 +8041,10 @@ sub varianteffectpredictor {
 
     if ( !$$reduce_io_ref ) {                  #Run as individual sbatch script
 
+        use MIP::Script::Setup_script qw(setup_script);
+
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = program_prerequisites(
+        ( $file_name, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -8357,10 +8379,11 @@ sub gatk_readbackedphasing {
     my $FILEHANDLE  = IO::Handle->new();    #Create anonymous filehandle
     my $core_number = 1;
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Language::Java qw(core);
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -8565,10 +8588,11 @@ sub gatk_phasebytransmission {
 
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Language::Java qw(core);
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -8807,6 +8831,7 @@ sub mpeddy {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Variantcalling::Peddy qw(peddy);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
@@ -8815,7 +8840,7 @@ sub mpeddy {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -9067,6 +9092,7 @@ sub mplink {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Variantcalling::Bcftools qw(view annotate);
     use Program::Variantcalling::Vt qw(vt_uniq);
     use Program::Variantcalling::Plink qw(plink);
@@ -9079,7 +9105,7 @@ sub mplink {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -9515,6 +9541,7 @@ sub variant_integrity {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Variantcalling::Variant_integrity qw(mendel father);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
@@ -9523,7 +9550,7 @@ sub variant_integrity {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -9853,8 +9880,10 @@ sub vt {
 
     if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
+        use MIP::Script::Setup_script qw(setup_script);
+
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = program_prerequisites(
+        ( $file_name, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -10284,8 +10313,9 @@ sub rhocall {
 
     if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
+        use MIP::Script::Setup_script qw(setup_script);
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = program_prerequisites(
+        ( $file_name, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -10622,8 +10652,10 @@ sub prepareforvariantannotationblock {
 
     if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
+        use MIP::Script::Setup_script qw(setup_script);
+
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = program_prerequisites(
+        ( $file_name, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -10911,6 +10943,7 @@ sub gatk_combinevariantcallsets {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Language::Java qw(core);
     use Program::Variantcalling::Gatk qw(combinevariants);
 
@@ -10923,7 +10956,7 @@ sub gatk_combinevariantcallsets {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -11234,6 +11267,7 @@ sub gatk_variantrecalibration {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use Language::Java qw(core);
     use Program::Variantcalling::Bcftools qw(norm);
@@ -11291,7 +11325,7 @@ sub gatk_variantrecalibration {
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -11939,6 +11973,7 @@ sub gatk_concatenate_genotypegvcfs {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Language::Java qw(core);
     use Program::Variantcalling::Gatk qw(selectvariants);
 
@@ -11988,7 +12023,7 @@ sub gatk_concatenate_genotypegvcfs {
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -12270,6 +12305,7 @@ sub gatk_genotypegvcfs {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Language::Java qw(core);
     use Program::Variantcalling::Gatk qw(genotypegvcfs);
 
@@ -12347,7 +12383,7 @@ sub gatk_genotypegvcfs {
           catfile( $$temp_directory_ref, $outfile_prefix );
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        my ($file_name) = program_prerequisites(
+        my ($file_name) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -12609,6 +12645,8 @@ sub rcoverageplots {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
     ## Filehandles
@@ -12634,7 +12672,7 @@ sub rcoverageplots {
       $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -12789,6 +12827,7 @@ sub bedtools_genomecov {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Alignment::Bedtools qw(genomecov);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
@@ -12828,7 +12867,7 @@ sub bedtools_genomecov {
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -13018,6 +13057,7 @@ sub picardtools_collecthsmetrics {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Language::Java qw(core);
     use Program::Alignment::Picardtools qw(collecthsmetrics);
 
@@ -13062,7 +13102,7 @@ sub picardtools_collecthsmetrics {
     my $padded_infile_list_ending_ref = \$file_info_href->{exome_target_bed}[1];
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -13293,6 +13333,7 @@ sub picardtools_collectmultiplemetrics {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Language::Java qw(core);
     use Program::Alignment::Picardtools qw(collectmultiplemetrics);
 
@@ -13333,7 +13374,7 @@ sub picardtools_collectmultiplemetrics {
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -13571,6 +13612,7 @@ sub chanjo_sexcheck {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Alignment::Chanjo qw(sex);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
@@ -13615,7 +13657,7 @@ sub chanjo_sexcheck {
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -13820,6 +13862,7 @@ sub sambamba_depth {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Alignment::Sambamba qw(depth);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
@@ -13866,7 +13909,7 @@ sub sambamba_depth {
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -14098,6 +14141,7 @@ sub sv_reformat {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Htslib qw(bgzip tabix);
     use MIP::Gnu::Software::Gnu_grep qw( gnu_grep);
 
@@ -14115,7 +14159,7 @@ sub sv_reformat {
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -14626,6 +14670,7 @@ sub sv_rankvariant {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Variantcalling::Genmod qw(annotate models score compound);
 
     ## Retrieve logger object
@@ -14651,7 +14696,7 @@ sub sv_rankvariant {
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -15266,6 +15311,7 @@ sub sv_vcfparser {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Variantcalling::Mip qw(vcfparser);
 
     my $consensus_analysis_type =
@@ -15280,7 +15326,7 @@ sub sv_vcfparser {
     my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -15795,6 +15841,7 @@ sub sv_varianteffectpredictor {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Variantcalling::Vep qw(variant_effect_predictor);
 
     my $consensus_analysis_type =
@@ -15840,7 +15887,7 @@ sub sv_varianteffectpredictor {
       floor( $core_number / $fork_number );    #Adjust for the number of forks
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -16245,6 +16292,7 @@ sub sv_combinevariantcallsets {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Variantcalling::Svdb qw(merge query);
     use Program::Variantcalling::Bcftools qw (merge view annotate);
     use Program::Htslib qw(bgzip tabix);
@@ -16261,7 +16309,7 @@ sub sv_combinevariantcallsets {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -17045,6 +17093,7 @@ sub cnvnator {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Alignment::Samtools qw(faidx);
     use Program::Variantcalling::Cnvnator
       qw(read_extraction histogram statistics partition calling convert_to_vcf);
@@ -17062,7 +17111,7 @@ sub cnvnator {
     my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -17518,6 +17567,7 @@ sub delly_reformat {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use Program::Variantcalling::Delly qw(call merge filter);
     use Program::Variantcalling::Bcftools qw(merge index);
@@ -17534,7 +17584,7 @@ sub delly_reformat {
     my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -18392,6 +18442,7 @@ sub delly_call {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Variantcalling::Delly qw(call);
 
     my $core_number =
@@ -18406,7 +18457,7 @@ sub delly_call {
     my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -18743,6 +18794,7 @@ sub manta {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Variantcalling::Manta qw(config workflow);
     use Program::Compression::Gzip qw(gzip);
 
@@ -18758,7 +18810,7 @@ sub manta {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -19066,6 +19118,7 @@ sub tiddit {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Variantcalling::Tiddit qw(sv);
 
     my $program_outdirectory_name =
@@ -19087,7 +19140,7 @@ sub tiddit {
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -19385,6 +19438,7 @@ sub samtools_mpileup {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Alignment::Samtools qw(mpileup);
     use Program::Variantcalling::Bcftools qw(call filter norm);
 
@@ -19400,7 +19454,7 @@ sub samtools_mpileup {
     my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -19803,6 +19857,7 @@ sub freebayes {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Variantcalling::Freebayes qw(calling);
     use Program::Variantcalling::Bcftools qw(filter norm);
 
@@ -19818,7 +19873,7 @@ sub freebayes {
     my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -20176,6 +20231,7 @@ sub gatk_haplotypecaller {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Alignment::Gatk qw(haplotypecaller);
 
     my $core_number =
@@ -20191,7 +20247,7 @@ sub gatk_haplotypecaller {
     my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -20580,6 +20636,7 @@ sub gatk_baserecalibration {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Alignment::Gatk qw(baserecalibrator printreads);
     use Program::Alignment::Picardtools qw(gatherbamfiles);
     use MIP::Gnu::Coreutils qw(gnu_rm);
@@ -20602,7 +20659,7 @@ sub gatk_baserecalibration {
         $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = program_prerequisites(
+        ( $file_name, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -21119,6 +21176,7 @@ sub gatk_realigner {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Alignment::Gatk qw(realignertargetcreator indelrealigner);
 
     my $core_number =
@@ -21138,7 +21196,7 @@ sub gatk_realigner {
         $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = program_prerequisites(
+        ( $file_name, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -21665,8 +21723,10 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
 
     if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
+        use MIP::Script::Setup_script qw(setup_script);
+
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = program_prerequisites(
+        ( $file_name, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -22117,8 +22177,10 @@ sub picardtools_mergesamfiles {
 
         $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
 
+        use MIP::Script::Setup_script qw(setup_script);
+
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = program_prerequisites(
+        ( $file_name, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -22882,6 +22944,7 @@ sub bwa_sampe {
     my $infile_size;
     my $paired_end_tracker = 0;
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Alignment::Samtools qw(view);
 
     while ( my ( $infile_prefix_index, $infile_prefix ) =
@@ -22904,7 +22967,7 @@ sub bwa_sampe {
           ;    #Collect paired-end or single-end sequence run mode
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        my ($file_name) = program_prerequisites(
+        my ($file_name) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -23089,6 +23152,8 @@ sub bwa_aln {
     my $outaligner_dir                  = $_[9];
     my $program_name                    = $_[10];
 
+    use MIP::Script::Setup_script qw(setup_script);
+
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
     my $time =
       ceil( 2.5 * scalar( @{ $infile_lane_prefix_href->{$sample_id} } ) )
@@ -23119,7 +23184,7 @@ sub bwa_aln {
       ; #Make sure that the number of cores does not exceed maximum after incrementing above
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -23326,13 +23391,14 @@ sub picardtools_mergerapidreads {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Language::Java qw(core);
 
     ## Filehandles
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -23635,6 +23701,7 @@ sub bwa_mem {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Alignment::Bwa qw(mem run_bwamem);
     use Program::Alignment::Samtools qw(view stats);
     use Program::Variantcalling::Bedtools qw (intersectbed);
@@ -23758,7 +23825,7 @@ sub bwa_mem {
             {    #Parallization for each file handled
 
                 ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-                my ( $file_name, $program_info_path ) = program_prerequisites(
+                my ( $file_name, $program_info_path ) = setup_script(
                     {
                         active_parameter_href => $active_parameter_href,
                         job_id_href           => $job_id_href,
@@ -23931,7 +23998,7 @@ sub bwa_mem {
         else {                            #Not rapid mode align whole file
 
             ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-            my ( $file_name, $program_info_path ) = program_prerequisites(
+            my ( $file_name, $program_info_path ) = setup_script(
                 {
                     active_parameter_href => $active_parameter_href,
                     job_id_href           => $job_id_href,
@@ -24399,6 +24466,8 @@ sub variantannotationblock {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+
     my $core_number = $active_parameter_href->{max_cores_per_node};
     my $xargs_file_name;
     my $time = 80;
@@ -24506,7 +24575,7 @@ sub variantannotationblock {
     }
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -24811,6 +24880,8 @@ sub bamcalibrationblock {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+
     my $core_number = $active_parameter_href->{max_cores_per_node};
     my $time        = 80;
 
@@ -24869,7 +24940,7 @@ sub bamcalibrationblock {
         my $xargs_file_name;
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        my ( $file_name, $program_info_path ) = program_prerequisites(
+        my ( $file_name, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -25050,11 +25121,13 @@ sub madeline {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+
     ## Filehandles
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -25230,6 +25303,7 @@ sub mfastqc {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use MIP::Gnu::Coreutils qw(gnu_cp);
     use Program::Qc::Fastqc qw (fastqc);
 
@@ -25262,7 +25336,7 @@ sub mfastqc {
       ; #Make sure that the number of cores does not exceed maximum after incrementing above
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -25512,6 +25586,7 @@ sub gzip_fastq {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Compression::Gzip qw(gzip);
 
     ## Filehandles
@@ -25548,7 +25623,7 @@ sub gzip_fastq {
       ; #Make sure that the number of cores does not exceed maximum after incrementing above
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -25739,6 +25814,7 @@ sub split_fastq_file {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use MIP::Gnu::Coreutils qw(gnu_cp gnu_rm gnu_mv gnu_split gnu_mkdir);
     use Program::Compression::Pigz qw(pigz);
 
@@ -25751,7 +25827,7 @@ sub split_fastq_file {
     foreach my $fastq_file ( @{ $infile_href->{$$sample_id_ref} } ) {
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        my ($file_name) = program_prerequisites(
+        my ($file_name) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -26040,6 +26116,7 @@ sub build_annovar_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use MIP::Gnu::Coreutils qw(gnu_mkdir);
 
     ## Retrieve logger object
@@ -26053,7 +26130,7 @@ sub build_annovar_prerequisites {
         "humandb", "Db_temporary" );    #Temporary download directory
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -26517,6 +26594,7 @@ sub build_ptchs_metric_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use MIP::Gnu::Coreutils qw(gnu_rm gnu_cat);
     use Language::Java qw(core);
     use Program::Interval::Picardtools qw(intervallisttools);
@@ -26532,7 +26610,7 @@ sub build_ptchs_metric_prerequisites {
         $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ($file_name) = program_prerequisites(
+        ($file_name) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -26882,6 +26960,8 @@ sub build_bwa_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger('MIP');
 
@@ -26890,7 +26970,7 @@ sub build_bwa_prerequisites {
       int( rand(10000) );    #Generate a random integer between 0-10,000.
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -27312,6 +27392,7 @@ sub build_human_genome_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use MIP::Gnu::Bash qw(gnu_cd);
     use MIP::Gnu::Coreutils qw(gnu_rm);
     use Program::Compression::Gzip qw(gzip);
@@ -27332,7 +27413,7 @@ sub build_human_genome_prerequisites {
           int( rand(10000) );    #Generate a random integer between 0-10,000.
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ($file_name) = program_prerequisites(
+        ($file_name) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -31276,423 +31357,6 @@ sub create_file_endings {
             }
         }
     }
-}
-
-sub program_prerequisites {
-
-##program_prerequisites
-
-##Function : Creates program directories (info & programData & programScript), program script filenames and writes sbatch header.
-##Returns  : Path to stdout
-##Arguments: $active_parameter_href, $job_id_href, $FILEHANDLE, $directory_id, $program_directory, $program_name, $call_type, $outdata_dir, $outscript_dir, $temp_directory, $email_types_ref, $source_environment_commands_ref, $slurm_quality_of_service, $core_number, $process_time, $error_trap, $set_errexit, $set_nounset, $set_pipefail, $sleep
-##         : $active_parameter_href           => The active parameters for this analysis hash {REF}
-##         : $job_id_href                     => The job_id hash {REF}
-##         : $FILEHANDLE                      => FILEHANDLE to write to
-##         : $directory_id                    => $samplID|$family_id
-##         : $program_directory               => Builds from $directory_id/$outaligner_dir
-##         : $program_name                    => Assigns filename to sbatch script
-##         : $call_type                       => SNV,INDEL or BOTH
-##         : $source_environment_commands_ref => Source environment command {REF}
-##         : $outdata_dir                     => The MIP out data directory {Optional}
-##         : $outscript_dir                   => The MIP out script directory {Optional}
-##         : $temp_directory                  => Temporary directory for program {Optional}
-##         : $email_types_ref                 => The email type
-##         : $slurm_quality_of_service        => SLURM quality of service priority {Optional}
-##         : $core_number                     => The number of cores to allocate {Optional}
-##         : $process_time                    => Allowed process time (Hours) {Optional}
-##         : $error_trap                      => Error trap switch {Optional}
-##         : $set_errexit                     => Bash set -e {Optional}
-##         : $set_nounset                     => BAsh set -u {Optional}
-##         : $set_pipefail                    => Pipe fail switch {Optional}
-##         : $sleep                           => Sleep for X seconds {Optional}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $outdata_dir;
-    my $outscript_dir;
-    my $temp_directory;
-    my $email_types_ref;
-    my $source_environment_commands_ref;
-    my $slurm_quality_of_service;
-    my $core_number;
-    my $process_time;
-    my $set_errexit;
-    my $set_nounset;
-    my $set_pipefail;
-    my $error_trap;
-    my $sleep;
-
-    if ( defined( $arg_href->{call_type} ) ) {
-
-        $arg_href->{call_type} = "_" . $arg_href->{call_type};
-    }
-    $arg_href->{call_type} //= "";
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $job_id_href;
-    my $FILEHANDLE;
-    my $directory_id;
-    my $program_directory;
-    my $program_name;
-    my $call_type;
-
-    use MIP::Check::Parameter qw(check_allowed_array_values);
-
-    my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        FILEHANDLE   => { store => \$FILEHANDLE },
-        directory_id => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$directory_id
-        },
-        program_directory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_directory
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name
-        },
-        call_type   => { strict_type => 1, store => \$call_type },
-        outdata_dir => {
-            default     => $arg_href->{active_parameter_href}{outdata_dir},
-            strict_type => 1,
-            store       => \$outdata_dir
-        },
-        outscript_dir => {
-            default     => $arg_href->{active_parameter_href}{outscript_dir},
-            strict_type => 1,
-            store       => \$outscript_dir
-        },
-        temp_directory => {
-            default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory
-        },
-        email_types_ref => {
-            default => $arg_href->{active_parameter_href}{email_types},
-            allow   => [
-                sub {
-                    check_allowed_array_values(
-                        {
-                            allowed_values_ref =>
-                              [qw(NONE BEGIN END FAIL REQUEUE ALL)],
-                            values_ref => $arg_href->{email_types_ref},
-                        }
-                    );
-                }
-            ],
-            strict_type => 1,
-            store       => \$email_types_ref
-        },
-        source_environment_commands_ref => {
-            default =>
-              $arg_href->{active_parameter_href}{source_environment_commands},
-            strict_type => 1,
-            store       => \$source_environment_commands_ref
-        },
-        core_number => {
-            default     => 1,
-            allow       => qr/^\d+$/,
-            strict_type => 1,
-            store       => \$core_number
-        },
-        process_time => {
-            default     => 1,
-            allow       => qr/^\d+$/,
-            strict_type => 1,
-            store       => \$process_time
-        },
-        slurm_quality_of_service => {
-            default =>
-              $arg_href->{active_parameter_href}{slurm_quality_of_service},
-            allow       => [ "low", "high", "normal" ],
-            strict_type => 1,
-            store       => \$slurm_quality_of_service
-        },
-        set_nounset => {
-            default     => $arg_href->{active_parameter_href}{bash_set_nounset},
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$set_nounset
-        },
-        set_errexit => {
-            default     => $arg_href->{active_parameter_href}{bash_set_errexit},
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$set_errexit
-        },
-        set_pipefail => {
-            default => $arg_href->{active_parameter_href}{bash_set_pipefail},
-            allow   => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$set_pipefail
-        },
-        error_trap => {
-            default     => 1,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$error_trap
-        },
-        sleep => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$sleep
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    use Readonly;
-    use MIP::Language::Shell
-      qw(build_shebang create_housekeeping_function create_error_trap_function enable_trap);
-    use MIP::Workloadmanager::Slurm qw(slurm_build_sbatch_header);
-    use MIP::Gnu::Bash qw(gnu_set);
-    use MIP::Gnu::Coreutils qw(gnu_echo gnu_mkdir gnu_sleep);
-    use MIP::Check::File qw(check_file_version_exist);
-
-    Readonly my $SPACE => q{ };
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
-
-    ### Sbatch script names and directory creation
-    # For holding commands to write with proper indention in bash
-    my @commands;
-    my $file_name_end = q{.sh};
-
-    # The sbatch script - to be created filename
-    my $file_name;
-    my $file_name_tracker;
-
-    ## Directories
-    my $program_data_directory =
-      catdir( $outdata_dir, $directory_id, $program_directory );
-    my $program_info_directory = catdir( $program_data_directory, 'info' );
-    my $program_script_directory =
-      catdir( $outscript_dir, $directory_id, $program_directory );
-
-    ## Create directories
-    make_path( $program_info_directory, $program_data_directory,
-        $program_script_directory );
-
-    ## File
-    my $file_name_suffix =
-      $program_name . q{_} . $directory_id . $call_type . q{.};
-    my $file_name_path =
-      catfile( $program_script_directory, $file_name_suffix );
-    my $dry_run_file_name_path =
-      catfile( $program_script_directory, q{dry_run_} . $file_name_suffix );
-    my $file_info_path = catfile( $program_info_directory, $file_name_suffix );
-    my $dry_run_file_info_path =
-      catfile( $program_info_directory, q{dry_run_} . $file_name_suffix );
-
-    ## Set paths depending on dry run or not
-    if (   ( $active_parameter_href->{ 'p' . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
-
-        $file_name = $file_name_path;
-    }
-    elsif ( $active_parameter_href->{ 'p' . $program_name } == 2 )
-    {    #Dry run single program
-
-        $file_name      = $dry_run_file_name_path;
-        $file_info_path = $dry_run_file_info_path;
-        $log->info( q{Dry run:}, "\n" );
-    }
-    else {    #Dry run
-
-        $file_name      = $dry_run_file_name_path;
-        $file_info_path = $dry_run_file_info_path;
-        $log->info( q{Dry run:}, "\n" );
-    }
-
-    ## Check if a file with with a filename consisting of
-    ## $file_path_prefix_ref.$file_counter.$file_path_suffix_ref exist
-    ( $file_name, $file_name_tracker ) = check_file_version_exist(
-        {
-            file_path_prefix_ref => \$file_name,
-            file_path_suffix_ref => \$file_name_end,
-        }
-    );
-
-###Info and Log
-    $log->info( q{Creating sbatch script for }
-          . $program_name
-          . q{ and writing script file(s) to: }
-          . $file_name
-          . "\n" );
-    $log->info( q{Sbatch script }
-          . $program_name
-          . q{ data files will be written to: }
-          . $program_data_directory
-          . "\n" );
-
-    ## Script file
-    open( $FILEHANDLE, q{>}, $file_name )
-      or $log->logdie(
-        q{Can't write to '} . $file_name . q{' :} . $OS_ERROR . "\n" );
-
-    # Build bash shebang line
-    build_shebang(
-        {
-            FILEHANDLE => $FILEHANDLE,
-            bash_bin_path =>
-              catfile( dirname( dirname( devnull() ) ), qw(bin bash) ),
-            invoke_login_shell => 1,
-        }
-    );
-
-    ## Set shell attributes
-    gnu_set(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            set_errexit  => $set_errexit,
-            set_nounset  => $set_nounset,
-            set_pipefail => $set_pipefail,
-        }
-    );
-
-    ### Sbatch header
-    ## Get parameters
-    my $job_name        = $program_name . q{_} . $directory_id . $call_type;
-    my $stderrfile_path = $file_info_path . $file_name_tracker . q{.stderr.txt};
-    my $stdoutfile_path = $file_info_path . $file_name_tracker . q{.stdout.txt};
-
-    my @sbatch_headers = slurm_build_sbatch_header(
-        {
-            project_id               => $active_parameter_href->{project_id},
-            core_number              => $core_number,
-            process_time             => $process_time . ":00:00",
-            slurm_quality_of_service => $slurm_quality_of_service,
-            job_name                 => $job_name,
-            stderrfile_path          => $stderrfile_path,
-            stdoutfile_path          => $stdoutfile_path,
-            email                    => $active_parameter_href->{email},
-            email_types_ref          => $email_types_ref,
-            FILEHANDLE               => $FILEHANDLE,
-        }
-    );
-
-    say $FILEHANDLE q{readonly PROGNAME=$(basename "$0")}, "\n";
-
-    gnu_echo(
-        {
-            strings_ref => [q{Running on: $(hostname)}],
-            FILEHANDLE  => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE "\n";
-
-# Let the process sleep for a random couple of seconds (0-60) to avoid race conditions in mainly conda sourcing activate
-    if ($sleep) {
-
-        gnu_sleep(
-            {
-                seconds_to_sleep => int rand 60,
-                FILEHANDLE       => $FILEHANDLE,
-            }
-        );
-        say $FILEHANDLE "\n";
-    }
-    if (   ($source_environment_commands_ref)
-        && (@$source_environment_commands_ref) )
-    {
-
-        say $FILEHANDLE q{##Activate environment};
-        say $FILEHANDLE join( $SPACE, @{$source_environment_commands_ref} ),
-          "\n";
-    }
-
-    # Not all programs need a temporary directory
-    if ( defined $temp_directory ) {
-
-        say $FILEHANDLE q{## Create temporary directory};
-
-        # Quote any bash variables in path
-        $temp_directory =~ s/(\$\w+)/"$1"/g;
-
-        # Assign batch variable
-        say $FILEHANDLE q{readonly TEMP_DIRECTORY=} . $temp_directory;
-
-        # Update perl scalar to bash variable
-        $temp_directory = q{"$TEMP_DIRECTORY"};
-
-        gnu_mkdir(
-            {
-                indirectory_path => $temp_directory,
-                parents          => 1,
-                FILEHANDLE       => $FILEHANDLE,
-            }
-        );
-        say $FILEHANDLE "\n";
-
-        create_housekeeping_function(
-            {
-                job_ids_ref => \@{ $job_id_href->{PAN}{PAN} },
-                sacct_format_fields_ref =>
-                  \@{ $active_parameter_href->{sacct_format_fields} },
-                log_file_path_ref  => \$active_parameter_href->{log_file},
-                FILEHANDLE         => $FILEHANDLE,
-                remove_dir         => $temp_directory,
-                trap_signals_ref   => [ "EXIT", "TERM", "INT" ],
-                trap_function_name => 'finish',
-                trap_function_call => q{$(finish } . $temp_directory . q{)},
-            }
-        );
-    }
-
-    if ($error_trap) {
-
-        ## Create debug trap
-        enable_trap(
-            {
-                FILEHANDLE         => $FILEHANDLE,
-                trap_signals_ref   => ["DEBUG"],
-                trap_function_call => q?previous_command="$BASH_COMMAND"?,
-            }
-        );
-
-        ## Create error handling function and trap
-        create_error_trap_function(
-            {
-                job_ids_ref => \@{ $job_id_href->{PAN}{PAN} },
-                sacct_format_fields_ref =>
-                  \@{ $active_parameter_href->{sacct_format_fields} },
-                log_file_path_ref  => \$active_parameter_href->{log_file},
-                FILEHANDLE         => $FILEHANDLE,
-                trap_signals_ref   => ["ERR"],
-                trap_function_name => "error",
-                trap_function_call => q{$(error "$previous_command" "$?")},
-            }
-        );
-    }
-
-    # Return filen name, file path for stdout/stderr for QC check later
-    return ( $file_name, $file_info_path . $file_name_tracker );
 }
 
 sub add_merged_infile_name {
@@ -38156,6 +37820,7 @@ sub vt_core {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use MIP::Gnu::Software::Gnu_less qw(gnu_less);
     use MIP::Gnu::Software::Gnu_sed qw(gnu_sed);
     use Program::Variantcalling::Mip qw(calculate_af max_af);
@@ -38173,7 +37838,7 @@ sub vt_core {
         $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = program_prerequisites(
+        ( $file_name, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
