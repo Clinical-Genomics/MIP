@@ -41,6 +41,7 @@ use Check::Check_modules qw(check_modules);
 use File::Format::Yaml qw(load_yaml write_yaml);
 use MIP_log::Log4perl qw(initiate_logger);
 use Script::Utils qw(help);
+use MIP::Check::Cluster qw(check_max_core_number);
 
 our $USAGE = build_usage( {} );
 
@@ -104,7 +105,7 @@ eval_parameter_hash(
     }
 );
 
-our $VERSION = "v5.0.5";    #Set MIP version
+our $VERSION = "v5.0.6";    #Set MIP version
 
 ## Directories, files, job_ids and sample_info
 my ( %infile, %indir_path, %infile_lane_prefix, %lane,
@@ -785,11 +786,13 @@ foreach my $parameter_name (@parameter_keys_to_check) {
 ## Check that the module core number do not exceed the maximum per node
 foreach my $program_name ( keys %{ $active_parameter{module_core_number} } ) {
 
+    ## Limit number of cores requested to the maximum number of cores available per node
     $active_parameter{module_core_number}{$program_name} =
       check_max_core_number(
         {
             max_cores_per_node => $active_parameter{max_cores_per_node},
-            core_number => $active_parameter{module_core_number}{$program_name},
+            core_number_requested =>
+              $active_parameter{module_core_number}{$program_name},
         }
       );
 }
@@ -5100,12 +5103,14 @@ sub rankvariant {
         }
     );
 
+    ### Detect the number of cores to use per genmod process.
+    ## Limit number of cores requested to the maximum number of cores available per node
     my $genmod_core_number = check_max_core_number(
         {
             max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-            core_number        => 16,
+            core_number_requested => 16,
         }
-    );    #Detect the number of cores to use per genmod process.
+    );
 
     unless ( defined($FILEHANDLE) ) {    #Run as individual sbatch script
 
@@ -14688,10 +14693,12 @@ sub sv_rankvariant {
     ## Set the number of cores
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
+
+    ## Limit number of cores requested to the maximum number of cores available per node
     my $genmod_core_number = check_max_core_number(
         {
             max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-            core_number        => $core_number,
+            core_number_requested => $core_number,
         }
     );
 
@@ -20264,10 +20271,12 @@ sub gatk_haplotypecaller {
 
     $core_number = floor( $active_parameter_href->{node_ram_memory} / 4 )
       ;    #Division by X according to the java heap
+
+    ## Limit number of cores requested to the maximum number of cores available per node
     $core_number = check_max_core_number(
         {
             max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-            core_number        => $core_number,
+            core_number_requested => $core_number,
         }
     );     #To not exceed maximum
 
@@ -20759,10 +20768,12 @@ sub gatk_baserecalibration {
 
     $core_number = floor( $active_parameter_href->{node_ram_memory} / 6 )
       ;                     #Division by X according to the java heap
+
+    ## Limit number of cores requested to the maximum number of cores available per node
     $core_number = check_max_core_number(
         {
             max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-            core_number        => $core_number
+            core_number_requested => $core_number
         }
     );                      #To not exceed maximum
 
@@ -21295,10 +21306,12 @@ sub gatk_realigner {
 
     $core_number = floor( $active_parameter_href->{node_ram_memory} / 4 )
       ;                     #Division by 4 since the java heap is 4GB
+
+    ## Limit number of cores requested to the maximum number of cores available per node
     $core_number = check_max_core_number(
         {
             max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-            core_number        => $core_number
+            core_number_requested => $core_number
         }
     );                      #To not exceed maximum
 
@@ -22272,11 +22285,13 @@ sub picardtools_mergesamfiles {
 
         $core_number = floor( $active_parameter_href->{node_ram_memory} / 4 )
           ;          #Division by X according to java Heap size
+
+        ## Limit number of cores requested to the maximum number of cores available per node
         $core_number = check_max_core_number(
             {
                 max_cores_per_node =>
                   $active_parameter_href->{max_cores_per_node},
-                core_number => $core_number,
+                core_number_requested => $core_number,
             }
         );           #To not exceed maximum
 
@@ -22500,11 +22515,13 @@ sub picardtools_mergesamfiles {
                     $core_number =
                       floor( $active_parameter_href->{node_ram_memory} / 4 )
                       ;          #Division by X according to java Heap size
+
+                    ## Limit number of cores requested to the maximum number of cores available per node
                     $core_number = check_max_core_number(
                         {
                             max_cores_per_node =>
                               $active_parameter_href->{max_cores_per_node},
-                            core_number => $core_number,
+                            core_number_requested => $core_number,
                         }
                     );           #To not exceed maximum
 
@@ -22674,11 +22691,13 @@ sub picardtools_mergesamfiles {
                 $core_number =
                   floor( $active_parameter_href->{node_ram_memory} / 4 )
                   ;    #Division by X according to java Heap size
+
+                ## Limit number of cores requested to the maximum number of cores available per node
                 $core_number = check_max_core_number(
                     {
                         max_cores_per_node =>
                           $active_parameter_href->{max_cores_per_node},
-                        core_number => $core_number,
+                        core_number_requested => $core_number,
                     }
                 );     #To not exceed maximum
 
@@ -23174,14 +23193,13 @@ sub bwa_aln {
         );
     }
 
-    ## Set the number of cores to allocate per sbatch job.
+    ## Limit number of cores requested to the maximum number of cores available per node
     $core_number = check_max_core_number(
         {
             max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-            core_number        => $core_number,
+            core_number_requested => $core_number,
         }
-      )
-      ; #Make sure that the number of cores does not exceed maximum after incrementing above
+    );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name) = setup_script(
@@ -25326,14 +25344,13 @@ sub mfastqc {
         );
     }
 
-    ## Set the number of cores to allocate per sbatch job.
+    ## Limit number of cores requested to the maximum number of cores available per node
     $core_number = check_max_core_number(
         {
             max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-            core_number        => $core_number,
+            core_number_requested => $core_number,
         }
-      )
-      ; #Make sure that the number of cores does not exceed maximum after incrementing above
+    );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name) = setup_script(
@@ -25613,14 +25630,13 @@ sub gzip_fastq {
         );
     }
 
-    ## Set the number of cores to allocate per sbatch job.
+    ## Limit number of cores requested to the maximum number of cores available per node
     $core_number = check_max_core_number(
         {
             max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-            core_number        => $core_number,
+            core_number_requested => $core_number,
         }
-      )
-      ; #Make sure that the number of cores does not exceed maximum after incrementing above
+    );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name) = setup_script(
@@ -29126,54 +29142,13 @@ sub adjust_core_number {
         $core_number = $modifier_core_number;
     }
 
-    ## Limit number of cores to the core processor number to allocate per sbatch job
+    ## Limit number of cores requested to the maximum number of cores available per node
     $core_number = check_max_core_number(
         {
-            max_cores_per_node => $max_cores_per_node,
-            core_number        => $core_number,
+            max_cores_per_node    => $max_cores_per_node,
+            core_number_requested => $core_number,
         }
     );    #Detect the number of cores to use
-    return $core_number;
-}
-
-sub check_max_core_number {
-
-##check_max_core_number
-
-##Function : Limit number of cores to the core processor number to allocate per sbatch job.
-##Returns  : "$core_number"
-##Arguments: $max_cores_per_node, $core_number
-##         : $max_cores_per_node => The max number of cores per node
-##         : $core_number        => The number of cores to allocate
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $max_cores_per_node;
-    my $core_number;
-
-    my $tmpl = {
-        max_cores_per_node => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$max_cores_per_node
-        },
-        core_number => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$core_number
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    if ( $core_number > $max_cores_per_node )
-    {    #Set number of cores depending on how many lanes to process
-
-        $core_number = $max_cores_per_node;    #Set to max on cluster
-    }
     return $core_number;
 }
 
