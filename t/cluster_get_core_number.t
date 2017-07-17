@@ -59,69 +59,56 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
     ## Modules with import
-    my %perl_module;
-
-    $perl_module{'Script::Utils'} = [qw(help)];
+    my %perl_module = (
+        'Script::Utils'       => [qw{help}],
+        'MIP::Check::Cluster' => [qw{check_max_core_number}],
+    );
 
     while ( my ( $module, $module_import ) = each %perl_module ) {
 
         use_ok( $module, @{$module_import} )
-          or BAIL_OUT 'Cannot load ' . $module;
+          or BAIL_OUT q{Cannot load } . $module;
     }
 
     ## Modules
-    my @modules = ('MIP::Check::Cluster');
+    my @modules = (qw{MIP::Cluster});
 
     for my $module (@modules) {
 
-        require_ok($module) or BAIL_OUT 'Cannot load ' . $module;
+        require_ok($module) or BAIL_OUT q{Cannot load } . $module;
     }
 }
 
-use MIP::Check::Cluster qw(check_max_core_number);
+use MIP::Cluster qw(get_core_number);
 
 diag(
-"Test check_max_core_number $MIP::Check::Cluster::VERSION, Perl $^V, $EXECUTABLE_NAME"
-);
+    "Test get_core_number $MIP::Cluster::VERSION, Perl $^V, $EXECUTABLE_NAME" );
 
 # Core number to test
-Readonly my $LOWER_THAN_MAX_CORES_PER_NODE    => 1;
-Readonly my $EQUALS_MAX_CORES_PER_NODE        => 2;
-Readonly my $GREATHER_THAN_MAX_CORES_PER_NODE => 3;
+Readonly my $MODULE_CORE_NUMBER   => 1;
+Readonly my $MODIFIER_CORE_NUMBER => 2;
+Readonly my $MAX_CORES_PER_NODE   => 2;
 
-my @test_core_numbers = (
-    $LOWER_THAN_MAX_CORES_PER_NODE,
-    $EQUALS_MAX_CORES_PER_NODE, $GREATHER_THAN_MAX_CORES_PER_NODE,
+my $returned_module_core_number = get_core_number(
+    {
+        module_core_number   => $MODULE_CORE_NUMBER,
+        modifier_core_number => $MODIFIER_CORE_NUMBER,
+        max_cores_per_node   => $MAX_CORES_PER_NODE,
+    }
 );
 
-# Possibly adjusted core numbers according to max core numbers
-my @returned_core_numbers;
-
-foreach my $core_number (@test_core_numbers) {
-
-    push @returned_core_numbers,
-      check_max_core_number(
-        {
-            max_cores_per_node    => 2,
-            core_number_requested => $core_number,
-        }
-      );
-}
+my $returned_modified_core_number = get_core_number(
+    {
+        module_core_number   => undef,
+        modifier_core_number => $MODIFIER_CORE_NUMBER,
+        max_cores_per_node   => $MAX_CORES_PER_NODE,
+    }
+);
 
 ## Test
-is(
-    $returned_core_numbers[0],
-    $LOWER_THAN_MAX_CORES_PER_NODE,
-    'Core number requested is lower than max core number'
-);
+is( $returned_module_core_number, 1, q{Got module core number} );
 
-is( $returned_core_numbers[1],
-    $EQUALS_MAX_CORES_PER_NODE,
-    'Core number requested equals max core number' );
-
-is( $returned_core_numbers[2],
-    $EQUALS_MAX_CORES_PER_NODE,
-    'Core number requested was greather than max core number' );
+is( $returned_modified_core_number, 2, q{Got modifier core number} );
 
 done_testing();
 

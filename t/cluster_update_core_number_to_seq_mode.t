@@ -59,69 +59,51 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
     ## Modules with import
-    my %perl_module;
-
-    $perl_module{'Script::Utils'} = [qw(help)];
+    my %perl_module = (
+        'Script::Utils'       => [qw{help}],
+    );
 
     while ( my ( $module, $module_import ) = each %perl_module ) {
 
         use_ok( $module, @{$module_import} )
-          or BAIL_OUT 'Cannot load ' . $module;
+          or BAIL_OUT q{Cannot load } . $module;
     }
 
     ## Modules
-    my @modules = ('MIP::Check::Cluster');
+    my @modules = (qw{MIP::Cluster});
 
     for my $module (@modules) {
 
-        require_ok($module) or BAIL_OUT 'Cannot load ' . $module;
+        require_ok($module) or BAIL_OUT q{Cannot load } . $module;
     }
 }
 
-use MIP::Check::Cluster qw(check_max_core_number);
+use MIP::Cluster qw(update_core_number_to_seq_mode);
 
 diag(
-"Test check_max_core_number $MIP::Check::Cluster::VERSION, Perl $^V, $EXECUTABLE_NAME"
-);
+    "Test update_core_number_to_seq_mode $MIP::Cluster::VERSION, Perl $^V, $EXECUTABLE_NAME" );
 
 # Core number to test
-Readonly my $LOWER_THAN_MAX_CORES_PER_NODE    => 1;
-Readonly my $EQUALS_MAX_CORES_PER_NODE        => 2;
-Readonly my $GREATHER_THAN_MAX_CORES_PER_NODE => 3;
+Readonly my $CORE_NUMBER   => 1;
 
-my @test_core_numbers = (
-    $LOWER_THAN_MAX_CORES_PER_NODE,
-    $EQUALS_MAX_CORES_PER_NODE, $GREATHER_THAN_MAX_CORES_PER_NODE,
-);
+my @sequence_run_types = qw(paired-end single-end);
 
-# Possibly adjusted core numbers according to max core numbers
 my @returned_core_numbers;
 
-foreach my $core_number (@test_core_numbers) {
+foreach my $sequence_run_type (@sequence_run_types) {
 
-    push @returned_core_numbers,
-      check_max_core_number(
-        {
-            max_cores_per_node    => 2,
-            core_number_requested => $core_number,
-        }
-      );
+  push @returned_core_numbers, update_core_number_to_seq_mode(
+							      {
+							       core_number => $CORE_NUMBER,
+							       sequence_run_type => $sequence_run_type,
+							      }
+							     );
 }
 
 ## Test
-is(
-    $returned_core_numbers[0],
-    $LOWER_THAN_MAX_CORES_PER_NODE,
-    'Core number requested is lower than max core number'
-);
+is( $returned_core_numbers[0], 3, q{Updated core number to paired-end mode} );
 
-is( $returned_core_numbers[1],
-    $EQUALS_MAX_CORES_PER_NODE,
-    'Core number requested equals max core number' );
-
-is( $returned_core_numbers[2],
-    $EQUALS_MAX_CORES_PER_NODE,
-    'Core number requested was greather than max core number' );
+is( $returned_core_numbers[1], 2, q{Updated core number to single-end mode} );
 
 done_testing();
 
