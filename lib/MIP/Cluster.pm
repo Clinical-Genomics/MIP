@@ -110,6 +110,7 @@ sub update_core_number_to_seq_mode {
             store       => \$core_number
         },
         sequence_run_type => {
+            allow       => [qw(paired-end single-end)],
             required    => 1,
             strict_type => 1,
             store       => \$sequence_run_type
@@ -119,13 +120,12 @@ sub update_core_number_to_seq_mode {
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     # Second read direction if present
-    if ( $sequence_run_type eq 'paired-end' )
-    {
+    if ( $sequence_run_type eq 'paired-end' ) {
 
-      # 2 processes per file
-      $core_number = $core_number + 2;
+        # 2 processes per file
+        $core_number = $core_number + 2;
     }
-    elsif ($sequence_run_type eq 'single-end') {
+    elsif ( $sequence_run_type eq 'single-end' ) {
 
         # Only 1 file and one process
         $core_number = $core_number + 1;
