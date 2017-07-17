@@ -5075,6 +5075,7 @@ sub rankvariant {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Cluster qw(get_core_number);
     use Program::Variantcalling::Genmod qw(annotate models score compound);
 
     ## Retrieve logger object
@@ -5093,8 +5094,8 @@ sub rankvariant {
     ## Filehandles
     my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
-    ## Adjust core number depending on user supplied input exists or not and max number of cores
-    my $core_number = adjust_core_number(
+    ## Get core number depending on user supplied input exists or not and max number of cores
+    my $core_number = get_core_number(
         {
             module_core_number => $active_parameter_href->{module_core_number}
               { "p" . $program_name },
@@ -6483,6 +6484,7 @@ sub snpeff {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Cluster qw(get_core_number);
     use Program::Variantcalling::Snpeff qw(ann);
     use Program::Variantcalling::Snpsift qw(annotate dbnsfp);
     use Program::Variantcalling::Mip qw(vcfparser);
@@ -6491,8 +6493,8 @@ sub snpeff {
     my $xargs_file_name;
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
-    ## Adjust core number depending on user supplied input exists or not and max number of cores
-    my $core_number = adjust_core_number(
+    ## Get core number depending on user supplied input exists or not and max number of cores
+    my $core_number = get_core_number(
         {
             module_core_number => $active_parameter_href->{module_core_number}
               { "p" . $program_name },
@@ -7557,14 +7559,15 @@ sub mvcfparser {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Cluster qw(get_core_number);
     use Program::Variantcalling::Mip qw(vcfparser);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $xargs_file_name;
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
-    ## Adjust core number depending on user supplied input exists or not and max number of cores
-    my $core_number = adjust_core_number(
+    ## Get core number depending on user supplied input exists or not and max number of cores
+    my $core_number = get_core_number(
         {
             module_core_number => $active_parameter_href->{module_core_number}
               { "p" . $program_name },
@@ -8016,6 +8019,7 @@ sub varianteffectpredictor {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Cluster qw(get_core_number);
     use Program::Variantcalling::Vep qw(variant_effect_predictor);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
@@ -8030,8 +8034,8 @@ sub varianteffectpredictor {
         $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
     }
 
-    ## Adjust core number depending on user supplied input exists or not and max number of cores
-    my $core_number = adjust_core_number(
+    ## Get core number depending on user supplied input exists or not and max number of cores
+    my $core_number = get_core_number(
         {
             module_core_number => $active_parameter_href->{module_core_number}
               { "p" . $program_name },
@@ -9858,6 +9862,7 @@ sub vt {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Cluster qw(get_core_number);
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use Program::Variantcalling::Genmod qw(annotate filter);
 
@@ -9873,8 +9878,8 @@ sub vt {
         $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
     }
 
-    ## Adjust core number depending on user supplied input exists or not and max number of cores
-    my $core_number = adjust_core_number(
+    ## Get core number depending on user supplied input exists or not and max number of cores
+    my $core_number = get_core_number(
         {
             module_core_number => $active_parameter_href->{module_core_number}
               { "p" . $program_name },
@@ -10291,6 +10296,7 @@ sub rhocall {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Cluster qw(get_core_number);
     use Program::Variantcalling::Bcftools qw(roh);
     use Program::Variantcalling::Rhocall qw(aggregate annotate);
 
@@ -10306,8 +10312,8 @@ sub rhocall {
         $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
     }
 
-    ## Adjust core number depending on user supplied input exists or not and max number of cores
-    my $core_number = adjust_core_number(
+    ## Get core number depending on user supplied input exists or not and max number of cores
+    my $core_number = get_core_number(
         {
             module_core_number => $active_parameter_href->{module_core_number}
               { "p" . $program_name },
@@ -10631,6 +10637,7 @@ sub prepareforvariantannotationblock {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Cluster qw(get_core_number);
     use Program::Htslib qw(bgzip tabix);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
@@ -10645,8 +10652,8 @@ sub prepareforvariantannotationblock {
         $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
     }
 
-    ## Adjust core number depending on user supplied input exists or not and max number of cores
-    my $core_number = adjust_core_number(
+    ## Get core number depending on user supplied input exists or not and max number of cores
+    my $core_number = get_core_number(
         {
             module_core_number => $active_parameter_href->{module_core_number}
               { "p" . $program_name },
@@ -15848,6 +15855,7 @@ sub sv_varianteffectpredictor {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Cluster qw(get_core_number);
     use MIP::Script::Setup_script qw(setup_script);
     use Program::Variantcalling::Vep qw(variant_effect_predictor);
 
@@ -15879,8 +15887,8 @@ sub sv_varianteffectpredictor {
         }
     );
 
-    ## Adjust core number depending on user supplied input exists or not and max number of cores
-    my $core_number = adjust_core_number(
+    ## Get core number depending on user supplied input exists or not and max number of cores
+    my $core_number = get_core_number(
         {
             module_core_number => $active_parameter_href->{module_core_number}
               { "p" . $program_name },
@@ -19125,6 +19133,7 @@ sub tiddit {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Cluster qw(get_core_number);
     use MIP::Script::Setup_script qw(setup_script);
     use Program::Variantcalling::Tiddit qw(sv);
 
@@ -19135,8 +19144,8 @@ sub tiddit {
     ## Filehandles
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
-    ## Adjust core number depending on user supplied input exists or not and max number of cores
-    my $core_number = adjust_core_number(
+    ## Get core number depending on user supplied input exists or not and max number of cores
+    my $core_number = get_core_number(
         {
             module_core_number => $active_parameter_href->{module_core_number}
               { "p" . $program_name },
@@ -23050,7 +23059,7 @@ sub bwa_sampe {
               . ".sai" )
           . " ";      #Read 1
 
-        if ( $sequence_run_mode eq "paired_end" ) {
+        if ( $sequence_run_mode eq 'paired-end' ) {
 
             $paired_end_tracker = $paired_end_tracker +
               1;      #Increment to collect correct read 2 from %infile
@@ -23064,7 +23073,7 @@ sub bwa_sampe {
             $infile )
           . " ";        #Fastq read 1
 
-        if ( $sequence_run_mode eq "paired_end" ) {
+        if ( $sequence_run_mode eq 'paired-end' ) {
 
             print $FILEHANDLE catfile(
                 $active_parameter_href->{temp_directory},
@@ -23171,6 +23180,7 @@ sub bwa_aln {
     my $outaligner_dir                  = $_[9];
     my $program_name                    = $_[10];
 
+    use MIP::Cluster qw(update_core_number_to_seq_mode);
     use MIP::Script::Setup_script qw(setup_script);
 
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
@@ -23182,12 +23192,12 @@ sub bwa_aln {
     foreach my $infile ( @{ $infile_lane_prefix_href->{$sample_id} } )
     {    #For all files
 
-        ## Adjust the number of cores to be used in the analysis according to sequencing mode requirements.
-        adjust_core_number_to_seq_mode(
+        ## Update the number of cores to be used in the analysis according to sequencing mode requirements
+        $core_number = update_core_number_to_seq_mode(
             {
-                core_number_ref => \$core_number,
-                sequence_run_type_ref =>
-                  \$sample_info_href->{sample}{$sample_id}{file}{$infile}
+                core_number => $core_number,
+                sequence_run_type =>
+                  $sample_info_href->{sample}{$sample_id}{file}{$infile}
                   {sequence_run_type},
             }
         );
@@ -23790,7 +23800,7 @@ sub bwa_mem {
         { #Files are already gz and presently the scalar for compression has not been investigated. Therefore no automatic time allocation can be performed.
 
             if ( $sample_info_href->{sample}{$$sample_id_ref}{file}
-                {$infile_prefix}{sequence_run_type} eq "paired_end" )
+                {$infile_prefix}{sequence_run_type} eq 'paired-end' )
             {    #Second read direction if present
 
                 $fastq_file_second = $infile_href->{$$sample_id_ref}
@@ -23807,7 +23817,7 @@ sub bwa_mem {
         else {        #Files are in fastq format
 
             if ( $sample_info_href->{sample}{$$sample_id_ref}{file}
-                {$infile_prefix}{sequence_run_type} eq "paired_end" )
+                {$infile_prefix}{sequence_run_type} eq 'paired-end' )
             {         #Second read direction if present
                 $fastq_file_second = $infile_href->{$$sample_id_ref}
                   [ $infile_index + $infile_index ];
@@ -23869,7 +23879,7 @@ sub bwa_mem {
 
                 my $infile;
 
-                if ( $sequence_run_mode eq "paired_end" )
+                if ( $sequence_run_mode eq 'paired-end' )
                 {    #Second read direction if present
 
                     $infile = $fastq_file_second;    #For required .fastq file
@@ -23913,7 +23923,7 @@ sub bwa_mem {
                   . q?) ) {print $_;}' ?;    #Limit to sbatch script interval
                 print $FILEHANDLE ") ";      #End Read 1
 
-                if ( $sequence_run_mode eq "paired_end" )
+                if ( $sequence_run_mode eq 'paired-end' )
                 {                            #Second read direction if present
 
                     print $FILEHANDLE "<( ";      #Pipe to BWA Mem (Read 2)
@@ -24049,7 +24059,7 @@ sub bwa_mem {
                 }
             );    #Read 1
 
-            if ( $sequence_run_mode eq "paired_end" )
+            if ( $sequence_run_mode eq 'paired-end' )
             {     #Second read direction if present
 
                 migrate_file(
@@ -24087,7 +24097,7 @@ sub bwa_mem {
             my $fastq_file_path = catfile( $$temp_directory_ref,
                 $infile_href->{$$sample_id_ref}[$paired_end_tracker] );
             my $second_fastq_file_path;
-            if ( $sequence_run_mode eq "paired_end" )
+            if ( $sequence_run_mode eq 'paired-end' )
             {    #Second read direction if present
 
                 $paired_end_tracker = $paired_end_tracker +
@@ -25321,6 +25331,8 @@ sub mfastqc {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Check::Cluster qw(check_max_core_number);
+    use MIP::Cluster qw(update_core_number_to_seq_mode);
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Gnu::Coreutils qw(gnu_cp);
     use Program::Qc::Fastqc qw (fastqc);
@@ -25333,12 +25345,12 @@ sub mfastqc {
 
     foreach my $infile ( @{ $infile_lane_prefix_href->{$$sample_id_ref} } ) {
 
-        ## Adjust the number of cores to be used in the analysis according to sequencing mode requirements.
-        adjust_core_number_to_seq_mode(
+        ## Update the number of cores to be used in the analysis according to sequencing mode requirements
+        $core_number = update_core_number_to_seq_mode(
             {
-                core_number_ref => \$core_number,
-                sequence_run_type_ref =>
-                  \$sample_info_href->{sample}{$$sample_id_ref}{file}{$infile}
+                core_number => $core_number,
+                sequence_run_type =>
+                  $sample_info_href->{sample}{$$sample_id_ref}{file}{$infile}
                   {sequence_run_type},
             }
         );
@@ -25603,6 +25615,7 @@ sub gzip_fastq {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Cluster qw(update_core_number_to_seq_mode);
     use MIP::Script::Setup_script qw(setup_script);
     use Program::Compression::Gzip qw(gzip);
 
@@ -25619,11 +25632,11 @@ sub gzip_fastq {
 
     foreach my $infile ( @{ $infile_lane_prefix_href->{$sample_id} } ) {
 
-        ## Adjust the number of cores to be used in the analysis according to sequencing mode requirements.
-        adjust_core_number_to_seq_mode(
+        ## Update the number of cores to be used in the analysis according to sequencing mode requirements
+        $core_number = update_core_number_to_seq_mode(
             {
-                core_number_ref => \$core_number,
-                sequence_run_type_ref =>
+                core_number => $core_number,
+                sequence_run_type =>
                   \$sample_info_href->{sample}{$sample_id}{file}{$infile}
                   {sequence_run_type},
             }
@@ -29093,65 +29106,6 @@ sub submit_jobs_to_sbatch {
     return $job_id;
 }
 
-sub adjust_core_number {
-
-##adjust_core_number
-
-##Function : Adjust core number depending on user supplied input exists or not and max number of cores.
-##Returns  : "Adjusted $core_number"
-##Arguments: $module_core_number, $modifier_core_number, $max_cores_per_node
-##         : $module_core_number    => User input module core numbers to use
-##         : $modifier_core_number  => Modifier core number dependent on mode of operation of command
-##         : $max_cores_per_node => The max number of cores per node
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $module_core_number;
-    my $modifier_core_number;
-    my $max_cores_per_node;
-
-    my $tmpl = {
-        module_core_number =>
-          { strict_type => 1, store => \$module_core_number },
-        modifier_core_number => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$modifier_core_number
-        },
-        max_cores_per_node => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$max_cores_per_node
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    my $core_number;
-    if (   ( defined($module_core_number) )
-        && ($module_core_number) )
-    {
-
-        $core_number = $module_core_number;
-    }
-    else {
-
-        $core_number = $modifier_core_number;
-    }
-
-    ## Limit number of cores requested to the maximum number of cores available per node
-    $core_number = check_max_core_number(
-        {
-            max_cores_per_node    => $max_cores_per_node,
-            core_number_requested => $core_number,
-        }
-    );    #Detect the number of cores to use
-    return $core_number;
-}
-
 sub collect_infiles {
 
 ##collect_infiles
@@ -29909,7 +29863,7 @@ sub add_infile_info {
           \$infile_lane_prefix_href->{$sample_id}[ $$lane_tracker_ref - 1 ]
           ;                     #Alias
         $sample_info_href->{sample}{$sample_id}{file}{$$file_at_lane_level_ref}
-          {sequence_run_type} = "paired_end"
+          {sequence_run_type} = 'paired-end'
           ;    #$lane_tracker -1 since it gets incremented after direction eq 1.
     }
 
@@ -33593,50 +33547,6 @@ sub replace_config_parameters_with_cmd_info {
               $parameter_href->{$parameter_name}{default}
               ;    #Transfer to active parameter
         }
-    }
-}
-
-sub adjust_core_number_to_seq_mode {
-
-##adjust_core_number_to_seq_mode
-
-##Function : Adjust the number of cores to be used in the analysis according to sequencing mode requirements.
-##Returns  : ""
-##Arguments: $core_number_ref, $sequence_run_type_ref
-##         : $core_number_ref       => The maximum number of cores to be use before printing "wait" statement {REF}
-##         : $sequence_run_type_ref => Type of sequencing [paired_end|single_end] {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $core_number_ref;
-    my $sequence_run_type_ref;
-
-    my $tmpl = {
-        core_number_ref => {
-            required    => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$core_number_ref
-        },
-        sequence_run_type_ref => {
-            required    => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$sequence_run_type_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    if ( $$sequence_run_type_ref eq "paired_end" )
-    {    #Second read direction if present
-
-        $$core_number_ref = $$core_number_ref + 2;    #2 processes per file
-    }
-    else {                                            #Single_end
-
-        $$core_number_ref = $$core_number_ref + 1;  #Only 1 file and one process
     }
 }
 
