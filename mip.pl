@@ -105,7 +105,7 @@ eval_parameter_hash(
     }
 );
 
-our $VERSION = "v5.0.6";    #Set MIP version
+our $VERSION = "v5.0.7";    #Set MIP version
 
 ## Directories, files, job_ids and sample_info
 my ( %infile, %indir_path, %infile_lane_prefix, %lane,
@@ -33554,7 +33554,7 @@ sub print_wait {
 
 ##print_wait
 
-##Function : Calculates when to prints "wait" statement and prints "wait" to supplied FILEHANDLE when adequate.
+##Function : Calculates when to print "wait" statement and prints "wait" to supplied FILEHANDLE when adequate.
 ##Returns  : Incremented $$core_counter_ref
 ##Arguments: $counter_ref, $core_number_ref, $core_counter_ref
 ##         : $counter_ref      => The number of used cores {REF}
@@ -33597,12 +33597,16 @@ sub print_wait {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    if ( $$counter_ref == $$core_counter_ref * $$core_number_ref )
-    {    #Using only nr of cores eq to lanes or max_cores_per_node
+    # Using only nr of cores eq to lanes or max_cores_per_node
+    if ( $$counter_ref == $$core_counter_ref * $$core_number_ref ) {
 
-        say $FILEHANDLE "wait", "\n";
-        $$core_counter_ref = $$core_counter_ref + 1
-          ; #Increase the maximum number of cores allowed to be used since "wait" was just printed
+        use MIP::Gnu::Bash qw(gnu_wait);
+
+        gnu_wait( { FILEHANDLE => $FILEHANDLE, } );
+        say $FILEHANDLE "\n";
+
+# Increase the maximum number of cores allowed to be used since "wait" was just printed
+        $$core_counter_ref = $$core_counter_ref + 1;
     }
 }
 
