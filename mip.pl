@@ -33559,66 +33559,6 @@ sub replace_config_parameters_with_cmd_info {
     }
 }
 
-sub print_wait {
-
-##print_wait
-
-##Function : Calculates when to print "wait" statement and prints "wait" to supplied FILEHANDLE when adequate.
-##Returns  : Incremented $$core_counter_ref
-##Arguments: $counter_ref, $core_number_ref, $core_counter_ref
-##         : $counter_ref      => The number of used cores {REF}
-##         : $core_number_ref  => The maximum number of cores to be use before printing "wait" statement {REF}
-##         : $core_counter_ref => Scales the number of $core_number_ref cores used after each print "wait" statement {REF}
-##         : $FILEHANDLE       => FILEHANDLE to print "wait" statment to
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $counter_ref;
-    my $core_number_ref;
-    my $core_counter_ref;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-        counter_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$counter_ref
-        },
-        core_number_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$core_number_ref
-        },
-        core_counter_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$core_counter_ref
-        },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    # Using only nr of cores eq to lanes or max_cores_per_node
-    if ( $$counter_ref == $$core_counter_ref * $$core_number_ref ) {
-
-        use MIP::Gnu::Bash qw(gnu_wait);
-
-        gnu_wait( { FILEHANDLE => $FILEHANDLE, } );
-        say $FILEHANDLE "\n";
-
-# Increase the maximum number of cores allowed to be used since "wait" was just printed
-        $$core_counter_ref = $$core_counter_ref + 1;
-    }
-}
-
 sub print_supported_annovar_table_names {
 
 ##print_supported_annovar_table_names
