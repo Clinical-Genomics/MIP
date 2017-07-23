@@ -11985,6 +11985,7 @@ sub gatk_concatenate_genotypegvcfs {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Processmanagement::Processes qw(print_wait);
     use MIP::Script::Setup_script qw(setup_script);
     use Language::Java qw(core);
     use Program::Variantcalling::Gatk qw(selectvariants);
@@ -12051,17 +12052,17 @@ sub gatk_concatenate_genotypegvcfs {
         }
     );
 
-    my $core_counter = 1;
+    my $process_batches_count = 1;
     while ( my ( $contig_index, $contig ) =
         each( @{ $file_info_href->{contigs} } ) )
     {
 
-        print_wait(
+        $process_batches_count = print_wait(
             {
-                counter_ref      => \$contig_index,
-                core_number_ref  => \$core_number,
-                core_counter_ref => \$core_counter,
-                FILEHANDLE       => $FILEHANDLE,
+                process_counter       => $contig_index,
+                max_process_number    => $core_number,
+                process_batches_count => $process_batches_count,
+                FILEHANDLE            => $FILEHANDLE,
             }
         );
 
@@ -17108,6 +17109,7 @@ sub cnvnator {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Processmanagement::Processes qw(print_wait);
     use MIP::Script::Setup_script qw(setup_script);
     use Program::Alignment::Samtools qw(faidx);
     use Program::Variantcalling::Cnvnator
@@ -17214,19 +17216,20 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
     say $FILEHANDLE "> " . catfile( $$temp_directory_ref, "contig_header.txt" ),
       "\n";
 
-    my $core_counter = 1;
+    my $process_batches_count = 1;
+
     ## Create by cnvnator required "chr.fa" files
     say $FILEHANDLE "## Create by cnvnator required 'chr.fa' files";
     while ( my ( $contig_index, $contig ) =
         each( @{ $file_info_href->{contigs} } ) )
     {
 
-        print_wait(
+        $process_batches_count = print_wait(
             {
-                counter_ref      => \$contig_index,
-                core_number_ref  => \$core_number,
-                core_counter_ref => \$core_counter,
-                FILEHANDLE       => $FILEHANDLE,
+                process_counter       => $contig_index,
+                max_process_number    => $core_number,
+                process_batches_count => $process_batches_count,
+                FILEHANDLE            => $FILEHANDLE,
             }
         );
 
@@ -18809,6 +18812,7 @@ sub manta {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Processmanagement::Processes qw(print_wait);
     use MIP::Script::Setup_script qw(setup_script);
     use Program::Variantcalling::Manta qw(config workflow);
     use Program::Compression::Gzip qw(gzip);
@@ -18880,18 +18884,18 @@ sub manta {
     );
 
     my %file_path_prefix;
-    my $core_counter = 1;
+    my $process_batches_count = 1;
     ## Collect infiles for all sample_ids to enable migration to temporary directory
     while ( my ( $sample_id_index, $sample_id ) =
         each( @{ $active_parameter_href->{sample_ids} } ) )
     {
 
-        print_wait(
+        $process_batches_count = print_wait(
             {
-                counter_ref      => \$sample_id_index,
-                core_number_ref  => \$core_number,
-                core_counter_ref => \$core_counter,
-                FILEHANDLE       => $FILEHANDLE,
+                process_counter       => $sample_id_index,
+                max_process_number    => $core_number,
+                process_batches_count => $process_batches_count,
+                FILEHANDLE            => $FILEHANDLE,
             }
         );
 
@@ -19133,6 +19137,7 @@ sub tiddit {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Processmanagement::Processes qw(print_wait);
     use MIP::Cluster qw(get_core_number);
     use MIP::Script::Setup_script qw(setup_script);
     use Program::Variantcalling::Tiddit qw(sv);
@@ -19208,7 +19213,7 @@ sub tiddit {
         }
     );
 
-    my $core_counter = 1;
+    my $process_batches_count = 1;
     while ( my ( $sample_id_index, $sample_id ) =
         each( @{ $active_parameter_href->{sample_ids} } ) )
     {    #Collect infiles for all sample_ids
@@ -19231,12 +19236,12 @@ sub tiddit {
         $file_path_prefix{$sample_id}{out} =
           catfile( $$temp_directory_ref, $sample_outfile_prefix );
 
-        print_wait(
+        $process_batches_count = print_wait(
             {
-                counter_ref      => \$sample_id_index,
-                core_number_ref  => \$core_number,
-                core_counter_ref => \$core_counter,
-                FILEHANDLE       => $FILEHANDLE,
+                process_counter       => $sample_id_index,
+                max_process_number    => $core_number,
+                process_batches_count => $process_batches_count,
+                FILEHANDLE            => $FILEHANDLE,
             }
         );
 
@@ -19255,17 +19260,17 @@ sub tiddit {
     }
     say $FILEHANDLE "wait", "\n";
 
-    $core_counter = 1;    # Restart counter
+    $process_batches_count = 1;    # Restart counter
     while ( my ( $sample_id_index, $sample_id ) =
         each( @{ $active_parameter_href->{sample_ids} } ) )
-    {                     #Collect infiles for all sample_ids
+    {                              #Collect infiles for all sample_ids
 
-        print_wait(
+        $process_batches_count = print_wait(
             {
-                counter_ref      => \$sample_id_index,
-                core_number_ref  => \$core_number,
-                core_counter_ref => \$core_counter,
-                FILEHANDLE       => $FILEHANDLE,
+                process_counter       => $sample_id_index,
+                max_process_number    => $core_number,
+                process_batches_count => $process_batches_count,
+                FILEHANDLE            => $FILEHANDLE,
             }
         );
 
@@ -23181,6 +23186,7 @@ sub bwa_aln {
     my $program_name                    = $_[10];
 
     use MIP::Cluster qw(update_core_number_to_seq_mode);
+    use MIP::Processmanagement::Processes qw(print_wait);
     use MIP::Script::Setup_script qw(setup_script);
 
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
@@ -23246,17 +23252,17 @@ sub bwa_aln {
 
     ## BWA Aln
     say $FILEHANDLE "## Creating .sai index";
-    my $core_counter = 1;
+    my $process_batches_count = 1;
     while ( my ( $infile_counter_index, $infile ) =
         each( @{ $infile_href->{$sample_id} } ) )
     {
 
-        print_wait(
+        $process_batches_count = print_wait(
             {
-                counter_ref      => \$infile_counter_index,
-                core_number_ref  => \$core_number,
-                core_counter_ref => \$core_counter,
-                FILEHANDLE       => $FILEHANDLE,
+                process_counter       => $infile_counter_index,
+                max_process_number    => $core_number,
+                process_batches_count => $process_batches_count,
+                FILEHANDLE            => $FILEHANDLE,
             }
         );
 
@@ -23420,6 +23426,7 @@ sub picardtools_mergerapidreads {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::Processmanagement::Processes qw(print_wait);
     use Language::Java qw(core);
 
     ## Filehandles
@@ -23450,8 +23457,8 @@ sub picardtools_mergerapidreads {
     my $outfile_tag =
       $file_info_href->{$$sample_id_ref}{ "p" . $program_name }{file_tag};
 
-    my $core_counter = 1;
-    my $core_tracker = 0
+    my $process_batches_count = 1;
+    my $core_tracker          = 0
       ; #Required to portion out cores and files before wait and to track the MOS_BU outfiles to correct lane
 
     for (
@@ -23472,13 +23479,13 @@ sub picardtools_mergerapidreads {
         if ( $nr_read_batch_process > 0 )
         {    #Check that we have read batch processes to merge
 
-            print_wait(
+            $process_batches_count = print_wait(
                 {
-                    counter_ref => \$core_tracker,
-                    core_number_ref =>
-                      \$active_parameter_href->{max_cores_per_node},
-                    core_counter_ref => \$core_counter,
-                    FILEHANDLE       => $FILEHANDLE,
+                    process_counter => $core_tracker,
+                    max_process_number =>
+                      $active_parameter_href->{max_cores_per_node},
+                    process_batches_count => $process_batches_count,
+                    FILEHANDLE            => $FILEHANDLE,
                 }
             );
 
@@ -25334,6 +25341,7 @@ sub mfastqc {
     use MIP::Check::Cluster qw(check_max_core_number);
     use MIP::Cluster qw(update_core_number_to_seq_mode);
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::Processmanagement::Processes qw(print_wait);
     use MIP::Gnu::Coreutils qw(gnu_cp);
     use Program::Qc::Fastqc qw (fastqc);
 
@@ -25401,17 +25409,18 @@ sub mfastqc {
 
     say $FILEHANDLE "## " . $program_name;
 
-    my $core_counter = 1;
+    my $process_batches_count = 1;
+
     while ( my ( $index, $infile ) =
         each( @{ $infile_href->{$$sample_id_ref} } ) )
     {
 
-        print_wait(
+        $process_batches_count = print_wait(
             {
-                counter_ref      => \$index,
-                core_number_ref  => \$core_number,
-                core_counter_ref => \$core_counter,
-                FILEHANDLE       => $FILEHANDLE,
+                process_counter       => $index,
+                max_process_number    => $core_number,
+                process_batches_count => $process_batches_count,
+                FILEHANDLE            => $FILEHANDLE,
             }
         );
 
@@ -25452,17 +25461,17 @@ sub mfastqc {
     say $FILEHANDLE "wait", "\n";
 
     ## Copies files from temporary folder to source.
-    $core_counter = 1;
+    $process_batches_count = 1;
     while ( my ( $index, $infile ) =
         each( @{ $infile_href->{$$sample_id_ref} } ) )
     {
 
-        print_wait(
+        $process_batches_count = print_wait(
             {
-                counter_ref      => \$index,
-                core_number_ref  => \$core_number,
-                core_counter_ref => \$core_counter,
-                FILEHANDLE       => $FILEHANDLE,
+                process_counter       => $index,
+                max_process_number    => $core_number,
+                process_batches_count => $process_batches_count,
+                FILEHANDLE            => $FILEHANDLE,
             }
         );
 
@@ -25671,7 +25680,7 @@ sub gzip_fastq {
     ## Assign suffix
     my $infile_suffix = $parameter_href->{ "p" . $program_name }{infile_suffix};
 
-    my $core_counter              = 1;
+    my $process_batches_count     = 1;
     my $uncompressed_file_counter = 0
       ; #Used to print wait at the right times since infiles cannot be used (can be a mixture of .gz and .fast files)
 
@@ -25683,12 +25692,12 @@ sub gzip_fastq {
         if ( $infile =~ /$infile_suffix$/ )
         { #For files ending with .fastq required since there can be a mixture (also .fastq.gz) within the sample dir
 
-            if ( $uncompressed_file_counter ==
-                $core_counter * $active_parameter_href->{max_cores_per_node} )
+            if ( $uncompressed_file_counter == $process_batches_count *
+                $active_parameter_href->{max_cores_per_node} )
             {    #Using only $active_parameter{max_cores_per_node} cores
 
                 say $FILEHANDLE "wait", "\n";
-                $core_counter = $core_counter + 1;
+                $process_batches_count = $process_batches_count + 1;
             }
 
             ## Perl wrapper for writing gzip recipe to $FILEHANDLE
@@ -33550,66 +33559,6 @@ sub replace_config_parameters_with_cmd_info {
     }
 }
 
-sub print_wait {
-
-##print_wait
-
-##Function : Calculates when to print "wait" statement and prints "wait" to supplied FILEHANDLE when adequate.
-##Returns  : Incremented $$core_counter_ref
-##Arguments: $counter_ref, $core_number_ref, $core_counter_ref
-##         : $counter_ref      => The number of used cores {REF}
-##         : $core_number_ref  => The maximum number of cores to be use before printing "wait" statement {REF}
-##         : $core_counter_ref => Scales the number of $core_number_ref cores used after each print "wait" statement {REF}
-##         : $FILEHANDLE       => FILEHANDLE to print "wait" statment to
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $counter_ref;
-    my $core_number_ref;
-    my $core_counter_ref;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-        counter_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$counter_ref
-        },
-        core_number_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$core_number_ref
-        },
-        core_counter_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$core_counter_ref
-        },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    # Using only nr of cores eq to lanes or max_cores_per_node
-    if ( $$counter_ref == $$core_counter_ref * $$core_number_ref ) {
-
-        use MIP::Gnu::Bash qw(gnu_wait);
-
-        gnu_wait( { FILEHANDLE => $FILEHANDLE, } );
-        say $FILEHANDLE "\n";
-
-# Increase the maximum number of cores allowed to be used since "wait" was just printed
-        $$core_counter_ref = $$core_counter_ref + 1;
-    }
-}
-
 sub print_supported_annovar_table_names {
 
 ##print_supported_annovar_table_names
@@ -35140,17 +35089,19 @@ sub migrate_files {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    my $core_counter = 1;
+    use MIP::Processmanagement::Processes qw(print_wait);
+
+    my $process_batches_count = 1;
 
     say $FILEHANDLE "## Copying file(s) to destination directory";
     while ( my ( $file_index, $file ) = each($infiles_ref) ) {    #For all files
 
-        print_wait(
+        $process_batches_count = print_wait(
             {
-                counter_ref      => \$file_index,
-                core_number_ref  => \$core_number,
-                core_counter_ref => \$core_counter,
-                FILEHANDLE       => $FILEHANDLE,
+                process_counter       => $file_index,
+                max_process_number    => $core_number,
+                process_batches_count => $process_batches_count,
+                FILEHANDLE            => $FILEHANDLE,
             }
         );
 
@@ -35287,17 +35238,19 @@ sub remove_files {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    my $core_counter = 1;
+    use MIP::Processmanagement::Processes qw(print_wait);
+
+    my $process_batches_count = 1;
 
     say $FILEHANDLE "## Remove file(s)";
     while ( my ( $file_index, $file ) = each($infiles_ref) ) {    #For all files
 
-        print_wait(
+        $process_batches_count = print_wait(
             {
-                counter_ref      => \$file_index,
-                core_number_ref  => \$core_number,
-                core_counter_ref => \$core_counter,
-                FILEHANDLE       => $FILEHANDLE,
+                process_counter       => $file_index,
+                max_process_number    => $core_number,
+                process_batches_count => $process_batches_count,
+                FILEHANDLE            => $FILEHANDLE,
             }
         );
 
@@ -35375,21 +35328,22 @@ sub remove_contig_files {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Processmanagement::Processes qw(print_wait);
     use MIP::Gnu::Coreutils qw(gnu_rm);
 
-    my $core_counter = 1;
+    my $process_batches_count = 1;
 
     ## Remove infile at indirectory
     say $FILEHANDLE "## Remove file at indirectory";
 
     while ( my ( $index, $element ) = each(@$file_elements_ref) ) {
 
-        print_wait(
+        $process_batches_count = print_wait(
             {
-                counter_ref      => \$index,
-                core_number_ref  => \$core_number,
-                core_counter_ref => \$core_counter,
-                FILEHANDLE       => $FILEHANDLE,
+                process_counter       => $index,
+                max_process_number    => $core_number,
+                process_batches_count => $process_batches_count,
+                FILEHANDLE            => $FILEHANDLE,
             }
         );
 
@@ -40183,8 +40137,10 @@ sub generate_contig_specific_target_bed_file {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    my $core_number  = $active_parameter_href->{max_cores_per_node};
-    my $core_counter = 1;
+    use MIP::Processmanagement::Processes qw(print_wait);
+
+    my $core_number           = $active_parameter_href->{max_cores_per_node};
+    my $process_batches_count = 1;
 
     say $FILEHANDLE "## Generate contig specific interval_list\n";
 
@@ -40192,12 +40148,12 @@ sub generate_contig_specific_target_bed_file {
         each( @{ $file_info_href->{contigs_size_ordered} } ) )
     {
 
-        print_wait(
+        $process_batches_count = print_wait(
             {
-                counter_ref      => \$contig_index,
-                core_number_ref  => \$core_number,
-                core_counter_ref => \$core_counter,
-                FILEHANDLE       => $FILEHANDLE,
+                process_counter       => $contig_index,
+                max_process_number    => $core_number,
+                process_batches_count => $process_batches_count,
+                FILEHANDLE            => $FILEHANDLE,
             }
         );
 
