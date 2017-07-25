@@ -105,7 +105,7 @@ eval_parameter_hash(
     }
 );
 
-our $VERSION = "v5.0.7";    #Set MIP version
+our $VERSION = "v5.0.8";    #Set MIP version
 
 ## Directories, files, job_ids and sample_info
 my ( %infile, %indir_path, %infile_lane_prefix, %lane,
@@ -4096,6 +4096,7 @@ sub evaluation {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use MIP::Gnu::Coreutils qw(gnu_cat);
     use Language::Java qw(core);
     use Program::Variantcalling::Gatk
@@ -4157,7 +4158,7 @@ sub evaluation {
         {
             FILEHANDLE => $FILEHANDLE,
             infile_path =>
-              catfile( $infamily_directory, $infile_prefix . ".vcf*" ),
+              catfile( $infamily_directory, $infile_prefix . q{.vcf*} ),
             outfile_path => $$temp_directory_ref
         }
     );
@@ -4650,6 +4651,7 @@ sub endvariantannotationblock {
         $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
 
         use MIP::Script::Setup_script qw(setup_script);
+        use MIP::IO::Files qw(migrate_file);
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
         ( $file_name, $program_info_path ) = setup_script(
@@ -4823,7 +4825,7 @@ sub endvariantannotationblock {
                 {
                     infile_path => $outfile_path_prefix
                       . $vcfparser_analysis_type
-                      . "_filtered"
+                      . q{_filtered}
                       . $outfile_suffix,
                     outfile_path => $outfamily_directory,
                     FILEHANDLE   => $FILEHANDLE,
@@ -4869,7 +4871,7 @@ sub endvariantannotationblock {
             {
                 infile_path => $outfile_path_prefix
                   . $vcfparser_analysis_type
-                  . $outfile_suffix . "*",
+                  . $outfile_suffix . q{*},
                 outfile_path => $outfamily_directory,
                 FILEHANDLE   => $FILEHANDLE,
             }
@@ -5118,6 +5120,7 @@ sub rankvariant {
         $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
         use MIP::Script::Setup_script qw(setup_script);
+        use MIP::IO::Files qw(migrate_file);
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
         ( $file_name, $program_info_path ) = setup_script(
@@ -5454,7 +5457,7 @@ sub rankvariant {
             ## QC Data File(s)
             migrate_file(
                 {
-                    infile_path => $outfile_path_prefix . "_"
+                    infile_path => $outfile_path_prefix . q{_}
                       . $file_info_href->{contigs_size_ordered}[0]
                       . $vcfparser_analysis_type
                       . $outfile_suffix,
@@ -5644,6 +5647,7 @@ sub gatk_variantevalexome {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
     use MIP::Gnu::Coreutils qw(gnu_cat gnu_sort);
     use Program::Variantcalling::Bedtools qw(intersectbed);
@@ -5723,7 +5727,7 @@ sub gatk_variantevalexome {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . "*"
+                $infamily_directory, $infile_prefix . $infile_suffix . q{*}
             ),
             outfile_path => $$temp_directory_ref
         }
@@ -5777,7 +5781,7 @@ sub gatk_variantevalexome {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . "*"
+                $infamily_directory, $infile_prefix . $infile_suffix . q{*}
             ),
             outfile_path => $$temp_directory_ref
         }
@@ -5813,7 +5817,7 @@ sub gatk_variantevalexome {
                     $infamily_directory,
                     $infile_prefix
                       . $vcfparser_analysis_type
-                      . $infile_suffix . "*"
+                      . $infile_suffix . q{*}
                 ),
                 outfile_path => $$temp_directory_ref
             }
@@ -6000,7 +6004,7 @@ sub gatk_variantevalexome {
         {
             infile_path => $outfile_path_prefix
               . $call_type
-              . "_exome"
+              . q{_exome}
               . $outfile_suffix,
             outfile_path => $outsample_directory,
             FILEHANDLE   => $FILEHANDLE,
@@ -6160,6 +6164,7 @@ sub gatk_variantevalall {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
     use Program::Variantcalling::Gatk qw(varianteval);
 
@@ -6236,7 +6241,7 @@ sub gatk_variantevalall {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . "*"
+                $infamily_directory, $infile_prefix . $infile_suffix . q{*}
             ),
             outfile_path => $$temp_directory_ref
         }
@@ -6485,6 +6490,7 @@ sub snpeff {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Cluster qw(get_core_number);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Snpeff qw(ann);
     use Program::Variantcalling::Snpsift qw(annotate dbnsfp);
     use Program::Variantcalling::Mip qw(vcfparser);
@@ -7560,6 +7566,7 @@ sub mvcfparser {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Cluster qw(get_core_number);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Mip qw(vcfparser);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
@@ -7767,7 +7774,7 @@ sub mvcfparser {
     ## QC Data File(s)
     migrate_file(
         {
-            infile_path => $outfile_path_prefix . "_"
+            infile_path => $outfile_path_prefix . q{_}
               . $file_info_href->{contigs_size_ordered}[0]
               . $infile_suffix,
             outfile_path => $outfamily_directory,
@@ -8020,6 +8027,7 @@ sub varianteffectpredictor {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Cluster qw(get_core_number);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Vep qw(variant_effect_predictor);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
@@ -8269,7 +8277,8 @@ sub varianteffectpredictor {
     ## QC Data File(s)
     migrate_file(
         {
-            infile_path => $outfile_path_prefix . "_*" . $infile_suffix . "_s*",
+            infile_path => $outfile_path_prefix . q{_*}
+              . $infile_suffix . q{_s*},
             outfile_path => $outfamily_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
@@ -8284,8 +8293,8 @@ sub varianteffectpredictor {
         say $FILEHANDLE "## Copy file from temporary directory";
         migrate_file(
             {
-                infile_path => $outfile_path_prefix . "_*"
-                  . $infile_suffix . "*",
+                infile_path => $outfile_path_prefix . q{_*}
+                  . $infile_suffix . q{*},
                 outfile_path => $outfamily_directory,
                 FILEHANDLE   => $FILEHANDLE,
             }
@@ -8300,7 +8309,7 @@ sub varianteffectpredictor {
         say $FILEHANDLE "## Copy file from temporary directory";
         migrate_file(
             {
-                infile_path => $outfile_path_prefix . "_"
+                infile_path => $outfile_path_prefix . q{_}
                   . $file_info_href->{contigs_size_ordered}[0]
                   . $infile_suffix,
                 outfile_path => $outfamily_directory,
@@ -8389,6 +8398,7 @@ sub gatk_readbackedphasing {
     my $core_number = 1;
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
@@ -8437,7 +8447,7 @@ sub gatk_readbackedphasing {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
                 $infamily_directory,
-                $family_id . $infile_tag . $call_type . ".vcf*"
+                $family_id . $infile_tag . $call_type . q{.vcf*}
             ),
             outfile_path => $active_parameter_href->{temp_directory}
         }
@@ -8459,9 +8469,10 @@ sub gatk_readbackedphasing {
         say $FILEHANDLE "## Copy file(s) to temporary directory";
         migrate_file(
             {
-                FILEHANDLE => $FILEHANDLE,
-                infile_path =>
-                  catfile( $insample_directory, $infile . $infile_tag . ".b*" ),
+                FILEHANDLE  => $FILEHANDLE,
+                infile_path => catfile(
+                    $insample_directory, $infile . $infile_tag . q{.b*}
+                ),
                 outfile_path => $active_parameter_href->{temp_directory}
             }
         );
@@ -8538,7 +8549,7 @@ sub gatk_readbackedphasing {
         {
             infile_path => catfile(
                 $active_parameter_href->{temp_directory},
-                $family_id . $outfile_tag . $call_type . ".vcf*"
+                $family_id . $outfile_tag . $call_type . q{.vcf*}
             ),
             outfile_path => $outfamily_directory,
             FILEHANDLE   => $FILEHANDLE,
@@ -8598,6 +8609,7 @@ sub gatk_phasebytransmission {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
@@ -8647,7 +8659,7 @@ sub gatk_phasebytransmission {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
                 $infamily_directory,
-                $family_id . $infile_tag . $call_type . ".vcf*"
+                $family_id . $infile_tag . $call_type . q{.vcf*}
             ),
             outfile_path => $active_parameter_href->{temp_directory}
         }
@@ -8706,7 +8718,7 @@ sub gatk_phasebytransmission {
         {
             infile_path => catfile(
                 $active_parameter_href->{temp_directory},
-                $family_id . $outfile_tag . $call_type . ".vcf*"
+                $family_id . $outfile_tag . $call_type . q{.vcf*}
             ),
             outfile_path => $outfamily_directory,
             FILEHANDLE   => $FILEHANDLE,
@@ -8841,6 +8853,7 @@ sub mpeddy {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Peddy qw(peddy);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
@@ -8925,7 +8938,7 @@ sub mpeddy {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . "*"
+                $infamily_directory, $infile_prefix . $infile_suffix . q{*}
             ),
             outfile_path => $$temp_directory_ref
         }
@@ -9186,7 +9199,7 @@ sub mplink {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . "*"
+                $infamily_directory, $infile_prefix . $infile_suffix . q{*}
             ),
             outfile_path => $$temp_directory_ref
         }
@@ -9551,6 +9564,7 @@ sub variant_integrity {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Variant_integrity qw(mendel father);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
@@ -9631,7 +9645,7 @@ sub variant_integrity {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . "*"
+                $infamily_directory, $infile_prefix . $infile_suffix . q{*}
             ),
             outfile_path => $$temp_directory_ref
         }
@@ -10132,8 +10146,8 @@ sub vt {
         say $FILEHANDLE "## Copy file from temporary directory";
         migrate_file(
             {
-                infile_path => $outfile_path_prefix . "_*"
-                  . $outfile_suffix . "*",
+                infile_path => $outfile_path_prefix . q{_*}
+                  . $outfile_suffix . q{*},
                 outfile_path => $outfamily_directory,
                 FILEHANDLE   => $FILEHANDLE,
             }
@@ -10297,6 +10311,7 @@ sub rhocall {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Cluster qw(get_core_number);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Bcftools qw(roh);
     use Program::Variantcalling::Rhocall qw(aggregate annotate);
 
@@ -10473,8 +10488,8 @@ sub rhocall {
         say $FILEHANDLE "## Copy file from temporary directory";
         migrate_file(
             {
-                infile_path => $outfile_path_prefix . "_*"
-                  . $outfile_suffix . "*",
+                infile_path => $outfile_path_prefix . q{_*}
+                  . $outfile_suffix . q{*},
                 outfile_path => $outfamily_directory,
                 FILEHANDLE   => $FILEHANDLE,
             }
@@ -10638,6 +10653,7 @@ sub prepareforvariantannotationblock {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Cluster qw(get_core_number);
+    use MIP::IO::Files qw(migrate_files);
     use Program::Htslib qw(bgzip tabix);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
@@ -10727,7 +10743,7 @@ sub prepareforvariantannotationblock {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . "*"
+                $infamily_directory, $infile_prefix . $infile_suffix . q{*}
             ),
             outfile_path => $$temp_directory_ref
         }
@@ -10812,7 +10828,8 @@ sub prepareforvariantannotationblock {
         say $FILEHANDLE "## Copy file from temporary directory";
         migrate_file(
             {
-                infile_path  => $file_path_prefix . "_*" . $infile_suffix . "*",
+                infile_path => $file_path_prefix . q{_*}
+                  . $infile_suffix . q{*},
                 outfile_path => $outfamily_directory,
                 FILEHANDLE   => $FILEHANDLE,
             }
@@ -10956,6 +10973,7 @@ sub gatk_combinevariantcallsets {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
     use Program::Variantcalling::Gatk qw(combinevariants);
 
@@ -11065,7 +11083,7 @@ sub gatk_combinevariantcallsets {
                     FILEHANDLE  => $FILEHANDLE,
                     infile_path => catfile(
                         $infamily_directory,
-                        $infile_prefix . $infile_suffix . "*"
+                        $infile_prefix . $infile_suffix . q{*}
                     ),
                     outfile_path => $$temp_directory_ref
                 }
@@ -11125,7 +11143,7 @@ sub gatk_combinevariantcallsets {
         say $FILEHANDLE "## Copy file from temporary directory";
         migrate_file(
             {
-                infile_path  => $outfile_path_prefix . ".bcf*",
+                infile_path  => $outfile_path_prefix . q{.bcf*},
                 outfile_path => $outfamily_directory,
                 FILEHANDLE   => $FILEHANDLE,
             }
@@ -11280,6 +11298,7 @@ sub gatk_variantrecalibration {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use Language::Java qw(core);
     use Program::Variantcalling::Bcftools qw(norm);
@@ -11388,7 +11407,7 @@ sub gatk_variantrecalibration {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . "*"
+                $infamily_directory, $infile_prefix . $infile_suffix . q{*}
             ),
             outfile_path => $$temp_directory_ref
         }
@@ -11711,8 +11730,8 @@ sub gatk_variantrecalibration {
             migrate_file(
                 {
                     infile_path => $outfile_path_prefix
-                      . "_incnonvariantloci"
-                      . $outfile_suffix . "*",
+                      . q{_incnonvariantloci}
+                      . $outfile_suffix . q{*},
                     outfile_path => $outfamily_directory,
                     FILEHANDLE   => $FILEHANDLE,
                 }
@@ -11816,7 +11835,7 @@ sub gatk_variantrecalibration {
         say $FILEHANDLE "## Copy file from temporary directory";
         migrate_file(
             {
-                infile_path  => $outfile_path_prefix . ".bcf*",
+                infile_path  => $outfile_path_prefix . q{.bcf*},
                 outfile_path => $outfamily_directory,
                 FILEHANDLE   => $FILEHANDLE,
             }
@@ -11987,6 +12006,7 @@ sub gatk_concatenate_genotypegvcfs {
 
     use MIP::Processmanagement::Processes qw(print_wait);
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
     use Program::Variantcalling::Gatk qw(selectvariants);
 
@@ -12072,7 +12092,7 @@ sub gatk_concatenate_genotypegvcfs {
                 FILEHANDLE  => $FILEHANDLE,
                 infile_path => catfile(
                     $infamily_directory,
-                    $infile_prefix . "_" . $contig . $infile_suffix . "*"
+                    $infile_prefix . q{_} . $contig . $infile_suffix . q{*}
                 ),
                 outfile_path => $$temp_directory_ref
             }
@@ -12162,7 +12182,7 @@ sub gatk_concatenate_genotypegvcfs {
         say $FILEHANDLE "## Copy file from temporary directory";
         migrate_file(
             {
-                infile_path  => $outfile_path_prefix . ".bcf*",
+                infile_path  => $outfile_path_prefix . q{.bcf*},
                 outfile_path => $outfamily_directory,
                 FILEHANDLE   => $FILEHANDLE,
             }
@@ -12174,7 +12194,7 @@ sub gatk_concatenate_genotypegvcfs {
     say $FILEHANDLE "## Copy file from temporary directory";
     migrate_file(
         {
-            infile_path  => $outfile_path_prefix . $outfile_suffix . "*",
+            infile_path  => $outfile_path_prefix . $outfile_suffix . q{*},
             outfile_path => $outfamily_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
@@ -12319,6 +12339,7 @@ sub gatk_genotypegvcfs {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
     use Program::Variantcalling::Gatk qw(genotypegvcfs);
 
@@ -12446,7 +12467,7 @@ sub gatk_genotypegvcfs {
                     FILEHANDLE  => $FILEHANDLE,
                     infile_path => catfile(
                         $insample_directory,
-                        $infile_prefix . $infile_suffix . "*"
+                        $infile_prefix . $infile_suffix . q{*}
                     ),
                     outfile_path => $$temp_directory_ref
                 }
@@ -12515,7 +12536,7 @@ sub gatk_genotypegvcfs {
         say $FILEHANDLE "## Copy file from temporary directory";
         migrate_file(
             {
-                infile_path  => $outfile_path_prefix . $outfile_suffix . "*",
+                infile_path  => $outfile_path_prefix . $outfile_suffix . q{*},
                 outfile_path => $outfamily_directory,
                 FILEHANDLE   => $FILEHANDLE,
             }
@@ -12841,6 +12862,7 @@ sub bedtools_genomecov {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Alignment::Bedtools qw(genomecov);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
@@ -12904,7 +12926,7 @@ sub bedtools_genomecov {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
                 $insample_directory,
-                $infile_prefix . substr( $infile_suffix, 0, 2 ) . "*"
+                $infile_prefix . substr( $infile_suffix, 0, 2 ) . q{*}
             ),
             outfile_path => $$temp_directory_ref,
         }
@@ -13071,6 +13093,7 @@ sub picardtools_collecthsmetrics {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
     use Program::Alignment::Picardtools qw(collecthsmetrics);
 
@@ -13139,7 +13162,7 @@ sub picardtools_collecthsmetrics {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
                 $insample_directory,
-                $infile_prefix . substr( $infile_suffix, 0, 2 ) . "*"
+                $infile_prefix . substr( $infile_suffix, 0, 2 ) . q{*}
             ),
             outfile_path => $$temp_directory_ref,
         }
@@ -13347,6 +13370,7 @@ sub picardtools_collectmultiplemetrics {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
     use Program::Alignment::Picardtools qw(collectmultiplemetrics);
 
@@ -13411,7 +13435,7 @@ sub picardtools_collectmultiplemetrics {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
                 $insample_directory,
-                $infile_prefix . substr( $infile_suffix, 0, 2 ) . "*"
+                $infile_prefix . substr( $infile_suffix, 0, 2 ) . q{*}
             ),
             outfile_path => $$temp_directory_ref,
         }
@@ -13876,6 +13900,7 @@ sub sambamba_depth {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Alignment::Sambamba qw(depth);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
@@ -13946,7 +13971,7 @@ sub sambamba_depth {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
                 $insample_directory,
-                $infile_prefix . substr( $infile_suffix, 0, 2 ) . "*"
+                $infile_prefix . substr( $infile_suffix, 0, 2 ) . q{*}
             ),    #".bam" -> ".b*" for getting index as well),
             outfile_path => $$temp_directory_ref
         }
@@ -14155,6 +14180,7 @@ sub sv_reformat {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Htslib qw(bgzip tabix);
     use MIP::Gnu::Software::Gnu_grep qw( gnu_grep);
 
@@ -14435,7 +14461,7 @@ sub sv_reformat {
                 {
                     infile_path => $outfile_path_prefix
                       . $vcfparser_analysis_type
-                      . "_filtered"
+                      . q{_filtered}
                       . $file_suffix,
                     outfile_path => $outfamily_directory,
                     FILEHANDLE   => $FILEHANDLE,
@@ -14481,7 +14507,7 @@ sub sv_reformat {
             {
                 infile_path => $outfile_path_prefix
                   . $vcfparser_analysis_type
-                  . $file_suffix . "*",
+                  . $file_suffix . q{*},
                 outfile_path => $outfamily_directory,
                 FILEHANDLE   => $FILEHANDLE,
             }
@@ -14684,6 +14710,7 @@ sub sv_rankvariant {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Genmod qw(annotate models score compound);
 
     ## Retrieve logger object
@@ -15136,7 +15163,7 @@ sub sv_rankvariant {
                         $$temp_directory_ref,
                         $outfile_prefix
                           . $vcfparser_analysis_type
-                          . $file_suffix . "*"
+                          . $file_suffix . q{*}
                     ),
                     outfile_path => $outfamily_directory,
                     FILEHANDLE   => $FILEHANDLE,
@@ -15327,6 +15354,7 @@ sub sv_vcfparser {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Mip qw(vcfparser);
 
     my $consensus_analysis_type =
@@ -15573,7 +15601,7 @@ sub sv_vcfparser {
             {
                 infile_path => catfile(
                     $$temp_directory_ref,
-                    $outfile_prefix . "_" . $contigs[0] . $file_suffix
+                    $outfile_prefix . q{_} . $contigs[0] . $file_suffix
                 ),    #Add contig info
                 outfile_path => $outfamily_directory,
                 FILEHANDLE   => $FILEHANDLE,
@@ -15692,7 +15720,7 @@ sub sv_vcfparser {
                 {
                     infile_path => $outfile_path_prefix
                       . $vcfparser_analysis_type
-                      . $file_suffix . "*",
+                      . $file_suffix . q{*},
                     outfile_path => $outfamily_directory,
                     FILEHANDLE   => $FILEHANDLE,
                 }
@@ -15858,6 +15886,7 @@ sub sv_varianteffectpredictor {
 
     use MIP::Cluster qw(get_core_number);
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Vep qw(variant_effect_predictor);
 
     my $consensus_analysis_type =
@@ -15957,7 +15986,7 @@ sub sv_varianteffectpredictor {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
-                $infamily_directory, $infile_prefix . $file_suffix . "*"
+                $infamily_directory, $infile_prefix . $file_suffix . q{*}
             ),
             outfile_path => $$temp_directory_ref
         }
@@ -16154,7 +16183,7 @@ q?if($alt=~ /\<|\[|\]|\>/) { $alt=~ s/\<|\>//g; $alt=~ s/\:.+//g; if($start >= $
     ## QC Data File(s)
     migrate_file(
         {
-            infile_path  => $outfile_path_prefix . "*" . $file_suffix . "_s*",
+            infile_path  => $outfile_path_prefix . q{*} . $file_suffix . q{_s*},
             outfile_path => $outfamily_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
@@ -16167,7 +16196,7 @@ q?if($alt=~ /\<|\[|\]|\>/) { $alt=~ s/\<|\>//g; $alt=~ s/\:.+//g; if($start >= $
     say $FILEHANDLE "## Copy file from temporary directory";
     migrate_file(
         {
-            infile_path  => $outfile_path_prefix . "*" . $file_suffix . "*",
+            infile_path  => $outfile_path_prefix . q{*} . $file_suffix . q{*},
             outfile_path => $outfamily_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
@@ -16309,6 +16338,7 @@ sub sv_combinevariantcallsets {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Svdb qw(merge query);
     use Program::Variantcalling::Bcftools qw (merge view annotate);
     use Program::Htslib qw(bgzip tabix);
@@ -16442,7 +16472,7 @@ sub sv_combinevariantcallsets {
                         infile_path => catfile(
                             $insample_directory,
                             $infile_prefix
-                              . $suffix{$structural_variant_caller} . "*"
+                              . $suffix{$structural_variant_caller} . q{*}
                         ),
                         outfile_path => $$temp_directory_ref
                     }
@@ -16591,7 +16621,7 @@ sub sv_combinevariantcallsets {
                     FILEHANDLE  => $FILEHANDLE,
                     infile_path => catfile(
                         $infamily_directory,
-                        $infile_prefix . $infile_suffix . "*"
+                        $infile_prefix . $infile_suffix . q{*}
                     ),
                     outfile_path => $$temp_directory_ref
                 }
@@ -16919,7 +16949,7 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
         say $FILEHANDLE "## Copy file from temporary directory";
         migrate_file(
             {
-                infile_path  => $outfile_path_prefix . ".bcf*",
+                infile_path  => $outfile_path_prefix . q{.bcf*},
                 outfile_path => $outfamily_directory,
                 FILEHANDLE   => $FILEHANDLE,
             }
@@ -17111,6 +17141,7 @@ sub cnvnator {
 
     use MIP::Processmanagement::Processes qw(print_wait);
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Alignment::Samtools qw(faidx);
     use Program::Variantcalling::Cnvnator
       qw(read_extraction histogram statistics partition calling convert_to_vcf);
@@ -17426,7 +17457,7 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
     say $FILEHANDLE "## Copy file from temporary directory";
     migrate_file(
         {
-            infile_path  => $outfile_path_prefix . $outfile_suffix . "*",
+            infile_path  => $outfile_path_prefix . $outfile_suffix . q{*},
             outfile_path => $outsample_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
@@ -17586,6 +17617,7 @@ sub delly_reformat {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use Program::Variantcalling::Delly qw(call merge filter);
     use Program::Variantcalling::Bcftools qw(merge index);
@@ -18461,6 +18493,7 @@ sub delly_call {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Delly qw(call);
 
     my $core_number =
@@ -18563,7 +18596,7 @@ sub delly_call {
                 FILEHANDLE  => $FILEHANDLE,
                 infile_path => catfile(
                     $insample_directory,
-                    $infile_prefix . substr( $infile_suffix, 0, 2 ) . "*"
+                    $infile_prefix . substr( $infile_suffix, 0, 2 ) . q{*}
                 ),
                 outfile_path => $active_parameter_href->{temp_directory}
             }
@@ -18678,7 +18711,7 @@ sub delly_call {
     say $FILEHANDLE "## Copy file from temporary directory";
     migrate_file(
         {
-            infile_path  => $outfile_path_prefix . "*" . $outfile_suffix . "*",
+            infile_path => $outfile_path_prefix . q{*} . $outfile_suffix . q{*},
             outfile_path => $outsample_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
@@ -18814,6 +18847,7 @@ sub manta {
 
     use MIP::Processmanagement::Processes qw(print_wait);
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Manta qw(config workflow);
     use Program::Compression::Gzip qw(gzip);
 
@@ -18921,7 +18955,7 @@ sub manta {
                 FILEHANDLE  => $FILEHANDLE,
                 infile_path => catfile(
                     $insample_directory,
-                    $infile_prefix . substr( $infile_suffix, 0, 2 ) . "*"
+                    $infile_prefix . substr( $infile_suffix, 0, 2 ) . q{*}
                 ),
                 outfile_path => $$temp_directory_ref,
             }
@@ -18984,7 +19018,7 @@ sub manta {
     say $FILEHANDLE "## Copy file from temporary directory";
     migrate_file(
         {
-            infile_path  => $outfile_path_prefix . $outfile_suffix . "*",
+            infile_path  => $outfile_path_prefix . $outfile_suffix . q{*},
             outfile_path => $outfamily_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
@@ -19140,6 +19174,7 @@ sub tiddit {
     use MIP::Processmanagement::Processes qw(print_wait);
     use MIP::Cluster qw(get_core_number);
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Tiddit qw(sv);
 
     my $program_outdirectory_name =
@@ -19252,7 +19287,7 @@ sub tiddit {
                 FILEHANDLE  => $FILEHANDLE,
                 infile_path => catfile(
                     $insample_directory,
-                    $infile_prefix . substr( $infile_suffix, 0, 2 ) . "*"
+                    $infile_prefix . substr( $infile_suffix, 0, 2 ) . q{*}
                 ),    #".bam" -> ".b*" for getting index as well
                 outfile_path => $$temp_directory_ref,
             }
@@ -19306,7 +19341,7 @@ sub tiddit {
     say $FILEHANDLE "## Copy file from temporary directory";
     migrate_file(
         {
-            infile_path  => $outfile_path_prefix . $outfile_suffix . "*",
+            infile_path  => $outfile_path_prefix . $outfile_suffix . q{*},
             outfile_path => $outfamily_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
@@ -19460,6 +19495,7 @@ sub samtools_mpileup {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Alignment::Samtools qw(mpileup);
     use Program::Variantcalling::Bcftools qw(call filter norm);
 
@@ -19710,7 +19746,7 @@ q?\'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %M
     say $FILEHANDLE "## Copy file from temporary directory";
     migrate_file(
         {
-            infile_path  => $outfile_path_prefix . $outfile_suffix . "*",
+            infile_path  => $outfile_path_prefix . $outfile_suffix . q{*},
             outfile_path => $outfamily_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
@@ -19879,6 +19915,7 @@ sub freebayes {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Freebayes qw(calling);
     use Program::Variantcalling::Bcftools qw(filter norm);
 
@@ -20087,7 +20124,7 @@ sub freebayes {
     say $FILEHANDLE "## Copy file from temporary directory";
     migrate_file(
         {
-            infile_path  => $outfile_path_prefix . $outfile_suffix . "*",
+            infile_path  => $outfile_path_prefix . $outfile_suffix . q{*},
             outfile_path => $outfamily_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
@@ -20660,6 +20697,7 @@ sub gatk_baserecalibration {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Alignment::Gatk qw(baserecalibrator printreads);
     use Program::Alignment::Picardtools qw(gatherbamfiles);
     use MIP::Gnu::Coreutils qw(gnu_rm);
@@ -21027,7 +21065,7 @@ sub gatk_baserecalibration {
     migrate_file(
         {
             infile_path => $outfile_path_prefix
-              . substr( $infile_suffix, 0, 2 ) . "*",
+              . substr( $infile_suffix, 0, 2 ) . q{*},
             outfile_path => $outsample_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
@@ -21693,6 +21731,7 @@ sub pmarkduplicates {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::IO::Files qw(migrate_file);
     use Program::Alignment::Sambamba qw(flagstat);
     use MIP::Gnu::Coreutils qw(gnu_cat);
 
@@ -21938,7 +21977,7 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
 
     migrate_file(
         {
-            infile_path  => $outfile_path_prefix . "_metric",
+            infile_path  => $outfile_path_prefix . q{_metric},
             outfile_path => $outsample_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
@@ -22184,6 +22223,7 @@ sub picardtools_mergesamfiles {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::IO::Files qw(migrate_files);
     use Program::Alignment::Picardtools qw(mergesamfiles);
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use Program::Alignment::Samtools qw(index);
@@ -22265,7 +22305,7 @@ sub picardtools_mergesamfiles {
             FILEHANDLE   => $FILEHANDLE,
             indirectory  => $insample_directory,
             core_number  => $core_number,
-            file_ending  => $infile_tag . $infile_suffix . "*",
+            file_ending  => $infile_tag . $infile_suffix . q{*},
         }
     );
 
@@ -22978,6 +23018,7 @@ sub bwa_sampe {
     my $paired_end_tracker = 0;
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_files);
     use Program::Alignment::Samtools qw(view);
 
     while ( my ( $infile_prefix_index, $infile_prefix ) =
@@ -23044,7 +23085,7 @@ sub bwa_sampe {
                 FILEHANDLE   => $FILEHANDLE,
                 indirectory  => $insample_directory,
                 core_number  => $core_number,
-                file_ending  => ".sai*",
+                file_ending  => q{.sai*},
             }
         );
 
@@ -23119,7 +23160,7 @@ sub bwa_sampe {
             {
                 infile_path => catfile(
                     $active_parameter_href->{temp_directory},
-                    $infile_prefix . ".bam"
+                    $infile_prefix . q{.bam}
                 ),
                 outfile_path => $outsample_directory,
                 FILEHANDLE   => $FILEHANDLE,
@@ -23188,6 +23229,7 @@ sub bwa_aln {
     use MIP::Cluster qw(update_core_number_to_seq_mode);
     use MIP::Processmanagement::Processes qw(print_wait);
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_files);
 
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
     my $time =
@@ -23296,7 +23338,7 @@ sub bwa_aln {
             FILEHANDLE   => $FILEHANDLE,
             indirectory  => $active_parameter_href->{temp_directory},
             core_number  => $core_number,
-            file_ending  => ".sai",
+            file_ending  => q{.sai},
         }
     );
 
@@ -23737,6 +23779,7 @@ sub bwa_mem {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Alignment::Bwa qw(mem run_bwamem);
     use Program::Alignment::Samtools qw(view stats);
     use Program::Variantcalling::Bedtools qw (intersectbed);
@@ -24209,7 +24252,7 @@ sub bwa_mem {
                 ## BAMS, bwa_mem logs etc.
                 migrate_file(
                     {
-                        infile_path  => $outfile_path_prefix . ".*",
+                        infile_path  => $outfile_path_prefix . q{.*},
                         outfile_path => $outsample_directory,
                         FILEHANDLE   => $FILEHANDLE,
                     }
@@ -24261,7 +24304,7 @@ q?perl -ne '$raw; $map; chomp($_); print $_, "\n"; if($_=~/raw total sequences:\
                 say $FILEHANDLE "## Copy file from temporary directory";
                 migrate_file(
                     {
-                        infile_path  => $outfile_path_prefix . ".stats",
+                        infile_path  => $outfile_path_prefix . q{.stats},
                         outfile_path => $outsample_directory,
                         FILEHANDLE   => $FILEHANDLE,
                     }
@@ -24291,7 +24334,7 @@ q?perl -ne '$raw; $map; chomp($_); print $_, "\n"; if($_=~/raw total sequences:\
                 say $FILEHANDLE "## Copy file from temporary directory";
                 migrate_file(
                     {
-                        infile_path  => $outfile_path_prefix . ".cram",
+                        infile_path  => $outfile_path_prefix . q{.cram},
                         outfile_path => $outsample_directory,
                         FILEHANDLE   => $FILEHANDLE,
                     }
@@ -25341,6 +25384,7 @@ sub mfastqc {
     use MIP::Check::Cluster qw(check_max_core_number);
     use MIP::Cluster qw(update_core_number_to_seq_mode);
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_files);
     use MIP::Processmanagement::Processes qw(print_wait);
     use MIP::Gnu::Coreutils qw(gnu_cp);
     use Program::Qc::Fastqc qw (fastqc);
@@ -25853,6 +25897,7 @@ sub split_fastq_file {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use MIP::Gnu::Coreutils qw(gnu_cp gnu_rm gnu_mv gnu_split gnu_mkdir);
     use Program::Compression::Pigz qw(pigz);
 
@@ -35027,163 +35072,6 @@ sub collect_outfile {
     }
 }
 
-sub migrate_files {
-
-##migrate_files
-
-##Function : Copies files from source to destination.
-##Returns  : ""
-##Arguments: $infiles_ref, $outfile_path, $FILEHANDLE, $indirectory, $core_number, $file_ending
-##         : $infiles_ref  => The array of files to copy
-##         : $outfile_path => Outfile path
-##         : $FILEHANDLE   => Filehandle to write to
-##         : $indirectory  => The directory for the files to be copied
-##         : $core_number  => The number of cores that can be used
-##         : $file_ending  => File ending for infiles. {Optional}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $file_ending;
-
-    ## Flatten argument(s)
-    my $infiles_ref;
-    my $outfile_path;
-    my $FILEHANDLE;
-    my $indirectory;
-    my $core_number;
-
-    my $tmpl = {
-        infiles_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$infiles_ref
-        },
-        outfile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$outfile_path
-        },
-        FILEHANDLE  => { required => 1, defined => 1, store => \$FILEHANDLE },
-        indirectory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$indirectory
-        },
-        core_number => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$core_number
-        },
-        file_ending => {
-            default     => "",
-            strict_type => 1,
-            store       => \$file_ending
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    use MIP::Processmanagement::Processes qw(print_wait);
-
-    my $process_batches_count = 1;
-
-    say $FILEHANDLE "## Copying file(s) to destination directory";
-    while ( my ( $file_index, $file ) = each($infiles_ref) ) {    #For all files
-
-        $process_batches_count = print_wait(
-            {
-                process_counter       => $file_index,
-                max_process_number    => $core_number,
-                process_batches_count => $process_batches_count,
-                FILEHANDLE            => $FILEHANDLE,
-            }
-        );
-
-        ## Copies file to destination
-        migrate_file(
-            {
-                FILEHANDLE   => $FILEHANDLE,
-                infile_path  => catfile( $indirectory, $file . $file_ending ),
-                outfile_path => $outfile_path,
-            }
-        );
-    }
-    say $FILEHANDLE "wait", "\n";
-}
-
-sub migrate_file {
-
-##migrate_file
-
-##Function : Copy file to from source ($infile_path) to destination ($outfile_path).
-##Returns  : "$infile_path_file_name"
-##Arguments: $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $xargs
-##         : $FILEHANDLE      => Filehandle to write to
-##         : $infile_path     => Infile path
-##         : $outfile_path    => Outfile path
-##         : $stderrfile_path => Stderrfile path
-##         : $xargs           => Use xargs if defined {Optional}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $FILEHANDLE;
-    my $infile_path;
-    my $outfile_path;
-    my $stderrfile_path;
-    my $xargs;
-
-    my $tmpl = {
-        FILEHANDLE  => { required => 1, defined => 1, store => \$FILEHANDLE },
-        infile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$infile_path
-        },
-        outfile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$outfile_path
-        },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        xargs           => { strict_type => 1, store => \$xargs },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    use MIP::Gnu::Coreutils qw(gnu_cp);
-
-    ## Split relative infile_path to file(s)
-    my ( $infile_path_volume, $infile_path_directory, $infile_path_file_name )
-      = File::Spec->splitpath($infile_path);
-
-    gnu_cp(
-        {
-            FILEHANDLE      => $FILEHANDLE,
-            preserve        => 1,
-            infile_path     => $infile_path,
-            outfile_path    => $outfile_path,
-            stderrfile_path => $stderrfile_path,
-        }
-    );
-
-    if ( !defined($xargs) ) {    #For print wait statement
-
-        say $FILEHANDLE "& ";
-    }
-    print $FILEHANDLE "\n";
-
-    return $infile_path_file_name;
-}
-
 sub remove_files {
 
 ##remove_files
@@ -35661,6 +35549,8 @@ sub xargs_migrate_contig_files {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::IO::Files qw(migrate_file);
+
     my $xargs_file_name;
 
     ## Create file commands for xargs
@@ -35685,13 +35575,13 @@ sub xargs_migrate_contig_files {
                 {
                     FILEHANDLE  => $XARGSFILEHANDLE,
                     infile_path => catfile(
-                        $indirectory, $infile . "_" . $contig . $file_ending
+                        $indirectory, $infile . q{_} . $contig . $file_ending
                     ),
                     outfile_path    => $temp_directory,
-                    xargs           => "xargs",
-                    stderrfile_path => $xargs_file_name . "."
+                    xargs           => 'xargs',
+                    stderrfile_path => $xargs_file_name . q{.}
                       . $contig
-                      . ".stderr.txt",
+                      . q{.stderr.txt},
                 }
             );
         }
@@ -35702,14 +35592,14 @@ sub xargs_migrate_contig_files {
                 {
                     infile_path => catfile(
                         $temp_directory,
-                        $outfile . "_" . $contig . $file_ending
+                        $outfile . q{_} . $contig . $file_ending
                     ),
                     outfile_path    => $outdirectory,
                     FILEHANDLE      => $XARGSFILEHANDLE,
-                    xargs           => "xargs",
-                    stderrfile_path => $xargs_file_name . "."
+                    xargs           => 'xargs',
+                    stderrfile_path => $xargs_file_name . q{.}
                       . $contig
-                      . ".stderr.txt",
+                      . q{.stderr.txt},
                 }
             );
         }
@@ -41369,6 +41259,7 @@ sub prepare_gatk_target_intervals {
       $arg_href->{target_interval_file_list_ref};
     my $temp_directory_ref = $arg_href->{temp_directory_ref};
 
+    use MIP::IO::Files qw(migrate_file);
     use MIP::Gnu::Coreutils qw(gnu_mv);
 
     if (   ( $$analysis_type_ref eq "wes" )
