@@ -25,13 +25,13 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(add_program_info_to_sample_info);
+    our @EXPORT_OK = qw(add_program_file_to_sample_info);
 
 }
 
-sub add_program_info_to_sample_info {
+sub add_program_file_to_sample_info {
 
-##add_program_info_to_sample_info
+##add_program_file_to_sample_info
 
 ##Function : Adds path and/or outdirectory and/or outfile from programs to sample_info to track all files and extract downstream
 ##Returns  : ""
@@ -87,46 +87,35 @@ sub add_program_info_to_sample_info {
 
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
+    ## Set the key and value pair to add to sample_info hash
+    my %parameter = (
+        path         => $path,
+        outdirectory => $outdirectory,
+        outfile      => $outfile,
+    );
+
     ## Sample level
     if ( defined $sample_id && defined $infile ) {
 
-        if ( defined $path ) {
+        while ( my ( $parameter_key, $parameter_value ) = each %parameter ) {
 
-            # Path of file and/or directory
-            $sample_info_href->{sample}{$sample_id}{program}{$program_name}
-              {$infile}{path} = $path;
-        }
-        if ( defined $outdirectory ) {
+            if ( defined $parameter_value ) {
 
-            # Out directory of file
-            $sample_info_href->{sample}{$sample_id}{program}{$program_name}
-              {$infile}{outdirectory} = $outdirectory;
-        }
-        if ( defined $outfile ) {
-
-            # Outfile
-            $sample_info_href->{sample}{$sample_id}{program}{$program_name}
-              {$infile}{outfile} = $outfile;
-
+                $sample_info_href->{sample}{$sample_id}{program}{$program_name}
+                  {$infile}{$parameter_key} = $parameter_value;
+            }
         }
     }
     else {
 
         ## Family level info
-        if ( defined $path ) {
+        while ( my ( $parameter_key, $parameter_value ) = each %parameter ) {
 
-            $sample_info_href->{program}{$program_name}{path} = $path;
-        }
-        if ( defined $outdirectory ) {
+            if ( defined $parameter_value ) {
 
-            # Out directory of file
-            $sample_info_href->{program}{$program_name}{outdirectory} =
-              $outdirectory;
-        }
-        if ( defined $outfile ) {
-
-            # Outfile
-            $sample_info_href->{program}{$program_name}{outfile} = $outfile;
+                $sample_info_href->{program}{$program_name}{$parameter_key} =
+                  $parameter_value;
+            }
         }
     }
     return;

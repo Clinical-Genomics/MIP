@@ -76,9 +76,9 @@ BEGIN {
     }
 }
 
-use MIP::QC::Record qw(add_program_info_to_sample_info);
+use MIP::QC::Record qw(add_program_file_to_sample_info);
 
-diag("Test add_program_info_to_sample_info $MIP::QC::Record::VERSION, Perl $^V, $EXECUTABLE_NAME");
+diag("Test add_program_file_to_sample_info $MIP::QC::Record::VERSION, Perl $^V, $EXECUTABLE_NAME");
 
 # Init hash
 my %sample_info;
@@ -90,7 +90,7 @@ my $outfile           = q{test.yaml};
 my $path              = catfile( $directory, $outfile );
 
 ## Family level
-add_program_info_to_sample_info(
+add_program_file_to_sample_info(
     {
         sample_info_href => \%sample_info,
         program_name     => $test_program_name,
@@ -117,7 +117,7 @@ is( $sample_info{program}{$test_program_name}{path},
 my $sample_id = q{test_sample_id};
 my $infile    = q{test_infile};
 
-add_program_info_to_sample_info(
+add_program_file_to_sample_info(
     {
         sample_info_href => \%sample_info,
         sample_id        => $sample_id,
