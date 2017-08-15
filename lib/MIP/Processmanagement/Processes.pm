@@ -14,6 +14,7 @@ use FindBin qw($Bin);    # Find directory of script
 use File::Basename qw(dirname);
 use File::Spec::Functions qw(catdir);
 
+
 ## MIPs lib/
 use lib catdir( dirname($Bin), 'lib' );
 use MIP::Unix::Standard_streams qw(unix_standard_streams);
@@ -77,14 +78,14 @@ sub print_wait {
 
     use MIP::Gnu::Bash qw(gnu_wait);
 
-# Using only nr of processs eq the maximum number of process scaled by the batch count
+    # Using only nr of processs eq the maximum number of process scaled by the batch count
     if ( $process_counter == $process_batches_count * $max_process_number ) {
 
         # Print wait statement to filehandle
         gnu_wait( { FILEHANDLE => $FILEHANDLE, } );
         say $FILEHANDLE "\n";
 
-# Increase the maximum number of processs allowed to be used since "wait" was just printed
+	# Increase the maximum number of processs allowed to be used since "wait" was just printed
         $process_batches_count = $process_batches_count + 1;
     }
     return $process_batches_count;
