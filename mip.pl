@@ -3894,7 +3894,7 @@ sub mqccollect {
 
     use MIP::Script::Setup_script qw(setup_script);
     use Program::Qc::Mip qw(qccollect);
-    use MIP::QC::Record qw(add_program_file_to_sample_info);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $jobid_chain   = $parameter_href->{ "p" . $program_name }{chain};
@@ -3947,7 +3947,7 @@ sub mqccollect {
 
         ## Collect QC metadata info for later use
       my $qc_metric_outfile = $$family_id_ref . q{_qc_metrics.yaml};
-      add_program_file_to_sample_info(
+      add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => 'qccollect',
@@ -4626,6 +4626,7 @@ sub endvariantannotationblock {
 
     use Program::Htslib qw(bgzip tabix);
     use MIP::Gnu::Software::Gnu_grep qw(gnu_grep);
+    use MIP::QC::Record qw(add_program_metafile_to_sample_info);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $consensus_analysis_type =
@@ -4895,10 +4896,13 @@ sub endvariantannotationblock {
 
             if ( $vcfparser_outfile_counter == 1 ) {
 
-                $sample_info_href->{program}{$program_name}{clinical}{path} =
-                    $final_path_prefix
-                  . $vcfparser_analysis_type
-                  . $outfile_suffix;    #Save clinical candidate list path
+	      # Save clinical candidate list path
+	      my $clinical_candidate_path = $final_path_prefix . $vcfparser_analysis_type . $outfile_suffix;
+	      add_program_metafile_to_sample_info({sample_info_href      => $sample_info_href,
+						   program_name => $program_name,
+						  metafile_tag => q{clinical},
+						  path => $clinical_candidate_path,
+});
 
                 if ( $active_parameter_href->{rankvariant_binary_file} ) {
 
@@ -4910,10 +4914,14 @@ sub endvariantannotationblock {
             }
             else {
 
-                $sample_info_href->{program}{$program_name}{research}{path} =
-                    $final_path_prefix
-                  . $vcfparser_analysis_type
-                  . $outfile_suffix;    #Save research candidate list path
+	      # Save research candidate list path
+	      my $research_candidate_path = $final_path_prefix . $vcfparser_analysis_type . $outfile_suffix;
+	      add_program_metafile_to_sample_info({sample_info_href      => $sample_info_href,
+						   program_name => $program_name,
+						  metafile_tag => q{research},
+						  path => $research_candidate_path,
+});
+
 
                 if ( $active_parameter_href->{rankvariant_binary_file} ) {
 
@@ -5077,7 +5085,7 @@ sub rankvariant {
 
     use MIP::Cluster qw(get_core_number);
     use Program::Variantcalling::Genmod qw(annotate models score compound);
-    use MIP::QC::Record qw(add_program_file_to_sample_info);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger('MIP');
@@ -5475,30 +5483,33 @@ sub rankvariant {
                       . $file_info_href->{contigs_size_ordered}[0]
                       . $vcfparser_analysis_type
                       . $outfile_suffix;
-	  add_program_file_to_sample_info(
+	  add_program_outfile_to_sample_info(
                 {
                     sample_info_href => $sample_info_href,
-                    program_name     => 'genmod',
+                    program_name     => q{genmod},
                     outdirectory     => $outfamily_directory,
                     outfile   => $qc_genmod_outfile,
                 }
             );
 
+	  # Add to Sample_info
             if ( defined( $active_parameter_href->{rank_model_file} ) )
-            {    #Add to Sample_info
+            {
 
+	      my $rank_model_version;
                 if ( $active_parameter_href->{rank_model_file} =~
                     /v(\d+\.\d+.\d+|\d+\.\d+)/ )
                 {
 
-		  my $rank_model_version = $1;
-                    $sample_info_href->{program}{rankvariant}{rank_model}
-                      {version} = $rank_model_version;
+		  $rank_model_version = $1;
                 }
-                $sample_info_href->{program}{rankvariant}{rank_model}{file} =
-                  basename( $active_parameter_href->{rank_model_file} );
-                $sample_info_href->{program}{rankvariant}{rank_model}{path} =
-                  $active_parameter_href->{rank_model_file};
+	      add_program_metafile_to_sample_info({sample_info_href      => $sample_info_href,
+						   program_name => q{genmod},
+						  metafile_tag => q{rank_model},
+						       file => basename( $active_parameter_href->{rank_model_file} ),
+						       path => $active_parameter_href->{rank_model_file},
+						  version => $rank_model_version,
+});
             }
         }
     }
@@ -5652,7 +5663,7 @@ sub gatk_variantevalexome {
     use MIP::Gnu::Coreutils qw(gnu_cat gnu_sort);
     use Program::Variantcalling::Bedtools qw(intersectbed);
     use Program::Variantcalling::Gatk qw(varianteval);
-    use MIP::QC::Record qw(add_program_file_to_sample_info);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -6022,7 +6033,7 @@ sub gatk_variantevalexome {
                   . $call_type
                   . q{_exome}
                   . $outfile_suffix;
-      add_program_file_to_sample_info(
+      add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
@@ -6168,7 +6179,7 @@ sub gatk_variantevalall {
     use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
     use Program::Variantcalling::Gatk qw(varianteval);
-    use MIP::QC::Record qw(add_program_file_to_sample_info);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -6337,7 +6348,7 @@ sub gatk_variantevalall {
     {
 
         ## Collect QC metadata info for later use
-      add_program_file_to_sample_info(
+      add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
@@ -6495,7 +6506,7 @@ sub snpeff {
     use Program::Variantcalling::Snpeff qw(ann);
     use Program::Variantcalling::Snpsift qw(annotate dbnsfp);
     use Program::Variantcalling::Mip qw(vcfparser);
-    use MIP::QC::Record qw(add_program_file_to_sample_info);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $xargs_file_name;
@@ -6925,7 +6936,7 @@ sub snpeff {
                   . $file_info_href->{contigs_size_ordered}[0]
                   . $vcfparser_analysis_type
                   . $outfile_suffix;
-      add_program_file_to_sample_info(
+      add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
@@ -7570,7 +7581,7 @@ sub mvcfparser {
     use MIP::Cluster qw(get_core_number);
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Mip qw(vcfparser);
-    use MIP::QC::Record qw(add_program_file_to_sample_info);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $xargs_file_name;
@@ -7820,7 +7831,7 @@ sub mvcfparser {
 	my $qc_vcfparser_outfile = $outfile_prefix . q{_}
                   . $file_info_href->{contigs_size_ordered}[0]
                   . $infile_suffix;
-	add_program_file_to_sample_info(
+	add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
@@ -8032,7 +8043,7 @@ sub varianteffectpredictor {
     use MIP::Cluster qw(get_core_number);
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Vep qw(variant_effect_predictor);
-    use MIP::QC::Record qw(add_program_file_to_sample_info);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $xargs_file_name;
@@ -8256,7 +8267,7 @@ sub varianteffectpredictor {
                   . $file_info_href->{contigs_size_ordered}[0]
                   . $infile_suffix
                   . q{_summary.html};
-      add_program_file_to_sample_info(
+      add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name . q{summary},
@@ -8268,7 +8279,7 @@ sub varianteffectpredictor {
       my $qc_vep_outfile = $outfile_prefix . q{_}
                   . $file_info_href->{contigs_size_ordered}[0]
                   . $infile_suffix;
-      add_program_file_to_sample_info(
+      add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
@@ -8349,7 +8360,7 @@ sub varianteffectpredictor {
         }
 
         ## Collect QC metadata info for later use
-	add_program_file_to_sample_info(
+	add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
@@ -8858,6 +8869,7 @@ sub mpeddy {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Peddy qw(peddy);
+    use MIP::QC::Record qw(add_program_metafile_to_sample_info);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -8986,8 +8998,11 @@ sub mpeddy {
 
             my $outfile_suffix = '.' . $file_key . '.' . $suffix;
             ## Collect QC metadata info for later use
-            $sample_info_href->{program}{$program_name}{$file_key}{path} =
-              $outfile_path_prefix . $outfile_suffix;
+	    add_program_metafile_to_sample_info({sample_info_href      => $sample_info_href,
+						   program_name => $program_name,
+						  metafile_tag => $file_key,
+						  path => $outfile_path_prefix . $outfile_suffix,
+});
         }
     }
 
@@ -9121,7 +9136,7 @@ sub mplink {
     use Program::Variantcalling::Bcftools qw(view annotate);
     use Program::Variantcalling::Vt qw(vt_uniq);
     use Program::Variantcalling::Plink qw(plink);
-    use MIP::QC::Record qw(add_program_file_to_sample_info);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -9396,7 +9411,7 @@ sub mplink {
         {    #Only perform if more than 1 sample
 
             ## Collect QC metadata info for later use
-	  add_program_file_to_sample_info(
+	  add_program_outfile_to_sample_info(
                 {
                     sample_info_href => $sample_info_href,
                     program_name     => q{inbreeding_factor},
@@ -9406,7 +9421,7 @@ sub mplink {
             );
 
             ## Collect QC metadata info for later use
-	  add_program_file_to_sample_info(
+	  add_program_outfile_to_sample_info(
                 {
                     sample_info_href => $sample_info_href,
                     program_name     => q{relation_check},
@@ -9417,7 +9432,7 @@ sub mplink {
         }
 
         ## Collect QC metadata info for later use
-	add_program_file_to_sample_info(
+	add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => q{plink_sexcheck},
@@ -9427,7 +9442,7 @@ sub mplink {
         );
 
         ## Collect QC metadata info for later use
-	add_program_file_to_sample_info(
+	add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => q{plink2},
@@ -9566,7 +9581,7 @@ sub variant_integrity {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Variant_integrity qw(mendel father);
-    use MIP::QC::Record qw(add_program_file_to_sample_info);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -9678,7 +9693,7 @@ sub variant_integrity {
             {
 
                 ## Collect QC metadata info for later use
-	      add_program_file_to_sample_info(
+	      add_program_outfile_to_sample_info(
                     {
                         sample_info_href => $sample_info_href,
                         program_name     => q{variant_integrity_mendel},
@@ -9716,7 +9731,7 @@ sub variant_integrity {
                 {
 
                     ## Collect QC metadata info for later use
-		  add_program_file_to_sample_info(
+		  add_program_outfile_to_sample_info(
                         {
                             sample_info_href => $sample_info_href,
                             program_name     => q{variant_integrity_father},
@@ -9879,7 +9894,7 @@ sub vt {
     use MIP::Cluster qw(get_core_number);
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use Program::Variantcalling::Genmod qw(annotate filter);
-    use MIP::QC::Record qw(add_program_file_to_sample_info);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     ## Constants
     Readonly my $DOT => q{.};
@@ -10050,7 +10065,7 @@ sub vt {
 	    my $qc_vt_outfile = $stderr_file . $DOT
                       . $contig . $DOT
                       . q{stderr.txt};
-	    add_program_file_to_sample_info(
+	    add_program_outfile_to_sample_info(
                 {
                     sample_info_href => $sample_info_href,
                     program_name     => 'vt',
@@ -11308,7 +11323,7 @@ sub gatk_variantrecalibration {
     use Program::Variantcalling::Bcftools qw(norm);
     use Program::Variantcalling::Gatk
       qw(variantrecalibrator applyrecalibration selectvariants calculategenotypeposteriors);
-    use MIP::QC::Record qw(add_program_file_to_sample_info);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -11874,7 +11889,7 @@ sub gatk_variantrecalibration {
 
         ## Collect QC metadata info for later use
       # Disabled pedigreeCheck to not include relationship test is qccollect
-      add_program_file_to_sample_info(
+      add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => q{pedigree_check},
@@ -13101,7 +13116,7 @@ sub picardtools_collecthsmetrics {
     use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
     use Program::Alignment::Picardtools qw(collecthsmetrics);
-    use MIP::QC::Record qw(add_program_file_to_sample_info);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -13231,7 +13246,7 @@ sub picardtools_collecthsmetrics {
     {
 
         ## Collect QC metadata info for later use
-      add_program_file_to_sample_info(
+      add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
@@ -13379,7 +13394,7 @@ sub picardtools_collectmultiplemetrics {
     use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
     use Program::Alignment::Picardtools qw(collectmultiplemetrics);
-    use MIP::QC::Record qw(add_program_file_to_sample_info);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     ## Constants
     Readonly my $DOT => q{.};
@@ -13504,7 +13519,7 @@ sub picardtools_collectmultiplemetrics {
     {
 
         ## Collect QC metadata info for later use
-      add_program_file_to_sample_info(
+      add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
@@ -13514,7 +13529,7 @@ sub picardtools_collectmultiplemetrics {
                 outfile   => $outfile_tag . $DOT . q{alignment_summary_metrics},
             }
         );
-      add_program_file_to_sample_info(
+      add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
@@ -13659,7 +13674,7 @@ sub chanjo_sexcheck {
 
     use MIP::Script::Setup_script qw(setup_script);
     use Program::Alignment::Chanjo qw(sex);
-    use MIP::QC::Record qw(add_program_file_to_sample_info);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -13752,7 +13767,7 @@ sub chanjo_sexcheck {
     {
 
         ## Collect QC metadata info for later use
-      add_program_file_to_sample_info(
+      add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
@@ -13762,14 +13777,15 @@ sub chanjo_sexcheck {
                 outfile   => $outfile_tag . $outfile_suffix,
             }
         );
-      add_program_file_to_sample_info(
+      add_program_metafile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
-                program_name     => 'chanjo',
+                program_name     => q{chanjo_sexcheck},
                 infile           => $infile,
-                outdirectory     => $outsample_directory,
-                outfile_ending   => $infile_tag . q{_chanjo_sexcheck.log},
+	     metafile_tag => q{log},
+                directory     => $outsample_directory,
+                file   => $infile_tag . q{_chanjo_sexcheck.log},
             }
         );
     }
@@ -13909,6 +13925,7 @@ sub sambamba_depth {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use Program::Alignment::Sambamba qw(depth);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -14035,9 +14052,13 @@ sub sambamba_depth {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        $sample_info_href->{sample}{$$sample_id_ref}{program}{$program_name}
-          {$infile}{ substr( $outfile_suffix, 1 ) }{path} =
-          catfile( $outsample_directory, $outfile_prefix . $outfile_suffix );
+    my $qc_sambamba_path = catfile( $outsample_directory, $outfile_prefix . $outfile_suffix );
+    add_program_outfile_to_sample_info({sample_info_href      => $sample_info_href,
+					 sample_id => $$sample_id_ref,
+					 program_name => $program_name,
+					 infile => $infile,
+					 path => $qc_sambamba_path,
+					});
     }
 
     close($FILEHANDLE);
@@ -14541,10 +14562,13 @@ sub sv_reformat {
 
             if ( $vcfparser_outfile_counter == 1 ) {
 
-                $sample_info_href->{program}{$program_name}{clinical}{path} =
-                    $final_path_prefix
-                  . $vcfparser_analysis_type
-                  . $file_suffix;    #Save clinical candidate list path
+	      # Save clinical candidate list path
+	      my $clinical_candidate_path = $final_path_prefix . $vcfparser_analysis_type . $file_suffix;
+	      add_program_metafile_to_sample_info({sample_info_href      => $sample_info_href,
+						   program_name => $program_name,
+						  metafile_tag => q{clinical},
+						  path => $clinical_candidate_path,
+});
 
                 if ( $active_parameter_href->{sv_rankvariant_binary_file} ) {
 
@@ -14556,10 +14580,13 @@ sub sv_reformat {
             }
             else {
 
-                $sample_info_href->{program}{$program_name}{research}{path} =
-                    $final_path_prefix
-                  . $vcfparser_analysis_type
-                  . $file_suffix;    #Save research candidate list path
+	      # Save research candidate list path
+	      my $research_candidate_path = $final_path_prefix . $vcfparser_analysis_type . $file_suffix;
+	      add_program_metafile_to_sample_info({sample_info_href      => $sample_info_href,
+						   program_name => $program_name,
+						  metafile_tag => q{research},
+						  path => $research_candidate_path,
+});
 
                 if ( $active_parameter_href->{sv_rankvariant_binary_file} ) {
 
@@ -14719,7 +14746,7 @@ sub sv_rankvariant {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Genmod qw(annotate models score compound);
-    use MIP::QC::Record qw(add_program_file_to_sample_info);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger('MIP');
@@ -15206,18 +15233,20 @@ sub sv_rankvariant {
         if ( defined( $active_parameter_href->{sv_rank_model_file} ) )
         {    #Add to Sample_info
 
+	  my $sv_rank_model_version;
             if ( $active_parameter_href->{sv_rank_model_file} =~
                 /v(\d+\.\d+.\d+|\d+\.\d+)/ )
             {
 
-	      my $sv_rank_model_version = $1;
-                $sample_info_href->{program}{sv_rankvariant}{rank_model}
-                  {version} = $sv_rank_model_version;
+	      $sv_rank_model_version = $1;
             }
-            $sample_info_href->{program}{sv_rankvariant}{rank_model}{file} =
-              basename( $active_parameter_href->{sv_rank_model_file} );
-            $sample_info_href->{program}{sv_rankvariant}{rank_model}{path} =
-              $active_parameter_href->{sv_rank_model_file};
+	    add_program_metafile_to_sample_info({sample_info_href      => $sample_info_href,
+						 program_name => q{sv_genmod},
+						 metafile_tag => q{sv_rank_model},
+						 file => basename( $active_parameter_href->{sv_rank_model_file} ),
+						 path => $active_parameter_href->{sv_rank_model_file},
+						 version => $sv_rank_model_version,
+						});
 
         }
 	my $qc_sv_genmod_outfile = $$family_id_ref
@@ -15225,7 +15254,7 @@ sub sv_rankvariant {
                   . $call_type
                   . $vcfparser_analysis_type
                   . $file_suffix;
-	add_program_file_to_sample_info(
+	add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => q{sv_genmod},
@@ -15366,7 +15395,7 @@ sub sv_vcfparser {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Mip qw(vcfparser);
-    use MIP::QC::Record qw(add_program_file_to_sample_info);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -15641,7 +15670,7 @@ sub sv_vcfparser {
         }
 
         ## Collect QC metadata info for later use
-	add_program_file_to_sample_info(
+	add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
@@ -15899,7 +15928,7 @@ sub sv_varianteffectpredictor {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Vep qw(variant_effect_predictor);
-    use MIP::QC::Record qw(add_program_file_to_sample_info);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
 
     ## Constants
     Readonly my $DOT => q{.};
@@ -16175,17 +16204,18 @@ q?if($alt=~ /\<|\[|\]|\>/) { $alt=~ s/\<|\>//g; $alt=~ s/\:.+//g; if($start >= $
         ## Collect QC metadata info for later use
 	my $qc_vep_summary_outfile = $outfile_sample_info_prefix
                   . $DOT . q{vcf_summary.html};
-	add_program_file_to_sample_info(
+	add_program_metafile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => $program_name . q{summary},
-                outdirectory     => $outfamily_directory,
-                outfile   => $qc_vep_summary_outfile,
+                program_name     => $program_name,
+	     metafile_tag => q{summary},
+                directory     => $outfamily_directory,
+                file   => $qc_vep_summary_outfile,
             }
         );
 
         ## Collect QC metadata info for later use
-	add_program_file_to_sample_info(
+	add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
@@ -16360,7 +16390,7 @@ sub sv_combinevariantcallsets {
     use Program::Variantcalling::Vt qw(decompose);
     use Program::Variantcalling::Genmod qw(annotate);
     use Program::Variantcalling::Vcfanno qw(vcfanno);
-    use MIP::QC::Record qw(add_program_file_to_sample_info);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my @structural_variant_callers;    #Stores callers that have been executed
     my @parallel_chains
@@ -16896,7 +16926,7 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
             && ( !$active_parameter_href->{dry_run_all} ) )
         {
 
-	  add_program_file_to_sample_info(
+	  add_program_outfile_to_sample_info(
                 {
                     sample_info_href => $sample_info_href,
                     program_name     => q{sv_combinevariantcallsets},
@@ -16992,7 +17022,7 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
                   . $outfile_tag
                   . $call_type
                   . $outfile_suffix;
-      add_program_file_to_sample_info(
+      add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => 'svdb',
@@ -17161,7 +17191,7 @@ sub cnvnator {
     use Program::Variantcalling::Cnvnator
       qw(read_extraction histogram statistics partition calling convert_to_vcf);
     use Program::Variantcalling::Bcftools qw(annotate);
-    use MIP::QC::Record qw(add_program_file_to_sample_info);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -17486,7 +17516,7 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-      add_program_file_to_sample_info(
+      add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => 'cnvnator',
@@ -17636,7 +17666,7 @@ sub delly_reformat {
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use Program::Variantcalling::Delly qw(call merge filter);
     use Program::Variantcalling::Bcftools qw(merge index);
-    use MIP::QC::Record qw(add_program_file_to_sample_info);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -18352,7 +18382,7 @@ sub delly_reformat {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-      add_program_file_to_sample_info(
+      add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => 'delly',
@@ -18865,7 +18895,7 @@ sub manta {
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Manta qw(config workflow);
     use Program::Compression::Gzip qw(gzip);
-    use MIP::QC::Record qw(add_program_file_to_sample_info);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -19045,7 +19075,7 @@ sub manta {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-      add_program_file_to_sample_info(
+      add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => 'manta',
@@ -19191,7 +19221,7 @@ sub tiddit {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Tiddit qw(sv);
-    use MIP::QC::Record qw(add_program_file_to_sample_info);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $program_outdirectory_name =
       $parameter_href->{ "p" . $program_name }{outdir_name};
@@ -19370,7 +19400,7 @@ sub tiddit {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-      add_program_file_to_sample_info(
+      add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => 'tiddit',
@@ -19513,7 +19543,7 @@ sub samtools_mpileup {
     use MIP::IO::Files qw(migrate_file);
     use Program::Alignment::Samtools qw(mpileup);
     use Program::Variantcalling::Bcftools qw(call filter norm);
-    use MIP::QC::Record qw(add_program_file_to_sample_info);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -19776,7 +19806,7 @@ q?\'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %M
     {
 
         ## Collect samtools version in qccollect
-      add_program_file_to_sample_info(
+      add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => 'samtools',
@@ -19785,7 +19815,7 @@ q?\'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %M
             }
         );
         ## Locating samtools_mpileup file
-      add_program_file_to_sample_info(
+      add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => 'samtools_mpileup',
@@ -19793,7 +19823,7 @@ q?\'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %M
                 outfile   => $outfile_prefix . $outfile_suffix,
             }
         );
-      add_program_file_to_sample_info(
+      add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => 'bcftools',
@@ -19931,7 +19961,7 @@ sub freebayes {
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Freebayes qw(calling);
     use Program::Variantcalling::Bcftools qw(filter norm);
-    use MIP::QC::Record qw(add_program_file_to_sample_info);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -20151,7 +20181,7 @@ sub freebayes {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-      add_program_file_to_sample_info(
+      add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => 'freebayes',
@@ -20159,7 +20189,7 @@ sub freebayes {
                 outfile   => $outfile_prefix . $outfile_suffix,
             }
         );
-      add_program_file_to_sample_info(
+      add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => 'bcftools',
@@ -21746,7 +21776,7 @@ sub pmarkduplicates {
     use MIP::IO::Files qw(migrate_file);
     use Program::Alignment::Sambamba qw(flagstat);
     use MIP::Gnu::Coreutils qw(gnu_cat);
-    use MIP::QC::Record qw(add_program_file_to_sample_info);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -22002,7 +22032,7 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
     {
 
         ## Collect QC metadata info for later use
-      add_program_file_to_sample_info(
+      add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
@@ -23796,7 +23826,7 @@ sub bwa_mem {
     use Program::Alignment::Samtools qw(view stats);
     use Program::Variantcalling::Bedtools qw (intersectbed);
     use Program::Alignment::Sambamba qw(sort);
-    use MIP::QC::Record qw(add_program_file_to_sample_info);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -24382,7 +24412,7 @@ q?perl -ne '$raw; $map; chomp($_); print $_, "\n"; if($_=~/raw total sequences:\
                 if ( $active_parameter_href->{bwa_mem_bamstats} ) {
 
                     ## Collect QC metadata info for later use
-		  add_program_file_to_sample_info(
+		  add_program_outfile_to_sample_info(
                         {
                             sample_info_href => $sample_info_href,
                             sample_id        => $$sample_id_ref,
@@ -24396,7 +24426,7 @@ q?perl -ne '$raw; $map; chomp($_); print $_, "\n"; if($_=~/raw total sequences:\
 
                 if ( $bwa_binary eq "bwa mem" ) {
 
-		  add_program_file_to_sample_info(
+		  add_program_outfile_to_sample_info(
                         {
                             sample_info_href => $sample_info_href,
                             sample_id        => $$sample_id_ref,
@@ -24409,7 +24439,7 @@ q?perl -ne '$raw; $map; chomp($_); print $_, "\n"; if($_=~/raw total sequences:\
                 }
                 if ( $bwa_binary eq "run-bwamem" ) {
 
-		  add_program_file_to_sample_info(
+		  add_program_outfile_to_sample_info(
                         {
                             sample_info_href => $sample_info_href,
                             sample_id        => $$sample_id_ref,
@@ -25210,6 +25240,7 @@ sub madeline {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     ## Filehandles
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
@@ -25257,8 +25288,11 @@ sub madeline {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        $sample_info_href->{program}{$program_name}{path} =
-          catfile( $outfamily_directory, $$family_id_ref . "_madeline.xml" );
+      my $qc_madelaine_path = catfile( $outfamily_directory, $$family_id_ref . "_madeline.xml" );
+      add_program_outfile_to_sample_info({sample_info_href      => $sample_info_href,
+						   program_name => $program_name,
+						  path => $qc_madelaine_path,
+});
     }
 
     close($FILEHANDLE);
@@ -25398,7 +25432,7 @@ sub mfastqc {
     use MIP::Processmanagement::Processes qw(print_wait);
     use MIP::Gnu::Coreutils qw(gnu_cp);
     use Program::Qc::Fastqc qw(fastqc);
-    use MIP::QC::Record qw(add_program_file_to_sample_info);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -25499,15 +25533,16 @@ sub mfastqc {
             && ( !$active_parameter_href->{dry_run_all} ) )
         {
 
-	  add_program_file_to_sample_info(
+	  my $qc_fastqc_outdirectory = catdir(
+                        $outsample_directory, $file_at_lane_level . q{_fastqc}
+                    );
+	  add_program_outfile_to_sample_info(
                 {
                     sample_info_href => $sample_info_href,
                     sample_id        => $$sample_id_ref,
-                    program_name     => 'fastqc',
+                    program_name     => q{fastqc},
                     infile           => $infile,
-                    outdirectory     => catfile(
-                        $outsample_directory, $file_at_lane_level . q{_fastqc}
-                    ),
+                    outdirectory     => $qc_fastqc_outdirectory,
                     outfile => q{fastqc_data.txt},
                 }
             );
@@ -36692,46 +36727,59 @@ sub add_to_sample_info {
         $sample_info_href->{expected_coverage} =
           $active_parameter_href->{expected_coverage};
     }
-    if ( exists( $active_parameter_href->{gatk_path} ) ) {
+    if ( exists $active_parameter_href->{gatk_path} ) {
 
+      my $gatk_version;
         if ( $active_parameter_href->{gatk_path} =~ /GenomeAnalysisTK-([^,]+)/ )
         {
 
-            $sample_info_href->{program}{gatk}{version} = $1;
+	  $gatk_version = $1;
         }
         else {    #Fall back on actually calling program
 
             my $jar_path = catfile( $active_parameter_href->{gatk_path},
                 "GenomeAnalysisTK.jar" );
-            my $ret = (`java -jar $jar_path --version 2>&1`);
-            chomp($ret);
-            $sample_info_href->{program}{gatk}{version} = $ret;
+            $gatk_version = (`java -jar $jar_path --version 2>&1`);
+            chomp $gatk_version;
         }
+      add_program_outfile_to_sample_info(
+            {
+                sample_info_href => $sample_info_href,
+                program_name     => 'gatk',
+                version => $gatk_version,
+            });
     }
-    if ( exists( $active_parameter_href->{picardtools_path} ) )
+    if ( exists $active_parameter_href->{picardtools_path} )
     {             #To enable addition of version to sample_info
 
+      my $picardtools_version;
         if ( $active_parameter_href->{picardtools_path} =~
             /picard-tools-([^,]+)/ )
         {
 
-            $sample_info_href->{program}{picardtools}{version} = $1;
+	  $picardtools_version = $1;
         }
         else {    #Fall back on actually calling program
 
             my $jar_path = catfile( $active_parameter_href->{picardtools_path},
                 "picard.jar" );
-            my $ret =
+            $picardtools_version =
               (`java -jar $jar_path CreateSequenceDictionary --version 2>&1`);
-            chomp($ret);
-            $sample_info_href->{program}{picardtools}{version} = $ret;
+            chomp $picardtools_version;
         }
+
+      add_program_outfile_to_sample_info(
+            {
+                sample_info_href => $sample_info_href,
+                program_name     => 'picardtools',
+                version => $picardtools_version,
+            });
     }
     my @sambamba_programs =
       ( "pbwa_mem", "psambamba_depth", "markduplicates_sambamba_markdup" );
     foreach my $program (@sambamba_programs) {
 
-        if (   ( exists( $active_parameter_href->{$program} ) )
+        if (   ( exists $active_parameter_href->{$program} )
             && ( $active_parameter_href->{$program} == 1 ) )
         {
 
@@ -36739,14 +36787,19 @@ sub add_to_sample_info {
 
                 my $regexp =
                   q?perl -nae 'if($_=~/sambamba\s(\S+)/) {print $1;last;}'?;
-                my $ret = (`sambamba 2>&1 | $regexp`);
-                chomp($ret);
-                $sample_info_href->{program}{sambamba}{version} = $ret;
+                my $sambamba_version = (`sambamba 2>&1 | $regexp`);
+                chomp $sambamba_version;
+		add_program_outfile_to_sample_info(
+            {
+                sample_info_href => $sample_info_href,
+                program_name     => 'sambamba',
+                version => $sambamba_version,
+            });
                 last;    #Only need to check once
             }
         }
     }
-    if ( exists( $active_parameter_href->{pcnvnator} ) )
+    if ( exists $active_parameter_href->{pcnvnator} )
     {                    #To enable addition of version to sample_info
 
         if (   ( $active_parameter_href->{pcnvnator} == 1 )
@@ -36755,9 +36808,14 @@ sub add_to_sample_info {
 
             my $regexp =
               q?perl -nae 'if($_=~/CNVnator\s+(\S+)/) {print $1;last;}'?;
-            my $ret = (`cnvnator 2>&1 | $regexp`);
-            chomp($ret);
-            $sample_info_href->{program}{cnvnator}{version} = $ret;
+            my $cnvnator_version = (`cnvnator 2>&1 | $regexp`);
+            chomp $cnvnator_version;
+	    add_program_outfile_to_sample_info(
+            {
+                sample_info_href => $sample_info_href,
+                program_name     => 'cnvnator',
+                version => $cnvnator_version,
+            });
         }
     }
     if ( defined($$human_genome_reference_ref) )

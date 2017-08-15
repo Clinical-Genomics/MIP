@@ -76,9 +76,9 @@ BEGIN {
     }
 }
 
-use MIP::QC::Record qw(add_program_file_to_sample_info);
+use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
-diag("Test add_program_file_to_sample_info $MIP::QC::Record::VERSION, Perl $^V, $EXECUTABLE_NAME");
+diag("Test add_program_outfile_to_sample_info $MIP::QC::Record::VERSION, Perl $^V, $EXECUTABLE_NAME");
 
 # Init hash
 my %sample_info;
@@ -88,15 +88,17 @@ my $test_program_name = q{test_program};
 my $directory         = q{test_directory};
 my $outfile           = q{test.yaml};
 my $path              = catfile( $directory, $outfile );
+my $version = q{1.0.1};
 
 ## Family level
-add_program_file_to_sample_info(
+add_program_outfile_to_sample_info(
     {
         sample_info_href => \%sample_info,
         program_name     => $test_program_name,
         outdirectory     => $directory,
         outfile          => $outfile,
         path             => $path,
+     version => $version,
     }
 );
 
@@ -113,11 +115,14 @@ is( $sample_info{program}{$test_program_name}{outfile},
 is( $sample_info{program}{$test_program_name}{path},
     $path, q{Assigned correct value to family level path} );
 
+is( $sample_info{program}{$test_program_name}{version},
+    $version, q{Assigned correct value to family level version} );
+
 ## Sample level
 my $sample_id = q{test_sample_id};
 my $infile    = q{test_infile};
 
-add_program_file_to_sample_info(
+add_program_outfile_to_sample_info(
     {
         sample_info_href => \%sample_info,
         sample_id        => $sample_id,
@@ -126,6 +131,7 @@ add_program_file_to_sample_info(
         outdirectory     => $directory,
         outfile          => $outfile,
         path             => $path,
+     version => $version,
     }
 );
 
@@ -153,6 +159,12 @@ is(
     $sample_info{sample}{$sample_id}{program}{$test_program_name}
       {$infile}{path},
     $path, q{Assigned correct value to sample level path}
+);
+
+is(
+    $sample_info{sample}{$sample_id}{program}{$test_program_name}
+      {$infile}{version},
+    $version, q{Assigned correct value to sample level version}
 );
 
 done_testing();

@@ -25,15 +25,16 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(add_program_file_to_sample_info);
+    our @EXPORT_OK =
+      qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
 
 }
 
-sub add_program_file_to_sample_info {
+sub add_program_outfile_to_sample_info {
 
-##add_program_file_to_sample_info
+##add_program_outfile_to_sample_info
 
-##Function : Adds path and/or outdirectory and/or outfile from programs to sample_info to track all files and extract downstream
+##Function : Adds path and/or outdirectory and/or outfile and/or version from programs to sample_info to track all outfiles and extract downstream
 ##Returns  : ""
 ##Arguments: $sample_info_href, $program_name, $path, $outdirectory, $outfile, $sample_id, $infile,
 ##         : $sample_info_href => Records on samples and family hash {REF}
@@ -41,6 +42,7 @@ sub add_program_file_to_sample_info {
 ##         : $path             => Path of file
 ##         : $outdirectory     => Outdirectory of the file
 ##         : $outfile          => Outfile name
+##         : $version          => Version of file
 ##         : $sample_id        => Sample_id for data at sample level {Optional}
 ##         : $infile           => Infile for data at sample level {Optional}
 
@@ -52,6 +54,7 @@ sub add_program_file_to_sample_info {
     my $path;
     my $outdirectory;
     my $outfile;
+    my $version;
     my $sample_id;
     my $infile;
 
@@ -81,6 +84,10 @@ sub add_program_file_to_sample_info {
             strict_type => 1,
             store       => \$outfile
         },
+		version => {
+            strict_type => 1,
+            store       => \$version
+        },
         infile    => { strict_type => 1, store => \$infile },
         sample_id => { strict_type => 1, store => \$sample_id },
     };
@@ -92,11 +99,12 @@ sub add_program_file_to_sample_info {
         path         => $path,
         outdirectory => $outdirectory,
         outfile      => $outfile,
+		     version      => $version,
     );
 
-    ## Sample level
     if ( defined $sample_id && defined $infile ) {
 
+      SAMPLE_PARAMETER:
         while ( my ( $parameter_key, $parameter_value ) = each %parameter ) {
 
             if ( defined $parameter_value ) {
@@ -108,13 +116,120 @@ sub add_program_file_to_sample_info {
     }
     else {
 
-        ## Family level info
+      FAMILY_PARAMETER:
         while ( my ( $parameter_key, $parameter_value ) = each %parameter ) {
 
             if ( defined $parameter_value ) {
 
                 $sample_info_href->{program}{$program_name}{$parameter_key} =
                   $parameter_value;
+            }
+        }
+    }
+    return;
+}
+
+sub add_program_metafile_to_sample_info {
+
+##add_program_metafile_to_sample_info
+
+##Function : Adds path and/or directory and/or file and/or version from programs to sample_info to track all metafiles and extract downstream
+##Returns  : ""
+##Arguments: $sample_info_href, $program_name, $metafile_tag, $path, $directory, $file, $version, $sample_id, $infile,
+##         : $sample_info_href => Records on samples and family hash {REF}
+##         : $program_name     => Program name
+##         : $metafile_tag     => Id tag of meta file
+##         : $path             => Path of file
+##         : $directory     => Directory of the file
+##         : $file          => File name
+##         : $version          => Version of file
+##         : $sample_id        => Sample_id for data at sample level {Optional}
+##         : $infile           => Infile for data at sample level {Optional}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $sample_info_href;
+    my $program_name;
+    my $metafile_tag;
+    my $path;
+    my $directory;
+    my $file;
+    my $version;
+    my $sample_id;
+    my $infile;
+
+    my $tmpl = {
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href
+        },
+        program_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$program_name
+        },
+        metafile_tag => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$metafile_tag
+        },
+        path => {
+            strict_type => 1,
+            store       => \$path
+        },
+        directory => {
+            strict_type => 1,
+            store       => \$directory
+        },
+        file => {
+            strict_type => 1,
+            store       => \$file
+        },
+        version => {
+            strict_type => 1,
+            store       => \$version
+        },
+        infile    => { strict_type => 1, store => \$infile },
+        sample_id => { strict_type => 1, store => \$sample_id },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
+
+    ## Set the key and value pair to add to sample_info hash
+    my %parameter = (
+        path         => $path,
+        directory => $directory,
+        file      => $file,
+        version      => $version,
+    );
+
+    if ( defined $sample_id && defined $infile ) {
+
+      SAMPLE_PARAMETER:
+        while ( my ( $parameter_key, $parameter_value ) = each %parameter ) {
+
+            if ( defined $parameter_value ) {
+
+                $sample_info_href->{sample}{$sample_id}{program}{$program_name}
+                  {$infile}{$metafile_tag}{$parameter_key} = $parameter_value;
+            }
+        }
+    }
+    else {
+
+      FAMILY_PARAMETER:
+        while ( my ( $parameter_key, $parameter_value ) = each %parameter ) {
+
+            if ( defined $parameter_value ) {
+
+                $sample_info_href->{program}{$program_name}{$metafile_tag}
+                  {$parameter_key} = $parameter_value;
             }
         }
     }
