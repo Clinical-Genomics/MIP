@@ -3894,6 +3894,7 @@ sub mqccollect {
 
     use MIP::Script::Setup_script qw(setup_script);
     use Program::Qc::Mip qw(qccollect);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $jobid_chain   = $parameter_href->{ "p" . $program_name }{chain};
@@ -3945,19 +3946,16 @@ sub mqccollect {
     {
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        my $qc_metric_outfile = $$family_id_ref . q{_qc_metrics.yaml};
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => "qccollect",
+                program_name     => 'qccollect',
                 outdirectory     => $outfamily_directory,
-                outfile_ending   => $$family_id_ref . "_qc_metrics.yaml",
-                outdata_type     => "infile_dependent"
+                outfile          => $qc_metric_outfile,
+                path => catfile( $outfamily_directory, $qc_metric_outfile ),
             }
         );
-
-        ## Add qc_metrics path to sample_info
-        $sample_info_href->{program}{qccollect}{qccollect_metrics_file}{path} =
-          $outfamily_directory . "/" . $$family_id_ref . "_qc_metrics.yaml";
 
         submit_job(
             {
@@ -4162,7 +4160,7 @@ sub evaluation {
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Rename vcf samples. The samples array will replace the sample names in the same order as supplied.
     rename_vcf_samples(
@@ -4474,7 +4472,7 @@ q?perl -nae 'unless($_=~/##contig=<ID=NC_007605,length=171823>/ || $_=~/##contig
             }
         );
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -4628,6 +4626,7 @@ sub endvariantannotationblock {
 
     use Program::Htslib qw(bgzip tabix);
     use MIP::Gnu::Software::Gnu_grep qw(gnu_grep);
+    use MIP::QC::Record qw(add_program_metafile_to_sample_info);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $consensus_analysis_type =
@@ -4831,7 +4830,7 @@ sub endvariantannotationblock {
                     FILEHANDLE   => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE "wait", "\n";
+            say $FILEHANDLE q{wait}, "\n";
         }
 
         if ( $active_parameter_href->{rankvariant_binary_file} ) {
@@ -4876,7 +4875,7 @@ sub endvariantannotationblock {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
 
         ## Adds the most complete vcf file to sample_info
         add_most_complete_vcf(
@@ -4897,10 +4896,19 @@ sub endvariantannotationblock {
 
             if ( $vcfparser_outfile_counter == 1 ) {
 
-                $sample_info_href->{program}{$program_name}{clinical}{path} =
+                # Save clinical candidate list path
+                my $clinical_candidate_path =
                     $final_path_prefix
                   . $vcfparser_analysis_type
-                  . $outfile_suffix;    #Save clinical candidate list path
+                  . $outfile_suffix;
+                add_program_metafile_to_sample_info(
+                    {
+                        sample_info_href => $sample_info_href,
+                        program_name     => $program_name,
+                        metafile_tag     => q{clinical},
+                        path             => $clinical_candidate_path,
+                    }
+                );
 
                 if ( $active_parameter_href->{rankvariant_binary_file} ) {
 
@@ -4912,10 +4920,19 @@ sub endvariantannotationblock {
             }
             else {
 
-                $sample_info_href->{program}{$program_name}{research}{path} =
+                # Save research candidate list path
+                my $research_candidate_path =
                     $final_path_prefix
                   . $vcfparser_analysis_type
-                  . $outfile_suffix;    #Save research candidate list path
+                  . $outfile_suffix;
+                add_program_metafile_to_sample_info(
+                    {
+                        sample_info_href => $sample_info_href,
+                        program_name     => $program_name,
+                        metafile_tag     => q{research},
+                        path             => $research_candidate_path,
+                    }
+                );
 
                 if ( $active_parameter_href->{rankvariant_binary_file} ) {
 
@@ -5079,6 +5096,8 @@ sub rankvariant {
 
     use MIP::Cluster qw(get_core_number);
     use Program::Variantcalling::Genmod qw(annotate models score compound);
+    use MIP::QC::Record
+      qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger('MIP');
@@ -5465,40 +5484,48 @@ sub rankvariant {
                     FILEHANDLE   => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE "wait", "\n";
+            say $FILEHANDLE q{wait}, "\n";
         }
 
         if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
             && ( !$active_parameter_href->{dry_run_all} ) )
         {
 
-            sample_info_qc(
+            my $qc_genmod_outfile =
+                $outfile_prefix . q{_}
+              . $file_info_href->{contigs_size_ordered}[0]
+              . $vcfparser_analysis_type
+              . $outfile_suffix;
+            add_program_outfile_to_sample_info(
                 {
                     sample_info_href => $sample_info_href,
-                    program_name     => "genmod",
+                    program_name     => q{genmod},
                     outdirectory     => $outfamily_directory,
-                    outfile_ending   => $outfile_prefix . "_"
-                      . $file_info_href->{contigs_size_ordered}[0]
-                      . $vcfparser_analysis_type
-                      . $outfile_suffix,
-                    outdata_type => "static"
+                    outfile          => $qc_genmod_outfile,
                 }
             );
 
-            if ( defined( $active_parameter_href->{rank_model_file} ) )
-            {    #Add to SampleInfo
+            # Add to Sample_info
+            if ( defined( $active_parameter_href->{rank_model_file} ) ) {
 
+                my $rank_model_version;
                 if ( $active_parameter_href->{rank_model_file} =~
                     /v(\d+\.\d+.\d+|\d+\.\d+)/ )
                 {
 
-                    $sample_info_href->{program}{rankvariant}{rank_model}
-                      {version} = $1;
+                    $rank_model_version = $1;
                 }
-                $sample_info_href->{program}{rankvariant}{rank_model}{file} =
-                  basename( $active_parameter_href->{rank_model_file} );
-                $sample_info_href->{program}{rankvariant}{rank_model}{path} =
-                  $active_parameter_href->{rank_model_file};
+                add_program_metafile_to_sample_info(
+                    {
+                        sample_info_href => $sample_info_href,
+                        program_name     => q{genmod},
+                        metafile_tag     => q{rank_model},
+                        file =>
+                          basename( $active_parameter_href->{rank_model_file} ),
+                        path    => $active_parameter_href->{rank_model_file},
+                        version => $rank_model_version,
+                    }
+                );
             }
         }
     }
@@ -5652,6 +5679,7 @@ sub gatk_variantevalexome {
     use MIP::Gnu::Coreutils qw(gnu_cat gnu_sort);
     use Program::Variantcalling::Bedtools qw(intersectbed);
     use Program::Variantcalling::Gatk qw(varianteval);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -5733,7 +5761,7 @@ sub gatk_variantevalexome {
         }
     );
 
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Select sample id from family id vcf file
 
@@ -5786,7 +5814,7 @@ sub gatk_variantevalexome {
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Extract exonic variants
     say $FILEHANDLE "## Extract exonic variants";
@@ -5822,7 +5850,7 @@ sub gatk_variantevalexome {
                 outfile_path => $$temp_directory_ref
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
 
         ## Extract exonic variants
         say $FILEHANDLE "## Extract exonic variants";
@@ -6010,25 +6038,23 @@ sub gatk_variantevalexome {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        my $qc_exome_outfile =
+          $outfile_tag . $call_type . q{_exome} . $outfile_suffix;
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
-                program_name     => "variantevalexome",
+                program_name     => 'variantevalexome',
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile_ending   => $outfile_tag
-                  . $call_type
-                  . "_exome"
-                  . $outfile_suffix,
-                outdata_type => "infile_dependent"
+                outfile          => $qc_exome_outfile,
             }
         );
     }
@@ -6167,6 +6193,7 @@ sub gatk_variantevalall {
     use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
     use Program::Variantcalling::Gatk qw(varianteval);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -6246,7 +6273,7 @@ sub gatk_variantevalall {
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Select sample id from family id vcf file
 
@@ -6328,22 +6355,21 @@ sub gatk_variantevalall {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
-                program_name     => "variantevalall",
+                program_name     => 'variantevalall',
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile_ending   => $outfile_tag . $call_type . $outfile_suffix,
-                outdata_type     => "infile_dependent"
+                outfile          => $outfile_tag . $call_type . $outfile_suffix,
             }
         );
     }
@@ -6494,6 +6520,7 @@ sub snpeff {
     use Program::Variantcalling::Snpeff qw(ann);
     use Program::Variantcalling::Snpsift qw(annotate dbnsfp);
     use Program::Variantcalling::Mip qw(vcfparser);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $xargs_file_name;
@@ -6910,7 +6937,7 @@ sub snpeff {
                     FILEHANDLE   => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE "wait", "\n";
+            say $FILEHANDLE q{wait}, "\n";
         }
     }
 
@@ -6919,16 +6946,17 @@ sub snpeff {
     {
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        my $qc_snpeff_outfile =
+            $outfile_prefix . q{_}
+          . $file_info_href->{contigs_size_ordered}[0]
+          . $vcfparser_analysis_type
+          . $outfile_suffix;
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
                 outdirectory     => $outfamily_directory,
-                outfile_ending   => $outfile_prefix . "_"
-                  . $file_info_href->{contigs_size_ordered}[0]
-                  . $vcfparser_analysis_type
-                  . $outfile_suffix,
-                outdata_type => "static"
+                outfile          => $qc_snpeff_outfile,
             }
         );
     }
@@ -7568,6 +7596,7 @@ sub mvcfparser {
     use MIP::Cluster qw(get_core_number);
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Mip qw(vcfparser);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $xargs_file_name;
@@ -7781,7 +7810,7 @@ sub mvcfparser {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
@@ -7814,15 +7843,16 @@ sub mvcfparser {
         }
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        my $qc_vcfparser_outfile =
+            $outfile_prefix . q{_}
+          . $file_info_href->{contigs_size_ordered}[0]
+          . $infile_suffix;
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
                 outdirectory     => $outfamily_directory,
-                outfile_ending   => $outfile_prefix . "_"
-                  . $file_info_href->{contigs_size_ordered}[0]
-                  . $infile_suffix,
-                outdata_type => "static"
+                outfile          => $qc_vcfparser_outfile,
             }
         );
     }
@@ -8029,6 +8059,7 @@ sub varianteffectpredictor {
     use MIP::Cluster qw(get_core_number);
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Vep qw(variant_effect_predictor);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $xargs_file_name;
@@ -8078,9 +8109,10 @@ sub varianteffectpredictor {
         );
         $stderr_path = $program_info_path . ".stderr.txt";
     }
+
+    # Split to enable submission to &sample_info_qc later
     my ( $volume, $directory, $stderr_file ) =
-      File::Spec->splitpath($stderr_path)
-      ;    #Split to enable submission to &sample_info_qc later
+      File::Spec->splitpath($stderr_path);
 
     ## Assign directories
     my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
@@ -8248,28 +8280,30 @@ sub varianteffectpredictor {
     {
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        my $qc_vep_summary_outfile =
+            $outfile_prefix . q{_}
+          . $file_info_href->{contigs_size_ordered}[0]
+          . $infile_suffix
+          . q{_summary.html};
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => $program_name . "summary",
+                program_name     => $program_name . q{summary},
                 outdirectory     => $outfamily_directory,
-                outfile_ending   => $outfile_prefix . "_"
-                  . $file_info_href->{contigs_size_ordered}[0]
-                  . $infile_suffix
-                  . "_summary.html",
-                outdata_type => "static"
+                outfile          => $qc_vep_summary_outfile,
             }
         );
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        my $qc_vep_outfile =
+            $outfile_prefix . q{_}
+          . $file_info_href->{contigs_size_ordered}[0]
+          . $infile_suffix;
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
                 outdirectory     => $outfamily_directory,
-                outfile_ending   => $outfile_prefix . "_"
-                  . $file_info_href->{contigs_size_ordered}[0]
-                  . $infile_suffix,
-                outdata_type => "static"
+                outfile          => $qc_vep_outfile,
             }
         );
     }
@@ -8283,7 +8317,7 @@ sub varianteffectpredictor {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($XARGSFILEHANDLE);
 
@@ -8299,7 +8333,7 @@ sub varianteffectpredictor {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
 
         close($FILEHANDLE);
     }
@@ -8316,7 +8350,7 @@ sub varianteffectpredictor {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
     }
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
@@ -8345,13 +8379,12 @@ sub varianteffectpredictor {
         }
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
                 outdirectory     => $directory,
-                outfile_ending   => $stderr_file,
-                outdata_type     => "info_directory"
+                outfile          => $stderr_file,
             }
         );
     }
@@ -8452,7 +8485,7 @@ sub gatk_readbackedphasing {
             outfile_path => $active_parameter_href->{temp_directory}
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Copy BAM file(s) to temporary directory
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
@@ -8476,7 +8509,7 @@ sub gatk_readbackedphasing {
                 outfile_path => $active_parameter_href->{temp_directory}
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
     }
 
     ## GATK ReadBackedPhasing
@@ -8555,7 +8588,7 @@ sub gatk_readbackedphasing {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -8664,7 +8697,7 @@ sub gatk_phasebytransmission {
             outfile_path => $active_parameter_href->{temp_directory}
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## GATK PhaseByTransmission
     say $FILEHANDLE "## GATK PhaseByTransmission";
@@ -8724,7 +8757,7 @@ sub gatk_phasebytransmission {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -8855,6 +8888,7 @@ sub mpeddy {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Peddy qw(peddy);
+    use MIP::QC::Record qw(add_program_metafile_to_sample_info);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -8943,7 +8977,7 @@ sub mpeddy {
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Reformat variant calling file and index
     view_vcf(
@@ -8983,8 +9017,14 @@ sub mpeddy {
 
             my $outfile_suffix = '.' . $file_key . '.' . $suffix;
             ## Collect QC metadata info for later use
-            $sample_info_href->{program}{$program_name}{$file_key}{path} =
-              $outfile_path_prefix . $outfile_suffix;
+            add_program_metafile_to_sample_info(
+                {
+                    sample_info_href => $sample_info_href,
+                    program_name     => $program_name,
+                    metafile_tag     => $file_key,
+                    path             => $outfile_path_prefix . $outfile_suffix,
+                }
+            );
         }
     }
 
@@ -9118,6 +9158,7 @@ sub mplink {
     use Program::Variantcalling::Bcftools qw(view annotate);
     use Program::Variantcalling::Vt qw(vt_uniq);
     use Program::Variantcalling::Plink qw(plink);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -9204,7 +9245,7 @@ sub mplink {
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Prepare input
     say $FILEHANDLE "## Remove indels using bcftools ";
@@ -9392,47 +9433,43 @@ sub mplink {
         {    #Only perform if more than 1 sample
 
             ## Collect QC metadata info for later use
-            sample_info_qc(
+            add_program_outfile_to_sample_info(
                 {
                     sample_info_href => $sample_info_href,
-                    program_name     => "inbreeding_factor",
+                    program_name     => q{inbreeding_factor},
                     outdirectory     => $outfamily_directory,
-                    outfile_ending   => $$family_id_ref . ".het",
-                    outdata_type     => "infile_dependent"
+                    outfile          => $$family_id_ref . q{.het},
                 }
             );
 
             ## Collect QC metadata info for later use
-            sample_info_qc(
+            add_program_outfile_to_sample_info(
                 {
                     sample_info_href => $sample_info_href,
-                    program_name     => "relation_check",
+                    program_name     => q{relation_check},
                     outdirectory     => $outfamily_directory,
-                    outfile_ending   => $$family_id_ref . ".mibs",
-                    outdata_type     => "infile_dependent"
+                    outfile          => $$family_id_ref . q{.mibs},
                 }
             );
         }
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => "plink_sexcheck",
+                program_name     => q{plink_sexcheck},
                 outdirectory     => $outfamily_directory,
-                outfile_ending   => $$family_id_ref . ".sexcheck",
-                outdata_type     => "infile_dependent"
+                outfile          => $$family_id_ref . q{.sexcheck},
             }
         );
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => "plink2",
+                program_name     => q{plink2},
                 outdirectory     => $directory,
-                outfile_ending   => $stdout_file,
-                outdata_type     => "info_directory",
+                outfile          => $stdout_file,
             }
         );
     }
@@ -9566,6 +9603,7 @@ sub variant_integrity {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Variant_integrity qw(mendel father);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -9650,7 +9688,7 @@ sub variant_integrity {
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Variant_integrity
     if ( scalar( @{ $active_parameter_href->{sample_ids} } ) > 1 )
@@ -9677,13 +9715,12 @@ sub variant_integrity {
             {
 
                 ## Collect QC metadata info for later use
-                sample_info_qc(
+                add_program_outfile_to_sample_info(
                     {
                         sample_info_href => $sample_info_href,
-                        program_name     => "variant_integrity_mendel",
+                        program_name     => q{variant_integrity_mendel},
                         outdirectory     => $outfamily_directory,
-                        outfile_ending   => $$family_id_ref . "_mendel.txt",
-                        outdata_type     => "infile_dependent"
+                        outfile          => $$family_id_ref . q{_mendel.txt},
                     }
                 );
             }
@@ -9716,13 +9753,12 @@ sub variant_integrity {
                 {
 
                     ## Collect QC metadata info for later use
-                    sample_info_qc(
+                    add_program_outfile_to_sample_info(
                         {
                             sample_info_href => $sample_info_href,
-                            program_name     => "variant_integrity_father",
+                            program_name     => q{variant_integrity_father},
                             outdirectory     => $outfamily_directory,
-                            outfile_ending   => $$family_id_ref . "_father.txt",
-                            outdata_type     => "infile_dependent"
+                            outfile_ending => $$family_id_ref . q{_father.txt},
                         }
                     );
                 }
@@ -9876,9 +9912,14 @@ sub vt {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use Readonly;
     use MIP::Cluster qw(get_core_number);
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use Program::Variantcalling::Genmod qw(annotate filter);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
+
+    ## Constants
+    Readonly my $DOT => q{.};
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $xargs_file_name;
@@ -10043,15 +10084,14 @@ sub vt {
               ;    #Split to enable submission to &SampleInfoQC later
 
             ## Collect QC metadata info for later use
-            sample_info_qc(
+            my $qc_vt_outfile =
+              $stderr_file . $DOT . $contig . $DOT . q{stderr.txt};
+            add_program_outfile_to_sample_info(
                 {
                     sample_info_href => $sample_info_href,
-                    program_name     => "vt",
+                    program_name     => 'vt',
                     outdirectory     => $directory,
-                    outfile_ending   => $stderr_file . "."
-                      . $contig
-                      . ".stderr.txt",
-                    outdata_type => "info_directory"
+                    outfile          => $qc_vt_outfile,
                 }
             );
         }
@@ -10152,7 +10192,7 @@ sub vt {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
 
         close($FILEHANDLE);
     }
@@ -10494,7 +10534,7 @@ sub rhocall {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
 
         close($FILEHANDLE);
     }
@@ -10748,7 +10788,7 @@ sub prepareforvariantannotationblock {
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Compress or decompress original file or stream to outfile (if supplied)
     bgzip(
@@ -10834,7 +10874,7 @@ sub prepareforvariantannotationblock {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
 
         close($FILEHANDLE);
     }
@@ -11090,7 +11130,7 @@ sub gatk_combinevariantcallsets {
             );
         }
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## GATK CombineVariants
     say $FILEHANDLE "## GATK CombineVariants";
@@ -11159,7 +11199,7 @@ sub gatk_combinevariantcallsets {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -11304,6 +11344,7 @@ sub gatk_variantrecalibration {
     use Program::Variantcalling::Bcftools qw(norm);
     use Program::Variantcalling::Gatk
       qw(variantrecalibrator applyrecalibration selectvariants calculategenotypeposteriors);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -11412,7 +11453,7 @@ sub gatk_variantrecalibration {
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ### GATK VariantRecalibrator
     ## Set mode to be used in variant recalibration
@@ -11840,7 +11881,7 @@ sub gatk_variantrecalibration {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
     }
 
     ## Copies file from temporary directory.
@@ -11859,7 +11900,7 @@ sub gatk_variantrecalibration {
             }
         );
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -11868,16 +11909,16 @@ sub gatk_variantrecalibration {
     {
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        # Disabled pedigreeCheck to not include relationship test is qccollect
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => "pedigree_check"
-                , #Disabled pedigreeCheck to not include relationship test is qccollect
-                outdirectory   => $outfamily_directory,
-                outfile_ending => $outfile_prefix . $outfile_suffix,
-                outdata_type   => "infile_dependent"
+                program_name     => q{pedigree_check},
+                outdirectory     => $outfamily_directory,
+                outfile          => $outfile_prefix . $outfile_suffix,
             }
         );
+
         $sample_info_href->{vcf_file}{ready_vcf}{path} =
           catfile( $outfamily_directory, $outfile_prefix . $outfile_suffix );
 
@@ -12098,7 +12139,7 @@ sub gatk_concatenate_genotypegvcfs {
             }
         );
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
     concatenate_variants(
@@ -12187,7 +12228,7 @@ sub gatk_concatenate_genotypegvcfs {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
     }
 
     ## Copies file from temporary directory.
@@ -12199,7 +12240,7 @@ sub gatk_concatenate_genotypegvcfs {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -12472,7 +12513,7 @@ sub gatk_genotypegvcfs {
                     outfile_path => $$temp_directory_ref
                 }
             );
-            say $FILEHANDLE "wait", "\n";
+            say $FILEHANDLE q{wait}, "\n";
         }
 
         ## GATK GenoTypeGVCFs
@@ -12541,7 +12582,7 @@ sub gatk_genotypegvcfs {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
 
         close($FILEHANDLE);
 
@@ -12726,7 +12767,7 @@ sub rcoverageplots {
     print $FILEHANDLE $active_parameter_href->{bedtools_genomecov_max_coverage}
       . " ";                            #X-axis max scale
     say $FILEHANDLE $outsample_directory, " &", "\n";    #OutFile
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -12931,7 +12972,7 @@ sub bedtools_genomecov {
             outfile_path => $$temp_directory_ref,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Bedtools Genomecov
     say $FILEHANDLE "## Calculate coverage metrics on alignment";
@@ -12957,7 +12998,7 @@ sub bedtools_genomecov {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -13096,6 +13137,7 @@ sub picardtools_collecthsmetrics {
     use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
     use Program::Alignment::Picardtools qw(collecthsmetrics);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -13167,7 +13209,7 @@ sub picardtools_collecthsmetrics {
             outfile_path => $$temp_directory_ref,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Collecthsmetrics
     say $FILEHANDLE "## Calculate capture metrics on alignment";
@@ -13218,22 +13260,21 @@ sub picardtools_collecthsmetrics {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
-                program_name     => "collecthsmetrics",
+                program_name     => 'collecthsmetrics',
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile_ending   => $outfile_tag,
-                outdata_type     => "infile_dependent"
+                outfile          => $outfile_tag,
             }
         );
     }
@@ -13369,10 +13410,15 @@ sub picardtools_collectmultiplemetrics {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use Readonly;
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
     use Program::Alignment::Picardtools qw(collectmultiplemetrics);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
+
+    ## Constants
+    Readonly my $DOT => q{.};
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -13440,7 +13486,7 @@ sub picardtools_collectmultiplemetrics {
             outfile_path => $$temp_directory_ref,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## CollectMultipleMetrics
     say $FILEHANDLE "## Collecting multiple metrics on alignment";
@@ -13487,33 +13533,31 @@ sub picardtools_collectmultiplemetrics {
             }
         );
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
-                program_name     => "collectmultiplemetrics",
+                program_name     => 'collectmultiplemetrics',
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile_ending   => $outfile_tag . ".alignment_summary_metrics",
-                outdata_type     => "infile_dependent"
+                outfile => $outfile_tag . $DOT . q{alignment_summary_metrics},
             }
         );
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
-                program_name     => "collectmultiplemetricsinsertsize",
+                program_name     => 'collectmultiplemetricsinsertsize',
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile_ending   => $outfile_tag . ".insert_size_metrics",
-                outdata_type     => "infile_dependent"
+                outfile_ending => $outfile_tag . $DOT . q{insert_size_metrics},
             }
         );
     }
@@ -13651,6 +13695,8 @@ sub chanjo_sexcheck {
 
     use MIP::Script::Setup_script qw(setup_script);
     use Program::Alignment::Chanjo qw(sex);
+    use MIP::QC::Record
+      qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -13743,26 +13789,25 @@ sub chanjo_sexcheck {
     {
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
-                program_name     => "chanjo_sexcheck",
+                program_name     => q{chanjo_sexcheck},
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile_ending   => $outfile_tag . $outfile_suffix,
-                outdata_type     => "infile_dependent"
+                outfile          => $outfile_tag . $outfile_suffix,
             }
         );
-        sample_info_qc(
+        add_program_metafile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
-                program_name     => "chanjo",
+                program_name     => q{chanjo_sexcheck},
                 infile           => $infile,
-                outdirectory     => $outsample_directory,
-                outfile_ending   => $infile_tag . "_chanjo_sexcheck.log",
-                outdata_type     => "infile_dependent"
+                metafile_tag     => q{log},
+                directory        => $outsample_directory,
+                file             => $infile_tag . q{_chanjo_sexcheck.log},
             }
         );
     }
@@ -13902,6 +13947,7 @@ sub sambamba_depth {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use Program::Alignment::Sambamba qw(depth);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -13976,7 +14022,7 @@ sub sambamba_depth {
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## sambamba_depth
     say $FILEHANDLE "## Annotating bed from alignment";
@@ -14022,15 +14068,23 @@ sub sambamba_depth {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        $sample_info_href->{sample}{$$sample_id_ref}{program}{$program_name}
-          {$infile}{ substr( $outfile_suffix, 1 ) }{path} =
+        my $qc_sambamba_path =
           catfile( $outsample_directory, $outfile_prefix . $outfile_suffix );
+        add_program_outfile_to_sample_info(
+            {
+                sample_info_href => $sample_info_href,
+                sample_id        => $$sample_id_ref,
+                program_name     => $program_name,
+                infile           => $infile,
+                path             => $qc_sambamba_path,
+            }
+        );
     }
 
     close($FILEHANDLE);
@@ -14363,7 +14417,7 @@ sub sv_reformat {
                     outfile_path => $$temp_directory_ref
                 }
             );
-            say $FILEHANDLE "wait", "\n";
+            say $FILEHANDLE q{wait}, "\n";
         }
 
         my $concatenate_ending = "";
@@ -14467,7 +14521,7 @@ sub sv_reformat {
                     FILEHANDLE   => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE "wait", "\n";
+            say $FILEHANDLE q{wait}, "\n";
         }
 
         if ( $active_parameter_href->{sv_rankvariant_binary_file} ) {
@@ -14512,7 +14566,7 @@ sub sv_reformat {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
 
         ## Adds the most complete vcf file to sample_info
         add_most_complete_vcf(
@@ -14534,10 +14588,17 @@ sub sv_reformat {
 
             if ( $vcfparser_outfile_counter == 1 ) {
 
-                $sample_info_href->{program}{$program_name}{clinical}{path} =
-                    $final_path_prefix
-                  . $vcfparser_analysis_type
-                  . $file_suffix;    #Save clinical candidate list path
+                # Save clinical candidate list path
+                my $clinical_candidate_path =
+                  $final_path_prefix . $vcfparser_analysis_type . $file_suffix;
+                add_program_metafile_to_sample_info(
+                    {
+                        sample_info_href => $sample_info_href,
+                        program_name     => $program_name,
+                        metafile_tag     => q{clinical},
+                        path             => $clinical_candidate_path,
+                    }
+                );
 
                 if ( $active_parameter_href->{sv_rankvariant_binary_file} ) {
 
@@ -14549,10 +14610,17 @@ sub sv_reformat {
             }
             else {
 
-                $sample_info_href->{program}{$program_name}{research}{path} =
-                    $final_path_prefix
-                  . $vcfparser_analysis_type
-                  . $file_suffix;    #Save research candidate list path
+                # Save research candidate list path
+                my $research_candidate_path =
+                  $final_path_prefix . $vcfparser_analysis_type . $file_suffix;
+                add_program_metafile_to_sample_info(
+                    {
+                        sample_info_href => $sample_info_href,
+                        program_name     => $program_name,
+                        metafile_tag     => q{research},
+                        path             => $research_candidate_path,
+                    }
+                );
 
                 if ( $active_parameter_href->{sv_rankvariant_binary_file} ) {
 
@@ -14712,6 +14780,8 @@ sub sv_rankvariant {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Genmod qw(annotate models score compound);
+    use MIP::QC::Record
+      qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger('MIP');
@@ -14915,7 +14985,7 @@ sub sv_rankvariant {
                     outfile_path => $$temp_directory_ref
                 }
             );
-            say $FILEHANDLE "wait", "\n";
+            say $FILEHANDLE q{wait}, "\n";
         }
 
         my $genmod_module = "";   #Track which genmod modules has been processed
@@ -15169,7 +15239,7 @@ sub sv_rankvariant {
                     FILEHANDLE   => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE "wait", "\n";
+            say $FILEHANDLE q{wait}, "\n";
 
             ## Adds the most complete vcf file to sample_info
             add_most_complete_vcf(
@@ -15196,34 +15266,43 @@ sub sv_rankvariant {
     {
 
         if ( defined( $active_parameter_href->{sv_rank_model_file} ) )
-        {    #Add to SampleInfo
+        {    #Add to Sample_info
 
+            my $sv_rank_model_version;
             if ( $active_parameter_href->{sv_rank_model_file} =~
                 /v(\d+\.\d+.\d+|\d+\.\d+)/ )
             {
 
-                $sample_info_href->{program}{sv_rankvariant}{rank_model}
-                  {version} = $1;
+                $sv_rank_model_version = $1;
             }
-            $sample_info_href->{program}{sv_rankvariant}{rank_model}{file} =
-              basename( $active_parameter_href->{sv_rank_model_file} );
-            $sample_info_href->{program}{sv_rankvariant}{rank_model}{path} =
-              $active_parameter_href->{sv_rank_model_file};
+            add_program_metafile_to_sample_info(
+                {
+                    sample_info_href => $sample_info_href,
+                    program_name     => q{sv_genmod},
+                    metafile_tag     => q{sv_rank_model},
+                    file =>
+                      basename( $active_parameter_href->{sv_rank_model_file} ),
+                    path    => $active_parameter_href->{sv_rank_model_file},
+                    version => $sv_rank_model_version,
+                }
+            );
 
         }
-        sample_info_qc(
+        my $qc_sv_genmod_outfile =
+            $$family_id_ref
+          . $outfile_tag
+          . $call_type
+          . $vcfparser_analysis_type
+          . $file_suffix;
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => "sv_genmod",
+                program_name     => q{sv_genmod},
                 outdirectory     => $outfamily_directory,
-                outfile_ending   => $$family_id_ref
-                  . $outfile_tag
-                  . $call_type
-                  . $vcfparser_analysis_type
-                  . $file_suffix,
-                outdata_type => "static"
+                outfile          => $qc_sv_genmod_outfile,
             }
         );
+
         submit_job(
             {
                 active_parameter_href   => $active_parameter_href,
@@ -15356,6 +15435,7 @@ sub sv_vcfparser {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Mip qw(vcfparser);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -15465,7 +15545,7 @@ sub sv_vcfparser {
                 outfile_path => $$temp_directory_ref
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
     }
 
     ## vcfparser
@@ -15607,7 +15687,7 @@ sub sv_vcfparser {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
     }
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
@@ -15630,13 +15710,12 @@ sub sv_vcfparser {
         }
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
                 outdirectory     => $outfamily_directory,
-                outfile_ending   => $outfile_sample_info_prefix . $file_suffix,
-                outdata_type     => "static"
+                outfile          => $outfile_sample_info_prefix . $file_suffix,
             }
         );
 
@@ -15725,7 +15804,7 @@ sub sv_vcfparser {
                     FILEHANDLE   => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE "wait", "\n";
+            say $FILEHANDLE q{wait}, "\n";
 
             ## Adds the most complete vcf file to sample_info
             add_most_complete_vcf(
@@ -15884,10 +15963,17 @@ sub sv_varianteffectpredictor {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use Readonly;
     use MIP::Cluster qw(get_core_number);
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Vep qw(variant_effect_predictor);
+    use MIP::QC::Record
+      qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
+
+    ## Constants
+    Readonly my $DOT     => q{.};
+    Readonly my $ASTERIX => q{*};
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -15991,7 +16077,7 @@ sub sv_varianteffectpredictor {
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Fix SV with no length as these will fail in the annotation with VEP
     my $perl_fix_sv_nolengths =
@@ -16157,25 +16243,25 @@ q?if($alt=~ /\<|\[|\]|\>/) { $alt=~ s/\<|\>//g; $alt=~ s/\:.+//g; if($start >= $
         }
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        my $qc_vep_summary_outfile =
+          $outfile_sample_info_prefix . $DOT . q{vcf_summary.html};
+        add_program_metafile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => $program_name . "summary",
-                outdirectory     => $outfamily_directory,
-                outfile_ending   => $outfile_sample_info_prefix
-                  . ".vcf_summary.html",
-                outdata_type => "static"
+                program_name     => $program_name,
+                metafile_tag     => q{summary},
+                directory        => $outfamily_directory,
+                file             => $qc_vep_summary_outfile,
             }
         );
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
                 outdirectory     => $outfamily_directory,
-                outfile_ending   => $outfile_sample_info_prefix . $file_suffix,
-                outdata_type     => "static"
+                outfile          => $outfile_sample_info_prefix . $file_suffix,
             }
         );
     }
@@ -16183,12 +16269,14 @@ q?if($alt=~ /\<|\[|\]|\>/) { $alt=~ s/\<|\>//g; $alt=~ s/\:.+//g; if($start >= $
     ## QC Data File(s)
     migrate_file(
         {
-            infile_path  => $outfile_path_prefix . q{*} . $file_suffix . q{_s*},
+            infile_path => $outfile_path_prefix
+              . $ASTERIX
+              . $file_suffix . q{_s*},
             outfile_path => $outfamily_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($XARGSFILEHANDLE);
 
@@ -16196,12 +16284,15 @@ q?if($alt=~ /\<|\[|\]|\>/) { $alt=~ s/\<|\>//g; $alt=~ s/\:.+//g; if($start >= $
     say $FILEHANDLE "## Copy file from temporary directory";
     migrate_file(
         {
-            infile_path  => $outfile_path_prefix . q{*} . $file_suffix . q{*},
+            infile_path => $outfile_path_prefix
+              . $ASTERIX
+              . $file_suffix
+              . $ASTERIX,
             outfile_path => $outfamily_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -16345,6 +16436,7 @@ sub sv_combinevariantcallsets {
     use Program::Variantcalling::Vt qw(decompose);
     use Program::Variantcalling::Genmod qw(annotate);
     use Program::Variantcalling::Vcfanno qw(vcfanno);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my @structural_variant_callers;    #Stores callers that have been executed
     my @parallel_chains
@@ -16478,7 +16570,7 @@ sub sv_combinevariantcallsets {
                     }
                 );
 
-                say $FILEHANDLE "wait", "\n";
+                say $FILEHANDLE q{wait}, "\n";
 
                 ## Reformat variant calling file and index
                 view_vcf(
@@ -16626,7 +16718,7 @@ sub sv_combinevariantcallsets {
                     outfile_path => $$temp_directory_ref
                 }
             );
-            say $FILEHANDLE "wait", "\n";
+            say $FILEHANDLE q{wait}, "\n";
 
             if ( $active_parameter_href->{sv_vt_decompose} > 0 ) {
 
@@ -16880,13 +16972,12 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
             && ( !$active_parameter_href->{dry_run_all} ) )
         {
 
-            sample_info_qc(
+            add_program_outfile_to_sample_info(
                 {
                     sample_info_href => $sample_info_href,
-                    program_name     => "sv_combinevariantcallsets",
+                    program_name     => q{sv_combinevariantcallsets},
                     outdirectory     => $directory,
-                    outfile_ending   => $stderr_file,
-                    outdata_type     => "info_directory"
+                    outfile          => $stderr_file,
                 }
             );
         }
@@ -16965,7 +17056,7 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -16973,16 +17064,14 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        sample_info_qc(
+        my $qc_svdb_outfile =
+          $$family_id_ref . $outfile_tag . $call_type . $outfile_suffix;
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => "svdb",
+                program_name     => 'svdb',
                 outdirectory     => $outfamily_directory,
-                outfile_ending   => $$family_id_ref
-                  . $outfile_tag
-                  . $call_type
-                  . $outfile_suffix,
-                outdata_type => "static"
+                outfile_ending   => $qc_svdb_outfile,
             }
         );
 
@@ -17146,6 +17235,7 @@ sub cnvnator {
     use Program::Variantcalling::Cnvnator
       qw(read_extraction histogram statistics partition calling convert_to_vcf);
     use Program::Variantcalling::Bcftools qw(annotate);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -17275,7 +17365,7 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
         );
         say $FILEHANDLE " &";
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -17462,7 +17552,7 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -17470,13 +17560,12 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => "cnvnator",
+                program_name     => 'cnvnator',
                 outdirectory     => $outsample_directory,
-                outfile_ending   => $outfile_prefix . $outfile_suffix,
-                outdata_type     => "static"
+                outfile          => $outfile_prefix . $outfile_suffix,
             }
         );
         submit_job(
@@ -17621,6 +17710,7 @@ sub delly_reformat {
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use Program::Variantcalling::Delly qw(call merge filter);
     use Program::Variantcalling::Bcftools qw(merge index);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -17838,7 +17928,7 @@ sub delly_reformat {
                     }
                   );
             }
-            say $FILEHANDLE "wait", "\n";
+            say $FILEHANDLE q{wait}, "\n";
         }
     }
 
@@ -18330,19 +18420,18 @@ sub delly_reformat {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => "delly",
+                program_name     => 'delly',
                 outdirectory     => $outfamily_directory,
-                outfile_ending   => $outfile_prefix . $outfile_suffix,
-                outdata_type     => "static"
+                outfile          => $outfile_prefix . $outfile_suffix,
             }
         );
     }
@@ -18628,7 +18717,7 @@ sub delly_call {
                 temp_directory     => $$temp_directory_ref,
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
     }
 
     ## delly
@@ -18716,7 +18805,7 @@ sub delly_call {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -18850,6 +18939,7 @@ sub manta {
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Manta qw(config workflow);
     use Program::Compression::Gzip qw(gzip);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -18961,7 +19051,7 @@ sub manta {
             }
         );
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## manta
     say $FILEHANDLE "## Manta";
@@ -19023,19 +19113,18 @@ sub manta {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => "manta",
+                program_name     => 'manta',
                 outdirectory     => $outfamily_directory,
-                outfile_ending   => $outfile_prefix . $outfile_suffix,
-                outdata_type     => "static"
+                outfile          => $outfile_prefix . $outfile_suffix,
             }
         );
     }
@@ -19176,6 +19265,7 @@ sub tiddit {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Tiddit qw(sv);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $program_outdirectory_name =
       $parameter_href->{ "p" . $program_name }{outdir_name};
@@ -19293,7 +19383,7 @@ sub tiddit {
             }
         );
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     $process_batches_count = 1;    # Restart counter
     while ( my ( $sample_id_index, $sample_id ) =
@@ -19322,7 +19412,7 @@ sub tiddit {
         );
         say $FILEHANDLE "& \n";
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Get parameters
     ## Tiddit sample outfiles
@@ -19346,7 +19436,7 @@ sub tiddit {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -19354,13 +19444,12 @@ sub tiddit {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => "tiddit",
+                program_name     => 'tiddit',
                 outdirectory     => $outfamily_directory,
                 outfile_ending   => $outfile_prefix . $outfile_suffix,
-                outdata_type     => "static"
             }
         );
 
@@ -19498,6 +19587,7 @@ sub samtools_mpileup {
     use MIP::IO::Files qw(migrate_file);
     use Program::Alignment::Samtools qw(mpileup);
     use Program::Variantcalling::Bcftools qw(call filter norm);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -19751,7 +19841,7 @@ q?\'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %M
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -19760,32 +19850,29 @@ q?\'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %M
     {
 
         ## Collect samtools version in qccollect
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => "samtools",
+                program_name     => 'samtools',
                 outdirectory     => $outfamily_directory,
-                outfile_ending   => $outfile_prefix . $outfile_suffix,
-                outdata_type     => "static"
+                outfile          => $outfile_prefix . $outfile_suffix,
             }
         );
         ## Locating samtools_mpileup file
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => "samtools_mpileup",
+                program_name     => 'samtools_mpileup',
                 outdirectory     => $outfamily_directory,
-                outfile_ending   => $outfile_prefix . $outfile_suffix,
-                outdata_type     => "static"
+                outfile          => $outfile_prefix . $outfile_suffix,
             }
         );
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => "bcftools",
+                program_name     => 'bcftools',
                 outdirectory     => $outfamily_directory,
                 outfile_ending   => $outfile_prefix . $outfile_suffix,
-                outdata_type     => "static"
             }
         );
 
@@ -19918,6 +20005,7 @@ sub freebayes {
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Freebayes qw(calling);
     use Program::Variantcalling::Bcftools qw(filter norm);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -20129,7 +20217,7 @@ sub freebayes {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -20137,22 +20225,20 @@ sub freebayes {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => "freebayes",
+                program_name     => 'freebayes',
                 outdirectory     => $outfamily_directory,
-                outfile_ending   => $outfile_prefix . $outfile_suffix,
-                outdata_type     => "static"
+                outfile          => $outfile_prefix . $outfile_suffix,
             }
         );
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => "bcftools",
+                program_name     => 'bcftools',
                 outdirectory     => $outfamily_directory,
                 outfile_ending   => $outfile_prefix . $outfile_suffix,
-                outdata_type     => "static"
             }
         );
 
@@ -21070,7 +21156,7 @@ sub gatk_baserecalibration {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Remove concatenated BAM file at temporary directory
     gnu_rm(
@@ -21734,6 +21820,7 @@ sub pmarkduplicates {
     use MIP::IO::Files qw(migrate_file);
     use Program::Alignment::Sambamba qw(flagstat);
     use MIP::Gnu::Coreutils qw(gnu_cat);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -21982,27 +22069,27 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
-                program_name     => "markduplicates",
+                program_name     => 'markduplicates',
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile_ending   => $outfile_tag . "_metric",
-                outdata_type     => "infile_dependent"
+                outfile          => $outfile_tag . q{_metric},
             }
         );
+
+# Markduplicates can be processed by either picardtools markduplicates or sambamba markdup
         $sample_info_href->{sample}{$$sample_id_ref}{program}{markduplicates}
-          {$infile}{processed_by} = $markduplicates_program
-          ; #markduplicates can be processed by either picardtools markduplicates or sambamba markdup
+          {$infile}{processed_by} = $markduplicates_program;
 
         if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
@@ -22525,7 +22612,7 @@ sub picardtools_mergesamfiles {
                         outfile_path => $$temp_directory_ref
                     }
                 );
-                say $FILEHANDLE "wait", "\n";
+                say $FILEHANDLE q{wait}, "\n";
 
                 if ( $merge_file =~ /lane(\d+)|s_(\d+)/ )
                 { #Look for lanes_ or lane\d in previously generated file to be merged with current run to be able to extract previous lanes
@@ -22726,7 +22813,7 @@ sub picardtools_mergesamfiles {
                     outfile_path => $$temp_directory_ref
                 }
             );
-            say $FILEHANDLE "wait", "\n";
+            say $FILEHANDLE q{wait}, "\n";
 
             if ( $merge_file =~ /lane(\d+)|s_(\d+)/ )
             { #Look for lanes_ or lane\d in previously generated file to be merged with current run to be able to extract previous lanes
@@ -23166,7 +23253,7 @@ sub bwa_sampe {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
 
         close($FILEHANDLE);
 
@@ -23328,7 +23415,7 @@ sub bwa_aln {
               [$infile_counter_index] . ".sai"
           ) . " &\n";    #OutFile
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Copies files from source to destination
     migrate_files(
@@ -23616,7 +23703,7 @@ sub picardtools_mergerapidreads {
               . " &";    #OutFile
         }
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Remove temp directory
     gnu_rm(
@@ -23784,6 +23871,7 @@ sub bwa_mem {
     use Program::Alignment::Samtools qw(view stats);
     use Program::Variantcalling::Bedtools qw (intersectbed);
     use Program::Alignment::Sambamba qw(sort);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -24124,7 +24212,7 @@ sub bwa_mem {
                     }
                 );    #Read 2
             }
-            say $FILEHANDLE "wait", "\n";
+            say $FILEHANDLE q{wait}, "\n";
 
             ### BWA MEM
 
@@ -24257,7 +24345,7 @@ sub bwa_mem {
                         FILEHANDLE   => $FILEHANDLE,
                     }
                 );
-                say $FILEHANDLE "wait", "\n";
+                say $FILEHANDLE q{wait}, "\n";
             }
             if ( $bwa_binary eq "run-bwamem" ) {
 
@@ -24280,7 +24368,7 @@ sub bwa_mem {
                         }
                     );
                 }
-                say $FILEHANDLE "wait", "\n";
+                say $FILEHANDLE q{wait}, "\n";
             }
 
             if ( $active_parameter_href->{bwa_mem_bamstats} ) {
@@ -24309,7 +24397,7 @@ q?perl -ne '$raw; $map; chomp($_); print $_, "\n"; if($_=~/raw total sequences:\
                         FILEHANDLE   => $FILEHANDLE,
                     }
                 );
-                say $FILEHANDLE "wait", "\n";
+                say $FILEHANDLE q{wait}, "\n";
             }
 
             if (   ( $active_parameter_href->{bwa_mem_cram} )
@@ -24339,7 +24427,7 @@ q?perl -ne '$raw; $map; chomp($_); print $_, "\n"; if($_=~/raw total sequences:\
                         FILEHANDLE   => $FILEHANDLE,
                     }
                 );
-                say $FILEHANDLE "wait", "\n";
+                say $FILEHANDLE q{wait}, "\n";
             }
 
             close($FILEHANDLE);
@@ -24369,44 +24457,41 @@ q?perl -ne '$raw; $map; chomp($_); print $_, "\n"; if($_=~/raw total sequences:\
                 if ( $active_parameter_href->{bwa_mem_bamstats} ) {
 
                     ## Collect QC metadata info for later use
-                    sample_info_qc(
+                    add_program_outfile_to_sample_info(
                         {
                             sample_info_href => $sample_info_href,
                             sample_id        => $$sample_id_ref,
-                            program_name     => "bamstats",
+                            program_name     => 'bamstats',
                             infile           => $infile_prefix,
                             outdirectory     => $outsample_directory,
-                            outfile_ending   => $outfile_tag . ".stats",
-                            outdata_type     => "infile_dependent"
+                            outfile          => $outfile_tag . q{.stats},
                         }
                     );
                 }
 
                 if ( $bwa_binary eq "bwa mem" ) {
 
-                    sample_info_qc(
+                    add_program_outfile_to_sample_info(
                         {
                             sample_info_href => $sample_info_href,
                             sample_id        => $$sample_id_ref,
-                            program_name     => "bwa",
+                            program_name     => 'bwa',
                             infile           => $infile_prefix,
                             outdirectory     => $directory,
-                            outfile_ending   => $stderr_file,
-                            outdata_type     => "info_directory"
+                            outfile          => $stderr_file,
                         }
                     );
                 }
                 if ( $bwa_binary eq "run-bwamem" ) {
 
-                    sample_info_qc(
+                    add_program_outfile_to_sample_info(
                         {
                             sample_info_href => $sample_info_href,
                             sample_id        => $$sample_id_ref,
-                            program_name     => "Bwa",
+                            program_name     => 'run-bwamem',
                             infile           => $infile_prefix,
                             outdirectory     => $outsample_directory,
-                            outfile_ending   => ".log.bwamem",
-                            outdata_type     => "infile_dependent"
+                            outfile          => q{.log.bwamem},
                         }
                     );
                 }
@@ -25200,6 +25285,7 @@ sub madeline {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     ## Filehandles
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
@@ -25247,8 +25333,15 @@ sub madeline {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        $sample_info_href->{program}{$program_name}{path} =
+        my $qc_madelaine_path =
           catfile( $outfamily_directory, $$family_id_ref . "_madeline.xml" );
+        add_program_outfile_to_sample_info(
+            {
+                sample_info_href => $sample_info_href,
+                program_name     => $program_name,
+                path             => $qc_madelaine_path,
+            }
+        );
     }
 
     close($FILEHANDLE);
@@ -25278,15 +25371,15 @@ sub mfastqc {
 ##Function : Raw sequence quality analysis using FASTQC.
 ##Returns  : ""
 ##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_href, $indir_path_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name
-##         : $parameter_href             => The parameter hash {REF}
-##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $infile_href                => The infiles hash {REF}
-##         : $indir_path_href            => The indirectories path(s) hash {REF}
+##         : $parameter_href          => The parameter hash {REF}
+##         : $active_parameter_href   => The active parameters for this analysis hash {REF}
+##         : $sample_info_href        => Info on samples and family hash {REF}
+##         : $infile_href             => The infiles hash {REF}
+##         : $indir_path_href         => The indirectories path(s) hash {REF}
 ##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
-##         : $job_id_href                => The job_id hash {REF}
-##         : $sample_id_ref              => The sample_id {REF}
-##         : $program_name               => The program name
+##         : $job_id_href             => The job_id hash {REF}
+##         : $sample_id_ref           => The sample_id {REF}
+##         : $program_name            => The program name
 
     my ($arg_href) = @_;
 
@@ -25379,7 +25472,7 @@ sub mfastqc {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     use MIP::Check::Cluster qw(check_max_core_number);
     use MIP::Cluster qw(update_core_number_to_seq_mode);
@@ -25387,13 +25480,15 @@ sub mfastqc {
     use MIP::IO::Files qw(migrate_files);
     use MIP::Processmanagement::Processes qw(print_wait);
     use MIP::Gnu::Coreutils qw(gnu_cp);
-    use Program::Qc::Fastqc qw (fastqc);
+    use Program::Qc::Fastqc qw(fastqc);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
 
     ## Filehandles
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
+    # Create anonymous filehandle
+    my $FILEHANDLE = IO::Handle->new();
 
     foreach my $infile ( @{ $infile_lane_prefix_href->{$$sample_id_ref} } ) {
 
@@ -25451,7 +25546,7 @@ sub mfastqc {
         }
     );
 
-    say $FILEHANDLE "## " . $program_name;
+    say $FILEHANDLE q{## } . $program_name;
 
     my $process_batches_count = 1;
 
@@ -25480,29 +25575,28 @@ sub mfastqc {
                 FILEHANDLE        => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "&", "\n";
+        say $FILEHANDLE q{&}, "\n";
 
         ## Collect QC metadata info for active program for later use
         if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
             && ( !$active_parameter_href->{dry_run_all} ) )
         {
 
-            sample_info_qc(
+            my $qc_fastqc_outdirectory =
+              catdir( $outsample_directory, $file_at_lane_level . q{_fastqc} );
+            add_program_outfile_to_sample_info(
                 {
                     sample_info_href => $sample_info_href,
                     sample_id        => $$sample_id_ref,
-                    program_name     => "fastqc",
+                    program_name     => q{fastqc},
                     infile           => $infile,
-                    outdirectory     => catfile(
-                        $outsample_directory, $file_at_lane_level . "_fastqc"
-                    ),
-                    outfile_ending => "fastqc_data.txt",
-                    outdata_type   => "static"
+                    outdirectory     => $qc_fastqc_outdirectory,
+                    outfile          => q{fastqc_data.txt},
                 }
             );
         }
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Copies files from temporary folder to source.
     $process_batches_count = 1;
@@ -25528,14 +25622,14 @@ sub mfastqc {
                 FILEHANDLE  => $FILEHANDLE,
                 recursive   => 1,
                 infile_path => catfile(
-                    $$temp_directory_ref, $file_at_lane_level . "_fastqc"
+                    $$temp_directory_ref, $file_at_lane_level . q{_fastqc}
                 ),
                 outfile_path => $outsample_directory,
             }
         );
-        say $FILEHANDLE "&", "\n";
+        say $FILEHANDLE q{&}, "\n";
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -25550,7 +25644,7 @@ sub mfastqc {
                 job_id_href             => $job_id_href,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 sample_id               => $$sample_id_ref,
-                dependencies            => "case_dependency_dead_end",
+                dependencies            => q{case_dependency_dead_end},
                 path => $parameter_href->{ "p" . $program_name }{chain},
                 sbatch_file_name => $file_name
             }
@@ -25740,7 +25834,7 @@ sub gzip_fastq {
                 $active_parameter_href->{max_cores_per_node} )
             {    #Using only $active_parameter{max_cores_per_node} cores
 
-                say $FILEHANDLE "wait", "\n";
+                say $FILEHANDLE q{wait}, "\n";
                 $process_batches_count = $process_batches_count + 1;
             }
 
@@ -25751,13 +25845,13 @@ sub gzip_fastq {
                     FILEHANDLE  => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE "&";
+            say $FILEHANDLE q{&};
             $uncompressed_file_counter++;
             $infile .= ".gz"
               ; #Add ".gz" to original fastq ending, since this will execute before fastQC and bwa.
         }
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
@@ -31454,108 +31548,6 @@ sub add_merged_infile_name {
     $file_info_href->{$sample_id}{merge_infile} = $infile;
 }
 
-sub sample_info_qc {
-
-##sample_info_qc
-
-##Function : Adds outdirectory and outfile to sample_info to track all files that QC metrics are to be extracted from later
-##Returns  : ""
-##Arguments: $sample_info_href, $program_name, $outdirectory, $outfile_ending, $outdata_type, $sample_id, $infile,
-##         : $sample_info_href => Info on samples and family hash {REF}
-##         : $program_name     => The program
-##         : $outdirectory     => The outdirectory of the QC file
-##         : $outfile_ending   => The outfile ending. Actually complete outfile for "static" & "info_directory"
-##         : $outdata_type     => Type of data produced by program (info_directory|infile_dependent|static)
-##         : $sample_id        => Sample_id for data at sample level {Optional}
-##         : $infile           => Infile for data at sample level {Optional}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $sample_info_href;
-    my $program_name;
-    my $outdirectory;
-    my $outfile_ending;
-    my $outdata_type;
-    my $sample_id;
-    my $infile;
-
-    my $tmpl = {
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name
-        },
-        outdirectory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$outdirectory
-        },
-        outfile_ending => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$outfile_ending
-        },
-        outdata_type => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            allow       => [ "static", "info_directory", "infile_dependent" ],
-            store       => \$outdata_type
-        },
-        infile    => { strict_type => 1, store => \$infile },
-        sample_id => { strict_type => 1, store => \$sample_id },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
-
-    unless ( defined($sample_id) ) {
-
-        $sample_info_href->{program}{$program_name}{outdirectory} =
-          $outdirectory;    #OutDirectory of QC file
-        $sample_info_href->{program}{$program_name}{outfile} = $outfile_ending;
-    }
-    elsif ( defined($infile) ) {
-
-        $sample_info_href->{sample}{$sample_id}{program}{$program_name}
-          {$infile}{outdirectory} = $outdirectory;    #OutDirectory of QC file
-
-        if ( $outdata_type eq "infile_dependent" )
-        {    #Programs which add a filending to infile
-
-            $sample_info_href->{sample}{$sample_id}{program}{$program_name}
-              {$infile}{outfile} =
-              $infile . $outfile_ending;    #Infile dependent QC outfile
-        }
-        else {
-
-            $sample_info_href->{sample}{$sample_id}{program}{$program_name}
-              {$infile}{outfile} =
-              $outfile_ending;    #Static QC outfile or Info stdout file
-        }
-    }
-    else {
-
-        $log->fatal(
-"Please provide infile to enable storing of sample_id data in hash\n"
-        );
-        exit 1;
-    }
-}
-
 sub split_target_file {
 
 ##split_target_file
@@ -35152,7 +35144,7 @@ sub remove_files {
         );
         print $FILEHANDLE "&", "\n";
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 }
 
 sub remove_contig_files {
@@ -35246,7 +35238,7 @@ sub remove_contig_files {
         );
         say $FILEHANDLE "& ";
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 }
 
 sub core2 {
@@ -36783,46 +36775,61 @@ sub add_to_sample_info {
         $sample_info_href->{expected_coverage} =
           $active_parameter_href->{expected_coverage};
     }
-    if ( exists( $active_parameter_href->{gatk_path} ) ) {
+    if ( exists $active_parameter_href->{gatk_path} ) {
 
+        my $gatk_version;
         if ( $active_parameter_href->{gatk_path} =~ /GenomeAnalysisTK-([^,]+)/ )
         {
 
-            $sample_info_href->{program}{gatk}{version} = $1;
+            $gatk_version = $1;
         }
         else {    #Fall back on actually calling program
 
             my $jar_path = catfile( $active_parameter_href->{gatk_path},
                 "GenomeAnalysisTK.jar" );
-            my $ret = (`java -jar $jar_path --version 2>&1`);
-            chomp($ret);
-            $sample_info_href->{program}{gatk}{version} = $ret;
+            $gatk_version = (`java -jar $jar_path --version 2>&1`);
+            chomp $gatk_version;
         }
+        add_program_outfile_to_sample_info(
+            {
+                sample_info_href => $sample_info_href,
+                program_name     => 'gatk',
+                version          => $gatk_version,
+            }
+        );
     }
-    if ( exists( $active_parameter_href->{picardtools_path} ) )
-    {             #To enable addition of version to sample_info
+    if ( exists $active_parameter_href->{picardtools_path} )
+    {    #To enable addition of version to sample_info
 
+        my $picardtools_version;
         if ( $active_parameter_href->{picardtools_path} =~
             /picard-tools-([^,]+)/ )
         {
 
-            $sample_info_href->{program}{picardtools}{version} = $1;
+            $picardtools_version = $1;
         }
         else {    #Fall back on actually calling program
 
             my $jar_path = catfile( $active_parameter_href->{picardtools_path},
                 "picard.jar" );
-            my $ret =
+            $picardtools_version =
               (`java -jar $jar_path CreateSequenceDictionary --version 2>&1`);
-            chomp($ret);
-            $sample_info_href->{program}{picardtools}{version} = $ret;
+            chomp $picardtools_version;
         }
+
+        add_program_outfile_to_sample_info(
+            {
+                sample_info_href => $sample_info_href,
+                program_name     => 'picardtools',
+                version          => $picardtools_version,
+            }
+        );
     }
     my @sambamba_programs =
       ( "pbwa_mem", "psambamba_depth", "markduplicates_sambamba_markdup" );
     foreach my $program (@sambamba_programs) {
 
-        if (   ( exists( $active_parameter_href->{$program} ) )
+        if (   ( exists $active_parameter_href->{$program} )
             && ( $active_parameter_href->{$program} == 1 ) )
         {
 
@@ -36830,14 +36837,20 @@ sub add_to_sample_info {
 
                 my $regexp =
                   q?perl -nae 'if($_=~/sambamba\s(\S+)/) {print $1;last;}'?;
-                my $ret = (`sambamba 2>&1 | $regexp`);
-                chomp($ret);
-                $sample_info_href->{program}{sambamba}{version} = $ret;
+                my $sambamba_version = (`sambamba 2>&1 | $regexp`);
+                chomp $sambamba_version;
+                add_program_outfile_to_sample_info(
+                    {
+                        sample_info_href => $sample_info_href,
+                        program_name     => 'sambamba',
+                        version          => $sambamba_version,
+                    }
+                );
                 last;    #Only need to check once
             }
         }
     }
-    if ( exists( $active_parameter_href->{pcnvnator} ) )
+    if ( exists $active_parameter_href->{pcnvnator} )
     {                    #To enable addition of version to sample_info
 
         if (   ( $active_parameter_href->{pcnvnator} == 1 )
@@ -36846,9 +36859,15 @@ sub add_to_sample_info {
 
             my $regexp =
               q?perl -nae 'if($_=~/CNVnator\s+(\S+)/) {print $1;last;}'?;
-            my $ret = (`cnvnator 2>&1 | $regexp`);
-            chomp($ret);
-            $sample_info_href->{program}{cnvnator}{version} = $ret;
+            my $cnvnator_version = (`cnvnator 2>&1 | $regexp`);
+            chomp $cnvnator_version;
+            add_program_outfile_to_sample_info(
+                {
+                    sample_info_href => $sample_info_href,
+                    program_name     => 'cnvnator',
+                    version          => $cnvnator_version,
+                }
+            );
         }
     }
     if ( defined($$human_genome_reference_ref) )
@@ -40059,7 +40078,7 @@ sub generate_contig_specific_target_bed_file {
             }
         );
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 }
 
 sub replace_iupac {
