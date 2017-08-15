@@ -84,7 +84,7 @@ sub add_program_outfile_to_sample_info {
             strict_type => 1,
             store       => \$outfile
         },
-		version => {
+        version => {
             strict_type => 1,
             store       => \$version
         },
@@ -99,7 +99,7 @@ sub add_program_outfile_to_sample_info {
         path         => $path,
         outdirectory => $outdirectory,
         outfile      => $outfile,
-		     version      => $version,
+        version      => $version,
     );
 
     if ( defined $sample_id && defined $infile ) {
@@ -203,10 +203,10 @@ sub add_program_metafile_to_sample_info {
 
     ## Set the key and value pair to add to sample_info hash
     my %parameter = (
-        path         => $path,
+        path      => $path,
         directory => $directory,
         file      => $file,
-        version      => $version,
+        version   => $version,
     );
 
     if ( defined $sample_id && defined $infile ) {

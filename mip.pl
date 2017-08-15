@@ -3946,14 +3946,14 @@ sub mqccollect {
     {
 
         ## Collect QC metadata info for later use
-      my $qc_metric_outfile = $$family_id_ref . q{_qc_metrics.yaml};
-      add_program_outfile_to_sample_info(
+        my $qc_metric_outfile = $$family_id_ref . q{_qc_metrics.yaml};
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => 'qccollect',
                 outdirectory     => $outfamily_directory,
-                outfile   => $qc_metric_outfile,
-	     path => catfile($outfamily_directory, $qc_metric_outfile),
+                outfile          => $qc_metric_outfile,
+                path => catfile( $outfamily_directory, $qc_metric_outfile ),
             }
         );
 
@@ -4896,13 +4896,19 @@ sub endvariantannotationblock {
 
             if ( $vcfparser_outfile_counter == 1 ) {
 
-	      # Save clinical candidate list path
-	      my $clinical_candidate_path = $final_path_prefix . $vcfparser_analysis_type . $outfile_suffix;
-	      add_program_metafile_to_sample_info({sample_info_href      => $sample_info_href,
-						   program_name => $program_name,
-						  metafile_tag => q{clinical},
-						  path => $clinical_candidate_path,
-});
+                # Save clinical candidate list path
+                my $clinical_candidate_path =
+                    $final_path_prefix
+                  . $vcfparser_analysis_type
+                  . $outfile_suffix;
+                add_program_metafile_to_sample_info(
+                    {
+                        sample_info_href => $sample_info_href,
+                        program_name     => $program_name,
+                        metafile_tag     => q{clinical},
+                        path             => $clinical_candidate_path,
+                    }
+                );
 
                 if ( $active_parameter_href->{rankvariant_binary_file} ) {
 
@@ -4914,14 +4920,19 @@ sub endvariantannotationblock {
             }
             else {
 
-	      # Save research candidate list path
-	      my $research_candidate_path = $final_path_prefix . $vcfparser_analysis_type . $outfile_suffix;
-	      add_program_metafile_to_sample_info({sample_info_href      => $sample_info_href,
-						   program_name => $program_name,
-						  metafile_tag => q{research},
-						  path => $research_candidate_path,
-});
-
+                # Save research candidate list path
+                my $research_candidate_path =
+                    $final_path_prefix
+                  . $vcfparser_analysis_type
+                  . $outfile_suffix;
+                add_program_metafile_to_sample_info(
+                    {
+                        sample_info_href => $sample_info_href,
+                        program_name     => $program_name,
+                        metafile_tag     => q{research},
+                        path             => $research_candidate_path,
+                    }
+                );
 
                 if ( $active_parameter_href->{rankvariant_binary_file} ) {
 
@@ -5085,7 +5096,8 @@ sub rankvariant {
 
     use MIP::Cluster qw(get_core_number);
     use Program::Variantcalling::Genmod qw(annotate models score compound);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
+    use MIP::QC::Record
+      qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger('MIP');
@@ -5479,37 +5491,41 @@ sub rankvariant {
             && ( !$active_parameter_href->{dry_run_all} ) )
         {
 
-	  my $qc_genmod_outfile = $outfile_prefix . q{_}
-                      . $file_info_href->{contigs_size_ordered}[0]
-                      . $vcfparser_analysis_type
-                      . $outfile_suffix;
-	  add_program_outfile_to_sample_info(
+            my $qc_genmod_outfile =
+                $outfile_prefix . q{_}
+              . $file_info_href->{contigs_size_ordered}[0]
+              . $vcfparser_analysis_type
+              . $outfile_suffix;
+            add_program_outfile_to_sample_info(
                 {
                     sample_info_href => $sample_info_href,
                     program_name     => q{genmod},
                     outdirectory     => $outfamily_directory,
-                    outfile   => $qc_genmod_outfile,
+                    outfile          => $qc_genmod_outfile,
                 }
             );
 
-	  # Add to Sample_info
-            if ( defined( $active_parameter_href->{rank_model_file} ) )
-            {
+            # Add to Sample_info
+            if ( defined( $active_parameter_href->{rank_model_file} ) ) {
 
-	      my $rank_model_version;
+                my $rank_model_version;
                 if ( $active_parameter_href->{rank_model_file} =~
                     /v(\d+\.\d+.\d+|\d+\.\d+)/ )
                 {
 
-		  $rank_model_version = $1;
+                    $rank_model_version = $1;
                 }
-	      add_program_metafile_to_sample_info({sample_info_href      => $sample_info_href,
-						   program_name => q{genmod},
-						  metafile_tag => q{rank_model},
-						       file => basename( $active_parameter_href->{rank_model_file} ),
-						       path => $active_parameter_href->{rank_model_file},
-						  version => $rank_model_version,
-});
+                add_program_metafile_to_sample_info(
+                    {
+                        sample_info_href => $sample_info_href,
+                        program_name     => q{genmod},
+                        metafile_tag     => q{rank_model},
+                        file =>
+                          basename( $active_parameter_href->{rank_model_file} ),
+                        path    => $active_parameter_href->{rank_model_file},
+                        version => $rank_model_version,
+                    }
+                );
             }
         }
     }
@@ -6029,18 +6045,16 @@ sub gatk_variantevalexome {
     {
 
         ## Collect QC metadata info for later use
-      my $qc_exome_outfile = $outfile_tag
-                  . $call_type
-                  . q{_exome}
-                  . $outfile_suffix;
-      add_program_outfile_to_sample_info(
+        my $qc_exome_outfile =
+          $outfile_tag . $call_type . q{_exome} . $outfile_suffix;
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
                 program_name     => 'variantevalexome',
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile   => $qc_exome_outfile,
+                outfile          => $qc_exome_outfile,
             }
         );
     }
@@ -6348,14 +6362,14 @@ sub gatk_variantevalall {
     {
 
         ## Collect QC metadata info for later use
-      add_program_outfile_to_sample_info(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
                 program_name     => 'variantevalall',
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile   => $outfile_tag . $call_type . $outfile_suffix,
+                outfile          => $outfile_tag . $call_type . $outfile_suffix,
             }
         );
     }
@@ -6932,16 +6946,17 @@ sub snpeff {
     {
 
         ## Collect QC metadata info for later use
-      my $qc_snpeff_outfile = $outfile_prefix . q{_}
-                  . $file_info_href->{contigs_size_ordered}[0]
-                  . $vcfparser_analysis_type
-                  . $outfile_suffix;
-      add_program_outfile_to_sample_info(
+        my $qc_snpeff_outfile =
+            $outfile_prefix . q{_}
+          . $file_info_href->{contigs_size_ordered}[0]
+          . $vcfparser_analysis_type
+          . $outfile_suffix;
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
                 outdirectory     => $outfamily_directory,
-                outfile   => $qc_snpeff_outfile,
+                outfile          => $qc_snpeff_outfile,
             }
         );
     }
@@ -7828,15 +7843,16 @@ sub mvcfparser {
         }
 
         ## Collect QC metadata info for later use
-	my $qc_vcfparser_outfile = $outfile_prefix . q{_}
-                  . $file_info_href->{contigs_size_ordered}[0]
-                  . $infile_suffix;
-	add_program_outfile_to_sample_info(
+        my $qc_vcfparser_outfile =
+            $outfile_prefix . q{_}
+          . $file_info_href->{contigs_size_ordered}[0]
+          . $infile_suffix;
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
                 outdirectory     => $outfamily_directory,
-                outfile   => $qc_vcfparser_outfile,
+                outfile          => $qc_vcfparser_outfile,
             }
         );
     }
@@ -8093,6 +8109,7 @@ sub varianteffectpredictor {
         );
         $stderr_path = $program_info_path . ".stderr.txt";
     }
+
     # Split to enable submission to &sample_info_qc later
     my ( $volume, $directory, $stderr_file ) =
       File::Spec->splitpath($stderr_path);
@@ -8263,28 +8280,30 @@ sub varianteffectpredictor {
     {
 
         ## Collect QC metadata info for later use
-      my $qc_vep_summary_outfile = $outfile_prefix . q{_}
-                  . $file_info_href->{contigs_size_ordered}[0]
-                  . $infile_suffix
-                  . q{_summary.html};
-      add_program_outfile_to_sample_info(
+        my $qc_vep_summary_outfile =
+            $outfile_prefix . q{_}
+          . $file_info_href->{contigs_size_ordered}[0]
+          . $infile_suffix
+          . q{_summary.html};
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name . q{summary},
                 outdirectory     => $outfamily_directory,
-                outfile   => $qc_vep_summary_outfile,
+                outfile          => $qc_vep_summary_outfile,
             }
         );
         ## Collect QC metadata info for later use
-      my $qc_vep_outfile = $outfile_prefix . q{_}
-                  . $file_info_href->{contigs_size_ordered}[0]
-                  . $infile_suffix;
-      add_program_outfile_to_sample_info(
+        my $qc_vep_outfile =
+            $outfile_prefix . q{_}
+          . $file_info_href->{contigs_size_ordered}[0]
+          . $infile_suffix;
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
                 outdirectory     => $outfamily_directory,
-                outfile   => $qc_vep_outfile,
+                outfile          => $qc_vep_outfile,
             }
         );
     }
@@ -8360,12 +8379,12 @@ sub varianteffectpredictor {
         }
 
         ## Collect QC metadata info for later use
-	add_program_outfile_to_sample_info(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
                 outdirectory     => $directory,
-                outfile   => $stderr_file,
+                outfile          => $stderr_file,
             }
         );
     }
@@ -8998,11 +9017,14 @@ sub mpeddy {
 
             my $outfile_suffix = '.' . $file_key . '.' . $suffix;
             ## Collect QC metadata info for later use
-	    add_program_metafile_to_sample_info({sample_info_href      => $sample_info_href,
-						   program_name => $program_name,
-						  metafile_tag => $file_key,
-						  path => $outfile_path_prefix . $outfile_suffix,
-});
+            add_program_metafile_to_sample_info(
+                {
+                    sample_info_href => $sample_info_href,
+                    program_name     => $program_name,
+                    metafile_tag     => $file_key,
+                    path             => $outfile_path_prefix . $outfile_suffix,
+                }
+            );
         }
     }
 
@@ -9411,43 +9433,43 @@ sub mplink {
         {    #Only perform if more than 1 sample
 
             ## Collect QC metadata info for later use
-	  add_program_outfile_to_sample_info(
+            add_program_outfile_to_sample_info(
                 {
                     sample_info_href => $sample_info_href,
                     program_name     => q{inbreeding_factor},
                     outdirectory     => $outfamily_directory,
-                    outfile   => $$family_id_ref . q{.het},
+                    outfile          => $$family_id_ref . q{.het},
                 }
             );
 
             ## Collect QC metadata info for later use
-	  add_program_outfile_to_sample_info(
+            add_program_outfile_to_sample_info(
                 {
                     sample_info_href => $sample_info_href,
                     program_name     => q{relation_check},
                     outdirectory     => $outfamily_directory,
-                    outfile   => $$family_id_ref . q{.mibs},
+                    outfile          => $$family_id_ref . q{.mibs},
                 }
             );
         }
 
         ## Collect QC metadata info for later use
-	add_program_outfile_to_sample_info(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => q{plink_sexcheck},
                 outdirectory     => $outfamily_directory,
-                outfile   => $$family_id_ref . q{.sexcheck},
+                outfile          => $$family_id_ref . q{.sexcheck},
             }
         );
 
         ## Collect QC metadata info for later use
-	add_program_outfile_to_sample_info(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => q{plink2},
                 outdirectory     => $directory,
-                outfile   => $stdout_file,
+                outfile          => $stdout_file,
             }
         );
     }
@@ -9693,12 +9715,12 @@ sub variant_integrity {
             {
 
                 ## Collect QC metadata info for later use
-	      add_program_outfile_to_sample_info(
+                add_program_outfile_to_sample_info(
                     {
                         sample_info_href => $sample_info_href,
                         program_name     => q{variant_integrity_mendel},
                         outdirectory     => $outfamily_directory,
-                        outfile   => $$family_id_ref . q{_mendel.txt},
+                        outfile          => $$family_id_ref . q{_mendel.txt},
                     }
                 );
             }
@@ -9731,12 +9753,12 @@ sub variant_integrity {
                 {
 
                     ## Collect QC metadata info for later use
-		  add_program_outfile_to_sample_info(
+                    add_program_outfile_to_sample_info(
                         {
                             sample_info_href => $sample_info_href,
                             program_name     => q{variant_integrity_father},
                             outdirectory     => $outfamily_directory,
-                            outfile_ending   => $$family_id_ref . q{_father.txt},
+                            outfile_ending => $$family_id_ref . q{_father.txt},
                         }
                     );
                 }
@@ -10062,15 +10084,14 @@ sub vt {
               ;    #Split to enable submission to &SampleInfoQC later
 
             ## Collect QC metadata info for later use
-	    my $qc_vt_outfile = $stderr_file . $DOT
-                      . $contig . $DOT
-                      . q{stderr.txt};
-	    add_program_outfile_to_sample_info(
+            my $qc_vt_outfile =
+              $stderr_file . $DOT . $contig . $DOT . q{stderr.txt};
+            add_program_outfile_to_sample_info(
                 {
                     sample_info_href => $sample_info_href,
                     program_name     => 'vt',
                     outdirectory     => $directory,
-                    outfile   => $qc_vt_outfile,
+                    outfile          => $qc_vt_outfile,
                 }
             );
         }
@@ -11888,13 +11909,13 @@ sub gatk_variantrecalibration {
     {
 
         ## Collect QC metadata info for later use
-      # Disabled pedigreeCheck to not include relationship test is qccollect
-      add_program_outfile_to_sample_info(
+        # Disabled pedigreeCheck to not include relationship test is qccollect
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => q{pedigree_check},
-                outdirectory   => $outfamily_directory,
-                outfile => $outfile_prefix . $outfile_suffix,
+                outdirectory     => $outfamily_directory,
+                outfile          => $outfile_prefix . $outfile_suffix,
             }
         );
 
@@ -13246,14 +13267,14 @@ sub picardtools_collecthsmetrics {
     {
 
         ## Collect QC metadata info for later use
-      add_program_outfile_to_sample_info(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
                 program_name     => 'collecthsmetrics',
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile   => $outfile_tag,
+                outfile          => $outfile_tag,
             }
         );
     }
@@ -13519,24 +13540,24 @@ sub picardtools_collectmultiplemetrics {
     {
 
         ## Collect QC metadata info for later use
-      add_program_outfile_to_sample_info(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
                 program_name     => 'collectmultiplemetrics',
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile   => $outfile_tag . $DOT . q{alignment_summary_metrics},
+                outfile => $outfile_tag . $DOT . q{alignment_summary_metrics},
             }
         );
-      add_program_outfile_to_sample_info(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
                 program_name     => 'collectmultiplemetricsinsertsize',
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile_ending   => $outfile_tag . $DOT . q{insert_size_metrics},
+                outfile_ending => $outfile_tag . $DOT . q{insert_size_metrics},
             }
         );
     }
@@ -13674,7 +13695,8 @@ sub chanjo_sexcheck {
 
     use MIP::Script::Setup_script qw(setup_script);
     use Program::Alignment::Chanjo qw(sex);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
+    use MIP::QC::Record
+      qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -13767,25 +13789,25 @@ sub chanjo_sexcheck {
     {
 
         ## Collect QC metadata info for later use
-      add_program_outfile_to_sample_info(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
                 program_name     => q{chanjo_sexcheck},
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile   => $outfile_tag . $outfile_suffix,
+                outfile          => $outfile_tag . $outfile_suffix,
             }
         );
-      add_program_metafile_to_sample_info(
+        add_program_metafile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
                 program_name     => q{chanjo_sexcheck},
                 infile           => $infile,
-	     metafile_tag => q{log},
-                directory     => $outsample_directory,
-                file   => $infile_tag . q{_chanjo_sexcheck.log},
+                metafile_tag     => q{log},
+                directory        => $outsample_directory,
+                file             => $infile_tag . q{_chanjo_sexcheck.log},
             }
         );
     }
@@ -14052,13 +14074,17 @@ sub sambamba_depth {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-    my $qc_sambamba_path = catfile( $outsample_directory, $outfile_prefix . $outfile_suffix );
-    add_program_outfile_to_sample_info({sample_info_href      => $sample_info_href,
-					 sample_id => $$sample_id_ref,
-					 program_name => $program_name,
-					 infile => $infile,
-					 path => $qc_sambamba_path,
-					});
+        my $qc_sambamba_path =
+          catfile( $outsample_directory, $outfile_prefix . $outfile_suffix );
+        add_program_outfile_to_sample_info(
+            {
+                sample_info_href => $sample_info_href,
+                sample_id        => $$sample_id_ref,
+                program_name     => $program_name,
+                infile           => $infile,
+                path             => $qc_sambamba_path,
+            }
+        );
     }
 
     close($FILEHANDLE);
@@ -14562,13 +14588,17 @@ sub sv_reformat {
 
             if ( $vcfparser_outfile_counter == 1 ) {
 
-	      # Save clinical candidate list path
-	      my $clinical_candidate_path = $final_path_prefix . $vcfparser_analysis_type . $file_suffix;
-	      add_program_metafile_to_sample_info({sample_info_href      => $sample_info_href,
-						   program_name => $program_name,
-						  metafile_tag => q{clinical},
-						  path => $clinical_candidate_path,
-});
+                # Save clinical candidate list path
+                my $clinical_candidate_path =
+                  $final_path_prefix . $vcfparser_analysis_type . $file_suffix;
+                add_program_metafile_to_sample_info(
+                    {
+                        sample_info_href => $sample_info_href,
+                        program_name     => $program_name,
+                        metafile_tag     => q{clinical},
+                        path             => $clinical_candidate_path,
+                    }
+                );
 
                 if ( $active_parameter_href->{sv_rankvariant_binary_file} ) {
 
@@ -14580,13 +14610,17 @@ sub sv_reformat {
             }
             else {
 
-	      # Save research candidate list path
-	      my $research_candidate_path = $final_path_prefix . $vcfparser_analysis_type . $file_suffix;
-	      add_program_metafile_to_sample_info({sample_info_href      => $sample_info_href,
-						   program_name => $program_name,
-						  metafile_tag => q{research},
-						  path => $research_candidate_path,
-});
+                # Save research candidate list path
+                my $research_candidate_path =
+                  $final_path_prefix . $vcfparser_analysis_type . $file_suffix;
+                add_program_metafile_to_sample_info(
+                    {
+                        sample_info_href => $sample_info_href,
+                        program_name     => $program_name,
+                        metafile_tag     => q{research},
+                        path             => $research_candidate_path,
+                    }
+                );
 
                 if ( $active_parameter_href->{sv_rankvariant_binary_file} ) {
 
@@ -14746,7 +14780,8 @@ sub sv_rankvariant {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Genmod qw(annotate models score compound);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
+    use MIP::QC::Record
+      qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger('MIP');
@@ -15233,34 +15268,39 @@ sub sv_rankvariant {
         if ( defined( $active_parameter_href->{sv_rank_model_file} ) )
         {    #Add to Sample_info
 
-	  my $sv_rank_model_version;
+            my $sv_rank_model_version;
             if ( $active_parameter_href->{sv_rank_model_file} =~
                 /v(\d+\.\d+.\d+|\d+\.\d+)/ )
             {
 
-	      $sv_rank_model_version = $1;
+                $sv_rank_model_version = $1;
             }
-	    add_program_metafile_to_sample_info({sample_info_href      => $sample_info_href,
-						 program_name => q{sv_genmod},
-						 metafile_tag => q{sv_rank_model},
-						 file => basename( $active_parameter_href->{sv_rank_model_file} ),
-						 path => $active_parameter_href->{sv_rank_model_file},
-						 version => $sv_rank_model_version,
-						});
+            add_program_metafile_to_sample_info(
+                {
+                    sample_info_href => $sample_info_href,
+                    program_name     => q{sv_genmod},
+                    metafile_tag     => q{sv_rank_model},
+                    file =>
+                      basename( $active_parameter_href->{sv_rank_model_file} ),
+                    path    => $active_parameter_href->{sv_rank_model_file},
+                    version => $sv_rank_model_version,
+                }
+            );
 
         }
-	my $qc_sv_genmod_outfile = $$family_id_ref
-                  . $outfile_tag
-                  . $call_type
-                  . $vcfparser_analysis_type
-                  . $file_suffix;
-	add_program_outfile_to_sample_info(
+        my $qc_sv_genmod_outfile =
+            $$family_id_ref
+          . $outfile_tag
+          . $call_type
+          . $vcfparser_analysis_type
+          . $file_suffix;
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => q{sv_genmod},
                 outdirectory     => $outfamily_directory,
-                outfile   => $qc_sv_genmod_outfile,
-	     }
+                outfile          => $qc_sv_genmod_outfile,
+            }
         );
 
         submit_job(
@@ -15670,12 +15710,12 @@ sub sv_vcfparser {
         }
 
         ## Collect QC metadata info for later use
-	add_program_outfile_to_sample_info(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
                 outdirectory     => $outfamily_directory,
-                outfile   => $outfile_sample_info_prefix . $file_suffix,
+                outfile          => $outfile_sample_info_prefix . $file_suffix,
             }
         );
 
@@ -15928,10 +15968,11 @@ sub sv_varianteffectpredictor {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Vep qw(variant_effect_predictor);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
+    use MIP::QC::Record
+      qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
 
     ## Constants
-    Readonly my $DOT => q{.};
+    Readonly my $DOT     => q{.};
     Readonly my $ASTERIX => q{*};
 
     my $consensus_analysis_type =
@@ -16202,25 +16243,25 @@ q?if($alt=~ /\<|\[|\]|\>/) { $alt=~ s/\<|\>//g; $alt=~ s/\:.+//g; if($start >= $
         }
 
         ## Collect QC metadata info for later use
-	my $qc_vep_summary_outfile = $outfile_sample_info_prefix
-                  . $DOT . q{vcf_summary.html};
-	add_program_metafile_to_sample_info(
+        my $qc_vep_summary_outfile =
+          $outfile_sample_info_prefix . $DOT . q{vcf_summary.html};
+        add_program_metafile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
-	     metafile_tag => q{summary},
-                directory     => $outfamily_directory,
-                file   => $qc_vep_summary_outfile,
+                metafile_tag     => q{summary},
+                directory        => $outfamily_directory,
+                file             => $qc_vep_summary_outfile,
             }
         );
 
         ## Collect QC metadata info for later use
-	add_program_outfile_to_sample_info(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
                 outdirectory     => $outfamily_directory,
-                outfile   => $outfile_sample_info_prefix . $file_suffix,
+                outfile          => $outfile_sample_info_prefix . $file_suffix,
             }
         );
     }
@@ -16228,7 +16269,9 @@ q?if($alt=~ /\<|\[|\]|\>/) { $alt=~ s/\<|\>//g; $alt=~ s/\:.+//g; if($start >= $
     ## QC Data File(s)
     migrate_file(
         {
-            infile_path  => $outfile_path_prefix . $ASTERIX . $file_suffix . q{_s*},
+            infile_path => $outfile_path_prefix
+              . $ASTERIX
+              . $file_suffix . q{_s*},
             outfile_path => $outfamily_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
@@ -16241,7 +16284,10 @@ q?if($alt=~ /\<|\[|\]|\>/) { $alt=~ s/\<|\>//g; $alt=~ s/\:.+//g; if($start >= $
     say $FILEHANDLE "## Copy file from temporary directory";
     migrate_file(
         {
-            infile_path  => $outfile_path_prefix . $ASTERIX . $file_suffix . $ASTERIX,
+            infile_path => $outfile_path_prefix
+              . $ASTERIX
+              . $file_suffix
+              . $ASTERIX,
             outfile_path => $outfamily_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
@@ -16926,12 +16972,12 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
             && ( !$active_parameter_href->{dry_run_all} ) )
         {
 
-	  add_program_outfile_to_sample_info(
+            add_program_outfile_to_sample_info(
                 {
                     sample_info_href => $sample_info_href,
                     program_name     => q{sv_combinevariantcallsets},
                     outdirectory     => $directory,
-                    outfile   => $stderr_file,
+                    outfile          => $stderr_file,
                 }
             );
         }
@@ -17018,11 +17064,9 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-      my $qc_svdb_outfile = $$family_id_ref
-                  . $outfile_tag
-                  . $call_type
-                  . $outfile_suffix;
-      add_program_outfile_to_sample_info(
+        my $qc_svdb_outfile =
+          $$family_id_ref . $outfile_tag . $call_type . $outfile_suffix;
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => 'svdb',
@@ -17516,12 +17560,12 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-      add_program_outfile_to_sample_info(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => 'cnvnator',
                 outdirectory     => $outsample_directory,
-                outfile   => $outfile_prefix . $outfile_suffix,
+                outfile          => $outfile_prefix . $outfile_suffix,
             }
         );
         submit_job(
@@ -18382,12 +18426,12 @@ sub delly_reformat {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-      add_program_outfile_to_sample_info(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => 'delly',
                 outdirectory     => $outfamily_directory,
-                outfile   => $outfile_prefix . $outfile_suffix,
+                outfile          => $outfile_prefix . $outfile_suffix,
             }
         );
     }
@@ -19075,12 +19119,12 @@ sub manta {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-      add_program_outfile_to_sample_info(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => 'manta',
                 outdirectory     => $outfamily_directory,
-                outfile   => $outfile_prefix . $outfile_suffix,
+                outfile          => $outfile_prefix . $outfile_suffix,
             }
         );
     }
@@ -19400,7 +19444,7 @@ sub tiddit {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-      add_program_outfile_to_sample_info(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => 'tiddit',
@@ -19806,24 +19850,24 @@ q?\'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %M
     {
 
         ## Collect samtools version in qccollect
-      add_program_outfile_to_sample_info(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => 'samtools',
                 outdirectory     => $outfamily_directory,
-                outfile   => $outfile_prefix . $outfile_suffix,
+                outfile          => $outfile_prefix . $outfile_suffix,
             }
         );
         ## Locating samtools_mpileup file
-      add_program_outfile_to_sample_info(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => 'samtools_mpileup',
                 outdirectory     => $outfamily_directory,
-                outfile   => $outfile_prefix . $outfile_suffix,
+                outfile          => $outfile_prefix . $outfile_suffix,
             }
         );
-      add_program_outfile_to_sample_info(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => 'bcftools',
@@ -20181,15 +20225,15 @@ sub freebayes {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-      add_program_outfile_to_sample_info(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => 'freebayes',
                 outdirectory     => $outfamily_directory,
-                outfile   => $outfile_prefix . $outfile_suffix,
+                outfile          => $outfile_prefix . $outfile_suffix,
             }
         );
-      add_program_outfile_to_sample_info(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => 'bcftools',
@@ -22032,17 +22076,18 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
     {
 
         ## Collect QC metadata info for later use
-      add_program_outfile_to_sample_info(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
                 program_name     => 'markduplicates',
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile   => $outfile_tag . q{_metric},
+                outfile          => $outfile_tag . q{_metric},
             }
         );
-       # Markduplicates can be processed by either picardtools markduplicates or sambamba markdup
+
+# Markduplicates can be processed by either picardtools markduplicates or sambamba markdup
         $sample_info_href->{sample}{$$sample_id_ref}{program}{markduplicates}
           {$infile}{processed_by} = $markduplicates_program;
 
@@ -24412,41 +24457,41 @@ q?perl -ne '$raw; $map; chomp($_); print $_, "\n"; if($_=~/raw total sequences:\
                 if ( $active_parameter_href->{bwa_mem_bamstats} ) {
 
                     ## Collect QC metadata info for later use
-		  add_program_outfile_to_sample_info(
+                    add_program_outfile_to_sample_info(
                         {
                             sample_info_href => $sample_info_href,
                             sample_id        => $$sample_id_ref,
                             program_name     => 'bamstats',
                             infile           => $infile_prefix,
                             outdirectory     => $outsample_directory,
-                            outfile   => $outfile_tag . q{.stats},
+                            outfile          => $outfile_tag . q{.stats},
                         }
                     );
                 }
 
                 if ( $bwa_binary eq "bwa mem" ) {
 
-		  add_program_outfile_to_sample_info(
+                    add_program_outfile_to_sample_info(
                         {
                             sample_info_href => $sample_info_href,
                             sample_id        => $$sample_id_ref,
                             program_name     => 'bwa',
                             infile           => $infile_prefix,
                             outdirectory     => $directory,
-                            outfile   => $stderr_file,
+                            outfile          => $stderr_file,
                         }
                     );
                 }
                 if ( $bwa_binary eq "run-bwamem" ) {
 
-		  add_program_outfile_to_sample_info(
+                    add_program_outfile_to_sample_info(
                         {
                             sample_info_href => $sample_info_href,
                             sample_id        => $$sample_id_ref,
                             program_name     => 'run-bwamem',
                             infile           => $infile_prefix,
                             outdirectory     => $outsample_directory,
-                            outfile   => q{.log.bwamem},
+                            outfile          => q{.log.bwamem},
                         }
                     );
                 }
@@ -25288,11 +25333,15 @@ sub madeline {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-      my $qc_madelaine_path = catfile( $outfamily_directory, $$family_id_ref . "_madeline.xml" );
-      add_program_outfile_to_sample_info({sample_info_href      => $sample_info_href,
-						   program_name => $program_name,
-						  path => $qc_madelaine_path,
-});
+        my $qc_madelaine_path =
+          catfile( $outfamily_directory, $$family_id_ref . "_madeline.xml" );
+        add_program_outfile_to_sample_info(
+            {
+                sample_info_href => $sample_info_href,
+                program_name     => $program_name,
+                path             => $qc_madelaine_path,
+            }
+        );
     }
 
     close($FILEHANDLE);
@@ -25533,20 +25582,19 @@ sub mfastqc {
             && ( !$active_parameter_href->{dry_run_all} ) )
         {
 
-	  my $qc_fastqc_outdirectory = catdir(
-                        $outsample_directory, $file_at_lane_level . q{_fastqc}
-                    );
-	  add_program_outfile_to_sample_info(
+            my $qc_fastqc_outdirectory =
+              catdir( $outsample_directory, $file_at_lane_level . q{_fastqc} );
+            add_program_outfile_to_sample_info(
                 {
                     sample_info_href => $sample_info_href,
                     sample_id        => $$sample_id_ref,
                     program_name     => q{fastqc},
                     infile           => $infile,
                     outdirectory     => $qc_fastqc_outdirectory,
-                    outfile => q{fastqc_data.txt},
+                    outfile          => q{fastqc_data.txt},
                 }
             );
-	}
+        }
     }
     say $FILEHANDLE q{wait}, "\n";
 
@@ -36729,11 +36777,11 @@ sub add_to_sample_info {
     }
     if ( exists $active_parameter_href->{gatk_path} ) {
 
-      my $gatk_version;
+        my $gatk_version;
         if ( $active_parameter_href->{gatk_path} =~ /GenomeAnalysisTK-([^,]+)/ )
         {
 
-	  $gatk_version = $1;
+            $gatk_version = $1;
         }
         else {    #Fall back on actually calling program
 
@@ -36742,22 +36790,23 @@ sub add_to_sample_info {
             $gatk_version = (`java -jar $jar_path --version 2>&1`);
             chomp $gatk_version;
         }
-      add_program_outfile_to_sample_info(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => 'gatk',
-                version => $gatk_version,
-            });
+                version          => $gatk_version,
+            }
+        );
     }
     if ( exists $active_parameter_href->{picardtools_path} )
-    {             #To enable addition of version to sample_info
+    {    #To enable addition of version to sample_info
 
-      my $picardtools_version;
+        my $picardtools_version;
         if ( $active_parameter_href->{picardtools_path} =~
             /picard-tools-([^,]+)/ )
         {
 
-	  $picardtools_version = $1;
+            $picardtools_version = $1;
         }
         else {    #Fall back on actually calling program
 
@@ -36768,12 +36817,13 @@ sub add_to_sample_info {
             chomp $picardtools_version;
         }
 
-      add_program_outfile_to_sample_info(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => 'picardtools',
-                version => $picardtools_version,
-            });
+                version          => $picardtools_version,
+            }
+        );
     }
     my @sambamba_programs =
       ( "pbwa_mem", "psambamba_depth", "markduplicates_sambamba_markdup" );
@@ -36789,12 +36839,13 @@ sub add_to_sample_info {
                   q?perl -nae 'if($_=~/sambamba\s(\S+)/) {print $1;last;}'?;
                 my $sambamba_version = (`sambamba 2>&1 | $regexp`);
                 chomp $sambamba_version;
-		add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                program_name     => 'sambamba',
-                version => $sambamba_version,
-            });
+                add_program_outfile_to_sample_info(
+                    {
+                        sample_info_href => $sample_info_href,
+                        program_name     => 'sambamba',
+                        version          => $sambamba_version,
+                    }
+                );
                 last;    #Only need to check once
             }
         }
@@ -36810,12 +36861,13 @@ sub add_to_sample_info {
               q?perl -nae 'if($_=~/CNVnator\s+(\S+)/) {print $1;last;}'?;
             my $cnvnator_version = (`cnvnator 2>&1 | $regexp`);
             chomp $cnvnator_version;
-	    add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                program_name     => 'cnvnator',
-                version => $cnvnator_version,
-            });
+            add_program_outfile_to_sample_info(
+                {
+                    sample_info_href => $sample_info_href,
+                    program_name     => 'cnvnator',
+                    version          => $cnvnator_version,
+                }
+            );
         }
     }
     if ( defined($$human_genome_reference_ref) )

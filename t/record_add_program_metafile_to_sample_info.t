@@ -89,9 +89,9 @@ my %sample_info;
 my $test_program_name = q{test_program};
 my $metafile          = q{test_metafile};
 my $directory         = q{test_directory};
-my $file           = q{test.yaml};
+my $file              = q{test.yaml};
 my $path              = catfile( $directory, $file );
-my $version = q{1.0.1};
+my $version           = q{1.0.1};
 
 ## Family level
 add_program_metafile_to_sample_info(
@@ -99,10 +99,10 @@ add_program_metafile_to_sample_info(
         sample_info_href => \%sample_info,
         program_name     => $test_program_name,
         metafile_tag     => $metafile,
-        directory     => $directory,
-        file          => $file,
+        directory        => $directory,
+        file             => $file,
         path             => $path,
-     version => $version,
+        version          => $version,
     }
 );
 
@@ -133,10 +133,10 @@ add_program_metafile_to_sample_info(
         infile           => $infile,
         program_name     => $test_program_name,
         metafile_tag     => $metafile,
-        directory     => $directory,
-        file          => $file,
+        directory        => $directory,
+        file             => $file,
         path             => $path,
-     version => $version,
+        version          => $version,
     }
 );
 

@@ -22,6 +22,8 @@ gnu_split.t
 gnu_trap.t
 gnu_wait.t
 processes_print_wait.t
+record_add_program_metafile_to_sample_info.t
+record_add_program_outfile_to_sample_info.t
 shell_build_shebang.t
 shell_create_housekeeping_function.t
 shell_create_error_trap_function.t
