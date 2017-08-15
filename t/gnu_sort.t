@@ -18,6 +18,7 @@ use File::Basename qw(dirname basename);
 use File::Spec::Functions qw(catdir);
 use Getopt::Long;
 use Test::More;
+use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), 'lib' );
@@ -25,20 +26,26 @@ use Script::Utils qw(help);
 
 our $USAGE = build_usage( {} );
 
+##Constants
+Readonly my $NEWLINE   => qq{\n};
+Readonly my $EMPTY_STR => q{ };
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = q{1.0.1};
 
 ###User Options
 GetOptions(
     'h|help' => sub {
         done_testing();
-        print {*STDOUT} $USAGE, "\n";
+        say {*STDOUT} $USAGE;
         exit;
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION,
-          "\n\n";
+        say {*STDOUT} $NEWLINE
+          . basename($PROGRAM_NAME)
+          . $EMPTY_STR
+          . $VERSION,
+          $NEWLINE;
         exit;
     },    #Display version number
     'vb|verbose' => $VERBOSE,
@@ -62,13 +69,13 @@ BEGIN {
     $perl_module{'Script::Utils'} = [qw(help)];
     while ( my ( $module, $module_import ) = each %perl_module ) {
         use_ok( $module, @{$module_import} )
-          or BAIL_OUT 'Cannot load ' . $module;
+          or BAIL_OUT q{Cannot load } . $module;
     }
 
 ##Modules
     my @modules = ('MIP::Gnu::Coreutils');
     for my $module (@modules) {
-        require_ok($module) or BAIL_OUT 'Cannot load ' . $module;
+        require_ok($module) or BAIL_OUT q{Cannot load } . $module;
     }
 }
 
@@ -78,20 +85,20 @@ use MIP::Test::Commands qw(test_function);
 diag("Test gnu_sort $MIP::Gnu::Coreutils::VERSION, Perl $^V, $EXECUTABLE_NAME");
 
 ## Base arguments
-my $function_base_command = 'sort';
+my $function_base_command = q{sort};
 
 my %base_argument = (
     stdoutfile_path => {
-        input           => 'stdoutfile.test',
-        expected_output => '1> stdoutfile.test',
+        input           => q{stdoutfile.test},
+        expected_output => q{1> stdoutfile.test},
     },
     stderrfile_path => {
-        input           => 'stderrfile.test',
-        expected_output => '2> stderrfile.test',
+        input           => q{stderrfile.test},
+        expected_output => q{2> stderrfile.test},
     },
     stderrfile_path_append => {
-        input           => 'stderrfile.test',
-        expected_output => '2>> stderrfile.test',
+        input           => q{stderrfile.test},
+        expected_output => q{2>> stderrfile.test},
     },
     FILEHANDLE => {
         input           => undef,
@@ -102,20 +109,20 @@ my %base_argument = (
 ## Can be duplicated with %base and/or %specific to enable testing of each individual argument
 my %required_argument = (
     keys_ref => {
-        inputs_ref      => [qw(2.2,2.5 3.2,3.5)],
-        expected_output => '--key 2.2,2.5 --key 3.2,3.5',
+        inputs_ref      => [ q{2.2,2.5}, q{3.2,3.5} ],
+        expected_output => q{--key 2.2,2.5 --key 3.2,3.5},
     },
 );
 
 ## Specific arguments
 my %specific_argument = (
     keys_ref => {
-        inputs_ref      => [qw(2.2,2.5 3.2,3.5)],
-        expected_output => '--key 2.2,2.5 --key 3.2,3.5',
+        inputs_ref      => [ q{2.2,2.5}, q{3.2,3.5} ],
+        expected_output => q{--key 2.2,2.5 --key 3.2,3.5},
     },
     infile_path => {
-        input           => 'infile.test',
-        expected_output => 'infile.test',
+        input           => q{infile.test},
+        expected_output => q{infile.test},
     },
 );
 
