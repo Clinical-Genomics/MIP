@@ -26,26 +26,20 @@ use Script::Utils qw(help);
 
 our $USAGE = build_usage( {} );
 
-##Constants
-Readonly my $NEWLINE   => qq{\n};
-Readonly my $EMPTY_STR => q{ };
 my $VERBOSE = 1;
-our $VERSION = q{1.0.1};
+our $VERSION = '1.0.0';
 
 ###User Options
 GetOptions(
     'h|help' => sub {
         done_testing();
-        say {*STDOUT} $USAGE;
+        print {*STDOUT} $USAGE, "\n";
         exit;
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $EMPTY_STR
-          . $VERSION,
-          $NEWLINE;
+        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION,
+          "\n\n";
         exit;
     },    #Display version number
     'vb|verbose' => $VERBOSE,
@@ -69,36 +63,35 @@ BEGIN {
     $perl_module{'Script::Utils'} = [qw(help)];
     while ( my ( $module, $module_import ) = each %perl_module ) {
         use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load } . $module;
+          or BAIL_OUT 'Cannot load ' . $module;
     }
 
 ##Modules
     my @modules = ('MIP::Gnu::Coreutils');
     for my $module (@modules) {
-        require_ok($module) or BAIL_OUT q{Cannot load } . $module;
+        require_ok($module) or BAIL_OUT 'Cannot load ' . $module;
     }
 }
 
-use MIP::Gnu::Coreutils qw(gnu_sort);
+use MIP::Gnu::Coreutils qw(gnu_echo);
 use MIP::Test::Commands qw(test_function);
 
-diag("Test gnu_sort $MIP::Gnu::Coreutils::VERSION, Perl $^V, $EXECUTABLE_NAME");
+diag("Test gnu_echo $MIP::Gnu::Coreutils::VERSION, Perl $^V, $EXECUTABLE_NAME");
+
+## Constants 
+Readonly my $DOUBLE_QUOTE => q{"};
 
 ## Base arguments
-my $function_base_command = q{sort};
+my $function_base_command = 'echo';
 
 my %base_argument = (
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
-    },
     stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
+        input           => 'stderrfile.test',
+        expected_output => '2> stderrfile.test',
     },
     stderrfile_path_append => {
-        input           => q{stderrfile.test},
-        expected_output => q{2>> stderrfile.test},
+        input           => 'stderrfile.test',
+        expected_output => '2>> stderrfile.test',
     },
     FILEHANDLE => {
         input           => undef,
@@ -108,26 +101,34 @@ my %base_argument = (
 
 ## Can be duplicated with %base and/or %specific to enable testing of each individual argument
 my %required_argument = (
-    keys_ref => {
-        inputs_ref      => [ q{2.2,2.5}, q{3.2,3.5} ],
-        expected_output => q{--key 2.2,2.5 --key 3.2,3.5},
+    strings_ref => {
+        inputs_ref      => [q{This is my test string}],
+        expected_output => $DOUBLE_QUOTE . q{This is my test string} . $DOUBLE_QUOTE,
     },
 );
 
 ## Specific arguments
 my %specific_argument = (
-    keys_ref => {
-        inputs_ref      => [ q{2.2,2.5}, q{3.2,3.5} ],
-        expected_output => q{--key 2.2,2.5 --key 3.2,3.5},
+    strings_ref => {
+        inputs_ref      => [q{This is my test string}],
+        expected_output => $DOUBLE_QUOTE . q{This is my test string} . $DOUBLE_QUOTE,
     },
-    infile_path => {
-        input           => q{infile.test},
-        expected_output => q{infile.test},
+    outfile_path => {
+        input           => 'outfile.test',
+        expected_output => '> outfile.test',
+    },
+    enable_interpretation => {
+        input           => 1,
+        expected_output => '-e',
+    },
+    no_trailing_newline => {
+        input           => 1,
+        expected_output => '-n',
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&gnu_sort;
+my $module_function_cref = \&gnu_echo;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

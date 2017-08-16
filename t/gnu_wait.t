@@ -15,37 +15,34 @@ use Params::Check qw(check allow last_error);
 
 use FindBin qw($Bin);    #Find directory of script
 use File::Basename qw(dirname basename);
-use File::Spec::Functions qw(catdir);
+use File::Spec::Functions qw(catfile catdir devnull);
 use Getopt::Long;
 use Test::More;
-use Readonly;
+
+## Third party module(s)
+use List::Util qw(any);
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), 'lib' );
 use Script::Utils qw(help);
+use MIP::Test::Writefile qw(test_write_to_file);
 
 our $USAGE = build_usage( {} );
 
-##Constants
-Readonly my $NEWLINE   => qq{\n};
-Readonly my $EMPTY_STR => q{ };
 my $VERBOSE = 1;
-our $VERSION = q{1.0.1};
+our $VERSION = '1.0.0';
 
 ###User Options
 GetOptions(
     'h|help' => sub {
         done_testing();
-        say {*STDOUT} $USAGE;
+        print {*STDOUT} $USAGE, "\n";
         exit;
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $EMPTY_STR
-          . $VERSION,
-          $NEWLINE;
+        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION,
+          "\n\n";
         exit;
     },    #Display version number
     'vb|verbose' => $VERBOSE,
@@ -67,31 +64,31 @@ BEGIN {
     my %perl_module;
 
     $perl_module{'Script::Utils'} = [qw(help)];
+
     while ( my ( $module, $module_import ) = each %perl_module ) {
+
         use_ok( $module, @{$module_import} )
           or BAIL_OUT q{Cannot load } . $module;
     }
 
 ##Modules
-    my @modules = ('MIP::Gnu::Coreutils');
+    my @modules = ('MIP::Gnu::Bash');
+
     for my $module (@modules) {
+
         require_ok($module) or BAIL_OUT q{Cannot load } . $module;
     }
 }
 
-use MIP::Gnu::Coreutils qw(gnu_sort);
+use MIP::Gnu::Bash qw(gnu_wait);
 use MIP::Test::Commands qw(test_function);
 
-diag("Test gnu_sort $MIP::Gnu::Coreutils::VERSION, Perl $^V, $EXECUTABLE_NAME");
+diag("Test gnu_wait $MIP::Gnu::Bash::VERSION, Perl $^V, $EXECUTABLE_NAME");
 
 ## Base arguments
-my $function_base_command = q{sort};
+my $function_base_command = 'wait';
 
 my %base_argument = (
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
-    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
@@ -102,43 +99,31 @@ my %base_argument = (
     },
     FILEHANDLE => {
         input           => undef,
-        expected_output => $function_base_command,
-    },
-);
-
-## Can be duplicated with %base and/or %specific to enable testing of each individual argument
-my %required_argument = (
-    keys_ref => {
-        inputs_ref      => [ q{2.2,2.5}, q{3.2,3.5} ],
-        expected_output => q{--key 2.2,2.5 --key 3.2,3.5},
+        expected_output => q{wait},
     },
 );
 
 ## Specific arguments
 my %specific_argument = (
-    keys_ref => {
-        inputs_ref      => [ q{2.2,2.5}, q{3.2,3.5} ],
-        expected_output => q{--key 2.2,2.5 --key 3.2,3.5},
-    },
-    infile_path => {
-        input           => q{infile.test},
-        expected_output => q{infile.test},
+    processes_ref => {
+        inputs_ref      => [ 1, 2, ],
+        expected_output => q{1 2},
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&gnu_sort;
+my $module_function_cref = \&gnu_wait;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
 
 foreach my $argument_href (@arguments) {
+
     my @commands = test_function(
         {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
+            argument_href         => $argument_href,
+            module_function_cref  => $module_function_cref,
+            function_base_command => $function_base_command,
         }
     );
 }
