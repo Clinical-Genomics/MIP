@@ -33,8 +33,8 @@ use MIP::Gnu::Coreutils qw(gnu_mkdir gnu_rm);
 our $USAGE = build_usage( {} );
 
 ## Constants
-Readonly my $NEWLINE   => qq{\n};
-Readonly my $EMPTY_STR => q{ };
+Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => q{ };
 my $VERBOSE = 0;
 our $VERSION = '1.0.1';
 
@@ -47,10 +47,7 @@ GetOptions(
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $EMPTY_STR
-          . $VERSION,
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
           $NEWLINE;
         exit;
     },    #Display version number
