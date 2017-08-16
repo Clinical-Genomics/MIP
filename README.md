@@ -139,7 +139,7 @@ $ bash mip.sh
 ```
 This will install all the dependencies of MIP and other modules included in MIP into a conda environment. 
 However a fresh version of perl and cpanm is installed, if enabled, outside of the conda environment, but are activated through bashrc and bash_profile.
-####*Optional*
+#### *Optional*
 Make sure to activate your conda environment if that option was used above.
     Test Perl modules and MIP
 ```
@@ -148,6 +148,7 @@ $ cd -
 ```
 
 4. Run MIP
+
 *Conda default environment*
 ``` 
 $ mip
@@ -194,12 +195,12 @@ $ mip
 
 ##### Meta-Data
 
-* Pedigree file \(YAML-format\)
-* Configuration file \(YAML-format\)
+* [Pedigree file] \(YAML-format\)
+* [Configuration file] \(YAML-format\)
 
 ### Usage
 
-MIP is called from the command line and takes input from the command line \(precedence\), a config file \(yaml-format\) or falls back on defaults where applicable.
+MIP is called from the command line and takes input from the command line \(precedence\ or falls back on defaults where applicable.
 
 Lists are supplied as repeated flag entries on the command line or in the config using the yaml format for arrays.  
 Only flags that will actually be used needs to be specified and MIP will check that all required parameters are set before submitting to SLURM.
@@ -231,7 +232,9 @@ MIP will create sbatch scripts \(.sh\) and submit them in proper order with atta
 
 ##### Data
 
-MIP will place any generated datafiles in the output data directory specified by `--outdata_dir`. All datatfiles are regenerated for each analysis. STDOUT and STDERR for each program is written in the program/info directory prior to alignment and in the aligner/info directory post alignment.
+MIP will place any generated datafiles in the output data directory specified by `--outdata_dir`. All data files are regenerated for each analysis. STDOUT and STDERR for each program is written in the program/info directory prior to alignment and in the aligner/info directory post alignment.
 
 [Miniconda]: http://conda.pydata.org/miniconda.html
 [CPAN]: https://www.cpan.org/
+[Pedigree file]: https://github.com/henrikstranneheim/MIP/tree/master/templates/643594-miptest_pedigree.yaml
+[Configuration file]: https://github.com/henrikstranneheim/MIP/blob/master/templates/mip_config.yaml
