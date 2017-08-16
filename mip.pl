@@ -28158,240 +28158,6 @@ sub add_to_job_id {
     return $job_ids_string;
 }
 
-sub push_to_job_id {
-
-##push_to_job_id
-
-##Function : Saves job_id to the correct hash array depending on chaintype.
-##Returns  : ""
-##Arguments: $active_parameter_href, $sample_info_href, $job_id_href, $infile_lane_prefix_href, $family_id_chain_key, $sample_id_chain_key, $sample_id, $path, $chain_key_type, $family_id_ref
-##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $job_id_href                => The info on jobIds hash {REF}
-##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
-##         : $family_id_chain_key        => Family ID chain hash key
-##         : $sample_id_chain_key        => Sample ID chain hash key
-##         : $sample_id                  => Sample ID
-##         : $family_id_ref              => Family id {REF}
-##         : $path                       => Trunk or branch
-##         : $chain_key_type             => "parallel", "merged" or "family_merged"
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $parallel_chains_ref;
-    my $family_id_chain_key;
-    my $sample_id_chain_key;
-    my $sample_id;
-    my $path;
-    my $chain_key_type;
-
-    my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        parallel_chains_ref =>
-          { default => [], strict_type => 1, store => \$parallel_chains_ref },
-        family_id_chain_key => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$family_id_chain_key
-        },
-        sample_id_chain_key => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$sample_id_chain_key
-        },
-        sample_id => { strict_type => 1, store => \$sample_id },
-        path =>
-          { required => 1, defined => 1, strict_type => 1, store => \$path },
-        chain_key_type => {
-            required    => 1,
-            defined     => 1,
-            allow       => [ "parallel", "merged", "family_merged" ],
-            strict_type => 1,
-            store       => \$chain_key_type
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
-
-    use MIP::Get::Analysis qw(get_overall_analysis_type);
-
-    ## Detect if all samples has the same sequencing type and return consensus if reached
-    my $consensus_analysis_type = get_overall_analysis_type(
-        { analysis_type_hef => \%{ $active_parameter_href->{analysis_type} }, }
-    );
-    my $chain_key;
-
-    if ( $chain_key_type eq "parallel" ) {    #Push parallel jobs
-
-        if (
-            ( $consensus_analysis_type eq "rapid" )
-            && ( $sample_info_href->{sample}{$sample_id}{pbwa_mem}
-                {sbatch_batch_processes} )
-          )
-        {                                     #Rapid run
-
-            for (
-                my $sbatch_counter = 0 ;
-                $sbatch_counter <
-                $sample_info_href->{sample}{$sample_id}{pbwa_mem}
-                {sbatch_batch_processes} ;
-                $sbatch_counter++
-              )
-            {    #Iterate over sbatch processes instead of infile(s)
-
-                $chain_key =
-                    $sample_id . "_"
-                  . $chain_key_type . "_"
-                  . $path
-                  . $sbatch_counter;    #Set key
-
-                if ( $job_id_href->{$family_id_chain_key}{$chain_key} )
-                {                       #Job exists
-
-                    for (
-                        my $job_counter = 0 ;
-                        $job_counter < scalar(
-                            @{
-                                $job_id_href->{$family_id_chain_key}{$chain_key}
-                            }
-                        ) ;
-                        $job_counter++
-                      )
-                    { #All previous jobs i.e. jobs in this case equals to infiles in number
-
-                        push(
-                            @{
-                                $job_id_href->{$family_id_chain_key}
-                                  {$sample_id_chain_key}
-                            },
-                            $job_id_href->{$family_id_chain_key}{$chain_key}
-                              [$job_counter]
-                        );    #Add job_id to hash
-                    }
-                }
-            }
-            $sample_info_href->{sample}{$sample_id}{pbwa_mem}
-              {sbatch_batch_processes} = ();
-        }
-        else {
-
-          INFILES:
-            while ( my ($infile_index) =
-                each( $infile_lane_prefix_href->{$sample_id} ) )
-            {                 #All infiles
-
-                $chain_key =
-                    $sample_id . "_"
-                  . $chain_key_type . "_"
-                  . $path
-                  . $infile_index;    #Set key
-
-                if ( $job_id_href->{$family_id_chain_key}{$chain_key} )
-                {                     #Job exists
-
-                  JOB_IDS:
-                    while (
-                        my ($job_index) = each(
-                            $job_id_href->{$family_id_chain_key}{$chain_key}
-                        )
-                      )
-                    { #All previous jobs i.e. jobs in this case equals to infiles in number
-
-                        push(
-                            @{
-                                $job_id_href->{$family_id_chain_key}
-                                  {$sample_id_chain_key}
-                            },
-                            $job_id_href->{$family_id_chain_key}{$chain_key}
-                              [$job_index]
-                        );    #Add job_id to hash
-                    }
-                }
-            }
-        }
-    }
-    elsif (( $chain_key_type eq "merged" )
-        || ( $chain_key_type eq "family_merged" ) )
-    {                         #Push merged jobs
-
-        $chain_key = $family_id_chain_key . "_" . $sample_id_chain_key; #Set key
-
-        if ( $job_id_href->{$family_id_chain_key}{$chain_key} ) {    #Job exists
-
-          JOB_IDS:
-            while ( my ($job_index) =
-                each( $job_id_href->{$family_id_chain_key}{$chain_key} ) )
-            { #All previous jobs i.e. jobs in this case equals to infiles in number
-
-                if ( $chain_key_type eq "family_merged" )
-                {    #Use $family_id_chain_key instead of $sample_id_chain_key
-
-                    push(
-                        @{
-                            $job_id_href->{$family_id_chain_key}
-                              {$family_id_chain_key}
-                        },
-                        $job_id_href->{$family_id_chain_key}{$chain_key}
-                          [$job_index]
-                    );    #Add job_id hash
-                }
-                else {
-                    push(
-                        @{
-                            $job_id_href->{$family_id_chain_key}
-                              {$sample_id_chain_key}
-                        },
-                        $job_id_href->{$family_id_chain_key}{$chain_key}
-                          [$job_index]
-                    );    #Add job_id to hash
-                }
-            }
-        }
-    }
-}
-
 sub submit_job {
 
 ##submit_job
@@ -28514,6 +28280,7 @@ sub submit_job {
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     use Readonly;
+    use MIP::Processmanagement::Processes qw(push_to_job_id);
 
     ## Constants
     Readonly my $NEWLINE      => qq{\n};
@@ -28573,8 +28340,6 @@ sub submit_job {
             ## Saves job_id to the correct hash array depending on chaintype
             push_to_job_id(
                 {
-                    active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
                     infile_lane_prefix_href => $infile_lane_prefix_href,
                     job_id_href             => $job_id_href,
                     family_id_chain_key     => $family_id_chain_key,
@@ -28609,8 +28374,6 @@ sub submit_job {
                 ## Saves job_id to the correct hash array depending on chaintype
                 push_to_job_id(
                     {
-                        active_parameter_href   => $active_parameter_href,
-                        sample_info_href        => $sample_info_href,
                         infile_lane_prefix_href => $infile_lane_prefix_href,
                         job_id_href             => $job_id_href,
                         family_id_chain_key     => $family_id_chain_key,
@@ -28630,8 +28393,6 @@ sub submit_job {
                 ## Saves job_id to the correct hash array depending on chaintype
                 push_to_job_id(
                     {
-                        active_parameter_href   => $active_parameter_href,
-                        sample_info_href        => $sample_info_href,
                         infile_lane_prefix_href => $infile_lane_prefix_href,
                         job_id_href             => $job_id_href,
                         family_id_chain_key     => $family_id_chain_key,
@@ -28856,8 +28617,6 @@ sub submit_job {
                     ## Saves job_id to the correct hash array depending on chaintype
                     push_to_job_id(
                         {
-                            active_parameter_href   => $active_parameter_href,
-                            sample_info_href        => $sample_info_href,
                             infile_lane_prefix_href => $infile_lane_prefix_href,
                             job_id_href             => $job_id_href,
                             family_id_chain_key     => $family_id_chain_key,

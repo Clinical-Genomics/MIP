@@ -27,8 +27,8 @@ use Script::Utils qw(help);
 our $USAGE = build_usage( {} );
 
 ##Constants
-Readonly my $NEWLINE   => qq{\n};
-Readonly my $EMPTY_STR => q{ };
+Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => q{ };
 my $VERBOSE = 1;
 our $VERSION = q{1.0.0};
 
@@ -41,10 +41,7 @@ GetOptions(
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $EMPTY_STR
-          . $VERSION,
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
           $NEWLINE;
         exit;
     },    #Display version number
@@ -101,8 +98,8 @@ my %analysis_type_mixed = (
 my $consensus_analysis_type = get_overall_analysis_type(
     { analysis_type_hef => \%analysis_type_consensus, } );
 
-my $mixed_analysis_type = get_overall_analysis_type(
-    { analysis_type_hef => \%analysis_type_mixed, } );
+my $mixed_analysis_type =
+  get_overall_analysis_type( { analysis_type_hef => \%analysis_type_mixed, } );
 
 is( $consensus_analysis_type, q{wgs},
     q{Correct return of consensus analysis typ} );
