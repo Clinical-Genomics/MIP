@@ -103,7 +103,7 @@ sub submit_jobs_to_sbatch {
 ##submit_sbatch_to_sbatch
 
 ##Function : Sumit jobs to sbatch
-##Returns  : "$job_id"
+##Returns  : "The submitted $job_id"
 ##Arguments: $sbatch_file_name, $job_dependency_type, $job_ids_string, $log
 ##         : $sbatch_file_name    => Sbatch file to submit
 ##         : $job_dependency_type => Job dependency type
@@ -142,7 +142,7 @@ sub submit_jobs_to_sbatch {
     use MIP::Workloadmanager::Slurm qw(slurm_sbatch);
     use IPC::Cmd qw[ run ];
 
-# Supply with potential dependency of previous jobs that this one is dependent on
+    # Supply with potential dependency of previous jobs that this one is dependent on
     my @commands = slurm_sbatch(
         {
             infile_path     => $sbatch_file_name,
@@ -169,7 +169,7 @@ sub submit_jobs_to_sbatch {
     else {
        # Catch errors since, proper sbatch submission should only return numbers
 
-        $log->fatal( $stdout_buf_ref->[0] );
+        $log->fatal( @{ $stderr_buf_ref } );
         $log->fatal( q{Aborting run} . $NEWLINE );
         exit 1;
     }

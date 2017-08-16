@@ -42,6 +42,7 @@ use File::Format::Yaml qw(load_yaml write_yaml);
 use MIP_log::Log4perl qw(initiate_logger);
 use Script::Utils qw(help);
 use MIP::Check::Cluster qw(check_max_core_number);
+use MIP::Get::Analysis qw(get_overall_analysis_type);
 
 our $USAGE = build_usage( {} );
 
@@ -711,8 +712,8 @@ foreach my $order_parameter_element (@order_parameters) {
     if ( $order_parameter_element eq 'analysis_type' ) {
 
         ## Detect if all samples has the same sequencing type and return consensus if reached
-        $parameter{dynamic_parameter}{consensus_analysis_type} =
-          detect_overall_analysis_type(
+      $parameter{dynamic_parameter}{consensus_analysis_type} =
+          get_overall_analysis_type(
             { analysis_type_hef => \%{ $active_parameter{analysis_type} }, } );
     }
 }
@@ -28252,10 +28253,12 @@ sub push_to_job_id {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
+
+    use MIP::Get::Analysis qw(get_overall_analysis_type);
 
     ## Detect if all samples has the same sequencing type and return consensus if reached
-    my $consensus_analysis_type = detect_overall_analysis_type(
+    my $consensus_analysis_type = get_overall_analysis_type(
         { analysis_type_hef => \%{ $active_parameter_href->{analysis_type} }, }
     );
     my $chain_key;
@@ -36165,6 +36168,8 @@ sub set_contigs {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Get::Analysis qw(get_overall_analysis_type);
+
     if ( $active_parameter_href->{human_genome_reference} =~ /hg\d+/ )
     {    #Refseq - prefix and M
 
@@ -36201,7 +36206,7 @@ sub set_contigs {
     }
 
     ## Detect if all samples has the same sequencing type and return consensus if reached
-    my $consensus_analysis_type = detect_overall_analysis_type(
+    my $consensus_analysis_type = get_overall_analysis_type(
         { analysis_type_hef => \%{ $active_parameter_href->{analysis_type} }, }
     );
     if ( $consensus_analysis_type eq "wes" ) {
@@ -40238,44 +40243,6 @@ sub get_matching_values_key {
 
         return $reversed{$$query_value_ref};
     }
-}
-
-sub detect_overall_analysis_type {
-
-##detect_overall_analysis_type
-
-##Function : Detect if all samples has the same sequencing type and return consensus or mixed
-##Returns  : "consensus/mixed analysis_type"
-##Arguments: $analysis_type_hef
-##         : $analysis_type_hef => The analysis_type hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $analysis_type_hef;
-
-    my $tmpl = {
-        analysis_type_hef => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$analysis_type_hef
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    my @analysis_types = ( "wes", "wgs", "rapid" );
-
-    foreach my $analysis_type (@analysis_types) {
-
-        if ( all { $_ eq $analysis_type } values %$analysis_type_hef ) {
-
-            return $analysis_type;
-        }
-    }
-    return "mixed"    # No consensus, then it must be mixed
 }
 
 sub bcftools_norm {
