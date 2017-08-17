@@ -131,9 +131,11 @@ sub create_fam_file {
         push @pedigree_lines, join $TAB, @fam_headers;
     }
 
+    SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
         my $sample_line = ${$family_id_ref};
-
+        
+        HEADER:
         foreach my $header (@fam_headers) {
 
             if (
@@ -158,7 +160,8 @@ sub create_fam_file {
         open $FILEHANDLE_SYS, '>', $fam_file_path
           or $log->logdie(qq{Can't open $fam_file_path: $ERRNO $NEWLINE});
 
-      # Adds the information from the samples in pedigree_lines, separated by \n
+        LINE:
+        # Adds the information from the samples in pedigree_lines, separated by \n
         foreach my $line (@pedigree_lines) {
             say {$FILEHANDLE_SYS} $line;
         }

@@ -199,10 +199,12 @@ for my $execution_mode (@execution_modes) {
 
     # Creating array of expected pedigree lines
     my @expected_pedigree_lines;
-
+    
+    SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_test_hash{sample_ids} } ) {
         my $sample_line = $active_parameter_test_hash{family_id};
-
+        
+        HEADER:
         foreach my $header ( split $TAB, $expected_header ) {
 
             if ( defined $sample_info_test_hash{sample}{$sample_id}{$header} ) {
