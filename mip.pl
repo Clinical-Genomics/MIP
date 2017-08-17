@@ -13950,6 +13950,10 @@ sub sambamba_depth {
     use MIP::IO::Files qw(migrate_file);
     use Program::Alignment::Sambamba qw(depth);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
+    use MIP::Processmanagement::Slurm_processes qw(slurm_submit_job_sample_id_dependency_dead_end);
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -14095,16 +14099,14 @@ sub sambamba_depth {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        submit_job(
+      slurm_submit_job_sample_id_dependency_dead_end(
             {
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
                 job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
+	     family_id => $$family_id_ref,
                 sample_id               => $$sample_id_ref,
-                dependencies            => "case_dependency_add_to_case",
                 path                    => $jobid_chain,
-                sbatch_file_name        => $file_name
+                sbatch_file_name        => $file_name,
+	     log => $log,
             }
         );
     }
@@ -28106,82 +28108,6 @@ sub read_yaml_pedigree_file {
     }
 }
 
-sub add_to_job_id {
-
-##add_to_job_id
-
-##Function : Adds all previous jobIds per familyChainKey and chain_key to job_ids string used to set the dependency in SLURM.
-##Returns  : "$job_ids"
-##Arguments: $job_id_href, $family_id_chain_key, $chain_key
-##         : $job_id_href         => The info on jobIds hash {REF}
-##         : $family_id_chain_key => Family ID chain hash key
-##         : $chain_key           => The current chain hash key
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $job_id_href;
-    my $family_id_chain_key;
-    my $chain_key;
-
-    my $tmpl = {
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        family_id_chain_key => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$family_id_chain_key
-        },
-        chain_key => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$chain_key
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    my $job_ids_string = "";    #JobID string to submit to batch system
-    my $chain_job_id_href =
-      $job_id_href->{$family_id_chain_key}{$chain_key};    #Alias
-
-    if ($chain_job_id_href) {
-
-        while ( my ( $job_index, $job_id ) = each( @{$chain_job_id_href} ) ) {
-
-            if ( ( !$job_index ) && ( scalar( @{$chain_job_id_href} ) == 1 ) )
-            {    #Only 1 previous job_id
-
-                $job_ids_string .= ":"
-                  . $job_id
-                  ;    #First and last job_id start with ":" and end without ":"
-            }
-            elsif ( !$job_index ) {    #First job_id
-
-                $job_ids_string .=
-                  ":" . $job_id . ":";    #First job_id start with :
-            }
-            elsif ( $job_index eq ( scalar( @{$chain_job_id_href} ) - 1 ) )
-            {                             #Last job_id
-
-                $job_ids_string .= $job_id;    #Last job_id finish without :
-            }
-            else {                             #JobIDs in the middle
-
-                $job_ids_string .= $job_id . ":";
-            }
-        }
-    }
-    return $job_ids_string;
-}
-
 sub submit_job {
 
 ##submit_job
@@ -28303,7 +28229,7 @@ sub submit_job {
 
     use Readonly;
     use MIP::Processmanagement::Processes
-      qw(add_parallel_job_id_to_dependency_tree add_merged_job_id_to_dependency_tree add_family_merged_job_id_to_family_id_dependency_tree);
+      qw(add_parallel_job_id_to_dependency_tree add_pan_job_id_to_sample_id_dependency_tree add_pan_job_id_to_family_id_dependency_tree add_to_job_id_dependency_string);
 
     ## Constants
     Readonly my $NEWLINE      => qq{\n};
@@ -28347,21 +28273,7 @@ sub submit_job {
     ## Dependent on earlier scripts and/or parallel.
     ## JobIDs that do not leave dependencies do not get pushed to job_id hash
 
-# Check jobs within sample_id (exception if dependencies = case_dependency_add_to_case (5))
     if ( defined $sample_id ) {
-
-        # Add family_id_sample_id jobs to current sample_id chain
-        if ( $dependencies eq q{case_dependency_add_to_case} ) {
-
-            ## Saves job_id to the correct hash array depending on chaintype
-            add_merged_job_id_to_dependency_tree(
-                {
-                    job_id_href         => $job_id_href,
-                    family_id_chain_key => $family_id_chain_key,
-                    sample_id_chain_key => $sample_id_chain_key,
-                }
-            );
-        }
 
         ## Not parallel jobs, but check if last job submission was parallel
         if (   ( $dependencies eq q{case_dependency} )
@@ -28393,7 +28305,7 @@ sub submit_job {
             {
 
                 ## Add to job_id string
-                $job_ids_string = add_to_job_id(
+                $job_ids_string = add_to_job_id_dependency_string(
                     {
                         job_id_href         => $job_id_href,
                         family_id_chain_key => $family_id_chain_key,
@@ -28408,7 +28320,7 @@ sub submit_job {
                 {
 
                     ## Add to job_id string
-                    $job_ids_string .= add_to_job_id(
+                    $job_ids_string .= add_to_job_id_dependency_string(
                         {
                             job_id_href         => $job_id_href,
                             family_id_chain_key => $family_id_chain_key,
@@ -28422,7 +28334,7 @@ sub submit_job {
                 ## Previous job was a single job
 
                 ## Add to job_id string
-                $job_ids_string = add_to_job_id(
+                $job_ids_string = add_to_job_id_dependency_string(
                     {
                         job_id_href         => $job_id_href,
                         family_id_chain_key => $family_id_chain_key,
@@ -28439,7 +28351,7 @@ sub submit_job {
             if ( $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} ) {
 
                 ## Add to job_id string
-                $job_ids_string = add_to_job_id(
+                $job_ids_string = add_to_job_id_dependency_string(
                     {
                         job_id_href         => $job_id_href,
                         family_id_chain_key => $family_id_chain_key,
@@ -28453,7 +28365,7 @@ sub submit_job {
                 ## Inherit from potential MAIN. Trunk
 
                 ## Add to job_id string
-                $job_ids_string = add_to_job_id(
+                $job_ids_string = add_to_job_id_dependency_string(
                     {
                         job_id_href         => $job_id_href,
                         family_id_chain_key => $$family_id_ref . q{_MAIN},
@@ -28467,7 +28379,7 @@ sub submit_job {
         if ( ( defined $path ) && ( $path eq q{ALL} ) ) {
 
             ## Add to job_id string
-            $job_ids_string = add_to_job_id(
+            $job_ids_string = add_to_job_id_dependency_string(
                 {
                     job_id_href         => $job_id_href,
                     family_id_chain_key => q{ALL},
@@ -28543,23 +28455,6 @@ sub submit_job {
               $job_id_returned;
         }
 
-        ## Job dependent on both family_id and sample_id push to array
-        if ( $dependencies eq q{case_dependency_add_to_case} ) {
-
-            ## Clear latest family_id_sample_id chainkey
-            @{ $job_id_href->{$family_id_chain_key}
-                  { $family_id_chain_key . q{_} . $sample_id_chain_key } } = ();
-
-            #Clear latest sample_id chainkey
-            @{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} } =
-              ();
-
-            ## Add job_id_returned to hash
-            push @{ $job_id_href->{$family_id_chain_key}
-                  { $family_id_chain_key . q{_} . $sample_id_chain_key } },
-              $job_id_returned;
-        }
-
         ## Keeps the job_id string dependecy within reasonable limits
         if (   ( defined $job_id_href->{ALL}{ALL} )
             && ( scalar( @{ $job_id_href->{ALL}{ALL} } ) >= 100 ) )
@@ -28571,7 +28466,7 @@ sub submit_job {
         ## Job dependent on all jobs
         # Add job_id to hash
         push @{ $job_id_href->{ALL}{ALL} }, $job_id_returned;
-    }
+      }
     else {
         ## AFTER merging to family_id
 
@@ -28586,7 +28481,7 @@ sub submit_job {
                 my $sample_id_chain_key = $sample_id . q{_} . $path;
 
                 ## Saves job_id to the correct hash array depending on chaintype
-                add_family_merged_job_id_to_family_id_dependency_tree(
+                add_pan_job_id_to_family_id_dependency_tree(
                     {
                         job_id_href         => $job_id_href,
                         family_id_chain_key => $family_id_chain_key,
@@ -28608,7 +28503,7 @@ sub submit_job {
                 {
 
                     ## Add to job_id string
-                    $job_ids_string .= add_to_job_id(
+                    $job_ids_string .= add_to_job_id_dependency_string(
                         {
                             job_id_href         => $job_id_href,
                             family_id_chain_key => $family_id_chain_key,
@@ -28636,7 +28531,7 @@ sub submit_job {
             {
 
                 ## Add to job_id string
-                $job_ids_string = add_to_job_id(
+                $job_ids_string = add_to_job_id_dependency_string(
                     {
                         job_id_href         => $job_id_href,
                         family_id_chain_key => $family_id_chain_key,
@@ -28648,7 +28543,7 @@ sub submit_job {
                 ## Previous job was a single job
 
                 ## Add to job_id string
-                $job_ids_string = add_to_job_id(
+                $job_ids_string = add_to_job_id_dependency_string(
                     {
                         job_id_href         => $job_id_href,
                         family_id_chain_key => $family_id_chain_key,
@@ -28664,7 +28559,7 @@ sub submit_job {
                 foreach my $parallel_chain (@$parallel_chains_ref) {
 
                     ## Add to job_id string
-                    $job_ids_string .= add_to_job_id(
+                    $job_ids_string .= add_to_job_id_dependency_string(
                         {
                             job_id_href         => $job_id_href,
                             family_id_chain_key => $$family_id_ref . q{_}
@@ -28691,7 +28586,7 @@ sub submit_job {
                 {
 
                     ## Add to job_id string
-                    $job_ids_string .= add_to_job_id(
+                    $job_ids_string .= add_to_job_id_dependency_string(
                         {
                             job_id_href         => $job_id_href,
                             family_id_chain_key => $family_id_chain_key,
@@ -28715,7 +28610,7 @@ sub submit_job {
                     {
 
                         ## Add to job_id string
-                        $job_ids_string .= add_to_job_id(
+                        $job_ids_string .= add_to_job_id_dependency_string(
                             {
                                 job_id_href         => $job_id_href,
                                 family_id_chain_key => $family_id_chain_key,
@@ -28734,7 +28629,7 @@ sub submit_job {
 
                 ## Add to job_id string
                 # Family chain
-                $job_ids_string = add_to_job_id(
+                $job_ids_string = add_to_job_id_dependency_string(
                     {
                         job_id_href         => $job_id_href,
                         family_id_chain_key => $family_id_chain_key,
@@ -28754,7 +28649,7 @@ sub submit_job {
                     {
 
                         ## Add to job_id string
-                        $job_ids_string .= add_to_job_id(
+                        $job_ids_string .= add_to_job_id_dependency_string(
                             {
                                 job_id_href         => $job_id_href,
                                 family_id_chain_key => $$family_id_ref
@@ -28767,7 +28662,7 @@ sub submit_job {
                     }
 
                     #Add to job_id string
-                    $job_ids_string .= add_to_job_id(
+                    $job_ids_string .= add_to_job_id_dependency_string(
                         {
                             job_id_href         => $job_id_href,
                             family_id_chain_key => $$family_id_ref . q{_}
@@ -28784,7 +28679,7 @@ sub submit_job {
                 ## Inherit from potential MAIN. Trunk
 
                 ## Add to job_id string
-                $job_ids_string = add_to_job_id(
+                $job_ids_string = add_to_job_id_dependency_string(
                     {
                         job_id_href         => $job_id_href,
                         family_id_chain_key => $$family_id_ref . q{_MAIN},
@@ -28807,7 +28702,7 @@ sub submit_job {
                     {
 
                         ## Add to job_id string
-                        $job_ids_string .= add_to_job_id(
+                        $job_ids_string .= add_to_job_id_dependency_string(
                             {
                                 job_id_href         => $job_id_href,
                                 family_id_chain_key => $family_id_chain_key,
@@ -28823,7 +28718,7 @@ sub submit_job {
         if ( ( defined $path ) && ( $path eq q{ALL} ) ) {
 
             ## Add to job_id string
-            $job_ids_string = add_to_job_id(
+            $job_ids_string = add_to_job_id_dependency_string(
                 {
                     job_id_href         => $job_id_href,
                     family_id_chain_key => q{ALL},
@@ -28924,7 +28819,7 @@ sub submit_job {
         ## Job dependent on all jobs
         # Add job_id to hash
         push @{ $job_id_href->{ALL}{ALL} }, $job_id_returned;
-    }
+      }
 
     ## Add job_id_returned to hash for sacct processing downstream
     push @{ $job_id_href->{PAN}{PAN} }, $job_id_returned;
