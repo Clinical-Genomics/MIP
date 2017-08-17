@@ -26,10 +26,10 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(gnu_cd gnu_trap gnu_set);
+    our @EXPORT_OK = qw(gnu_cd gnu_trap gnu_set gnu_wait);
 
 }
 
@@ -162,7 +162,7 @@ sub gnu_trap {
     }
     if ( @{$trap_signals_ref} ) {
 
-        push @commands, join( $SPACE, @{$trap_signals_ref} );
+        push @commands, join $SPACE, @{$trap_signals_ref};
     }
 
     push @commands,
@@ -279,6 +279,64 @@ sub gnu_set {
         {
             commands_ref => \@commands,
             separator    => $NEWLINE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+    return @commands;
+}
+
+sub gnu_wait {
+
+##gnu_wait
+
+##Function : Perl wrapper for writing wait recipe to already open $FILEHANDLE or return commands array. Based on wait 4.0
+##Returns  : "@commands"
+##Arguments: $processes_ref, $FILEHANDLE, $stderrfile_path, $stderrfile_path_append
+##         : $processes_ref          => Specified processes to write to
+##         : $FILEHANDLE             => Filehandle to write to
+##         : $stderrfile_path        => Stderrfile path
+##         : $stderrfile_path_append => Append stderr info to file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $processes_ref;
+    my $FILEHANDLE;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+
+    my $tmpl = {
+        processes_ref =>
+          { default => [], strict_type => 1, store => \$processes_ref },
+        FILEHANDLE      => { store       => \$FILEHANDLE },
+        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+        stderrfile_path_append =>
+          { strict_type => 1, store => \$stderrfile_path_append },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+
+    ### wait
+    ##Stores commands depending on input parameters
+    my @commands = qw(wait);
+
+    ## Options
+    if ( @{$processes_ref} ) {
+
+        push @commands, join $SPACE, @{$processes_ref};
+    }
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+        }
+      );
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
         }
     );

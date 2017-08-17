@@ -41,8 +41,11 @@ use Check::Check_modules qw(check_modules);
 use File::Format::Yaml qw(load_yaml write_yaml);
 use MIP_log::Log4perl qw(initiate_logger);
 use Script::Utils qw(help);
+use MIP::File::Format::Pedigree qw(create_fam_file);
+use MIP::Check::Cluster qw(check_max_core_number);
 
 our $USAGE = build_usage( {} );
+
 
 BEGIN {
 
@@ -104,7 +107,7 @@ eval_parameter_hash(
     }
 );
 
-our $VERSION = "v5.0.5";    #Set MIP version
+our $VERSION = "v5.0.8";    #Set MIP version
 
 ## Directories, files, job_ids and sample_info
 my ( %infile, %indir_path, %infile_lane_prefix, %lane,
@@ -785,11 +788,13 @@ foreach my $parameter_name (@parameter_keys_to_check) {
 ## Check that the module core number do not exceed the maximum per node
 foreach my $program_name ( keys %{ $active_parameter{module_core_number} } ) {
 
+    ## Limit number of cores requested to the maximum number of cores available per node
     $active_parameter{module_core_number}{$program_name} =
       check_max_core_number(
         {
             max_cores_per_node => $active_parameter{max_cores_per_node},
-            core_number => $active_parameter{module_core_number}{$program_name},
+            core_number_requested =>
+              $active_parameter{module_core_number}{$program_name},
         }
       );
 }
@@ -2728,6 +2733,7 @@ if ( $active_parameter{sample_info_file} ne 0 ) { #Write SampleInfo to yaml file
     $log->info( "Wrote: " . $active_parameter{sample_info_file}, "\n" );
 }
 
+
 ######################
 ####Sub routines######
 ######################
@@ -3110,6 +3116,7 @@ sub msacct {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use MIP::Workloadmanager::Slurm qw(slurm_sacct);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
@@ -3118,7 +3125,7 @@ sub msacct {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -3243,13 +3250,15 @@ sub analysisrunstatus {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
     ## Filehandles
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -3594,6 +3603,8 @@ sub removeredundantfiles {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $xargs_file_name;
 
@@ -3602,7 +3613,7 @@ sub removeredundantfiles {
     my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -3734,6 +3745,7 @@ sub mmultiqc {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Qc::Multiqc qw(multiqc);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
@@ -3742,7 +3754,7 @@ sub mmultiqc {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -3883,7 +3895,9 @@ sub mqccollect {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Qc::Mip qw(qccollect);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $jobid_chain   = $parameter_href->{ "p" . $program_name }{chain};
@@ -3892,7 +3906,7 @@ sub mqccollect {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -3935,19 +3949,16 @@ sub mqccollect {
     {
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        my $qc_metric_outfile = $$family_id_ref . q{_qc_metrics.yaml};
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => "qccollect",
+                program_name     => 'qccollect',
                 outdirectory     => $outfamily_directory,
-                outfile_ending   => $$family_id_ref . "_qc_metrics.yaml",
-                outdata_type     => "infile_dependent"
+                outfile          => $qc_metric_outfile,
+                path => catfile( $outfamily_directory, $qc_metric_outfile ),
             }
         );
-
-        ## Add qc_metrics path to sample_info
-        $sample_info_href->{program}{qccollect}{qccollect_metrics_file}{path} =
-          $outfamily_directory . "/" . $$family_id_ref . "_qc_metrics.yaml";
 
         submit_job(
             {
@@ -4085,6 +4096,8 @@ sub evaluation {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use MIP::Gnu::Coreutils qw(gnu_cat);
     use Language::Java qw(core);
     use Program::Variantcalling::Gatk
@@ -4099,7 +4112,7 @@ sub evaluation {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -4146,11 +4159,11 @@ sub evaluation {
         {
             FILEHANDLE => $FILEHANDLE,
             infile_path =>
-              catfile( $infamily_directory, $infile_prefix . ".vcf*" ),
+              catfile( $infamily_directory, $infile_prefix . q{.vcf*} ),
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Rename vcf samples. The samples array will replace the sample names in the same order as supplied.
     rename_vcf_samples(
@@ -4462,7 +4475,7 @@ q?perl -nae 'unless($_=~/##contig=<ID=NC_007605,length=171823>/ || $_=~/##contig
             }
         );
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -4616,6 +4629,7 @@ sub endvariantannotationblock {
 
     use Program::Htslib qw(bgzip tabix);
     use MIP::Gnu::Software::Gnu_grep qw(gnu_grep);
+    use MIP::QC::Record qw(add_program_metafile_to_sample_info);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $consensus_analysis_type =
@@ -4638,8 +4652,11 @@ sub endvariantannotationblock {
 
         $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
 
+        use MIP::Script::Setup_script qw(setup_script);
+        use MIP::IO::Files qw(migrate_file);
+
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = program_prerequisites(
+        ( $file_name, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -4810,13 +4827,13 @@ sub endvariantannotationblock {
                 {
                     infile_path => $outfile_path_prefix
                       . $vcfparser_analysis_type
-                      . "_filtered"
+                      . q{_filtered}
                       . $outfile_suffix,
                     outfile_path => $outfamily_directory,
                     FILEHANDLE   => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE "wait", "\n";
+            say $FILEHANDLE q{wait}, "\n";
         }
 
         if ( $active_parameter_href->{rankvariant_binary_file} ) {
@@ -4856,12 +4873,12 @@ sub endvariantannotationblock {
             {
                 infile_path => $outfile_path_prefix
                   . $vcfparser_analysis_type
-                  . $outfile_suffix . "*",
+                  . $outfile_suffix . q{*},
                 outfile_path => $outfamily_directory,
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
 
         ## Adds the most complete vcf file to sample_info
         add_most_complete_vcf(
@@ -4882,10 +4899,19 @@ sub endvariantannotationblock {
 
             if ( $vcfparser_outfile_counter == 1 ) {
 
-                $sample_info_href->{program}{$program_name}{clinical}{path} =
+                # Save clinical candidate list path
+                my $clinical_candidate_path =
                     $final_path_prefix
                   . $vcfparser_analysis_type
-                  . $outfile_suffix;    #Save clinical candidate list path
+                  . $outfile_suffix;
+                add_program_metafile_to_sample_info(
+                    {
+                        sample_info_href => $sample_info_href,
+                        program_name     => $program_name,
+                        metafile_tag     => q{clinical},
+                        path             => $clinical_candidate_path,
+                    }
+                );
 
                 if ( $active_parameter_href->{rankvariant_binary_file} ) {
 
@@ -4897,10 +4923,19 @@ sub endvariantannotationblock {
             }
             else {
 
-                $sample_info_href->{program}{$program_name}{research}{path} =
+                # Save research candidate list path
+                my $research_candidate_path =
                     $final_path_prefix
                   . $vcfparser_analysis_type
-                  . $outfile_suffix;    #Save research candidate list path
+                  . $outfile_suffix;
+                add_program_metafile_to_sample_info(
+                    {
+                        sample_info_href => $sample_info_href,
+                        program_name     => $program_name,
+                        metafile_tag     => q{research},
+                        path             => $research_candidate_path,
+                    }
+                );
 
                 if ( $active_parameter_href->{rankvariant_binary_file} ) {
 
@@ -5062,7 +5097,10 @@ sub rankvariant {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Cluster qw(get_core_number);
     use Program::Variantcalling::Genmod qw(annotate models score compound);
+    use MIP::QC::Record
+      qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger('MIP');
@@ -5080,8 +5118,8 @@ sub rankvariant {
     ## Filehandles
     my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
-    ## Adjust core number depending on user supplied input exists or not and max number of cores
-    my $core_number = adjust_core_number(
+    ## Get core number depending on user supplied input exists or not and max number of cores
+    my $core_number = get_core_number(
         {
             module_core_number => $active_parameter_href->{module_core_number}
               { "p" . $program_name },
@@ -5090,19 +5128,24 @@ sub rankvariant {
         }
     );
 
+    ### Detect the number of cores to use per genmod process.
+    ## Limit number of cores requested to the maximum number of cores available per node
     my $genmod_core_number = check_max_core_number(
         {
             max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-            core_number        => 16,
+            core_number_requested => 16,
         }
-    );    #Detect the number of cores to use per genmod process.
+    );
 
     unless ( defined($FILEHANDLE) ) {    #Run as individual sbatch script
 
         $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
+        use MIP::Script::Setup_script qw(setup_script);
+        use MIP::IO::Files qw(migrate_file);
+
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = program_prerequisites(
+        ( $file_name, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -5436,7 +5479,7 @@ sub rankvariant {
             ## QC Data File(s)
             migrate_file(
                 {
-                    infile_path => $outfile_path_prefix . "_"
+                    infile_path => $outfile_path_prefix . q{_}
                       . $file_info_href->{contigs_size_ordered}[0]
                       . $vcfparser_analysis_type
                       . $outfile_suffix,
@@ -5444,40 +5487,48 @@ sub rankvariant {
                     FILEHANDLE   => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE "wait", "\n";
+            say $FILEHANDLE q{wait}, "\n";
         }
 
         if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
             && ( !$active_parameter_href->{dry_run_all} ) )
         {
 
-            sample_info_qc(
+            my $qc_genmod_outfile =
+                $outfile_prefix . q{_}
+              . $file_info_href->{contigs_size_ordered}[0]
+              . $vcfparser_analysis_type
+              . $outfile_suffix;
+            add_program_outfile_to_sample_info(
                 {
                     sample_info_href => $sample_info_href,
-                    program_name     => "genmod",
+                    program_name     => q{genmod},
                     outdirectory     => $outfamily_directory,
-                    outfile_ending   => $outfile_prefix . "_"
-                      . $file_info_href->{contigs_size_ordered}[0]
-                      . $vcfparser_analysis_type
-                      . $outfile_suffix,
-                    outdata_type => "static"
+                    outfile          => $qc_genmod_outfile,
                 }
             );
 
-            if ( defined( $active_parameter_href->{rank_model_file} ) )
-            {    #Add to SampleInfo
+            # Add to Sample_info
+            if ( defined( $active_parameter_href->{rank_model_file} ) ) {
 
+                my $rank_model_version;
                 if ( $active_parameter_href->{rank_model_file} =~
                     /v(\d+\.\d+.\d+|\d+\.\d+)/ )
                 {
 
-                    $sample_info_href->{program}{rankvariant}{rank_model}
-                      {version} = $1;
+                    $rank_model_version = $1;
                 }
-                $sample_info_href->{program}{rankvariant}{rank_model}{file} =
-                  basename( $active_parameter_href->{rank_model_file} );
-                $sample_info_href->{program}{rankvariant}{rank_model}{path} =
-                  $active_parameter_href->{rank_model_file};
+                add_program_metafile_to_sample_info(
+                    {
+                        sample_info_href => $sample_info_href,
+                        program_name     => q{genmod},
+                        metafile_tag     => q{rank_model},
+                        file =>
+                          basename( $active_parameter_href->{rank_model_file} ),
+                        path    => $active_parameter_href->{rank_model_file},
+                        version => $rank_model_version,
+                    }
+                );
             }
         }
     }
@@ -5625,10 +5676,13 @@ sub gatk_variantevalexome {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
     use MIP::Gnu::Coreutils qw(gnu_cat gnu_sort);
     use Program::Variantcalling::Bedtools qw(intersectbed);
     use Program::Variantcalling::Gatk qw(varianteval);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -5636,7 +5690,7 @@ sub gatk_variantevalexome {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -5704,13 +5758,13 @@ sub gatk_variantevalexome {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . "*"
+                $infamily_directory, $infile_prefix . $infile_suffix . q{*}
             ),
             outfile_path => $$temp_directory_ref
         }
     );
 
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Select sample id from family id vcf file
 
@@ -5758,12 +5812,12 @@ sub gatk_variantevalexome {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . "*"
+                $infamily_directory, $infile_prefix . $infile_suffix . q{*}
             ),
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Extract exonic variants
     say $FILEHANDLE "## Extract exonic variants";
@@ -5794,12 +5848,12 @@ sub gatk_variantevalexome {
                     $infamily_directory,
                     $infile_prefix
                       . $vcfparser_analysis_type
-                      . $infile_suffix . "*"
+                      . $infile_suffix . q{*}
                 ),
                 outfile_path => $$temp_directory_ref
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
 
         ## Extract exonic variants
         say $FILEHANDLE "## Extract exonic variants";
@@ -5981,31 +6035,29 @@ sub gatk_variantevalexome {
         {
             infile_path => $outfile_path_prefix
               . $call_type
-              . "_exome"
+              . q{_exome}
               . $outfile_suffix,
             outfile_path => $outsample_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        my $qc_exome_outfile =
+          $outfile_tag . $call_type . q{_exome} . $outfile_suffix;
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
-                program_name     => "variantevalexome",
+                program_name     => 'variantevalexome',
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile_ending   => $outfile_tag
-                  . $call_type
-                  . "_exome"
-                  . $outfile_suffix,
-                outdata_type => "infile_dependent"
+                outfile          => $qc_exome_outfile,
             }
         );
     }
@@ -6140,8 +6192,11 @@ sub gatk_variantevalall {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
     use Program::Variantcalling::Gatk qw(varianteval);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -6149,7 +6204,7 @@ sub gatk_variantevalall {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -6216,12 +6271,12 @@ sub gatk_variantevalall {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . "*"
+                $infamily_directory, $infile_prefix . $infile_suffix . q{*}
             ),
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Select sample id from family id vcf file
 
@@ -6303,22 +6358,21 @@ sub gatk_variantevalall {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
-                program_name     => "variantevalall",
+                program_name     => 'variantevalall',
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile_ending   => $outfile_tag . $call_type . $outfile_suffix,
-                outdata_type     => "infile_dependent"
+                outfile          => $outfile_tag . $call_type . $outfile_suffix,
             }
         );
     }
@@ -6464,16 +6518,19 @@ sub snpeff {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Cluster qw(get_core_number);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Snpeff qw(ann);
     use Program::Variantcalling::Snpsift qw(annotate dbnsfp);
     use Program::Variantcalling::Mip qw(vcfparser);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $xargs_file_name;
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
-    ## Adjust core number depending on user supplied input exists or not and max number of cores
-    my $core_number = adjust_core_number(
+    ## Get core number depending on user supplied input exists or not and max number of cores
+    my $core_number = get_core_number(
         {
             module_core_number => $active_parameter_href->{module_core_number}
               { "p" . $program_name },
@@ -6489,8 +6546,10 @@ sub snpeff {
 
         $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
 
+        use MIP::Script::Setup_script qw(setup_script);
+
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = program_prerequisites(
+        ( $file_name, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -6881,7 +6940,7 @@ sub snpeff {
                     FILEHANDLE   => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE "wait", "\n";
+            say $FILEHANDLE q{wait}, "\n";
         }
     }
 
@@ -6890,16 +6949,17 @@ sub snpeff {
     {
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        my $qc_snpeff_outfile =
+            $outfile_prefix . q{_}
+          . $file_info_href->{contigs_size_ordered}[0]
+          . $vcfparser_analysis_type
+          . $outfile_suffix;
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
                 outdirectory     => $outfamily_directory,
-                outfile_ending   => $outfile_prefix . "_"
-                  . $file_info_href->{contigs_size_ordered}[0]
-                  . $vcfparser_analysis_type
-                  . $outfile_suffix,
-                outdata_type => "static"
+                outfile          => $qc_snpeff_outfile,
             }
         );
     }
@@ -7079,8 +7139,10 @@ sub annovar {
 
         $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
 
+        use MIP::Script::Setup_script qw(setup_script);
+
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = program_prerequisites(
+        ( $file_name, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -7534,14 +7596,17 @@ sub mvcfparser {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Cluster qw(get_core_number);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Mip qw(vcfparser);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $xargs_file_name;
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
-    ## Adjust core number depending on user supplied input exists or not and max number of cores
-    my $core_number = adjust_core_number(
+    ## Get core number depending on user supplied input exists or not and max number of cores
+    my $core_number = get_core_number(
         {
             module_core_number => $active_parameter_href->{module_core_number}
               { "p" . $program_name },
@@ -7557,8 +7622,10 @@ sub mvcfparser {
 
         $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
 
+        use MIP::Script::Setup_script qw(setup_script);
+
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = program_prerequisites(
+        ( $file_name, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -7739,14 +7806,14 @@ sub mvcfparser {
     ## QC Data File(s)
     migrate_file(
         {
-            infile_path => $outfile_path_prefix . "_"
+            infile_path => $outfile_path_prefix . q{_}
               . $file_info_href->{contigs_size_ordered}[0]
               . $infile_suffix,
             outfile_path => $outfamily_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
@@ -7779,15 +7846,16 @@ sub mvcfparser {
         }
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        my $qc_vcfparser_outfile =
+            $outfile_prefix . q{_}
+          . $file_info_href->{contigs_size_ordered}[0]
+          . $infile_suffix;
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
                 outdirectory     => $outfamily_directory,
-                outfile_ending   => $outfile_prefix . "_"
-                  . $file_info_href->{contigs_size_ordered}[0]
-                  . $infile_suffix,
-                outdata_type => "static"
+                outfile          => $qc_vcfparser_outfile,
             }
         );
     }
@@ -7991,7 +8059,10 @@ sub varianteffectpredictor {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Cluster qw(get_core_number);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Vep qw(variant_effect_predictor);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $xargs_file_name;
@@ -8005,8 +8076,8 @@ sub varianteffectpredictor {
         $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
     }
 
-    ## Adjust core number depending on user supplied input exists or not and max number of cores
-    my $core_number = adjust_core_number(
+    ## Get core number depending on user supplied input exists or not and max number of cores
+    my $core_number = get_core_number(
         {
             module_core_number => $active_parameter_href->{module_core_number}
               { "p" . $program_name },
@@ -8021,8 +8092,10 @@ sub varianteffectpredictor {
 
     if ( !$$reduce_io_ref ) {                  #Run as individual sbatch script
 
+        use MIP::Script::Setup_script qw(setup_script);
+
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = program_prerequisites(
+        ( $file_name, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -8039,9 +8112,10 @@ sub varianteffectpredictor {
         );
         $stderr_path = $program_info_path . ".stderr.txt";
     }
+
+    # Split to enable submission to &sample_info_qc later
     my ( $volume, $directory, $stderr_file ) =
-      File::Spec->splitpath($stderr_path)
-      ;    #Split to enable submission to &sample_info_qc later
+      File::Spec->splitpath($stderr_path);
 
     ## Assign directories
     my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
@@ -8209,28 +8283,30 @@ sub varianteffectpredictor {
     {
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        my $qc_vep_summary_outfile =
+            $outfile_prefix . q{_}
+          . $file_info_href->{contigs_size_ordered}[0]
+          . $infile_suffix
+          . q{_summary.html};
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => $program_name . "summary",
+                program_name     => $program_name . q{summary},
                 outdirectory     => $outfamily_directory,
-                outfile_ending   => $outfile_prefix . "_"
-                  . $file_info_href->{contigs_size_ordered}[0]
-                  . $infile_suffix
-                  . "_summary.html",
-                outdata_type => "static"
+                outfile          => $qc_vep_summary_outfile,
             }
         );
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        my $qc_vep_outfile =
+            $outfile_prefix . q{_}
+          . $file_info_href->{contigs_size_ordered}[0]
+          . $infile_suffix;
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
                 outdirectory     => $outfamily_directory,
-                outfile_ending   => $outfile_prefix . "_"
-                  . $file_info_href->{contigs_size_ordered}[0]
-                  . $infile_suffix,
-                outdata_type => "static"
+                outfile          => $qc_vep_outfile,
             }
         );
     }
@@ -8238,12 +8314,13 @@ sub varianteffectpredictor {
     ## QC Data File(s)
     migrate_file(
         {
-            infile_path => $outfile_path_prefix . "_*" . $infile_suffix . "_s*",
+            infile_path => $outfile_path_prefix . q{_*}
+              . $infile_suffix . q{_s*},
             outfile_path => $outfamily_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($XARGSFILEHANDLE);
 
@@ -8253,13 +8330,13 @@ sub varianteffectpredictor {
         say $FILEHANDLE "## Copy file from temporary directory";
         migrate_file(
             {
-                infile_path => $outfile_path_prefix . "_*"
-                  . $infile_suffix . "*",
+                infile_path => $outfile_path_prefix . q{_*}
+                  . $infile_suffix . q{*},
                 outfile_path => $outfamily_directory,
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
 
         close($FILEHANDLE);
     }
@@ -8269,14 +8346,14 @@ sub varianteffectpredictor {
         say $FILEHANDLE "## Copy file from temporary directory";
         migrate_file(
             {
-                infile_path => $outfile_path_prefix . "_"
+                infile_path => $outfile_path_prefix . q{_}
                   . $file_info_href->{contigs_size_ordered}[0]
                   . $infile_suffix,
                 outfile_path => $outfamily_directory,
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
     }
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
@@ -8305,13 +8382,12 @@ sub varianteffectpredictor {
         }
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
                 outdirectory     => $directory,
-                outfile_ending   => $stderr_file,
-                outdata_type     => "info_directory"
+                outfile          => $stderr_file,
             }
         );
     }
@@ -8357,10 +8433,12 @@ sub gatk_readbackedphasing {
     my $FILEHANDLE  = IO::Handle->new();    #Create anonymous filehandle
     my $core_number = 1;
 
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -8405,12 +8483,12 @@ sub gatk_readbackedphasing {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
                 $infamily_directory,
-                $family_id . $infile_tag . $call_type . ".vcf*"
+                $family_id . $infile_tag . $call_type . q{.vcf*}
             ),
             outfile_path => $active_parameter_href->{temp_directory}
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Copy BAM file(s) to temporary directory
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
@@ -8427,13 +8505,14 @@ sub gatk_readbackedphasing {
         say $FILEHANDLE "## Copy file(s) to temporary directory";
         migrate_file(
             {
-                FILEHANDLE => $FILEHANDLE,
-                infile_path =>
-                  catfile( $insample_directory, $infile . $infile_tag . ".b*" ),
+                FILEHANDLE  => $FILEHANDLE,
+                infile_path => catfile(
+                    $insample_directory, $infile . $infile_tag . q{.b*}
+                ),
                 outfile_path => $active_parameter_href->{temp_directory}
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
     }
 
     ## GATK ReadBackedPhasing
@@ -8506,13 +8585,13 @@ sub gatk_readbackedphasing {
         {
             infile_path => catfile(
                 $active_parameter_href->{temp_directory},
-                $family_id . $outfile_tag . $call_type . ".vcf*"
+                $family_id . $outfile_tag . $call_type . q{.vcf*}
             ),
             outfile_path => $outfamily_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -8565,10 +8644,12 @@ sub gatk_phasebytransmission {
 
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -8614,12 +8695,12 @@ sub gatk_phasebytransmission {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
                 $infamily_directory,
-                $family_id . $infile_tag . $call_type . ".vcf*"
+                $family_id . $infile_tag . $call_type . q{.vcf*}
             ),
             outfile_path => $active_parameter_href->{temp_directory}
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## GATK PhaseByTransmission
     say $FILEHANDLE "## GATK PhaseByTransmission";
@@ -8673,13 +8754,13 @@ sub gatk_phasebytransmission {
         {
             infile_path => catfile(
                 $active_parameter_href->{temp_directory},
-                $family_id . $outfile_tag . $call_type . ".vcf*"
+                $family_id . $outfile_tag . $call_type . q{.vcf*}
             ),
             outfile_path => $outfamily_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -8807,7 +8888,10 @@ sub mpeddy {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Peddy qw(peddy);
+    use MIP::QC::Record qw(add_program_metafile_to_sample_info);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -8815,7 +8899,7 @@ sub mpeddy {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -8891,12 +8975,12 @@ sub mpeddy {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . "*"
+                $infamily_directory, $infile_prefix . $infile_suffix . q{*}
             ),
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Reformat variant calling file and index
     view_vcf(
@@ -8936,8 +9020,14 @@ sub mpeddy {
 
             my $outfile_suffix = '.' . $file_key . '.' . $suffix;
             ## Collect QC metadata info for later use
-            $sample_info_href->{program}{$program_name}{$file_key}{path} =
-              $outfile_path_prefix . $outfile_suffix;
+            add_program_metafile_to_sample_info(
+                {
+                    sample_info_href => $sample_info_href,
+                    program_name     => $program_name,
+                    metafile_tag     => $file_key,
+                    path             => $outfile_path_prefix . $outfile_suffix,
+                }
+            );
         }
     }
 
@@ -9067,9 +9157,11 @@ sub mplink {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Variantcalling::Bcftools qw(view annotate);
     use Program::Variantcalling::Vt qw(vt_uniq);
     use Program::Variantcalling::Plink qw(plink);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -9079,7 +9171,7 @@ sub mplink {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -9151,12 +9243,12 @@ sub mplink {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . "*"
+                $infamily_directory, $infile_prefix . $infile_suffix . q{*}
             ),
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Prepare input
     say $FILEHANDLE "## Remove indels using bcftools ";
@@ -9344,47 +9436,43 @@ sub mplink {
         {    #Only perform if more than 1 sample
 
             ## Collect QC metadata info for later use
-            sample_info_qc(
+            add_program_outfile_to_sample_info(
                 {
                     sample_info_href => $sample_info_href,
-                    program_name     => "inbreeding_factor",
+                    program_name     => q{inbreeding_factor},
                     outdirectory     => $outfamily_directory,
-                    outfile_ending   => $$family_id_ref . ".het",
-                    outdata_type     => "infile_dependent"
+                    outfile          => $$family_id_ref . q{.het},
                 }
             );
 
             ## Collect QC metadata info for later use
-            sample_info_qc(
+            add_program_outfile_to_sample_info(
                 {
                     sample_info_href => $sample_info_href,
-                    program_name     => "relation_check",
+                    program_name     => q{relation_check},
                     outdirectory     => $outfamily_directory,
-                    outfile_ending   => $$family_id_ref . ".mibs",
-                    outdata_type     => "infile_dependent"
+                    outfile          => $$family_id_ref . q{.mibs},
                 }
             );
         }
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => "plink_sexcheck",
+                program_name     => q{plink_sexcheck},
                 outdirectory     => $outfamily_directory,
-                outfile_ending   => $$family_id_ref . ".sexcheck",
-                outdata_type     => "infile_dependent"
+                outfile          => $$family_id_ref . q{.sexcheck},
             }
         );
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => "plink2",
+                program_name     => q{plink2},
                 outdirectory     => $directory,
-                outfile_ending   => $stdout_file,
-                outdata_type     => "info_directory",
+                outfile          => $stdout_file,
             }
         );
     }
@@ -9515,7 +9603,10 @@ sub variant_integrity {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Variant_integrity qw(mendel father);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -9523,7 +9614,7 @@ sub variant_integrity {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -9595,12 +9686,12 @@ sub variant_integrity {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . "*"
+                $infamily_directory, $infile_prefix . $infile_suffix . q{*}
             ),
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Variant_integrity
     if ( scalar( @{ $active_parameter_href->{sample_ids} } ) > 1 )
@@ -9627,13 +9718,12 @@ sub variant_integrity {
             {
 
                 ## Collect QC metadata info for later use
-                sample_info_qc(
+                add_program_outfile_to_sample_info(
                     {
                         sample_info_href => $sample_info_href,
-                        program_name     => "variant_integrity_mendel",
+                        program_name     => q{variant_integrity_mendel},
                         outdirectory     => $outfamily_directory,
-                        outfile_ending   => $$family_id_ref . "_mendel.txt",
-                        outdata_type     => "infile_dependent"
+                        outfile          => $$family_id_ref . q{_mendel.txt},
                     }
                 );
             }
@@ -9666,13 +9756,12 @@ sub variant_integrity {
                 {
 
                     ## Collect QC metadata info for later use
-                    sample_info_qc(
+                    add_program_outfile_to_sample_info(
                         {
                             sample_info_href => $sample_info_href,
-                            program_name     => "variant_integrity_father",
+                            program_name     => q{variant_integrity_father},
                             outdirectory     => $outfamily_directory,
-                            outfile_ending   => $$family_id_ref . "_father.txt",
-                            outdata_type     => "infile_dependent"
+                            outfile_ending => $$family_id_ref . q{_father.txt},
                         }
                     );
                 }
@@ -9826,8 +9915,14 @@ sub vt {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use Readonly;
+    use MIP::Cluster qw(get_core_number);
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use Program::Variantcalling::Genmod qw(annotate filter);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
+
+    ## Constants
+    Readonly my $DOT => q{.};
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $xargs_file_name;
@@ -9841,8 +9936,8 @@ sub vt {
         $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
     }
 
-    ## Adjust core number depending on user supplied input exists or not and max number of cores
-    my $core_number = adjust_core_number(
+    ## Get core number depending on user supplied input exists or not and max number of cores
+    my $core_number = get_core_number(
         {
             module_core_number => $active_parameter_href->{module_core_number}
               { "p" . $program_name },
@@ -9853,8 +9948,10 @@ sub vt {
 
     if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
+        use MIP::Script::Setup_script qw(setup_script);
+
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = program_prerequisites(
+        ( $file_name, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -9990,15 +10087,14 @@ sub vt {
               ;    #Split to enable submission to &SampleInfoQC later
 
             ## Collect QC metadata info for later use
-            sample_info_qc(
+            my $qc_vt_outfile =
+              $stderr_file . $DOT . $contig . $DOT . q{stderr.txt};
+            add_program_outfile_to_sample_info(
                 {
                     sample_info_href => $sample_info_href,
-                    program_name     => "vt",
+                    program_name     => 'vt',
                     outdirectory     => $directory,
-                    outfile_ending   => $stderr_file . "."
-                      . $contig
-                      . ".stderr.txt",
-                    outdata_type => "info_directory"
+                    outfile          => $qc_vt_outfile,
                 }
             );
         }
@@ -10093,13 +10189,13 @@ sub vt {
         say $FILEHANDLE "## Copy file from temporary directory";
         migrate_file(
             {
-                infile_path => $outfile_path_prefix . "_*"
-                  . $outfile_suffix . "*",
+                infile_path => $outfile_path_prefix . q{_*}
+                  . $outfile_suffix . q{*},
                 outfile_path => $outfamily_directory,
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
 
         close($FILEHANDLE);
     }
@@ -10257,6 +10353,8 @@ sub rhocall {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Cluster qw(get_core_number);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Bcftools qw(roh);
     use Program::Variantcalling::Rhocall qw(aggregate annotate);
 
@@ -10272,8 +10370,8 @@ sub rhocall {
         $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
     }
 
-    ## Adjust core number depending on user supplied input exists or not and max number of cores
-    my $core_number = adjust_core_number(
+    ## Get core number depending on user supplied input exists or not and max number of cores
+    my $core_number = get_core_number(
         {
             module_core_number => $active_parameter_href->{module_core_number}
               { "p" . $program_name },
@@ -10284,8 +10382,9 @@ sub rhocall {
 
     if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
+        use MIP::Script::Setup_script qw(setup_script);
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = program_prerequisites(
+        ( $file_name, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -10432,13 +10531,13 @@ sub rhocall {
         say $FILEHANDLE "## Copy file from temporary directory";
         migrate_file(
             {
-                infile_path => $outfile_path_prefix . "_*"
-                  . $outfile_suffix . "*",
+                infile_path => $outfile_path_prefix . q{_*}
+                  . $outfile_suffix . q{*},
                 outfile_path => $outfamily_directory,
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
 
         close($FILEHANDLE);
     }
@@ -10596,6 +10695,8 @@ sub prepareforvariantannotationblock {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Cluster qw(get_core_number);
+    use MIP::IO::Files qw(migrate_files);
     use Program::Htslib qw(bgzip tabix);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
@@ -10610,8 +10711,8 @@ sub prepareforvariantannotationblock {
         $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
     }
 
-    ## Adjust core number depending on user supplied input exists or not and max number of cores
-    my $core_number = adjust_core_number(
+    ## Get core number depending on user supplied input exists or not and max number of cores
+    my $core_number = get_core_number(
         {
             module_core_number => $active_parameter_href->{module_core_number}
               { "p" . $program_name },
@@ -10622,8 +10723,10 @@ sub prepareforvariantannotationblock {
 
     if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
+        use MIP::Script::Setup_script qw(setup_script);
+
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = program_prerequisites(
+        ( $file_name, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -10683,12 +10786,12 @@ sub prepareforvariantannotationblock {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . "*"
+                $infamily_directory, $infile_prefix . $infile_suffix . q{*}
             ),
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Compress or decompress original file or stream to outfile (if supplied)
     bgzip(
@@ -10768,12 +10871,13 @@ sub prepareforvariantannotationblock {
         say $FILEHANDLE "## Copy file from temporary directory";
         migrate_file(
             {
-                infile_path  => $file_path_prefix . "_*" . $infile_suffix . "*",
+                infile_path => $file_path_prefix . q{_*}
+                  . $infile_suffix . q{*},
                 outfile_path => $outfamily_directory,
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
 
         close($FILEHANDLE);
     }
@@ -10911,6 +11015,8 @@ sub gatk_combinevariantcallsets {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
     use Program::Variantcalling::Gatk qw(combinevariants);
 
@@ -10923,7 +11029,7 @@ sub gatk_combinevariantcallsets {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -11020,14 +11126,14 @@ sub gatk_combinevariantcallsets {
                     FILEHANDLE  => $FILEHANDLE,
                     infile_path => catfile(
                         $infamily_directory,
-                        $infile_prefix . $infile_suffix . "*"
+                        $infile_prefix . $infile_suffix . q{*}
                     ),
                     outfile_path => $$temp_directory_ref
                 }
             );
         }
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## GATK CombineVariants
     say $FILEHANDLE "## GATK CombineVariants";
@@ -11080,7 +11186,7 @@ sub gatk_combinevariantcallsets {
         say $FILEHANDLE "## Copy file from temporary directory";
         migrate_file(
             {
-                infile_path  => $outfile_path_prefix . ".bcf*",
+                infile_path  => $outfile_path_prefix . q{.bcf*},
                 outfile_path => $outfamily_directory,
                 FILEHANDLE   => $FILEHANDLE,
             }
@@ -11096,7 +11202,7 @@ sub gatk_combinevariantcallsets {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -11234,11 +11340,14 @@ sub gatk_variantrecalibration {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use Language::Java qw(core);
     use Program::Variantcalling::Bcftools qw(norm);
     use Program::Variantcalling::Gatk
       qw(variantrecalibrator applyrecalibration selectvariants calculategenotypeposteriors);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -11291,7 +11400,7 @@ sub gatk_variantrecalibration {
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -11342,12 +11451,12 @@ sub gatk_variantrecalibration {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . "*"
+                $infamily_directory, $infile_prefix . $infile_suffix . q{*}
             ),
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ### GATK VariantRecalibrator
     ## Set mode to be used in variant recalibration
@@ -11665,8 +11774,8 @@ sub gatk_variantrecalibration {
             migrate_file(
                 {
                     infile_path => $outfile_path_prefix
-                      . "_incnonvariantloci"
-                      . $outfile_suffix . "*",
+                      . q{_incnonvariantloci}
+                      . $outfile_suffix . q{*},
                     outfile_path => $outfamily_directory,
                     FILEHANDLE   => $FILEHANDLE,
                 }
@@ -11770,12 +11879,12 @@ sub gatk_variantrecalibration {
         say $FILEHANDLE "## Copy file from temporary directory";
         migrate_file(
             {
-                infile_path  => $outfile_path_prefix . ".bcf*",
+                infile_path  => $outfile_path_prefix . q{.bcf*},
                 outfile_path => $outfamily_directory,
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
     }
 
     ## Copies file from temporary directory.
@@ -11794,7 +11903,7 @@ sub gatk_variantrecalibration {
             }
         );
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -11803,16 +11912,16 @@ sub gatk_variantrecalibration {
     {
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        # Disabled pedigreeCheck to not include relationship test is qccollect
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => "pedigree_check"
-                , #Disabled pedigreeCheck to not include relationship test is qccollect
-                outdirectory   => $outfamily_directory,
-                outfile_ending => $outfile_prefix . $outfile_suffix,
-                outdata_type   => "infile_dependent"
+                program_name     => q{pedigree_check},
+                outdirectory     => $outfamily_directory,
+                outfile          => $outfile_prefix . $outfile_suffix,
             }
         );
+
         $sample_info_href->{vcf_file}{ready_vcf}{path} =
           catfile( $outfamily_directory, $outfile_prefix . $outfile_suffix );
 
@@ -11939,6 +12048,9 @@ sub gatk_concatenate_genotypegvcfs {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Processmanagement::Processes qw(print_wait);
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
     use Program::Variantcalling::Gatk qw(selectvariants);
 
@@ -11988,7 +12100,7 @@ sub gatk_concatenate_genotypegvcfs {
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -12004,17 +12116,17 @@ sub gatk_concatenate_genotypegvcfs {
         }
     );
 
-    my $core_counter = 1;
+    my $process_batches_count = 1;
     while ( my ( $contig_index, $contig ) =
         each( @{ $file_info_href->{contigs} } ) )
     {
 
-        print_wait(
+        $process_batches_count = print_wait(
             {
-                counter_ref      => \$contig_index,
-                core_number_ref  => \$core_number,
-                core_counter_ref => \$core_counter,
-                FILEHANDLE       => $FILEHANDLE,
+                process_counter       => $contig_index,
+                max_process_number    => $core_number,
+                process_batches_count => $process_batches_count,
+                FILEHANDLE            => $FILEHANDLE,
             }
         );
 
@@ -12024,13 +12136,13 @@ sub gatk_concatenate_genotypegvcfs {
                 FILEHANDLE  => $FILEHANDLE,
                 infile_path => catfile(
                     $infamily_directory,
-                    $infile_prefix . "_" . $contig . $infile_suffix . "*"
+                    $infile_prefix . q{_} . $contig . $infile_suffix . q{*}
                 ),
                 outfile_path => $$temp_directory_ref
             }
         );
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
     concatenate_variants(
@@ -12114,24 +12226,24 @@ sub gatk_concatenate_genotypegvcfs {
         say $FILEHANDLE "## Copy file from temporary directory";
         migrate_file(
             {
-                infile_path  => $outfile_path_prefix . ".bcf*",
+                infile_path  => $outfile_path_prefix . q{.bcf*},
                 outfile_path => $outfamily_directory,
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
     }
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
     migrate_file(
         {
-            infile_path  => $outfile_path_prefix . $outfile_suffix . "*",
+            infile_path  => $outfile_path_prefix . $outfile_suffix . q{*},
             outfile_path => $outfamily_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -12270,6 +12382,8 @@ sub gatk_genotypegvcfs {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
     use Program::Variantcalling::Gatk qw(genotypegvcfs);
 
@@ -12347,7 +12461,7 @@ sub gatk_genotypegvcfs {
           catfile( $$temp_directory_ref, $outfile_prefix );
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        my ($file_name) = program_prerequisites(
+        my ($file_name) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -12397,12 +12511,12 @@ sub gatk_genotypegvcfs {
                     FILEHANDLE  => $FILEHANDLE,
                     infile_path => catfile(
                         $insample_directory,
-                        $infile_prefix . $infile_suffix . "*"
+                        $infile_prefix . $infile_suffix . q{*}
                     ),
                     outfile_path => $$temp_directory_ref
                 }
             );
-            say $FILEHANDLE "wait", "\n";
+            say $FILEHANDLE q{wait}, "\n";
         }
 
         ## GATK GenoTypeGVCFs
@@ -12466,12 +12580,12 @@ sub gatk_genotypegvcfs {
         say $FILEHANDLE "## Copy file from temporary directory";
         migrate_file(
             {
-                infile_path  => $outfile_path_prefix . $outfile_suffix . "*",
+                infile_path  => $outfile_path_prefix . $outfile_suffix . q{*},
                 outfile_path => $outfamily_directory,
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
 
         close($FILEHANDLE);
 
@@ -12609,6 +12723,8 @@ sub rcoverageplots {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
     ## Filehandles
@@ -12634,7 +12750,7 @@ sub rcoverageplots {
       $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -12654,7 +12770,7 @@ sub rcoverageplots {
     print $FILEHANDLE $active_parameter_href->{bedtools_genomecov_max_coverage}
       . " ";                            #X-axis max scale
     say $FILEHANDLE $outsample_directory, " &", "\n";    #OutFile
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -12789,6 +12905,8 @@ sub bedtools_genomecov {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Alignment::Bedtools qw(genomecov);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
@@ -12828,7 +12946,7 @@ sub bedtools_genomecov {
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -12852,12 +12970,12 @@ sub bedtools_genomecov {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
                 $insample_directory,
-                $infile_prefix . substr( $infile_suffix, 0, 2 ) . "*"
+                $infile_prefix . substr( $infile_suffix, 0, 2 ) . q{*}
             ),
             outfile_path => $$temp_directory_ref,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Bedtools Genomecov
     say $FILEHANDLE "## Calculate coverage metrics on alignment";
@@ -12883,7 +13001,7 @@ sub bedtools_genomecov {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -13018,8 +13136,11 @@ sub picardtools_collecthsmetrics {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
     use Program::Alignment::Picardtools qw(collecthsmetrics);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -13062,7 +13183,7 @@ sub picardtools_collecthsmetrics {
     my $padded_infile_list_ending_ref = \$file_info_href->{exome_target_bed}[1];
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -13086,12 +13207,12 @@ sub picardtools_collecthsmetrics {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
                 $insample_directory,
-                $infile_prefix . substr( $infile_suffix, 0, 2 ) . "*"
+                $infile_prefix . substr( $infile_suffix, 0, 2 ) . q{*}
             ),
             outfile_path => $$temp_directory_ref,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Collecthsmetrics
     say $FILEHANDLE "## Calculate capture metrics on alignment";
@@ -13142,22 +13263,21 @@ sub picardtools_collecthsmetrics {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
-                program_name     => "collecthsmetrics",
+                program_name     => 'collecthsmetrics',
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile_ending   => $outfile_tag,
-                outdata_type     => "infile_dependent"
+                outfile          => $outfile_tag,
             }
         );
     }
@@ -13293,8 +13413,15 @@ sub picardtools_collectmultiplemetrics {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use Readonly;
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
     use Program::Alignment::Picardtools qw(collectmultiplemetrics);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
+
+    ## Constants
+    Readonly my $DOT => q{.};
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -13333,7 +13460,7 @@ sub picardtools_collectmultiplemetrics {
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -13357,12 +13484,12 @@ sub picardtools_collectmultiplemetrics {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
                 $insample_directory,
-                $infile_prefix . substr( $infile_suffix, 0, 2 ) . "*"
+                $infile_prefix . substr( $infile_suffix, 0, 2 ) . q{*}
             ),
             outfile_path => $$temp_directory_ref,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## CollectMultipleMetrics
     say $FILEHANDLE "## Collecting multiple metrics on alignment";
@@ -13409,33 +13536,31 @@ sub picardtools_collectmultiplemetrics {
             }
         );
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
-                program_name     => "collectmultiplemetrics",
+                program_name     => 'collectmultiplemetrics',
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile_ending   => $outfile_tag . ".alignment_summary_metrics",
-                outdata_type     => "infile_dependent"
+                outfile => $outfile_tag . $DOT . q{alignment_summary_metrics},
             }
         );
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
-                program_name     => "collectmultiplemetricsinsertsize",
+                program_name     => 'collectmultiplemetricsinsertsize',
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile_ending   => $outfile_tag . ".insert_size_metrics",
-                outdata_type     => "infile_dependent"
+                outfile_ending => $outfile_tag . $DOT . q{insert_size_metrics},
             }
         );
     }
@@ -13571,7 +13696,10 @@ sub chanjo_sexcheck {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Alignment::Chanjo qw(sex);
+    use MIP::QC::Record
+      qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -13615,7 +13743,7 @@ sub chanjo_sexcheck {
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -13664,26 +13792,25 @@ sub chanjo_sexcheck {
     {
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
-                program_name     => "chanjo_sexcheck",
+                program_name     => q{chanjo_sexcheck},
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile_ending   => $outfile_tag . $outfile_suffix,
-                outdata_type     => "infile_dependent"
+                outfile          => $outfile_tag . $outfile_suffix,
             }
         );
-        sample_info_qc(
+        add_program_metafile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
-                program_name     => "chanjo",
+                program_name     => q{chanjo_sexcheck},
                 infile           => $infile,
-                outdirectory     => $outsample_directory,
-                outfile_ending   => $infile_tag . "_chanjo_sexcheck.log",
-                outdata_type     => "infile_dependent"
+                metafile_tag     => q{log},
+                directory        => $outsample_directory,
+                file             => $infile_tag . q{_chanjo_sexcheck.log},
             }
         );
     }
@@ -13820,7 +13947,10 @@ sub sambamba_depth {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Alignment::Sambamba qw(depth);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -13866,7 +13996,7 @@ sub sambamba_depth {
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -13890,12 +14020,12 @@ sub sambamba_depth {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
                 $insample_directory,
-                $infile_prefix . substr( $infile_suffix, 0, 2 ) . "*"
+                $infile_prefix . substr( $infile_suffix, 0, 2 ) . q{*}
             ),    #".bam" -> ".b*" for getting index as well),
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## sambamba_depth
     say $FILEHANDLE "## Annotating bed from alignment";
@@ -13941,15 +14071,23 @@ sub sambamba_depth {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        $sample_info_href->{sample}{$$sample_id_ref}{program}{$program_name}
-          {$infile}{ substr( $outfile_suffix, 1 ) }{path} =
+        my $qc_sambamba_path =
           catfile( $outsample_directory, $outfile_prefix . $outfile_suffix );
+        add_program_outfile_to_sample_info(
+            {
+                sample_info_href => $sample_info_href,
+                sample_id        => $$sample_id_ref,
+                program_name     => $program_name,
+                infile           => $infile,
+                path             => $qc_sambamba_path,
+            }
+        );
     }
 
     close($FILEHANDLE);
@@ -14098,6 +14236,8 @@ sub sv_reformat {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Htslib qw(bgzip tabix);
     use MIP::Gnu::Software::Gnu_grep qw( gnu_grep);
 
@@ -14115,7 +14255,7 @@ sub sv_reformat {
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -14280,7 +14420,7 @@ sub sv_reformat {
                     outfile_path => $$temp_directory_ref
                 }
             );
-            say $FILEHANDLE "wait", "\n";
+            say $FILEHANDLE q{wait}, "\n";
         }
 
         my $concatenate_ending = "";
@@ -14378,13 +14518,13 @@ sub sv_reformat {
                 {
                     infile_path => $outfile_path_prefix
                       . $vcfparser_analysis_type
-                      . "_filtered"
+                      . q{_filtered}
                       . $file_suffix,
                     outfile_path => $outfamily_directory,
                     FILEHANDLE   => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE "wait", "\n";
+            say $FILEHANDLE q{wait}, "\n";
         }
 
         if ( $active_parameter_href->{sv_rankvariant_binary_file} ) {
@@ -14424,12 +14564,12 @@ sub sv_reformat {
             {
                 infile_path => $outfile_path_prefix
                   . $vcfparser_analysis_type
-                  . $file_suffix . "*",
+                  . $file_suffix . q{*},
                 outfile_path => $outfamily_directory,
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
 
         ## Adds the most complete vcf file to sample_info
         add_most_complete_vcf(
@@ -14451,10 +14591,17 @@ sub sv_reformat {
 
             if ( $vcfparser_outfile_counter == 1 ) {
 
-                $sample_info_href->{program}{$program_name}{clinical}{path} =
-                    $final_path_prefix
-                  . $vcfparser_analysis_type
-                  . $file_suffix;    #Save clinical candidate list path
+                # Save clinical candidate list path
+                my $clinical_candidate_path =
+                  $final_path_prefix . $vcfparser_analysis_type . $file_suffix;
+                add_program_metafile_to_sample_info(
+                    {
+                        sample_info_href => $sample_info_href,
+                        program_name     => $program_name,
+                        metafile_tag     => q{clinical},
+                        path             => $clinical_candidate_path,
+                    }
+                );
 
                 if ( $active_parameter_href->{sv_rankvariant_binary_file} ) {
 
@@ -14466,10 +14613,17 @@ sub sv_reformat {
             }
             else {
 
-                $sample_info_href->{program}{$program_name}{research}{path} =
-                    $final_path_prefix
-                  . $vcfparser_analysis_type
-                  . $file_suffix;    #Save research candidate list path
+                # Save research candidate list path
+                my $research_candidate_path =
+                  $final_path_prefix . $vcfparser_analysis_type . $file_suffix;
+                add_program_metafile_to_sample_info(
+                    {
+                        sample_info_href => $sample_info_href,
+                        program_name     => $program_name,
+                        metafile_tag     => q{research},
+                        path             => $research_candidate_path,
+                    }
+                );
 
                 if ( $active_parameter_href->{sv_rankvariant_binary_file} ) {
 
@@ -14626,7 +14780,11 @@ sub sv_rankvariant {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Genmod qw(annotate models score compound);
+    use MIP::QC::Record
+      qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger('MIP');
@@ -14643,15 +14801,17 @@ sub sv_rankvariant {
     ## Set the number of cores
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
+
+    ## Limit number of cores requested to the maximum number of cores available per node
     my $genmod_core_number = check_max_core_number(
         {
             max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-            core_number        => $core_number,
+            core_number_requested => $core_number,
         }
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -14828,7 +14988,7 @@ sub sv_rankvariant {
                     outfile_path => $$temp_directory_ref
                 }
             );
-            say $FILEHANDLE "wait", "\n";
+            say $FILEHANDLE q{wait}, "\n";
         }
 
         my $genmod_module = "";   #Track which genmod modules has been processed
@@ -15076,13 +15236,13 @@ sub sv_rankvariant {
                         $$temp_directory_ref,
                         $outfile_prefix
                           . $vcfparser_analysis_type
-                          . $file_suffix . "*"
+                          . $file_suffix . q{*}
                     ),
                     outfile_path => $outfamily_directory,
                     FILEHANDLE   => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE "wait", "\n";
+            say $FILEHANDLE q{wait}, "\n";
 
             ## Adds the most complete vcf file to sample_info
             add_most_complete_vcf(
@@ -15109,34 +15269,43 @@ sub sv_rankvariant {
     {
 
         if ( defined( $active_parameter_href->{sv_rank_model_file} ) )
-        {    #Add to SampleInfo
+        {    #Add to Sample_info
 
+            my $sv_rank_model_version;
             if ( $active_parameter_href->{sv_rank_model_file} =~
                 /v(\d+\.\d+.\d+|\d+\.\d+)/ )
             {
 
-                $sample_info_href->{program}{sv_rankvariant}{rank_model}
-                  {version} = $1;
+                $sv_rank_model_version = $1;
             }
-            $sample_info_href->{program}{sv_rankvariant}{rank_model}{file} =
-              basename( $active_parameter_href->{sv_rank_model_file} );
-            $sample_info_href->{program}{sv_rankvariant}{rank_model}{path} =
-              $active_parameter_href->{sv_rank_model_file};
+            add_program_metafile_to_sample_info(
+                {
+                    sample_info_href => $sample_info_href,
+                    program_name     => q{sv_genmod},
+                    metafile_tag     => q{sv_rank_model},
+                    file =>
+                      basename( $active_parameter_href->{sv_rank_model_file} ),
+                    path    => $active_parameter_href->{sv_rank_model_file},
+                    version => $sv_rank_model_version,
+                }
+            );
 
         }
-        sample_info_qc(
+        my $qc_sv_genmod_outfile =
+            $$family_id_ref
+          . $outfile_tag
+          . $call_type
+          . $vcfparser_analysis_type
+          . $file_suffix;
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => "sv_genmod",
+                program_name     => q{sv_genmod},
                 outdirectory     => $outfamily_directory,
-                outfile_ending   => $$family_id_ref
-                  . $outfile_tag
-                  . $call_type
-                  . $vcfparser_analysis_type
-                  . $file_suffix,
-                outdata_type => "static"
+                outfile          => $qc_sv_genmod_outfile,
             }
         );
+
         submit_job(
             {
                 active_parameter_href   => $active_parameter_href,
@@ -15266,7 +15435,10 @@ sub sv_vcfparser {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Mip qw(vcfparser);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -15280,7 +15452,7 @@ sub sv_vcfparser {
     my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -15376,7 +15548,7 @@ sub sv_vcfparser {
                 outfile_path => $$temp_directory_ref
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
     }
 
     ## vcfparser
@@ -15512,13 +15684,13 @@ sub sv_vcfparser {
             {
                 infile_path => catfile(
                     $$temp_directory_ref,
-                    $outfile_prefix . "_" . $contigs[0] . $file_suffix
+                    $outfile_prefix . q{_} . $contigs[0] . $file_suffix
                 ),    #Add contig info
                 outfile_path => $outfamily_directory,
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
     }
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
@@ -15541,13 +15713,12 @@ sub sv_vcfparser {
         }
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
                 outdirectory     => $outfamily_directory,
-                outfile_ending   => $outfile_sample_info_prefix . $file_suffix,
-                outdata_type     => "static"
+                outfile          => $outfile_sample_info_prefix . $file_suffix,
             }
         );
 
@@ -15631,12 +15802,12 @@ sub sv_vcfparser {
                 {
                     infile_path => $outfile_path_prefix
                       . $vcfparser_analysis_type
-                      . $file_suffix . "*",
+                      . $file_suffix . q{*},
                     outfile_path => $outfamily_directory,
                     FILEHANDLE   => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE "wait", "\n";
+            say $FILEHANDLE q{wait}, "\n";
 
             ## Adds the most complete vcf file to sample_info
             add_most_complete_vcf(
@@ -15795,7 +15966,17 @@ sub sv_varianteffectpredictor {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use Readonly;
+    use MIP::Cluster qw(get_core_number);
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Vep qw(variant_effect_predictor);
+    use MIP::QC::Record
+      qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
+
+    ## Constants
+    Readonly my $DOT     => q{.};
+    Readonly my $ASTERIX => q{*};
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -15825,8 +16006,8 @@ sub sv_varianteffectpredictor {
         }
     );
 
-    ## Adjust core number depending on user supplied input exists or not and max number of cores
-    my $core_number = adjust_core_number(
+    ## Get core number depending on user supplied input exists or not and max number of cores
+    my $core_number = get_core_number(
         {
             module_core_number => $active_parameter_href->{module_core_number}
               { "p" . $program_name },
@@ -15840,7 +16021,7 @@ sub sv_varianteffectpredictor {
       floor( $core_number / $fork_number );    #Adjust for the number of forks
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -15894,12 +16075,12 @@ sub sv_varianteffectpredictor {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
-                $infamily_directory, $infile_prefix . $file_suffix . "*"
+                $infamily_directory, $infile_prefix . $file_suffix . q{*}
             ),
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Fix SV with no length as these will fail in the annotation with VEP
     my $perl_fix_sv_nolengths =
@@ -16065,25 +16246,25 @@ q?if($alt=~ /\<|\[|\]|\>/) { $alt=~ s/\<|\>//g; $alt=~ s/\:.+//g; if($start >= $
         }
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        my $qc_vep_summary_outfile =
+          $outfile_sample_info_prefix . $DOT . q{vcf_summary.html};
+        add_program_metafile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => $program_name . "summary",
-                outdirectory     => $outfamily_directory,
-                outfile_ending   => $outfile_sample_info_prefix
-                  . ".vcf_summary.html",
-                outdata_type => "static"
+                program_name     => $program_name,
+                metafile_tag     => q{summary},
+                directory        => $outfamily_directory,
+                file             => $qc_vep_summary_outfile,
             }
         );
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
                 outdirectory     => $outfamily_directory,
-                outfile_ending   => $outfile_sample_info_prefix . $file_suffix,
-                outdata_type     => "static"
+                outfile          => $outfile_sample_info_prefix . $file_suffix,
             }
         );
     }
@@ -16091,12 +16272,14 @@ q?if($alt=~ /\<|\[|\]|\>/) { $alt=~ s/\<|\>//g; $alt=~ s/\:.+//g; if($start >= $
     ## QC Data File(s)
     migrate_file(
         {
-            infile_path  => $outfile_path_prefix . "*" . $file_suffix . "_s*",
+            infile_path => $outfile_path_prefix
+              . $ASTERIX
+              . $file_suffix . q{_s*},
             outfile_path => $outfamily_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($XARGSFILEHANDLE);
 
@@ -16104,12 +16287,15 @@ q?if($alt=~ /\<|\[|\]|\>/) { $alt=~ s/\<|\>//g; $alt=~ s/\:.+//g; if($start >= $
     say $FILEHANDLE "## Copy file from temporary directory";
     migrate_file(
         {
-            infile_path  => $outfile_path_prefix . "*" . $file_suffix . "*",
+            infile_path => $outfile_path_prefix
+              . $ASTERIX
+              . $file_suffix
+              . $ASTERIX,
             outfile_path => $outfamily_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -16245,12 +16431,15 @@ sub sv_combinevariantcallsets {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Svdb qw(merge query);
     use Program::Variantcalling::Bcftools qw (merge view annotate);
     use Program::Htslib qw(bgzip tabix);
     use Program::Variantcalling::Vt qw(decompose);
     use Program::Variantcalling::Genmod qw(annotate);
     use Program::Variantcalling::Vcfanno qw(vcfanno);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my @structural_variant_callers;    #Stores callers that have been executed
     my @parallel_chains
@@ -16261,7 +16450,7 @@ sub sv_combinevariantcallsets {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -16378,13 +16567,13 @@ sub sv_combinevariantcallsets {
                         infile_path => catfile(
                             $insample_directory,
                             $infile_prefix
-                              . $suffix{$structural_variant_caller} . "*"
+                              . $suffix{$structural_variant_caller} . q{*}
                         ),
                         outfile_path => $$temp_directory_ref
                     }
                 );
 
-                say $FILEHANDLE "wait", "\n";
+                say $FILEHANDLE q{wait}, "\n";
 
                 ## Reformat variant calling file and index
                 view_vcf(
@@ -16527,12 +16716,12 @@ sub sv_combinevariantcallsets {
                     FILEHANDLE  => $FILEHANDLE,
                     infile_path => catfile(
                         $infamily_directory,
-                        $infile_prefix . $infile_suffix . "*"
+                        $infile_prefix . $infile_suffix . q{*}
                     ),
                     outfile_path => $$temp_directory_ref
                 }
             );
-            say $FILEHANDLE "wait", "\n";
+            say $FILEHANDLE q{wait}, "\n";
 
             if ( $active_parameter_href->{sv_vt_decompose} > 0 ) {
 
@@ -16786,13 +16975,12 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
             && ( !$active_parameter_href->{dry_run_all} ) )
         {
 
-            sample_info_qc(
+            add_program_outfile_to_sample_info(
                 {
                     sample_info_href => $sample_info_href,
-                    program_name     => "sv_combinevariantcallsets",
+                    program_name     => q{sv_combinevariantcallsets},
                     outdirectory     => $directory,
-                    outfile_ending   => $stderr_file,
-                    outdata_type     => "info_directory"
+                    outfile          => $stderr_file,
                 }
             );
         }
@@ -16855,7 +17043,7 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
         say $FILEHANDLE "## Copy file from temporary directory";
         migrate_file(
             {
-                infile_path  => $outfile_path_prefix . ".bcf*",
+                infile_path  => $outfile_path_prefix . q{.bcf*},
                 outfile_path => $outfamily_directory,
                 FILEHANDLE   => $FILEHANDLE,
             }
@@ -16871,7 +17059,7 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -16879,16 +17067,14 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        sample_info_qc(
+        my $qc_svdb_outfile =
+          $$family_id_ref . $outfile_tag . $call_type . $outfile_suffix;
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => "svdb",
+                program_name     => 'svdb',
                 outdirectory     => $outfamily_directory,
-                outfile_ending   => $$family_id_ref
-                  . $outfile_tag
-                  . $call_type
-                  . $outfile_suffix,
-                outdata_type => "static"
+                outfile_ending   => $qc_svdb_outfile,
             }
         );
 
@@ -17045,10 +17231,14 @@ sub cnvnator {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Processmanagement::Processes qw(print_wait);
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Alignment::Samtools qw(faidx);
     use Program::Variantcalling::Cnvnator
       qw(read_extraction histogram statistics partition calling convert_to_vcf);
     use Program::Variantcalling::Bcftools qw(annotate);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -17062,7 +17252,7 @@ sub cnvnator {
     my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -17150,19 +17340,20 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
     say $FILEHANDLE "> " . catfile( $$temp_directory_ref, "contig_header.txt" ),
       "\n";
 
-    my $core_counter = 1;
+    my $process_batches_count = 1;
+
     ## Create by cnvnator required "chr.fa" files
     say $FILEHANDLE "## Create by cnvnator required 'chr.fa' files";
     while ( my ( $contig_index, $contig ) =
         each( @{ $file_info_href->{contigs} } ) )
     {
 
-        print_wait(
+        $process_batches_count = print_wait(
             {
-                counter_ref      => \$contig_index,
-                core_number_ref  => \$core_number,
-                core_counter_ref => \$core_counter,
-                FILEHANDLE       => $FILEHANDLE,
+                process_counter       => $contig_index,
+                max_process_number    => $core_number,
+                process_batches_count => $process_batches_count,
+                FILEHANDLE            => $FILEHANDLE,
             }
         );
 
@@ -17177,7 +17368,7 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
         );
         say $FILEHANDLE " &";
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -17359,12 +17550,12 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
     say $FILEHANDLE "## Copy file from temporary directory";
     migrate_file(
         {
-            infile_path  => $outfile_path_prefix . $outfile_suffix . "*",
+            infile_path  => $outfile_path_prefix . $outfile_suffix . q{*},
             outfile_path => $outsample_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -17372,13 +17563,12 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => "cnvnator",
+                program_name     => 'cnvnator',
                 outdirectory     => $outsample_directory,
-                outfile_ending   => $outfile_prefix . $outfile_suffix,
-                outdata_type     => "static"
+                outfile          => $outfile_prefix . $outfile_suffix,
             }
         );
         submit_job(
@@ -17518,9 +17708,12 @@ sub delly_reformat {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use Program::Variantcalling::Delly qw(call merge filter);
     use Program::Variantcalling::Bcftools qw(merge index);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -17534,7 +17727,7 @@ sub delly_reformat {
     my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -17738,7 +17931,7 @@ sub delly_reformat {
                     }
                   );
             }
-            say $FILEHANDLE "wait", "\n";
+            say $FILEHANDLE q{wait}, "\n";
         }
     }
 
@@ -18230,19 +18423,18 @@ sub delly_reformat {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => "delly",
+                program_name     => 'delly',
                 outdirectory     => $outfamily_directory,
-                outfile_ending   => $outfile_prefix . $outfile_suffix,
-                outdata_type     => "static"
+                outfile          => $outfile_prefix . $outfile_suffix,
             }
         );
     }
@@ -18392,6 +18584,8 @@ sub delly_call {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Delly qw(call);
 
     my $core_number =
@@ -18406,7 +18600,7 @@ sub delly_call {
     my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -18494,7 +18688,7 @@ sub delly_call {
                 FILEHANDLE  => $FILEHANDLE,
                 infile_path => catfile(
                     $insample_directory,
-                    $infile_prefix . substr( $infile_suffix, 0, 2 ) . "*"
+                    $infile_prefix . substr( $infile_suffix, 0, 2 ) . q{*}
                 ),
                 outfile_path => $active_parameter_href->{temp_directory}
             }
@@ -18526,7 +18720,7 @@ sub delly_call {
                 temp_directory     => $$temp_directory_ref,
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
     }
 
     ## delly
@@ -18609,12 +18803,12 @@ sub delly_call {
     say $FILEHANDLE "## Copy file from temporary directory";
     migrate_file(
         {
-            infile_path  => $outfile_path_prefix . "*" . $outfile_suffix . "*",
+            infile_path => $outfile_path_prefix . q{*} . $outfile_suffix . q{*},
             outfile_path => $outsample_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -18743,8 +18937,12 @@ sub manta {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Processmanagement::Processes qw(print_wait);
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Manta qw(config workflow);
     use Program::Compression::Gzip qw(gzip);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -18758,7 +18956,7 @@ sub manta {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -18813,18 +19011,18 @@ sub manta {
     );
 
     my %file_path_prefix;
-    my $core_counter = 1;
+    my $process_batches_count = 1;
     ## Collect infiles for all sample_ids to enable migration to temporary directory
     while ( my ( $sample_id_index, $sample_id ) =
         each( @{ $active_parameter_href->{sample_ids} } ) )
     {
 
-        print_wait(
+        $process_batches_count = print_wait(
             {
-                counter_ref      => \$sample_id_index,
-                core_number_ref  => \$core_number,
-                core_counter_ref => \$core_counter,
-                FILEHANDLE       => $FILEHANDLE,
+                process_counter       => $sample_id_index,
+                max_process_number    => $core_number,
+                process_batches_count => $process_batches_count,
+                FILEHANDLE            => $FILEHANDLE,
             }
         );
 
@@ -18850,13 +19048,13 @@ sub manta {
                 FILEHANDLE  => $FILEHANDLE,
                 infile_path => catfile(
                     $insample_directory,
-                    $infile_prefix . substr( $infile_suffix, 0, 2 ) . "*"
+                    $infile_prefix . substr( $infile_suffix, 0, 2 ) . q{*}
                 ),
                 outfile_path => $$temp_directory_ref,
             }
         );
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## manta
     say $FILEHANDLE "## Manta";
@@ -18913,24 +19111,23 @@ sub manta {
     say $FILEHANDLE "## Copy file from temporary directory";
     migrate_file(
         {
-            infile_path  => $outfile_path_prefix . $outfile_suffix . "*",
+            infile_path  => $outfile_path_prefix . $outfile_suffix . q{*},
             outfile_path => $outfamily_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => "manta",
+                program_name     => 'manta',
                 outdirectory     => $outfamily_directory,
-                outfile_ending   => $outfile_prefix . $outfile_suffix,
-                outdata_type     => "static"
+                outfile          => $outfile_prefix . $outfile_suffix,
             }
         );
     }
@@ -19066,7 +19263,12 @@ sub tiddit {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Processmanagement::Processes qw(print_wait);
+    use MIP::Cluster qw(get_core_number);
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Tiddit qw(sv);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $program_outdirectory_name =
       $parameter_href->{ "p" . $program_name }{outdir_name};
@@ -19075,8 +19277,8 @@ sub tiddit {
     ## Filehandles
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
-    ## Adjust core number depending on user supplied input exists or not and max number of cores
-    my $core_number = adjust_core_number(
+    ## Get core number depending on user supplied input exists or not and max number of cores
+    my $core_number = get_core_number(
         {
             module_core_number => $active_parameter_href->{module_core_number}
               { "p" . $program_name },
@@ -19087,7 +19289,7 @@ sub tiddit {
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -19139,7 +19341,7 @@ sub tiddit {
         }
     );
 
-    my $core_counter = 1;
+    my $process_batches_count = 1;
     while ( my ( $sample_id_index, $sample_id ) =
         each( @{ $active_parameter_href->{sample_ids} } ) )
     {    #Collect infiles for all sample_ids
@@ -19162,12 +19364,12 @@ sub tiddit {
         $file_path_prefix{$sample_id}{out} =
           catfile( $$temp_directory_ref, $sample_outfile_prefix );
 
-        print_wait(
+        $process_batches_count = print_wait(
             {
-                counter_ref      => \$sample_id_index,
-                core_number_ref  => \$core_number,
-                core_counter_ref => \$core_counter,
-                FILEHANDLE       => $FILEHANDLE,
+                process_counter       => $sample_id_index,
+                max_process_number    => $core_number,
+                process_batches_count => $process_batches_count,
+                FILEHANDLE            => $FILEHANDLE,
             }
         );
 
@@ -19178,25 +19380,25 @@ sub tiddit {
                 FILEHANDLE  => $FILEHANDLE,
                 infile_path => catfile(
                     $insample_directory,
-                    $infile_prefix . substr( $infile_suffix, 0, 2 ) . "*"
+                    $infile_prefix . substr( $infile_suffix, 0, 2 ) . q{*}
                 ),    #".bam" -> ".b*" for getting index as well
                 outfile_path => $$temp_directory_ref,
             }
         );
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
-    $core_counter = 1;    # Restart counter
+    $process_batches_count = 1;    # Restart counter
     while ( my ( $sample_id_index, $sample_id ) =
         each( @{ $active_parameter_href->{sample_ids} } ) )
-    {                     #Collect infiles for all sample_ids
+    {                              #Collect infiles for all sample_ids
 
-        print_wait(
+        $process_batches_count = print_wait(
             {
-                counter_ref      => \$sample_id_index,
-                core_number_ref  => \$core_number,
-                core_counter_ref => \$core_counter,
-                FILEHANDLE       => $FILEHANDLE,
+                process_counter       => $sample_id_index,
+                max_process_number    => $core_number,
+                process_batches_count => $process_batches_count,
+                FILEHANDLE            => $FILEHANDLE,
             }
         );
 
@@ -19213,7 +19415,7 @@ sub tiddit {
         );
         say $FILEHANDLE "& \n";
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Get parameters
     ## Tiddit sample outfiles
@@ -19232,12 +19434,12 @@ sub tiddit {
     say $FILEHANDLE "## Copy file from temporary directory";
     migrate_file(
         {
-            infile_path  => $outfile_path_prefix . $outfile_suffix . "*",
+            infile_path  => $outfile_path_prefix . $outfile_suffix . q{*},
             outfile_path => $outfamily_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -19245,13 +19447,12 @@ sub tiddit {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => "tiddit",
+                program_name     => 'tiddit',
                 outdirectory     => $outfamily_directory,
                 outfile_ending   => $outfile_prefix . $outfile_suffix,
-                outdata_type     => "static"
             }
         );
 
@@ -19385,8 +19586,11 @@ sub samtools_mpileup {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Alignment::Samtools qw(mpileup);
     use Program::Variantcalling::Bcftools qw(call filter norm);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -19400,7 +19604,7 @@ sub samtools_mpileup {
     my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -19635,12 +19839,12 @@ q?\'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %M
     say $FILEHANDLE "## Copy file from temporary directory";
     migrate_file(
         {
-            infile_path  => $outfile_path_prefix . $outfile_suffix . "*",
+            infile_path  => $outfile_path_prefix . $outfile_suffix . q{*},
             outfile_path => $outfamily_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -19649,32 +19853,29 @@ q?\'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %M
     {
 
         ## Collect samtools version in qccollect
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => "samtools",
+                program_name     => 'samtools',
                 outdirectory     => $outfamily_directory,
-                outfile_ending   => $outfile_prefix . $outfile_suffix,
-                outdata_type     => "static"
+                outfile          => $outfile_prefix . $outfile_suffix,
             }
         );
         ## Locating samtools_mpileup file
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => "samtools_mpileup",
+                program_name     => 'samtools_mpileup',
                 outdirectory     => $outfamily_directory,
-                outfile_ending   => $outfile_prefix . $outfile_suffix,
-                outdata_type     => "static"
+                outfile          => $outfile_prefix . $outfile_suffix,
             }
         );
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => "bcftools",
+                program_name     => 'bcftools',
                 outdirectory     => $outfamily_directory,
                 outfile_ending   => $outfile_prefix . $outfile_suffix,
-                outdata_type     => "static"
             }
         );
 
@@ -19803,8 +20004,11 @@ sub freebayes {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Freebayes qw(calling);
     use Program::Variantcalling::Bcftools qw(filter norm);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -19818,7 +20022,7 @@ sub freebayes {
     my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -20011,12 +20215,12 @@ sub freebayes {
     say $FILEHANDLE "## Copy file from temporary directory";
     migrate_file(
         {
-            infile_path  => $outfile_path_prefix . $outfile_suffix . "*",
+            infile_path  => $outfile_path_prefix . $outfile_suffix . q{*},
             outfile_path => $outfamily_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -20024,22 +20228,20 @@ sub freebayes {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => "freebayes",
+                program_name     => 'freebayes',
                 outdirectory     => $outfamily_directory,
-                outfile_ending   => $outfile_prefix . $outfile_suffix,
-                outdata_type     => "static"
+                outfile          => $outfile_prefix . $outfile_suffix,
             }
         );
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => "bcftools",
+                program_name     => 'bcftools',
                 outdirectory     => $outfamily_directory,
                 outfile_ending   => $outfile_prefix . $outfile_suffix,
-                outdata_type     => "static"
             }
         );
 
@@ -20176,6 +20378,7 @@ sub gatk_haplotypecaller {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Alignment::Gatk qw(haplotypecaller);
 
     my $core_number =
@@ -20191,7 +20394,7 @@ sub gatk_haplotypecaller {
     my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -20208,10 +20411,12 @@ sub gatk_haplotypecaller {
 
     $core_number = floor( $active_parameter_href->{node_ram_memory} / 4 )
       ;    #Division by X according to the java heap
+
+    ## Limit number of cores requested to the maximum number of cores available per node
     $core_number = check_max_core_number(
         {
             max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-            core_number        => $core_number,
+            core_number_requested => $core_number,
         }
     );     #To not exceed maximum
 
@@ -20580,6 +20785,8 @@ sub gatk_baserecalibration {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Alignment::Gatk qw(baserecalibrator printreads);
     use Program::Alignment::Picardtools qw(gatherbamfiles);
     use MIP::Gnu::Coreutils qw(gnu_rm);
@@ -20602,7 +20809,7 @@ sub gatk_baserecalibration {
         $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = program_prerequisites(
+        ( $file_name, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -20702,10 +20909,12 @@ sub gatk_baserecalibration {
 
     $core_number = floor( $active_parameter_href->{node_ram_memory} / 6 )
       ;                     #Division by X according to the java heap
+
+    ## Limit number of cores requested to the maximum number of cores available per node
     $core_number = check_max_core_number(
         {
             max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-            core_number        => $core_number
+            core_number_requested => $core_number
         }
     );                      #To not exceed maximum
 
@@ -20945,12 +21154,12 @@ sub gatk_baserecalibration {
     migrate_file(
         {
             infile_path => $outfile_path_prefix
-              . substr( $infile_suffix, 0, 2 ) . "*",
+              . substr( $infile_suffix, 0, 2 ) . q{*},
             outfile_path => $outsample_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Remove concatenated BAM file at temporary directory
     gnu_rm(
@@ -21119,6 +21328,7 @@ sub gatk_realigner {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Alignment::Gatk qw(realignertargetcreator indelrealigner);
 
     my $core_number =
@@ -21138,7 +21348,7 @@ sub gatk_realigner {
         $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = program_prerequisites(
+        ( $file_name, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -21237,10 +21447,12 @@ sub gatk_realigner {
 
     $core_number = floor( $active_parameter_href->{node_ram_memory} / 4 )
       ;                     #Division by 4 since the java heap is 4GB
+
+    ## Limit number of cores requested to the maximum number of cores available per node
     $core_number = check_max_core_number(
         {
             max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-            core_number        => $core_number
+            core_number_requested => $core_number
         }
     );                      #To not exceed maximum
 
@@ -21608,8 +21820,10 @@ sub pmarkduplicates {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::IO::Files qw(migrate_file);
     use Program::Alignment::Sambamba qw(flagstat);
     use MIP::Gnu::Coreutils qw(gnu_cat);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -21665,8 +21879,10 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
 
     if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
+        use MIP::Script::Setup_script qw(setup_script);
+
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = program_prerequisites(
+        ( $file_name, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -21851,32 +22067,32 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
 
     migrate_file(
         {
-            infile_path  => $outfile_path_prefix . "_metric",
+            infile_path  => $outfile_path_prefix . q{_metric},
             outfile_path => $outsample_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
         ## Collect QC metadata info for later use
-        sample_info_qc(
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
-                program_name     => "markduplicates",
+                program_name     => 'markduplicates',
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile_ending   => $outfile_tag . "_metric",
-                outdata_type     => "infile_dependent"
+                outfile          => $outfile_tag . q{_metric},
             }
         );
+
+# Markduplicates can be processed by either picardtools markduplicates or sambamba markdup
         $sample_info_href->{sample}{$$sample_id_ref}{program}{markduplicates}
-          {$infile}{processed_by} = $markduplicates_program
-          ; #markduplicates can be processed by either picardtools markduplicates or sambamba markdup
+          {$infile}{processed_by} = $markduplicates_program;
 
         if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
@@ -22097,6 +22313,7 @@ sub picardtools_mergesamfiles {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::IO::Files qw(migrate_files);
     use Program::Alignment::Picardtools qw(mergesamfiles);
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use Program::Alignment::Samtools qw(index);
@@ -22117,8 +22334,10 @@ sub picardtools_mergesamfiles {
 
         $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
 
+        use MIP::Script::Setup_script qw(setup_script);
+
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = program_prerequisites(
+        ( $file_name, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -22176,7 +22395,7 @@ sub picardtools_mergesamfiles {
             FILEHANDLE   => $FILEHANDLE,
             indirectory  => $insample_directory,
             core_number  => $core_number,
-            file_ending  => $infile_tag . $infile_suffix . "*",
+            file_ending  => $infile_tag . $infile_suffix . q{*},
         }
     );
 
@@ -22210,11 +22429,13 @@ sub picardtools_mergesamfiles {
 
         $core_number = floor( $active_parameter_href->{node_ram_memory} / 4 )
           ;          #Division by X according to java Heap size
+
+        ## Limit number of cores requested to the maximum number of cores available per node
         $core_number = check_max_core_number(
             {
                 max_cores_per_node =>
                   $active_parameter_href->{max_cores_per_node},
-                core_number => $core_number,
+                core_number_requested => $core_number,
             }
         );           #To not exceed maximum
 
@@ -22394,7 +22615,7 @@ sub picardtools_mergesamfiles {
                         outfile_path => $$temp_directory_ref
                     }
                 );
-                say $FILEHANDLE "wait", "\n";
+                say $FILEHANDLE q{wait}, "\n";
 
                 if ( $merge_file =~ /lane(\d+)|s_(\d+)/ )
                 { #Look for lanes_ or lane\d in previously generated file to be merged with current run to be able to extract previous lanes
@@ -22438,11 +22659,13 @@ sub picardtools_mergesamfiles {
                     $core_number =
                       floor( $active_parameter_href->{node_ram_memory} / 4 )
                       ;          #Division by X according to java Heap size
+
+                    ## Limit number of cores requested to the maximum number of cores available per node
                     $core_number = check_max_core_number(
                         {
                             max_cores_per_node =>
                               $active_parameter_href->{max_cores_per_node},
-                            core_number => $core_number,
+                            core_number_requested => $core_number,
                         }
                     );           #To not exceed maximum
 
@@ -22593,7 +22816,7 @@ sub picardtools_mergesamfiles {
                     outfile_path => $$temp_directory_ref
                 }
             );
-            say $FILEHANDLE "wait", "\n";
+            say $FILEHANDLE q{wait}, "\n";
 
             if ( $merge_file =~ /lane(\d+)|s_(\d+)/ )
             { #Look for lanes_ or lane\d in previously generated file to be merged with current run to be able to extract previous lanes
@@ -22612,11 +22835,13 @@ sub picardtools_mergesamfiles {
                 $core_number =
                   floor( $active_parameter_href->{node_ram_memory} / 4 )
                   ;    #Division by X according to java Heap size
+
+                ## Limit number of cores requested to the maximum number of cores available per node
                 $core_number = check_max_core_number(
                     {
                         max_cores_per_node =>
                           $active_parameter_href->{max_cores_per_node},
-                        core_number => $core_number,
+                        core_number_requested => $core_number,
                     }
                 );     #To not exceed maximum
 
@@ -22882,6 +23107,8 @@ sub bwa_sampe {
     my $infile_size;
     my $paired_end_tracker = 0;
 
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_files);
     use Program::Alignment::Samtools qw(view);
 
     while ( my ( $infile_prefix_index, $infile_prefix ) =
@@ -22904,7 +23131,7 @@ sub bwa_sampe {
           ;    #Collect paired-end or single-end sequence run mode
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        my ($file_name) = program_prerequisites(
+        my ($file_name) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -22948,7 +23175,7 @@ sub bwa_sampe {
                 FILEHANDLE   => $FILEHANDLE,
                 indirectory  => $insample_directory,
                 core_number  => $core_number,
-                file_ending  => ".sai*",
+                file_ending  => q{.sai*},
             }
         );
 
@@ -22968,7 +23195,7 @@ sub bwa_sampe {
               . ".sai" )
           . " ";      #Read 1
 
-        if ( $sequence_run_mode eq "paired_end" ) {
+        if ( $sequence_run_mode eq 'paired-end' ) {
 
             $paired_end_tracker = $paired_end_tracker +
               1;      #Increment to collect correct read 2 from %infile
@@ -22982,7 +23209,7 @@ sub bwa_sampe {
             $infile )
           . " ";        #Fastq read 1
 
-        if ( $sequence_run_mode eq "paired_end" ) {
+        if ( $sequence_run_mode eq 'paired-end' ) {
 
             print $FILEHANDLE catfile(
                 $active_parameter_href->{temp_directory},
@@ -23023,13 +23250,13 @@ sub bwa_sampe {
             {
                 infile_path => catfile(
                     $active_parameter_href->{temp_directory},
-                    $infile_prefix . ".bam"
+                    $infile_prefix . q{.bam}
                 ),
                 outfile_path => $outsample_directory,
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "wait", "\n";
+        say $FILEHANDLE q{wait}, "\n";
 
         close($FILEHANDLE);
 
@@ -23089,6 +23316,11 @@ sub bwa_aln {
     my $outaligner_dir                  = $_[9];
     my $program_name                    = $_[10];
 
+    use MIP::Cluster qw(update_core_number_to_seq_mode);
+    use MIP::Processmanagement::Processes qw(print_wait);
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_files);
+
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
     my $time =
       ceil( 2.5 * scalar( @{ $infile_lane_prefix_href->{$sample_id} } ) )
@@ -23098,28 +23330,27 @@ sub bwa_aln {
     foreach my $infile ( @{ $infile_lane_prefix_href->{$sample_id} } )
     {    #For all files
 
-        ## Adjust the number of cores to be used in the analysis according to sequencing mode requirements.
-        adjust_core_number_to_seq_mode(
+        ## Update the number of cores to be used in the analysis according to sequencing mode requirements
+        $core_number = update_core_number_to_seq_mode(
             {
-                core_number_ref => \$core_number,
-                sequence_run_type_ref =>
-                  \$sample_info_href->{sample}{$sample_id}{file}{$infile}
+                core_number => $core_number,
+                sequence_run_type =>
+                  $sample_info_href->{sample}{$sample_id}{file}{$infile}
                   {sequence_run_type},
             }
         );
     }
 
-    ## Set the number of cores to allocate per sbatch job.
+    ## Limit number of cores requested to the maximum number of cores available per node
     $core_number = check_max_core_number(
         {
             max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-            core_number        => $core_number,
+            core_number_requested => $core_number,
         }
-      )
-      ; #Make sure that the number of cores does not exceed maximum after incrementing above
+    );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -23153,17 +23384,17 @@ sub bwa_aln {
 
     ## BWA Aln
     say $FILEHANDLE "## Creating .sai index";
-    my $core_counter = 1;
+    my $process_batches_count = 1;
     while ( my ( $infile_counter_index, $infile ) =
         each( @{ $infile_href->{$sample_id} } ) )
     {
 
-        print_wait(
+        $process_batches_count = print_wait(
             {
-                counter_ref      => \$infile_counter_index,
-                core_number_ref  => \$core_number,
-                core_counter_ref => \$core_counter,
-                FILEHANDLE       => $FILEHANDLE,
+                process_counter       => $infile_counter_index,
+                max_process_number    => $core_number,
+                process_batches_count => $process_batches_count,
+                FILEHANDLE            => $FILEHANDLE,
             }
         );
 
@@ -23187,7 +23418,7 @@ sub bwa_aln {
               [$infile_counter_index] . ".sai"
           ) . " &\n";    #OutFile
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Copies files from source to destination
     migrate_files(
@@ -23197,7 +23428,7 @@ sub bwa_aln {
             FILEHANDLE   => $FILEHANDLE,
             indirectory  => $active_parameter_href->{temp_directory},
             core_number  => $core_number,
-            file_ending  => ".sai",
+            file_ending  => q{.sai},
         }
     );
 
@@ -23326,13 +23557,15 @@ sub picardtools_mergerapidreads {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::Processmanagement::Processes qw(print_wait);
     use Language::Java qw(core);
 
     ## Filehandles
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -23356,8 +23589,8 @@ sub picardtools_mergerapidreads {
     my $outfile_tag =
       $file_info_href->{$$sample_id_ref}{ "p" . $program_name }{file_tag};
 
-    my $core_counter = 1;
-    my $core_tracker = 0
+    my $process_batches_count = 1;
+    my $core_tracker          = 0
       ; #Required to portion out cores and files before wait and to track the MOS_BU outfiles to correct lane
 
     for (
@@ -23378,13 +23611,13 @@ sub picardtools_mergerapidreads {
         if ( $nr_read_batch_process > 0 )
         {    #Check that we have read batch processes to merge
 
-            print_wait(
+            $process_batches_count = print_wait(
                 {
-                    counter_ref => \$core_tracker,
-                    core_number_ref =>
-                      \$active_parameter_href->{max_cores_per_node},
-                    core_counter_ref => \$core_counter,
-                    FILEHANDLE       => $FILEHANDLE,
+                    process_counter => $core_tracker,
+                    max_process_number =>
+                      $active_parameter_href->{max_cores_per_node},
+                    process_batches_count => $process_batches_count,
+                    FILEHANDLE            => $FILEHANDLE,
                 }
             );
 
@@ -23473,7 +23706,7 @@ sub picardtools_mergerapidreads {
               . " &";    #OutFile
         }
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Remove temp directory
     gnu_rm(
@@ -23635,10 +23868,13 @@ sub bwa_mem {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use Program::Alignment::Bwa qw(mem run_bwamem);
     use Program::Alignment::Samtools qw(view stats);
     use Program::Variantcalling::Bedtools qw (intersectbed);
     use Program::Alignment::Sambamba qw(sort);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -23705,7 +23941,7 @@ sub bwa_mem {
         { #Files are already gz and presently the scalar for compression has not been investigated. Therefore no automatic time allocation can be performed.
 
             if ( $sample_info_href->{sample}{$$sample_id_ref}{file}
-                {$infile_prefix}{sequence_run_type} eq "paired_end" )
+                {$infile_prefix}{sequence_run_type} eq 'paired-end' )
             {    #Second read direction if present
 
                 $fastq_file_second = $infile_href->{$$sample_id_ref}
@@ -23722,7 +23958,7 @@ sub bwa_mem {
         else {        #Files are in fastq format
 
             if ( $sample_info_href->{sample}{$$sample_id_ref}{file}
-                {$infile_prefix}{sequence_run_type} eq "paired_end" )
+                {$infile_prefix}{sequence_run_type} eq 'paired-end' )
             {         #Second read direction if present
                 $fastq_file_second = $infile_href->{$$sample_id_ref}
                   [ $infile_index + $infile_index ];
@@ -23758,7 +23994,7 @@ sub bwa_mem {
             {    #Parallization for each file handled
 
                 ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-                my ( $file_name, $program_info_path ) = program_prerequisites(
+                my ( $file_name, $program_info_path ) = setup_script(
                     {
                         active_parameter_href => $active_parameter_href,
                         job_id_href           => $job_id_href,
@@ -23784,7 +24020,7 @@ sub bwa_mem {
 
                 my $infile;
 
-                if ( $sequence_run_mode eq "paired_end" )
+                if ( $sequence_run_mode eq 'paired-end' )
                 {    #Second read direction if present
 
                     $infile = $fastq_file_second;    #For required .fastq file
@@ -23828,7 +24064,7 @@ sub bwa_mem {
                   . q?) ) {print $_;}' ?;    #Limit to sbatch script interval
                 print $FILEHANDLE ") ";      #End Read 1
 
-                if ( $sequence_run_mode eq "paired_end" )
+                if ( $sequence_run_mode eq 'paired-end' )
                 {                            #Second read direction if present
 
                     print $FILEHANDLE "<( ";      #Pipe to BWA Mem (Read 2)
@@ -23931,7 +24167,7 @@ sub bwa_mem {
         else {                            #Not rapid mode align whole file
 
             ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-            my ( $file_name, $program_info_path ) = program_prerequisites(
+            my ( $file_name, $program_info_path ) = setup_script(
                 {
                     active_parameter_href => $active_parameter_href,
                     job_id_href           => $job_id_href,
@@ -23964,7 +24200,7 @@ sub bwa_mem {
                 }
             );    #Read 1
 
-            if ( $sequence_run_mode eq "paired_end" )
+            if ( $sequence_run_mode eq 'paired-end' )
             {     #Second read direction if present
 
                 migrate_file(
@@ -23979,7 +24215,7 @@ sub bwa_mem {
                     }
                 );    #Read 2
             }
-            say $FILEHANDLE "wait", "\n";
+            say $FILEHANDLE q{wait}, "\n";
 
             ### BWA MEM
 
@@ -24002,7 +24238,7 @@ sub bwa_mem {
             my $fastq_file_path = catfile( $$temp_directory_ref,
                 $infile_href->{$$sample_id_ref}[$paired_end_tracker] );
             my $second_fastq_file_path;
-            if ( $sequence_run_mode eq "paired_end" )
+            if ( $sequence_run_mode eq 'paired-end' )
             {    #Second read direction if present
 
                 $paired_end_tracker = $paired_end_tracker +
@@ -24107,12 +24343,12 @@ sub bwa_mem {
                 ## BAMS, bwa_mem logs etc.
                 migrate_file(
                     {
-                        infile_path  => $outfile_path_prefix . ".*",
+                        infile_path  => $outfile_path_prefix . q{.*},
                         outfile_path => $outsample_directory,
                         FILEHANDLE   => $FILEHANDLE,
                     }
                 );
-                say $FILEHANDLE "wait", "\n";
+                say $FILEHANDLE q{wait}, "\n";
             }
             if ( $bwa_binary eq "run-bwamem" ) {
 
@@ -24135,7 +24371,7 @@ sub bwa_mem {
                         }
                     );
                 }
-                say $FILEHANDLE "wait", "\n";
+                say $FILEHANDLE q{wait}, "\n";
             }
 
             if ( $active_parameter_href->{bwa_mem_bamstats} ) {
@@ -24159,12 +24395,12 @@ q?perl -ne '$raw; $map; chomp($_); print $_, "\n"; if($_=~/raw total sequences:\
                 say $FILEHANDLE "## Copy file from temporary directory";
                 migrate_file(
                     {
-                        infile_path  => $outfile_path_prefix . ".stats",
+                        infile_path  => $outfile_path_prefix . q{.stats},
                         outfile_path => $outsample_directory,
                         FILEHANDLE   => $FILEHANDLE,
                     }
                 );
-                say $FILEHANDLE "wait", "\n";
+                say $FILEHANDLE q{wait}, "\n";
             }
 
             if (   ( $active_parameter_href->{bwa_mem_cram} )
@@ -24189,12 +24425,12 @@ q?perl -ne '$raw; $map; chomp($_); print $_, "\n"; if($_=~/raw total sequences:\
                 say $FILEHANDLE "## Copy file from temporary directory";
                 migrate_file(
                     {
-                        infile_path  => $outfile_path_prefix . ".cram",
+                        infile_path  => $outfile_path_prefix . q{.cram},
                         outfile_path => $outsample_directory,
                         FILEHANDLE   => $FILEHANDLE,
                     }
                 );
-                say $FILEHANDLE "wait", "\n";
+                say $FILEHANDLE q{wait}, "\n";
             }
 
             close($FILEHANDLE);
@@ -24224,44 +24460,41 @@ q?perl -ne '$raw; $map; chomp($_); print $_, "\n"; if($_=~/raw total sequences:\
                 if ( $active_parameter_href->{bwa_mem_bamstats} ) {
 
                     ## Collect QC metadata info for later use
-                    sample_info_qc(
+                    add_program_outfile_to_sample_info(
                         {
                             sample_info_href => $sample_info_href,
                             sample_id        => $$sample_id_ref,
-                            program_name     => "bamstats",
+                            program_name     => 'bamstats',
                             infile           => $infile_prefix,
                             outdirectory     => $outsample_directory,
-                            outfile_ending   => $outfile_tag . ".stats",
-                            outdata_type     => "infile_dependent"
+                            outfile          => $outfile_tag . q{.stats},
                         }
                     );
                 }
 
                 if ( $bwa_binary eq "bwa mem" ) {
 
-                    sample_info_qc(
+                    add_program_outfile_to_sample_info(
                         {
                             sample_info_href => $sample_info_href,
                             sample_id        => $$sample_id_ref,
-                            program_name     => "bwa",
+                            program_name     => 'bwa',
                             infile           => $infile_prefix,
                             outdirectory     => $directory,
-                            outfile_ending   => $stderr_file,
-                            outdata_type     => "info_directory"
+                            outfile          => $stderr_file,
                         }
                     );
                 }
                 if ( $bwa_binary eq "run-bwamem" ) {
 
-                    sample_info_qc(
+                    add_program_outfile_to_sample_info(
                         {
                             sample_info_href => $sample_info_href,
                             sample_id        => $$sample_id_ref,
-                            program_name     => "Bwa",
+                            program_name     => 'run-bwamem',
                             infile           => $infile_prefix,
                             outdirectory     => $outsample_directory,
-                            outfile_ending   => ".log.bwamem",
-                            outdata_type     => "infile_dependent"
+                            outfile          => q{.log.bwamem},
                         }
                     );
                 }
@@ -24399,6 +24632,8 @@ sub variantannotationblock {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+
     my $core_number = $active_parameter_href->{max_cores_per_node};
     my $xargs_file_name;
     my $time = 80;
@@ -24506,7 +24741,7 @@ sub variantannotationblock {
     }
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = program_prerequisites(
+    my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -24811,6 +25046,8 @@ sub bamcalibrationblock {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+
     my $core_number = $active_parameter_href->{max_cores_per_node};
     my $time        = 80;
 
@@ -24869,7 +25106,7 @@ sub bamcalibrationblock {
         my $xargs_file_name;
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        my ( $file_name, $program_info_path ) = program_prerequisites(
+        my ( $file_name, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -25050,11 +25287,14 @@ sub madeline {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
+
     ## Filehandles
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -25096,8 +25336,15 @@ sub madeline {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        $sample_info_href->{program}{$program_name}{path} =
+        my $qc_madelaine_path =
           catfile( $outfamily_directory, $$family_id_ref . "_madeline.xml" );
+        add_program_outfile_to_sample_info(
+            {
+                sample_info_href => $sample_info_href,
+                program_name     => $program_name,
+                path             => $qc_madelaine_path,
+            }
+        );
     }
 
     close($FILEHANDLE);
@@ -25127,15 +25374,15 @@ sub mfastqc {
 ##Function : Raw sequence quality analysis using FASTQC.
 ##Returns  : ""
 ##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_href, $indir_path_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name
-##         : $parameter_href             => The parameter hash {REF}
-##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $infile_href                => The infiles hash {REF}
-##         : $indir_path_href            => The indirectories path(s) hash {REF}
+##         : $parameter_href          => The parameter hash {REF}
+##         : $active_parameter_href   => The active parameters for this analysis hash {REF}
+##         : $sample_info_href        => Info on samples and family hash {REF}
+##         : $infile_href             => The infiles hash {REF}
+##         : $indir_path_href         => The indirectories path(s) hash {REF}
 ##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
-##         : $job_id_href                => The job_id hash {REF}
-##         : $sample_id_ref              => The sample_id {REF}
-##         : $program_name               => The program name
+##         : $job_id_href             => The job_id hash {REF}
+##         : $sample_id_ref           => The sample_id {REF}
+##         : $program_name            => The program name
 
     my ($arg_href) = @_;
 
@@ -25228,41 +25475,47 @@ sub mfastqc {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
+    use MIP::Check::Cluster qw(check_max_core_number);
+    use MIP::Cluster qw(update_core_number_to_seq_mode);
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_files);
+    use MIP::Processmanagement::Processes qw(print_wait);
     use MIP::Gnu::Coreutils qw(gnu_cp);
-    use Program::Qc::Fastqc qw (fastqc);
+    use Program::Qc::Fastqc qw(fastqc);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
 
     ## Filehandles
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
+    # Create anonymous filehandle
+    my $FILEHANDLE = IO::Handle->new();
 
     foreach my $infile ( @{ $infile_lane_prefix_href->{$$sample_id_ref} } ) {
 
-        ## Adjust the number of cores to be used in the analysis according to sequencing mode requirements.
-        adjust_core_number_to_seq_mode(
+        ## Update the number of cores to be used in the analysis according to sequencing mode requirements
+        $core_number = update_core_number_to_seq_mode(
             {
-                core_number_ref => \$core_number,
-                sequence_run_type_ref =>
-                  \$sample_info_href->{sample}{$$sample_id_ref}{file}{$infile}
+                core_number => $core_number,
+                sequence_run_type =>
+                  $sample_info_href->{sample}{$$sample_id_ref}{file}{$infile}
                   {sequence_run_type},
             }
         );
     }
 
-    ## Set the number of cores to allocate per sbatch job.
+    ## Limit number of cores requested to the maximum number of cores available per node
     $core_number = check_max_core_number(
         {
             max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-            core_number        => $core_number,
+            core_number_requested => $core_number,
         }
-      )
-      ; #Make sure that the number of cores does not exceed maximum after incrementing above
+    );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -25296,19 +25549,20 @@ sub mfastqc {
         }
     );
 
-    say $FILEHANDLE "## " . $program_name;
+    say $FILEHANDLE q{## } . $program_name;
 
-    my $core_counter = 1;
+    my $process_batches_count = 1;
+
     while ( my ( $index, $infile ) =
         each( @{ $infile_href->{$$sample_id_ref} } ) )
     {
 
-        print_wait(
+        $process_batches_count = print_wait(
             {
-                counter_ref      => \$index,
-                core_number_ref  => \$core_number,
-                core_counter_ref => \$core_counter,
-                FILEHANDLE       => $FILEHANDLE,
+                process_counter       => $index,
+                max_process_number    => $core_number,
+                process_batches_count => $process_batches_count,
+                FILEHANDLE            => $FILEHANDLE,
             }
         );
 
@@ -25324,42 +25578,41 @@ sub mfastqc {
                 FILEHANDLE        => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "&", "\n";
+        say $FILEHANDLE q{&}, "\n";
 
         ## Collect QC metadata info for active program for later use
         if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
             && ( !$active_parameter_href->{dry_run_all} ) )
         {
 
-            sample_info_qc(
+            my $qc_fastqc_outdirectory =
+              catdir( $outsample_directory, $file_at_lane_level . q{_fastqc} );
+            add_program_outfile_to_sample_info(
                 {
                     sample_info_href => $sample_info_href,
                     sample_id        => $$sample_id_ref,
-                    program_name     => "fastqc",
+                    program_name     => q{fastqc},
                     infile           => $infile,
-                    outdirectory     => catfile(
-                        $outsample_directory, $file_at_lane_level . "_fastqc"
-                    ),
-                    outfile_ending => "fastqc_data.txt",
-                    outdata_type   => "static"
+                    outdirectory     => $qc_fastqc_outdirectory,
+                    outfile          => q{fastqc_data.txt},
                 }
             );
         }
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     ## Copies files from temporary folder to source.
-    $core_counter = 1;
+    $process_batches_count = 1;
     while ( my ( $index, $infile ) =
         each( @{ $infile_href->{$$sample_id_ref} } ) )
     {
 
-        print_wait(
+        $process_batches_count = print_wait(
             {
-                counter_ref      => \$index,
-                core_number_ref  => \$core_number,
-                core_counter_ref => \$core_counter,
-                FILEHANDLE       => $FILEHANDLE,
+                process_counter       => $index,
+                max_process_number    => $core_number,
+                process_batches_count => $process_batches_count,
+                FILEHANDLE            => $FILEHANDLE,
             }
         );
 
@@ -25372,14 +25625,14 @@ sub mfastqc {
                 FILEHANDLE  => $FILEHANDLE,
                 recursive   => 1,
                 infile_path => catfile(
-                    $$temp_directory_ref, $file_at_lane_level . "_fastqc"
+                    $$temp_directory_ref, $file_at_lane_level . q{_fastqc}
                 ),
                 outfile_path => $outsample_directory,
             }
         );
-        say $FILEHANDLE "&", "\n";
+        say $FILEHANDLE q{&}, "\n";
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 
@@ -25394,7 +25647,7 @@ sub mfastqc {
                 job_id_href             => $job_id_href,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 sample_id               => $$sample_id_ref,
-                dependencies            => "case_dependency_dead_end",
+                dependencies            => q{case_dependency_dead_end},
                 path => $parameter_href->{ "p" . $program_name }{chain},
                 sbatch_file_name => $file_name
             }
@@ -25512,6 +25765,8 @@ sub gzip_fastq {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Cluster qw(update_core_number_to_seq_mode);
+    use MIP::Script::Setup_script qw(setup_script);
     use Program::Compression::Gzip qw(gzip);
 
     ## Filehandles
@@ -25527,28 +25782,27 @@ sub gzip_fastq {
 
     foreach my $infile ( @{ $infile_lane_prefix_href->{$sample_id} } ) {
 
-        ## Adjust the number of cores to be used in the analysis according to sequencing mode requirements.
-        adjust_core_number_to_seq_mode(
+        ## Update the number of cores to be used in the analysis according to sequencing mode requirements
+        $core_number = update_core_number_to_seq_mode(
             {
-                core_number_ref => \$core_number,
-                sequence_run_type_ref =>
+                core_number => $core_number,
+                sequence_run_type =>
                   \$sample_info_href->{sample}{$sample_id}{file}{$infile}
                   {sequence_run_type},
             }
         );
     }
 
-    ## Set the number of cores to allocate per sbatch job.
+    ## Limit number of cores requested to the maximum number of cores available per node
     $core_number = check_max_core_number(
         {
             max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-            core_number        => $core_number,
+            core_number_requested => $core_number,
         }
-      )
-      ; #Make sure that the number of cores does not exceed maximum after incrementing above
+    );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -25567,7 +25821,7 @@ sub gzip_fastq {
     ## Assign suffix
     my $infile_suffix = $parameter_href->{ "p" . $program_name }{infile_suffix};
 
-    my $core_counter              = 1;
+    my $process_batches_count     = 1;
     my $uncompressed_file_counter = 0
       ; #Used to print wait at the right times since infiles cannot be used (can be a mixture of .gz and .fast files)
 
@@ -25579,12 +25833,12 @@ sub gzip_fastq {
         if ( $infile =~ /$infile_suffix$/ )
         { #For files ending with .fastq required since there can be a mixture (also .fastq.gz) within the sample dir
 
-            if ( $uncompressed_file_counter ==
-                $core_counter * $active_parameter_href->{max_cores_per_node} )
+            if ( $uncompressed_file_counter == $process_batches_count *
+                $active_parameter_href->{max_cores_per_node} )
             {    #Using only $active_parameter{max_cores_per_node} cores
 
-                say $FILEHANDLE "wait", "\n";
-                $core_counter = $core_counter + 1;
+                say $FILEHANDLE q{wait}, "\n";
+                $process_batches_count = $process_batches_count + 1;
             }
 
             ## Perl wrapper for writing gzip recipe to $FILEHANDLE
@@ -25594,13 +25848,13 @@ sub gzip_fastq {
                     FILEHANDLE  => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE "&";
+            say $FILEHANDLE q{&};
             $uncompressed_file_counter++;
             $infile .= ".gz"
               ; #Add ".gz" to original fastq ending, since this will execute before fastQC and bwa.
         }
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
@@ -25739,6 +25993,8 @@ sub split_fastq_file {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file);
     use MIP::Gnu::Coreutils qw(gnu_cp gnu_rm gnu_mv gnu_split gnu_mkdir);
     use Program::Compression::Pigz qw(pigz);
 
@@ -25751,7 +26007,7 @@ sub split_fastq_file {
     foreach my $fastq_file ( @{ $infile_href->{$$sample_id_ref} } ) {
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        my ($file_name) = program_prerequisites(
+        my ($file_name) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -26040,6 +26296,7 @@ sub build_annovar_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use MIP::Gnu::Coreutils qw(gnu_mkdir);
 
     ## Retrieve logger object
@@ -26053,7 +26310,7 @@ sub build_annovar_prerequisites {
         "humandb", "Db_temporary" );    #Temporary download directory
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -26517,6 +26774,7 @@ sub build_ptchs_metric_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use MIP::Gnu::Coreutils qw(gnu_rm gnu_cat);
     use Language::Java qw(core);
     use Program::Interval::Picardtools qw(intervallisttools);
@@ -26532,7 +26790,7 @@ sub build_ptchs_metric_prerequisites {
         $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ($file_name) = program_prerequisites(
+        ($file_name) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -26882,6 +27140,8 @@ sub build_bwa_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger('MIP');
 
@@ -26890,7 +27150,7 @@ sub build_bwa_prerequisites {
       int( rand(10000) );    #Generate a random integer between 0-10,000.
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites(
+    my ($file_name) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -27312,6 +27572,7 @@ sub build_human_genome_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use MIP::Gnu::Bash qw(gnu_cd);
     use MIP::Gnu::Coreutils qw(gnu_rm);
     use Program::Compression::Gzip qw(gzip);
@@ -27332,7 +27593,7 @@ sub build_human_genome_prerequisites {
           int( rand(10000) );    #Generate a random integer between 0-10,000.
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ($file_name) = program_prerequisites(
+        ($file_name) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -28996,106 +29257,6 @@ sub submit_jobs_to_sbatch {
     return $job_id;
 }
 
-sub adjust_core_number {
-
-##adjust_core_number
-
-##Function : Adjust core number depending on user supplied input exists or not and max number of cores.
-##Returns  : "Adjusted $core_number"
-##Arguments: $module_core_number, $modifier_core_number, $max_cores_per_node
-##         : $module_core_number    => User input module core numbers to use
-##         : $modifier_core_number  => Modifier core number dependent on mode of operation of command
-##         : $max_cores_per_node => The max number of cores per node
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $module_core_number;
-    my $modifier_core_number;
-    my $max_cores_per_node;
-
-    my $tmpl = {
-        module_core_number =>
-          { strict_type => 1, store => \$module_core_number },
-        modifier_core_number => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$modifier_core_number
-        },
-        max_cores_per_node => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$max_cores_per_node
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    my $core_number;
-    if (   ( defined($module_core_number) )
-        && ($module_core_number) )
-    {
-
-        $core_number = $module_core_number;
-    }
-    else {
-
-        $core_number = $modifier_core_number;
-    }
-
-    ## Limit number of cores to the core processor number to allocate per sbatch job
-    $core_number = check_max_core_number(
-        {
-            max_cores_per_node => $max_cores_per_node,
-            core_number        => $core_number,
-        }
-    );    #Detect the number of cores to use
-    return $core_number;
-}
-
-sub check_max_core_number {
-
-##check_max_core_number
-
-##Function : Limit number of cores to the core processor number to allocate per sbatch job.
-##Returns  : "$core_number"
-##Arguments: $max_cores_per_node, $core_number
-##         : $max_cores_per_node => The max number of cores per node
-##         : $core_number        => The number of cores to allocate
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $max_cores_per_node;
-    my $core_number;
-
-    my $tmpl = {
-        max_cores_per_node => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$max_cores_per_node
-        },
-        core_number => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$core_number
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    if ( $core_number > $max_cores_per_node )
-    {    #Set number of cores depending on how many lanes to process
-
-        $core_number = $max_cores_per_node;    #Set to max on cluster
-    }
-    return $core_number;
-}
-
 sub collect_infiles {
 
 ##collect_infiles
@@ -29853,7 +30014,7 @@ sub add_infile_info {
           \$infile_lane_prefix_href->{$sample_id}[ $$lane_tracker_ref - 1 ]
           ;                     #Alias
         $sample_info_href->{sample}{$sample_id}{file}{$$file_at_lane_level_ref}
-          {sequence_run_type} = "paired_end"
+          {sequence_run_type} = 'paired-end'
           ;    #$lane_tracker -1 since it gets incremented after direction eq 1.
     }
 
@@ -31278,400 +31439,6 @@ sub create_file_endings {
     }
 }
 
-sub program_prerequisites {
-
-##program_prerequisites
-
-##Function : Creates program directories (info & programData & programScript), program script filenames and writes sbatch header.
-##Returns  : Path to stdout
-##Arguments: $active_parameter_href, $job_id_href, $FILEHANDLE, $directory_id, $program_directory, $program_name, $call_type, $outdata_dir, $outscript_dir, $temp_directory, $email_types_ref, $source_environment_commands_ref, $slurm_quality_of_service, $core_number, $process_time, $error_trap, $set_errexit, $set_nounset, $set_pipefail, $sleep
-##         : $active_parameter_href           => The active parameters for this analysis hash {REF}
-##         : $job_id_href                     => The job_id hash {REF}
-##         : $FILEHANDLE                      => FILEHANDLE to write to
-##         : $directory_id                    => $samplID|$family_id
-##         : $program_directory               => Builds from $directory_id/$outaligner_dir
-##         : $program_name                    => Assigns filename to sbatch script
-##         : $call_type                       => SNV,INDEL or BOTH
-##         : $source_environment_commands_ref => Source environment command {REF}
-##         : $outdata_dir                     => The MIP out data directory {Optional}
-##         : $outscript_dir                   => The MIP out script directory {Optional}
-##         : $temp_directory                  => Temporary directory for program {Optional}
-##         : $email_types_ref                 => The email type
-##         : $slurm_quality_of_service        => SLURM quality of service priority {Optional}
-##         : $core_number                     => The number of cores to allocate {Optional}
-##         : $process_time                    => Allowed process time (Hours) {Optional}
-##         : $error_trap                      => Error trap switch {Optional}
-##         : $set_errexit                     => Bash set -e {Optional}
-##         : $set_nounset                     => BAsh set -u {Optional}
-##         : $set_pipefail                        => Pipe fail switch {Optional}
-##         : $sleep                           => Sleep for X seconds {Optional}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $outdata_dir;
-    my $outscript_dir;
-    my $temp_directory;
-    my $email_types_ref;
-    my $source_environment_commands_ref;
-    my $slurm_quality_of_service;
-    my $core_number;
-    my $process_time;
-    my $set_errexit;
-    my $set_nounset;
-    my $set_pipefail;
-    my $error_trap;
-    my $sleep;
-
-    if ( defined( $arg_href->{call_type} ) ) {
-
-        $arg_href->{call_type} = "_" . $arg_href->{call_type};
-    }
-    $arg_href->{call_type} //= "";
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $job_id_href;
-    my $FILEHANDLE;
-    my $directory_id;
-    my $program_directory;
-    my $program_name;
-    my $call_type;
-
-    my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        FILEHANDLE   => { store => \$FILEHANDLE },
-        directory_id => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$directory_id
-        },
-        program_directory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_directory
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name
-        },
-        call_type   => { strict_type => 1, store => \$call_type },
-        outdata_dir => {
-            default     => $arg_href->{active_parameter_href}{outdata_dir},
-            strict_type => 1,
-            store       => \$outdata_dir
-        },
-        outscript_dir => {
-            default     => $arg_href->{active_parameter_href}{outscript_dir},
-            strict_type => 1,
-            store       => \$outscript_dir
-        },
-        temp_directory => {
-            default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory
-        },
-        email_types_ref => {
-            default     => $arg_href->{active_parameter_href}{email_types},
-            strict_type => 1,
-            store       => \$email_types_ref
-        },
-        source_environment_commands_ref => {
-            default =>
-              $arg_href->{active_parameter_href}{source_environment_commands},
-            strict_type => 1,
-            store       => \$source_environment_commands_ref
-        },
-        core_number => {
-            default     => 1,
-            allow       => qr/^\d+$/,
-            strict_type => 1,
-            store       => \$core_number
-        },
-        process_time => {
-            default     => 1,
-            allow       => qr/^\d+$/,
-            strict_type => 1,
-            store       => \$process_time
-        },
-        slurm_quality_of_service => {
-            default =>
-              $arg_href->{active_parameter_href}{slurm_quality_of_service},
-            allow       => [ "low", "high", "normal" ],
-            strict_type => 1,
-            store       => \$slurm_quality_of_service
-        },
-        set_nounset => {
-            default     => $arg_href->{active_parameter_href}{bash_set_nounset},
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$set_nounset
-        },
-        set_errexit => {
-            default     => $arg_href->{active_parameter_href}{bash_set_errexit},
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$set_errexit
-        },
-        set_pipefail => {
-            default => $arg_href->{active_parameter_href}{bash_set_pipefail},
-            allow   => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$set_pipefail
-        },
-        error_trap => {
-            default     => 1,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$error_trap
-        },
-        sleep => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$sleep
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    use MIP::Language::Shell
-      qw(build_shebang create_housekeeping_function create_error_trap_function enable_trap);
-    use MIP::Workloadmanager::Slurm qw(slurm_build_sbatch_header);
-    use MIP::Gnu::Bash qw(gnu_set);
-    use MIP::Gnu::Coreutils qw(gnu_echo gnu_mkdir);
-    use MIP::Check::File qw(check_file_version_exist);
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
-
-    ### Sbatch script names and directory creation
-    # For holding commands to write with proper indention in bash
-    my @commands;
-    my $file_name_end = '.sh';
-
-    # The sbatch script - to be created filename
-    my $file_name;
-    my $file_name_tracker;
-
-    my $program_data_directory =
-      catdir( $outdata_dir, $directory_id, $program_directory );
-    my $file_name_path =
-      catfile( $outscript_dir, $directory_id, $program_directory,
-        $program_name . "_" . $directory_id . $call_type )
-      . ".";
-    my $dry_run_file_name_path =
-      catfile( $outscript_dir, $directory_id, $program_directory,
-        "dry_run_" . $program_name . "_" . $directory_id . $call_type )
-      . ".";
-    my $file_info_path =
-      catfile( $outdata_dir, $directory_id, $program_directory, "info",
-        $program_name . "_" . $directory_id . $call_type )
-      . ".";
-    my $dry_run_file_info_path =
-      catfile( $outdata_dir, $directory_id, $program_directory, "info",
-        "dry_run_" . $program_name . "_" . $directory_id . $call_type )
-      . ".";
-
-    ## Create directories
-    make_path(
-        catfile( $outdata_dir, $directory_id, $program_directory, "info" )
-        ,    #Creates the outaligner_dir folder and info data file directory
-        $program_data_directory
-        , #Creates the outaligner_dir folder and if supplied the program data file directory
-        catfile( $outscript_dir, $directory_id, $program_directory )
-        ,    #Creates the outaligner_dir folder script file directory
-    );
-
-    ## Set paths depending on dry run or not
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
-
-        $file_name = $file_name_path;
-    }
-    elsif ( $active_parameter_href->{ "p" . $program_name } == 2 )
-    {        #Dry run single program
-
-        $file_name      = $dry_run_file_name_path;
-        $file_info_path = $dry_run_file_info_path;
-        $log->info("Dry run:\n");
-    }
-    else {    #Dry run
-
-        $file_name      = $dry_run_file_name_path;
-        $file_info_path = $dry_run_file_info_path;
-        $log->info("Dry run:\n");
-    }
-
-    ## Check if a file with with a filename consisting of
-    ## $file_path_prefix_ref.$file_counter.$file_path_suffix_ref exist
-    ( $file_name, $file_name_tracker ) = check_file_version_exist(
-        {
-            file_path_prefix_ref   => \$file_name,
-            file_path_suffix_ref => \$file_name_end,
-        }
-    );
-
-###Info and Log
-    $log->info( "Creating sbatch script for "
-          . $program_name
-          . " and writing script file(s) to: "
-          . $file_name
-          . "\n" );
-    $log->info( "Sbatch script "
-          . $program_name
-          . " data files will be written to: "
-          . $program_data_directory
-          . "\n" );
-
-    ## Script file
-    open( $FILEHANDLE, '>', $file_name )
-      or $log->logdie( "Can't write to '" . $file_name . "' :" . $! . "\n" );
-
-    # Build bash shebang line
-    build_shebang(
-        {
-            FILEHANDLE => $FILEHANDLE,
-            bash_bin_path =>
-              catfile( dirname( dirname( devnull() ) ), qw(bin bash) ),
-            invoke_login_shell => 1,
-        }
-    );
-
-    ## Set shell attributes
-    gnu_set(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            set_errexit  => $set_errexit,
-            set_nounset  => $set_nounset,
-            set_pipefail => $set_pipefail,
-        }
-    );
-
-    ### Sbatch header
-    ## Get parameters
-    my $job_name        = $program_name . '_' . $directory_id . $call_type;
-    my $stderrfile_path = $file_info_path . $file_name_tracker . '.stderr.txt';
-    my $stdoutfile_path = $file_info_path . $file_name_tracker . ".stdout.txt";
-
-    my @sbatch_headers = slurm_build_sbatch_header(
-        {
-            project_id               => $active_parameter_href->{project_id},
-            core_number              => $core_number,
-            process_time             => $process_time . ":00:00",
-            slurm_quality_of_service => $slurm_quality_of_service,
-            job_name                 => $job_name,
-            stderrfile_path          => $stderrfile_path,
-            stdoutfile_path          => $stdoutfile_path,
-            email                    => $active_parameter_href->{email},
-            email_types_ref          => $email_types_ref,
-            FILEHANDLE               => $FILEHANDLE,
-        }
-    );
-
-    say $FILEHANDLE q?readonly PROGNAME=$(basename "$0")?, "\n";
-
-    gnu_echo(
-        {
-            strings_ref => [q?Running on: $(hostname)?],
-            FILEHANDLE  => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE "\n";
-
-    # Let the process sleep for a random couple of seconds (0-60) to avoid race conditions in mainly conda sourcing activate
-    if ($sleep) {
-
-        say $FILEHANDLE "sleep " . int( rand(60) );
-    }
-    if (   ($source_environment_commands_ref)
-        && (@$source_environment_commands_ref) )
-    {
-
-        say $FILEHANDLE "##Activate environment";
-        say $FILEHANDLE join( ' ', @{$source_environment_commands_ref} ), "\n";
-    }
-    if ( defined $temp_directory )
-    {    #Not all programs need a temporary directory
-
-        say $FILEHANDLE "## Create temporary directory";
-        $temp_directory =~ s/(\$\w+)/"$1"/g;   #Quote any bash variables in path
-        say $FILEHANDLE q?readonly TEMP_DIRECTORY=?
-          . $temp_directory;                   #Assign batch variable
-        $temp_directory =
-          q?"$TEMP_DIRECTORY"?;    #Update perl scalar to bash variable
-        gnu_mkdir(
-            {
-                indirectory_path => $temp_directory,
-                parents          => 1,
-                FILEHANDLE       => $FILEHANDLE,
-            }
-        );
-        say $FILEHANDLE "\n";
-
-        create_housekeeping_function(
-            {
-                job_ids_ref => \@{ $job_id_href->{PAN}{PAN} },
-                sacct_format_fields_ref =>
-                  \@{ $active_parameter_href->{sacct_format_fields} },
-                log_file_path_ref  => \$active_parameter_href->{log_file},
-                FILEHANDLE         => $FILEHANDLE,
-                remove_dir         => $temp_directory,
-                trap_signals_ref   => [ "EXIT", "TERM", "INT" ],
-                trap_function_name => 'finish',
-                trap_function_call => q{$(finish } . $temp_directory . q{)},
-            }
-        );
-    }
-
-    if ($error_trap) {
-
-        ## Create debug trap
-        enable_trap(
-            {
-                FILEHANDLE         => $FILEHANDLE,
-                trap_signals_ref   => ["DEBUG"],
-                trap_function_call => q?previous_command="$BASH_COMMAND"?,
-            }
-        );
-
-        ## Create error handling function and trap
-        create_error_trap_function(
-            {
-                job_ids_ref => \@{ $job_id_href->{PAN}{PAN} },
-                sacct_format_fields_ref =>
-                  \@{ $active_parameter_href->{sacct_format_fields} },
-                log_file_path_ref  => \$active_parameter_href->{log_file},
-                FILEHANDLE         => $FILEHANDLE,
-                trap_signals_ref   => ["ERR"],
-                trap_function_name => "error",
-                trap_function_call => q{$(error "$previous_command" "$?")},
-            }
-        );
-    }
-
-    # Return filen name, file path for stdout/stderr for QC check later
-    return ( $file_name, $file_info_path . $file_name_tracker );
-}
-
 sub add_merged_infile_name {
 
 ##add_merged_infile_name
@@ -31782,108 +31549,6 @@ sub add_merged_infile_name {
         }
     }
     $file_info_href->{$sample_id}{merge_infile} = $infile;
-}
-
-sub sample_info_qc {
-
-##sample_info_qc
-
-##Function : Adds outdirectory and outfile to sample_info to track all files that QC metrics are to be extracted from later
-##Returns  : ""
-##Arguments: $sample_info_href, $program_name, $outdirectory, $outfile_ending, $outdata_type, $sample_id, $infile,
-##         : $sample_info_href => Info on samples and family hash {REF}
-##         : $program_name     => The program
-##         : $outdirectory     => The outdirectory of the QC file
-##         : $outfile_ending   => The outfile ending. Actually complete outfile for "static" & "info_directory"
-##         : $outdata_type     => Type of data produced by program (info_directory|infile_dependent|static)
-##         : $sample_id        => Sample_id for data at sample level {Optional}
-##         : $infile           => Infile for data at sample level {Optional}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $sample_info_href;
-    my $program_name;
-    my $outdirectory;
-    my $outfile_ending;
-    my $outdata_type;
-    my $sample_id;
-    my $infile;
-
-    my $tmpl = {
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name
-        },
-        outdirectory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$outdirectory
-        },
-        outfile_ending => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$outfile_ending
-        },
-        outdata_type => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            allow       => [ "static", "info_directory", "infile_dependent" ],
-            store       => \$outdata_type
-        },
-        infile    => { strict_type => 1, store => \$infile },
-        sample_id => { strict_type => 1, store => \$sample_id },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
-
-    unless ( defined($sample_id) ) {
-
-        $sample_info_href->{program}{$program_name}{outdirectory} =
-          $outdirectory;    #OutDirectory of QC file
-        $sample_info_href->{program}{$program_name}{outfile} = $outfile_ending;
-    }
-    elsif ( defined($infile) ) {
-
-        $sample_info_href->{sample}{$sample_id}{program}{$program_name}
-          {$infile}{outdirectory} = $outdirectory;    #OutDirectory of QC file
-
-        if ( $outdata_type eq "infile_dependent" )
-        {    #Programs which add a filending to infile
-
-            $sample_info_href->{sample}{$sample_id}{program}{$program_name}
-              {$infile}{outfile} =
-              $infile . $outfile_ending;    #Infile dependent QC outfile
-        }
-        else {
-
-            $sample_info_href->{sample}{$sample_id}{program}{$program_name}
-              {$infile}{outfile} =
-              $outfile_ending;    #Static QC outfile or Info stdout file
-        }
-    }
-    else {
-
-        $log->fatal(
-"Please provide infile to enable storing of sample_id data in hash\n"
-        );
-        exit 1;
-    }
 }
 
 sub split_target_file {
@@ -33934,106 +33599,6 @@ sub replace_config_parameters_with_cmd_info {
     }
 }
 
-sub adjust_core_number_to_seq_mode {
-
-##adjust_core_number_to_seq_mode
-
-##Function : Adjust the number of cores to be used in the analysis according to sequencing mode requirements.
-##Returns  : ""
-##Arguments: $core_number_ref, $sequence_run_type_ref
-##         : $core_number_ref       => The maximum number of cores to be use before printing "wait" statement {REF}
-##         : $sequence_run_type_ref => Type of sequencing [paired_end|single_end] {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $core_number_ref;
-    my $sequence_run_type_ref;
-
-    my $tmpl = {
-        core_number_ref => {
-            required    => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$core_number_ref
-        },
-        sequence_run_type_ref => {
-            required    => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$sequence_run_type_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    if ( $$sequence_run_type_ref eq "paired_end" )
-    {    #Second read direction if present
-
-        $$core_number_ref = $$core_number_ref + 2;    #2 processes per file
-    }
-    else {                                            #Single_end
-
-        $$core_number_ref = $$core_number_ref + 1;  #Only 1 file and one process
-    }
-}
-
-sub print_wait {
-
-##print_wait
-
-##Function : Calculates when to prints "wait" statement and prints "wait" to supplied FILEHANDLE when adequate.
-##Returns  : Incremented $$core_counter_ref
-##Arguments: $counter_ref, $core_number_ref, $core_counter_ref
-##         : $counter_ref      => The number of used cores {REF}
-##         : $core_number_ref  => The maximum number of cores to be use before printing "wait" statement {REF}
-##         : $core_counter_ref => Scales the number of $core_number_ref cores used after each print "wait" statement {REF}
-##         : $FILEHANDLE       => FILEHANDLE to print "wait" statment to
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $counter_ref;
-    my $core_number_ref;
-    my $core_counter_ref;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-        counter_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$counter_ref
-        },
-        core_number_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$core_number_ref
-        },
-        core_counter_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$core_counter_ref
-        },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    if ( $$counter_ref == $$core_counter_ref * $$core_number_ref )
-    {    #Using only nr of cores eq to lanes or max_cores_per_node
-
-        say $FILEHANDLE "wait", "\n";
-        $$core_counter_ref = $$core_counter_ref + 1
-          ; #Increase the maximum number of cores allowed to be used since "wait" was just printed
-    }
-}
-
 sub print_supported_annovar_table_names {
 
 ##print_supported_annovar_table_names
@@ -34931,181 +34496,6 @@ sub check_merge_picardtools_mergesamfiles_previous_bams {
     }
 }
 
-sub create_fam_file {
-
-##create_fam_file
-
-##Function : Create .fam file to be used in variant calling analyses. Also checks if file already exists when using execution_mode=sbatch.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, sample_info_href, $pedigree_file, $execution_mode, $fam_file_path, $include_header, $FILEHANDLE, $family_id_ref
-##         : $parameter_href        => Hash with paremters from yaml file {REF}
-##         : $active_parameter_href => The active parameters for this analysis hash {REF}
-##         : $sample_info_href      => Info on samples and family hash {REF}
-##         : $pedigree_file         => The supplied pedigree file to create the reduced ".fam" file from
-##         : $execution_mode        => Either system (direct) or via sbatch
-##         : $fam_file_path         => The family file path
-##         : $include_header        => Wether to include header ("1") or not ("0")
-##         : $FILEHANDLE            => Filehandle to write to {Optional unless execution_mode=sbatch}
-##         : $family_id_ref         => The family_id {REF}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $pedigree_file;
-    my $execution_mode;
-    my $include_header;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $fam_file_path;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-        parameter_href =>
-          { default => {}, strict_type => 1, store => \$parameter_href },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
-        fam_file_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$fam_file_path
-        },
-        FILEHANDLE    => { store => \$FILEHANDLE },
-        pedigree_file => {
-            default     => $arg_href->{active_parameter_href}{pedigree_file},
-            strict_type => 1,
-            store       => \$pedigree_file
-        },
-        execution_mode => {
-            default     => "sbatch",
-            allow       => [ "sbatch", "system" ],
-            strict_type => 1,
-            store       => \$execution_mode
-        },
-        include_header => {
-            default     => 1,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$include_header
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
-
-    my @fam_headers =
-      ( "#family_id", "sample_id", "father", "mother", "sex", "phenotype" );
-    my @pedigree_lines;
-    my $header;
-
-    if ($include_header) {
-
-        push( @pedigree_lines, join( "\t", @fam_headers ) );
-    }
-
-    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-        my $sample_line = $$family_id_ref;
-
-        foreach my $header (@fam_headers) {
-
-            if (
-                defined(
-                    $parameter_href->{dynamic_parameter}{$sample_id}
-                      { "plink_" . $header }
-                )
-              )
-            {
-
-                $sample_line .= "\t"
-                  . $parameter_href->{dynamic_parameter}{$sample_id}
-                  { "plink_" . $header };
-            }
-            elsif (
-                defined( $sample_info_href->{sample}{$sample_id}{$header} ) )
-            {
-
-                $sample_line .=
-                  "\t" . $sample_info_href->{sample}{$sample_id}{$header};
-            }
-        }
-        push( @pedigree_lines, $sample_line );
-    }
-    if ( $execution_mode eq "system" ) {    #Execute directly
-
-        my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-        open( $FILEHANDLE, ">", $fam_file_path )
-          or
-          $log->logdie( "Can't open '" . $fam_file_path . "': " . $! . "\n" );
-
-        foreach my $line (@pedigree_lines) {
-
-            say $FILEHANDLE $line;
-        }
-        $log->info( "Wrote: " . $fam_file_path, "\n" );
-        close($FILEHANDLE);
-    }
-    if ( $execution_mode eq "sbatch" ) {
-
-        unless ( -f $fam_file_path ) {    #Check to see if file already exists
-
-            if ($FILEHANDLE) {
-
-                say $FILEHANDLE "#Generating '.fam' file";
-
-                use MIP::Gnu::Coreutils qw(gnu_echo);
-
-                ## Get parameters
-                my @strings = map { $_ . q?\n? } @pedigree_lines;
-
-                gnu_echo(
-                    {
-                        strings_ref           => \@strings,
-                        outfile_path          => $fam_file_path,
-                        enable_interpretation => 1,
-                        no_trailing_newline   => 1,
-                        FILEHANDLE            => $FILEHANDLE,
-                    }
-                );
-                say $FILEHANDLE "\n";
-            }
-            else {
-
-                $log->fatal(
-"Create fam file[subroutine]:Using 'execution_mode=sbatch' requires a filehandle to write to. Please supply filehandle to subroutine call.",
-                    "\n"
-                );
-                exit 1;
-            }
-        }
-    }
-
-    ## Add newly created family file to qc_sample_info
-    $sample_info_href->{pedigree_minimal} = $fam_file_path;
-}
 
 sub check_annovar_tables {
 
@@ -35502,161 +34892,6 @@ sub collect_outfile {
     }
 }
 
-sub migrate_files {
-
-##migrate_files
-
-##Function : Copies files from source to destination.
-##Returns  : ""
-##Arguments: $infiles_ref, $outfile_path, $FILEHANDLE, $indirectory, $core_number, $file_ending
-##         : $infiles_ref  => The array of files to copy
-##         : $outfile_path => Outfile path
-##         : $FILEHANDLE   => Filehandle to write to
-##         : $indirectory  => The directory for the files to be copied
-##         : $core_number  => The number of cores that can be used
-##         : $file_ending  => File ending for infiles. {Optional}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $file_ending;
-
-    ## Flatten argument(s)
-    my $infiles_ref;
-    my $outfile_path;
-    my $FILEHANDLE;
-    my $indirectory;
-    my $core_number;
-
-    my $tmpl = {
-        infiles_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$infiles_ref
-        },
-        outfile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$outfile_path
-        },
-        FILEHANDLE  => { required => 1, defined => 1, store => \$FILEHANDLE },
-        indirectory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$indirectory
-        },
-        core_number => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$core_number
-        },
-        file_ending => {
-            default     => "",
-            strict_type => 1,
-            store       => \$file_ending
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    my $core_counter = 1;
-
-    say $FILEHANDLE "## Copying file(s) to destination directory";
-    while ( my ( $file_index, $file ) = each($infiles_ref) ) {    #For all files
-
-        print_wait(
-            {
-                counter_ref      => \$file_index,
-                core_number_ref  => \$core_number,
-                core_counter_ref => \$core_counter,
-                FILEHANDLE       => $FILEHANDLE,
-            }
-        );
-
-        ## Copies file to destination
-        migrate_file(
-            {
-                FILEHANDLE   => $FILEHANDLE,
-                infile_path  => catfile( $indirectory, $file . $file_ending ),
-                outfile_path => $outfile_path,
-            }
-        );
-    }
-    say $FILEHANDLE "wait", "\n";
-}
-
-sub migrate_file {
-
-##migrate_file
-
-##Function : Copy file to from source ($infile_path) to destination ($outfile_path).
-##Returns  : "$infile_path_file_name"
-##Arguments: $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $xargs
-##         : $FILEHANDLE      => Filehandle to write to
-##         : $infile_path     => Infile path
-##         : $outfile_path    => Outfile path
-##         : $stderrfile_path => Stderrfile path
-##         : $xargs           => Use xargs if defined {Optional}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $FILEHANDLE;
-    my $infile_path;
-    my $outfile_path;
-    my $stderrfile_path;
-    my $xargs;
-
-    my $tmpl = {
-        FILEHANDLE  => { required => 1, defined => 1, store => \$FILEHANDLE },
-        infile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$infile_path
-        },
-        outfile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$outfile_path
-        },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        xargs           => { strict_type => 1, store => \$xargs },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
-
-    use MIP::Gnu::Coreutils qw(gnu_cp);
-
-    ## Split relative infile_path to file(s)
-    my ( $infile_path_volume, $infile_path_directory, $infile_path_file_name )
-      = File::Spec->splitpath($infile_path);
-
-    gnu_cp(
-        {
-            FILEHANDLE      => $FILEHANDLE,
-            preserve        => 1,
-            infile_path     => $infile_path,
-            outfile_path    => $outfile_path,
-            stderrfile_path => $stderrfile_path,
-        }
-    );
-
-    if ( !defined($xargs) ) {    #For print wait statement
-
-        say $FILEHANDLE "& ";
-    }
-    print $FILEHANDLE "\n";
-
-    return $infile_path_file_name;
-}
-
 sub remove_files {
 
 ##remove_files
@@ -35711,17 +34946,19 @@ sub remove_files {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    my $core_counter = 1;
+    use MIP::Processmanagement::Processes qw(print_wait);
+
+    my $process_batches_count = 1;
 
     say $FILEHANDLE "## Remove file(s)";
     while ( my ( $file_index, $file ) = each($infiles_ref) ) {    #For all files
 
-        print_wait(
+        $process_batches_count = print_wait(
             {
-                counter_ref      => \$file_index,
-                core_number_ref  => \$core_number,
-                core_counter_ref => \$core_counter,
-                FILEHANDLE       => $FILEHANDLE,
+                process_counter       => $file_index,
+                max_process_number    => $core_number,
+                process_batches_count => $process_batches_count,
+                FILEHANDLE            => $FILEHANDLE,
             }
         );
 
@@ -35735,7 +34972,7 @@ sub remove_files {
         );
         print $FILEHANDLE "&", "\n";
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 }
 
 sub remove_contig_files {
@@ -35799,21 +35036,22 @@ sub remove_contig_files {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Processmanagement::Processes qw(print_wait);
     use MIP::Gnu::Coreutils qw(gnu_rm);
 
-    my $core_counter = 1;
+    my $process_batches_count = 1;
 
     ## Remove infile at indirectory
     say $FILEHANDLE "## Remove file at indirectory";
 
     while ( my ( $index, $element ) = each(@$file_elements_ref) ) {
 
-        print_wait(
+        $process_batches_count = print_wait(
             {
-                counter_ref      => \$index,
-                core_number_ref  => \$core_number,
-                core_counter_ref => \$core_counter,
-                FILEHANDLE       => $FILEHANDLE,
+                process_counter       => $index,
+                max_process_number    => $core_number,
+                process_batches_count => $process_batches_count,
+                FILEHANDLE            => $FILEHANDLE,
             }
         );
 
@@ -35828,7 +35066,7 @@ sub remove_contig_files {
         );
         say $FILEHANDLE "& ";
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 }
 
 sub core2 {
@@ -36131,6 +35369,8 @@ sub xargs_migrate_contig_files {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::IO::Files qw(migrate_file);
+
     my $xargs_file_name;
 
     ## Create file commands for xargs
@@ -36155,13 +35395,13 @@ sub xargs_migrate_contig_files {
                 {
                     FILEHANDLE  => $XARGSFILEHANDLE,
                     infile_path => catfile(
-                        $indirectory, $infile . "_" . $contig . $file_ending
+                        $indirectory, $infile . q{_} . $contig . $file_ending
                     ),
                     outfile_path    => $temp_directory,
-                    xargs           => "xargs",
-                    stderrfile_path => $xargs_file_name . "."
+                    xargs           => 'xargs',
+                    stderrfile_path => $xargs_file_name . q{.}
                       . $contig
-                      . ".stderr.txt",
+                      . q{.stderr.txt},
                 }
             );
         }
@@ -36172,14 +35412,14 @@ sub xargs_migrate_contig_files {
                 {
                     infile_path => catfile(
                         $temp_directory,
-                        $outfile . "_" . $contig . $file_ending
+                        $outfile . q{_} . $contig . $file_ending
                     ),
                     outfile_path    => $outdirectory,
                     FILEHANDLE      => $XARGSFILEHANDLE,
-                    xargs           => "xargs",
-                    stderrfile_path => $xargs_file_name . "."
+                    xargs           => 'xargs',
+                    stderrfile_path => $xargs_file_name . q{.}
                       . $contig
-                      . ".stderr.txt",
+                      . q{.stderr.txt},
                 }
             );
         }
@@ -37363,46 +36603,61 @@ sub add_to_sample_info {
         $sample_info_href->{expected_coverage} =
           $active_parameter_href->{expected_coverage};
     }
-    if ( exists( $active_parameter_href->{gatk_path} ) ) {
+    if ( exists $active_parameter_href->{gatk_path} ) {
 
+        my $gatk_version;
         if ( $active_parameter_href->{gatk_path} =~ /GenomeAnalysisTK-([^,]+)/ )
         {
 
-            $sample_info_href->{program}{gatk}{version} = $1;
+            $gatk_version = $1;
         }
         else {    #Fall back on actually calling program
 
             my $jar_path = catfile( $active_parameter_href->{gatk_path},
                 "GenomeAnalysisTK.jar" );
-            my $ret = (`java -jar $jar_path --version 2>&1`);
-            chomp($ret);
-            $sample_info_href->{program}{gatk}{version} = $ret;
+            $gatk_version = (`java -jar $jar_path --version 2>&1`);
+            chomp $gatk_version;
         }
+        add_program_outfile_to_sample_info(
+            {
+                sample_info_href => $sample_info_href,
+                program_name     => 'gatk',
+                version          => $gatk_version,
+            }
+        );
     }
-    if ( exists( $active_parameter_href->{picardtools_path} ) )
-    {             #To enable addition of version to sample_info
+    if ( exists $active_parameter_href->{picardtools_path} )
+    {    #To enable addition of version to sample_info
 
+        my $picardtools_version;
         if ( $active_parameter_href->{picardtools_path} =~
             /picard-tools-([^,]+)/ )
         {
 
-            $sample_info_href->{program}{picardtools}{version} = $1;
+            $picardtools_version = $1;
         }
         else {    #Fall back on actually calling program
 
             my $jar_path = catfile( $active_parameter_href->{picardtools_path},
                 "picard.jar" );
-            my $ret =
+            $picardtools_version =
               (`java -jar $jar_path CreateSequenceDictionary --version 2>&1`);
-            chomp($ret);
-            $sample_info_href->{program}{picardtools}{version} = $ret;
+            chomp $picardtools_version;
         }
+
+        add_program_outfile_to_sample_info(
+            {
+                sample_info_href => $sample_info_href,
+                program_name     => 'picardtools',
+                version          => $picardtools_version,
+            }
+        );
     }
     my @sambamba_programs =
       ( "pbwa_mem", "psambamba_depth", "markduplicates_sambamba_markdup" );
     foreach my $program (@sambamba_programs) {
 
-        if (   ( exists( $active_parameter_href->{$program} ) )
+        if (   ( exists $active_parameter_href->{$program} )
             && ( $active_parameter_href->{$program} == 1 ) )
         {
 
@@ -37410,14 +36665,20 @@ sub add_to_sample_info {
 
                 my $regexp =
                   q?perl -nae 'if($_=~/sambamba\s(\S+)/) {print $1;last;}'?;
-                my $ret = (`sambamba 2>&1 | $regexp`);
-                chomp($ret);
-                $sample_info_href->{program}{sambamba}{version} = $ret;
+                my $sambamba_version = (`sambamba 2>&1 | $regexp`);
+                chomp $sambamba_version;
+                add_program_outfile_to_sample_info(
+                    {
+                        sample_info_href => $sample_info_href,
+                        program_name     => 'sambamba',
+                        version          => $sambamba_version,
+                    }
+                );
                 last;    #Only need to check once
             }
         }
     }
-    if ( exists( $active_parameter_href->{pcnvnator} ) )
+    if ( exists $active_parameter_href->{pcnvnator} )
     {                    #To enable addition of version to sample_info
 
         if (   ( $active_parameter_href->{pcnvnator} == 1 )
@@ -37426,9 +36687,15 @@ sub add_to_sample_info {
 
             my $regexp =
               q?perl -nae 'if($_=~/CNVnator\s+(\S+)/) {print $1;last;}'?;
-            my $ret = (`cnvnator 2>&1 | $regexp`);
-            chomp($ret);
-            $sample_info_href->{program}{cnvnator}{version} = $ret;
+            my $cnvnator_version = (`cnvnator 2>&1 | $regexp`);
+            chomp $cnvnator_version;
+            add_program_outfile_to_sample_info(
+                {
+                    sample_info_href => $sample_info_href,
+                    program_name     => 'cnvnator',
+                    version          => $cnvnator_version,
+                }
+            );
         }
     }
     if ( defined($$human_genome_reference_ref) )
@@ -38133,6 +37400,7 @@ sub vt_core {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Script::Setup_script qw(setup_script);
     use MIP::Gnu::Software::Gnu_less qw(gnu_less);
     use MIP::Gnu::Software::Gnu_sed qw(gnu_sed);
     use Program::Variantcalling::Mip qw(calculate_af max_af);
@@ -38150,7 +37418,7 @@ sub vt_core {
         $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = program_prerequisites(
+        ( $file_name, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -39825,8 +39093,9 @@ sub rename_vcf_samples {
     gnu_printf(
         {
             format_string => $format_string,
-            outfile_path  => catfile( $$temp_directory_ref, "sample_name.txt" ),
-            FILEHANDLE    => $FILEHANDLE,
+            stdoutfile_path =>
+              catfile( $$temp_directory_ref, "sample_name.txt" ),
+            FILEHANDLE => $FILEHANDLE,
         }
     );
     say $FILEHANDLE "\n";
@@ -40605,8 +39874,10 @@ sub generate_contig_specific_target_bed_file {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    my $core_number  = $active_parameter_href->{max_cores_per_node};
-    my $core_counter = 1;
+    use MIP::Processmanagement::Processes qw(print_wait);
+
+    my $core_number           = $active_parameter_href->{max_cores_per_node};
+    my $process_batches_count = 1;
 
     say $FILEHANDLE "## Generate contig specific interval_list\n";
 
@@ -40614,12 +39885,12 @@ sub generate_contig_specific_target_bed_file {
         each( @{ $file_info_href->{contigs_size_ordered} } ) )
     {
 
-        print_wait(
+        $process_batches_count = print_wait(
             {
-                counter_ref      => \$contig_index,
-                core_number_ref  => \$core_number,
-                core_counter_ref => \$core_counter,
-                FILEHANDLE       => $FILEHANDLE,
+                process_counter       => $contig_index,
+                max_process_number    => $core_number,
+                process_batches_count => $process_batches_count,
+                FILEHANDLE            => $FILEHANDLE,
             }
         );
 
@@ -40635,7 +39906,7 @@ sub generate_contig_specific_target_bed_file {
             }
         );
     }
-    say $FILEHANDLE "wait", "\n";
+    say $FILEHANDLE q{wait}, "\n";
 }
 
 sub replace_iupac {
@@ -41835,6 +41106,7 @@ sub prepare_gatk_target_intervals {
       $arg_href->{target_interval_file_list_ref};
     my $temp_directory_ref = $arg_href->{temp_directory_ref};
 
+    use MIP::IO::Files qw(migrate_file);
     use MIP::Gnu::Coreutils qw(gnu_mv);
 
     if (   ( $$analysis_type_ref eq "wes" )
