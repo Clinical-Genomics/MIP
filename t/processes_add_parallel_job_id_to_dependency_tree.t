@@ -27,8 +27,9 @@ use Script::Utils qw{help};
 our $USAGE = build_usage( {} );
 
 ##Constants
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
+Readonly my $NEWLINE    => qq{\n};
+Readonly my $SPACE      => q{ };
+Readonly my $UNDERSCORE => q{_};
 
 my $VERBOSE = 1;
 our $VERSION = q{1.0.0};
@@ -65,6 +66,8 @@ BEGIN {
     my %perl_module;
 
     $perl_module{'Script::Utils'} = [qw{help}];
+
+  MODULES:
     while ( my ( $module, $module_import ) = each %perl_module ) {
         use_ok( $module, @{$module_import} )
           or BAIL_OUT q{Cannot load } . $module;
@@ -72,22 +75,25 @@ BEGIN {
 
 ##Modules
     my @modules = ('MIP::Processmanagement::Processes');
+
+  MODULES:
     for my $module (@modules) {
         require_ok($module) or BAIL_OUT q{Cannot load } . $module;
     }
 }
 
-use MIP::Processmanagement::Processes qw{push_to_job_id};
+use MIP::Processmanagement::Processes
+  qw{add_parallel_job_id_to_dependency_tree};
 
 diag(
-"Test push_to_job_id $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test add_parallel_job_id_to_dependency_tree $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments
 my $sample_id           = q{sample1};
 my $path                = q{MAIN};
-my $family_id_chain_key = q{family1} . q{_} . $path;
-my $sample_id_chain_key = $sample_id . q{_MAIN};
+my $family_id_chain_key = q{family1} . $UNDERSCORE . $path;
+my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
 my $chain_key_parallel  = q{parallel};
 
 my %infile_lane_prefix = (
@@ -106,7 +112,7 @@ my %job_id = (
 );
 
 ### No previous parallel job_ids
-push_to_job_id(
+add_parallel_job_id_to_dependency_tree(
     {
         infile_lane_prefix_href => \%infile_lane_prefix,
         job_id_href             => \%job_id,
@@ -114,7 +120,6 @@ push_to_job_id(
         sample_id_chain_key     => $sample_id_chain_key,
         path                    => $path,
         sample_id               => $sample_id,
-        chain_key_type          => $chain_key_parallel,
     }
 );
 my $no_parallel_push_result = join $SPACE,
@@ -128,13 +133,18 @@ while ( my ($infile_index) = each $infile_lane_prefix{$sample_id} ) {
 
     # Set key
     my $chain_key_parallel_job =
-      $sample_id . q{_} . $chain_key_parallel . q{_} . $path . $infile_index;
+        $sample_id
+      . $UNDERSCORE
+      . $chain_key_parallel
+      . $UNDERSCORE
+      . $path
+      . $infile_index;
 
     push @{ $job_id{$family_id_chain_key}{$chain_key_parallel_job} },
       q{job_id_} . $infile_index;
 }
 
-push_to_job_id(
+add_parallel_job_id_to_dependency_tree(
     {
         infile_lane_prefix_href => \%infile_lane_prefix,
         job_id_href             => \%job_id,
@@ -142,7 +152,6 @@ push_to_job_id(
         sample_id_chain_key     => $sample_id_chain_key,
         path                    => $path,
         sample_id               => $sample_id,
-        chain_key_type          => $chain_key_parallel,
     }
 );
 
@@ -152,104 +161,6 @@ is(
     $parallel_push_result,
     q{job_id_1 job_id_2 job_id_0 job_id_1},
     q{Push parallel job_id}
-);
-
-###Merged jobs
-
-# Reset parameters for new sample_id
-$sample_id           = q{sample2};
-$sample_id_chain_key = $sample_id . q{_MAIN};
-
-my $chain_key_merged_job = $family_id_chain_key . q{_} . $sample_id_chain_key;
-my $chain_key_merged     = q{merged};
-
-push_to_job_id(
-    {
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        job_id_href             => \%job_id,
-        family_id_chain_key     => $family_id_chain_key,
-        sample_id_chain_key     => $sample_id_chain_key,
-        path                    => $path,
-        sample_id               => $sample_id,
-        chain_key_type          => $chain_key_merged,
-    }
-);
-
-my $no_merged_push_result = join $SPACE,
-  @{ $job_id{$family_id_chain_key}{$sample_id_chain_key} };
-is( $no_merged_push_result, q{job_id_3}, q{No merged job_id} );
-
-## Add previous merged job
-$job_id{$family_id_chain_key}{$chain_key_merged_job} = [qw{job_id_0 job_id_1}];
-
-push_to_job_id(
-    {
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        job_id_href             => \%job_id,
-        family_id_chain_key     => $family_id_chain_key,
-        sample_id_chain_key     => $sample_id_chain_key,
-        path                    => $path,
-        sample_id               => $sample_id,
-        chain_key_type          => $chain_key_merged,
-    }
-);
-
-my $merged_push_result = join $SPACE,
-  @{ $job_id{$family_id_chain_key}{$sample_id_chain_key} };
-is(
-    $merged_push_result,
-    q{job_id_3 job_id_0 job_id_1},
-    q{Pushed merged job_id}
-);
-
-###Family_merged jobs
-
-# Reset parameters for new sample_id
-$sample_id           = q{sample3};
-$sample_id_chain_key = $sample_id . q{_MAIN};
-
-my $chain_key_family_merged_job =
-  $family_id_chain_key . q{_} . $sample_id_chain_key;
-my $chain_key_family_merged = q{family_merged};
-
-push_to_job_id(
-    {
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        job_id_href             => \%job_id,
-        family_id_chain_key     => $family_id_chain_key,
-        sample_id_chain_key     => $sample_id_chain_key,
-        path                    => $path,
-        sample_id               => $sample_id,
-        chain_key_type          => $chain_key_family_merged,
-    }
-);
-
-my $no_family_merged_push_result = join $SPACE,
-  @{ $job_id{$family_id_chain_key}{$family_id_chain_key} };
-is( $no_family_merged_push_result, q{job_id_6}, q{No family_merged job_id} );
-
-## Add previous merged job
-$job_id{$family_id_chain_key}{$chain_key_family_merged_job} =
-  [qw{job_id_0 job_id_1}];
-
-push_to_job_id(
-    {
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        job_id_href             => \%job_id,
-        family_id_chain_key     => $family_id_chain_key,
-        sample_id_chain_key     => $sample_id_chain_key,
-        path                    => $path,
-        sample_id               => $sample_id,
-        chain_key_type          => $chain_key_family_merged,
-    }
-);
-
-my $family_merged_push_result = join $SPACE,
-  @{ $job_id{$family_id_chain_key}{$family_id_chain_key} };
-is(
-    $family_merged_push_result,
-    q{job_id_6 job_id_0 job_id_1},
-    q{Pushed family_merged job_id}
 );
 
 done_testing();

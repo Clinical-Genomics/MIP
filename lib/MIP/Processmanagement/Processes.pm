@@ -29,39 +29,38 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{push_to_job_id print_wait};
+    our @EXPORT_OK =
+      qw{add_parallel_job_id_to_dependency_tree add_merged_job_id_to_dependency_tree add_family_merged_job_id_to_dependency_tree print_wait};
 
 }
 
 ##Constants
-Readonly my $NEWLINE => qq{\n};
+Readonly my $NEWLINE    => qq{\n};
+Readonly my $UNDERSCORE => q{_};
 
-sub push_to_job_id {
+sub add_parallel_job_id_to_dependency_tree {
 
-##push_to_job_id
+##add_parallel_job_id_to_dependency_tree
 
-##Function : Saves job_id to the correct hash array depending on chain type.
+##Function : Saves job_id to the correct hash array in dependency tree hash depending on chain type.
 ##Returns  : ""
-##Arguments: $job_id_href, $infile_lane_prefix_href, $family_id_chain_key, $sample_id_chain_key, $sample_id, $path, $chain_key_type
+##Arguments: $job_id_href, $infile_lane_prefix_href, $family_id_chain_key, $sample_id_chain_key, $sample_id, $path
 ##         : $job_id_href             => Info on jobIds hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $family_id_chain_key     => Family ID chain hash key
 ##         : $sample_id_chain_key     => Sample ID chain hash key
 ##         : $sample_id               => Sample ID
 ##         : $path                    => Trunk or branch
-##         : $chain_key_type          => 'parallel', 'merged' or 'family_merged'
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $parallel_chains_ref;
     my $family_id_chain_key;
     my $sample_id_chain_key;
     my $sample_id;
     my $path;
-    my $chain_key_type;
 
     my $tmpl = {
         infile_lane_prefix_href => {
@@ -78,8 +77,6 @@ sub push_to_job_id {
             strict_type => 1,
             store       => \$job_id_href
         },
-        parallel_chains_ref =>
-          { default => [], strict_type => 1, store => \$parallel_chains_ref },
         family_id_chain_key => {
             required    => 1,
             defined     => 1,
@@ -95,87 +92,179 @@ sub push_to_job_id {
         sample_id => { strict_type => 1, store => \$sample_id },
         path =>
           { required => 1, defined => 1, strict_type => 1, store => \$path },
-        chain_key_type => {
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+
+    my $chain_key_type = q{parallel};
+    my $parallel_jobs_chain_key;
+
+    ## Push parallel job_ids
+  INFILES:
+    while ( my ($infile_index) = each $infile_lane_prefix_href->{$sample_id} ) {
+
+        # Set key
+        $parallel_jobs_chain_key =
+            $sample_id
+          . $UNDERSCORE
+          . $chain_key_type
+          . $UNDERSCORE
+          . $path
+          . $infile_index;
+
+        ## If parellel job_ids exists
+        if (
+            exists $job_id_href->{$family_id_chain_key}
+            {$parallel_jobs_chain_key} )
+        {
+
+            # Alias job_ids array for sample_id in job_id_href to push to
+            my $sample_id_job_ids_ref =
+              \@{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} };
+
+            # Alias parallel job_ids array to push from
+            my $job_ids_ref =
+              \@{ $job_id_href->{$family_id_chain_key}{$parallel_jobs_chain_key}
+              };
+
+            push $sample_id_job_ids_ref, @{$job_ids_ref};
+        }
+    }
+    return;
+}
+
+sub add_merged_job_id_to_dependency_tree {
+
+##add_merged_job_id_to_dependency_tree
+
+##Function : Saves job_id to the correct hash array depending on chain type.
+##Returns  : ""
+##Arguments: $job_id_href, $family_id_chain_key, $sample_id_chain_key
+##         : $job_id_href         => Info on jobIds hash {REF}
+##         : $family_id_chain_key => Family ID chain hash key
+##         : $sample_id_chain_key => Sample ID chain hash key
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $job_id_href;
+    my $family_id_chain_key;
+    my $sample_id_chain_key;
+
+    my $tmpl = {
+        job_id_href => {
             required    => 1,
             defined     => 1,
-            allow       => [qw{parallel merged family_merged}],
+            default     => {},
             strict_type => 1,
-            store       => \$chain_key_type
+            store       => \$job_id_href
+        },
+        family_id_chain_key => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$family_id_chain_key
+        },
+        sample_id_chain_key => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$sample_id_chain_key
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
 
+    my $chain_key_type = q{merged};
+    my $merged_chain_key;
+
+    ## Push merged jobs
+
+    # Set key
+    $merged_chain_key =
+      $family_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
+
+    # If merged job ids exists
+    if ( exists $job_id_href->{$family_id_chain_key}{$merged_chain_key} ) {
+
+        # Alias merged job_ids array to push from
+        my $job_ids_ref =
+          \@{ $job_id_href->{$family_id_chain_key}{$merged_chain_key} };
+
+        # Alias job_ids array for sample_id in job_id_href to push to
+        my $sample_id_job_ids_ref =
+          \@{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} };
+
+        # Add job_ids to sample_id job_ids
+        push $sample_id_job_ids_ref, @{$job_ids_ref};
+    }
+    return;
+}
+
+sub add_family_merged_job_id_to_dependency_tree {
+
+##add_family_merged_job_id_to_dependency_tree
+
+##Function : Saves job_id to the correct hash array depending on chain type.
+##Returns  : ""
+##Arguments: $job_id_href, $family_id_chain_key, $sample_id_chain_key
+##         : $job_id_href         => Info on jobIds hash {REF}
+##         : $family_id_chain_key => Family ID chain hash key
+##         : $sample_id_chain_key => Sample ID chain hash key
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $job_id_href;
+    my $family_id_chain_key;
+    my $sample_id_chain_key;
+
+    my $tmpl = {
+        job_id_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$job_id_href
+        },
+        family_id_chain_key => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$family_id_chain_key
+        },
+        sample_id_chain_key => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$sample_id_chain_key
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+
+    my $chain_key_type = q{family_merged};
     my $chain_key;
 
-    ## Push parallel job_ids
-    if ( $chain_key_type eq q{parallel} ) {
+    ## Push family_merged jobs
 
-      INFILES:
-        while ( my ($infile_index) =
-            each $infile_lane_prefix_href->{$sample_id} )
-        {
+    # Set key
+    $chain_key = $family_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
 
-            # Set key
-            $chain_key =
-                $sample_id . q{_}
-              . $chain_key_type . q{_}
-              . $path
-              . $infile_index;
+    # If family_merged job ids exists
+    if ( exists $job_id_href->{$family_id_chain_key}{$chain_key} ) {
 
-            ## If parellel job_ids exists
-            if ( exists $job_id_href->{$family_id_chain_key}{$chain_key} ) {
+        # Alias family_merged job_ids array to push from
+        my $job_ids_ref =
+          \@{ $job_id_href->{$family_id_chain_key}{$chain_key} };
 
-                # Alias job_ids array for sample_id in job_id_href to push to
-                my $sample_id_job_ids_ref =
-                  \@{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key}
-                  };
+        ## Use $family_id_chain_key instead of $sample_id_chain_key
+        # Alias job_ids array for family_id in job_id_href to push to
+        my $family_id_job_ids_ref =
+          \@{ $job_id_href->{$family_id_chain_key}{$family_id_chain_key} };
 
-                # Alias parallel job_ids array to push from
-                my $job_ids_ref =
-                  \@{ $job_id_href->{$family_id_chain_key}{$chain_key} };
-
-                push $sample_id_job_ids_ref, @{$job_ids_ref};
-            }
-        }
-    }
-    elsif (( $chain_key_type eq q{merged} )
-        || ( $chain_key_type eq q{family_merged} ) )
-    {
-        # Push merged jobs
-
-        # Set key
-        $chain_key = $family_id_chain_key . q{_} . $sample_id_chain_key;
-
-        # If merged job ids exists
-        if ( exists $job_id_href->{$family_id_chain_key}{$chain_key} ) {
-
-            # Alias parallel job_ids array to push from
-            my $job_ids_ref =
-              \@{ $job_id_href->{$family_id_chain_key}{$chain_key} };
-
-            # Use $family_id_chain_key instead of $sample_id_chain_key
-            if ( $chain_key_type eq q{family_merged} ) {
-
-                # Alias job_ids array for sample_id in job_id_href to push to
-                my $family_id_job_ids_ref =
-                  \@{ $job_id_href->{$family_id_chain_key}{$family_id_chain_key}
-                  };
-
-                # Add job_ids to family_id job_ids
-                push $family_id_job_ids_ref, @{$job_ids_ref};
-            }
-            else {
-
-                # Alias job_ids array for sample_id in job_id_href to push to
-                my $sample_id_job_ids_ref =
-                  \@{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key}
-                  };
-
-                # Add job_ids to sample_id job_ids
-                push $sample_id_job_ids_ref, @{$job_ids_ref};
-            }
-        }
+        # Add job_ids to family_id job_ids
+        push $family_id_job_ids_ref, @{$job_ids_ref};
     }
     return;
 }

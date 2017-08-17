@@ -47,7 +47,6 @@ use MIP::Get::Analysis qw(get_overall_analysis_type);
 
 our $USAGE = build_usage( {} );
 
-
 BEGIN {
 
     my @modules = (
@@ -714,7 +713,7 @@ foreach my $order_parameter_element (@order_parameters) {
     if ( $order_parameter_element eq 'analysis_type' ) {
 
         ## Detect if all samples has the same sequencing type and return consensus if reached
-      $parameter{dynamic_parameter}{consensus_analysis_type} =
+        $parameter{dynamic_parameter}{consensus_analysis_type} =
           get_overall_analysis_type(
             { analysis_type_hef => \%{ $active_parameter{analysis_type} }, } );
     }
@@ -2733,7 +2732,6 @@ if ( $active_parameter{sample_info_file} ne 0 ) { #Write SampleInfo to yaml file
     );
     $log->info( "Wrote: " . $active_parameter{sample_info_file}, "\n" );
 }
-
 
 ######################
 ####Sub routines######
@@ -25486,8 +25484,11 @@ sub mfastqc {
     use MIP::Gnu::Coreutils qw(gnu_cp);
     use Program::Qc::Fastqc qw(fastqc);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
-    use MIP::Processmanagement::Slurm_processes qw(slurm_submit_job_no_dependency_dead_end);
+    use MIP::Processmanagement::Slurm_processes
+      qw(slurm_submit_job_no_dependency_dead_end);
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -25643,10 +25644,13 @@ sub mfastqc {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-      slurm_submit_job_no_dependency_dead_end({job_id_href => $job_id_href,
-					       sbatch_file_name => $file_name,
-					       log => $log,
-					      });
+        slurm_submit_job_no_dependency_dead_end(
+            {
+                job_id_href      => $job_id_href,
+                sbatch_file_name => $file_name,
+                log              => $log,
+            }
+        );
     }
 }
 
@@ -26293,6 +26297,8 @@ sub build_annovar_prerequisites {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Gnu::Coreutils qw(gnu_mkdir);
+    use MIP::Processmanagement::Slurm_processes
+      qw(slurm_submit_job_no_dependency_add_to_case);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger('MIP');
@@ -26649,15 +26655,16 @@ sub build_annovar_prerequisites {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        submit_job(
+        my $slurm_path = $parameter_href->{ "p" . $program_name }{chain};
+
+        slurm_submit_job_no_dependency_add_to_case(
             {
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                dependencies            => "no_dependency_add_to_case",
-                path => $parameter_href->{ "p" . $program_name }{chain},
-                sbatch_file_name => $file_name
+                job_id_href    => $job_id_href,
+                sample_ids_ref => \@{ $active_parameter_href->{sample_ids} },
+                family_id_chain_key => $$family_id_ref . q{_} . $slurm_path,
+                path                => $slurm_path,
+                sbatch_file_name    => $file_name,
+                log                 => $log,
             }
         );
     }
@@ -26773,6 +26780,8 @@ sub build_ptchs_metric_prerequisites {
     use MIP::Gnu::Coreutils qw(gnu_rm gnu_cat);
     use Language::Java qw(core);
     use Program::Interval::Picardtools qw(intervallisttools);
+    use MIP::Processmanagement::Slurm_processes
+      qw(slurm_submit_job_no_dependency_add_to_case);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger('MIP');
@@ -26999,15 +27008,17 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
             && ( !$active_parameter_href->{dry_run_all} ) )
         {
 
-            submit_job(
+            my $slurm_path = q{MAIN};
+
+            slurm_submit_job_no_dependency_add_to_case(
                 {
-                    active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
-                    job_id_href             => $job_id_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    dependencies            => "no_dependency_add_to_case",
-                    path                    => "MAIN",
-                    sbatch_file_name        => $file_name
+                    job_id_href => $job_id_href,
+                    sample_ids_ref =>
+                      \@{ $active_parameter_href->{sample_ids} },
+                    family_id_chain_key => $$family_id_ref . q{_} . $slurm_path,
+                    path                => $slurm_path,
+                    sbatch_file_name    => $file_name,
+                    log                 => $log,
                 }
             );
         }
@@ -27136,6 +27147,8 @@ sub build_bwa_prerequisites {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::Processmanagement::Slurm_processes
+      qw(slurm_submit_job_no_dependency_add_to_case);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger('MIP');
@@ -27213,15 +27226,16 @@ sub build_bwa_prerequisites {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        submit_job(
+        my $slurm_path = $parameter_href->{ "p" . $program_name }{chain};
+
+        slurm_submit_job_no_dependency_add_to_case(
             {
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                dependencies            => "no_dependency_add_to_case",
-                path => $parameter_href->{ "p" . $program_name }{chain},
-                sbatch_file_name => $file_name
+                job_id_href    => $job_id_href,
+                sample_ids_ref => \@{ $active_parameter_href->{sample_ids} },
+                family_id_chain_key => $$family_id_ref . q{_} . $slurm_path,
+                path                => $slurm_path,
+                sbatch_file_name    => $file_name,
+                log                 => $log,
             }
         );
     }
@@ -27572,6 +27586,8 @@ sub build_human_genome_prerequisites {
     use MIP::Gnu::Coreutils qw(gnu_rm);
     use Program::Compression::Gzip qw(gzip);
     use Language::Java qw(core);
+    use MIP::Processmanagement::Slurm_processes
+      qw(slurm_submit_job_no_dependency_add_to_case);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger('MIP');
@@ -27768,15 +27784,17 @@ sub build_human_genome_prerequisites {
             && ( !$active_parameter_href->{dry_run_all} ) )
         {
 
-            submit_job(
+            my $slurm_path = q{MAIN};
+
+            slurm_submit_job_no_dependency_add_to_case(
                 {
-                    active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
-                    job_id_href             => $job_id_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    dependencies            => "no_dependency_add_to_case",
-                    path                    => "MAIN",
-                    sbatch_file_name        => $file_name
+                    job_id_href => $job_id_href,
+                    sample_ids_ref =>
+                      \@{ $active_parameter_href->{sample_ids} },
+                    family_id_chain_key => $$family_id_ref . q{_} . $slurm_path,
+                    path                => $slurm_path,
+                    sbatch_file_name    => $file_name,
+                    log                 => $log,
                 }
             );
         }
@@ -28189,7 +28207,6 @@ sub submit_job {
 ##3 = Dependent on earlier scripts and executed in parallel within step (sample_id_dependency_step_in_parallel)
 ##4 = Dependent on earlier scripts and parallel scripts and executed in parallel within step (sample_id_and_parallel_dependency_step_in_parallel)
 ##5 = Dependent on earlier scripts both family_id and sample_id and adds to both family_id and sample_id jobs (case_dependency_add_to_case)
-##6 = Not dependent on earlier scripts and adds to sample_id jobs and family_id jobs, but sbatch is processed at family level i.e. affects all sample_id jobs e.g. building a reference (no_dependency_add_to_case)
 ##7 = Dependent on all earlier scripts in selected chains for family_id jobs i.e. wait for chains jobs before launching (chain_and_parallel_dependency)
 
 ###Chain
@@ -28249,7 +28266,7 @@ sub submit_job {
             required => 1,
             defined  => 1,
             allow    => [
-                qw{no_dependency_dead_end no_dependency case_dependency case_dependency_dead_end sample_id_dependency_step_in_parallel sample_id_and_parallel_dependency_step_in_parallel case_dependency_add_to_case no_dependency_add_to_case chain_and_parallel_dependency}
+                qw{no_dependency case_dependency case_dependency_dead_end sample_id_dependency_step_in_parallel sample_id_and_parallel_dependency_step_in_parallel case_dependency_add_to_case chain_and_parallel_dependency}
             ],
             strict_type => 1,
             store       => \$dependencies
@@ -28283,7 +28300,8 @@ sub submit_job {
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     use Readonly;
-    use MIP::Processmanagement::Processes qw(push_to_job_id);
+    use MIP::Processmanagement::Processes
+      qw(add_parallel_job_id_to_dependency_tree add_merged_job_id_to_dependency_tree add_family_merged_job_id_to_dependency_tree);
 
     ## Constants
     Readonly my $NEWLINE      => qq{\n};
@@ -28324,36 +28342,7 @@ sub submit_job {
     # Family chainkey
     my $family_id_chain_key = $$family_id_ref . q{_} . $path;
 
-    # Initiate chain - No dependencies, adds to all sample_id(s) and family_id
-    if ( $dependencies eq q{no_dependency_add_to_case} ) {
-
-        ## Submit jobs to sbatch
-        $job_id_returned =
-          submit_jobs_to_sbatch( { sbatch_file_name => $sbatch_file_name, } );
-
-      SAMPLE_ID:
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-            # Add job_id_returned to hash
-            my $sample_id_chain_key = $sample_id . q{_} . $path;
-            push @{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key}
-              },
-              $job_id_returned;
-
-            ## Saves job_id to the correct hash array depending on chaintype
-            push_to_job_id(
-                {
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    family_id_chain_key     => $family_id_chain_key,
-                    sample_id_chain_key     => $sample_id_chain_key,
-                    path                    => $path,
-                    chain_key_type          => q{family_merged},
-                }
-            );
-        }
-    }
-    elsif ( $dependencies eq q{no_dependency} ) {
+    if ( $dependencies eq q{no_dependency} ) {
         ## Initiate chain - No dependencies, initiate Trunk (Main or other)
         ## Submit jobs to sbatch
         $job_id_returned =
@@ -28368,22 +28357,18 @@ sub submit_job {
         ## Dependent on earlier scripts and/or parallel.
         ## JobIDs that do not leave dependencies do not get pushed to job_id hash
 
-      # Check jobs within sample_id (exception if dependencies = case_dependency_add_to_case (5))
+# Check jobs within sample_id (exception if dependencies = case_dependency_add_to_case (5))
         if ( defined $sample_id ) {
 
             # Add family_id_sample_id jobs to current sample_id chain
             if ( $dependencies eq q{case_dependency_add_to_case} ) {
 
                 ## Saves job_id to the correct hash array depending on chaintype
-                push_to_job_id(
+                add_merged_job_id_to_dependency_tree(
                     {
-                        infile_lane_prefix_href => $infile_lane_prefix_href,
-                        job_id_href             => $job_id_href,
-                        family_id_chain_key     => $family_id_chain_key,
-                        sample_id_chain_key     => $sample_id_chain_key,
-                        sample_id               => $sample_id,
-                        path                    => $path,
-                        chain_key_type          => q{merged},
+                        job_id_href         => $job_id_href,
+                        family_id_chain_key => $family_id_chain_key,
+                        sample_id_chain_key => $sample_id_chain_key,
                     }
                 );
             }
@@ -28394,7 +28379,7 @@ sub submit_job {
             {
 
                 ## Saves job_id to the correct hash array depending on chaintype
-                push_to_job_id(
+                add_parallel_job_id_to_dependency_tree(
                     {
                         infile_lane_prefix_href => $infile_lane_prefix_href,
                         job_id_href             => $job_id_href,
@@ -28402,7 +28387,6 @@ sub submit_job {
                         sample_id_chain_key     => $sample_id_chain_key,
                         sample_id               => $sample_id,
                         path                    => $path,
-                        chain_key_type          => q{parallel},
                     }
                 );
             }
@@ -28618,14 +28602,11 @@ sub submit_job {
                     my $sample_id_chain_key = $sample_id . q{_} . $path;
 
                     ## Saves job_id to the correct hash array depending on chaintype
-                    push_to_job_id(
+                    add_family_merged_job_id_to_dependency_tree(
                         {
-                            infile_lane_prefix_href => $infile_lane_prefix_href,
-                            job_id_href             => $job_id_href,
-                            family_id_chain_key     => $family_id_chain_key,
-                            sample_id_chain_key     => $sample_id_chain_key,
-                            path                    => $path,
-                            chain_key_type          => q{family_merged},
+                            job_id_href         => $job_id_href,
+                            family_id_chain_key => $family_id_chain_key,
+                            sample_id_chain_key => $sample_id_chain_key,
                         }
                     );
                 }
@@ -28973,8 +28954,8 @@ sub submit_job {
             ## Job dependent on all jobs
             # Add job_id to hash
             push @{ $job_id_href->{ALL}{ALL} }, $job_id_returned;
-	  }
-      }
+        }
+    }
 
     ## Add job_id_returned to hash for sacct processing downstream
     push @{ $job_id_href->{PAN}{PAN} }, $job_id_returned;
@@ -34304,7 +34285,6 @@ sub check_merge_picardtools_mergesamfiles_previous_bams {
     }
 }
 
-
 sub check_annovar_tables {
 
 ##check_annovar_tables
@@ -37217,6 +37197,11 @@ sub vt_core {
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use Program::Htslib qw(bgzip tabix);
     use Program::Variantcalling::Vt qw(decompose normalize vt_uniq);
+    use MIP::Processmanagement::Slurm_processes
+      qw(slurm_submit_job_no_dependency_add_to_case);
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my $file_name;
     my $program_info_path;
@@ -37419,15 +37404,17 @@ sub vt_core {
             && ( !$active_parameter_href->{dry_run_all} ) )
         {
 
-            submit_job(
+            my $slurm_path = $parameter_href->{ "p" . $program }{chain};
+
+            slurm_submit_job_no_dependency_add_to_case(
                 {
-                    active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    dependencies            => "no_dependency_add_to_case",
-                    path => $parameter_href->{ "p" . $program }{chain},
-                    sbatch_file_name => $file_name
+                    job_id_href => $job_id_href,
+                    sample_ids_ref =>
+                      \@{ $active_parameter_href->{sample_ids} },
+                    family_id_chain_key => $$family_id_ref . q{_} . $slurm_path,
+                    path                => $slurm_path,
+                    sbatch_file_name    => $file_name,
+                    log                 => $log,
                 }
             );
         }
