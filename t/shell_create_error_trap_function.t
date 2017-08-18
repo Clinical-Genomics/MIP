@@ -23,6 +23,7 @@ use IPC::Cmd qw(can_run run);
 
 ## Third party module(s)
 use List::Util qw(any);
+use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), 'lib' );
@@ -31,20 +32,23 @@ use MIP::Gnu::Coreutils qw(gnu_mkdir gnu_rm);
 
 our $USAGE = build_usage( {} );
 
+## Constants
+Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => q{ };
 my $VERBOSE = 0;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 ###User Options
 GetOptions(
     'h|help' => sub {
         done_testing();
-        print {*STDOUT} $USAGE, "\n";
+        say {*STDOUT} $USAGE;
         exit;
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION,
-          "\n\n";
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
+          $NEWLINE;
         exit;
     },    #Display version number
     'vb|verbose' => $VERBOSE,
@@ -65,7 +69,7 @@ BEGIN {
     ## Modules with import
     my %perl_module;
 
-    $perl_module{'Script::Utils'}           = [qw(help)];
+    $perl_module{'Script::Utils'}       = [qw(help)];
     $perl_module{'MIP::Gnu::Coreutils'} = [qw(gnu_mkdir gnu_rm)];
 
     while ( my ( $module, $module_import ) = each %perl_module ) {
@@ -83,10 +87,9 @@ BEGIN {
     }
 }
 
-use MIP::Language::Shell qw(build_shebang enable_trap create_error_trap_function);
+use MIP::Language::Shell
+  qw(build_shebang enable_trap create_error_trap_function);
 use MIP::Gnu::Bash qw(gnu_set);
-
-my $NEWLINE = q{\n};
 
 diag(
 "Test create_error_trap_function $MIP::Language::Shell::VERSION, Perl $^V, $EXECUTABLE_NAME"
@@ -96,15 +99,15 @@ diag(
 my $FILEHANDLE = IO::Handle->new();
 
 # Shell create error trap file
-my $bash_file_path = catfile( cwd(), 'test_create_error_trap_function.sh' );
+my $bash_file_path = catfile( cwd(), q{test_create_error_trap_function.sh} );
 
 # Temporary directory
-my $temp_dir = catdir( cwd(), qw(test_dir .test_create_error_trap_function));
+my $temp_dir = catdir( cwd(), qw(test_dir .test_create_error_trap_function) );
 
 # Open filehandle
 open $FILEHANDLE, '>', $bash_file_path
-  or
-  croak( q{Cannot write to '} . $bash_file_path . q{' :} . $OS_ERROR . "\n" );
+  or croak(
+    q{Cannot write to '} . $bash_file_path . q{' :} . $OS_ERROR . $NEWLINE );
 
 ## Write to bash file
 _build_test_file_recipe(
@@ -117,16 +120,17 @@ _build_test_file_recipe(
 close $FILEHANDLE;
 
 ## Testing write to file
-ok( -e $bash_file_path, 'Create bash' );
+ok( -e $bash_file_path, q{Create bash} );
 
-ok( can_run('bash'), 'Checking can run bash binary' );
+ok( can_run('bash'), q{Checking can run bash binary} );
 
-my $cmds_ref = [ 'bash', $bash_file_path ];
-my ( $success, $error_message, $full_buf_ref, $stdout_buf_ref, $stderr_buf_ref ) =
-  run( command => $cmds_ref, verbose => $VERBOSE );
+my $cmds_ref = [ q{bash}, $bash_file_path ];
+my ( $success, $error_message, $full_buf_ref, $stdout_buf_ref, $stderr_buf_ref )
+  = run( command => $cmds_ref, verbose => $VERBOSE );
 
 ## Testing error trap function
-ok($stderr_buf_ref->[1] =~/[:] Unknown Error - ExitCode[=]/, q{Performed error trap} );
+ok( $stderr_buf_ref->[-1] =~ /[:] Unknown Error - ExitCode[=]/,
+    q{Performed error trap} );
 
 done_testing();
 
@@ -195,15 +199,18 @@ sub _build_test_file_recipe {
     # Add bash shebang
     build_shebang(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            FILEHANDLE => $FILEHANDLE,
         }
     );
 
     ## Set shell attributes
-    gnu_set({FILEHANDLE         => $FILEHANDLE,
-	     set_errexit        => 1,
-	     set_nounset        => 1,
-	    });
+    gnu_set(
+        {
+            FILEHANDLE  => $FILEHANDLE,
+            set_errexit => 1,
+            set_nounset => 1,
+        }
+    );
 
     enable_trap(
         {
@@ -216,7 +223,7 @@ sub _build_test_file_recipe {
     # Create housekeeping fucntion to remove temp_dir
     create_error_trap_function(
         {
-            trap_function_name => 'error',
+            trap_function_name => q{error},
             FILEHANDLE         => $FILEHANDLE,
         }
     );
@@ -237,7 +244,7 @@ sub _build_test_file_recipe {
             FILEHANDLE       => $FILEHANDLE,
         }
     );
-    say {$FILEHANDLE} "\n";
+    say {$FILEHANDLE} $NEWLINE;
 
     return;
 }

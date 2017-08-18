@@ -25,7 +25,9 @@ use MIP::Language::Shell qw(create_bash_file);
 use Program::Download::Wget qw(wget);
 use MIP::Gnu::Bash qw(gnu_cd);
 use MIP::Gnu::Coreutils qw(gnu_cp gnu_rm gnu_mv gnu_mkdir);
+use MIP::PacketManager::Conda qw{ conda_create };
 use Script::Utils qw(help set_default_array_parameters);
+
 
 our $USAGE = build_usage( {} );
 
@@ -277,10 +279,12 @@ if ( exists( $parameter{conda_environment} ) ) {
     ## Check Conda environment
     if ( !-d catdir( $parameter{conda_prefix_path} ) ) {
 
-        ## Create Conda environment if required
-        create_conda_environment(
+        ## Create Conda environment and install pip
+        conda_create(
             {
-                parameter_href => \%parameter,
+                env_name => $parameter_href->{conda_environment},
+                python_version => $parameter_href->{python_version},
+                packages_ref => [ qw{pip} ],
                 FILEHANDLE     => $FILEHANDLE,
             }
         );
@@ -792,52 +796,6 @@ sub check_conda {
     return;
 }
 
-sub create_conda_environment {
-
-##create_conda_environment
-
-##Function : Create Conda environment
-##Returns  : ""
-##Arguments: $parameter_href
-##         : $parameter_href => Holds all parameters
-##         : $FILEHANDLE     => Filehandle to write to
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
-
-    ## Create conda environment
-    print $FILEHANDLE '### Creating Conda Environment and install: '
-      . $parameter_href->{conda_environment}, "\n";
-    print $FILEHANDLE 'conda create ';
-
-    if ( $parameter_href->{quiet} ) {
-
-        print $FILEHANDLE '--quiet ';    #Do not display progress bar
-    }
-    print $FILEHANDLE '-n ' . $parameter_href->{conda_environment} . q{ };
-    print $FILEHANDLE '-y ';
-    print $FILEHANDLE 'pip ';
-    print $FILEHANDLE 'python=' . $parameter_href->{python_version} . q{ };
-    print $FILEHANDLE "\n\n";
-
-    return;
-}
 
 sub install_bioconda_modules {
 

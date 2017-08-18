@@ -1,51 +1,50 @@
 #!/usr/bin/env perl
 
-#### Copyright 2017 Henrik Stranneheim
-
-use Modern::Perl qw(2014);
-use warnings qw(FATAL utf8);
+use Modern::Perl qw{2014};
+use warnings qw{FATAL utf8};
 use autodie;
 use 5.018;    #Require at least perl 5.18
 use utf8;
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
+use open qw{ :encoding(UTF-8) :std };
+use charnames qw{ :full :short };
 use Carp;
-use English qw(-no_match_vars);
-use Params::Check qw(check allow last_error);
+use English qw{-no_match_vars};
+use Params::Check qw{check allow last_error};
 
-use FindBin qw($Bin);    #Find directory of script
-use File::Basename qw(dirname basename);
-use File::Spec::Functions qw(catdir);
+use FindBin qw{$Bin};    #Find directory of script
+use File::Basename qw{dirname basename};
+use File::Spec::Functions qw{catdir};
 use Getopt::Long;
 use Test::More;
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), 'lib' );
-use Script::Utils qw(help);
+use Script::Utils qw{help};
 
 our $USAGE = build_usage( {} );
 
-##Constants
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
 my $VERBOSE = 1;
-our $VERSION = q{1.0.1};
+our $VERSION = '1.0.0';
+
+## Constants
+Readonly my $SPACE   => q{ };
+Readonly my $NEWLINE => qq{\n};
 
 ###User Options
 GetOptions(
-    'h|help' => sub {
+    q{h|help} => sub {
         done_testing();
         say {*STDOUT} $USAGE;
         exit;
     },    #Display help text
-    'v|version' => sub {
+    q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
-          $NEWLINE;
+        say {*STDOUT} $NEWLINE, basename($PROGRAM_NAME),
+          $SPACE, $VERSION, $NEWLINE;
         exit;
     },    #Display version number
-    'vb|verbose' => $VERBOSE,
+    q{vb|verbose} => $VERBOSE,
   )
   or (
     done_testing(),
@@ -63,32 +62,38 @@ BEGIN {
 ##Modules with import
     my %perl_module;
 
-    $perl_module{'Script::Utils'} = [qw(help)];
+    $perl_module{'Script::Utils'} = [qw{help}];
+
+  PERL_MODULES:
     while ( my ( $module, $module_import ) = each %perl_module ) {
         use_ok( $module, @{$module_import} )
           or BAIL_OUT q{Cannot load } . $module;
     }
 
 ##Modules
-    my @modules = ('MIP::Gnu::Coreutils');
+    my @modules = (q{MIP::PacketManager::Conda});
+
+  MODULES:
     for my $module (@modules) {
         require_ok($module) or BAIL_OUT q{Cannot load } . $module;
     }
 }
 
-use MIP::Gnu::Coreutils qw(gnu_sort);
-use MIP::Test::Commands qw(test_function);
+use MIP::PacketManager::Conda qw{conda_create};
+use MIP::Test::Commands qw{test_function};
 
-diag("Test gnu_sort $MIP::Gnu::Coreutils::VERSION, Perl $^V, $EXECUTABLE_NAME");
+diag(
+    q{Test conda_create }
+      . $MIP::PacketManager::Conda::VERSION
+      . q{, Perl}
+      . $PERL_VERSION,
+    $EXECUTABLE_NAME
+);
 
 ## Base arguments
-my $function_base_command = q{sort};
+my $function_base_command = q{conda create};
 
 my %base_argument = (
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
-    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
@@ -105,29 +110,40 @@ my %base_argument = (
 
 ## Can be duplicated with %base and/or %specific to enable testing of each individual argument
 my %required_argument = (
-    keys_ref => {
-        inputs_ref      => [ q{2.2,2.5}, q{3.2,3.5} ],
-        expected_output => q{--key 2.2,2.5 --key 3.2,3.5},
+    FILEHANDLE => {
+        input           => undef,
+        expected_output => $function_base_command,
     },
 );
 
-## Specific arguments
 my %specific_argument = (
-    keys_ref => {
-        inputs_ref      => [ q{2.2,2.5}, q{3.2,3.5} ],
-        expected_output => q{--key 2.2,2.5 --key 3.2,3.5},
+    env_name => {
+        input           => q{test_env},
+        expected_output => q{--name test_env},
     },
-    infile_path => {
-        input           => q{infile.test},
-        expected_output => q{infile.test},
+    python_version => {
+        input           => '3.6',
+        expected_output => q{python=3.6},
+    },
+    quiet => {
+        input           => 1,
+        expected_output => q{--quiet},
+    },
+    no_confirmation => {
+        input           => 1,
+        expected_output => q{--yes},
+    },
+    packages_ref => {
+        inputs_ref      => [qw{ test_package_1 test_package_2}],
+        expected_output => q{test_package_1 test_package_2},
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&gnu_sort;
+my $module_function_cref = \&conda_create;
 
 ## Test both base and function specific arguments
-my @arguments = ( \%base_argument, \%specific_argument );
+my @arguments = ( \%required_argument, \%specific_argument );
 
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
@@ -136,6 +152,7 @@ foreach my $argument_href (@arguments) {
             required_argument_href => \%required_argument,
             module_function_cref   => $module_function_cref,
             function_base_command  => $function_base_command,
+            do_test_base_command   => 1,
         }
     );
 }

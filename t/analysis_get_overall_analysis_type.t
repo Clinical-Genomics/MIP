@@ -30,7 +30,7 @@ our $USAGE = build_usage( {} );
 Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
 my $VERBOSE = 1;
-our $VERSION = q{1.0.1};
+our $VERSION = q{1.0.0};
 
 ###User Options
 GetOptions(
@@ -70,75 +70,41 @@ BEGIN {
     }
 
 ##Modules
-    my @modules = ('MIP::Gnu::Coreutils');
+    my @modules = ('MIP::Get::Analysis');
     for my $module (@modules) {
         require_ok($module) or BAIL_OUT q{Cannot load } . $module;
     }
 }
 
-use MIP::Gnu::Coreutils qw(gnu_sort);
-use MIP::Test::Commands qw(test_function);
+use MIP::Get::Analysis qw(get_overall_analysis_type);
 
-diag("Test gnu_sort $MIP::Gnu::Coreutils::VERSION, Perl $^V, $EXECUTABLE_NAME");
+diag(
+"Test get_overall_analysis_type $MIP::Get::Analysis::VERSION, Perl $^V, $EXECUTABLE_NAME"
+);
 
 ## Base arguments
-my $function_base_command = q{sort};
-
-my %base_argument = (
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
-    },
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
-    },
-    stderrfile_path_append => {
-        input           => q{stderrfile.test},
-        expected_output => q{2>> stderrfile.test},
-    },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
-    },
+my %analysis_type_consensus = (
+    sample_1 => q{wgs},
+    sample_2 => q{wgs},
+    sample_3 => q{wgs},
 );
 
-## Can be duplicated with %base and/or %specific to enable testing of each individual argument
-my %required_argument = (
-    keys_ref => {
-        inputs_ref      => [ q{2.2,2.5}, q{3.2,3.5} ],
-        expected_output => q{--key 2.2,2.5 --key 3.2,3.5},
-    },
+my %analysis_type_mixed = (
+    sample_1 => q{wgs},
+    sample_2 => q{wes},
+    sample_3 => q{wes},
 );
 
-## Specific arguments
-my %specific_argument = (
-    keys_ref => {
-        inputs_ref      => [ q{2.2,2.5}, q{3.2,3.5} ],
-        expected_output => q{--key 2.2,2.5 --key 3.2,3.5},
-    },
-    infile_path => {
-        input           => q{infile.test},
-        expected_output => q{infile.test},
-    },
-);
+my $consensus_analysis_type = get_overall_analysis_type(
+    { analysis_type_hef => \%analysis_type_consensus, } );
 
-## Coderef - enables generalized use of generate call
-my $module_function_cref = \&gnu_sort;
+my $mixed_analysis_type =
+  get_overall_analysis_type( { analysis_type_hef => \%analysis_type_mixed, } );
 
-## Test both base and function specific arguments
-my @arguments = ( \%base_argument, \%specific_argument );
+is( $consensus_analysis_type, q{wgs},
+    q{Correct return of consensus analysis typ} );
 
-foreach my $argument_href (@arguments) {
-    my @commands = test_function(
-        {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-        }
-    );
-}
+is( $mixed_analysis_type, q{mixed}, q{Correct return of mixed analysis type} );
 
 done_testing();
 
