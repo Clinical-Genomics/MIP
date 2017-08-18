@@ -29,9 +29,15 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{add_to_job_id_dependency_string add_parallel_job_id_to_dependency_tree add_pan_job_id_to_sample_id_dependency_tree add_pan_job_id_to_family_id_dependency_tree add_sample_job_id_to_dependency_tree print_wait};
-
+    our @EXPORT_OK = qw{add_to_job_id_dependency_string
+      add_parallel_job_id_to_dependency_tree
+      add_pan_job_id_to_sample_id_dependency_tree
+      add_pan_job_id_to_family_id_dependency_tree
+      add_sample_job_id_to_sample_id_dependency_tree
+      create_job_id_string_for_sample_id
+      clear_sample_id_pan_job_id_dependency_tree
+      clear_sample_id_job_id_dependency_tree
+      print_wait};
 }
 
 ##Constants
@@ -83,8 +89,7 @@ sub add_to_job_id_dependency_string {
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     # Job_id string to submit to workload manager
-    my $job_ids_string =
-      $EMPTY_STR;
+    my $job_ids_string = $EMPTY_STR;
 
     # Alias hash to get job_id dependencies from
     my $chain_job_id_href = $job_id_href->{$family_id_chain_key}{$chain_key};
@@ -94,33 +99,36 @@ sub add_to_job_id_dependency_string {
       JOB_IDS:
         while ( my ( $job_index, $job_id ) = each @{$chain_job_id_href} ) {
 
-	  # Only for defined job_ids
-	  if (defined $job_id) {
+            # Only for defined job_ids
+            if ( defined $job_id ) {
 
-            # Only 1 previous job_id
-            if ( ( !$job_index ) && ( scalar @{$chain_job_id_href} == 1 ) ) {
+                # Only 1 previous job_id
+                if ( ( !$job_index ) && ( scalar @{$chain_job_id_href} == 1 ) )
+                {
 
-                #Single job_id start with $COLON and end without $COLON
-                $job_ids_string .= $COLON . $job_id;
+                    #Single job_id start with $COLON and end without $COLON
+                    $job_ids_string .= $COLON . $job_id;
+                }
+                elsif ( !$job_index ) {
+
+                    #First job_id to add
+
+                    #First job_id start with $COLON and ends with $COLON
+                    $job_ids_string .= $COLON . $job_id . $COLON;
+                }
+                elsif ( $job_index eq ( scalar @{$chain_job_id_href} - 1 ) ) {
+
+                    #Last job_id
+
+                    #Last job_id finish without $COLON
+                    $job_ids_string .= $job_id;
+                }
+                else {
+                    #JobIDs in the middle
+
+                    $job_ids_string .= $job_id . $COLON;
+                }
             }
-            elsif ( !$job_index ) {
-                #First job_id to add
-
-                #First job_id start with $COLON and ends with $COLON
-                $job_ids_string .= $COLON . $job_id . $COLON;
-            }
-            elsif ( $job_index eq ( scalar @{$chain_job_id_href} - 1 ) ) {
-                #Last job_id
-
-                #Last job_id finish without $COLON
-                $job_ids_string .= $job_id;
-            }
-            else {
-                #JobIDs in the middle
-
-                $job_ids_string .= $job_id . $COLON;
-            }
-	  }
         }
     }
     return $job_ids_string;
@@ -268,8 +276,7 @@ sub add_pan_job_id_to_sample_id_dependency_tree {
     ## Push pan jobs
 
     # Set key
-    $pan_chain_key =
-      $family_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
+    $pan_chain_key = $family_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
 
     # If pan job ids exists
     if ( exists $job_id_href->{$family_id_chain_key}{$pan_chain_key} ) {
@@ -355,9 +362,9 @@ sub add_pan_job_id_to_family_id_dependency_tree {
     return;
 }
 
-sub add_sample_job_id_to_dependency_tree {
+sub add_sample_job_id_to_sample_id_dependency_tree {
 
-##add_sample_job_id_to_dependency_tree
+##add_sample_job_id_to_sample_id_dependency_tree
 
 ##Function : Saves job_id to the correct hash array depending on chain type.
 ##Returns  : ""
@@ -415,6 +422,216 @@ sub add_sample_job_id_to_dependency_tree {
     push $sample_id_job_ids_ref, $job_id_returned;
 
     return;
+}
+
+sub clear_sample_id_pan_job_id_dependency_tree {
+
+##clear_sample_id_pan_job_id_dependency_tree
+
+##Function : Clear pan (i.e job_ids that affect all chains) job_id to the the sample_id chain.
+##Returns  : ""
+##Arguments: $job_id_href, $family_id_chain_key, $sample_id_chain_key
+##         : $job_id_href         => Info on jobIds hash {REF}
+##         : $family_id_chain_key => Family ID chain hash key
+##         : $sample_id_chain_key => Sample ID chain hash key
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $job_id_href;
+    my $family_id_chain_key;
+    my $sample_id_chain_key;
+
+    my $tmpl = {
+        job_id_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$job_id_href
+        },
+        family_id_chain_key => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$family_id_chain_key
+        },
+        sample_id_chain_key => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$sample_id_chain_key
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+
+    my $pan_chain_key;
+
+    # Set key
+    $pan_chain_key = $family_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
+
+    ## Clear latest family_id_sample_id chainkey
+    @{ $job_id_href->{$family_id_chain_key}{$pan_chain_key} } = ();
+
+    return;
+}
+
+sub clear_sample_id_job_id_dependency_tree {
+
+##clear_sample_id_job_id_dependency_tree
+
+##Function : Clear sample job_ids in the the sample_id chain.
+##Returns  : ""
+##Arguments: $job_id_href, $family_id_chain_key, $sample_id_chain_key
+##         : $job_id_href         => Info on jobIds hash {REF}
+##         : $family_id_chain_key => Family ID chain hash key
+##         : $sample_id_chain_key => Sample ID chain hash key
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $job_id_href;
+    my $family_id_chain_key;
+    my $sample_id_chain_key;
+
+    my $tmpl = {
+        job_id_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$job_id_href
+        },
+        family_id_chain_key => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$family_id_chain_key
+        },
+        sample_id_chain_key => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$sample_id_chain_key
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+
+    # Clear latest sample_id chainkey
+    @{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} } = ();
+
+    return;
+}
+
+sub create_job_id_string_for_sample_id {
+
+##create_job_id_string_for_sample_id
+
+##Function : Create job id string from the job id chain and path associated with sample for SLURM submission using dependencies
+##Returns  : "$job_ids_string"
+##Arguments: $job_id_href, $family_id, $sample_id, $family_id_chain_key, $sample_id_chain_key, $path
+##         : $job_id_href         => The info on job ids hash {REF}
+##         : $family_id           => Family id
+##         : $sample_id           => Sample id
+##         : $family_id_chain_key => Family ID chain hash key
+##         : $sample_id_chain_key => Sample ID chain hash key
+##         : $path                => Trunk or branch
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $job_id_href;
+    my $family_id_chain_key;
+    my $sample_id_chain_key;
+    my $family_id;
+    my $sample_id;
+    my $path;
+
+    my $tmpl = {
+        job_id_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$job_id_href
+        },
+        family_id => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$family_id
+        },
+        sample_id => {
+            strict_type => 1,
+            store       => \$sample_id
+        },
+        family_id_chain_key => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$family_id_chain_key
+        },
+        sample_id_chain_key => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$sample_id_chain_key
+        },
+        path =>
+          { required => 1, defined => 1, strict_type => 1, store => \$path },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+
+    my $job_ids_string;
+    my $path_main = q{MAIN};
+
+    if ( $path eq $path_main ) {
+
+        ## Add to job_id string
+        $job_ids_string = add_to_job_id_dependency_string(
+            {
+                job_id_href         => $job_id_href,
+                family_id_chain_key => $family_id_chain_key,
+                chain_key           => $sample_id_chain_key,
+            }
+        );
+    }
+    elsif ( $path ne $path_main ) {
+        ## Check for any previous job_ids within path current PATH. Branch.
+
+        ## Second or later in branch chain
+        if ( $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} ) {
+
+            ## Add to job_id string
+            $job_ids_string = add_to_job_id_dependency_string(
+                {
+                    job_id_href         => $job_id_href,
+                    family_id_chain_key => $family_id_chain_key,
+                    chain_key           => $sample_id_chain_key,
+                }
+            );
+        }
+        elsif ( $job_id_href->{ $family_id . $UNDERSCORE . $path_main }
+            { $sample_id . $UNDERSCORE . $path_main } )
+        {
+            ## Inherit from potential MAIN. Trunk
+
+            ## Add to job_id string
+            $job_ids_string = add_to_job_id_dependency_string(
+                {
+                    job_id_href         => $job_id_href,
+                    family_id_chain_key => $family_id
+                      . $UNDERSCORE
+                      . $path_main,
+                    chain_key => $sample_id . $UNDERSCORE . $path_main,
+                }
+            );
+        }
+    }
+    return $job_ids_string;
 }
 
 sub print_wait {

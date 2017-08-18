@@ -29,7 +29,7 @@ our $USAGE = build_usage( {} );
 ##Constants
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
-Readonly my $EMPTY_STR      => q{};
+Readonly my $EMPTY_STR  => q{};
 Readonly my $UNDERSCORE => q{_};
 
 my $VERBOSE = 1;
@@ -69,7 +69,7 @@ BEGIN {
 
     $perl_module{'Script::Utils'} = [qw{help}];
 
-  MODULES:
+  PERL_MODULES:
     while ( my ( $module, $module_import ) = each %perl_module ) {
         use_ok( $module, @{$module_import} )
           or BAIL_OUT q{Cannot load } . $module;
@@ -84,109 +84,47 @@ BEGIN {
     }
 }
 
-use MIP::Processmanagement::Processes qw{add_to_job_id_dependency_string};
+use MIP::Processmanagement::Processes
+  qw{clear_sample_id_pan_job_id_dependency_tree};
 
 diag(
-"Test add_to_job_id_dependency_string $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test clear_sample_id_pan_job_id_dependency_tree $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments
-my $sample_id           = q{sample2};
+my $family_id           = q{family1};
+my $sample_id           = q{sample1};
 my $path                = q{MAIN};
-my $family_id_chain_key = q{family1} . $UNDERSCORE . $path;
+my $family_id_chain_key = $family_id . $UNDERSCORE . $path;
+my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
+my $pan_chain_key = $family_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
 
 my %job_id = (
     $family_id_chain_key => {
         q{sample1} . $UNDERSCORE . $path => [qw{job_id_1 job_id_2}],
-        q{sample2} . $UNDERSCORE . $path      => [qw{job_id_3}],
-        q{sample3} . $UNDERSCORE . $path      => [qw{job_id_4 job_id_5 job_id_8}],
-			     q{sample4} . $UNDERSCORE . $path      => [undef],
-        $family_id_chain_key => [qw{job_id_6}],
+        q{sample2} . $UNDERSCORE . $path => [qw{job_id_3}],
+        q{sample3} . $UNDERSCORE . $path => [qw{job_id_4 job_id_5 job_id_8}],
+        q{sample4} . $UNDERSCORE . $path => [undef],
+        $pan_chain_key                   => [qw{job_id_1 job_id_2}],
+        $family_id_chain_key             => [qw{job_id_6}],
     },
 );
 
-### Sample job
+### Clear pan job id dependency for sample id
 
-## Add 1 job_id to job_id_string
-my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
-
-my $job_ids_string = add_to_job_id_dependency_string(
-				{
-				 job_id_href         => \%job_id,
-				 family_id_chain_key => $family_id_chain_key,
-				 chain_key           => $sample_id_chain_key,
-				}
-			       );
-my $expected_job_id_string = q{:job_id_3};
-is(
-    $job_ids_string,
-    $expected_job_id_string,
-    q{Added 1 job_id to job_id_string}
+## Add job_ids from MAIN chain to job_id_string
+clear_sample_id_pan_job_id_dependency_tree(
+    {
+        job_id_href         => \%job_id,
+        family_id_chain_key => $family_id_chain_key,
+        sample_id_chain_key => $sample_id_chain_key,
+    }
 );
 
-## Add 2 job_ids to job_id_string
-$sample_id           = q{sample1};
-$sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
-
-## Add to job_id string
-$job_ids_string = add_to_job_id_dependency_string(
-				{
-				 job_id_href         => \%job_id,
-				 family_id_chain_key => $family_id_chain_key,
-				 chain_key           => $sample_id_chain_key,
-				}
-			       );
-
-$expected_job_id_string = q{:job_id_1:job_id_2};
-
-is(
-    $job_ids_string,
-    $expected_job_id_string,
-    q{Added 2 job_ids to job_id_string}
-);
-
-## Add 3 job_ids to job_id_string
-$sample_id           = q{sample3};
-$sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
-
-## Add to job_id string
-$job_ids_string = add_to_job_id_dependency_string(
-				{
-				 job_id_href         => \%job_id,
-				 family_id_chain_key => $family_id_chain_key,
-				 chain_key           => $sample_id_chain_key,
-				}
-			       );
-
-$expected_job_id_string = q{:job_id_4:job_id_5:job_id_8};
-
-is(
-    $job_ids_string,
-    $expected_job_id_string,
-    q{Added 3 job_ids to job_id_string}
-);
-
-## Do not add undef job_ids to job_id_string
-$sample_id           = q{sample4};
-$sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
-
-## Add to job_id string
-$job_ids_string = add_to_job_id_dependency_string(
-				{
-				 job_id_href         => \%job_id,
-				 family_id_chain_key => $family_id_chain_key,
-				 chain_key           => $sample_id_chain_key,
-				}
-			       );
-
-$expected_job_id_string = $EMPTY_STR;
-
-is(
-    $job_ids_string,
-    $expected_job_id_string,
-    q{Nothing was added to job_id_string}
-);
-
+my $result_ref      = $job_id{$family_id_chain_key}{$pan_chain_key};
+my $expected_result = 0;
+is( @{$result_ref}, $expected_result,
+    q{Cleared job_id from pan job_id chain} );
 
 done_testing();
 

@@ -26,11 +26,10 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw(slurm_submit_job_no_dependency_add_to_case
-	 slurm_submit_job_no_dependency_dead_end
-	 slurm_submit_job_sample_id_dependency_dead_end
-	 submit_jobs_to_sbatch slurm_submission_info);
+    our @EXPORT_OK = qw(slurm_submit_job_no_dependency_add_to_case
+      slurm_submit_job_no_dependency_dead_end
+      slurm_submit_job_sample_id_dependency_dead_end
+      submit_jobs_to_sbatch slurm_submission_info);
 
 }
 
@@ -101,7 +100,7 @@ sub slurm_submit_job_no_dependency_add_to_case {
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     use MIP::Processmanagement::Processes
-      qw(add_sample_job_id_to_dependency_tree add_pan_job_id_to_family_id_dependency_tree);
+      qw(add_sample_job_id_to_sample_id_dependency_tree add_pan_job_id_to_family_id_dependency_tree);
 
     ## Set keys
     my $family_id_chain_key => $family_id . $UNDERSCORE . $path;
@@ -126,7 +125,7 @@ sub slurm_submit_job_no_dependency_add_to_case {
         my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
 
         ## Save job_id to sample_id dependencies
-        add_sample_job_id_to_dependency_tree(
+        add_sample_job_id_to_sample_id_dependency_tree(
             {
                 job_id_href         => $job_id_href,
                 family_id_chain_key => $family_id_chain_key,
@@ -283,7 +282,7 @@ sub slurm_submit_job_no_dependency_add_to_sample {
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     use MIP::Processmanagement::Processes
-      qw(add_sample_job_id_to_dependency_tree);
+      qw(add_sample_job_id_to_sample_id_dependency_tree);
 
     # The job_id that is returned from submission
     my $job_id_returned;
@@ -302,7 +301,7 @@ sub slurm_submit_job_no_dependency_add_to_sample {
         }
     );
 
-    add_sample_job_id_to_dependency_tree(
+    add_sample_job_id_to_sample_id_dependency_tree(
         {
             job_id_href         => $job_id_href,
             family_id_chain_key => $family_id_chain_key,
@@ -383,7 +382,7 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
             strict_type => 1,
             store       => \$sbatch_file_name
         },
-		job_dependency_type => {
+        job_dependency_type => {
             default     => q{afterok},
             allow       => [qw{afterany afterok}],
             strict_type => 1,
@@ -393,7 +392,12 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     use MIP::Processmanagement::Processes
-      qw(add_pan_job_id_to_sample_id_dependency_tree add_to_job_id_dependency_string);
+      qw(add_pan_job_id_to_sample_id_dependency_tree
+      add_to_job_id_dependency_string
+      create_job_id_string_for_sample_id
+      clear_sample_id_pan_job_id_dependency_tree
+      clear_sample_id_job_id_dependency_tree
+    );
 
     # Create string with all previous job_ids
     my $job_ids_string;
@@ -404,87 +408,70 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
     ## Set keys
     my $family_id_chain_key = $family_id . $UNDERSCORE . $path;
     my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
-    my $merged_chain_key = $family_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
+    my $pan_chain_key =
+      $family_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
 
     ## Always check and add any pan (i.e job_ids that affect all chains) dependency jobs
-      add_pan_job_id_to_sample_id_dependency_tree(
-					   {
-					    job_id_href         => $job_id_href,
-					    family_id_chain_key => $family_id_chain_key,
-					    sample_id_chain_key => $sample_id_chain_key,
-					   }
-					  );
-      if ( $path eq q{MAIN} ) {
-
-	## Add to job_id string
-	$job_ids_string = add_to_job_id_dependency_string(
-					{
-					 job_id_href         => $job_id_href,
-					 family_id_chain_key => $family_id_chain_key,
-					 chain_key           => $sample_id_chain_key,
-					}
-				       );
-      }
-      elsif ( $path ne q{MAIN} ) {
-	## Check for any previous job_ids within path current PATH. Branch.
-
-	## Second or later in branch chain
-	if ( $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} ) {
-
-                ## Add to job_id string
-                $job_ids_string = add_to_job_id_dependency_string(
-                    {
-                        job_id_href         => $job_id_href,
-                        family_id_chain_key => $family_id_chain_key,
-                        chain_key           => $sample_id_chain_key,
-                    }
-                );
-            }
-            elsif ( $job_id_href->{ $family_id . $UNDERSCORE . q{MAIN} }
-                { $sample_id . $UNDERSCORE . q{MAIN} } )
-            {
-                ## Inherit from potential MAIN. Trunk
-
-                ## Add to job_id string
-                $job_ids_string = add_to_job_id_dependency_string(
-                    {
-                        job_id_href         => $job_id_href,
-                        family_id_chain_key => $family_id . $UNDERSCORE . q{MAIN},
-                        chain_key           => $sample_id . $UNDERSCORE . q{MAIN},
-                    }
-                );
-            }
+    add_pan_job_id_to_sample_id_dependency_tree(
+        {
+            job_id_href         => $job_id_href,
+            family_id_chain_key => $family_id_chain_key,
+            sample_id_chain_key => $sample_id_chain_key,
         }
+    );
+
+    ## Create job id string from the job id chain and path associated with sample for
+    ## SLURM submission using dependencies
+    $job_ids_string = create_job_id_string_for_sample_id(
+        {
+            job_id_href         => $job_id_href,
+            family_id           => $family_id,
+            sample_id           => $sample_id,
+            family_id_chain_key => $family_id_chain_key,
+            sample_id_chain_key => $sample_id_chain_key,
+            path                => $path,
+        }
+    );
 
     ## Submit jobs to sbatch
     $job_id_returned = submit_jobs_to_sbatch(
         {
-	 job_dependency_type => $job_dependency_type,
-	 job_ids_string      => $job_ids_string,
-            sbatch_file_name => $sbatch_file_name,
-            log              => $log,
+            job_dependency_type => $job_dependency_type,
+            job_ids_string      => $job_ids_string,
+            sbatch_file_name    => $sbatch_file_name,
+            log                 => $log,
         }
     );
 
-            ## Clear latest family_id_sample_id chainkey
-            @{ $job_id_href->{$family_id_chain_key}
-                  { $merged_chain_key } } = ();
+    ## Clear latest family_id_sample_id chainkey
+    clear_sample_id_pan_job_id_dependency_tree(
+        {
+            job_id_href         => $job_id_href,
+            family_id_chain_key => $family_id_chain_key,
+            sample_id_chain_key => $sample_id_chain_key,
+        }
+    );
 
-            #Clear latest sample_id chainkey
-            @{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} } =
-              ();
+    ## Clear sample job_ids in the the sample_id chain
+    clear_sample_id_job_id_dependency_tree(
+        {
+            job_id_href         => $job_id_href,
+            family_id_chain_key => $family_id_chain_key,
+            sample_id_chain_key => $sample_id_chain_key,
+        }
+    );
 
     ## Keeps the job_id string dependency within reasonable limits
-        if (   ( defined $job_id_href->{ALL}{ALL} )
-            && ( scalar( @{ $job_id_href->{ALL}{ALL} } ) >= 100 ) )
-        {
+    if (   ( defined $job_id_href->{ALL}{ALL} )
+        && ( scalar( @{ $job_id_href->{ALL}{ALL} } ) >= 100 ) )
+    {
 
-            # Remove oldest job_id
-            shift @{ $job_id_href->{ALL}{ALL} };
-        }
-        ## Job dependent on all jobs
-        # Add job_id to hash
-        push @{ $job_id_href->{ALL}{ALL} }, $job_id_returned;
+        # Remove oldest job_id
+        shift @{ $job_id_href->{ALL}{ALL} };
+    }
+    ## Job dependent on all jobs
+    # Add job_id to hash
+    push @{ $job_id_href->{ALL}{ALL} }, $job_id_returned;
 
     slurm_submission_info(
         {
@@ -629,7 +616,6 @@ sub slurm_submission_info {
     return;
 }
 
-
 ##Decommisioned###
 sub slurm_submit_job_case_dependency_add_to_case {
 
@@ -690,7 +676,7 @@ sub slurm_submit_job_case_dependency_add_to_case {
             strict_type => 1,
             store       => \$sbatch_file_name
         },
-		job_dependency_type => {
+        job_dependency_type => {
             default     => q{afterok},
             allow       => [qw{afterany afterok}],
             strict_type => 1,
@@ -713,33 +699,33 @@ sub slurm_submit_job_case_dependency_add_to_case {
 
     if ( defined $sample_id ) {
 
-      my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
+        my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
 
-      ## Saves job_id to the correct hash array depending on chaintype
-      add_pan_job_id_to_sample_id_dependency_tree(
-					   {
-					    job_id_href         => $job_id_href,
-					    family_id_chain_key => $family_id_chain_key,
-					    sample_id_chain_key => $sample_id_chain_key,
-					   }
-					  );
+        ## Saves job_id to the correct hash array depending on chaintype
+        add_pan_job_id_to_sample_id_dependency_tree(
+            {
+                job_id_href         => $job_id_href,
+                family_id_chain_key => $family_id_chain_key,
+                sample_id_chain_key => $sample_id_chain_key,
+            }
+        );
 
-      if ( $path eq q{MAIN} ) {
+        if ( $path eq q{MAIN} ) {
 
-	## Add to job_id string
-	$job_ids_string = add_to_job_id(
-					{
-					 job_id_href         => $job_id_href,
-					 family_id_chain_key => $family_id_chain_key,
-					 chain_key           => $sample_id_chain_key,
-					}
-				       );
-      }
-      elsif ( $path ne q{MAIN} ) {
-	## Check for any previous job_ids within path current PATH. Branch.
+            ## Add to job_id string
+            $job_ids_string = add_to_job_id(
+                {
+                    job_id_href         => $job_id_href,
+                    family_id_chain_key => $family_id_chain_key,
+                    chain_key           => $sample_id_chain_key,
+                }
+            );
+        }
+        elsif ( $path ne q{MAIN} ) {
+            ## Check for any previous job_ids within path current PATH. Branch.
 
-	## Second or later in branch chain
-	if ( $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} ) {
+            ## Second or later in branch chain
+            if ( $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} ) {
 
                 ## Add to job_id string
                 $job_ids_string = add_to_job_id(
@@ -750,8 +736,9 @@ sub slurm_submit_job_case_dependency_add_to_case {
                     }
                 );
             }
-            elsif ( $job_id_href->{ $family_id . q{_MAIN} }
-                { $sample_id . q{_MAIN} } )
+            elsif (
+                $job_id_href->{ $family_id . q{_MAIN} }{ $sample_id . q{_MAIN} }
+              )
             {
                 ## Inherit from potential MAIN. Trunk
 
@@ -766,30 +753,30 @@ sub slurm_submit_job_case_dependency_add_to_case {
             }
         }
 
-    ## Submit jobs to sbatch
-    $job_id_returned = submit_jobs_to_sbatch(
-        {
-	 job_dependency_type => $job_dependency_type,
-	 job_ids_string      => $job_ids_string,
-            sbatch_file_name => $sbatch_file_name,
-            log              => $log,
-        }
-    );
+        ## Submit jobs to sbatch
+        $job_id_returned = submit_jobs_to_sbatch(
+            {
+                job_dependency_type => $job_dependency_type,
+                job_ids_string      => $job_ids_string,
+                sbatch_file_name    => $sbatch_file_name,
+                log                 => $log,
+            }
+        );
 
-            ## Clear latest family_id_sample_id chainkey
-            @{ $job_id_href->{$family_id_chain_key}
-                  { $family_id_chain_key . q{_} . $sample_id_chain_key } } = ();
+        ## Clear latest family_id_sample_id chainkey
+        @{ $job_id_href->{$family_id_chain_key}
+              { $family_id_chain_key . q{_} . $sample_id_chain_key } } = ();
 
-            #Clear latest sample_id chainkey
-            @{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} } =
-              ();
+        #Clear latest sample_id chainkey
+        @{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} } =
+          ();
 
-            ## Add job_id_returned to hash
-            push @{ $job_id_href->{$family_id_chain_key}
-                  { $family_id_chain_key . q{_} . $sample_id_chain_key } },
-              $job_id_returned;
+        ## Add job_id_returned to hash
+        push @{ $job_id_href->{$family_id_chain_key}
+              { $family_id_chain_key . q{_} . $sample_id_chain_key } },
+          $job_id_returned;
 
-    ## Keeps the job_id string dependecy within reasonable limits
+        ## Keeps the job_id string dependecy within reasonable limits
         if (   ( defined $job_id_href->{ALL}{ALL} )
             && ( scalar( @{ $job_id_href->{ALL}{ALL} } ) >= 100 ) )
         {

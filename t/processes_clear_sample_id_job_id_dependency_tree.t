@@ -29,6 +29,7 @@ our $USAGE = build_usage( {} );
 ##Constants
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
+Readonly my $EMPTY_STR  => q{};
 Readonly my $UNDERSCORE => q{_};
 
 my $VERBOSE = 1;
@@ -68,7 +69,7 @@ BEGIN {
 
     $perl_module{'Script::Utils'} = [qw{help}];
 
-  MODULES:
+  PERL_MODULES:
     while ( my ( $module, $module_import ) = each %perl_module ) {
         use_ok( $module, @{$module_import} )
           or BAIL_OUT q{Cannot load } . $module;
@@ -83,47 +84,47 @@ BEGIN {
     }
 }
 
-use MIP::Processmanagement::Processes qw{add_sample_job_id_to_dependency_tree};
+use MIP::Processmanagement::Processes
+  qw{clear_sample_id_job_id_dependency_tree};
 
 diag(
-"Test add_sample_job_id_to_dependency_tree $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test clear_sample_id_job_id_dependency_tree $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments
+my $family_id           = q{family1};
 my $sample_id           = q{sample1};
 my $path                = q{MAIN};
-my $family_id_chain_key = q{family1} . $UNDERSCORE . $path;
+my $family_id_chain_key = $family_id . $UNDERSCORE . $path;
 my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
+my $pan_chain_key = $family_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
 
 my %job_id = (
     $family_id_chain_key => {
-        $sample_id_chain_key => [qw{job_id_1 job_id_2}],
-        q{sample2_MAIN}      => [qw{job_id_3}],
-        q{sample3_MAIN}      => [qw{job_id_4 job_id_5}],
-        $family_id_chain_key => [qw{job_id_6}],
+        q{sample1} . $UNDERSCORE . $path => [qw{job_id_1 job_id_2}],
+        q{sample2} . $UNDERSCORE . $path => [qw{job_id_3}],
+        q{sample3} . $UNDERSCORE . $path => [qw{job_id_4 job_id_5 job_id_8}],
+        q{sample4} . $UNDERSCORE . $path => [undef],
+        $pan_chain_key                   => [qw{job_id_1 job_id_2}],
+        $family_id_chain_key             => [qw{job_id_6}],
     },
 );
 
-### Sample job
+### Clear pan job id dependency for sample id
 
-my $job_id_returned = q{job_id_7};
-
-add_sample_job_id_to_dependency_tree(
+## Add job_ids from MAIN chain to job_id_string
+clear_sample_id_job_id_dependency_tree(
     {
         job_id_href         => \%job_id,
         family_id_chain_key => $family_id_chain_key,
         sample_id_chain_key => $sample_id_chain_key,
-        job_id_returned     => $job_id_returned,
     }
 );
 
-my $sample_push_result = join $SPACE,
-  @{ $job_id{$family_id_chain_key}{$sample_id_chain_key} };
-is(
-    $sample_push_result,
-    q{job_id_1 job_id_2 job_id_7},
-    q{Pushed to sample_id job_id}
-);
+my $result_ref      = $job_id{$family_id_chain_key}{$sample_id_chain_key};
+my $expected_result = 0;
+is( @{$result_ref}, $expected_result,
+    q{Cleared job_ids from sample_id job_id chain} );
 
 done_testing();
 

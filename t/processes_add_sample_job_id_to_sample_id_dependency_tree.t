@@ -29,7 +29,6 @@ our $USAGE = build_usage( {} );
 ##Constants
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
-Readonly my $EMPTY_STR      => q{};
 Readonly my $UNDERSCORE => q{_};
 
 my $VERBOSE = 1;
@@ -84,109 +83,47 @@ BEGIN {
     }
 }
 
-use MIP::Processmanagement::Processes qw{add_to_job_id_dependency_string};
+use MIP::Processmanagement::Processes qw{add_sample_job_id_to_sample_id_dependency_tree};
 
 diag(
-"Test add_to_job_id_dependency_string $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test add_sample_job_id_to_sample_id_dependency_tree $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments
-my $sample_id           = q{sample2};
+my $sample_id           = q{sample1};
 my $path                = q{MAIN};
 my $family_id_chain_key = q{family1} . $UNDERSCORE . $path;
+my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
 
 my %job_id = (
     $family_id_chain_key => {
-        q{sample1} . $UNDERSCORE . $path => [qw{job_id_1 job_id_2}],
-        q{sample2} . $UNDERSCORE . $path      => [qw{job_id_3}],
-        q{sample3} . $UNDERSCORE . $path      => [qw{job_id_4 job_id_5 job_id_8}],
-			     q{sample4} . $UNDERSCORE . $path      => [undef],
+        $sample_id_chain_key => [qw{job_id_1 job_id_2}],
+        q{sample2_MAIN}      => [qw{job_id_3}],
+        q{sample3_MAIN}      => [qw{job_id_4 job_id_5}],
         $family_id_chain_key => [qw{job_id_6}],
     },
 );
 
 ### Sample job
 
-## Add 1 job_id to job_id_string
-my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
+my $job_id_returned = q{job_id_7};
 
-my $job_ids_string = add_to_job_id_dependency_string(
-				{
-				 job_id_href         => \%job_id,
-				 family_id_chain_key => $family_id_chain_key,
-				 chain_key           => $sample_id_chain_key,
-				}
-			       );
-my $expected_job_id_string = q{:job_id_3};
-is(
-    $job_ids_string,
-    $expected_job_id_string,
-    q{Added 1 job_id to job_id_string}
+add_sample_job_id_to_sample_id_dependency_tree(
+    {
+        job_id_href         => \%job_id,
+        family_id_chain_key => $family_id_chain_key,
+        sample_id_chain_key => $sample_id_chain_key,
+        job_id_returned     => $job_id_returned,
+    }
 );
 
-## Add 2 job_ids to job_id_string
-$sample_id           = q{sample1};
-$sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
-
-## Add to job_id string
-$job_ids_string = add_to_job_id_dependency_string(
-				{
-				 job_id_href         => \%job_id,
-				 family_id_chain_key => $family_id_chain_key,
-				 chain_key           => $sample_id_chain_key,
-				}
-			       );
-
-$expected_job_id_string = q{:job_id_1:job_id_2};
-
+my $sample_push_result = join $SPACE,
+  @{ $job_id{$family_id_chain_key}{$sample_id_chain_key} };
 is(
-    $job_ids_string,
-    $expected_job_id_string,
-    q{Added 2 job_ids to job_id_string}
+    $sample_push_result,
+    q{job_id_1 job_id_2 job_id_7},
+    q{Pushed to sample_id job_id}
 );
-
-## Add 3 job_ids to job_id_string
-$sample_id           = q{sample3};
-$sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
-
-## Add to job_id string
-$job_ids_string = add_to_job_id_dependency_string(
-				{
-				 job_id_href         => \%job_id,
-				 family_id_chain_key => $family_id_chain_key,
-				 chain_key           => $sample_id_chain_key,
-				}
-			       );
-
-$expected_job_id_string = q{:job_id_4:job_id_5:job_id_8};
-
-is(
-    $job_ids_string,
-    $expected_job_id_string,
-    q{Added 3 job_ids to job_id_string}
-);
-
-## Do not add undef job_ids to job_id_string
-$sample_id           = q{sample4};
-$sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
-
-## Add to job_id string
-$job_ids_string = add_to_job_id_dependency_string(
-				{
-				 job_id_href         => \%job_id,
-				 family_id_chain_key => $family_id_chain_key,
-				 chain_key           => $sample_id_chain_key,
-				}
-			       );
-
-$expected_job_id_string = $EMPTY_STR;
-
-is(
-    $job_ids_string,
-    $expected_job_id_string,
-    q{Nothing was added to job_id_string}
-);
-
 
 done_testing();
 
