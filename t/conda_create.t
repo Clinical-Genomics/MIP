@@ -1,42 +1,47 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw(2014);
-use warnings qw(FATAL utf8);
+use Modern::Perl qw{2014};
+use warnings qw{FATAL utf8};
 use autodie;
 use 5.018;    #Require at least perl 5.18
 use utf8;
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
+use open qw{ :encoding(UTF-8) :std };
+use charnames qw{ :full :short };
 use Carp;
-use English qw(-no_match_vars);
-use Params::Check qw(check allow last_error);
+use English qw{-no_match_vars};
+use Params::Check qw{check allow last_error};
 
-use FindBin qw($Bin);    #Find directory of script
-use File::Basename qw(dirname basename);
-use File::Spec::Functions qw(catdir);
+use FindBin qw{$Bin};    #Find directory of script
+use File::Basename qw{dirname basename};
+use File::Spec::Functions qw{catdir};
 use Getopt::Long;
 use Test::More;
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), 'lib' );
-use Script::Utils qw(help);
+use Script::Utils qw{help};
 
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
 our $VERSION = '1.0.0';
 
+## Constants
+Readonly my $SPACE   => q{ };
+Readonly my $NEWLINE => qq{\n};
+
 ###User Options
 GetOptions(
     q{h|help} => sub {
         done_testing();
-        say {*STDOUT} $USAGE, "\n";
+        say {*STDOUT} $USAGE;
         exit;
     },    #Display help text
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION, "\n\n";
+        say {*STDOUT} $NEWLINE, basename($PROGRAM_NAME),
+          $SPACE, $VERSION, $NEWLINE;
         exit;
     },    #Display version number
     q{vb|verbose} => $VERBOSE,
@@ -57,7 +62,9 @@ BEGIN {
 ##Modules with import
     my %perl_module;
 
-    $perl_module{'Script::Utils'} = [qw(help)];
+    $perl_module{'Script::Utils'} = [qw{help}];
+
+  PERL_MODULES:
     while ( my ( $module, $module_import ) = each %perl_module ) {
         use_ok( $module, @{$module_import} )
           or BAIL_OUT q{Cannot load } . $module;
@@ -65,16 +72,22 @@ BEGIN {
 
 ##Modules
     my @modules = (q{MIP::PacketManager::Conda});
+
+  MODULES:
     for my $module (@modules) {
         require_ok($module) or BAIL_OUT q{Cannot load } . $module;
     }
 }
 
-use MIP::PacketManager::Conda qw(conda_create);
-use MIP::Test::Commands qw(test_function);
+use MIP::PacketManager::Conda qw{conda_create};
+use MIP::Test::Commands qw{test_function};
 
 diag(
-"Test conda_create $MIP::PacketManager::Conda::VERSION, Perl $PERL_VERSION, $EXECUTABLE_NAME"
+    q{Test conda_create }
+      . $MIP::PacketManager::Conda::VERSION
+      . q{, Perl}
+      . $PERL_VERSION,
+    $EXECUTABLE_NAME
 );
 
 ## Base arguments

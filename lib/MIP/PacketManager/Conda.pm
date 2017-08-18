@@ -29,14 +29,14 @@ Readonly my $NEWLINE => qq{\n};
 
 BEGIN {
 
-    use base qw(Exporter);
+    use base qw{Exporter};
     require Exporter;
 
     # Set the version for version checking
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(conda_create);
+    our @EXPORT_OK = qw{conda_create};
 }
 
 sub conda_create {
@@ -45,14 +45,14 @@ sub conda_create {
 
 ##Function : Create Conda environment
 ##Returns  : @commands
-##Arguments: $env_name, $python_version, $quiet, $no_confirmation,
-##           $packages_ref, $FILEHANDLE
+##Arguments: $packages_ref, $env_name, $python_version, $quiet, $no_confirmation,
+##           $FILEHANDLE
+##         : $packages_ref    => Packages to be installed
+##         : $FILEHANDLE      => Filehandle to write to
 ##         : $env_name        => Name of environment to create
 ##         : $python_version  => Python version to install
 ##         : $quiet           => Do not display progress bar
 ##         : $no_confirmation => Do not ask for confirmation
-##         : $packages_ref    => Packages to be installed
-##         : $FILEHANDLE      => Filehandle to write to
 
     my ($arg_href) = @_;
 
@@ -65,6 +65,15 @@ sub conda_create {
     my $FILEHANDLE;
 
     my $tmpl = {
+        packages_ref => {
+            default     => [],
+            strict_type => 1,
+            store       => \$packages_ref
+        },
+        FILEHANDLE => {
+            required => 1,
+            store    => \$FILEHANDLE
+        },
         env_name => {
             default     => q{},
             defined     => 1,
@@ -73,6 +82,7 @@ sub conda_create {
         },
         python_version => {
             default     => '2.7',
+            allow       => [qr/\d+.\d+ | \d+.\d+.\d+/xms],
             strict_type => 1,
             store       => \$python_version
         },
@@ -88,15 +98,6 @@ sub conda_create {
             strict_type => 1,
             store       => \$no_confirmation
         },
-        packages_ref => {
-            default     => [],
-            strict_type => 1,
-            store       => \$packages_ref
-        },
-        FILEHANDLE => {
-            required => 1,
-            store    => \$FILEHANDLE
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -105,15 +106,13 @@ sub conda_create {
     # Basic command
     my @commands = q{conda create};
 
-    #say $FILEHANDLE qq{### Creating Conda Environment and install: $env_name};
-
     # Add python version
     if ($python_version) {
-        push @commands, qq{python=$python_version};
+        push @commands, q{python=} . $python_version;
     }
 
     if ($env_name) {
-        push @commands, qq{--name $env_name};
+        push @commands, q{--name } . $env_name;
     }
 
     if ($quiet) {
