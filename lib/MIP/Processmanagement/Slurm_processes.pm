@@ -397,6 +397,7 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
       create_job_id_string_for_sample_id
       clear_sample_id_pan_job_id_dependency_tree
       clear_sample_id_job_id_dependency_tree
+      limit_job_id_string
     );
 
     # Create string with all previous job_ids
@@ -461,14 +462,13 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
         }
     );
 
-    ## Keeps the job_id string dependency within reasonable limits
-    if (   ( defined $job_id_href->{ALL}{ALL} )
-        && ( scalar( @{ $job_id_href->{ALL}{ALL} } ) >= 100 ) )
-    {
+    ## Limit number of job_ids in job_id chain
+    limit_job_id_string(
+        {
+            job_id_href => $job_id_href,
+        }
+    );
 
-        # Remove oldest job_id
-        shift @{ $job_id_href->{ALL}{ALL} };
-    }
     ## Job dependent on all jobs
     # Add job_id to hash
     push @{ $job_id_href->{ALL}{ALL} }, $job_id_returned;

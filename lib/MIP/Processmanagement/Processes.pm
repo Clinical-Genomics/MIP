@@ -37,6 +37,7 @@ BEGIN {
       create_job_id_string_for_sample_id
       clear_sample_id_pan_job_id_dependency_tree
       clear_sample_id_job_id_dependency_tree
+      limit_job_id_string
       print_wait};
 }
 
@@ -632,6 +633,62 @@ sub create_job_id_string_for_sample_id {
         }
     }
     return $job_ids_string;
+}
+
+sub limit_job_id_string {
+
+##limit_job_id_string
+
+##Function : Limit number of job_ids in job_id chain
+##Returns  : ""
+##Arguments: $job_id_href, $family_id_chain_key, $chain_key
+##         : $job_id_href         => The info on job ids hash {REF}
+##         : $family_id_chain_key => Family ID chain hash key
+##         : $chain_key           => The current chain hash key
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $job_id_href;
+    my $family_id_chain_key;
+    my $chain_key;
+
+    my $tmpl = {
+        job_id_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$job_id_href
+        },
+        family_id_chain_key => {
+            default     => qw{ALL},
+            strict_type => 1,
+            store       => \$family_id_chain_key
+        },
+        chain_key => {
+            default     => qw{ALL},
+            strict_type => 1,
+            store       => \$chain_key
+        },
+    };
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
+
+    # Set maximum job_ids to track limit
+    Readonly my $MAX_JOB_IDS_TO_TRACK => 100;
+
+    # Alias job_id chain array
+    my $job_ids_ref = $job_id_href->{$family_id_chain_key}{$chain_key};
+
+    ## Keeps the job_id string dependency within reasonable limits
+    if (   ( defined $job_ids_ref )
+        && ( scalar @{$job_ids_ref} >= $MAX_JOB_IDS_TO_TRACK ) )
+    {
+
+        # Remove oldest job_ids
+        @{$job_ids_ref} = @{$job_ids_ref}[ 0 .. $MAX_JOB_IDS_TO_TRACK ];
+    }
+    return;
 }
 
 sub print_wait {
