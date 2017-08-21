@@ -391,8 +391,8 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
     };
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
-    use MIP::Processmanagement::Processes
-      qw(add_pan_job_id_to_sample_id_dependency_tree
+    use MIP::Processmanagement::Processes qw(add_job_id_dependency_tree
+      add_pan_job_id_to_sample_id_dependency_tree
       add_to_job_id_dependency_string
       create_job_id_string_for_sample_id
       clear_sample_id_pan_job_id_dependency_tree
@@ -469,9 +469,14 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
         }
     );
 
-    ## Job dependent on all jobs
-    # Add job_id to hash
-    push @{ $job_id_href->{ALL}{ALL} }, $job_id_returned;
+    ## Add job_id to jobs dependent on all jobs
+    add_job_id_dependency_tree(
+        {
+            job_id_href     => $job_id_href,
+            chain_key       => q{ALL},
+            job_id_returned => $job_id_returned,
+        }
+    );
 
     slurm_submission_info(
         {
@@ -480,9 +485,14 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
         }
     );
 
-    ## Add job_id_returned to hash for sacct processing downstream
-    push @{ $job_id_href->{PAN}{PAN} }, $job_id_returned;
-
+    ## Add PAN job_id_returned to hash for sacct processing downstream
+    add_job_id_dependency_tree(
+        {
+            job_id_href     => $job_id_href,
+            chain_key       => q{PAN},
+            job_id_returned => $job_id_returned,
+        }
+    );
     return;
 }
 

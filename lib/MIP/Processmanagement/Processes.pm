@@ -30,6 +30,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{add_to_job_id_dependency_string
+      add_job_id_dependency_tree
       add_parallel_job_id_to_dependency_tree
       add_pan_job_id_to_sample_id_dependency_tree
       add_pan_job_id_to_family_id_dependency_tree
@@ -133,6 +134,60 @@ sub add_to_job_id_dependency_string {
         }
     }
     return $job_ids_string;
+}
+
+sub add_job_id_dependency_tree {
+
+##add_job_id_dependency_tree
+
+##Function : Saves job_id to the correct hash array depending on chain type.
+##Returns  : ""
+##Arguments: $job_id_href, $chain_key, $job_id_returned
+##         : $job_id_href         => Info on jobIds hash {REF}
+##         : $chain_key           => Arbitrary chain hash key
+##         : $job_id_returned     => Job_id that was returned from submission
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $job_id_href;
+    my $chain_key;
+    my $job_id_returned;
+
+    my $tmpl = {
+        job_id_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$job_id_href
+        },
+        chain_key => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$chain_key
+        },
+        job_id_returned => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$job_id_returned
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+
+    ## Push job_id to arbitrary chain key
+
+    # Alias job_ids array for arbitrary chain key in job_id_href to push to
+    my $chain_key_job_ids_ref =
+      \@{ $job_id_href->{$chain_key}{$chain_key} };
+
+    # Add to sample_id job dependency tree
+    push $chain_key_job_ids_ref, $job_id_returned;
+
+    return;
 }
 
 sub add_parallel_job_id_to_dependency_tree {
