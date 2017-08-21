@@ -36,7 +36,7 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{conda_create};
+    our @EXPORT_OK = qw{conda_create conda_source_activate};
 }
 
 sub conda_create {
@@ -131,6 +131,55 @@ sub conda_create {
         {
             commands_ref => \@commands,
             separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+
+    return @commands;
+}
+
+sub conda_source_activate {
+
+##conda_source_activate
+
+##Function : Activate conda environment
+##Returns  : "@commands"
+##Arguments: $FILEHANDLE, $env_name,
+##         : $FILEHANDLE => Filehandle to write to
+##         : $env_name   => Name of conda environment
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $env_name;
+
+    my $tmpl = {
+        FILEHANDLE => {
+            required => 1,
+            store    => \$FILEHANDLE
+        },
+        env_name => {
+            default     => q{root},
+            defined     => 1,
+            strict_type => 1,
+            store       => \$env_name
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+
+    ## Stores commands depending on input parameters
+
+    # Basic command
+    my @commands = q{source activate};
+
+    # Activates env, default root
+    push @commands, $env_name;
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
             FILEHANDLE   => $FILEHANDLE,
         }
     );

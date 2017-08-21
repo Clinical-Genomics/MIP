@@ -25,7 +25,7 @@ use MIP::Language::Shell qw(create_bash_file);
 use Program::Download::Wget qw(wget);
 use MIP::Gnu::Bash qw(gnu_cd);
 use MIP::Gnu::Coreutils qw(gnu_cp gnu_rm gnu_mv gnu_mkdir);
-use MIP::PacketManager::Conda qw{ conda_create };
+use MIP::PacketManager::Conda qw{ conda_create conda_source_activate };
 use Script::Utils qw(help set_default_array_parameters);
 
 
@@ -239,6 +239,10 @@ Script::Utils::set_default_array_parameters(
     }
 );
 
+## Constants
+Readonly my $SPACE => qq{\n};
+
+
 ##########
 ###MAIN###
 ##########
@@ -280,6 +284,9 @@ if ( exists( $parameter{conda_environment} ) ) {
     if ( !-d catdir( $parameter{conda_prefix_path} ) ) {
 
         ## Create Conda environment and install pip
+        say $FILEHANDLE q{## Creating conda environment: } 
+          . $parameter_href->{conda_environment} 
+          . q{and install packages}; 
         conda_create(
             {
                 env_name => $parameter_href->{conda_environment},
@@ -288,6 +295,7 @@ if ( exists( $parameter{conda_environment} ) ) {
                 FILEHANDLE     => $FILEHANDLE,
             }
         );
+        say $FILEHANDLE $NEWLINE;
     }
 }
 
@@ -1433,13 +1441,16 @@ sub pip_install {
         print $FILEHANDLE '### Install PIP packages in conda main environment',
           "\n";
     }
+   
     ## Activate conda environment
-    activate_conda_environment(
+    say $FILEHANDLE q{## Activate conda environment};  
+    conda_source_activate(
         {
-            parameter_href => $parameter_href,
-            FILEHANDLE     => $FILEHANDLE,
+            FILEHANDLE => $FILEHANDLE,
+            env_name   => $parameter_href->{conda_environment},
         }
     );
+    say $FILEHANDLE $NEWLINE;
 
     ## Install PIP packages
     print $FILEHANDLE '## Install PIP packages', "\n";
@@ -2295,12 +2306,15 @@ sub varianteffectpredictor {
     print $FILEHANDLE '### Install varianteffectpredictor', "\n";
 
     ## Activate conda environment
-    activate_conda_environment(
+    say $FILEHANDLE q{## Activate conda environment};
+    conda_source_activate(
         {
-            parameter_href => $parameter_href,
-            FILEHANDLE     => $FILEHANDLE,
+            FILEHANDLE => $FILEHANDLE,
+            env_name   => $parameter_href->{conda_environment},
         }
     );
+    say $FILEHANDLE $NEWLINE;
+    
 
     ##Make sure that the cache directory exists
     gnu_mkdir(
@@ -2674,12 +2688,14 @@ sub cnvnator {
     print $FILEHANDLE '### Install cnvnator', "\n";
 
     ## Activate conda environment
-    activate_conda_environment(
+    say $FILEHANDLE q{## Activate conda environment};
+    conda_source_activate(
         {
-            parameter_href => $parameter_href,
-            FILEHANDLE     => $FILEHANDLE,
+            FILEHANDLE => $FILEHANDLE,
+            env_name   => $parameter_href->{conda_environment},
         }
     );
+    say $FILEHANDLE $NEWLINE;
 
     ## Create the temporary install directory
     create_install_dir( { FILEHANDLE => $FILEHANDLE, } );
@@ -2834,13 +2850,15 @@ sub tiddit {
     print $FILEHANDLE '### Install tiddit', "\n";
 
     ## Activate conda environment
-    activate_conda_environment(
+    say $FILEHANDLE q{## Activate conda environment};
+    conda_source_activate(
         {
-            parameter_href => $parameter_href,
-            FILEHANDLE     => $FILEHANDLE,
+            FILEHANDLE => $FILEHANDLE,
+            env_name   => $parameter_href->{conda_environment},
         }
     );
-
+    say $FILEHANDLE $NEWLINE;
+    
     ## Move to miniconda environment
     gnu_cd(
         {
@@ -3010,12 +3028,14 @@ sub svdb {
     print $FILEHANDLE '### Install svdb', "\n";
 
     ## Activate conda environment
-    activate_conda_environment(
+    say $FILEHANDLE q{## Activate conda environment};
+    conda_source_activate(
         {
-            parameter_href => $parameter_href,
-            FILEHANDLE     => $FILEHANDLE,
+            FILEHANDLE => $FILEHANDLE,
+            env_name   => $parameter_href->{conda_environment},
         }
     );
+    say $FILEHANDLE $NEWLINE;
 
     ## Move to miniconda environment
     gnu_cd(
@@ -3281,12 +3301,14 @@ sub rhocall {
     }
 
     ## Activate conda environment
-    activate_conda_environment(
+    say $FILEHANDLE q{## Activate conda environment};
+    conda_source_activate(
         {
-            parameter_href => $parameter_href,
-            FILEHANDLE     => $FILEHANDLE,
+            FILEHANDLE => $FILEHANDLE,
+            env_name   => $parameter_href->{conda_environment},
         }
     );
+    say $FILEHANDLE $NEWLINE;
 
     ## Install rhocall
     print $FILEHANDLE '### Install rhocall', "\n";
@@ -3347,48 +3369,6 @@ sub rhocall {
 
     ## Deactivate conda environment
     deactivate_conda_environment( { FILEHANDLE => $FILEHANDLE, } );
-    return;
-}
-
-sub activate_conda_environment {
-
-##activate_conda_environment
-
-##Function : Activate conda environment
-##Returns  : ""
-##Arguments: $parameter_href, $FILEHANDLE
-##         : $parameter_href => Holds all parameters
-##         : $FILEHANDLE       => Filehandle to write to
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
-
-    if ( exists( $parameter_href->{conda_environment} )
-        && ( $parameter_href->{conda_environment} ) )
-    {
-
-        ## Activate conda environment
-        print $FILEHANDLE '## Activate conda environment', "\n";
-        print $FILEHANDLE 'source activate '
-          . $parameter_href->{conda_environment} . q{ };
-        print $FILEHANDLE "\n\n";
-    }
     return;
 }
 
@@ -3907,12 +3887,14 @@ sub snpeff_download {
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     ## Activate conda environment
-    activate_conda_environment(
+    say $FILEHANDLE q{## Activate conda environment};
+    conda_source_activate(
         {
-            parameter_href => $parameter_href,
-            FILEHANDLE     => $FILEHANDLE,
+            FILEHANDLE => $FILEHANDLE,
+            env_name   => $parameter_href->{conda_environment},
         }
     );
+    say $FILEHANDLE $NEWLINE;
 
     print $FILEHANDLE 'java -Xmx2g ';
     print $FILEHANDLE '-jar '
@@ -3964,12 +3946,14 @@ sub references {
     my $pwd = cwd();
 
     ## Activate conda environment
-    activate_conda_environment(
+    say $FILEHANDLE q{## Activate conda environment};
+    conda_source_activate(
         {
-            parameter_href => $parameter_href,
-            FILEHANDLE     => $FILEHANDLE,
+            FILEHANDLE => $FILEHANDLE,
+            env_name   => $parameter_href->{conda_environment},
         }
     );
+    say $FILEHANDLE $NEWLINE;
 
     print STDERR 'Writting install instructions for references', "\n";
 
