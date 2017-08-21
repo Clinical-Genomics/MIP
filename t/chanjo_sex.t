@@ -2,31 +2,27 @@
 
 #### Copyright 2017 Henrik Stranneheim
 
-#added by Chiara
-#use diagnostics;
-#use Data::Dumper;
-
-use Modern::Perl qw(2014);
-use warnings qw(FATAL utf8);
+use Modern::Perl qw{2014};
+use warnings qw{FATAL utf8};
 use autodie;
 use 5.018;    #Require at least perl 5.18
 use utf8;
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
+use open qw{ :encoding(UTF-8) :std };
+use charnames qw{ :full :short };
 use Carp;
-use English qw(-no_match_vars);
-use Params::Check qw(check allow last_error);
+use English qw{-no_match_vars};
+use Params::Check qw{check allow last_error};
 
-use FindBin qw($Bin);    #Find directory of script
-use File::Basename qw(dirname basename);
-use File::Spec::Functions qw(catdir);
+use FindBin qw{$Bin};    #Find directory of script
+use File::Basename qw{dirname basename};
+use File::Spec::Functions qw{catdir};
 use Getopt::Long;
 use Test::More;
 use FileHandle;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), 'lib' );
-use Script::Utils qw(help);
+use Script::Utils qw{help};
 
 our $USAGE = build_usage( {} );
 
@@ -64,7 +60,7 @@ BEGIN {
 ## Modules with import
     my %perl_module;
 
-    $perl_module{'Script::Utils'} = [qw(help)];
+    $perl_module{'Script::Utils'} = [qw{help}];
 
     while ( my ( $module, $module_import ) = each %perl_module ) {
 
@@ -81,18 +77,18 @@ BEGIN {
     }
 }
 
-use MIP::Program::Alignment::Chanjo qw(chanjo_sex);
-use MIP::Test::Commands qw(test_function);
+use MIP::Program::Alignment::Chanjo qw{chanjo_sex};
+use MIP::Test::Commands qw{test_function};
 
 diag(
 "Test gnu_sed MIP::Program::Alignment::Chanjo::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments
-my $function_base_command = 'chanjo';
+my $function_base_command = q{chanjo};
 
-my $filename = 'test.txt';
-open(my $fh, '>', $filename) or die "Could not open file '$filename' $!";
+#my $filename = 'test.txt';
+#open(my $fh, '>', $filename) or die "Could not open file '$filename' $!";
 
 my %base_argument = (
     FILEHANDLE => {
@@ -104,7 +100,7 @@ my %base_argument = (
 ## Can be duplicated with %base and/or %specific to enable testing of each individual argument
 my %required_argument = (
     FILEHANDLE => {
-        input           => $fh,
+        input           => undef,
         expected_output => $function_base_command,
     },
     infile_path => {
@@ -123,20 +119,20 @@ my %specific_argument = (
         input           => 'stderrfile.test',
         expected_output => '2> stderrfile.test',
     },
-    #---------------------------------------------------------> doesn't work
+
     log_file_path => {
         input           => 'logfile.test',
-        expected_output => 'logfile.test',
+        expected_output => q{--log-file logfile.test},
     },
     chr_prefix => {
-        input           => undef,
-        expected_output => '???????',
+        input           => q{chr},
+        expected_output => '--prefix chr',
     },
     log_level => {
         input           => 'INFO',
-        expected_output => 'INFO',
+        expected_output => '--log-level INFO',
     },
-    #---------------------------------------------------------> doesn't work
+
 );
 
 ## Coderef - enables generalized use of generate call
@@ -146,9 +142,6 @@ my $module_function_cref = \&chanjo_sex;
 my @arguments = ( \%base_argument, \%specific_argument );
 
 foreach my $argument_href (@arguments) {
-	
-	#print Dumper($argument_href);
-	
 	
     my @commands = test_function(
         {
@@ -188,7 +181,7 @@ sub build_usage {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
+    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
 
     return <<"END_USAGE";
  $program_name [options]
