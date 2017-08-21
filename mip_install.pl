@@ -25,7 +25,7 @@ use MIP::Language::Shell qw(create_bash_file);
 use Program::Download::Wget qw(wget);
 use MIP::Gnu::Bash qw(gnu_cd);
 use MIP::Gnu::Coreutils qw(gnu_cp gnu_rm gnu_mv gnu_mkdir);
-use MIP::PacketManager::Conda qw{ conda_create conda_source_activate };
+use MIP::PacketManager::Conda qw{ conda_create conda_source_activate conda_source_deactivate };
 use Script::Utils qw(help set_default_array_parameters);
 
 
@@ -1470,7 +1470,13 @@ sub pip_install {
     print $FILEHANDLE "\n\n";
 
     ## Deactivate conda environment
-    deactivate_conda_environment( { FILEHANDLE => $FILEHANDLE, } );
+    say $FILEHANDLE q{## Deactivate conda environment};
+    conda_source_deactivate(
+        { 
+            FILEHANDLE => $FILEHANDLE, 
+        } 
+    );
+    say $FILEHANDLE $NEWLINE;
 
     return;
 }
@@ -2539,7 +2545,14 @@ sub varianteffectpredictor {
     print $FILEHANDLE "\n\n";
 
     ## Deactivate conda environment
-    deactivate_conda_environment( { FILEHANDLE => $FILEHANDLE, } );
+    say $FILEHANDLE q{## Deactivate conda environment};
+    conda_source_deactivate(
+        {
+            FILEHANDLE => $FILEHANDLE,
+        }
+    );
+    say $FILEHANDLE $NEWLINE;
+    
     return;
 }
 
@@ -2797,7 +2810,14 @@ sub cnvnator {
         }
     );
     ## Deactivate conda environment
-    deactivate_conda_environment( { FILEHANDLE => $FILEHANDLE, } );
+    say $FILEHANDLE q{## Deactivate conda environment};
+    conda_source_deactivate(
+        {
+            FILEHANDLE => $FILEHANDLE,
+        }
+    );
+    say $FILEHANDLE $NEWLINE;
+    
     return;
 }
 
@@ -2975,7 +2995,14 @@ sub tiddit {
     print $FILEHANDLE "\n\n";
 
     ## Deactivate conda environment
-    deactivate_conda_environment( { FILEHANDLE => $FILEHANDLE, } );
+    say $FILEHANDLE q{## Deactivate conda environment};
+    conda_source_deactivate(
+        {
+            FILEHANDLE => $FILEHANDLE,
+        }
+    );
+    say $FILEHANDLE $NEWLINE;
+    
     return;
 }
 
@@ -3103,7 +3130,14 @@ sub svdb {
     print $FILEHANDLE "\n\n";
 
     ## Deactivate conda environment
-    deactivate_conda_environment( { FILEHANDLE => $FILEHANDLE, } );
+    say $FILEHANDLE q{## Deactivate conda environment};
+    conda_source_deactivate(
+        {
+            FILEHANDLE => $FILEHANDLE,
+        }
+    );
+    say $FILEHANDLE $NEWLINE;
+
     return;
 }
 
@@ -3368,34 +3402,14 @@ sub rhocall {
     print $FILEHANDLE "\n\n";
 
     ## Deactivate conda environment
-    deactivate_conda_environment( { FILEHANDLE => $FILEHANDLE, } );
-    return;
-}
-
-sub deactivate_conda_environment {
-
-##deactivate_conda_environment
-
-##Function : Deactivate conda environment
-##Returns  : ""
-##Arguments: $FILEHANDLE
-##         : $FILEHANDLE => Filehandle to write to
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $FILEHANDLE;
-
-    my $tmpl =
-      { FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE }, };
-
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
-
-    ## Deactivate conda environment
-    print $FILEHANDLE '## Deactivate conda environment', "\n";
-    print $FILEHANDLE 'source deactivate ';
-    print $FILEHANDLE "\n\n";
-
+    say $FILEHANDLE q{## Deactivate conda environment};
+    conda_source_deactivate(
+        {
+            FILEHANDLE => $FILEHANDLE,
+        }
+    );
+    say $FILEHANDLE $NEWLINE;
+    
     return;
 }
 
@@ -3909,7 +3923,13 @@ sub snpeff_download {
     print $FILEHANDLE "\n\n";
 
     ## Deactivate conda environment
-    deactivate_conda_environment( { FILEHANDLE => $FILEHANDLE, } );
+    say $FILEHANDLE q{## Deactivate conda environment};
+    conda_source_deactivate(
+        {
+            FILEHANDLE => $FILEHANDLE,
+        }
+    );
+    say $FILEHANDLE $NEWLINE;
 
     return;
 }
@@ -3980,6 +4000,13 @@ sub references {
     print $FILEHANDLE "\n\n";
 
     ## Deactivate conda environment
-    deactivate_conda_environment( { FILEHANDLE => $FILEHANDLE, } );
+    say $FILEHANDLE q{## Deactivate conda environment};
+    conda_source_deactivate(
+        {
+            FILEHANDLE => $FILEHANDLE,
+        }
+    );
+    say $FILEHANDLE $NEWLINE;
+    
     return;
 }
