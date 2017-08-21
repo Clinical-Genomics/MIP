@@ -14,6 +14,7 @@ use autodie;
 use Test::More;
 use Params::Check qw[check allow last_error];
 $Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
+use Data::Dumper;
 
 ## CPAN
 use List::MoreUtils qw(zip);
@@ -55,6 +56,7 @@ sub test_function {
 ##         : $function_base_command  => Function base command
 ##         : $do_test_base_command   => Perform test of base command
 
+    #print("\n\n\n---->in tmpl\n\n\n");
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
@@ -64,7 +66,9 @@ sub test_function {
     my $module_function_cref;
     my $do_test_base_command;
 
+
     my $tmpl = {
+		
         argument_href => {
             required    => 1,
             defined     => 1,
@@ -101,15 +105,19 @@ sub test_function {
         ### Parameter to test in this loop check if array ref or scalar
         my $input_value;
         my $input_values_ref;
+        
+        #print Dumper($argument);
 
         ## SCALAR
         if ( exists $argument_href->{$argument}{input} ) {
-
+            
             $input_value = $argument_href->{$argument}{input};
+            #print("Im in scalar:\t$input_value\n");
         }
         ## ARRAY
         elsif ( exists $argument_href->{$argument}{inputs_ref} ) {
 
+			
             $input_values_ref = $argument_href->{$argument}{inputs_ref};
         }
 
