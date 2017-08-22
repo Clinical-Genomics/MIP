@@ -107,11 +107,6 @@ sub conda_create {
     # Basic command
     my @commands = q{conda create};
 
-    # Add python version
-    if ($python_version) {
-        push @commands, q{python=} . $python_version;
-    }
-
     if ($env_name) {
         push @commands, q{--name} . $SPACE . $env_name;
     }
@@ -122,6 +117,11 @@ sub conda_create {
 
     if ($no_confirmation) {
         push @commands, q{--yes};
+    }
+    
+    # Add python version
+    if ($python_version) {
+        push @commands, q{python=} . $python_version;
     }
 
     if ( @{$packages_ref} ) {
@@ -162,7 +162,6 @@ sub conda_source_activate {
         },
         env_name => {
             required    => 1,
-            defined     => 1,
             strict_type => 1,
             store       => \$env_name
         },
