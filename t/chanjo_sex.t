@@ -35,8 +35,6 @@ my $VERBOSE = 1;
 our $VERSION = '0.0.0';
 
 ###User Options
-Readonly my $NEWLINE => qq{\n};
-
 GetOptions(
     'h|help' => sub {
         done_testing();
@@ -45,8 +43,9 @@ GetOptions(
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        print {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
-          $NEWLINE x 2;
+        say {*STDOUT} basename($PROGRAM_NAME) . $SPACE . $VERSION,
+          $NEWLINE;
+
         exit;
     },    #Display version number
     'vb|verbose' => $VERBOSE,
