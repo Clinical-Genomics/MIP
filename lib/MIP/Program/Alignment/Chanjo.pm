@@ -108,7 +108,7 @@ sub chanjo_sex {
     ## Options
     if ($chr_prefix) {
 
-        push @commands, q{--prefix} .  $SPACE . $chr_prefix;
+        push @commands, q{--prefix} . $SPACE . $chr_prefix;
     }
     ##Infile
     push @commands, $infile_path;
