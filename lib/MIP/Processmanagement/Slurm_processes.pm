@@ -496,6 +496,93 @@ sub slurm_submit_job_sample_id_dependency_dead_end {
     return;
 }
 
+sub slurm_submit_job_family_id_dependency_dead_end {
+
+##slurm_submit_job_family_id_dependency_dead_end
+
+##Function : Submit jobs that has family dependencies and leave no dependencies using SLURM
+##Returns  : ""
+##Arguments: $job_id_href, $family_id, $sample_id, $path, $sbatch_file_name, $log, $job_dependency_type
+##         : $job_id_href         => The info on job ids hash {REF}
+##         : $family_id           => Family id
+##         : $sample_id           => Sample id
+##         : $path                => Trunk or branch
+##         : $sbatch_file_name    => Sbatch file name
+##         : $log                 => Log
+##         : $job_dependency_type => SLURM job dependency type
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $job_dependency_type;
+
+    ## Flatten argument(s)
+    my $job_id_href;
+    my $family_id;
+    my $sample_id;
+    my $path;
+    my $sbatch_file_name;
+    my $log;
+
+    my $tmpl = {
+        job_id_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$job_id_href
+        },
+        family_id => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$family_id
+        },
+        sample_id => {
+            strict_type => 1,
+            store       => \$sample_id
+        },
+        path =>
+          { required => 1, defined => 1, strict_type => 1, store => \$path },
+        log => {
+            required => 1,
+            defined  => 1,
+            store    => \$log
+        },
+        sbatch_file_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$sbatch_file_name
+        },
+        job_dependency_type => {
+            default     => q{afterok},
+            allow       => [qw{afterany afterok}],
+            strict_type => 1,
+            store       => \$job_dependency_type
+        },
+    };
+    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
+
+####BEING DEVELOPPED#####
+
+#    use MIP::Processmanagement::Processes qw(add_job_id_dependency_tree    );
+
+    # Create string with all previous job_ids
+    my $job_ids_string;
+
+    # The job_id that is returned from submission
+    my $job_id_returned;
+
+    ## Set keys
+#    my $family_id_chain_key = $family_id . $UNDERSCORE . $path;
+#    my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
+#    my $pan_chain_key =
+#      $family_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
+
+    
+  }
+
 sub submit_jobs_to_sbatch {
 
 ##submit_sbatch_to_sbatch
@@ -623,191 +710,6 @@ sub slurm_submission_info {
           . $SINGLE_QUOTE,
         $NEWLINE
     );
-    return;
-}
-
-##Decommisioned###
-sub slurm_submit_job_case_dependency_add_to_case {
-
-##slurm_submit_job_case_dependency_add_to_case
-
-##Function : Submit jobs that has case dependencies and leave case dependencies using SLURM
-##Returns  : ""
-##Arguments: $job_id_href, $family_id, $sample_id, $path, $sbatch_file_name, $log, $job_dependency_type
-##         : $job_id_href         => The info on job ids hash {REF}
-##         : $family_id           => Family id
-##         : $sample_id           => Sample id
-##         : $path                => Trunk or branch
-##         : $sbatch_file_name    => Sbatch file name
-##         : $log                 => Log
-##         : $job_dependency_type => SLURM job dependency type
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $job_dependency_type;
-
-    ## Flatten argument(s)
-    my $job_id_href;
-    my $family_id;
-    my $sample_id;
-    my $path;
-    my $sbatch_file_name;
-    my $log;
-
-    my $tmpl = {
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        family_id => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$family_id
-        },
-        sample_id => {
-            strict_type => 1,
-            store       => \$sample_id
-        },
-        path =>
-          { required => 1, defined => 1, strict_type => 1, store => \$path },
-        log => {
-            required => 1,
-            defined  => 1,
-            store    => \$log
-        },
-        sbatch_file_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$sbatch_file_name
-        },
-        job_dependency_type => {
-            default     => q{afterok},
-            allow       => [qw{afterany afterok}],
-            strict_type => 1,
-            store       => \$job_dependency_type
-        },
-    };
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
-
-    use MIP::Processmanagement::Processes
-      qw(add_pan_job_id_to_sample_id_dependency_tree);
-
-    # Create string with all previous job_ids
-    my $job_ids_string;
-
-    # The job_id that is returned from submission
-    my $job_id_returned;
-
-    ## Set keys
-    my $family_id_chain_key => $family_id . $UNDERSCORE . $path;
-
-    if ( defined $sample_id ) {
-
-        my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
-
-        ## Saves job_id to the correct hash array depending on chaintype
-        add_pan_job_id_to_sample_id_dependency_tree(
-            {
-                job_id_href         => $job_id_href,
-                family_id_chain_key => $family_id_chain_key,
-                sample_id_chain_key => $sample_id_chain_key,
-            }
-        );
-
-        if ( $path eq q{MAIN} ) {
-
-            ## Add to job_id string
-            $job_ids_string = add_to_job_id(
-                {
-                    job_id_href         => $job_id_href,
-                    family_id_chain_key => $family_id_chain_key,
-                    chain_key           => $sample_id_chain_key,
-                }
-            );
-        }
-        elsif ( $path ne q{MAIN} ) {
-            ## Check for any previous job_ids within path current PATH. Branch.
-
-            ## Second or later in branch chain
-            if ( $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} ) {
-
-                ## Add to job_id string
-                $job_ids_string = add_to_job_id(
-                    {
-                        job_id_href         => $job_id_href,
-                        family_id_chain_key => $family_id_chain_key,
-                        chain_key           => $sample_id_chain_key,
-                    }
-                );
-            }
-            elsif (
-                $job_id_href->{ $family_id . q{_MAIN} }{ $sample_id . q{_MAIN} }
-              )
-            {
-                ## Inherit from potential MAIN. Trunk
-
-                ## Add to job_id string
-                $job_ids_string = add_to_job_id(
-                    {
-                        job_id_href         => $job_id_href,
-                        family_id_chain_key => $family_id . q{_MAIN},
-                        chain_key           => $sample_id . q{_MAIN},
-                    }
-                );
-            }
-        }
-
-        ## Submit jobs to sbatch
-        $job_id_returned = submit_jobs_to_sbatch(
-            {
-                job_dependency_type => $job_dependency_type,
-                job_ids_string      => $job_ids_string,
-                sbatch_file_name    => $sbatch_file_name,
-                log                 => $log,
-            }
-        );
-
-        ## Clear latest family_id_sample_id chainkey
-        @{ $job_id_href->{$family_id_chain_key}
-              { $family_id_chain_key . q{_} . $sample_id_chain_key } } = ();
-
-        #Clear latest sample_id chainkey
-        @{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} } =
-          ();
-
-        ## Add job_id_returned to hash
-        push @{ $job_id_href->{$family_id_chain_key}
-              { $family_id_chain_key . q{_} . $sample_id_chain_key } },
-          $job_id_returned;
-
-        ## Keeps the job_id string dependecy within reasonable limits
-        if (   ( defined $job_id_href->{ALL}{ALL} )
-            && ( scalar( @{ $job_id_href->{ALL}{ALL} } ) >= 100 ) )
-        {
-
-            # Remove oldest job_id
-            shift @{ $job_id_href->{ALL}{ALL} };
-        }
-        ## Job dependent on all jobs
-        # Add job_id to hash
-        push @{ $job_id_href->{ALL}{ALL} }, $job_id_returned;
-    }
-    slurm_submission_info(
-        {
-            job_id_returned => $job_id_returned,
-            log             => $log,
-        }
-    );
-
-    ## Add job_id_returned to hash for sacct processing downstream
-    push @{ $job_id_href->{PAN}{PAN} }, $job_id_returned;
-
     return;
 }
 

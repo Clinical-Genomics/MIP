@@ -28229,7 +28229,7 @@ sub submit_job {
 
     use Readonly;
     use MIP::Processmanagement::Processes
-      qw(add_parallel_job_id_to_dependency_tree add_pan_job_id_to_sample_id_dependency_tree add_pan_job_id_to_family_id_dependency_tree add_to_job_id_dependency_string);
+      qw(add_parallel_job_id_to_sample_id_dependency_tree add_pan_job_id_to_sample_id_dependency_tree add_pan_job_id_to_family_id_dependency_tree add_to_job_id_dependency_string);
 
     ## Constants
     Readonly my $NEWLINE      => qq{\n};
@@ -28281,7 +28281,7 @@ sub submit_job {
         {
 
             ## Saves job_id to the correct hash array depending on chaintype
-            add_parallel_job_id_to_dependency_tree(
+            add_parallel_job_id_to_sample_id_dependency_tree(
                 {
                     infile_lane_prefix_href => $infile_lane_prefix_href,
                     job_id_href             => $job_id_href,

@@ -83,10 +83,10 @@ BEGIN {
 }
 
 use MIP::Processmanagement::Processes
-  qw{add_parallel_job_id_to_dependency_tree};
+  qw{add_parallel_job_id_to_sample_id_dependency_tree};
 
 diag(
-"Test add_parallel_job_id_to_dependency_tree $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test add_parallel_job_id_to_sample_id_dependency_tree $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments
@@ -112,7 +112,7 @@ my %job_id = (
 );
 
 ### No previous parallel job_ids
-add_parallel_job_id_to_dependency_tree(
+add_parallel_job_id_to_sample_id_dependency_tree(
     {
         infile_lane_prefix_href => \%infile_lane_prefix,
         job_id_href             => \%job_id,
@@ -144,7 +144,7 @@ while ( my ($infile_index) = each $infile_lane_prefix{$sample_id} ) {
       q{job_id_} . $infile_index;
 }
 
-add_parallel_job_id_to_dependency_tree(
+add_parallel_job_id_to_sample_id_dependency_tree(
     {
         infile_lane_prefix_href => \%infile_lane_prefix,
         job_id_href             => \%job_id,

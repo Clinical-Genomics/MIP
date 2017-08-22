@@ -31,7 +31,7 @@ BEGIN {
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{add_to_job_id_dependency_string
       add_job_id_dependency_tree
-      add_parallel_job_id_to_dependency_tree
+      add_parallel_job_id_to_sample_id_dependency_tree
       add_pan_job_id_to_sample_id_dependency_tree
       add_pan_job_id_to_family_id_dependency_tree
       add_sample_job_id_to_sample_id_dependency_tree
@@ -190,9 +190,9 @@ sub add_job_id_dependency_tree {
     return;
 }
 
-sub add_parallel_job_id_to_dependency_tree {
+sub add_parallel_job_id_to_sample_id_dependency_tree {
 
-##add_parallel_job_id_to_dependency_tree
+##add_parallel_job_id_to_sample_id_dependency_tree
 
 ##Function : Saves job_id to the correct hash array in dependency tree hash depending on chain type.
 ##Returns  : ""
