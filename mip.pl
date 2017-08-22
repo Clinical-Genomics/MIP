@@ -13650,7 +13650,7 @@ sub chanjo_sexcheck {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
-    use Program::Alignment::Chanjo qw(sex);
+    use MIP::Program::Alignment::Chanjo qw(chanjo_sex);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -13721,7 +13721,7 @@ sub chanjo_sexcheck {
 
         $chr_prefix = "chr";
     }
-    sex(
+    chanjo_sex(
         {
             infile_path =>
               catfile( $insample_directory, $infile_prefix . $infile_suffix ),
