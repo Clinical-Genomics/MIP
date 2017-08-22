@@ -104,12 +104,12 @@ sub test_function {
 
         ## SCALAR
         if ( exists $argument_href->{$argument}{input} ) {
-
+            
             $input_value = $argument_href->{$argument}{input};
         }
         ## ARRAY
         elsif ( exists $argument_href->{$argument}{inputs_ref} ) {
-
+			
             $input_values_ref = $argument_href->{$argument}{inputs_ref};
         }
 
