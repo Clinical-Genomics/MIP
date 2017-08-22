@@ -19,6 +19,9 @@ use File::Spec::Functions qw{catdir};
 use Getopt::Long;
 use Test::More;
 use FileHandle;
+use Readonly;
+
+
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), 'lib' );
@@ -30,16 +33,18 @@ my $VERBOSE = 1;
 our $VERSION = '0.0.0';
 
 ###User Options
+Readonly my $NEWLINE => qq{\n};
+
 GetOptions(
     'h|help' => sub {
         done_testing();
-        print {*STDOUT} $USAGE, "\n";
+        print {*STDOUT} $USAGE, $NEWLINE;
         exit;
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION,
-          "\n\n";
+        print {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . q{  } . $VERSION,
+          $NEWLINE x 2;
         exit;
     },    #Display version number
     'vb|verbose' => $VERBOSE,
@@ -104,33 +109,33 @@ my %required_argument = (
         expected_output => $function_base_command,
     },
     infile_path => {
-        input           => 'infile.test',
-        expected_output => 'infile.test',
+        input           => q{infile.test},
+        expected_output => q{infile.test},
     },
 );
 
 ## Specific arguments
 my %specific_argument = (
     outfile_path => {
-        input           => 'outfile.test',
-        expected_output => '> outfile.test',
+        input           => q{outfile.test},
+        expected_output => q{> outfile.test},
     },
     stderrfile_path => {
-        input           => 'stderrfile.test',
-        expected_output => '2> stderrfile.test',
+        input           => q{stderrfile.test},
+        expected_output => q{2> stderrfile.test},
     },
 
     log_file_path => {
-        input           => 'logfile.test',
+        input           => q{logfile.test},
         expected_output => q{--log-file logfile.test},
     },
     chr_prefix => {
         input           => q{chr},
-        expected_output => '--prefix chr',
+        expected_output => q{--prefix chr},
     },
     log_level => {
-        input           => 'INFO',
-        expected_output => '--log-level INFO',
+        input           => q{INFO},
+        expected_output => q{--log-level INFO},
     },
 
 );

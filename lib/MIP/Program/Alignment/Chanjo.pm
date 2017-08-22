@@ -96,26 +96,26 @@ sub chanjo_sex {
     ## Chanjo main options
     if ($log_level) {
 
-        push @commands, q{--log-level } . $log_level;
+        push @commands, q{--log-level} . $SPACE . $log_level;
     }
     if ($log_file_path) {
 
-        push @commands, '--log-file ' . $log_file_path;
+        push @commands, q{--log-file} . $SPACE . $log_file_path;
     }
 
-    push @commands, 'sex';
+    push @commands, q{sex};
 
     ## Options
     if ($chr_prefix) {
 
-        push @commands, '--prefix ' . $chr_prefix;
+        push @commands, q{--prefix} .  $SPACE . $chr_prefix;
     }
     ##Infile
     push @commands, $infile_path;
 
     if ($outfile_path) {
 
-        push @commands, '> ' . $outfile_path;
+        push @commands, q{>} . $SPACE . $outfile_path;
     }
     if ($stderrfile_path) {
 
