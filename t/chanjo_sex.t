@@ -21,11 +21,13 @@ use Test::More;
 use FileHandle;
 use Readonly;
 
-
-
 ## MIPs lib/
 use lib catdir( dirname($Bin), 'lib' );
 use Script::Utils qw{help};
+
+## Constants
+Readonly my $SPACE => q{ };
+Readonly my $NEWLINE => qq{\n};
 
 our $USAGE = build_usage( {} );
 
@@ -38,12 +40,12 @@ Readonly my $NEWLINE => qq{\n};
 GetOptions(
     'h|help' => sub {
         done_testing();
-        print {*STDOUT} $USAGE, $NEWLINE;
+        say {*STDOUT} $USAGE;
         exit;
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        print {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . q{  } . $VERSION,
+        print {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
           $NEWLINE x 2;
         exit;
     },    #Display version number
