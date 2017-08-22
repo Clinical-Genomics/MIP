@@ -241,8 +241,8 @@ Script::Utils::set_default_array_parameters(
 );
 
 ## Constants
-Readonly my $SPACE => qq{\n};
-
+Readonly my $SPACE => q{ };
+Readonly my $NEWLINW => qq{\n};
 
 ##########
 ###MAIN###
@@ -1443,7 +1443,7 @@ sub pip_install {
           "\n";
     }
    
-    ## Only activate conda environment if name supplied by user 
+    ## Only activate conda environment if supplied by user 
     if ( exists( ($parameter_href->{conda_environment}) ) {
         ## Activate conda environment
         say $FILEHANDLE q{## Activate conda environment};  
@@ -1473,7 +1473,7 @@ sub pip_install {
     }
     print $FILEHANDLE "\n\n";
     
-    ## Deactivate conda environment if the varaible exists
+    ## Deactivate conda environment if conda_environment exists
     if ( exists( ($parameter_href->{conda_environment}) ) {
         say $FILEHANDLE q{## Deactivate conda environment};
         conda_source_deactivate(
@@ -2317,7 +2317,7 @@ sub varianteffectpredictor {
     ## Install VEP
     print $FILEHANDLE '### Install varianteffectpredictor', "\n";
     
-    ## Only activate conda environment if name supplied by user
+    ## Only activate conda environment if supplied by user
     if ( exists( ($parameter_href->{conda_environment}) ) {
         ## Activate conda environment
         say $FILEHANDLE q{## Activate conda environment};
@@ -2552,7 +2552,7 @@ sub varianteffectpredictor {
     );
     print $FILEHANDLE "\n\n";
 
-    ## Deactivate conda environment if the varaible exists
+    ## Deactivate conda environment if conda_environment exists
     if ( exists( ($parameter_href->{conda_environment}) ) {
         say $FILEHANDLE q{## Deactivate conda environment};
         conda_source_deactivate(
@@ -2710,7 +2710,7 @@ sub cnvnator {
     ## Install CNVNator
     print $FILEHANDLE '### Install cnvnator', "\n";
    
-    ## Only activate conda environment if name supplied by user
+    ## Only activate conda environment if supplied by user
     if ( exists( ($parameter_href->{conda_environment}) ) {
         ## Activate conda environment
         say $FILEHANDLE q{## Activate conda environment};
@@ -2823,7 +2823,7 @@ sub cnvnator {
         }
     );
     
-    ## Deactivate conda environment if the varaible exists
+    ## Deactivate conda environment if conda_environment exists
     if ( exists( ($parameter_href->{conda_environment}) ) {
         say $FILEHANDLE q{## Deactivate conda environment};
         conda_source_deactivate(
@@ -2885,7 +2885,7 @@ sub tiddit {
     ## Install tiddit
     print $FILEHANDLE '### Install tiddit', "\n";
 
-    ## Only activate conda environment if name supplied by user
+    ## Only activate conda environment if supplied by user
     if ( exists( ($parameter_href->{conda_environment}) ) {
         ## Activate conda environment
         say $FILEHANDLE q{## Activate conda environment};
@@ -3013,7 +3013,7 @@ sub tiddit {
     );
     print $FILEHANDLE "\n\n";
 
-    ## Deactivate conda environment if the varaible exists
+    ## Deactivate conda environment if conda_environment exists
     if ( exists( ($parameter_href->{conda_environment}) ) {
         say $FILEHANDLE q{## Deactivate conda environment};
         conda_source_deactivate(
@@ -3075,7 +3075,7 @@ sub svdb {
     ## Install svdb
     print $FILEHANDLE '### Install svdb', "\n";
 
-    ## Only activate conda environment if name supplied by user
+    ## Only activate conda environment if supplied by user
     if ( exists( ($parameter_href->{conda_environment}) ) {
         ## Activate conda environment
         say $FILEHANDLE q{## Activate conda environment};
@@ -3153,7 +3153,7 @@ sub svdb {
     );
     print $FILEHANDLE "\n\n";
 
-    ## Deactivate conda environment if the varaible exists
+    ## Deactivate conda environment if conda_environment exists
     if ( exists( ($parameter_href->{conda_environment}) ) {
         say $FILEHANDLE q{## Deactivate conda environment};
         conda_source_deactivate(
@@ -3360,7 +3360,7 @@ sub rhocall {
         return;
     }
 
-    ## Only activate conda environment if name supplied by user
+    ## Only activate conda environment if supplied by user
     if ( exists( ($parameter_href->{conda_environment}) ) {
         ## Activate conda environment
         say $FILEHANDLE q{## Activate conda environment};
@@ -3430,7 +3430,7 @@ sub rhocall {
     );
     print $FILEHANDLE "\n\n";
 
-    ## Deactivate conda environment if the varaible exists
+    ## Deactivate conda environment if conda_environment exists
     if ( exists( ($parameter_href->{conda_environment}) ) {
         say $FILEHANDLE q{## Deactivate conda environment};
         conda_source_deactivate(
@@ -3931,7 +3931,7 @@ sub snpeff_download {
 
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
-    ## Only activate conda environment if name supplied by user
+    ## Only activate conda environment if supplied by user
     if ( exists( ($parameter_href->{conda_environment}) ) {
         ## Activate conda environment
         say $FILEHANDLE q{## Activate conda environment};
@@ -3956,7 +3956,7 @@ sub snpeff_download {
       . q{ };
     print $FILEHANDLE "\n\n";
 
-    ## Deactivate conda environment if the varaible exists
+    ## Deactivate conda environment if conda_environment exists
     if ( exists( ($parameter_href->{conda_environment}) ) {
         say $FILEHANDLE q{## Deactivate conda environment};
         conda_source_deactivate(
@@ -4001,7 +4001,7 @@ sub references {
 
     my $pwd = cwd();
 
-    ## Only activate conda environment if name supplied by user
+    ## Only activate conda environment if supplied by user
     if ( exists( ($parameter_href->{conda_environment}) ) {
         ## Activate conda environment
         say $FILEHANDLE q{## Activate conda environment};
@@ -4038,7 +4038,7 @@ sub references {
     );
     print $FILEHANDLE "\n\n";
 
-    ## Deactivate conda environment if the varaible exists
+    ## Deactivate conda environment if conda_environment exists
     if ( exists( ($parameter_href->{conda_environment}) ) {
         say $FILEHANDLE q{## Deactivate conda environment};
         conda_source_deactivate(
