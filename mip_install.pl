@@ -242,7 +242,7 @@ Script::Utils::set_default_array_parameters(
 
 ## Constants
 Readonly my $SPACE => q{ };
-Readonly my $NEWLINW => qq{\n};
+Readonly my $NEWLINE => qq{\n};
 
 ##########
 ###MAIN###
@@ -286,12 +286,12 @@ if ( exists( $parameter{conda_environment} ) ) {
 
         ## Create Conda environment and install pip
         say $FILEHANDLE q{## Creating conda environment: } 
-          . $parameter_href->{conda_environment} 
+          . $parameter{conda_environment} 
           . q{and install packages}; 
         conda_create(
             {
-                env_name => $parameter_href->{conda_environment},
-                python_version => $parameter_href->{python_version},
+                env_name => $parameter{conda_environment},
+                python_version => $parameter{python_version},
                 packages_ref => [ qw{pip} ],
                 FILEHANDLE     => $FILEHANDLE,
             }
@@ -1444,7 +1444,7 @@ sub pip_install {
     }
    
     ## Only activate conda environment if supplied by user 
-    if ( exists( ($parameter_href->{conda_environment}) ) {
+    if ( exists( $parameter_href->{conda_environment} ) ) {
         ## Activate conda environment
         say $FILEHANDLE q{## Activate conda environment};  
         conda_source_activate(
@@ -1474,7 +1474,7 @@ sub pip_install {
     print $FILEHANDLE "\n\n";
     
     ## Deactivate conda environment if conda_environment exists
-    if ( exists( ($parameter_href->{conda_environment}) ) {
+    if ( exists( $parameter_href->{conda_environment} ) ) {
         say $FILEHANDLE q{## Deactivate conda environment};
         conda_source_deactivate(
             {
@@ -2318,7 +2318,7 @@ sub varianteffectpredictor {
     print $FILEHANDLE '### Install varianteffectpredictor', "\n";
     
     ## Only activate conda environment if supplied by user
-    if ( exists( ($parameter_href->{conda_environment}) ) {
+    if ( exists( $parameter_href->{conda_environment} ) ) {
         ## Activate conda environment
         say $FILEHANDLE q{## Activate conda environment};
         conda_source_activate(
@@ -2553,7 +2553,7 @@ sub varianteffectpredictor {
     print $FILEHANDLE "\n\n";
 
     ## Deactivate conda environment if conda_environment exists
-    if ( exists( ($parameter_href->{conda_environment}) ) {
+    if ( exists( $parameter_href->{conda_environment} ) ) {
         say $FILEHANDLE q{## Deactivate conda environment};
         conda_source_deactivate(
             {
@@ -2711,7 +2711,7 @@ sub cnvnator {
     print $FILEHANDLE '### Install cnvnator', "\n";
    
     ## Only activate conda environment if supplied by user
-    if ( exists( ($parameter_href->{conda_environment}) ) {
+    if ( exists( $parameter_href->{conda_environment} ) ) {
         ## Activate conda environment
         say $FILEHANDLE q{## Activate conda environment};
         conda_source_activate(
@@ -2824,7 +2824,7 @@ sub cnvnator {
     );
     
     ## Deactivate conda environment if conda_environment exists
-    if ( exists( ($parameter_href->{conda_environment}) ) {
+    if ( exists( $parameter_href->{conda_environment} ) ) {
         say $FILEHANDLE q{## Deactivate conda environment};
         conda_source_deactivate(
             {
@@ -2886,7 +2886,7 @@ sub tiddit {
     print $FILEHANDLE '### Install tiddit', "\n";
 
     ## Only activate conda environment if supplied by user
-    if ( exists( ($parameter_href->{conda_environment}) ) {
+    if ( exists( $parameter_href->{conda_environment} ) ) {
         ## Activate conda environment
         say $FILEHANDLE q{## Activate conda environment};
         conda_source_activate(
@@ -3014,7 +3014,7 @@ sub tiddit {
     print $FILEHANDLE "\n\n";
 
     ## Deactivate conda environment if conda_environment exists
-    if ( exists( ($parameter_href->{conda_environment}) ) {
+    if ( exists( $parameter_href->{conda_environment} ) ) {
         say $FILEHANDLE q{## Deactivate conda environment};
         conda_source_deactivate(
             {
@@ -3076,7 +3076,7 @@ sub svdb {
     print $FILEHANDLE '### Install svdb', "\n";
 
     ## Only activate conda environment if supplied by user
-    if ( exists( ($parameter_href->{conda_environment}) ) {
+    if ( exists( $parameter_href->{conda_environment} ) ) {
         ## Activate conda environment
         say $FILEHANDLE q{## Activate conda environment};
         conda_source_activate(
@@ -3154,7 +3154,7 @@ sub svdb {
     print $FILEHANDLE "\n\n";
 
     ## Deactivate conda environment if conda_environment exists
-    if ( exists( ($parameter_href->{conda_environment}) ) {
+    if ( exists( $parameter_href->{conda_environment} ) ) {
         say $FILEHANDLE q{## Deactivate conda environment};
         conda_source_deactivate(
             {
@@ -3361,7 +3361,7 @@ sub rhocall {
     }
 
     ## Only activate conda environment if supplied by user
-    if ( exists( ($parameter_href->{conda_environment}) ) {
+    if ( exists( $parameter_href->{conda_environment} ) ) {
         ## Activate conda environment
         say $FILEHANDLE q{## Activate conda environment};
         conda_source_activate(
@@ -3431,7 +3431,7 @@ sub rhocall {
     print $FILEHANDLE "\n\n";
 
     ## Deactivate conda environment if conda_environment exists
-    if ( exists( ($parameter_href->{conda_environment}) ) {
+    if ( exists( $parameter_href->{conda_environment} ) ) {
         say $FILEHANDLE q{## Deactivate conda environment};
         conda_source_deactivate(
             {
@@ -3932,7 +3932,7 @@ sub snpeff_download {
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
     ## Only activate conda environment if supplied by user
-    if ( exists( ($parameter_href->{conda_environment}) ) {
+    if ( exists( $parameter_href->{conda_environment} ) ) {
         ## Activate conda environment
         say $FILEHANDLE q{## Activate conda environment};
         conda_source_activate(
@@ -3957,7 +3957,7 @@ sub snpeff_download {
     print $FILEHANDLE "\n\n";
 
     ## Deactivate conda environment if conda_environment exists
-    if ( exists( ($parameter_href->{conda_environment}) ) {
+    if ( exists( $parameter_href->{conda_environment} ) ) {
         say $FILEHANDLE q{## Deactivate conda environment};
         conda_source_deactivate(
             {
@@ -4002,7 +4002,7 @@ sub references {
     my $pwd = cwd();
 
     ## Only activate conda environment if supplied by user
-    if ( exists( ($parameter_href->{conda_environment}) ) {
+    if ( exists( $parameter_href->{conda_environment} ) ) {
         ## Activate conda environment
         say $FILEHANDLE q{## Activate conda environment};
         conda_source_activate(
@@ -4039,7 +4039,7 @@ sub references {
     print $FILEHANDLE "\n\n";
 
     ## Deactivate conda environment if conda_environment exists
-    if ( exists( ($parameter_href->{conda_environment}) ) {
+    if ( exists( $parameter_href->{conda_environment} ) ) {
         say $FILEHANDLE q{## Deactivate conda environment};
         conda_source_deactivate(
             {
