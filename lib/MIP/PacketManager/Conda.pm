@@ -33,7 +33,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -161,7 +161,7 @@ sub conda_source_activate {
             store    => \$FILEHANDLE
         },
         env_name => {
-            default     => q{root},
+            required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$env_name
