@@ -67,7 +67,7 @@ BEGIN {
   PERL_MODULES:
     while ( my ( $module, $module_import ) = each %perl_module ) {
         use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load } . $module;
+          or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 
 ##Modules

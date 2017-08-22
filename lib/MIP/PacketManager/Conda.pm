@@ -33,7 +33,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -113,7 +113,7 @@ sub conda_create {
     }
 
     if ($env_name) {
-        push @commands, q{--name } . $env_name;
+        push @commands, q{--name} . $SPACE . $env_name;
     }
 
     if ($quiet) {
