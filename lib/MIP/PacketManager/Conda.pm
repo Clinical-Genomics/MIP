@@ -36,7 +36,8 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{conda_create conda_source_activate};
+    our @EXPORT_OK =
+      qw{conda_create conda_source_activate conda_source_deactivate};
 }
 
 sub conda_create {
@@ -182,6 +183,42 @@ sub conda_source_activate {
             commands_ref => \@commands,
             FILEHANDLE   => $FILEHANDLE,
         }
+    );
+
+    return @commands;
+}
+
+sub conda_source_deactivate {
+
+## conda_source_deactivate
+
+##Function : Deactivate conda environment
+##Returns  : "@commands"
+##Arguments: $FILEHANDLE
+##         : $FILEHANDLE => Filehandle to write to
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+
+    my $tmpl = {
+        FILEHANDLE => {
+            required => 1,
+            defined  => 1,
+            store    => \$FILEHANDLE
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+
+    my @commands = q{source deactivate};
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
+        },
     );
 
     return @commands;
