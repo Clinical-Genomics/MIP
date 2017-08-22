@@ -13845,7 +13845,7 @@ sub sambamba_depth {
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
+##         : $infile_lane_prefix_href    => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $sample_id_ref              => The sample_id {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
@@ -14102,6 +14102,7 @@ sub sambamba_depth {
       slurm_submit_job_sample_id_dependency_dead_end(
             {
                 job_id_href             => $job_id_href,
+	     infile_lane_prefix_href => $infile_lane_prefix_href,
 	     family_id => $$family_id_ref,
                 sample_id               => $$sample_id_ref,
                 path                    => $jobid_chain,
