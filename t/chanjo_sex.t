@@ -68,6 +68,7 @@ BEGIN {
 
     $perl_module{'Script::Utils'} = [qw{help}];
 
+    #PERL MODULES
     while ( my ( $module, $module_import ) = each %perl_module ) {
 
         use_ok( $module, @{$module_import} )
@@ -77,6 +78,7 @@ BEGIN {
 ## Modules
     my @modules = ('MIP::Program::Alignment::Chanjo');
 
+    #MODULES
     for my $module (@modules) {
 
         require_ok($module) or BAIL_OUT 'Cannot load ' . $module;
@@ -87,7 +89,7 @@ use MIP::Program::Alignment::Chanjo qw{chanjo_sex};
 use MIP::Test::Commands qw{test_function};
 
 diag(
-"Test gnu_sed MIP::Program::Alignment::Chanjo::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test chanjo_sex MIP::Program::Alignment::Chanjo::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments

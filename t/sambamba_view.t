@@ -64,10 +64,12 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
+
     my %perl_module;
 
     $perl_module{'Script::Utils'} = [qw{help}];
-
+    
+    #PERL MODULES
     while ( my ( $module, $module_import ) = each %perl_module ) {
 
         use_ok( $module, @{$module_import} )
@@ -77,17 +79,18 @@ BEGIN {
 ## Modules
     my @modules = ('MIP::Program::Alignment::Sambamba_view');
 
+    #MODULES
     for my $module (@modules) {
 
         require_ok($module) or BAIL_OUT 'Cannot load ' . $module;
     }
 }
 
-use MIP::Program::Alignment::Sambamba_view qw{view};
+use MIP::Program::Alignment::Sambamba_view qw{sambamba_view};
 use MIP::Test::Commands qw{test_function};
 
 diag(
-"Test gnu_sed MIP::Program::Alignment::Sambamba_view::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test sambamba_view MIP::Program::Alignment::Sambamba_view::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Default(s)
@@ -157,7 +160,7 @@ my %specific_argument = (
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&view;
+my $module_function_cref = \&sambamba_view;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

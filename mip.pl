@@ -35997,7 +35997,7 @@ sub split_and_index_aligment_file {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use Program::Alignment::Sambamba qw(index);
-    use MIP::Program::Alignment::Sambamba_view qw(view);
+    use MIP::Program::Alignment::Sambamba_view qw(sambamba_view);
 
     my $xargs_file_name;
 
@@ -36018,7 +36018,7 @@ sub split_and_index_aligment_file {
     ## Split by contig
     foreach my $contig (@$contigs_ref) {
 
-        MIP::Program::Alignment::Sambamba_view::view(
+        sambamba_view(
             {
                 infile_path =>
                   catfile( $$temp_directory_ref, $infile . $file_suffix ),

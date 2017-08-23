@@ -12,11 +12,6 @@ use FindBin qw{$Bin};    #Find directory of script
 use File::Basename qw{dirname};
 use File::Spec::Functions qw{catdir};
 
-## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
-use MIP::Unix::Standard_streams qw{unix_standard_streams};
-use MIP::Unix::Write_to_file qw{unix_write_to_file};
-
 BEGIN {
     require Exporter;
 
@@ -27,15 +22,20 @@ BEGIN {
     use base qw {Exporter};
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{view};
-
+    our @EXPORT_OK = qw{sambamba_view};
 }
 
+## MIPs lib/
+use lib catdir( dirname($Bin), 'lib' );
+use MIP::Unix::Standard_streams qw{unix_standard_streams};
+use MIP::Unix::Write_to_file qw{unix_write_to_file};
+
+## Constants
 use Params::Check qw{check allow last_error};
 use Readonly;
 Readonly my $SPACE => q{ };
 
-sub view {
+sub sambamba_view {
 
 ##view
 
@@ -105,9 +105,8 @@ sub view {
     check( $tmpl, $arg_href, 1 )
       or croak qw{Could not parse arguments!};
 
-    ## Sambamba
-    my @commands =
-      qw{sambamba view};    #Stores commands depending on input parameters
+    ## Array @commands stores commands depending on input parameters
+    my @commands = qw{sambamba view};
 
     if ($with_header) {     #Include header
 
@@ -116,33 +115,36 @@ sub view {
 
     if ($output_format) {
 
-        push @commands, q{--format} . $SPACE . $output_format;    #Output format
+		#Output format
+        push @commands, q{--format} . $SPACE . $output_format;
     }
 
     if ($referencefile_path) {
 
+        #Reference for writing CRAM
         push @commands,
-          q{--ref-filename=} . $referencefile_path;  #Reference for writing CRAM
+          q{--ref-filename=} . $referencefile_path;
     }
 
     if ($show_progress) {
 
-        push @commands, q{--show-progress}
-          ; #Show progressbar in STDERR (works only for BAM files with no regions specified)
+        #Show progressbar in STDERR (works only for BAM files with no regions specified)
+        push @commands, q{--show-progress}; 
     }
 
     if ($outfile_path) {
 
-        push @commands,
-          q{--output-filename=} . $outfile_path;    #Specify output filename
+		#Specify output filename
+        push @commands, q{--output-filename=} . $outfile_path;    
     }
 
     ## Infile
     push @commands, $infile_path;
 
-    if (@$regions_ref) {                            #Limit output to regions
-
-        push @commands, join( $SPACE, @{$regions_ref} );
+    if (@$regions_ref) {                            
+		
+		#Limit output to regions
+        push @commands, join $SPACE, @{$regions_ref};
     }
 
     if ($stderrfile_path) {
