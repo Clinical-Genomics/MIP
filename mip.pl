@@ -13696,7 +13696,7 @@ sub chanjo_sexcheck {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
-    use Program::Alignment::Chanjo qw(sex);
+    use MIP::Program::Alignment::Chanjo qw(chanjo_sex);
     use MIP::QC::Record
       qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
 
@@ -13769,7 +13769,7 @@ sub chanjo_sexcheck {
 
         $chr_prefix = "chr";
     }
-    sex(
+    chanjo_sex(
         {
             infile_path =>
               catfile( $insample_directory, $infile_prefix . $infile_suffix ),
@@ -25768,6 +25768,9 @@ sub gzip_fastq {
     use MIP::Script::Setup_script qw(setup_script);
     use Program::Compression::Gzip qw(gzip);
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger(q{MIP});
+
     ## Filehandles
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
@@ -25859,15 +25862,15 @@ sub gzip_fastq {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        submit_job(
+        my $slurm_path = $parameter_href->{ "p" . $program_name }{chain};
+
+        slurm_submit_job_no_dependency_add_to_sample(
             {
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                sample_id               => $sample_id,
-                dependencies            => "no_dependency",
-                path => $parameter_href->{ "p" . $program_name }{chain},
+                job_id_href      => $job_id_href,
+                family_id        => $$family_id_ref,
+                sample_id        => $sample_id,
+                path             => $slurm_path,
+                log              => $log,
                 sbatch_file_name => $file_name
             }
         );
@@ -26659,12 +26662,12 @@ sub build_annovar_prerequisites {
 
         slurm_submit_job_no_dependency_add_to_case(
             {
-                job_id_href    => $job_id_href,
-                sample_ids_ref => \@{ $active_parameter_href->{sample_ids} },
-                family_id_chain_key => $$family_id_ref . q{_} . $slurm_path,
-                path                => $slurm_path,
-                sbatch_file_name    => $file_name,
-                log                 => $log,
+                job_id_href      => $job_id_href,
+                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
+                family_id        => $$family_id_ref,
+                path             => $slurm_path,
+                sbatch_file_name => $file_name,
+                log              => $log,
             }
         );
     }
@@ -27015,10 +27018,10 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
                     job_id_href => $job_id_href,
                     sample_ids_ref =>
                       \@{ $active_parameter_href->{sample_ids} },
-                    family_id_chain_key => $$family_id_ref . q{_} . $slurm_path,
-                    path                => $slurm_path,
-                    sbatch_file_name    => $file_name,
-                    log                 => $log,
+                    family_id        => $$family_id_ref,
+                    path             => $slurm_path,
+                    sbatch_file_name => $file_name,
+                    log              => $log,
                 }
             );
         }
@@ -27230,12 +27233,12 @@ sub build_bwa_prerequisites {
 
         slurm_submit_job_no_dependency_add_to_case(
             {
-                job_id_href    => $job_id_href,
-                sample_ids_ref => \@{ $active_parameter_href->{sample_ids} },
-                family_id_chain_key => $$family_id_ref . q{_} . $slurm_path,
-                path                => $slurm_path,
-                sbatch_file_name    => $file_name,
-                log                 => $log,
+                job_id_href      => $job_id_href,
+                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
+                family_id        => $$family_id_ref,
+                path             => $slurm_path,
+                sbatch_file_name => $file_name,
+                log              => $log,
             }
         );
     }
@@ -27791,10 +27794,10 @@ sub build_human_genome_prerequisites {
                     job_id_href => $job_id_href,
                     sample_ids_ref =>
                       \@{ $active_parameter_href->{sample_ids} },
-                    family_id_chain_key => $$family_id_ref . q{_} . $slurm_path,
-                    path                => $slurm_path,
-                    sbatch_file_name    => $file_name,
-                    log                 => $log,
+                    family_id        => $$family_id_ref,
+                    path             => $slurm_path,
+                    sbatch_file_name => $file_name,
+                    log              => $log,
                 }
             );
         }
@@ -28201,7 +28204,6 @@ sub submit_job {
 
 ###Dependencies
 
-##0 = Not dependent on earlier scripts (no_dependency).
 ##1 = Dependent on earlier scripts within sample_id_path or family_id_path (case_dependency).
 ##2 = Dependent on earlier scripts within sample_id_path or family_id_path, but are self cul-de-sâcs (case_dependency_dead_end).
 ##3 = Dependent on earlier scripts and executed in parallel within step (sample_id_dependency_step_in_parallel)
@@ -28266,7 +28268,7 @@ sub submit_job {
             required => 1,
             defined  => 1,
             allow    => [
-                qw{no_dependency case_dependency case_dependency_dead_end sample_id_dependency_step_in_parallel sample_id_and_parallel_dependency_step_in_parallel case_dependency_add_to_case chain_and_parallel_dependency}
+                qw{case_dependency case_dependency_dead_end sample_id_dependency_step_in_parallel sample_id_and_parallel_dependency_step_in_parallel case_dependency_add_to_case chain_and_parallel_dependency}
             ],
             strict_type => 1,
             store       => \$dependencies
@@ -28301,7 +28303,7 @@ sub submit_job {
 
     use Readonly;
     use MIP::Processmanagement::Processes
-      qw(add_parallel_job_id_to_dependency_tree add_merged_job_id_to_dependency_tree add_family_merged_job_id_to_dependency_tree);
+      qw(add_parallel_job_id_to_dependency_tree add_merged_job_id_to_dependency_tree add_family_merged_job_id_to_family_id_dependency_tree);
 
     ## Constants
     Readonly my $NEWLINE      => qq{\n};
@@ -28342,29 +28344,249 @@ sub submit_job {
     # Family chainkey
     my $family_id_chain_key = $$family_id_ref . q{_} . $path;
 
-    if ( $dependencies eq q{no_dependency} ) {
-        ## Initiate chain - No dependencies, initiate Trunk (Main or other)
-        ## Submit jobs to sbatch
-        $job_id_returned =
-          submit_jobs_to_sbatch( { sbatch_file_name => $sbatch_file_name, } );
-
-        # Add job_id_returned to hash
-        push
-          @{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} },
-          $job_id_returned;
-    }
-    else {
-        ## Dependent on earlier scripts and/or parallel.
-        ## JobIDs that do not leave dependencies do not get pushed to job_id hash
+    ## Dependent on earlier scripts and/or parallel.
+    ## JobIDs that do not leave dependencies do not get pushed to job_id hash
 
 # Check jobs within sample_id (exception if dependencies = case_dependency_add_to_case (5))
-        if ( defined $sample_id ) {
+    if ( defined $sample_id ) {
 
-            # Add family_id_sample_id jobs to current sample_id chain
-            if ( $dependencies eq q{case_dependency_add_to_case} ) {
+        # Add family_id_sample_id jobs to current sample_id chain
+        if ( $dependencies eq q{case_dependency_add_to_case} ) {
+
+            ## Saves job_id to the correct hash array depending on chaintype
+            add_merged_job_id_to_dependency_tree(
+                {
+                    job_id_href         => $job_id_href,
+                    family_id_chain_key => $family_id_chain_key,
+                    sample_id_chain_key => $sample_id_chain_key,
+                }
+            );
+        }
+
+        ## Not parallel jobs, but check if last job submission was parallel
+        if (   ( $dependencies eq q{case_dependency} )
+            || ( $dependencies eq q{case_dependency_dead_end} ) )
+        {
+
+            ## Saves job_id to the correct hash array depending on chaintype
+            add_parallel_job_id_to_dependency_tree(
+                {
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    job_id_href             => $job_id_href,
+                    family_id_chain_key     => $family_id_chain_key,
+                    sample_id_chain_key     => $sample_id_chain_key,
+                    sample_id               => $sample_id,
+                    path                    => $path,
+                }
+            );
+        }
+        if ( ( defined $path ) && ( $path eq q{MAIN} ) ) {
+
+            # Parallel jobs
+            if (
+                (
+                    $dependencies eq
+                    q{sample_id_and_parallel_dependency_step_in_parallel}
+                )
+                || ( $dependencies eq q{sample_id_dependency_step_in_parallel} )
+              )
+            {
+
+                ## Add to job_id string
+                $job_ids_string = add_to_job_id(
+                    {
+                        job_id_href         => $job_id_href,
+                        family_id_chain_key => $family_id_chain_key,
+                        chain_key           => $sample_id_parallel_chain_key,
+                    }
+                );
+
+                # Check for previous single jobs
+                # Required to initiate broken chain with correct dependencies
+                if (
+                    $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} )
+                {
+
+                    ## Add to job_id string
+                    $job_ids_string .= add_to_job_id(
+                        {
+                            job_id_href         => $job_id_href,
+                            family_id_chain_key => $family_id_chain_key,
+                            chain_key           => $sample_id_chain_key,
+                        }
+                    );
+                }
+
+            }
+            else {
+                ## Previous job was a single job
+
+                ## Add to job_id string
+                $job_ids_string = add_to_job_id(
+                    {
+                        job_id_href         => $job_id_href,
+                        family_id_chain_key => $family_id_chain_key,
+                        chain_key           => $sample_id_chain_key,
+                    }
+                );
+            }
+        }
+
+        ## Check for any previous job_ids within path current PATH. Branch.
+        if ( ( defined $path ) && ( $path ne q{MAIN} ) ) {
+
+            ## Second or later in branch chain
+            if ( $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} ) {
+
+                ## Add to job_id string
+                $job_ids_string = add_to_job_id(
+                    {
+                        job_id_href         => $job_id_href,
+                        family_id_chain_key => $family_id_chain_key,
+                        chain_key           => $sample_id_chain_key,
+                    }
+                );
+            }
+            elsif ( $job_id_href->{ $$family_id_ref . q{_MAIN} }
+                { $sample_id . q{_MAIN} } )
+            {
+                ## Inherit from potential MAIN. Trunk
+
+                ## Add to job_id string
+                $job_ids_string = add_to_job_id(
+                    {
+                        job_id_href         => $job_id_href,
+                        family_id_chain_key => $$family_id_ref . q{_MAIN},
+                        chain_key           => $sample_id . q{_MAIN},
+                    }
+                );
+            }
+        }
+
+        ## Inherit from all previous jobs
+        if ( ( defined $path ) && ( $path eq q{ALL} ) ) {
+
+            ## Add to job_id string
+            $job_ids_string = add_to_job_id(
+                {
+                    job_id_href         => $job_id_href,
+                    family_id_chain_key => q{ALL},
+                    chain_key           => q{ALL},
+                }
+            );
+        }
+
+        ## Previous jobs for chainkey exists
+        if ($job_ids_string) {
+
+            ## Submit jobs to sbatch
+            $job_id_returned = submit_jobs_to_sbatch(
+                {
+                    sbatch_file_name    => $sbatch_file_name,
+                    job_dependency_type => $job_dependency_type,
+                    job_ids_string      => $job_ids_string,
+                }
+            );
+        }
+        else {
+            ## No previous jobs
+            ## Submit jobs to sbatch
+            $job_id_returned = submit_jobs_to_sbatch(
+                { sbatch_file_name => $sbatch_file_name, } );
+        }
+
+        ## Ordinary job push to array
+        if ( $dependencies eq q{case_dependency} ) {
+
+            # Clear latest family_id/sample_id chain submission
+            @{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} } =
+              ();
+
+            ## Clear all latest parallel jobs within chainkey
+          INFILES:
+            while ( my ($infile_index) =
+                each( $infile_lane_prefix_href->{$sample_id} ) )
+            {
+
+                # Create key
+                my $sample_id_parallel_chain_key =
+                  $sample_id . q{_parallel_} . $path . $infile_index;
+
+                ## If parallel job exists
+                if ( $job_id_href->{$family_id_chain_key}
+                    {$sample_id_parallel_chain_key} )
+                {
+
+                    # Clear latest family_id/sample_id chain submission
+                    @{ $job_id_href->{$family_id_chain_key}
+                          {$sample_id_parallel_chain_key} } = ();
+                }
+            }
+
+            # Add job_id_returned to hash
+            push @{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key}
+              },
+              $job_id_returned;
+        }
+
+        ## Parallel job wait to push to array until all parallel jobs are finished within step
+        if (
+            ( $dependencies eq q{sample_id_dependency_step_in_parallel} )
+            || ( $dependencies eq
+                q{sample_id_and_parallel_dependency_step_in_parallel} )
+          )
+        {
+
+            ## Add job_id_returned to hash
+            push @{ $job_id_href->{$family_id_chain_key}
+                  {$sample_id_parallel_chain_key} },
+              $job_id_returned;
+        }
+
+        ## Job dependent on both family_id and sample_id push to array
+        if ( $dependencies eq q{case_dependency_add_to_case} ) {
+
+            ## Clear latest family_id_sample_id chainkey
+            @{ $job_id_href->{$family_id_chain_key}
+                  { $family_id_chain_key . q{_} . $sample_id_chain_key } } = ();
+
+            #Clear latest sample_id chainkey
+            @{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} } =
+              ();
+
+            ## Add job_id_returned to hash
+            push @{ $job_id_href->{$family_id_chain_key}
+                  { $family_id_chain_key . q{_} . $sample_id_chain_key } },
+              $job_id_returned;
+        }
+
+        ## Keeps the job_id string dependecy within reasonable limits
+        if (   ( defined $job_id_href->{ALL}{ALL} )
+            && ( scalar( @{ $job_id_href->{ALL}{ALL} } ) >= 100 ) )
+        {
+
+            # Remove oldest job_id
+            shift @{ $job_id_href->{ALL}{ALL} };
+        }
+        ## Job dependent on all jobs
+        # Add job_id to hash
+        push @{ $job_id_href->{ALL}{ALL} }, $job_id_returned;
+    }
+    else {
+        ## AFTER merging to family_id
+
+        ## Add family_id_sample_id jobs to current family_id chain
+        if ( $dependencies eq q{case_dependency_add_to_case} ) {
+
+          SAMPLE_IDS:
+            foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
+            {
+
+                # Current chain
+                my $sample_id_chain_key = $sample_id . q{_} . $path;
 
                 ## Saves job_id to the correct hash array depending on chaintype
-                add_merged_job_id_to_dependency_tree(
+                add_family_merged_job_id_to_family_id_dependency_tree(
                     {
                         job_id_href         => $job_id_href,
                         family_id_chain_key => $family_id_chain_key,
@@ -28372,150 +28594,112 @@ sub submit_job {
                     }
                 );
             }
+        }
 
-            ## Not parallel jobs, but check if last job submission was parallel
-            if (   ( $dependencies eq q{case_dependency} )
-                || ( $dependencies eq q{case_dependency_dead_end} ) )
+        ## Not parallel jobs, but check if last job submission was parallel
+        if (   ( $dependencies eq q{case_dependency} )
+            || ( $dependencies eq q{case_dependency_dead_end} ) )
+        {
+
+            if ( defined $job_id_href->{$family_id_chain_key} ) {
+
+                foreach my $family_id_parallel_chain_key (
+                    keys $job_id_href->{$family_id_chain_key} )
+                {
+
+                    ## Add to job_id string
+                    $job_ids_string .= add_to_job_id(
+                        {
+                            job_id_href         => $job_id_href,
+                            family_id_chain_key => $family_id_chain_key,
+                            chain_key => $family_id_parallel_chain_key,
+                        }
+                    );
+                }
+            }
+        }
+
+        ## Check for any previous job_ids within path MAIN. Test for previous must be done to allow initiating from broken chain. Trunk and not first in chain
+        if (   ( defined $path )
+            && ( $path eq q{MAIN} )
+            && ( $job_id_href->{$family_id_chain_key}{$family_id_chain_key} ) )
+        {
+
+            ## Parallel jobs
+            if (
+                (
+                    $dependencies eq
+                    q{sample_id_and_parallel_dependency_step_in_parallel}
+                )
+                || ( $dependencies eq q{sample_id_dependency_step_in_parallel} )
+              )
             {
-
-                ## Saves job_id to the correct hash array depending on chaintype
-                add_parallel_job_id_to_dependency_tree(
-                    {
-                        infile_lane_prefix_href => $infile_lane_prefix_href,
-                        job_id_href             => $job_id_href,
-                        family_id_chain_key     => $family_id_chain_key,
-                        sample_id_chain_key     => $sample_id_chain_key,
-                        sample_id               => $sample_id,
-                        path                    => $path,
-                    }
-                );
-            }
-            if ( ( defined $path ) && ( $path eq q{MAIN} ) ) {
-
-                # Parallel jobs
-                if (
-                    (
-                        $dependencies eq
-                        q{sample_id_and_parallel_dependency_step_in_parallel}
-                    )
-                    || ( $dependencies eq
-                        q{sample_id_dependency_step_in_parallel} )
-                  )
-                {
-
-                    ## Add to job_id string
-                    $job_ids_string = add_to_job_id(
-                        {
-                            job_id_href         => $job_id_href,
-                            family_id_chain_key => $family_id_chain_key,
-                            chain_key => $sample_id_parallel_chain_key,
-                        }
-                    );
-
-                   # Check for previous single jobs
-                   # Required to initiate broken chain with correct dependencies
-                    if ( $job_id_href->{$family_id_chain_key}
-                        {$sample_id_chain_key} )
-                    {
-
-                        ## Add to job_id string
-                        $job_ids_string .= add_to_job_id(
-                            {
-                                job_id_href         => $job_id_href,
-                                family_id_chain_key => $family_id_chain_key,
-                                chain_key           => $sample_id_chain_key,
-                            }
-                        );
-                    }
-
-                }
-                else {
-                    ## Previous job was a single job
-
-                    ## Add to job_id string
-                    $job_ids_string = add_to_job_id(
-                        {
-                            job_id_href         => $job_id_href,
-                            family_id_chain_key => $family_id_chain_key,
-                            chain_key           => $sample_id_chain_key,
-                        }
-                    );
-                }
-            }
-
-            ## Check for any previous job_ids within path current PATH. Branch.
-            if ( ( defined $path ) && ( $path ne q{MAIN} ) ) {
-
-                ## Second or later in branch chain
-                if (
-                    $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} )
-                {
-
-                    ## Add to job_id string
-                    $job_ids_string = add_to_job_id(
-                        {
-                            job_id_href         => $job_id_href,
-                            family_id_chain_key => $family_id_chain_key,
-                            chain_key           => $sample_id_chain_key,
-                        }
-                    );
-                }
-                elsif ( $job_id_href->{ $$family_id_ref . q{_MAIN} }
-                    { $sample_id . q{_MAIN} } )
-                {
-                    ## Inherit from potential MAIN. Trunk
-
-                    ## Add to job_id string
-                    $job_ids_string = add_to_job_id(
-                        {
-                            job_id_href         => $job_id_href,
-                            family_id_chain_key => $$family_id_ref . q{_MAIN},
-                            chain_key           => $sample_id . q{_MAIN},
-                        }
-                    );
-                }
-            }
-
-            ## Inherit from all previous jobs
-            if ( ( defined $path ) && ( $path eq q{ALL} ) ) {
 
                 ## Add to job_id string
                 $job_ids_string = add_to_job_id(
                     {
                         job_id_href         => $job_id_href,
-                        family_id_chain_key => q{ALL},
-                        chain_key           => q{ALL},
-                    }
-                );
-            }
-
-            ## Previous jobs for chainkey exists
-            if ($job_ids_string) {
-
-                ## Submit jobs to sbatch
-                $job_id_returned = submit_jobs_to_sbatch(
-                    {
-                        sbatch_file_name    => $sbatch_file_name,
-                        job_dependency_type => $job_dependency_type,
-                        job_ids_string      => $job_ids_string,
+                        family_id_chain_key => $family_id_chain_key,
+                        chain_key           => $family_id_parallel_chain_key,
                     }
                 );
             }
             else {
-                ## No previous jobs
-                ## Submit jobs to sbatch
-                $job_id_returned = submit_jobs_to_sbatch(
-                    { sbatch_file_name => $sbatch_file_name, } );
+                ## Previous job was a single job
+
+                ## Add to job_id string
+                $job_ids_string = add_to_job_id(
+                    {
+                        job_id_href         => $job_id_href,
+                        family_id_chain_key => $family_id_chain_key,
+                        chain_key           => $family_id_chain_key,
+                    }
+                );
             }
 
-            ## Ordinary job push to array
-            if ( $dependencies eq q{case_dependency} ) {
+            ## Add jobs from other parallel chains that have branched of from MAIN i.e. merge branch back again
+            if ( $dependencies eq q{chain_and_parallel_dependency} ) {
 
-                # Clear latest family_id/sample_id chain submission
-                @{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} }
-                  = ();
+              PARALLEL_CHAINS:
+                foreach my $parallel_chain (@$parallel_chains_ref) {
 
-                ## Clear all latest parallel jobs within chainkey
+                    ## Add to job_id string
+                    $job_ids_string .= add_to_job_id(
+                        {
+                            job_id_href         => $job_id_href,
+                            family_id_chain_key => $$family_id_ref . q{_}
+                              . $parallel_chain,
+                            chain_key => $$family_id_ref . q{_}
+                              . $parallel_chain,
+                        }
+                    );
+                }
+            }
+        }
+        elsif ( ( defined $path ) && $path eq q{MAIN} ) {
+            ## First family_id MAIN chain
+
+            ## Add all previous jobId(s) from sample_id chainkey(s)
+          SAMPLE_IDS:
+            foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
+            {
+
+                my $sample_id_chain_key = $sample_id . q{_} . $path;
+
+                if (
+                    $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} )
+                {
+
+                    ## Add to job_id string
+                    $job_ids_string .= add_to_job_id(
+                        {
+                            job_id_href         => $job_id_href,
+                            family_id_chain_key => $family_id_chain_key,
+                            chain_key           => $sample_id_chain_key,
+                        }
+                    );
+
+                }
               INFILES:
                 while ( my ($infile_index) =
                     each( $infile_lane_prefix_href->{$sample_id} ) )
@@ -28530,181 +28714,93 @@ sub submit_job {
                         {$sample_id_parallel_chain_key} )
                     {
 
-                        # Clear latest family_id/sample_id chain submission
-                        @{ $job_id_href->{$family_id_chain_key}
-                              {$sample_id_parallel_chain_key} } = ();
+                        ## Add to job_id string
+                        $job_ids_string .= add_to_job_id(
+                            {
+                                job_id_href         => $job_id_href,
+                                family_id_chain_key => $family_id_chain_key,
+                                chain_key => $sample_id_parallel_chain_key,
+                            }
+                        );
                     }
                 }
-
-                # Add job_id_returned to hash
-                push
-                  @{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key}
-                  },
-                  $job_id_returned;
             }
-
-            ## Parallel job wait to push to array until all parallel jobs are finished within step
-            if (
-                ( $dependencies eq q{sample_id_dependency_step_in_parallel} )
-                || ( $dependencies eq
-                    q{sample_id_and_parallel_dependency_step_in_parallel} )
-              )
-            {
-
-                ## Add job_id_returned to hash
-                push @{ $job_id_href->{$family_id_chain_key}
-                      {$sample_id_parallel_chain_key} },
-                  $job_id_returned;
-            }
-
-            ## Job dependent on both family_id and sample_id push to array
-            if ( $dependencies eq q{case_dependency_add_to_case} ) {
-
-                ## Clear latest family_id_sample_id chainkey
-                @{ $job_id_href->{$family_id_chain_key}
-                      { $family_id_chain_key . q{_} . $sample_id_chain_key } }
-                  = ();
-
-                #Clear latest sample_id chainkey
-                @{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} }
-                  = ();
-
-                ## Add job_id_returned to hash
-                push @{ $job_id_href->{$family_id_chain_key}
-                      { $family_id_chain_key . q{_} . $sample_id_chain_key } },
-                  $job_id_returned;
-            }
-
-            ## Keeps the job_id string dependecy within reasonable limits
-            if (   ( defined $job_id_href->{ALL}{ALL} )
-                && ( scalar( @{ $job_id_href->{ALL}{ALL} } ) >= 100 ) )
-            {
-
-                # Remove oldest job_id
-                shift @{ $job_id_href->{ALL}{ALL} };
-            }
-            ## Job dependent on all jobs
-            # Add job_id to hash
-            push @{ $job_id_href->{ALL}{ALL} }, $job_id_returned;
         }
-        else {
-            ## AFTER merging to family_id
+        ## Check for any previous job_ids within path current PATH.
+        if ( ( defined $path ) && $path ne q{MAIN} ) {
 
-            ## Add family_id_sample_id jobs to current family_id chain
-            if ( $dependencies eq q{case_dependency_add_to_case} ) {
+            ## Second or later in branch chain
+            if ( $job_id_href->{$family_id_chain_key}{$family_id_chain_key} ) {
 
-              SAMPLE_IDS:
-                foreach
-                  my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
-                {
-
-                    # Current chain
-                    my $sample_id_chain_key = $sample_id . q{_} . $path;
-
-                    ## Saves job_id to the correct hash array depending on chaintype
-                    add_family_merged_job_id_to_dependency_tree(
-                        {
-                            job_id_href         => $job_id_href,
-                            family_id_chain_key => $family_id_chain_key,
-                            sample_id_chain_key => $sample_id_chain_key,
-                        }
-                    );
-                }
+                ## Add to job_id string
+                # Family chain
+                $job_ids_string = add_to_job_id(
+                    {
+                        job_id_href         => $job_id_href,
+                        family_id_chain_key => $family_id_chain_key,
+                        chain_key           => $family_id_chain_key,
+                    }
+                );
             }
+            elsif ( $dependencies eq q{chain_and_parallel_dependency} ) {
+                ## Add jobs from other parallel chains that have branched of from MAIN i.e. merge branch back again
 
-            ## Not parallel jobs, but check if last job submission was parallel
-            if (   ( $dependencies eq q{case_dependency} )
-                || ( $dependencies eq q{case_dependency_dead_end} ) )
-            {
+              PARALLEL_CHAINS:
+                foreach my $parallel_chain (@$parallel_chains_ref) {
 
-                if ( defined $job_id_href->{$family_id_chain_key} ) {
-
-                    foreach my $family_id_parallel_chain_key (
-                        keys $job_id_href->{$family_id_chain_key} )
+                  SAMPLE_IDS:
+                    foreach my $sample_id (
+                        @{ $active_parameter_href->{sample_ids} } )
                     {
 
                         ## Add to job_id string
                         $job_ids_string .= add_to_job_id(
                             {
                                 job_id_href         => $job_id_href,
-                                family_id_chain_key => $family_id_chain_key,
-                                chain_key => $family_id_parallel_chain_key,
+                                family_id_chain_key => $$family_id_ref
+                                  . q{_}
+                                  . $parallel_chain,
+                                chain_key => $sample_id . q{_}
+                                  . $parallel_chain,
                             }
                         );
                     }
+
+                    #Add to job_id string
+                    $job_ids_string .= add_to_job_id(
+                        {
+                            job_id_href         => $job_id_href,
+                            family_id_chain_key => $$family_id_ref . q{_}
+                              . $parallel_chain,
+                            chain_key => $$family_id_ref . q{_}
+                              . $parallel_chain,
+                        }
+                    );
                 }
             }
-
-            ## Check for any previous job_ids within path MAIN. Test for previous must be done to allow initiating from broken chain. Trunk and not first in chain
-            if (   ( defined $path )
-                && ( $path eq q{MAIN} )
-                && (
-                    $job_id_href->{$family_id_chain_key}{$family_id_chain_key} )
-              )
+            elsif ( $job_id_href->{ $$family_id_ref . q{_MAIN} }
+                { $$family_id_ref . q{_MAIN} } )
             {
+                ## Inherit from potential MAIN. Trunk
 
-                ## Parallel jobs
-                if (
-                    (
-                        $dependencies eq
-                        q{sample_id_and_parallel_dependency_step_in_parallel}
-                    )
-                    || ( $dependencies eq
-                        q{sample_id_dependency_step_in_parallel} )
-                  )
-                {
-
-                    ## Add to job_id string
-                    $job_ids_string = add_to_job_id(
-                        {
-                            job_id_href         => $job_id_href,
-                            family_id_chain_key => $family_id_chain_key,
-                            chain_key => $family_id_parallel_chain_key,
-                        }
-                    );
-                }
-                else {
-                    ## Previous job was a single job
-
-                    ## Add to job_id string
-                    $job_ids_string = add_to_job_id(
-                        {
-                            job_id_href         => $job_id_href,
-                            family_id_chain_key => $family_id_chain_key,
-                            chain_key           => $family_id_chain_key,
-                        }
-                    );
-                }
-
-                ## Add jobs from other parallel chains that have branched of from MAIN i.e. merge branch back again
-                if ( $dependencies eq q{chain_and_parallel_dependency} ) {
-
-                  PARALLEL_CHAINS:
-                    foreach my $parallel_chain (@$parallel_chains_ref) {
-
-                        ## Add to job_id string
-                        $job_ids_string .= add_to_job_id(
-                            {
-                                job_id_href         => $job_id_href,
-                                family_id_chain_key => $$family_id_ref . q{_}
-                                  . $parallel_chain,
-                                chain_key => $$family_id_ref . q{_}
-                                  . $parallel_chain,
-                            }
-                        );
+                ## Add to job_id string
+                $job_ids_string = add_to_job_id(
+                    {
+                        job_id_href         => $job_id_href,
+                        family_id_chain_key => $$family_id_ref . q{_MAIN},
+                        chain_key           => $$family_id_ref . q{_MAIN},
                     }
-                }
+                );
             }
-            elsif ( ( defined $path ) && $path eq q{MAIN} ) {
-                ## First family_id MAIN chain
+            else {    #First job in new path and first family_id MAIN chain
 
-                ## Add all previous jobId(s) from sample_id chainkey(s)
               SAMPLE_IDS:
                 foreach
                   my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
                 {
 
-                    my $sample_id_chain_key = $sample_id . q{_} . $path;
+                    my $family_id_chain_key = $$family_id_ref . q{_MAIN};
+                    my $sample_id_chain_key = $sample_id . q{_MAIN};
 
                     if ( $job_id_href->{$family_id_chain_key}
                         {$sample_id_chain_key} )
@@ -28718,243 +28814,116 @@ sub submit_job {
                                 chain_key           => $sample_id_chain_key,
                             }
                         );
-
-                    }
-                  INFILES:
-                    while ( my ($infile_index) =
-                        each( $infile_lane_prefix_href->{$sample_id} ) )
-                    {
-
-                        # Create key
-                        my $sample_id_parallel_chain_key =
-                          $sample_id . q{_parallel_} . $path . $infile_index;
-
-                        ## If parallel job exists
-                        if ( $job_id_href->{$family_id_chain_key}
-                            {$sample_id_parallel_chain_key} )
-                        {
-
-                            ## Add to job_id string
-                            $job_ids_string .= add_to_job_id(
-                                {
-                                    job_id_href         => $job_id_href,
-                                    family_id_chain_key => $family_id_chain_key,
-                                    chain_key => $sample_id_parallel_chain_key,
-                                }
-                            );
-                        }
                     }
                 }
             }
-            ## Check for any previous job_ids within path current PATH.
-            if ( ( defined $path ) && $path ne q{MAIN} ) {
+        }
 
-                ## Second or later in branch chain
-                if (
-                    $job_id_href->{$family_id_chain_key}{$family_id_chain_key} )
+        ## Inherit from all previous jobs
+        if ( ( defined $path ) && ( $path eq q{ALL} ) ) {
+
+            ## Add to job_id string
+            $job_ids_string = add_to_job_id(
                 {
-
-                    ## Add to job_id string
-                    # Family chain
-                    $job_ids_string = add_to_job_id(
-                        {
-                            job_id_href         => $job_id_href,
-                            family_id_chain_key => $family_id_chain_key,
-                            chain_key           => $family_id_chain_key,
-                        }
-                    );
+                    job_id_href         => $job_id_href,
+                    family_id_chain_key => q{ALL},
+                    chain_key           => q{ALL},
                 }
-                elsif ( $dependencies eq q{chain_and_parallel_dependency} ) {
-                    ## Add jobs from other parallel chains that have branched of from MAIN i.e. merge branch back again
+            );
+        }
+        if ($job_ids_string) {
 
-                  PARALLEL_CHAINS:
-                    foreach my $parallel_chain (@$parallel_chains_ref) {
-
-                      SAMPLE_IDS:
-                        foreach my $sample_id (
-                            @{ $active_parameter_href->{sample_ids} } )
-                        {
-
-                            ## Add to job_id string
-                            $job_ids_string .= add_to_job_id(
-                                {
-                                    job_id_href         => $job_id_href,
-                                    family_id_chain_key => $$family_id_ref
-                                      . q{_}
-                                      . $parallel_chain,
-                                    chain_key => $sample_id . q{_}
-                                      . $parallel_chain,
-                                }
-                            );
-                        }
-
-                        #Add to job_id string
-                        $job_ids_string .= add_to_job_id(
-                            {
-                                job_id_href         => $job_id_href,
-                                family_id_chain_key => $$family_id_ref . q{_}
-                                  . $parallel_chain,
-                                chain_key => $$family_id_ref . q{_}
-                                  . $parallel_chain,
-                            }
-                        );
-                    }
-                }
-                elsif ( $job_id_href->{ $$family_id_ref . q{_MAIN} }
-                    { $$family_id_ref . q{_MAIN} } )
+            ## Submit jobs to sbatch
+            $job_id_returned = submit_jobs_to_sbatch(
                 {
-                    ## Inherit from potential MAIN. Trunk
-
-                    ## Add to job_id string
-                    $job_ids_string = add_to_job_id(
-                        {
-                            job_id_href         => $job_id_href,
-                            family_id_chain_key => $$family_id_ref . q{_MAIN},
-                            chain_key           => $$family_id_ref . q{_MAIN},
-                        }
-                    );
+                    sbatch_file_name    => $sbatch_file_name,
+                    job_dependency_type => $job_dependency_type,
+                    job_ids_string      => $job_ids_string,
                 }
-                else {    #First job in new path and first family_id MAIN chain
+            );
+        }
+        else {
 
-                  SAMPLE_IDS:
-                    foreach my $sample_id (
-                        @{ $active_parameter_href->{sample_ids} } )
-                    {
+            ## Submit jobs to sbatch
+            $job_id_returned = submit_jobs_to_sbatch(
+                { sbatch_file_name => $sbatch_file_name, } );
+        }
 
-                        my $family_id_chain_key = $$family_id_ref . q{_MAIN};
-                        my $sample_id_chain_key = $sample_id . q{_MAIN};
+        ## Ordinary job push to array
+        if (   ( $dependencies eq q{case_dependency} )
+            || ( $dependencies eq q{chain_and_parallel_dependency} ) )
+        {
 
-                        if ( $job_id_href->{$family_id_chain_key}
-                            {$sample_id_chain_key} )
-                        {
+            ## Clear latest family_id/sample_id chain submission
+            @{ $job_id_href->{$family_id_chain_key}{$family_id_chain_key} } =
+              ();
 
-                            ## Add to job_id string
-                            $job_ids_string .= add_to_job_id(
-                                {
-                                    job_id_href         => $job_id_href,
-                                    family_id_chain_key => $family_id_chain_key,
-                                    chain_key           => $sample_id_chain_key,
-                                }
-                            );
-                        }
-                    }
-                }
-            }
-
-            ## Inherit from all previous jobs
-            if ( ( defined $path ) && ( $path eq q{ALL} ) ) {
-
-                ## Add to job_id string
-                $job_ids_string = add_to_job_id(
-                    {
-                        job_id_href         => $job_id_href,
-                        family_id_chain_key => q{ALL},
-                        chain_key           => q{ALL},
-                    }
-                );
-            }
-            if ($job_ids_string) {
-
-                ## Submit jobs to sbatch
-                $job_id_returned = submit_jobs_to_sbatch(
-                    {
-                        sbatch_file_name    => $sbatch_file_name,
-                        job_dependency_type => $job_dependency_type,
-                        job_ids_string      => $job_ids_string,
-                    }
-                );
-            }
-            else {
-
-                ## Submit jobs to sbatch
-                $job_id_returned = submit_jobs_to_sbatch(
-                    { sbatch_file_name => $sbatch_file_name, } );
-            }
-
-            ## Ordinary job push to array
-            if (   ( $dependencies eq q{case_dependency} )
-                || ( $dependencies eq q{chain_and_parallel_dependency} ) )
+            ## Clear all latest parallel jobs within chainkey
+          CHAIN_KEYS:
+            foreach my $chain_key ( keys $job_id_href->{$family_id_chain_key} )
             {
 
                 ## Clear latest family_id/sample_id chain submission
-                @{ $job_id_href->{$family_id_chain_key}{$family_id_chain_key} }
+                @{ $job_id_href->{$family_id_chain_key}{$chain_key} } =
+                  ();
+            }
+
+            # Add job_id_returned to hash
+            push @{ $job_id_href->{$family_id_chain_key}{$family_id_chain_key}
+              },
+              $job_id_returned;
+        }
+
+        ## Parallel job wait to push to array until all parallel jobs are finished within step
+        if (
+            ( $dependencies eq q{sample_id_dependency_step_in_parallel} )
+            || ( $dependencies eq
+                q{sample_id_and_parallel_dependency_step_in_parallel} )
+          )
+        {
+
+            ## Add job_id_returned to hash.
+            push @{ $job_id_href->{$family_id_chain_key}
+                  {$family_id_parallel_chain_key} },
+              $job_id_returned;
+        }
+
+        ## Job dependent on both family_id and sample_id push to array
+        if ( $dependencies eq q{case_dependency_add_to_case} ) {
+
+          SAMPLE_IDS:
+            foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
+            {
+
+                ## Current chain
+                my $sample_id_chain_key = $sample_id . q{_} . $path;
+
+                ## Clear latest merged family_id_chain_key and sample chain key
+                @{ $job_id_href->{$family_id_chain_key}
+                      { $family_id_chain_key . q{_} . $sample_id_chain_key } }
                   = ();
 
-                ## Clear all latest parallel jobs within chainkey
-              CHAIN_KEYS:
-                foreach
-                  my $chain_key ( keys $job_id_href->{$family_id_chain_key} )
-                {
-
-                    ## Clear latest family_id/sample_id chain submission
-                    @{ $job_id_href->{$family_id_chain_key}{$chain_key} } =
-                      ();
-                }
-
-                # Add job_id_returned to hash
-                push
-                  @{ $job_id_href->{$family_id_chain_key}{$family_id_chain_key}
-                  },
-                  $job_id_returned;
-            }
-
-            ## Parallel job wait to push to array until all parallel jobs are finished within step
-            if (
-                ( $dependencies eq q{sample_id_dependency_step_in_parallel} )
-                || ( $dependencies eq
-                    q{sample_id_and_parallel_dependency_step_in_parallel} )
-              )
-            {
-
-                ## Add job_id_returned to hash.
+                ## Clear latest family_id chainkey
+                @{ $job_id_href->{$family_id_chain_key}{$family_id_chain_key} }
+                  = ();
                 push @{ $job_id_href->{$family_id_chain_key}
-                      {$family_id_parallel_chain_key} },
+                      { $family_id_chain_key . q{_} . $sample_id_chain_key } },
                   $job_id_returned;
             }
-
-            ## Job dependent on both family_id and sample_id push to array
-            if ( $dependencies eq q{case_dependency_add_to_case} ) {
-
-              SAMPLE_IDS:
-                foreach
-                  my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
-                {
-
-                    ## Current chain
-                    my $sample_id_chain_key = $sample_id . q{_} . $path;
-
-                    ## Clear latest merged family_id_chain_key and sample chain key
-                    @{
-                        $job_id_href->{$family_id_chain_key}{
-                            $family_id_chain_key . q{_} . $sample_id_chain_key
-                        }
-                    } = ();
-
-                    ## Clear latest family_id chainkey
-                    @{ $job_id_href->{$family_id_chain_key}
-                          {$family_id_chain_key} } = ();
-                    push @{
-                        $job_id_href->{$family_id_chain_key}{
-                            $family_id_chain_key . q{_} . $sample_id_chain_key
-                        }
-                      },
-                      $job_id_returned;
-                }
-            }
-
-            ## Keeps the job_id string dependecy within reasonable limits
-            if (   ( defined $job_id_href->{ALL}{ALL} )
-                && ( scalar( @{ $job_id_href->{ALL}{ALL} } ) >= 100 ) )
-            {
-
-                # Remove oldest job_id.
-                shift @{ $job_id_href->{ALL}{ALL} };
-            }
-
-            ## Job dependent on all jobs
-            # Add job_id to hash
-            push @{ $job_id_href->{ALL}{ALL} }, $job_id_returned;
         }
+
+        ## Keeps the job_id string dependecy within reasonable limits
+        if (   ( defined $job_id_href->{ALL}{ALL} )
+            && ( scalar( @{ $job_id_href->{ALL}{ALL} } ) >= 100 ) )
+        {
+
+            # Remove oldest job_id.
+            shift @{ $job_id_href->{ALL}{ALL} };
+        }
+
+        ## Job dependent on all jobs
+        # Add job_id to hash
+        push @{ $job_id_href->{ALL}{ALL} }, $job_id_returned;
     }
 
     ## Add job_id_returned to hash for sacct processing downstream
@@ -37411,10 +37380,10 @@ sub vt_core {
                     job_id_href => $job_id_href,
                     sample_ids_ref =>
                       \@{ $active_parameter_href->{sample_ids} },
-                    family_id_chain_key => $$family_id_ref . q{_} . $slurm_path,
-                    path                => $slurm_path,
-                    sbatch_file_name    => $file_name,
-                    log                 => $log,
+                    family_id        => $$family_id_ref,
+                    path             => $slurm_path,
+                    sbatch_file_name => $file_name,
+                    log              => $log,
                 }
             );
         }

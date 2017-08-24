@@ -83,14 +83,15 @@ BEGIN {
     }
 }
 
-use MIP::Processmanagement::Processes qw{add_merged_job_id_to_dependency_tree};
+use MIP::Processmanagement::Processes
+  qw{add_family_merged_job_id_to_family_id_dependency_tree};
 
 diag(
-"Test add_merged_job_id_to_dependency_tree $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test add_family_merged_job_id_to_family_id_dependency_tree $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments
-my $sample_id           = q{sample2};
+my $sample_id           = q{sample3};
 my $path                = q{MAIN};
 my $family_id_chain_key = q{family1} . $UNDERSCORE . $path;
 my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
@@ -104,12 +105,12 @@ my %job_id = (
     },
 );
 
-### Merged jobs
+### Family_merged jobs
 
-my $merged_chain_key =
+my $chain_key_family_merged_job =
   $family_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
 
-add_merged_job_id_to_dependency_tree(
+add_family_merged_job_id_to_family_id_dependency_tree(
     {
         job_id_href         => \%job_id,
         family_id_chain_key => $family_id_chain_key,
@@ -117,14 +118,15 @@ add_merged_job_id_to_dependency_tree(
     }
 );
 
-my $no_merged_push_result = join $SPACE,
-  @{ $job_id{$family_id_chain_key}{$sample_id_chain_key} };
-is( $no_merged_push_result, q{job_id_3}, q{No merged job_id} );
+my $no_family_merged_push_result = join $SPACE,
+  @{ $job_id{$family_id_chain_key}{$family_id_chain_key} };
+is( $no_family_merged_push_result, q{job_id_6}, q{No family_merged job_id} );
 
 ## Add previous merged job
-$job_id{$family_id_chain_key}{$merged_chain_key} = [qw{job_id_0 job_id_1}];
+$job_id{$family_id_chain_key}{$chain_key_family_merged_job} =
+  [qw{job_id_0 job_id_1}];
 
-add_merged_job_id_to_dependency_tree(
+add_family_merged_job_id_to_family_id_dependency_tree(
     {
         job_id_href         => \%job_id,
         family_id_chain_key => $family_id_chain_key,
@@ -132,12 +134,12 @@ add_merged_job_id_to_dependency_tree(
     }
 );
 
-my $merged_push_result = join $SPACE,
-  @{ $job_id{$family_id_chain_key}{$sample_id_chain_key} };
+my $family_merged_push_result = join $SPACE,
+  @{ $job_id{$family_id_chain_key}{$family_id_chain_key} };
 is(
-    $merged_push_result,
-    q{job_id_3 job_id_0 job_id_1},
-    q{Pushed merged job_id}
+    $family_merged_push_result,
+    q{job_id_6 job_id_0 job_id_1},
+    q{Pushed family_merged job_id}
 );
 
 done_testing();
