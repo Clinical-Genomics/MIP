@@ -114,9 +114,6 @@ my %required_argument = (
         input           => undef,
         expected_output => $function_base_command,
     },
-);
-
-my %specific_argument = (
     env_name => {
         input           => q{test_env},
         expected_output => q{test_env},
@@ -127,7 +124,7 @@ my %specific_argument = (
 my $module_function_cref = \&conda_source_activate;
 
 ## Test both base and function specific arguments
-my @arguments = ( \%required_argument, \%specific_argument );
+my @arguments = ( \%required_argument );
 
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
