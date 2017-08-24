@@ -1599,7 +1599,7 @@ if ( $active_parameter{psambamba_depth} > 0 ) {
 
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
-        sambamba_depth(
+        msambamba_depth(
             {
                 parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
@@ -13787,9 +13787,9 @@ sub chanjo_sexcheck {
     }
 }
 
-sub sambamba_depth {
+sub msambamba_depth {
 
-##sambamba_depth
+##msambamba_depth
 
 ##Function : Generate coverage bed outfile for each individual.
 ##Returns  : ""
@@ -13901,7 +13901,7 @@ sub sambamba_depth {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
-    use Program::Alignment::Sambamba qw(depth);
+    use MIP::Program::Alignment::Sambamba qw(sambamba_depth);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -21732,7 +21732,7 @@ sub pmarkduplicates {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::IO::Files qw(migrate_file);
-    use Program::Alignment::Sambamba qw(flagstat);
+    use MIP::Program::Alignment::Sambamba qw(sambamba_flagstat);
     use MIP::Gnu::Coreutils qw(gnu_cat);
 
     my $core_number =
@@ -21878,7 +21878,7 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
             print $XARGSFILEHANDLE "; ";
 
             ## Process BAM with sambamba flagstat to produce metric file for downstream analysis
-            flagstat(
+            sambamba_flagstat(
                 {
                     infile_path => $outfile_path_prefix . "_"
                       . $contig
@@ -21901,7 +21901,7 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
 
         $markduplicates_program = "sambamba_markdup";
 
-        use Program::Alignment::Sambamba qw(markdup);
+        use MIP::Program::Alignment::Sambamba qw(sambamba_markdup);
 
         ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
             {
@@ -21916,7 +21916,7 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
 
         foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
-            markdup(
+            sambamba_markdup(
                 {
                     infile_path => $file_path_prefix . "_"
                       . $contig
@@ -21941,7 +21941,7 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
             print $XARGSFILEHANDLE "; ";
 
             ## Process BAM with sambamba flagstat to produce metric file for downstream analysis
-            flagstat(
+            sambamba_flagstat(
                 {
                     infile_path => $outfile_path_prefix . "_"
                       . $contig
@@ -23783,7 +23783,7 @@ sub bwa_mem {
     use Program::Alignment::Bwa qw(mem run_bwamem);
     use Program::Alignment::Samtools qw(view stats);
     use Program::Variantcalling::Bedtools qw (intersectbed);
-    use Program::Alignment::Sambamba qw(sort);
+    use MIP::Program::Alignment::Sambamba qw(sambamba_sort);
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -24234,7 +24234,7 @@ sub bwa_mem {
             $paired_end_tracker++;
 
             ## Sort the output from bwa mem|run-bwamem
-            Program::Alignment::Sambamba::sort(
+            sambamba_sort(
                 {
                     infile_path   => $sambamba_sort_infile,
                     outfile_path  => $outfile_path_prefix . $outfile_suffix,
@@ -35996,8 +35996,7 @@ sub split_and_index_aligment_file {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use Program::Alignment::Sambamba qw(index);
-    use MIP::Program::Alignment::Sambamba_view qw(sambamba_view);
+    use MIP::Program::Alignment::Sambamba qw(sambamba_view sambamba_index);
 
     my $xargs_file_name;
 
@@ -36039,7 +36038,7 @@ sub split_and_index_aligment_file {
         );
         print $XARGSFILEHANDLE "; ";    #Seperate commands
 
-        Program::Alignment::Sambamba::index(
+        sambamba_index(
             {
                 infile_path =>
                   catfile( $$temp_directory_ref, $infile . $file_suffix ),

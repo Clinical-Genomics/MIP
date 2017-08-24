@@ -77,7 +77,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = ('MIP::Program::Alignment::Sambamba_view');
+    my @modules = ('MIP::Program::Alignment::Sambamba');
 
     #MODULES
     for my $module (@modules) {
@@ -86,27 +86,12 @@ BEGIN {
     }
 }
 
-use MIP::Program::Alignment::Sambamba_view qw{sambamba_view};
+use MIP::Program::Alignment::Sambamba qw{sambamba_sort};
 use MIP::Test::Commands qw{test_function};
 
 diag(
-"Test sambamba_view MIP::Program::Alignment::Sambamba_view::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test sambamba_sort MIP::Program::Alignment::Sambamba::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
-
-## Default(s)
-    my $with_header;
-    my $show_progress;
-    my $output_format;
-
-    ## Flatten argument(s)
-    my $regions_ref;
-    my $FILEHANDLE;
-    my $infile_path;
-    my $outfile_path;
-    my $stderrfile_path;
-    my $referencefile_path;
-    my $stderrfile_path_append;
-
 
 ## Base arguments
 my $function_base_command = q{sambamba};
@@ -121,46 +106,41 @@ my %base_argument = (
 ## Can be duplicated with %base and/or %specific to enable testing of each individual argument
 my %required_argument = (
     FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
+        input            => undef,
+        expected_output  => $function_base_command,
     },
     infile_path => {
-        input           => q{infile.test},
-        expected_output => q{infile.test},
+        input            => q{infile.test},
+        expected_output  => q{infile.test},
     },
 );
 
 ## Specific arguments
 my %specific_argument = (
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
-    },
-    with_header => {
-		input           => 1,
-		expected_output => q{--with-header},
+    stderrfile_path      => {
+        input            => q{stderrfile.test},
+        expected_output  => q{2> stderrfile.test},
     },
     show_progress => {
-		input           => 1,
-		expected_output => q{--show-progress},
+		input            => 1,
+		expected_output  => q{--show-progress},
     },
-    output_format => {
-		input   => q{bam},
-		expected_output => q{--format bam},
+    memory_limit => {
+		input			 => q{4G},
+		expected_output  => q{--memory-limit=4G},
+	},
+	temp_directory => {
+		input            => q{temp},
+	    expected_output  => q{--tmpdir=temp},
     },
-    referencefile_path => {
-        input           => q{pathToRef.test},
-        expected_output => q{--ref-filename=pathToRef.test},
-    
-    },
-    regions_ref => {
-		inputs_ref           => [qw(1:1000000-2000000 2:1000-5000)],
-		expected_output => q{1:1000000-2000000 2:1000-5000},
+    outfile_path => {
+		input            => q{outfile.test},
+		expected_output  => q{--out=outfile.test},
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&sambamba_view;
+my $module_function_cref = \&sambamba_sort;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
@@ -214,3 +194,4 @@ sub build_usage {
     -v/--version Display version
 END_USAGE
 }
+
