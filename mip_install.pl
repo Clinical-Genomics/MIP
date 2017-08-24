@@ -280,11 +280,13 @@ conda_check(
 
 ## Optionally update conda
 if ( $parameter{conda_update} ) {
+    say $FILEHANDLE q{### Updating Conda};
     conda_update(
         {
             FILEHANDLE => $FILEHANDLE,
         }
     );
+    say $FILEHANDLE $NEWLINE;
 }
 
 
