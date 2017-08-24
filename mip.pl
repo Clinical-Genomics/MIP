@@ -41,9 +41,7 @@ use Check::Check_modules qw(check_modules);
 use File::Format::Yaml qw(load_yaml write_yaml);
 use MIP_log::Log4perl qw(initiate_logger);
 use Script::Utils qw(help);
-use MIP::File::Format::Pedigree qw(create_fam_file);
 use MIP::Check::Cluster qw(check_max_core_number);
-use MIP::Get::Analysis qw(get_overall_analysis_type);
 
 our $USAGE = build_usage( {} );
 
@@ -714,7 +712,7 @@ foreach my $order_parameter_element (@order_parameters) {
 
         ## Detect if all samples has the same sequencing type and return consensus if reached
         $parameter{dynamic_parameter}{consensus_analysis_type} =
-          get_overall_analysis_type(
+          detect_overall_analysis_type(
             { analysis_type_hef => \%{ $active_parameter{analysis_type} }, } );
     }
 }
@@ -1601,7 +1599,7 @@ if ( $active_parameter{psambamba_depth} > 0 ) {
 
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
-        sambamba_depth(
+        msambamba_depth(
             {
                 parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
@@ -3896,7 +3894,6 @@ sub mqccollect {
 
     use MIP::Script::Setup_script qw(setup_script);
     use Program::Qc::Mip qw(qccollect);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $jobid_chain   = $parameter_href->{ "p" . $program_name }{chain};
@@ -3948,16 +3945,19 @@ sub mqccollect {
     {
 
         ## Collect QC metadata info for later use
-        my $qc_metric_outfile = $$family_id_ref . q{_qc_metrics.yaml};
-        add_program_outfile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => 'qccollect',
+                program_name     => "qccollect",
                 outdirectory     => $outfamily_directory,
-                outfile          => $qc_metric_outfile,
-                path => catfile( $outfamily_directory, $qc_metric_outfile ),
+                outfile_ending   => $$family_id_ref . "_qc_metrics.yaml",
+                outdata_type     => "infile_dependent"
             }
         );
+
+        ## Add qc_metrics path to sample_info
+        $sample_info_href->{program}{qccollect}{qccollect_metrics_file}{path} =
+          $outfamily_directory . "/" . $$family_id_ref . "_qc_metrics.yaml";
 
         submit_job(
             {
@@ -4162,7 +4162,7 @@ sub evaluation {
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     ## Rename vcf samples. The samples array will replace the sample names in the same order as supplied.
     rename_vcf_samples(
@@ -4474,7 +4474,7 @@ q?perl -nae 'unless($_=~/##contig=<ID=NC_007605,length=171823>/ || $_=~/##contig
             }
         );
     }
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     close($FILEHANDLE);
 
@@ -4628,7 +4628,6 @@ sub endvariantannotationblock {
 
     use Program::Htslib qw(bgzip tabix);
     use MIP::Gnu::Software::Gnu_grep qw(gnu_grep);
-    use MIP::QC::Record qw(add_program_metafile_to_sample_info);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $consensus_analysis_type =
@@ -4832,7 +4831,7 @@ sub endvariantannotationblock {
                     FILEHANDLE   => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE q{wait}, "\n";
+            say $FILEHANDLE "wait", "\n";
         }
 
         if ( $active_parameter_href->{rankvariant_binary_file} ) {
@@ -4877,7 +4876,7 @@ sub endvariantannotationblock {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE q{wait}, "\n";
+        say $FILEHANDLE "wait", "\n";
 
         ## Adds the most complete vcf file to sample_info
         add_most_complete_vcf(
@@ -4898,19 +4897,10 @@ sub endvariantannotationblock {
 
             if ( $vcfparser_outfile_counter == 1 ) {
 
-                # Save clinical candidate list path
-                my $clinical_candidate_path =
+                $sample_info_href->{program}{$program_name}{clinical}{path} =
                     $final_path_prefix
                   . $vcfparser_analysis_type
-                  . $outfile_suffix;
-                add_program_metafile_to_sample_info(
-                    {
-                        sample_info_href => $sample_info_href,
-                        program_name     => $program_name,
-                        metafile_tag     => q{clinical},
-                        path             => $clinical_candidate_path,
-                    }
-                );
+                  . $outfile_suffix;    #Save clinical candidate list path
 
                 if ( $active_parameter_href->{rankvariant_binary_file} ) {
 
@@ -4922,19 +4912,10 @@ sub endvariantannotationblock {
             }
             else {
 
-                # Save research candidate list path
-                my $research_candidate_path =
+                $sample_info_href->{program}{$program_name}{research}{path} =
                     $final_path_prefix
                   . $vcfparser_analysis_type
-                  . $outfile_suffix;
-                add_program_metafile_to_sample_info(
-                    {
-                        sample_info_href => $sample_info_href,
-                        program_name     => $program_name,
-                        metafile_tag     => q{research},
-                        path             => $research_candidate_path,
-                    }
-                );
+                  . $outfile_suffix;    #Save research candidate list path
 
                 if ( $active_parameter_href->{rankvariant_binary_file} ) {
 
@@ -5098,8 +5079,6 @@ sub rankvariant {
 
     use MIP::Cluster qw(get_core_number);
     use Program::Variantcalling::Genmod qw(annotate models score compound);
-    use MIP::QC::Record
-      qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger('MIP');
@@ -5486,48 +5465,40 @@ sub rankvariant {
                     FILEHANDLE   => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE q{wait}, "\n";
+            say $FILEHANDLE "wait", "\n";
         }
 
         if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
             && ( !$active_parameter_href->{dry_run_all} ) )
         {
 
-            my $qc_genmod_outfile =
-                $outfile_prefix . q{_}
-              . $file_info_href->{contigs_size_ordered}[0]
-              . $vcfparser_analysis_type
-              . $outfile_suffix;
-            add_program_outfile_to_sample_info(
+            sample_info_qc(
                 {
                     sample_info_href => $sample_info_href,
-                    program_name     => q{genmod},
+                    program_name     => "genmod",
                     outdirectory     => $outfamily_directory,
-                    outfile          => $qc_genmod_outfile,
+                    outfile_ending   => $outfile_prefix . "_"
+                      . $file_info_href->{contigs_size_ordered}[0]
+                      . $vcfparser_analysis_type
+                      . $outfile_suffix,
+                    outdata_type => "static"
                 }
             );
 
-            # Add to Sample_info
-            if ( defined( $active_parameter_href->{rank_model_file} ) ) {
+            if ( defined( $active_parameter_href->{rank_model_file} ) )
+            {    #Add to SampleInfo
 
-                my $rank_model_version;
                 if ( $active_parameter_href->{rank_model_file} =~
                     /v(\d+\.\d+.\d+|\d+\.\d+)/ )
                 {
 
-                    $rank_model_version = $1;
+                    $sample_info_href->{program}{rankvariant}{rank_model}
+                      {version} = $1;
                 }
-                add_program_metafile_to_sample_info(
-                    {
-                        sample_info_href => $sample_info_href,
-                        program_name     => q{genmod},
-                        metafile_tag     => q{rank_model},
-                        file =>
-                          basename( $active_parameter_href->{rank_model_file} ),
-                        path    => $active_parameter_href->{rank_model_file},
-                        version => $rank_model_version,
-                    }
-                );
+                $sample_info_href->{program}{rankvariant}{rank_model}{file} =
+                  basename( $active_parameter_href->{rank_model_file} );
+                $sample_info_href->{program}{rankvariant}{rank_model}{path} =
+                  $active_parameter_href->{rank_model_file};
             }
         }
     }
@@ -5681,7 +5652,6 @@ sub gatk_variantevalexome {
     use MIP::Gnu::Coreutils qw(gnu_cat gnu_sort);
     use Program::Variantcalling::Bedtools qw(intersectbed);
     use Program::Variantcalling::Gatk qw(varianteval);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -5763,7 +5733,7 @@ sub gatk_variantevalexome {
         }
     );
 
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     ## Select sample id from family id vcf file
 
@@ -5816,7 +5786,7 @@ sub gatk_variantevalexome {
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     ## Extract exonic variants
     say $FILEHANDLE "## Extract exonic variants";
@@ -5852,7 +5822,7 @@ sub gatk_variantevalexome {
                 outfile_path => $$temp_directory_ref
             }
         );
-        say $FILEHANDLE q{wait}, "\n";
+        say $FILEHANDLE "wait", "\n";
 
         ## Extract exonic variants
         say $FILEHANDLE "## Extract exonic variants";
@@ -6040,23 +6010,25 @@ sub gatk_variantevalexome {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
         ## Collect QC metadata info for later use
-        my $qc_exome_outfile =
-          $outfile_tag . $call_type . q{_exome} . $outfile_suffix;
-        add_program_outfile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
-                program_name     => 'variantevalexome',
+                program_name     => "variantevalexome",
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile          => $qc_exome_outfile,
+                outfile_ending   => $outfile_tag
+                  . $call_type
+                  . "_exome"
+                  . $outfile_suffix,
+                outdata_type => "infile_dependent"
             }
         );
     }
@@ -6195,7 +6167,6 @@ sub gatk_variantevalall {
     use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
     use Program::Variantcalling::Gatk qw(varianteval);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -6275,7 +6246,7 @@ sub gatk_variantevalall {
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     ## Select sample id from family id vcf file
 
@@ -6357,21 +6328,22 @@ sub gatk_variantevalall {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
         ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
-                program_name     => 'variantevalall',
+                program_name     => "variantevalall",
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile          => $outfile_tag . $call_type . $outfile_suffix,
+                outfile_ending   => $outfile_tag . $call_type . $outfile_suffix,
+                outdata_type     => "infile_dependent"
             }
         );
     }
@@ -6522,7 +6494,6 @@ sub snpeff {
     use Program::Variantcalling::Snpeff qw(ann);
     use Program::Variantcalling::Snpsift qw(annotate dbnsfp);
     use Program::Variantcalling::Mip qw(vcfparser);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $xargs_file_name;
@@ -6939,7 +6910,7 @@ sub snpeff {
                     FILEHANDLE   => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE q{wait}, "\n";
+            say $FILEHANDLE "wait", "\n";
         }
     }
 
@@ -6948,17 +6919,16 @@ sub snpeff {
     {
 
         ## Collect QC metadata info for later use
-        my $qc_snpeff_outfile =
-            $outfile_prefix . q{_}
-          . $file_info_href->{contigs_size_ordered}[0]
-          . $vcfparser_analysis_type
-          . $outfile_suffix;
-        add_program_outfile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
                 outdirectory     => $outfamily_directory,
-                outfile          => $qc_snpeff_outfile,
+                outfile_ending   => $outfile_prefix . "_"
+                  . $file_info_href->{contigs_size_ordered}[0]
+                  . $vcfparser_analysis_type
+                  . $outfile_suffix,
+                outdata_type => "static"
             }
         );
     }
@@ -7598,7 +7568,6 @@ sub mvcfparser {
     use MIP::Cluster qw(get_core_number);
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Mip qw(vcfparser);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $xargs_file_name;
@@ -7812,7 +7781,7 @@ sub mvcfparser {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
@@ -7845,16 +7814,15 @@ sub mvcfparser {
         }
 
         ## Collect QC metadata info for later use
-        my $qc_vcfparser_outfile =
-            $outfile_prefix . q{_}
-          . $file_info_href->{contigs_size_ordered}[0]
-          . $infile_suffix;
-        add_program_outfile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
                 outdirectory     => $outfamily_directory,
-                outfile          => $qc_vcfparser_outfile,
+                outfile_ending   => $outfile_prefix . "_"
+                  . $file_info_href->{contigs_size_ordered}[0]
+                  . $infile_suffix,
+                outdata_type => "static"
             }
         );
     }
@@ -8061,7 +8029,6 @@ sub varianteffectpredictor {
     use MIP::Cluster qw(get_core_number);
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Vep qw(variant_effect_predictor);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $xargs_file_name;
@@ -8111,10 +8078,9 @@ sub varianteffectpredictor {
         );
         $stderr_path = $program_info_path . ".stderr.txt";
     }
-
-    # Split to enable submission to &sample_info_qc later
     my ( $volume, $directory, $stderr_file ) =
-      File::Spec->splitpath($stderr_path);
+      File::Spec->splitpath($stderr_path)
+      ;    #Split to enable submission to &sample_info_qc later
 
     ## Assign directories
     my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
@@ -8282,30 +8248,28 @@ sub varianteffectpredictor {
     {
 
         ## Collect QC metadata info for later use
-        my $qc_vep_summary_outfile =
-            $outfile_prefix . q{_}
-          . $file_info_href->{contigs_size_ordered}[0]
-          . $infile_suffix
-          . q{_summary.html};
-        add_program_outfile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => $program_name . q{summary},
+                program_name     => $program_name . "summary",
                 outdirectory     => $outfamily_directory,
-                outfile          => $qc_vep_summary_outfile,
+                outfile_ending   => $outfile_prefix . "_"
+                  . $file_info_href->{contigs_size_ordered}[0]
+                  . $infile_suffix
+                  . "_summary.html",
+                outdata_type => "static"
             }
         );
         ## Collect QC metadata info for later use
-        my $qc_vep_outfile =
-            $outfile_prefix . q{_}
-          . $file_info_href->{contigs_size_ordered}[0]
-          . $infile_suffix;
-        add_program_outfile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
                 outdirectory     => $outfamily_directory,
-                outfile          => $qc_vep_outfile,
+                outfile_ending   => $outfile_prefix . "_"
+                  . $file_info_href->{contigs_size_ordered}[0]
+                  . $infile_suffix,
+                outdata_type => "static"
             }
         );
     }
@@ -8319,7 +8283,7 @@ sub varianteffectpredictor {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     close($XARGSFILEHANDLE);
 
@@ -8335,7 +8299,7 @@ sub varianteffectpredictor {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE q{wait}, "\n";
+        say $FILEHANDLE "wait", "\n";
 
         close($FILEHANDLE);
     }
@@ -8352,7 +8316,7 @@ sub varianteffectpredictor {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE q{wait}, "\n";
+        say $FILEHANDLE "wait", "\n";
     }
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
@@ -8381,12 +8345,13 @@ sub varianteffectpredictor {
         }
 
         ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
                 outdirectory     => $directory,
-                outfile          => $stderr_file,
+                outfile_ending   => $stderr_file,
+                outdata_type     => "info_directory"
             }
         );
     }
@@ -8487,7 +8452,7 @@ sub gatk_readbackedphasing {
             outfile_path => $active_parameter_href->{temp_directory}
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     ## Copy BAM file(s) to temporary directory
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
@@ -8511,7 +8476,7 @@ sub gatk_readbackedphasing {
                 outfile_path => $active_parameter_href->{temp_directory}
             }
         );
-        say $FILEHANDLE q{wait}, "\n";
+        say $FILEHANDLE "wait", "\n";
     }
 
     ## GATK ReadBackedPhasing
@@ -8590,7 +8555,7 @@ sub gatk_readbackedphasing {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     close($FILEHANDLE);
 
@@ -8699,7 +8664,7 @@ sub gatk_phasebytransmission {
             outfile_path => $active_parameter_href->{temp_directory}
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     ## GATK PhaseByTransmission
     say $FILEHANDLE "## GATK PhaseByTransmission";
@@ -8759,7 +8724,7 @@ sub gatk_phasebytransmission {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     close($FILEHANDLE);
 
@@ -8890,7 +8855,6 @@ sub mpeddy {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Peddy qw(peddy);
-    use MIP::QC::Record qw(add_program_metafile_to_sample_info);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -8979,7 +8943,7 @@ sub mpeddy {
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     ## Reformat variant calling file and index
     view_vcf(
@@ -9019,14 +8983,8 @@ sub mpeddy {
 
             my $outfile_suffix = '.' . $file_key . '.' . $suffix;
             ## Collect QC metadata info for later use
-            add_program_metafile_to_sample_info(
-                {
-                    sample_info_href => $sample_info_href,
-                    program_name     => $program_name,
-                    metafile_tag     => $file_key,
-                    path             => $outfile_path_prefix . $outfile_suffix,
-                }
-            );
+            $sample_info_href->{program}{$program_name}{$file_key}{path} =
+              $outfile_path_prefix . $outfile_suffix;
         }
     }
 
@@ -9160,7 +9118,6 @@ sub mplink {
     use Program::Variantcalling::Bcftools qw(view annotate);
     use Program::Variantcalling::Vt qw(vt_uniq);
     use Program::Variantcalling::Plink qw(plink);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -9247,7 +9204,7 @@ sub mplink {
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     ## Prepare input
     say $FILEHANDLE "## Remove indels using bcftools ";
@@ -9435,43 +9392,47 @@ sub mplink {
         {    #Only perform if more than 1 sample
 
             ## Collect QC metadata info for later use
-            add_program_outfile_to_sample_info(
+            sample_info_qc(
                 {
                     sample_info_href => $sample_info_href,
-                    program_name     => q{inbreeding_factor},
+                    program_name     => "inbreeding_factor",
                     outdirectory     => $outfamily_directory,
-                    outfile          => $$family_id_ref . q{.het},
+                    outfile_ending   => $$family_id_ref . ".het",
+                    outdata_type     => "infile_dependent"
                 }
             );
 
             ## Collect QC metadata info for later use
-            add_program_outfile_to_sample_info(
+            sample_info_qc(
                 {
                     sample_info_href => $sample_info_href,
-                    program_name     => q{relation_check},
+                    program_name     => "relation_check",
                     outdirectory     => $outfamily_directory,
-                    outfile          => $$family_id_ref . q{.mibs},
+                    outfile_ending   => $$family_id_ref . ".mibs",
+                    outdata_type     => "infile_dependent"
                 }
             );
         }
 
         ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => q{plink_sexcheck},
+                program_name     => "plink_sexcheck",
                 outdirectory     => $outfamily_directory,
-                outfile          => $$family_id_ref . q{.sexcheck},
+                outfile_ending   => $$family_id_ref . ".sexcheck",
+                outdata_type     => "infile_dependent"
             }
         );
 
         ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => q{plink2},
+                program_name     => "plink2",
                 outdirectory     => $directory,
-                outfile          => $stdout_file,
+                outfile_ending   => $stdout_file,
+                outdata_type     => "info_directory",
             }
         );
     }
@@ -9605,7 +9566,6 @@ sub variant_integrity {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Variant_integrity qw(mendel father);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -9690,7 +9650,7 @@ sub variant_integrity {
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     ## Variant_integrity
     if ( scalar( @{ $active_parameter_href->{sample_ids} } ) > 1 )
@@ -9717,12 +9677,13 @@ sub variant_integrity {
             {
 
                 ## Collect QC metadata info for later use
-                add_program_outfile_to_sample_info(
+                sample_info_qc(
                     {
                         sample_info_href => $sample_info_href,
-                        program_name     => q{variant_integrity_mendel},
+                        program_name     => "variant_integrity_mendel",
                         outdirectory     => $outfamily_directory,
-                        outfile          => $$family_id_ref . q{_mendel.txt},
+                        outfile_ending   => $$family_id_ref . "_mendel.txt",
+                        outdata_type     => "infile_dependent"
                     }
                 );
             }
@@ -9755,12 +9716,13 @@ sub variant_integrity {
                 {
 
                     ## Collect QC metadata info for later use
-                    add_program_outfile_to_sample_info(
+                    sample_info_qc(
                         {
                             sample_info_href => $sample_info_href,
-                            program_name     => q{variant_integrity_father},
+                            program_name     => "variant_integrity_father",
                             outdirectory     => $outfamily_directory,
-                            outfile => $$family_id_ref . q{_father.txt},
+                            outfile_ending   => $$family_id_ref . "_father.txt",
+                            outdata_type     => "infile_dependent"
                         }
                     );
                 }
@@ -9914,14 +9876,9 @@ sub vt {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use Readonly;
     use MIP::Cluster qw(get_core_number);
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use Program::Variantcalling::Genmod qw(annotate filter);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
-
-    ## Constants
-    Readonly my $DOT => q{.};
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $xargs_file_name;
@@ -10086,14 +10043,15 @@ sub vt {
               ;    #Split to enable submission to &SampleInfoQC later
 
             ## Collect QC metadata info for later use
-            my $qc_vt_outfile =
-              $stderr_file . $DOT . $contig . $DOT . q{stderr.txt};
-            add_program_outfile_to_sample_info(
+            sample_info_qc(
                 {
                     sample_info_href => $sample_info_href,
-                    program_name     => 'vt',
+                    program_name     => "vt",
                     outdirectory     => $directory,
-                    outfile          => $qc_vt_outfile,
+                    outfile_ending   => $stderr_file . "."
+                      . $contig
+                      . ".stderr.txt",
+                    outdata_type => "info_directory"
                 }
             );
         }
@@ -10194,7 +10152,7 @@ sub vt {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE q{wait}, "\n";
+        say $FILEHANDLE "wait", "\n";
 
         close($FILEHANDLE);
     }
@@ -10536,7 +10494,7 @@ sub rhocall {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE q{wait}, "\n";
+        say $FILEHANDLE "wait", "\n";
 
         close($FILEHANDLE);
     }
@@ -10790,7 +10748,7 @@ sub prepareforvariantannotationblock {
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     ## Compress or decompress original file or stream to outfile (if supplied)
     bgzip(
@@ -10876,7 +10834,7 @@ sub prepareforvariantannotationblock {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE q{wait}, "\n";
+        say $FILEHANDLE "wait", "\n";
 
         close($FILEHANDLE);
     }
@@ -11132,7 +11090,7 @@ sub gatk_combinevariantcallsets {
             );
         }
     }
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     ## GATK CombineVariants
     say $FILEHANDLE "## GATK CombineVariants";
@@ -11201,7 +11159,7 @@ sub gatk_combinevariantcallsets {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     close($FILEHANDLE);
 
@@ -11346,7 +11304,6 @@ sub gatk_variantrecalibration {
     use Program::Variantcalling::Bcftools qw(norm);
     use Program::Variantcalling::Gatk
       qw(variantrecalibrator applyrecalibration selectvariants calculategenotypeposteriors);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -11455,7 +11412,7 @@ sub gatk_variantrecalibration {
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     ### GATK VariantRecalibrator
     ## Set mode to be used in variant recalibration
@@ -11883,7 +11840,7 @@ sub gatk_variantrecalibration {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE q{wait}, "\n";
+        say $FILEHANDLE "wait", "\n";
     }
 
     ## Copies file from temporary directory.
@@ -11902,7 +11859,7 @@ sub gatk_variantrecalibration {
             }
         );
     }
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     close($FILEHANDLE);
 
@@ -11911,16 +11868,16 @@ sub gatk_variantrecalibration {
     {
 
         ## Collect QC metadata info for later use
-        # Disabled pedigreeCheck to not include relationship test is qccollect
-        add_program_outfile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => q{pedigree_check},
-                outdirectory     => $outfamily_directory,
-                outfile          => $outfile_prefix . $outfile_suffix,
+                program_name     => "pedigree_check"
+                , #Disabled pedigreeCheck to not include relationship test is qccollect
+                outdirectory   => $outfamily_directory,
+                outfile_ending => $outfile_prefix . $outfile_suffix,
+                outdata_type   => "infile_dependent"
             }
         );
-
         $sample_info_href->{vcf_file}{ready_vcf}{path} =
           catfile( $outfamily_directory, $outfile_prefix . $outfile_suffix );
 
@@ -12141,7 +12098,7 @@ sub gatk_concatenate_genotypegvcfs {
             }
         );
     }
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
     concatenate_variants(
@@ -12230,7 +12187,7 @@ sub gatk_concatenate_genotypegvcfs {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE q{wait}, "\n";
+        say $FILEHANDLE "wait", "\n";
     }
 
     ## Copies file from temporary directory.
@@ -12242,7 +12199,7 @@ sub gatk_concatenate_genotypegvcfs {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     close($FILEHANDLE);
 
@@ -12515,7 +12472,7 @@ sub gatk_genotypegvcfs {
                     outfile_path => $$temp_directory_ref
                 }
             );
-            say $FILEHANDLE q{wait}, "\n";
+            say $FILEHANDLE "wait", "\n";
         }
 
         ## GATK GenoTypeGVCFs
@@ -12584,7 +12541,7 @@ sub gatk_genotypegvcfs {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE q{wait}, "\n";
+        say $FILEHANDLE "wait", "\n";
 
         close($FILEHANDLE);
 
@@ -12769,7 +12726,7 @@ sub rcoverageplots {
     print $FILEHANDLE $active_parameter_href->{bedtools_genomecov_max_coverage}
       . " ";                            #X-axis max scale
     say $FILEHANDLE $outsample_directory, " &", "\n";    #OutFile
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     close($FILEHANDLE);
 
@@ -12974,7 +12931,7 @@ sub bedtools_genomecov {
             outfile_path => $$temp_directory_ref,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     ## Bedtools Genomecov
     say $FILEHANDLE "## Calculate coverage metrics on alignment";
@@ -13000,7 +12957,7 @@ sub bedtools_genomecov {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     close($FILEHANDLE);
 
@@ -13139,7 +13096,6 @@ sub picardtools_collecthsmetrics {
     use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
     use Program::Alignment::Picardtools qw(collecthsmetrics);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -13211,7 +13167,7 @@ sub picardtools_collecthsmetrics {
             outfile_path => $$temp_directory_ref,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     ## Collecthsmetrics
     say $FILEHANDLE "## Calculate capture metrics on alignment";
@@ -13262,21 +13218,22 @@ sub picardtools_collecthsmetrics {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
         ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
-                program_name     => 'collecthsmetrics',
+                program_name     => "collecthsmetrics",
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile          => $outfile_tag,
+                outfile_ending   => $outfile_tag,
+                outdata_type     => "infile_dependent"
             }
         );
     }
@@ -13412,15 +13369,10 @@ sub picardtools_collectmultiplemetrics {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use Readonly;
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
     use Program::Alignment::Picardtools qw(collectmultiplemetrics);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
-
-    ## Constants
-    Readonly my $DOT => q{.};
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -13488,7 +13440,7 @@ sub picardtools_collectmultiplemetrics {
             outfile_path => $$temp_directory_ref,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     ## CollectMultipleMetrics
     say $FILEHANDLE "## Collecting multiple metrics on alignment";
@@ -13535,31 +13487,33 @@ sub picardtools_collectmultiplemetrics {
             }
         );
     }
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
         ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
-                program_name     => 'collectmultiplemetrics',
+                program_name     => "collectmultiplemetrics",
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile => $outfile_tag . $DOT . q{alignment_summary_metrics},
+                outfile_ending   => $outfile_tag . ".alignment_summary_metrics",
+                outdata_type     => "infile_dependent"
             }
         );
-        add_program_outfile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
-                program_name     => 'collectmultiplemetricsinsertsize',
+                program_name     => "collectmultiplemetricsinsertsize",
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile => $outfile_tag . $DOT . q{insert_size_metrics},
+                outfile_ending   => $outfile_tag . ".insert_size_metrics",
+                outdata_type     => "infile_dependent"
             }
         );
     }
@@ -13697,8 +13651,6 @@ sub chanjo_sexcheck {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Program::Alignment::Chanjo qw(chanjo_sex);
-    use MIP::QC::Record
-      qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -13791,25 +13743,26 @@ sub chanjo_sexcheck {
     {
 
         ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
-                program_name     => q{chanjo_sexcheck},
+                program_name     => "chanjo_sexcheck",
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile          => $outfile_tag . $outfile_suffix,
+                outfile_ending   => $outfile_tag . $outfile_suffix,
+                outdata_type     => "infile_dependent"
             }
         );
-        add_program_metafile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
-                program_name     => q{chanjo_sexcheck},
+                program_name     => "chanjo",
                 infile           => $infile,
-                metafile_tag     => q{log},
-                directory        => $outsample_directory,
-                file             => $infile_tag . q{_chanjo_sexcheck.log},
+                outdirectory     => $outsample_directory,
+                outfile_ending   => $infile_tag . "_chanjo_sexcheck.log",
+                outdata_type     => "infile_dependent"
             }
         );
     }
@@ -13834,9 +13787,9 @@ sub chanjo_sexcheck {
     }
 }
 
-sub sambamba_depth {
+sub msambamba_depth {
 
-##sambamba_depth
+##msambamba_depth
 
 ##Function : Generate coverage bed outfile for each individual.
 ##Returns  : ""
@@ -13948,8 +13901,7 @@ sub sambamba_depth {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
-    use Program::Alignment::Sambamba qw(depth);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
+    use MIP::Program::Alignment::Sambamba qw(sambamba_depth);
 
     my $jobid_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -14024,7 +13976,7 @@ sub sambamba_depth {
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     ## sambamba_depth
     say $FILEHANDLE "## Annotating bed from alignment";
@@ -14070,23 +14022,15 @@ sub sambamba_depth {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        my $qc_sambamba_path =
+        $sample_info_href->{sample}{$$sample_id_ref}{program}{$program_name}
+          {$infile}{ substr( $outfile_suffix, 1 ) }{path} =
           catfile( $outsample_directory, $outfile_prefix . $outfile_suffix );
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                sample_id        => $$sample_id_ref,
-                program_name     => $program_name,
-                infile           => $infile,
-                path             => $qc_sambamba_path,
-            }
-        );
     }
 
     close($FILEHANDLE);
@@ -14419,7 +14363,7 @@ sub sv_reformat {
                     outfile_path => $$temp_directory_ref
                 }
             );
-            say $FILEHANDLE q{wait}, "\n";
+            say $FILEHANDLE "wait", "\n";
         }
 
         my $concatenate_ending = "";
@@ -14523,7 +14467,7 @@ sub sv_reformat {
                     FILEHANDLE   => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE q{wait}, "\n";
+            say $FILEHANDLE "wait", "\n";
         }
 
         if ( $active_parameter_href->{sv_rankvariant_binary_file} ) {
@@ -14568,7 +14512,7 @@ sub sv_reformat {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE q{wait}, "\n";
+        say $FILEHANDLE "wait", "\n";
 
         ## Adds the most complete vcf file to sample_info
         add_most_complete_vcf(
@@ -14590,17 +14534,10 @@ sub sv_reformat {
 
             if ( $vcfparser_outfile_counter == 1 ) {
 
-                # Save clinical candidate list path
-                my $clinical_candidate_path =
-                  $final_path_prefix . $vcfparser_analysis_type . $file_suffix;
-                add_program_metafile_to_sample_info(
-                    {
-                        sample_info_href => $sample_info_href,
-                        program_name     => $program_name,
-                        metafile_tag     => q{clinical},
-                        path             => $clinical_candidate_path,
-                    }
-                );
+                $sample_info_href->{program}{$program_name}{clinical}{path} =
+                    $final_path_prefix
+                  . $vcfparser_analysis_type
+                  . $file_suffix;    #Save clinical candidate list path
 
                 if ( $active_parameter_href->{sv_rankvariant_binary_file} ) {
 
@@ -14612,17 +14549,10 @@ sub sv_reformat {
             }
             else {
 
-                # Save research candidate list path
-                my $research_candidate_path =
-                  $final_path_prefix . $vcfparser_analysis_type . $file_suffix;
-                add_program_metafile_to_sample_info(
-                    {
-                        sample_info_href => $sample_info_href,
-                        program_name     => $program_name,
-                        metafile_tag     => q{research},
-                        path             => $research_candidate_path,
-                    }
-                );
+                $sample_info_href->{program}{$program_name}{research}{path} =
+                    $final_path_prefix
+                  . $vcfparser_analysis_type
+                  . $file_suffix;    #Save research candidate list path
 
                 if ( $active_parameter_href->{sv_rankvariant_binary_file} ) {
 
@@ -14782,8 +14712,6 @@ sub sv_rankvariant {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Genmod qw(annotate models score compound);
-    use MIP::QC::Record
-      qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger('MIP');
@@ -14987,7 +14915,7 @@ sub sv_rankvariant {
                     outfile_path => $$temp_directory_ref
                 }
             );
-            say $FILEHANDLE q{wait}, "\n";
+            say $FILEHANDLE "wait", "\n";
         }
 
         my $genmod_module = "";   #Track which genmod modules has been processed
@@ -15241,7 +15169,7 @@ sub sv_rankvariant {
                     FILEHANDLE   => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE q{wait}, "\n";
+            say $FILEHANDLE "wait", "\n";
 
             ## Adds the most complete vcf file to sample_info
             add_most_complete_vcf(
@@ -15268,43 +15196,34 @@ sub sv_rankvariant {
     {
 
         if ( defined( $active_parameter_href->{sv_rank_model_file} ) )
-        {    #Add to Sample_info
+        {    #Add to SampleInfo
 
-            my $sv_rank_model_version;
             if ( $active_parameter_href->{sv_rank_model_file} =~
                 /v(\d+\.\d+.\d+|\d+\.\d+)/ )
             {
 
-                $sv_rank_model_version = $1;
+                $sample_info_href->{program}{sv_rankvariant}{rank_model}
+                  {version} = $1;
             }
-            add_program_metafile_to_sample_info(
-                {
-                    sample_info_href => $sample_info_href,
-                    program_name     => q{sv_genmod},
-                    metafile_tag     => q{sv_rank_model},
-                    file =>
-                      basename( $active_parameter_href->{sv_rank_model_file} ),
-                    path    => $active_parameter_href->{sv_rank_model_file},
-                    version => $sv_rank_model_version,
-                }
-            );
+            $sample_info_href->{program}{sv_rankvariant}{rank_model}{file} =
+              basename( $active_parameter_href->{sv_rank_model_file} );
+            $sample_info_href->{program}{sv_rankvariant}{rank_model}{path} =
+              $active_parameter_href->{sv_rank_model_file};
 
         }
-        my $qc_sv_genmod_outfile =
-            $$family_id_ref
-          . $outfile_tag
-          . $call_type
-          . $vcfparser_analysis_type
-          . $file_suffix;
-        add_program_outfile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => q{sv_genmod},
+                program_name     => "sv_genmod",
                 outdirectory     => $outfamily_directory,
-                outfile          => $qc_sv_genmod_outfile,
+                outfile_ending   => $$family_id_ref
+                  . $outfile_tag
+                  . $call_type
+                  . $vcfparser_analysis_type
+                  . $file_suffix,
+                outdata_type => "static"
             }
         );
-
         submit_job(
             {
                 active_parameter_href   => $active_parameter_href,
@@ -15437,7 +15356,6 @@ sub sv_vcfparser {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Mip qw(vcfparser);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -15547,7 +15465,7 @@ sub sv_vcfparser {
                 outfile_path => $$temp_directory_ref
             }
         );
-        say $FILEHANDLE q{wait}, "\n";
+        say $FILEHANDLE "wait", "\n";
     }
 
     ## vcfparser
@@ -15689,7 +15607,7 @@ sub sv_vcfparser {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE q{wait}, "\n";
+        say $FILEHANDLE "wait", "\n";
     }
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
@@ -15712,12 +15630,13 @@ sub sv_vcfparser {
         }
 
         ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
                 outdirectory     => $outfamily_directory,
-                outfile          => $outfile_sample_info_prefix . $file_suffix,
+                outfile_ending   => $outfile_sample_info_prefix . $file_suffix,
+                outdata_type     => "static"
             }
         );
 
@@ -15806,7 +15725,7 @@ sub sv_vcfparser {
                     FILEHANDLE   => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE q{wait}, "\n";
+            say $FILEHANDLE "wait", "\n";
 
             ## Adds the most complete vcf file to sample_info
             add_most_complete_vcf(
@@ -15965,17 +15884,10 @@ sub sv_varianteffectpredictor {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use Readonly;
     use MIP::Cluster qw(get_core_number);
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Vep qw(variant_effect_predictor);
-    use MIP::QC::Record
-      qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
-
-    ## Constants
-    Readonly my $DOT     => q{.};
-    Readonly my $ASTERIX => q{*};
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -16079,7 +15991,7 @@ sub sv_varianteffectpredictor {
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     ## Fix SV with no length as these will fail in the annotation with VEP
     my $perl_fix_sv_nolengths =
@@ -16245,25 +16157,25 @@ q?if($alt=~ /\<|\[|\]|\>/) { $alt=~ s/\<|\>//g; $alt=~ s/\:.+//g; if($start >= $
         }
 
         ## Collect QC metadata info for later use
-        my $qc_vep_summary_outfile =
-          $outfile_sample_info_prefix . $DOT . q{vcf_summary.html};
-        add_program_metafile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => $program_name,
-                metafile_tag     => q{summary},
-                directory        => $outfamily_directory,
-                file             => $qc_vep_summary_outfile,
+                program_name     => $program_name . "summary",
+                outdirectory     => $outfamily_directory,
+                outfile_ending   => $outfile_sample_info_prefix
+                  . ".vcf_summary.html",
+                outdata_type => "static"
             }
         );
 
         ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
                 outdirectory     => $outfamily_directory,
-                outfile          => $outfile_sample_info_prefix . $file_suffix,
+                outfile_ending   => $outfile_sample_info_prefix . $file_suffix,
+                outdata_type     => "static"
             }
         );
     }
@@ -16271,14 +16183,12 @@ q?if($alt=~ /\<|\[|\]|\>/) { $alt=~ s/\<|\>//g; $alt=~ s/\:.+//g; if($start >= $
     ## QC Data File(s)
     migrate_file(
         {
-            infile_path => $outfile_path_prefix
-              . $ASTERIX
-              . $file_suffix . q{_s*},
+            infile_path  => $outfile_path_prefix . q{*} . $file_suffix . q{_s*},
             outfile_path => $outfamily_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     close($XARGSFILEHANDLE);
 
@@ -16286,15 +16196,12 @@ q?if($alt=~ /\<|\[|\]|\>/) { $alt=~ s/\<|\>//g; $alt=~ s/\:.+//g; if($start >= $
     say $FILEHANDLE "## Copy file from temporary directory";
     migrate_file(
         {
-            infile_path => $outfile_path_prefix
-              . $ASTERIX
-              . $file_suffix
-              . $ASTERIX,
+            infile_path  => $outfile_path_prefix . q{*} . $file_suffix . q{*},
             outfile_path => $outfamily_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     close($FILEHANDLE);
 
@@ -16438,7 +16345,6 @@ sub sv_combinevariantcallsets {
     use Program::Variantcalling::Vt qw(decompose);
     use Program::Variantcalling::Genmod qw(annotate);
     use Program::Variantcalling::Vcfanno qw(vcfanno);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my @structural_variant_callers;    #Stores callers that have been executed
     my @parallel_chains
@@ -16572,7 +16478,7 @@ sub sv_combinevariantcallsets {
                     }
                 );
 
-                say $FILEHANDLE q{wait}, "\n";
+                say $FILEHANDLE "wait", "\n";
 
                 ## Reformat variant calling file and index
                 view_vcf(
@@ -16720,7 +16626,7 @@ sub sv_combinevariantcallsets {
                     outfile_path => $$temp_directory_ref
                 }
             );
-            say $FILEHANDLE q{wait}, "\n";
+            say $FILEHANDLE "wait", "\n";
 
             if ( $active_parameter_href->{sv_vt_decompose} > 0 ) {
 
@@ -16974,12 +16880,13 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
             && ( !$active_parameter_href->{dry_run_all} ) )
         {
 
-            add_program_outfile_to_sample_info(
+            sample_info_qc(
                 {
                     sample_info_href => $sample_info_href,
-                    program_name     => q{sv_combinevariantcallsets},
+                    program_name     => "sv_combinevariantcallsets",
                     outdirectory     => $directory,
-                    outfile          => $stderr_file,
+                    outfile_ending   => $stderr_file,
+                    outdata_type     => "info_directory"
                 }
             );
         }
@@ -17058,7 +16965,7 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     close($FILEHANDLE);
 
@@ -17066,14 +16973,16 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        my $qc_svdb_outfile =
-          $$family_id_ref . $outfile_tag . $call_type . $outfile_suffix;
-        add_program_outfile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => 'svdb',
+                program_name     => "svdb",
                 outdirectory     => $outfamily_directory,
-                outfile          => $qc_svdb_outfile,
+                outfile_ending   => $$family_id_ref
+                  . $outfile_tag
+                  . $call_type
+                  . $outfile_suffix,
+                outdata_type => "static"
             }
         );
 
@@ -17237,7 +17146,6 @@ sub cnvnator {
     use Program::Variantcalling::Cnvnator
       qw(read_extraction histogram statistics partition calling convert_to_vcf);
     use Program::Variantcalling::Bcftools qw(annotate);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -17367,7 +17275,7 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
         );
         say $FILEHANDLE " &";
     }
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -17554,7 +17462,7 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     close($FILEHANDLE);
 
@@ -17562,12 +17470,13 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        add_program_outfile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => 'cnvnator',
+                program_name     => "cnvnator",
                 outdirectory     => $outsample_directory,
-                outfile          => $outfile_prefix . $outfile_suffix,
+                outfile_ending   => $outfile_prefix . $outfile_suffix,
+                outdata_type     => "static"
             }
         );
         submit_job(
@@ -17712,7 +17621,6 @@ sub delly_reformat {
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use Program::Variantcalling::Delly qw(call merge filter);
     use Program::Variantcalling::Bcftools qw(merge index);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -17930,7 +17838,7 @@ sub delly_reformat {
                     }
                   );
             }
-            say $FILEHANDLE q{wait}, "\n";
+            say $FILEHANDLE "wait", "\n";
         }
     }
 
@@ -18422,18 +18330,19 @@ sub delly_reformat {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        add_program_outfile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => 'delly',
+                program_name     => "delly",
                 outdirectory     => $outfamily_directory,
-                outfile          => $outfile_prefix . $outfile_suffix,
+                outfile_ending   => $outfile_prefix . $outfile_suffix,
+                outdata_type     => "static"
             }
         );
     }
@@ -18719,7 +18628,7 @@ sub delly_call {
                 temp_directory     => $$temp_directory_ref,
             }
         );
-        say $FILEHANDLE q{wait}, "\n";
+        say $FILEHANDLE "wait", "\n";
     }
 
     ## delly
@@ -18807,7 +18716,7 @@ sub delly_call {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     close($FILEHANDLE);
 
@@ -18941,7 +18850,6 @@ sub manta {
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Manta qw(config workflow);
     use Program::Compression::Gzip qw(gzip);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -19053,7 +18961,7 @@ sub manta {
             }
         );
     }
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     ## manta
     say $FILEHANDLE "## Manta";
@@ -19115,18 +19023,19 @@ sub manta {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        add_program_outfile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => 'manta',
+                program_name     => "manta",
                 outdirectory     => $outfamily_directory,
-                outfile          => $outfile_prefix . $outfile_suffix,
+                outfile_ending   => $outfile_prefix . $outfile_suffix,
+                outdata_type     => "static"
             }
         );
     }
@@ -19267,7 +19176,6 @@ sub tiddit {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Tiddit qw(sv);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $program_outdirectory_name =
       $parameter_href->{ "p" . $program_name }{outdir_name};
@@ -19385,7 +19293,7 @@ sub tiddit {
             }
         );
     }
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     $process_batches_count = 1;    # Restart counter
     while ( my ( $sample_id_index, $sample_id ) =
@@ -19414,7 +19322,7 @@ sub tiddit {
         );
         say $FILEHANDLE "& \n";
     }
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     ## Get parameters
     ## Tiddit sample outfiles
@@ -19438,7 +19346,7 @@ sub tiddit {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     close($FILEHANDLE);
 
@@ -19446,12 +19354,13 @@ sub tiddit {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        add_program_outfile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => 'tiddit',
+                program_name     => "tiddit",
                 outdirectory     => $outfamily_directory,
-                outfile          => $outfile_prefix . $outfile_suffix,
+                outfile_ending   => $outfile_prefix . $outfile_suffix,
+                outdata_type     => "static"
             }
         );
 
@@ -19589,7 +19498,6 @@ sub samtools_mpileup {
     use MIP::IO::Files qw(migrate_file);
     use Program::Alignment::Samtools qw(mpileup);
     use Program::Variantcalling::Bcftools qw(call filter norm);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -19843,7 +19751,7 @@ q?\'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %M
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     close($FILEHANDLE);
 
@@ -19852,29 +19760,32 @@ q?\'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %M
     {
 
         ## Collect samtools version in qccollect
-        add_program_outfile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => 'samtools',
+                program_name     => "samtools",
                 outdirectory     => $outfamily_directory,
-                outfile          => $outfile_prefix . $outfile_suffix,
+                outfile_ending   => $outfile_prefix . $outfile_suffix,
+                outdata_type     => "static"
             }
         );
         ## Locating samtools_mpileup file
-        add_program_outfile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => 'samtools_mpileup',
+                program_name     => "samtools_mpileup",
                 outdirectory     => $outfamily_directory,
-                outfile          => $outfile_prefix . $outfile_suffix,
+                outfile_ending   => $outfile_prefix . $outfile_suffix,
+                outdata_type     => "static"
             }
         );
-        add_program_outfile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => 'bcftools',
+                program_name     => "bcftools",
                 outdirectory     => $outfamily_directory,
-                outfile          => $outfile_prefix . $outfile_suffix,
+                outfile_ending   => $outfile_prefix . $outfile_suffix,
+                outdata_type     => "static"
             }
         );
 
@@ -20007,7 +19918,6 @@ sub freebayes {
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Freebayes qw(calling);
     use Program::Variantcalling::Bcftools qw(filter norm);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -20219,7 +20129,7 @@ sub freebayes {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     close($FILEHANDLE);
 
@@ -20227,20 +20137,22 @@ sub freebayes {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        add_program_outfile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => 'freebayes',
+                program_name     => "freebayes",
                 outdirectory     => $outfamily_directory,
-                outfile          => $outfile_prefix . $outfile_suffix,
+                outfile_ending   => $outfile_prefix . $outfile_suffix,
+                outdata_type     => "static"
             }
         );
-        add_program_outfile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
-                program_name     => 'bcftools',
+                program_name     => "bcftools",
                 outdirectory     => $outfamily_directory,
-                outfile          => $outfile_prefix . $outfile_suffix,
+                outfile_ending   => $outfile_prefix . $outfile_suffix,
+                outdata_type     => "static"
             }
         );
 
@@ -21158,7 +21070,7 @@ sub gatk_baserecalibration {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     ## Remove concatenated BAM file at temporary directory
     gnu_rm(
@@ -21820,9 +21732,8 @@ sub pmarkduplicates {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::IO::Files qw(migrate_file);
-    use Program::Alignment::Sambamba qw(flagstat);
+    use MIP::Program::Alignment::Sambamba qw(sambamba_flagstat);
     use MIP::Gnu::Coreutils qw(gnu_cat);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -21967,7 +21878,7 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
             print $XARGSFILEHANDLE "; ";
 
             ## Process BAM with sambamba flagstat to produce metric file for downstream analysis
-            flagstat(
+            sambamba_flagstat(
                 {
                     infile_path => $outfile_path_prefix . "_"
                       . $contig
@@ -21990,7 +21901,7 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
 
         $markduplicates_program = "sambamba_markdup";
 
-        use Program::Alignment::Sambamba qw(markdup);
+        use MIP::Program::Alignment::Sambamba qw(sambamba_markdup);
 
         ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
             {
@@ -22005,7 +21916,7 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
 
         foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
-            markdup(
+            sambamba_markdup(
                 {
                     infile_path => $file_path_prefix . "_"
                       . $contig
@@ -22030,7 +21941,7 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
             print $XARGSFILEHANDLE "; ";
 
             ## Process BAM with sambamba flagstat to produce metric file for downstream analysis
-            flagstat(
+            sambamba_flagstat(
                 {
                     infile_path => $outfile_path_prefix . "_"
                       . $contig
@@ -22071,27 +21982,27 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
         ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
+        sample_info_qc(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
-                program_name     => 'markduplicates',
+                program_name     => "markduplicates",
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile          => $outfile_tag . q{_metric},
+                outfile_ending   => $outfile_tag . "_metric",
+                outdata_type     => "infile_dependent"
             }
         );
-
-# Markduplicates can be processed by either picardtools markduplicates or sambamba markdup
         $sample_info_href->{sample}{$$sample_id_ref}{program}{markduplicates}
-          {$infile}{processed_by} = $markduplicates_program;
+          {$infile}{processed_by} = $markduplicates_program
+          ; #markduplicates can be processed by either picardtools markduplicates or sambamba markdup
 
         if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
@@ -22614,7 +22525,7 @@ sub picardtools_mergesamfiles {
                         outfile_path => $$temp_directory_ref
                     }
                 );
-                say $FILEHANDLE q{wait}, "\n";
+                say $FILEHANDLE "wait", "\n";
 
                 if ( $merge_file =~ /lane(\d+)|s_(\d+)/ )
                 { #Look for lanes_ or lane\d in previously generated file to be merged with current run to be able to extract previous lanes
@@ -22815,7 +22726,7 @@ sub picardtools_mergesamfiles {
                     outfile_path => $$temp_directory_ref
                 }
             );
-            say $FILEHANDLE q{wait}, "\n";
+            say $FILEHANDLE "wait", "\n";
 
             if ( $merge_file =~ /lane(\d+)|s_(\d+)/ )
             { #Look for lanes_ or lane\d in previously generated file to be merged with current run to be able to extract previous lanes
@@ -23255,7 +23166,7 @@ sub bwa_sampe {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE q{wait}, "\n";
+        say $FILEHANDLE "wait", "\n";
 
         close($FILEHANDLE);
 
@@ -23417,7 +23328,7 @@ sub bwa_aln {
               [$infile_counter_index] . ".sai"
           ) . " &\n";    #OutFile
     }
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     ## Copies files from source to destination
     migrate_files(
@@ -23705,7 +23616,7 @@ sub picardtools_mergerapidreads {
               . " &";    #OutFile
         }
     }
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     ## Remove temp directory
     gnu_rm(
@@ -23872,8 +23783,7 @@ sub bwa_mem {
     use Program::Alignment::Bwa qw(mem run_bwamem);
     use Program::Alignment::Samtools qw(view stats);
     use Program::Variantcalling::Bedtools qw (intersectbed);
-    use Program::Alignment::Sambamba qw(sort);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
+    use MIP::Program::Alignment::Sambamba qw(sambamba_sort);
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -24214,7 +24124,7 @@ sub bwa_mem {
                     }
                 );    #Read 2
             }
-            say $FILEHANDLE q{wait}, "\n";
+            say $FILEHANDLE "wait", "\n";
 
             ### BWA MEM
 
@@ -24324,7 +24234,7 @@ sub bwa_mem {
             $paired_end_tracker++;
 
             ## Sort the output from bwa mem|run-bwamem
-            Program::Alignment::Sambamba::sort(
+            sambamba_sort(
                 {
                     infile_path   => $sambamba_sort_infile,
                     outfile_path  => $outfile_path_prefix . $outfile_suffix,
@@ -24347,7 +24257,7 @@ sub bwa_mem {
                         FILEHANDLE   => $FILEHANDLE,
                     }
                 );
-                say $FILEHANDLE q{wait}, "\n";
+                say $FILEHANDLE "wait", "\n";
             }
             if ( $bwa_binary eq "run-bwamem" ) {
 
@@ -24370,7 +24280,7 @@ sub bwa_mem {
                         }
                     );
                 }
-                say $FILEHANDLE q{wait}, "\n";
+                say $FILEHANDLE "wait", "\n";
             }
 
             if ( $active_parameter_href->{bwa_mem_bamstats} ) {
@@ -24399,7 +24309,7 @@ q?perl -ne '$raw; $map; chomp($_); print $_, "\n"; if($_=~/raw total sequences:\
                         FILEHANDLE   => $FILEHANDLE,
                     }
                 );
-                say $FILEHANDLE q{wait}, "\n";
+                say $FILEHANDLE "wait", "\n";
             }
 
             if (   ( $active_parameter_href->{bwa_mem_cram} )
@@ -24429,7 +24339,7 @@ q?perl -ne '$raw; $map; chomp($_); print $_, "\n"; if($_=~/raw total sequences:\
                         FILEHANDLE   => $FILEHANDLE,
                     }
                 );
-                say $FILEHANDLE q{wait}, "\n";
+                say $FILEHANDLE "wait", "\n";
             }
 
             close($FILEHANDLE);
@@ -24459,41 +24369,44 @@ q?perl -ne '$raw; $map; chomp($_); print $_, "\n"; if($_=~/raw total sequences:\
                 if ( $active_parameter_href->{bwa_mem_bamstats} ) {
 
                     ## Collect QC metadata info for later use
-                    add_program_outfile_to_sample_info(
+                    sample_info_qc(
                         {
                             sample_info_href => $sample_info_href,
                             sample_id        => $$sample_id_ref,
-                            program_name     => 'bamstats',
+                            program_name     => "bamstats",
                             infile           => $infile_prefix,
                             outdirectory     => $outsample_directory,
-                            outfile          => $outfile_tag . q{.stats},
+                            outfile_ending   => $outfile_tag . ".stats",
+                            outdata_type     => "infile_dependent"
                         }
                     );
                 }
 
                 if ( $bwa_binary eq "bwa mem" ) {
 
-                    add_program_outfile_to_sample_info(
+                    sample_info_qc(
                         {
                             sample_info_href => $sample_info_href,
                             sample_id        => $$sample_id_ref,
-                            program_name     => 'bwa',
+                            program_name     => "bwa",
                             infile           => $infile_prefix,
                             outdirectory     => $directory,
-                            outfile          => $stderr_file,
+                            outfile_ending   => $stderr_file,
+                            outdata_type     => "info_directory"
                         }
                     );
                 }
                 if ( $bwa_binary eq "run-bwamem" ) {
 
-                    add_program_outfile_to_sample_info(
+                    sample_info_qc(
                         {
                             sample_info_href => $sample_info_href,
                             sample_id        => $$sample_id_ref,
-                            program_name     => 'run-bwamem',
+                            program_name     => "Bwa",
                             infile           => $infile_prefix,
                             outdirectory     => $outsample_directory,
-                            outfile          => q{.log.bwamem},
+                            outfile_ending   => ".log.bwamem",
+                            outdata_type     => "infile_dependent"
                         }
                     );
                 }
@@ -25287,7 +25200,6 @@ sub madeline {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     ## Filehandles
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
@@ -25335,15 +25247,8 @@ sub madeline {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        my $qc_madelaine_path =
+        $sample_info_href->{program}{$program_name}{path} =
           catfile( $outfamily_directory, $$family_id_ref . "_madeline.xml" );
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                program_name     => $program_name,
-                path             => $qc_madelaine_path,
-            }
-        );
     }
 
     close($FILEHANDLE);
@@ -25373,15 +25278,15 @@ sub mfastqc {
 ##Function : Raw sequence quality analysis using FASTQC.
 ##Returns  : ""
 ##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_href, $indir_path_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name
-##         : $parameter_href          => The parameter hash {REF}
-##         : $active_parameter_href   => The active parameters for this analysis hash {REF}
-##         : $sample_info_href        => Info on samples and family hash {REF}
-##         : $infile_href             => The infiles hash {REF}
-##         : $indir_path_href         => The indirectories path(s) hash {REF}
+##         : $parameter_href             => The parameter hash {REF}
+##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
+##         : $sample_info_href           => Info on samples and family hash {REF}
+##         : $infile_href                => The infiles hash {REF}
+##         : $indir_path_href            => The indirectories path(s) hash {REF}
 ##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
-##         : $job_id_href             => The job_id hash {REF}
-##         : $sample_id_ref           => The sample_id {REF}
-##         : $program_name            => The program name
+##         : $job_id_href                => The job_id hash {REF}
+##         : $sample_id_ref              => The sample_id {REF}
+##         : $program_name               => The program name
 
     my ($arg_href) = @_;
 
@@ -25474,7 +25379,7 @@ sub mfastqc {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Check::Cluster qw(check_max_core_number);
     use MIP::Cluster qw(update_core_number_to_seq_mode);
@@ -25482,20 +25387,13 @@ sub mfastqc {
     use MIP::IO::Files qw(migrate_files);
     use MIP::Processmanagement::Processes qw(print_wait);
     use MIP::Gnu::Coreutils qw(gnu_cp);
-    use Program::Qc::Fastqc qw(fastqc);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_no_dependency_dead_end);
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    use Program::Qc::Fastqc qw (fastqc);
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
 
     ## Filehandles
-    # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
+    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     foreach my $infile ( @{ $infile_lane_prefix_href->{$$sample_id_ref} } ) {
 
@@ -25553,7 +25451,7 @@ sub mfastqc {
         }
     );
 
-    say $FILEHANDLE q{## } . $program_name;
+    say $FILEHANDLE "## " . $program_name;
 
     my $process_batches_count = 1;
 
@@ -25582,28 +25480,29 @@ sub mfastqc {
                 FILEHANDLE        => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE q{&}, "\n";
+        say $FILEHANDLE "&", "\n";
 
         ## Collect QC metadata info for active program for later use
         if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
             && ( !$active_parameter_href->{dry_run_all} ) )
         {
 
-            my $qc_fastqc_outdirectory =
-              catdir( $outsample_directory, $file_at_lane_level . q{_fastqc} );
-            add_program_outfile_to_sample_info(
+            sample_info_qc(
                 {
                     sample_info_href => $sample_info_href,
                     sample_id        => $$sample_id_ref,
-                    program_name     => q{fastqc},
+                    program_name     => "fastqc",
                     infile           => $infile,
-                    outdirectory     => $qc_fastqc_outdirectory,
-                    outfile          => q{fastqc_data.txt},
+                    outdirectory     => catfile(
+                        $outsample_directory, $file_at_lane_level . "_fastqc"
+                    ),
+                    outfile_ending => "fastqc_data.txt",
+                    outdata_type   => "static"
                 }
             );
         }
     }
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     ## Copies files from temporary folder to source.
     $process_batches_count = 1;
@@ -25629,14 +25528,14 @@ sub mfastqc {
                 FILEHANDLE  => $FILEHANDLE,
                 recursive   => 1,
                 infile_path => catfile(
-                    $$temp_directory_ref, $file_at_lane_level . q{_fastqc}
+                    $$temp_directory_ref, $file_at_lane_level . "_fastqc"
                 ),
                 outfile_path => $outsample_directory,
             }
         );
-        say $FILEHANDLE q{&}, "\n";
+        say $FILEHANDLE "&", "\n";
     }
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     close($FILEHANDLE);
 
@@ -25644,11 +25543,16 @@ sub mfastqc {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        slurm_submit_job_no_dependency_dead_end(
+        submit_job(
             {
-                job_id_href      => $job_id_href,
-                sbatch_file_name => $file_name,
-                log              => $log,
+                active_parameter_href   => $active_parameter_href,
+                sample_info_href        => $sample_info_href,
+                job_id_href             => $job_id_href,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                sample_id               => $$sample_id_ref,
+                dependencies            => "case_dependency_dead_end",
+                path => $parameter_href->{ "p" . $program_name }{chain},
+                sbatch_file_name => $file_name
             }
         );
     }
@@ -25768,9 +25672,6 @@ sub gzip_fastq {
     use MIP::Script::Setup_script qw(setup_script);
     use Program::Compression::Gzip qw(gzip);
 
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
     ## Filehandles
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
@@ -25839,7 +25740,7 @@ sub gzip_fastq {
                 $active_parameter_href->{max_cores_per_node} )
             {    #Using only $active_parameter{max_cores_per_node} cores
 
-                say $FILEHANDLE q{wait}, "\n";
+                say $FILEHANDLE "wait", "\n";
                 $process_batches_count = $process_batches_count + 1;
             }
 
@@ -25850,27 +25751,27 @@ sub gzip_fastq {
                     FILEHANDLE  => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE q{&};
+            say $FILEHANDLE "&";
             $uncompressed_file_counter++;
             $infile .= ".gz"
               ; #Add ".gz" to original fastq ending, since this will execute before fastQC and bwa.
         }
     }
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        my $slurm_path = $parameter_href->{ "p" . $program_name }{chain};
-
-        slurm_submit_job_no_dependency_add_to_sample(
+        submit_job(
             {
-                job_id_href      => $job_id_href,
-                family_id        => $$family_id_ref,
-                sample_id        => $sample_id,
-                path             => $slurm_path,
-                log              => $log,
+                active_parameter_href   => $active_parameter_href,
+                sample_info_href        => $sample_info_href,
+                job_id_href             => $job_id_href,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                sample_id               => $sample_id,
+                dependencies            => "no_dependency",
+                path => $parameter_href->{ "p" . $program_name }{chain},
                 sbatch_file_name => $file_name
             }
         );
@@ -26300,8 +26201,6 @@ sub build_annovar_prerequisites {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Gnu::Coreutils qw(gnu_mkdir);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_no_dependency_add_to_case);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger('MIP');
@@ -26658,16 +26557,15 @@ sub build_annovar_prerequisites {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        my $slurm_path = $parameter_href->{ "p" . $program_name }{chain};
-
-        slurm_submit_job_no_dependency_add_to_case(
+        submit_job(
             {
-                job_id_href      => $job_id_href,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                family_id        => $$family_id_ref,
-                path             => $slurm_path,
-                sbatch_file_name => $file_name,
-                log              => $log,
+                active_parameter_href   => $active_parameter_href,
+                sample_info_href        => $sample_info_href,
+                job_id_href             => $job_id_href,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                dependencies            => "no_dependency_add_to_case",
+                path => $parameter_href->{ "p" . $program_name }{chain},
+                sbatch_file_name => $file_name
             }
         );
     }
@@ -26783,8 +26681,6 @@ sub build_ptchs_metric_prerequisites {
     use MIP::Gnu::Coreutils qw(gnu_rm gnu_cat);
     use Language::Java qw(core);
     use Program::Interval::Picardtools qw(intervallisttools);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_no_dependency_add_to_case);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger('MIP');
@@ -27011,17 +26907,15 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
             && ( !$active_parameter_href->{dry_run_all} ) )
         {
 
-            my $slurm_path = q{MAIN};
-
-            slurm_submit_job_no_dependency_add_to_case(
+            submit_job(
                 {
-                    job_id_href => $job_id_href,
-                    sample_ids_ref =>
-                      \@{ $active_parameter_href->{sample_ids} },
-                    family_id        => $$family_id_ref,
-                    path             => $slurm_path,
-                    sbatch_file_name => $file_name,
-                    log              => $log,
+                    active_parameter_href   => $active_parameter_href,
+                    sample_info_href        => $sample_info_href,
+                    job_id_href             => $job_id_href,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    dependencies            => "no_dependency_add_to_case",
+                    path                    => "MAIN",
+                    sbatch_file_name        => $file_name
                 }
             );
         }
@@ -27150,8 +27044,6 @@ sub build_bwa_prerequisites {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::Script::Setup_script qw(setup_script);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_no_dependency_add_to_case);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger('MIP');
@@ -27229,16 +27121,15 @@ sub build_bwa_prerequisites {
         && ( !$active_parameter_href->{dry_run_all} ) )
     {
 
-        my $slurm_path = $parameter_href->{ "p" . $program_name }{chain};
-
-        slurm_submit_job_no_dependency_add_to_case(
+        submit_job(
             {
-                job_id_href      => $job_id_href,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                family_id        => $$family_id_ref,
-                path             => $slurm_path,
-                sbatch_file_name => $file_name,
-                log              => $log,
+                active_parameter_href   => $active_parameter_href,
+                sample_info_href        => $sample_info_href,
+                job_id_href             => $job_id_href,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                dependencies            => "no_dependency_add_to_case",
+                path => $parameter_href->{ "p" . $program_name }{chain},
+                sbatch_file_name => $file_name
             }
         );
     }
@@ -27589,8 +27480,6 @@ sub build_human_genome_prerequisites {
     use MIP::Gnu::Coreutils qw(gnu_rm);
     use Program::Compression::Gzip qw(gzip);
     use Language::Java qw(core);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_no_dependency_add_to_case);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger('MIP');
@@ -27787,17 +27676,15 @@ sub build_human_genome_prerequisites {
             && ( !$active_parameter_href->{dry_run_all} ) )
         {
 
-            my $slurm_path = q{MAIN};
-
-            slurm_submit_job_no_dependency_add_to_case(
+            submit_job(
                 {
-                    job_id_href => $job_id_href,
-                    sample_ids_ref =>
-                      \@{ $active_parameter_href->{sample_ids} },
-                    family_id        => $$family_id_ref,
-                    path             => $slurm_path,
-                    sbatch_file_name => $file_name,
-                    log              => $log,
+                    active_parameter_href   => $active_parameter_href,
+                    sample_info_href        => $sample_info_href,
+                    job_id_href             => $job_id_href,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    dependencies            => "no_dependency_add_to_case",
+                    path                    => "MAIN",
+                    sbatch_file_name        => $file_name
                 }
             );
         }
@@ -28148,7 +28035,7 @@ sub add_to_job_id {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    my $job_ids_string = "";    #JobID string to submit to batch system
+    my $job_id_string = "";    #JobID string to submit to batch system
     my $chain_job_id_href =
       $job_id_href->{$family_id_chain_key}{$chain_key};    #Alias
 
@@ -28159,27 +28046,259 @@ sub add_to_job_id {
             if ( ( !$job_index ) && ( scalar( @{$chain_job_id_href} ) == 1 ) )
             {    #Only 1 previous job_id
 
-                $job_ids_string .= ":"
+                $job_id_string .= ":"
                   . $job_id
                   ;    #First and last job_id start with ":" and end without ":"
             }
             elsif ( !$job_index ) {    #First job_id
 
-                $job_ids_string .=
+                $job_id_string .=
                   ":" . $job_id . ":";    #First job_id start with :
             }
             elsif ( $job_index eq ( scalar( @{$chain_job_id_href} ) - 1 ) )
             {                             #Last job_id
 
-                $job_ids_string .= $job_id;    #Last job_id finish without :
+                $job_id_string .= $job_id;    #Last job_id finish without :
             }
-            else {                             #JobIDs in the middle
+            else {                            #JobIDs in the middle
 
-                $job_ids_string .= $job_id . ":";
+                $job_id_string .= $job_id . ":";
             }
         }
     }
-    return $job_ids_string;
+    return $job_id_string;
+}
+
+sub push_to_job_id {
+
+##push_to_job_id
+
+##Function : Saves job_id to the correct hash array depending on chaintype.
+##Returns  : ""
+##Arguments: $active_parameter_href, $sample_info_href, $job_id_href, $infile_lane_prefix_href, $family_id_chain_key, $sample_id_chain_key, $sample_id, $path, $chain_key_type, $family_id_ref
+##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
+##         : $sample_info_href           => Info on samples and family hash {REF}
+##         : $job_id_href                => The info on jobIds hash {REF}
+##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
+##         : $family_id_chain_key        => Family ID chain hash key
+##         : $sample_id_chain_key        => Sample ID chain hash key
+##         : $sample_id                  => Sample ID
+##         : $family_id_ref              => Family id {REF}
+##         : $path                       => Trunk or branch
+##         : $chain_key_type             => "parallel", "merged" or "family_merged"
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $family_id_ref;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $sample_info_href;
+    my $infile_lane_prefix_href;
+    my $job_id_href;
+    my $parallel_chains_ref;
+    my $family_id_chain_key;
+    my $sample_id_chain_key;
+    my $sample_id;
+    my $path;
+    my $chain_key_type;
+
+    my $tmpl = {
+        active_parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$active_parameter_href
+        },
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href
+        },
+        infile_lane_prefix_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$infile_lane_prefix_href
+        },
+        job_id_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$job_id_href
+        },
+        parallel_chains_ref =>
+          { default => [], strict_type => 1, store => \$parallel_chains_ref },
+        family_id_chain_key => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$family_id_chain_key
+        },
+        sample_id_chain_key => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$sample_id_chain_key
+        },
+        sample_id => { strict_type => 1, store => \$sample_id },
+        path =>
+          { required => 1, defined => 1, strict_type => 1, store => \$path },
+        chain_key_type => {
+            required    => 1,
+            defined     => 1,
+            allow       => [ "parallel", "merged", "family_merged" ],
+            strict_type => 1,
+            store       => \$chain_key_type
+        },
+        family_id_ref => {
+            default     => \$arg_href->{active_parameter_href}{family_id},
+            strict_type => 1,
+            store       => \$family_id_ref
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+
+    ## Detect if all samples has the same sequencing type and return consensus if reached
+    my $consensus_analysis_type = detect_overall_analysis_type(
+        { analysis_type_hef => \%{ $active_parameter_href->{analysis_type} }, }
+    );
+    my $chain_key;
+
+    if ( $chain_key_type eq "parallel" ) {    #Push parallel jobs
+
+        if (
+            ( $consensus_analysis_type eq "rapid" )
+            && ( $sample_info_href->{sample}{$sample_id}{pbwa_mem}
+                {sbatch_batch_processes} )
+          )
+        {                                     #Rapid run
+
+            for (
+                my $sbatch_counter = 0 ;
+                $sbatch_counter <
+                $sample_info_href->{sample}{$sample_id}{pbwa_mem}
+                {sbatch_batch_processes} ;
+                $sbatch_counter++
+              )
+            {    #Iterate over sbatch processes instead of infile(s)
+
+                $chain_key =
+                    $sample_id . "_"
+                  . $chain_key_type . "_"
+                  . $path
+                  . $sbatch_counter;    #Set key
+
+                if ( $job_id_href->{$family_id_chain_key}{$chain_key} )
+                {                       #Job exists
+
+                    for (
+                        my $job_counter = 0 ;
+                        $job_counter < scalar(
+                            @{
+                                $job_id_href->{$family_id_chain_key}{$chain_key}
+                            }
+                        ) ;
+                        $job_counter++
+                      )
+                    { #All previous jobs i.e. jobs in this case equals to infiles in number
+
+                        push(
+                            @{
+                                $job_id_href->{$family_id_chain_key}
+                                  {$sample_id_chain_key}
+                            },
+                            $job_id_href->{$family_id_chain_key}{$chain_key}
+                              [$job_counter]
+                        );    #Add job_id to hash
+                    }
+                }
+            }
+            $sample_info_href->{sample}{$sample_id}{pbwa_mem}
+              {sbatch_batch_processes} = ();
+        }
+        else {
+
+          INFILES:
+            while ( my ($infile_index) =
+                each( $infile_lane_prefix_href->{$sample_id} ) )
+            {                 #All infiles
+
+                $chain_key =
+                    $sample_id . "_"
+                  . $chain_key_type . "_"
+                  . $path
+                  . $infile_index;    #Set key
+
+                if ( $job_id_href->{$family_id_chain_key}{$chain_key} )
+                {                     #Job exists
+
+                  JOB_IDS:
+                    while (
+                        my ($job_index) = each(
+                            $job_id_href->{$family_id_chain_key}{$chain_key}
+                        )
+                      )
+                    { #All previous jobs i.e. jobs in this case equals to infiles in number
+
+                        push(
+                            @{
+                                $job_id_href->{$family_id_chain_key}
+                                  {$sample_id_chain_key}
+                            },
+                            $job_id_href->{$family_id_chain_key}{$chain_key}
+                              [$job_index]
+                        );    #Add job_id to hash
+                    }
+                }
+            }
+        }
+    }
+    elsif (( $chain_key_type eq "merged" )
+        || ( $chain_key_type eq "family_merged" ) )
+    {                         #Push merged jobs
+
+        $chain_key = $family_id_chain_key . "_" . $sample_id_chain_key; #Set key
+
+        if ( $job_id_href->{$family_id_chain_key}{$chain_key} ) {    #Job exists
+
+          JOB_IDS:
+            while ( my ($job_index) =
+                each( $job_id_href->{$family_id_chain_key}{$chain_key} ) )
+            { #All previous jobs i.e. jobs in this case equals to infiles in number
+
+                if ( $chain_key_type eq "family_merged" )
+                {    #Use $family_id_chain_key instead of $sample_id_chain_key
+
+                    push(
+                        @{
+                            $job_id_href->{$family_id_chain_key}
+                              {$family_id_chain_key}
+                        },
+                        $job_id_href->{$family_id_chain_key}{$chain_key}
+                          [$job_index]
+                    );    #Add job_id hash
+                }
+                else {
+                    push(
+                        @{
+                            $job_id_href->{$family_id_chain_key}
+                              {$sample_id_chain_key}
+                        },
+                        $job_id_href->{$family_id_chain_key}{$chain_key}
+                          [$job_index]
+                    );    #Add job_id to hash
+                }
+            }
+        }
+    }
 }
 
 sub submit_job {
@@ -28204,11 +28323,14 @@ sub submit_job {
 
 ###Dependencies
 
+##-1 = Not dependent on earlier scripts, and are self cul-de-sâcs (no_dependency_dead_end).
+##0 = Not dependent on earlier scripts (no_dependency).
 ##1 = Dependent on earlier scripts within sample_id_path or family_id_path (case_dependency).
 ##2 = Dependent on earlier scripts within sample_id_path or family_id_path, but are self cul-de-sâcs (case_dependency_dead_end).
 ##3 = Dependent on earlier scripts and executed in parallel within step (sample_id_dependency_step_in_parallel)
 ##4 = Dependent on earlier scripts and parallel scripts and executed in parallel within step (sample_id_and_parallel_dependency_step_in_parallel)
 ##5 = Dependent on earlier scripts both family_id and sample_id and adds to both family_id and sample_id jobs (case_dependency_add_to_case)
+##6 = Not dependent on earlier scripts and adds to sample_id jobs and family_id jobs, but sbatch is processed at family level i.e. affects all sample_id jobs e.g. building a reference (no_dependency_add_to_case)
 ##7 = Dependent on all earlier scripts in selected chains for family_id jobs i.e. wait for chains jobs before launching (chain_and_parallel_dependency)
 
 ###Chain
@@ -28268,7 +28390,15 @@ sub submit_job {
             required => 1,
             defined  => 1,
             allow    => [
-                qw{case_dependency case_dependency_dead_end sample_id_dependency_step_in_parallel sample_id_and_parallel_dependency_step_in_parallel case_dependency_add_to_case chain_and_parallel_dependency}
+                "no_dependency_dead_end",
+                "no_dependency",
+                "case_dependency",
+                "case_dependency_dead_end",
+                "sample_id_dependency_step_in_parallel",
+                "sample_id_and_parallel_dependency_step_in_parallel",
+                "case_dependency_add_to_case",
+                "no_dependency_add_to_case",
+                "chain_and_parallel_dependency",
             ],
             strict_type => 1,
             store       => \$dependencies
@@ -28292,522 +28422,168 @@ sub submit_job {
             store       => \$family_id_ref
         },
         job_dependency_type => {
-            default     => q{afterok},
-            allow       => [qw{afterany afterok}],
+            default     => "afterok",
+            allow       => [ "afterany", "afterok" ],
             strict_type => 1,
             store       => \$job_dependency_type
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
-
-    use Readonly;
-    use MIP::Processmanagement::Processes
-      qw(add_parallel_job_id_to_dependency_tree add_merged_job_id_to_dependency_tree add_family_merged_job_id_to_family_id_dependency_tree);
-
-    ## Constants
-    Readonly my $NEWLINE      => qq{\n};
-    Readonly my $SINGLE_QUOTE => q{'};
+    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
+    my $log = Log::Log4perl->get_logger('MIP');
 
     my $sample_id_chain_key;
     my $sample_id_parallel_chain_key;
     my $family_id_parallel_chain_key;
 
-    if ( defined $sample_id ) {
+    if ( defined($sample_id) ) {
 
-        # Sample chainkey
-        $sample_id_chain_key = $sample_id . q{_} . $path;
+        $sample_id_chain_key = $sample_id . "_" . $path;    #Sample chainkey
     }
-    if ( defined $sbatch_script_tracker ) {
+    if ( ( defined($sbatch_script_tracker) ) ) {
 
-        # Family parallel chainkey
         $family_id_parallel_chain_key =
-          $$family_id_ref . q{_parallel_} . $path . $sbatch_script_tracker;
+            $$family_id_ref
+          . "_parallel_"
+          . $path
+          . $sbatch_script_tracker;    #Family parallel chainkey
 
-        if ( defined $sample_id ) {
+        if ( defined($sample_id) ) {
 
-            # Sample parallel chainkey
             $sample_id_parallel_chain_key =
-              $sample_id . q{_parallel_} . $path . $sbatch_script_tracker;
+                $sample_id
+              . "_parallel_"
+              . $path
+              . $sbatch_script_tracker;    #Sample parallel chainkey
         }
     }
+    my $job_ids = "";    #Create string with all previous job_ids
+    my $family_id_chain_key = $$family_id_ref . "_" . $path;    #Family chainkey
+    my $job_id;    #The job_id that is returned from submission
 
-    # Create string with all previous job_ids
-    my $job_ids_string;
+    if ( $dependencies eq "no_dependency_dead_end" )
+    {              #Initiate chain - No dependencies, lonely program "sapling"
 
-    # The job_id that is returned from submission
-    my $job_id_returned;
+        ## Sumit jobs to sbatch
+        $job_id =
+          submit_jobs_to_sbatch( { sbatch_file_name => $sbatch_file_name, } );
+    }
+    if ( $dependencies eq "no_dependency_add_to_case" )
+    {  #Initiate chain - No dependencies, adds to all sample_id(s) and family_id
 
-    # Family chainkey
-    my $family_id_chain_key = $$family_id_ref . q{_} . $path;
+        ## Sumit jobs to sbatch
+        $job_id =
+          submit_jobs_to_sbatch( { sbatch_file_name => $sbatch_file_name, } );
 
-    ## Dependent on earlier scripts and/or parallel.
-    ## JobIDs that do not leave dependencies do not get pushed to job_id hash
+        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
-# Check jobs within sample_id (exception if dependencies = case_dependency_add_to_case (5))
-    if ( defined $sample_id ) {
-
-        # Add family_id_sample_id jobs to current sample_id chain
-        if ( $dependencies eq q{case_dependency_add_to_case} ) {
-
-            ## Saves job_id to the correct hash array depending on chaintype
-            add_merged_job_id_to_dependency_tree(
-                {
-                    job_id_href         => $job_id_href,
-                    family_id_chain_key => $family_id_chain_key,
-                    sample_id_chain_key => $sample_id_chain_key,
-                }
-            );
-        }
-
-        ## Not parallel jobs, but check if last job submission was parallel
-        if (   ( $dependencies eq q{case_dependency} )
-            || ( $dependencies eq q{case_dependency_dead_end} ) )
-        {
+            my $sample_id_chain_key = $sample_id . "_" . $path;
+            push(
+                @{
+                    $job_id_href->{$family_id_chain_key}{$sample_id_chain_key}
+                },
+                $job_id
+            );    #Add job_id to hash
 
             ## Saves job_id to the correct hash array depending on chaintype
-            add_parallel_job_id_to_dependency_tree(
+            push_to_job_id(
                 {
+                    active_parameter_href   => $active_parameter_href,
+                    sample_info_href        => $sample_info_href,
                     infile_lane_prefix_href => $infile_lane_prefix_href,
                     job_id_href             => $job_id_href,
                     family_id_chain_key     => $family_id_chain_key,
                     sample_id_chain_key     => $sample_id_chain_key,
-                    sample_id               => $sample_id,
                     path                    => $path,
+                    chain_key_type          => "family_merged",
                 }
             );
         }
-        if ( ( defined $path ) && ( $path eq q{MAIN} ) ) {
-
-            # Parallel jobs
-            if (
-                (
-                    $dependencies eq
-                    q{sample_id_and_parallel_dependency_step_in_parallel}
-                )
-                || ( $dependencies eq q{sample_id_dependency_step_in_parallel} )
-              )
-            {
-
-                ## Add to job_id string
-                $job_ids_string = add_to_job_id(
-                    {
-                        job_id_href         => $job_id_href,
-                        family_id_chain_key => $family_id_chain_key,
-                        chain_key           => $sample_id_parallel_chain_key,
-                    }
-                );
-
-                # Check for previous single jobs
-                # Required to initiate broken chain with correct dependencies
-                if (
-                    $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} )
-                {
-
-                    ## Add to job_id string
-                    $job_ids_string .= add_to_job_id(
-                        {
-                            job_id_href         => $job_id_href,
-                            family_id_chain_key => $family_id_chain_key,
-                            chain_key           => $sample_id_chain_key,
-                        }
-                    );
-                }
-
-            }
-            else {
-                ## Previous job was a single job
-
-                ## Add to job_id string
-                $job_ids_string = add_to_job_id(
-                    {
-                        job_id_href         => $job_id_href,
-                        family_id_chain_key => $family_id_chain_key,
-                        chain_key           => $sample_id_chain_key,
-                    }
-                );
-            }
-        }
-
-        ## Check for any previous job_ids within path current PATH. Branch.
-        if ( ( defined $path ) && ( $path ne q{MAIN} ) ) {
-
-            ## Second or later in branch chain
-            if ( $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} ) {
-
-                ## Add to job_id string
-                $job_ids_string = add_to_job_id(
-                    {
-                        job_id_href         => $job_id_href,
-                        family_id_chain_key => $family_id_chain_key,
-                        chain_key           => $sample_id_chain_key,
-                    }
-                );
-            }
-            elsif ( $job_id_href->{ $$family_id_ref . q{_MAIN} }
-                { $sample_id . q{_MAIN} } )
-            {
-                ## Inherit from potential MAIN. Trunk
-
-                ## Add to job_id string
-                $job_ids_string = add_to_job_id(
-                    {
-                        job_id_href         => $job_id_href,
-                        family_id_chain_key => $$family_id_ref . q{_MAIN},
-                        chain_key           => $sample_id . q{_MAIN},
-                    }
-                );
-            }
-        }
-
-        ## Inherit from all previous jobs
-        if ( ( defined $path ) && ( $path eq q{ALL} ) ) {
-
-            ## Add to job_id string
-            $job_ids_string = add_to_job_id(
-                {
-                    job_id_href         => $job_id_href,
-                    family_id_chain_key => q{ALL},
-                    chain_key           => q{ALL},
-                }
-            );
-        }
-
-        ## Previous jobs for chainkey exists
-        if ($job_ids_string) {
-
-            ## Submit jobs to sbatch
-            $job_id_returned = submit_jobs_to_sbatch(
-                {
-                    sbatch_file_name    => $sbatch_file_name,
-                    job_dependency_type => $job_dependency_type,
-                    job_ids_string      => $job_ids_string,
-                }
-            );
-        }
-        else {
-            ## No previous jobs
-            ## Submit jobs to sbatch
-            $job_id_returned = submit_jobs_to_sbatch(
-                { sbatch_file_name => $sbatch_file_name, } );
-        }
-
-        ## Ordinary job push to array
-        if ( $dependencies eq q{case_dependency} ) {
-
-            # Clear latest family_id/sample_id chain submission
-            @{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} } =
-              ();
-
-            ## Clear all latest parallel jobs within chainkey
-          INFILES:
-            while ( my ($infile_index) =
-                each( $infile_lane_prefix_href->{$sample_id} ) )
-            {
-
-                # Create key
-                my $sample_id_parallel_chain_key =
-                  $sample_id . q{_parallel_} . $path . $infile_index;
-
-                ## If parallel job exists
-                if ( $job_id_href->{$family_id_chain_key}
-                    {$sample_id_parallel_chain_key} )
-                {
-
-                    # Clear latest family_id/sample_id chain submission
-                    @{ $job_id_href->{$family_id_chain_key}
-                          {$sample_id_parallel_chain_key} } = ();
-                }
-            }
-
-            # Add job_id_returned to hash
-            push @{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key}
-              },
-              $job_id_returned;
-        }
-
-        ## Parallel job wait to push to array until all parallel jobs are finished within step
-        if (
-            ( $dependencies eq q{sample_id_dependency_step_in_parallel} )
-            || ( $dependencies eq
-                q{sample_id_and_parallel_dependency_step_in_parallel} )
-          )
-        {
-
-            ## Add job_id_returned to hash
-            push @{ $job_id_href->{$family_id_chain_key}
-                  {$sample_id_parallel_chain_key} },
-              $job_id_returned;
-        }
-
-        ## Job dependent on both family_id and sample_id push to array
-        if ( $dependencies eq q{case_dependency_add_to_case} ) {
-
-            ## Clear latest family_id_sample_id chainkey
-            @{ $job_id_href->{$family_id_chain_key}
-                  { $family_id_chain_key . q{_} . $sample_id_chain_key } } = ();
-
-            #Clear latest sample_id chainkey
-            @{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} } =
-              ();
-
-            ## Add job_id_returned to hash
-            push @{ $job_id_href->{$family_id_chain_key}
-                  { $family_id_chain_key . q{_} . $sample_id_chain_key } },
-              $job_id_returned;
-        }
-
-        ## Keeps the job_id string dependecy within reasonable limits
-        if (   ( defined $job_id_href->{ALL}{ALL} )
-            && ( scalar( @{ $job_id_href->{ALL}{ALL} } ) >= 100 ) )
-        {
-
-            # Remove oldest job_id
-            shift @{ $job_id_href->{ALL}{ALL} };
-        }
-        ## Job dependent on all jobs
-        # Add job_id to hash
-        push @{ $job_id_href->{ALL}{ALL} }, $job_id_returned;
     }
-    else {
-        ## AFTER merging to family_id
+    elsif ( $dependencies eq "no_dependency" )
+    {    #Initiate chain - No dependencies, initiate Trunk (Main or other)
 
-        ## Add family_id_sample_id jobs to current family_id chain
-        if ( $dependencies eq q{case_dependency_add_to_case} ) {
+        ## Sumit jobs to sbatch
+        $job_id =
+          submit_jobs_to_sbatch( { sbatch_file_name => $sbatch_file_name, } );
 
-          SAMPLE_IDS:
-            foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
-            {
+        push(
+            @{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} },
+            $job_id
+        );    #Add job_id to hash
+    }
+    else
+    { #Dependent on earlier scripts and/or parallel. JobIDs that do not leave dependencies do not get pushed to job_id hash
 
-                # Current chain
-                my $sample_id_chain_key = $sample_id . q{_} . $path;
+        if ( defined($sample_id) )
+        {    #Check jobs within sample_id (exception if dependencies = 5)
+
+            if ( $dependencies eq "case_dependency_add_to_case" )
+            {    #Add family_id_sample_id jobs to current sample_id chain
 
                 ## Saves job_id to the correct hash array depending on chaintype
-                add_family_merged_job_id_to_family_id_dependency_tree(
+                push_to_job_id(
                     {
-                        job_id_href         => $job_id_href,
-                        family_id_chain_key => $family_id_chain_key,
-                        sample_id_chain_key => $sample_id_chain_key,
+                        active_parameter_href   => $active_parameter_href,
+                        sample_info_href        => $sample_info_href,
+                        infile_lane_prefix_href => $infile_lane_prefix_href,
+                        job_id_href             => $job_id_href,
+                        family_id_chain_key     => $family_id_chain_key,
+                        sample_id_chain_key     => $sample_id_chain_key,
+                        sample_id               => $sample_id,
+                        path                    => $path,
+                        chain_key_type          => "merged",
                     }
                 );
             }
-        }
+            if (   ( $dependencies eq "case_dependency" )
+                || ( $dependencies eq "case_dependency_dead_end" ) )
+            {  #Not parallel jobs, but check if last job submission was parallel
 
-        ## Not parallel jobs, but check if last job submission was parallel
-        if (   ( $dependencies eq q{case_dependency} )
-            || ( $dependencies eq q{case_dependency_dead_end} ) )
-        {
-
-            if ( defined $job_id_href->{$family_id_chain_key} ) {
-
-                foreach my $family_id_parallel_chain_key (
-                    keys $job_id_href->{$family_id_chain_key} )
-                {
-
-                    ## Add to job_id string
-                    $job_ids_string .= add_to_job_id(
-                        {
-                            job_id_href         => $job_id_href,
-                            family_id_chain_key => $family_id_chain_key,
-                            chain_key => $family_id_parallel_chain_key,
-                        }
-                    );
-                }
-            }
-        }
-
-        ## Check for any previous job_ids within path MAIN. Test for previous must be done to allow initiating from broken chain. Trunk and not first in chain
-        if (   ( defined $path )
-            && ( $path eq q{MAIN} )
-            && ( $job_id_href->{$family_id_chain_key}{$family_id_chain_key} ) )
-        {
-
-            ## Parallel jobs
-            if (
-                (
-                    $dependencies eq
-                    q{sample_id_and_parallel_dependency_step_in_parallel}
-                )
-                || ( $dependencies eq q{sample_id_dependency_step_in_parallel} )
-              )
-            {
-
-                ## Add to job_id string
-                $job_ids_string = add_to_job_id(
+                ## Saves job_id to the correct hash array depending on chaintype
+                push_to_job_id(
                     {
-                        job_id_href         => $job_id_href,
-                        family_id_chain_key => $family_id_chain_key,
-                        chain_key           => $family_id_parallel_chain_key,
+                        active_parameter_href   => $active_parameter_href,
+                        sample_info_href        => $sample_info_href,
+                        infile_lane_prefix_href => $infile_lane_prefix_href,
+                        job_id_href             => $job_id_href,
+                        family_id_chain_key     => $family_id_chain_key,
+                        sample_id_chain_key     => $sample_id_chain_key,
+                        sample_id               => $sample_id,
+                        path                    => $path,
+                        chain_key_type          => "parallel",
                     }
                 );
             }
-            else {
-                ## Previous job was a single job
-
-                ## Add to job_id string
-                $job_ids_string = add_to_job_id(
-                    {
-                        job_id_href         => $job_id_href,
-                        family_id_chain_key => $family_id_chain_key,
-                        chain_key           => $family_id_chain_key,
-                    }
-                );
-            }
-
-            ## Add jobs from other parallel chains that have branched of from MAIN i.e. merge branch back again
-            if ( $dependencies eq q{chain_and_parallel_dependency} ) {
-
-              PARALLEL_CHAINS:
-                foreach my $parallel_chain (@$parallel_chains_ref) {
-
-                    ## Add to job_id string
-                    $job_ids_string .= add_to_job_id(
-                        {
-                            job_id_href         => $job_id_href,
-                            family_id_chain_key => $$family_id_ref . q{_}
-                              . $parallel_chain,
-                            chain_key => $$family_id_ref . q{_}
-                              . $parallel_chain,
-                        }
-                    );
-                }
-            }
-        }
-        elsif ( ( defined $path ) && $path eq q{MAIN} ) {
-            ## First family_id MAIN chain
-
-            ## Add all previous jobId(s) from sample_id chainkey(s)
-          SAMPLE_IDS:
-            foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
-            {
-
-                my $sample_id_chain_key = $sample_id . q{_} . $path;
+            if ( ( defined($path) ) && ( $path eq "MAIN" ) ) {
 
                 if (
-                    $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} )
-                {
+                    (
+                        $dependencies eq
+                        "sample_id_and_parallel_dependency_step_in_parallel"
+                    )
+                    || ( $dependencies eq
+                        "sample_id_dependency_step_in_parallel" )
+                  )
+                {    #Parallel jobs
 
                     ## Add to job_id string
-                    $job_ids_string .= add_to_job_id(
+                    $job_ids = add_to_job_id(
                         {
                             job_id_href         => $job_id_href,
                             family_id_chain_key => $family_id_chain_key,
-                            chain_key           => $sample_id_chain_key,
+                            chain_key => $sample_id_parallel_chain_key,
                         }
                     );
-
-                }
-              INFILES:
-                while ( my ($infile_index) =
-                    each( $infile_lane_prefix_href->{$sample_id} ) )
-                {
-
-                    # Create key
-                    my $sample_id_parallel_chain_key =
-                      $sample_id . q{_parallel_} . $path . $infile_index;
-
-                    ## If parallel job exists
-                    if ( $job_id_href->{$family_id_chain_key}
-                        {$sample_id_parallel_chain_key} )
-                    {
-
-                        ## Add to job_id string
-                        $job_ids_string .= add_to_job_id(
-                            {
-                                job_id_href         => $job_id_href,
-                                family_id_chain_key => $family_id_chain_key,
-                                chain_key => $sample_id_parallel_chain_key,
-                            }
-                        );
-                    }
-                }
-            }
-        }
-        ## Check for any previous job_ids within path current PATH.
-        if ( ( defined $path ) && $path ne q{MAIN} ) {
-
-            ## Second or later in branch chain
-            if ( $job_id_href->{$family_id_chain_key}{$family_id_chain_key} ) {
-
-                ## Add to job_id string
-                # Family chain
-                $job_ids_string = add_to_job_id(
-                    {
-                        job_id_href         => $job_id_href,
-                        family_id_chain_key => $family_id_chain_key,
-                        chain_key           => $family_id_chain_key,
-                    }
-                );
-            }
-            elsif ( $dependencies eq q{chain_and_parallel_dependency} ) {
-                ## Add jobs from other parallel chains that have branched of from MAIN i.e. merge branch back again
-
-              PARALLEL_CHAINS:
-                foreach my $parallel_chain (@$parallel_chains_ref) {
-
-                  SAMPLE_IDS:
-                    foreach my $sample_id (
-                        @{ $active_parameter_href->{sample_ids} } )
-                    {
-
-                        ## Add to job_id string
-                        $job_ids_string .= add_to_job_id(
-                            {
-                                job_id_href         => $job_id_href,
-                                family_id_chain_key => $$family_id_ref
-                                  . q{_}
-                                  . $parallel_chain,
-                                chain_key => $sample_id . q{_}
-                                  . $parallel_chain,
-                            }
-                        );
-                    }
-
-                    #Add to job_id string
-                    $job_ids_string .= add_to_job_id(
-                        {
-                            job_id_href         => $job_id_href,
-                            family_id_chain_key => $$family_id_ref . q{_}
-                              . $parallel_chain,
-                            chain_key => $$family_id_ref . q{_}
-                              . $parallel_chain,
-                        }
-                    );
-                }
-            }
-            elsif ( $job_id_href->{ $$family_id_ref . q{_MAIN} }
-                { $$family_id_ref . q{_MAIN} } )
-            {
-                ## Inherit from potential MAIN. Trunk
-
-                ## Add to job_id string
-                $job_ids_string = add_to_job_id(
-                    {
-                        job_id_href         => $job_id_href,
-                        family_id_chain_key => $$family_id_ref . q{_MAIN},
-                        chain_key           => $$family_id_ref . q{_MAIN},
-                    }
-                );
-            }
-            else {    #First job in new path and first family_id MAIN chain
-
-              SAMPLE_IDS:
-                foreach
-                  my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
-                {
-
-                    my $family_id_chain_key = $$family_id_ref . q{_MAIN};
-                    my $sample_id_chain_key = $sample_id . q{_MAIN};
 
                     if ( $job_id_href->{$family_id_chain_key}
                         {$sample_id_chain_key} )
-                    {
+                    { #Check for previous single jobs - required to initiate broken chain with correct dependencies
 
                         ## Add to job_id string
-                        $job_ids_string .= add_to_job_id(
+                        $job_ids .= add_to_job_id(
                             {
                                 job_id_href         => $job_id_href,
                                 family_id_chain_key => $family_id_chain_key,
@@ -28815,138 +28591,507 @@ sub submit_job {
                             }
                         );
                     }
+
+                }
+                else {    #Previous job was a single job
+
+                    ## Add to job_id string
+                    $job_ids = add_to_job_id(
+                        {
+                            job_id_href         => $job_id_href,
+                            family_id_chain_key => $family_id_chain_key,
+                            chain_key           => $sample_id_chain_key,
+                        }
+                    );
                 }
             }
-        }
+            if ( ( defined($path) ) && ( $path ne "MAIN" ) )
+            {  #Check for any previous job_ids within path current PATH. Branch.
 
-        ## Inherit from all previous jobs
-        if ( ( defined $path ) && ( $path eq q{ALL} ) ) {
+                if (
+                    $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} )
+                {    #Second or later in branch chain
 
-            ## Add to job_id string
-            $job_ids_string = add_to_job_id(
-                {
-                    job_id_href         => $job_id_href,
-                    family_id_chain_key => q{ALL},
-                    chain_key           => q{ALL},
+                    ## Add to job_id string
+                    $job_ids = add_to_job_id(
+                        {
+                            job_id_href         => $job_id_href,
+                            family_id_chain_key => $family_id_chain_key,
+                            chain_key           => $sample_id_chain_key,
+                        }
+                    );
                 }
-            );
-        }
-        if ($job_ids_string) {
+                elsif ( $job_id_href->{ $$family_id_ref . "_MAIN" }
+                    { $sample_id . "_MAIN" } )
+                {    #Inherit from potential MAIN. Trunk
 
-            ## Submit jobs to sbatch
-            $job_id_returned = submit_jobs_to_sbatch(
-                {
-                    sbatch_file_name    => $sbatch_file_name,
-                    job_dependency_type => $job_dependency_type,
-                    job_ids_string      => $job_ids_string,
+                    ## Add to job_id string
+                    $job_ids = add_to_job_id(
+                        {
+                            job_id_href         => $job_id_href,
+                            family_id_chain_key => $$family_id_ref . "_MAIN",
+                            chain_key           => $sample_id . "_MAIN",
+                        }
+                    );
                 }
-            );
-        }
-        else {
-
-            ## Submit jobs to sbatch
-            $job_id_returned = submit_jobs_to_sbatch(
-                { sbatch_file_name => $sbatch_file_name, } );
-        }
-
-        ## Ordinary job push to array
-        if (   ( $dependencies eq q{case_dependency} )
-            || ( $dependencies eq q{chain_and_parallel_dependency} ) )
-        {
-
-            ## Clear latest family_id/sample_id chain submission
-            @{ $job_id_href->{$family_id_chain_key}{$family_id_chain_key} } =
-              ();
-
-            ## Clear all latest parallel jobs within chainkey
-          CHAIN_KEYS:
-            foreach my $chain_key ( keys $job_id_href->{$family_id_chain_key} )
-            {
-
-                ## Clear latest family_id/sample_id chain submission
-                @{ $job_id_href->{$family_id_chain_key}{$chain_key} } =
-                  ();
             }
+            if ( ( defined($path) ) && ( $path eq "ALL" ) )
+            {    #Inherit from all previous jobs
 
-            # Add job_id_returned to hash
-            push @{ $job_id_href->{$family_id_chain_key}{$family_id_chain_key}
-              },
-              $job_id_returned;
-        }
+                ## Add to job_id string
+                $job_ids = add_to_job_id(
+                    {
+                        job_id_href         => $job_id_href,
+                        family_id_chain_key => "ALL",
+                        chain_key           => "ALL",
+                    }
+                );
+            }
+            if ($job_ids) {    #Previous jobs for chainkey exists
 
-        ## Parallel job wait to push to array until all parallel jobs are finished within step
-        if (
-            ( $dependencies eq q{sample_id_dependency_step_in_parallel} )
-            || ( $dependencies eq
-                q{sample_id_and_parallel_dependency_step_in_parallel} )
-          )
-        {
+                ## Sumit jobs to sbatch
+                $job_id = submit_jobs_to_sbatch(
+                    {
+                        sbatch_file_name    => $sbatch_file_name,
+                        job_dependency_type => $job_dependency_type,
+                        job_ids             => $job_ids,
+                    }
+                );
+            }
+            else {             #No previous jobs
 
-            ## Add job_id_returned to hash.
-            push @{ $job_id_href->{$family_id_chain_key}
-                  {$family_id_parallel_chain_key} },
-              $job_id_returned;
-        }
+                ## Sumit jobs to sbatch
+                $job_id = submit_jobs_to_sbatch(
+                    { sbatch_file_name => $sbatch_file_name, } );
+            }
+            if ( $dependencies eq "case_dependency" )
+            {                  #Ordinary job push to array
 
-        ## Job dependent on both family_id and sample_id push to array
-        if ( $dependencies eq q{case_dependency_add_to_case} ) {
+                @{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} }
+                  = ();    #Clear latest family_id/sample_id chain submission
 
-          SAMPLE_IDS:
-            foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
-            {
+                ##Clear all latest parallel jobs within chainkey
+                while ( my ($infile_index) =
+                    each( $infile_lane_prefix_href->{$sample_id} ) )
+                {
 
-                ## Current chain
-                my $sample_id_chain_key = $sample_id . q{_} . $path;
+                    my $sample_id_parallel_chain_key =
+                        $sample_id
+                      . "_parallel_"
+                      . $path
+                      . $infile_index;    #Create key
 
-                ## Clear latest merged family_id_chain_key and sample chain key
+                    if ( $job_id_href->{$family_id_chain_key}
+                        {$sample_id_parallel_chain_key} )
+                    {                     #Parallel job exists
+
+                        @{ $job_id_href->{$family_id_chain_key}
+                              {$sample_id_parallel_chain_key} } =
+                          (); #Clear latest family_id/sample_id chain submission
+                    }
+                }
+                push(
+                    @{
+                        $job_id_href->{$family_id_chain_key}
+                          {$sample_id_chain_key}
+                    },
+                    $job_id
+                );            #Add job_id to hash
+            }
+            if (
+                ( $dependencies eq "sample_id_dependency_step_in_parallel" )
+                || ( $dependencies eq
+                    "sample_id_and_parallel_dependency_step_in_parallel" )
+              )
+            { #Parallel job wait to push to array until all parallel jobs are finished within step
+
+                push(
+                    @{
+                        $job_id_href->{$family_id_chain_key}
+                          {$sample_id_parallel_chain_key}
+                    },
+                    $job_id
+                );    #Add job_id to hash
+            }
+            if ( $dependencies eq "case_dependency_add_to_case" )
+            {    #Job dependent on both family_id and sample_id push to array
+
                 @{ $job_id_href->{$family_id_chain_key}
-                      { $family_id_chain_key . q{_} . $sample_id_chain_key } }
-                  = ();
-
-                ## Clear latest family_id chainkey
-                @{ $job_id_href->{$family_id_chain_key}{$family_id_chain_key} }
-                  = ();
-                push @{ $job_id_href->{$family_id_chain_key}
-                      { $family_id_chain_key . q{_} . $sample_id_chain_key } },
-                  $job_id_returned;
+                      { $family_id_chain_key . "_" . $sample_id_chain_key } } =
+                  ();    #Clear latest family_id_sample_id chainkey
+                @{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} }
+                  = ();    #Clear latest sample_id chainkey
+                push(
+                    @{
+                        $job_id_href->{$family_id_chain_key}
+                          { $family_id_chain_key . "_" . $sample_id_chain_key }
+                    },
+                    $job_id
+                );         #Add job_id to hash
             }
+
+            ## Keeps the job_id string dependecy within reasonable limits
+            if (   ( defined( $job_id_href->{ALL}{ALL} ) )
+                && ( scalar( @{ $job_id_href->{ALL}{ALL} } >= 100 ) ) )
+            {
+
+                shift( @{ $job_id_href->{ALL}{ALL} } );   #Remove oldest job_id.
+            }
+            ## Job dependent on all jobs
+            push( @{ $job_id_href->{ALL}{ALL} }, $job_id );  #Add job_id to hash
         }
+        else {    #AFTER merging to family_id
 
-        ## Keeps the job_id string dependecy within reasonable limits
-        if (   ( defined $job_id_href->{ALL}{ALL} )
-            && ( scalar( @{ $job_id_href->{ALL}{ALL} } ) >= 100 ) )
-        {
+            if ( $dependencies eq "case_dependency_add_to_case" )
+            {     #Add family_id_sample_id jobs to current family_id chain
 
-            # Remove oldest job_id.
-            shift @{ $job_id_href->{ALL}{ALL} };
+                foreach
+                  my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
+                {
+
+                    my $sample_id_chain_key =
+                      $sample_id . "_" . $path;    #Current chain
+
+                    ## Saves job_id to the correct hash array depending on chaintype
+                    push_to_job_id(
+                        {
+                            active_parameter_href   => $active_parameter_href,
+                            sample_info_href        => $sample_info_href,
+                            infile_lane_prefix_href => $infile_lane_prefix_href,
+                            job_id_href             => $job_id_href,
+                            family_id_chain_key     => $family_id_chain_key,
+                            sample_id_chain_key     => $sample_id_chain_key,
+                            path                    => $path,
+                            chain_key_type          => "family_merged",
+                        }
+                    );
+                }
+            }
+            if (   ( $dependencies eq "case_dependency" )
+                || ( $dependencies eq "case_dependency_dead_end" ) )
+            {  #Not parallel jobs, but check if last job submission was parallel
+
+                if ( defined( $job_id_href->{$family_id_chain_key} ) ) {
+
+                    foreach my $family_id_parallel_chain_key (
+                        keys $job_id_href->{$family_id_chain_key} )
+                    {
+
+                        ## Add to job_id string
+                        $job_ids .= add_to_job_id(
+                            {
+                                job_id_href         => $job_id_href,
+                                family_id_chain_key => $family_id_chain_key,
+                                chain_key => $family_id_parallel_chain_key,
+                            }
+                        );
+                    }
+                }
+            }
+            if (   ( defined($path) )
+                && ( $path eq "MAIN" )
+                && (
+                    $job_id_href->{$family_id_chain_key}{$family_id_chain_key} )
+              )
+            { #Check for any previous job_ids within path MAIN. Test for previous must be done to allow initiating from broken chain. Trunk and not first in chain
+
+                if (
+                    (
+                        $dependencies eq
+                        "sample_id_and_parallel_dependency_step_in_parallel"
+                    )
+                    || ( $dependencies eq
+                        "sample_id_dependency_step_in_parallel" )
+                  )
+                {    #Parallel jobs
+
+                    ## Add to job_id string
+                    $job_ids = add_to_job_id(
+                        {
+                            job_id_href         => $job_id_href,
+                            family_id_chain_key => $family_id_chain_key,
+                            chain_key => $family_id_parallel_chain_key,
+                        }
+                    );
+                }
+                else {    #Previous job was a single job
+
+                    ## Add to job_id string
+                    $job_ids = add_to_job_id(
+                        {
+                            job_id_href         => $job_id_href,
+                            family_id_chain_key => $family_id_chain_key,
+                            chain_key           => $family_id_chain_key,
+                        }
+                    );
+                }
+                if ( $dependencies eq "chain_and_parallel_dependency" )
+                { #Add jobs from other parallel chains that have branched of from MAIN i.e. merge branch back again
+
+                    foreach my $parallel_chain (@$parallel_chains_ref) {
+
+                        ## Add to job_id string
+                        $job_ids .= add_to_job_id(
+                            {
+                                job_id_href         => $job_id_href,
+                                family_id_chain_key => $$family_id_ref . "_"
+                                  . $parallel_chain,
+                                chain_key => $$family_id_ref . "_"
+                                  . $parallel_chain,
+                            }
+                        );
+                    }
+                }
+            }
+            elsif ( ( defined($path) ) && $path eq "MAIN" )
+            {    #First family_id MAIN chain
+
+                ##Add all previous jobId(s) from sample_id chainkey(s)
+                foreach
+                  my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
+                {
+
+                    my $sample_id_chain_key = $sample_id . "_" . $path;
+
+                    if ( $job_id_href->{$family_id_chain_key}
+                        {$sample_id_chain_key} )
+                    {
+
+                        ## Add to job_id string
+                        $job_ids .= add_to_job_id(
+                            {
+                                job_id_href         => $job_id_href,
+                                family_id_chain_key => $family_id_chain_key,
+                                chain_key           => $sample_id_chain_key,
+                            }
+                        );
+
+                    }
+                    while ( my ($infile_index) =
+                        each( $infile_lane_prefix_href->{$sample_id} ) )
+                    {
+
+                        my $sample_id_parallel_chain_key =
+                            $sample_id
+                          . "_parallel_"
+                          . $path
+                          . $infile_index;    #Create key
+
+                        if ( $job_id_href->{$family_id_chain_key}
+                            {$sample_id_parallel_chain_key} )
+                        {                     #Parallel job exists
+
+                            ## Add to job_id string
+                            $job_ids .= add_to_job_id(
+                                {
+                                    job_id_href         => $job_id_href,
+                                    family_id_chain_key => $family_id_chain_key,
+                                    chain_key => $sample_id_parallel_chain_key,
+                                }
+                            );
+                        }
+                    }
+                }
+            }
+            if ( ( defined($path) ) && $path ne "MAIN" )
+            {   #Check for any previous job_ids within path current PATH. Branch
+
+                if (
+                    $job_id_href->{$family_id_chain_key}{$family_id_chain_key} )
+                {    #Second or later in branch chain
+
+                    ## Add to job_id string
+                    $job_ids = add_to_job_id(
+                        {
+                            job_id_href         => $job_id_href,
+                            family_id_chain_key => $family_id_chain_key,
+                            chain_key           => $family_id_chain_key,
+                        }
+                    );    #Family chain
+                }
+                elsif ( $dependencies eq "chain_and_parallel_dependency" )
+                { #Add jobs from other parallel chains that have branched of from MAIN i.e. merge branch back again
+
+                    foreach my $parallel_chain (@$parallel_chains_ref) {
+
+                        foreach my $sample_id (
+                            @{ $active_parameter_href->{sample_ids} } )
+                        {
+
+                            ## Add to job_id string
+                            $job_ids .= add_to_job_id(
+                                {
+                                    job_id_href         => $job_id_href,
+                                    family_id_chain_key => $$family_id_ref . "_"
+                                      . $parallel_chain,
+                                    chain_key => $sample_id . "_"
+                                      . $parallel_chain,
+                                }
+                            );
+                        }
+
+                        #Add to job_id string
+                        $job_ids .= add_to_job_id(
+                            {
+                                job_id_href         => $job_id_href,
+                                family_id_chain_key => $$family_id_ref . "_"
+                                  . $parallel_chain,
+                                chain_key => $$family_id_ref . "_"
+                                  . $parallel_chain,
+                            }
+                        );
+                    }
+                }
+                elsif ( $job_id_href->{ $$family_id_ref . "_MAIN" }
+                    { $$family_id_ref . "_MAIN" } )
+                {    #Inherit from potential MAIN. Trunk
+
+                    ## Add to job_id string
+                    $job_ids = add_to_job_id(
+                        {
+                            job_id_href         => $job_id_href,
+                            family_id_chain_key => $$family_id_ref . "_MAIN",
+                            chain_key           => $$family_id_ref . "_MAIN",
+                        }
+                    );
+                }
+                else {    #First job in new path and first family_id MAIN chain
+
+                    foreach my $sample_id (
+                        @{ $active_parameter_href->{sample_ids} } )
+                    {
+
+                        my $family_id_chain_key = $$family_id_ref . "_MAIN";
+                        my $sample_id_chain_key = $sample_id . "_MAIN";
+
+                        if ( $job_id_href->{$family_id_chain_key}
+                            {$sample_id_chain_key} )
+                        {
+
+                            ## Add to job_id string
+                            $job_ids .= add_to_job_id(
+                                {
+                                    job_id_href         => $job_id_href,
+                                    family_id_chain_key => $family_id_chain_key,
+                                    chain_key           => $sample_id_chain_key,
+                                }
+                            );
+                        }
+                    }
+                }
+            }
+            if ( ( defined($path) ) && ( $path eq "ALL" ) )
+            {    #Inherit from all previous jobs
+
+                ## Add to job_id string
+                $job_ids = add_to_job_id(
+                    {
+                        job_id_href         => $job_id_href,
+                        family_id_chain_key => "ALL",
+                        chain_key           => "ALL",
+                    }
+                );
+            }
+            if ($job_ids) {
+
+                ## Sumit jobs to sbatch
+                $job_id = submit_jobs_to_sbatch(
+                    {
+                        sbatch_file_name    => $sbatch_file_name,
+                        job_dependency_type => $job_dependency_type,
+                        job_ids             => $job_ids,
+                    }
+                );
+            }
+            else {
+
+                ## Sumit jobs to sbatch
+                $job_id = submit_jobs_to_sbatch(
+                    { sbatch_file_name => $sbatch_file_name, } );
+            }
+            if (   ( $dependencies eq "case_dependency" )
+                || ( $dependencies eq "chain_and_parallel_dependency" ) )
+            {    #Ordinary job push to array
+
+                @{ $job_id_href->{$family_id_chain_key}{$family_id_chain_key} }
+                  = ();    #Clear latest family_id/sample_id chain submission
+
+                ##Clear all latest parallel jobs within chainkey
+                foreach
+                  my $chain_key ( keys $job_id_href->{$family_id_chain_key} )
+                {
+
+                    @{ $job_id_href->{$family_id_chain_key}{$chain_key} } =
+                      ();    #Clear latest family_id/sample_id chain submission
+                }
+                push(
+                    @{
+                        $job_id_href->{$family_id_chain_key}
+                          {$family_id_chain_key}
+                    },
+                    $job_id
+                );           #Add job_id to hash
+            }
+            if (
+                ( $dependencies eq "sample_id_dependency_step_in_parallel" )
+                || ( $dependencies eq
+                    "sample_id_and_parallel_dependency_step_in_parallel" )
+              )
+            { #Parallel job wait to push to array until all parallel jobs are finished within step
+
+                push(
+                    @{
+                        $job_id_href->{$family_id_chain_key}
+                          {$family_id_parallel_chain_key}
+                    },
+                    $job_id
+                );    #Add job_id to hash.
+            }
+            if ( $dependencies eq "case_dependency_add_to_case" )
+            {    #Job dependent on both family_id and sample_id push to array
+
+                foreach
+                  my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
+                {
+
+                    my $sample_id_chain_key =
+                      $sample_id . "_" . $path;    #Current chain
+                    @{ $job_id_href->{$family_id_chain_key}
+                          { $family_id_chain_key . "_" . $sample_id_chain_key }
+                    } = ();
+                    @{ $job_id_href->{$family_id_chain_key}
+                          {$family_id_chain_key} } =
+                      ();    #Clear latest sample_id chainkey
+                    push(
+                        @{
+                            $job_id_href->{$family_id_chain_key}{
+                                    $family_id_chain_key . "_"
+                                  . $sample_id_chain_key
+                            }
+                        },
+                        $job_id
+                    );
+                }
+            }
+
+            ## Keeps the job_id string dependecy within reasonable limits
+            if (   ( defined( $job_id_href->{ALL}{ALL} ) )
+                && ( scalar( @{ $job_id_href->{ALL}{ALL} } >= 100 ) ) )
+            {
+
+                shift( @{ $job_id_href->{ALL}{ALL} } );   #Remove oldest job_id.
+            }
+            ## Job dependent on all jobs
+            push( @{ $job_id_href->{ALL}{ALL} }, $job_id );  #Add job_id to hash
         }
-
-        ## Job dependent on all jobs
-        # Add job_id to hash
-        push @{ $job_id_href->{ALL}{ALL} }, $job_id_returned;
     }
 
-    ## Add job_id_returned to hash for sacct processing downstream
-    push @{ $job_id_href->{PAN}{PAN} }, $job_id_returned;
+    $log->info("Sbatch script submitted, job id: $job_id\n");
+    $log->info("To check status of job, please run \'squeue -j $job_id\'\n");
+    $log->info("To cancel job, please run \'scancel $job_id\'\n");
 
-    $log->info( q{Sbatch script submitted, job id: } . $job_id_returned,
-        $NEWLINE );
-    $log->info(
-        q{To check status of job, please run }
-          . $SINGLE_QUOTE
-          . q{squeue -j }
-          . $job_id_returned
-          . $SINGLE_QUOTE,
-        $NEWLINE
-    );
-    $log->info(
-        q{To cancel job, please run }
-          . $SINGLE_QUOTE
-          . q{scancel }
-          . $job_id_returned
-          . $SINGLE_QUOTE,
-        $NEWLINE
-    );
+    push( @{ $job_id_href->{PAN}{PAN} }, $job_id )
+      ;    #Add job_id to hash for sacct processing downstream
 }
 
 sub submit_jobs_to_sbatch {
@@ -28955,17 +29100,17 @@ sub submit_jobs_to_sbatch {
 
 ##Function : Sumit jobs to sbatch
 ##Returns  : "$job_id"
-##Arguments: $sbatch_file_name, $job_dependency_type, $job_ids_string
-##         : $sbatch_file_name    => Sbatch file to submit
+##Arguments: $sbatch_file_name, $job_dependency_type, $job_ids
+##         : sbatch_file_name     => Sbatch file to submit
 ##         : $job_dependency_type => Job dependency type
-##         : $job_ids_string      => Job ids string
+##         : $job_ids             => Job ids string
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $sbatch_file_name;
     my $job_dependency_type;
-    my $job_ids_string;
+    my $job_ids;
 
     my $tmpl = {
         sbatch_file_name => {
@@ -28976,7 +29121,7 @@ sub submit_jobs_to_sbatch {
         },
         job_dependency_type =>
           { strict_type => 1, store => \$job_dependency_type },
-        job_ids_string => { strict_type => 1, store => \$job_ids_string },
+        job_ids => { strict_type => 1, store => \$job_ids },
     };
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
@@ -28984,7 +29129,7 @@ sub submit_jobs_to_sbatch {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger('MIP');
 
-    my $job_ids_string_return;
+    my $job_ids_return;
     my $job_id;
 
     use MIP::Workloadmanager::Slurm qw(slurm_sbatch);
@@ -28995,20 +29140,20 @@ sub submit_jobs_to_sbatch {
         {
             infile_path     => $sbatch_file_name,
             dependency_type => $job_dependency_type,
-            job_ids_string  => $job_ids_string,
+            job_ids_string  => $job_ids,
         }
       );
 
     # Submit job to system
-    $job_ids_string_return = `$cmd`;
+    $job_ids_return = `$cmd`;
 
     # Just submitted job_id
-    ($job_id) = ( $job_ids_string_return =~ /Submitted batch job (\d+)/ );
+    ($job_id) = ( $job_ids_return =~ /Submitted batch job (\d+)/ );
 
     # Catch errors since, propper sbatch submission should only return numbers
-    if ( $job_ids_string_return !~ /\d+/ ) {
+    if ( $job_ids_return !~ /\d+/ ) {
 
-        $log->fatal( $job_ids_string_return . "\n" );
+        $log->fatal( $job_ids_return . "\n" );
         $log->fatal("MIP: Aborting run.\n");
         exit 1;
     }
@@ -31307,6 +31452,108 @@ sub add_merged_infile_name {
         }
     }
     $file_info_href->{$sample_id}{merge_infile} = $infile;
+}
+
+sub sample_info_qc {
+
+##sample_info_qc
+
+##Function : Adds outdirectory and outfile to sample_info to track all files that QC metrics are to be extracted from later
+##Returns  : ""
+##Arguments: $sample_info_href, $program_name, $outdirectory, $outfile_ending, $outdata_type, $sample_id, $infile,
+##         : $sample_info_href => Info on samples and family hash {REF}
+##         : $program_name     => The program
+##         : $outdirectory     => The outdirectory of the QC file
+##         : $outfile_ending   => The outfile ending. Actually complete outfile for "static" & "info_directory"
+##         : $outdata_type     => Type of data produced by program (info_directory|infile_dependent|static)
+##         : $sample_id        => Sample_id for data at sample level {Optional}
+##         : $infile           => Infile for data at sample level {Optional}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $sample_info_href;
+    my $program_name;
+    my $outdirectory;
+    my $outfile_ending;
+    my $outdata_type;
+    my $sample_id;
+    my $infile;
+
+    my $tmpl = {
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href
+        },
+        program_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$program_name
+        },
+        outdirectory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$outdirectory
+        },
+        outfile_ending => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$outfile_ending
+        },
+        outdata_type => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            allow       => [ "static", "info_directory", "infile_dependent" ],
+            store       => \$outdata_type
+        },
+        infile    => { strict_type => 1, store => \$infile },
+        sample_id => { strict_type => 1, store => \$sample_id },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger('MIP');
+
+    unless ( defined($sample_id) ) {
+
+        $sample_info_href->{program}{$program_name}{outdirectory} =
+          $outdirectory;    #OutDirectory of QC file
+        $sample_info_href->{program}{$program_name}{outfile} = $outfile_ending;
+    }
+    elsif ( defined($infile) ) {
+
+        $sample_info_href->{sample}{$sample_id}{program}{$program_name}
+          {$infile}{outdirectory} = $outdirectory;    #OutDirectory of QC file
+
+        if ( $outdata_type eq "infile_dependent" )
+        {    #Programs which add a filending to infile
+
+            $sample_info_href->{sample}{$sample_id}{program}{$program_name}
+              {$infile}{outfile} =
+              $infile . $outfile_ending;    #Infile dependent QC outfile
+        }
+        else {
+
+            $sample_info_href->{sample}{$sample_id}{program}{$program_name}
+              {$infile}{outfile} =
+              $outfile_ending;    #Static QC outfile or Info stdout file
+        }
+    }
+    else {
+
+        $log->fatal(
+"Please provide infile to enable storing of sample_id data in hash\n"
+        );
+        exit 1;
+    }
 }
 
 sub split_target_file {
@@ -34254,6 +34501,182 @@ sub check_merge_picardtools_mergesamfiles_previous_bams {
     }
 }
 
+sub create_fam_file {
+
+##create_fam_file
+
+##Function : Create .fam file to be used in variant calling analyses. Also checks if file already exists when using execution_mode=sbatch.
+##Returns  : ""
+##Arguments: $parameter_href, $active_parameter_href, sample_info_href, $pedigree_file, $execution_mode, $fam_file_path, $include_header, $FILEHANDLE, $family_id_ref
+##         : $parameter_href        => Hash with paremters from yaml file {REF}
+##         : $active_parameter_href => The active parameters for this analysis hash {REF}
+##         : $sample_info_href      => Info on samples and family hash {REF}
+##         : $pedigree_file         => The supplied pedigree file to create the reduced ".fam" file from
+##         : $execution_mode        => Either system (direct) or via sbatch
+##         : $fam_file_path         => The family file path
+##         : $include_header        => Wether to include header ("1") or not ("0")
+##         : $FILEHANDLE            => Filehandle to write to {Optional unless execution_mode=sbatch}
+##         : $family_id_ref         => The family_id {REF}
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $family_id_ref;
+    my $pedigree_file;
+    my $execution_mode;
+    my $include_header;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $active_parameter_href;
+    my $sample_info_href;
+    my $fam_file_path;
+    my $FILEHANDLE;
+
+    my $tmpl = {
+        parameter_href =>
+          { default => {}, strict_type => 1, store => \$parameter_href },
+        active_parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$active_parameter_href
+        },
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href
+        },
+        fam_file_path => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$fam_file_path
+        },
+        FILEHANDLE    => { store => \$FILEHANDLE },
+        pedigree_file => {
+            default     => $arg_href->{active_parameter_href}{pedigree_file},
+            strict_type => 1,
+            store       => \$pedigree_file
+        },
+        execution_mode => {
+            default     => "sbatch",
+            allow       => [ "sbatch", "system" ],
+            strict_type => 1,
+            store       => \$execution_mode
+        },
+        include_header => {
+            default     => 1,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$include_header
+        },
+        family_id_ref => {
+            default     => \$arg_href->{active_parameter_href}{family_id},
+            strict_type => 1,
+            store       => \$family_id_ref
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger('MIP');
+
+    my @fam_headers =
+      ( "#family_id", "sample_id", "father", "mother", "sex", "phenotype" );
+    my @pedigree_lines;
+    my $header;
+
+    if ($include_header) {
+
+        push( @pedigree_lines, join( "\t", @fam_headers ) );
+    }
+
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+        my $sample_line = $$family_id_ref;
+
+        foreach my $header (@fam_headers) {
+
+            if (
+                defined(
+                    $parameter_href->{dynamic_parameter}{$sample_id}
+                      { "plink_" . $header }
+                )
+              )
+            {
+
+                $sample_line .= "\t"
+                  . $parameter_href->{dynamic_parameter}{$sample_id}
+                  { "plink_" . $header };
+            }
+            elsif (
+                defined( $sample_info_href->{sample}{$sample_id}{$header} ) )
+            {
+
+                $sample_line .=
+                  "\t" . $sample_info_href->{sample}{$sample_id}{$header};
+            }
+        }
+        push( @pedigree_lines, $sample_line );
+    }
+    if ( $execution_mode eq "system" ) {    #Execute directly
+
+        my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
+        open( $FILEHANDLE, ">", $fam_file_path )
+          or
+          $log->logdie( "Can't open '" . $fam_file_path . "': " . $! . "\n" );
+
+        foreach my $line (@pedigree_lines) {
+
+            say $FILEHANDLE $line;
+        }
+        $log->info( "Wrote: " . $fam_file_path, "\n" );
+        close($FILEHANDLE);
+    }
+    if ( $execution_mode eq "sbatch" ) {
+
+        unless ( -f $fam_file_path ) {    #Check to see if file already exists
+
+            if ($FILEHANDLE) {
+
+                say $FILEHANDLE "#Generating '.fam' file";
+
+                use MIP::Gnu::Coreutils qw(gnu_echo);
+
+                ## Get parameters
+                my @strings = map { $_ . q?\n? } @pedigree_lines;
+
+                gnu_echo(
+                    {
+                        strings_ref           => \@strings,
+                        outfile_path          => $fam_file_path,
+                        enable_interpretation => 1,
+                        no_trailing_newline   => 1,
+                        FILEHANDLE            => $FILEHANDLE,
+                    }
+                );
+                say $FILEHANDLE "\n";
+            }
+            else {
+
+                $log->fatal(
+"Create fam file[subroutine]:Using 'execution_mode=sbatch' requires a filehandle to write to. Please supply filehandle to subroutine call.",
+                    "\n"
+                );
+                exit 1;
+            }
+        }
+    }
+
+    ## Add newly created family file to qc_sample_info
+    $sample_info_href->{pedigree_minimal} = $fam_file_path;
+}
+
 sub check_annovar_tables {
 
 ##check_annovar_tables
@@ -34729,7 +35152,7 @@ sub remove_files {
         );
         print $FILEHANDLE "&", "\n";
     }
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 }
 
 sub remove_contig_files {
@@ -34823,7 +35246,7 @@ sub remove_contig_files {
         );
         say $FILEHANDLE "& ";
     }
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 }
 
 sub core2 {
@@ -35573,7 +35996,7 @@ sub split_and_index_aligment_file {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use Program::Alignment::Sambamba qw(view index);
+    use MIP::Program::Alignment::Sambamba qw(sambamba_view sambamba_index);
 
     my $xargs_file_name;
 
@@ -35594,7 +36017,7 @@ sub split_and_index_aligment_file {
     ## Split by contig
     foreach my $contig (@$contigs_ref) {
 
-        Program::Alignment::Sambamba::view(
+        sambamba_view(
             {
                 infile_path =>
                   catfile( $$temp_directory_ref, $infile . $file_suffix ),
@@ -35615,7 +36038,7 @@ sub split_and_index_aligment_file {
         );
         print $XARGSFILEHANDLE "; ";    #Seperate commands
 
-        Program::Alignment::Sambamba::index(
+        sambamba_index(
             {
                 infile_path =>
                   catfile( $$temp_directory_ref, $infile . $file_suffix ),
@@ -35704,8 +36127,6 @@ sub set_contigs {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use MIP::Get::Analysis qw(get_overall_analysis_type);
-
     if ( $active_parameter_href->{human_genome_reference} =~ /hg\d+/ )
     {    #Refseq - prefix and M
 
@@ -35742,7 +36163,7 @@ sub set_contigs {
     }
 
     ## Detect if all samples has the same sequencing type and return consensus if reached
-    my $consensus_analysis_type = get_overall_analysis_type(
+    my $consensus_analysis_type = detect_overall_analysis_type(
         { analysis_type_hef => \%{ $active_parameter_href->{analysis_type} }, }
     );
     if ( $consensus_analysis_type eq "wes" ) {
@@ -36362,61 +36783,46 @@ sub add_to_sample_info {
         $sample_info_href->{expected_coverage} =
           $active_parameter_href->{expected_coverage};
     }
-    if ( exists $active_parameter_href->{gatk_path} ) {
+    if ( exists( $active_parameter_href->{gatk_path} ) ) {
 
-        my $gatk_version;
         if ( $active_parameter_href->{gatk_path} =~ /GenomeAnalysisTK-([^,]+)/ )
         {
 
-            $gatk_version = $1;
+            $sample_info_href->{program}{gatk}{version} = $1;
         }
         else {    #Fall back on actually calling program
 
             my $jar_path = catfile( $active_parameter_href->{gatk_path},
                 "GenomeAnalysisTK.jar" );
-            $gatk_version = (`java -jar $jar_path --version 2>&1`);
-            chomp $gatk_version;
+            my $ret = (`java -jar $jar_path --version 2>&1`);
+            chomp($ret);
+            $sample_info_href->{program}{gatk}{version} = $ret;
         }
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                program_name     => 'gatk',
-                version          => $gatk_version,
-            }
-        );
     }
-    if ( exists $active_parameter_href->{picardtools_path} )
-    {    #To enable addition of version to sample_info
+    if ( exists( $active_parameter_href->{picardtools_path} ) )
+    {             #To enable addition of version to sample_info
 
-        my $picardtools_version;
         if ( $active_parameter_href->{picardtools_path} =~
             /picard-tools-([^,]+)/ )
         {
 
-            $picardtools_version = $1;
+            $sample_info_href->{program}{picardtools}{version} = $1;
         }
         else {    #Fall back on actually calling program
 
             my $jar_path = catfile( $active_parameter_href->{picardtools_path},
                 "picard.jar" );
-            $picardtools_version =
+            my $ret =
               (`java -jar $jar_path CreateSequenceDictionary --version 2>&1`);
-            chomp $picardtools_version;
+            chomp($ret);
+            $sample_info_href->{program}{picardtools}{version} = $ret;
         }
-
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                program_name     => 'picardtools',
-                version          => $picardtools_version,
-            }
-        );
     }
     my @sambamba_programs =
       ( "pbwa_mem", "psambamba_depth", "markduplicates_sambamba_markdup" );
     foreach my $program (@sambamba_programs) {
 
-        if (   ( exists $active_parameter_href->{$program} )
+        if (   ( exists( $active_parameter_href->{$program} ) )
             && ( $active_parameter_href->{$program} == 1 ) )
         {
 
@@ -36424,20 +36830,14 @@ sub add_to_sample_info {
 
                 my $regexp =
                   q?perl -nae 'if($_=~/sambamba\s(\S+)/) {print $1;last;}'?;
-                my $sambamba_version = (`sambamba 2>&1 | $regexp`);
-                chomp $sambamba_version;
-                add_program_outfile_to_sample_info(
-                    {
-                        sample_info_href => $sample_info_href,
-                        program_name     => 'sambamba',
-                        version          => $sambamba_version,
-                    }
-                );
+                my $ret = (`sambamba 2>&1 | $regexp`);
+                chomp($ret);
+                $sample_info_href->{program}{sambamba}{version} = $ret;
                 last;    #Only need to check once
             }
         }
     }
-    if ( exists $active_parameter_href->{pcnvnator} )
+    if ( exists( $active_parameter_href->{pcnvnator} ) )
     {                    #To enable addition of version to sample_info
 
         if (   ( $active_parameter_href->{pcnvnator} == 1 )
@@ -36446,15 +36846,9 @@ sub add_to_sample_info {
 
             my $regexp =
               q?perl -nae 'if($_=~/CNVnator\s+(\S+)/) {print $1;last;}'?;
-            my $cnvnator_version = (`cnvnator 2>&1 | $regexp`);
-            chomp $cnvnator_version;
-            add_program_outfile_to_sample_info(
-                {
-                    sample_info_href => $sample_info_href,
-                    program_name     => 'cnvnator',
-                    version          => $cnvnator_version,
-                }
-            );
+            my $ret = (`cnvnator 2>&1 | $regexp`);
+            chomp($ret);
+            $sample_info_href->{program}{cnvnator}{version} = $ret;
         }
     }
     if ( defined($$human_genome_reference_ref) )
@@ -37166,11 +37560,6 @@ sub vt_core {
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use Program::Htslib qw(bgzip tabix);
     use Program::Variantcalling::Vt qw(decompose normalize vt_uniq);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_no_dependency_add_to_case);
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my $file_name;
     my $program_info_path;
@@ -37373,17 +37762,15 @@ sub vt_core {
             && ( !$active_parameter_href->{dry_run_all} ) )
         {
 
-            my $slurm_path = $parameter_href->{ "p" . $program }{chain};
-
-            slurm_submit_job_no_dependency_add_to_case(
+            submit_job(
                 {
-                    job_id_href => $job_id_href,
-                    sample_ids_ref =>
-                      \@{ $active_parameter_href->{sample_ids} },
-                    family_id        => $$family_id_ref,
-                    path             => $slurm_path,
-                    sbatch_file_name => $file_name,
-                    log              => $log,
+                    active_parameter_href   => $active_parameter_href,
+                    sample_info_href        => $sample_info_href,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    job_id_href             => $job_id_href,
+                    dependencies            => "no_dependency_add_to_case",
+                    path => $parameter_href->{ "p" . $program }{chain},
+                    sbatch_file_name => $file_name
                 }
             );
         }
@@ -39672,7 +40059,7 @@ sub generate_contig_specific_target_bed_file {
             }
         );
     }
-    say $FILEHANDLE q{wait}, "\n";
+    say $FILEHANDLE "wait", "\n";
 }
 
 sub replace_iupac {
@@ -39786,6 +40173,44 @@ sub get_matching_values_key {
 
         return $reversed{$$query_value_ref};
     }
+}
+
+sub detect_overall_analysis_type {
+
+##detect_overall_analysis_type
+
+##Function : Detect if all samples has the same sequencing type and return consensus or mixed
+##Returns  : "consensus/mixed analysis_type"
+##Arguments: $analysis_type_hef
+##         : $analysis_type_hef => The analysis_type hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $analysis_type_hef;
+
+    my $tmpl = {
+        analysis_type_hef => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$analysis_type_hef
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
+
+    my @analysis_types = ( "wes", "wgs", "rapid" );
+
+    foreach my $analysis_type (@analysis_types) {
+
+        if ( all { $_ eq $analysis_type } values %$analysis_type_hef ) {
+
+            return $analysis_type;
+        }
+    }
+    return "mixed"    # No consensus, then it must be mixed
 }
 
 sub bcftools_norm {
