@@ -25,7 +25,7 @@ use lib catdir( $Bin, 'lib' );        #Add MIPs internal lib
 use MIP::Language::Shell qw(create_bash_file);
 use Program::Download::Wget qw(wget);
 use MIP::Gnu::Bash qw(gnu_cd);
-use MIP::Gnu::Coreutils qw(gnu_cp gnu_rm gnu_mv gnu_mkdir);
+use MIP::Gnu::Coreutils qw(gnu_cp gnu_rm gnu_mv gnu_mkdir gnu_link );
 use MIP::PacketManager::Conda qw{ conda_create conda_source_activate conda_source_deactivate };
 use Script::Utils qw(help set_default_array_parameters);
 
@@ -888,11 +888,10 @@ sub install_bioconda_modules {
 
             foreach my $binary (@bwakit_binaries) {
 
-                create_softlink(
+                gnu_link(
                     {
-                        parameter_href => $parameter_href,
                         FILEHANDLE     => $FILEHANDLE,
-                        binary         => catfile(
+                        target_path    => catfile(
                             $parameter_href->{conda_prefix_path},
                             'share',
                             'bwakit-'
@@ -900,10 +899,17 @@ sub install_bioconda_modules {
                               . $parameter_href->{bioconda_bwakit_patch},
                             $binary
                         ),
-                        softlink => $binary,
+                        link_path => catfile(
+                            $parameter_href->{conda_prefix_path}, 
+                              q{bin}, $binary
+                        ),
+                        symbolic => 1,
+                        force => 1,
                     }
                 );
+                print $FILEHANDLE $NEWLINE;
             }
+            print $FILEHANDLE $NEWLINE;
 
             gnu_cp(
                 {
@@ -926,21 +932,25 @@ sub install_bioconda_modules {
         }
         if ( $program eq 'picard' ) {
 
-            create_softlink(
+            gnu_link(
                 {
-                    parameter_href => $parameter_href,
                     FILEHANDLE     => $FILEHANDLE,
-                    binary         => catfile(
+                    target_path         => catfile(
                         $parameter_href->{conda_prefix_path},
-                        'share',
-                        'picard-'
+                        q{share},
+                        q{picard-}
                           . $parameter_href->{bioconda}{picard}
                           . $parameter_href->{bioconda_picard_patch},
-                        'picard.jar'
+                        q{picard.jar}
                     ),
-                    softlink => 'picard.jar',
+                    link_path => catfile(
+                         $parameter_href->{conda_prefix_path}, q{picard.jar}
+                    ),
+                    symbolic => 1,
+                    force => 1,
                 }
             );
+            print $FILEHANDLE $NEWLINE;
         }
         if ( $program eq 'snpeff' ) {
 
@@ -949,11 +959,10 @@ sub install_bioconda_modules {
 
             foreach my $binary (@snpeff_binaries) {
 
-                create_softlink(
+                gnu_link(
                     {
-                        parameter_href => $parameter_href,
                         FILEHANDLE     => $FILEHANDLE,
-                        binary         => catfile(
+                        target_path    => catfile(
                             $parameter_href->{conda_prefix_path},
                             'share',
                             'snpeff-'
@@ -961,10 +970,16 @@ sub install_bioconda_modules {
                               . $parameter_href->{bioconda_snpeff_patch},
                             $binary
                         ),
-                        softlink => $binary,
+                        link_path => catfile(
+                            $parameter_href->{conda_prefix_path}, $binary
+                        ),
+                        symbolic => 1,
+                        force => 1,
                     }
                 );
+                print $FILEHANDLE $NEWLINE;
             }
+            print $FILEHANDLE $NEWLINE;
 
             foreach my $genome_version (
                 @{ $parameter_href->{snpeff_genome_versions} } )
@@ -1018,11 +1033,10 @@ sub install_bioconda_modules {
 
             foreach my $binary (@snpsift_binaries) {
 
-                create_softlink(
+                gnu_link(
                     {
-                        parameter_href => $parameter_href,
                         FILEHANDLE     => $FILEHANDLE,
-                        binary         => catfile(
+                        target_path    => catfile(
                             $parameter_href->{conda_prefix_path},
                             'share',
                             'snpsift-'
@@ -1030,10 +1044,16 @@ sub install_bioconda_modules {
                               . $parameter_href->{bioconda_snpsift_patch},
                             $binary
                         ),
-                        softlink => $binary,
+                        link_path => catfile(
+                            $parameter_href->{conda_prefix_path}, $binary
+                        ),
+                        symbolic => 1,
+                        force => 1,
                     }
                 );
+                print $FILEHANDLE $NEWLINE;
             }
+            print $FILEHANDLE $NEWLINE;
         }
         if ( $program eq 'manta' ) {
 
@@ -1041,11 +1061,10 @@ sub install_bioconda_modules {
 
             foreach my $binary (@manta_binaries) {
 
-                create_softlink(
+                gnu_link(
                     {
-                        parameter_href => $parameter_href,
                         FILEHANDLE     => $FILEHANDLE,
-                        binary         => catfile(
+                        target_path    => catfile(
                             $parameter_href->{conda_prefix_path},
                             'share',
                             'manta-'
@@ -1054,10 +1073,16 @@ sub install_bioconda_modules {
                             'bin',
                             $binary
                         ),
-                        softlink => $binary,
+                        link_path => catfile(
+                            $parameter_href->{conda_prefix_path}, $binary
+                        ),
+                        symbolic => 1,
+                        force => 1,
                     }
                 );
+                print $FILEHANDLE $NEWLINE;
             }
+            print $FILEHANDLE $NEWLINE;
 
             ## Make file executable
             enable_executable(
