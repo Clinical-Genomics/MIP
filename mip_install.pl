@@ -1620,18 +1620,22 @@ sub picardtools {
     );
     print $FILEHANDLE "\n\n";
 
-    create_softlink(
+    gnu_link(
         {
-            parameter_href => $parameter_href,
             FILEHANDLE     => $FILEHANDLE,
-            binary         => catfile(
+            target_path    => catfile(
                 $parameter_href->{conda_prefix_path},
                 'share', 'picard-tools-' . $parameter_href->{picardtools},
                 'picard.jar'
             ),
-            softlink => 'picard.jar',
+            link_path => catfile(
+                $parameter_href->{conda_prefix_path}, 'picard.jar'
+            ),
+            symbolic => 1,
+            force => 1,
         }
     );
+    print $FILEHANDLE $NEWLINE;
 
     ## Remove the temporary install directory
     remove_install_dir(
@@ -1741,21 +1745,26 @@ sub sambamba {
     gnu_mv(
         {
             infile_path => 'sambamba_v' . $parameter_href->{sambamba},
-            outfile_path =>
-              catdir( $parameter_href->{conda_prefix_path}, 'bin' ),
+            outfile_path => catdir( 
+                $parameter_href->{conda_prefix_path}, 'bin' 
+            ),
             FILEHANDLE => $FILEHANDLE,
         }
     );
     print $FILEHANDLE "\n\n";
 
-    create_softlink(
+    gnu_link(
         {
-            parameter_href => $parameter_href,
             FILEHANDLE     => $FILEHANDLE,
-            binary   => 'sambamba_v' . $parameter_href->{bioconda}{sambamba},
-            softlink => 'sambamba',
+            target_path    => 'sambamba_v' . $parameter_href->{bioconda}{sambamba},
+            link_path => catfile(
+                $parameter_href->{conda_prefix_path},'sambamba',
+            ),
+            symbolic => 1,
+            force => 1,
         }
     );
+    print $FILEHANDLE $NEWLINE;
 
     ## Remove the temporary install directory
     remove_install_dir(
@@ -2211,17 +2220,21 @@ sub snpeff {
 
     foreach my $binary (@snpeff_binaries) {
 
-        create_softlink(
+        gnu_link(
             {
-                parameter_href => $parameter_href,
                 FILEHANDLE     => $FILEHANDLE,
-                binary         => catfile(
+                target_path         => catfile(
                     $parameter_href->{conda_prefix_path},  'share',
                     'snpEff.' . $parameter_href->{snpeff}, $binary
                 ),
-                softlink => $binary,
+                link_path => catfile(
+                    $parameter_href->{conda_prefix_path}, $binary
+                ),
+                symbolic => 1,
+                gorce => 1,
             }
         );
+        print $FILEHANDLE $NEWLINE;
     }
 
     foreach
@@ -3006,14 +3019,23 @@ sub tiddit {
     ## Make available from conda environment
     my $cwd = cwd();
     print $FILEHANDLE '## Make available from conda environment', "\n";
-    print $FILEHANDLE 'ln -f -s ';
-    print $FILEHANDLE catfile(
-        $parameter_href->{conda_prefix_path},
-        'TIDDIT-' . $parameter_href->{tiddit},
-        qw(bin TIDDIT)
-    ) . q{ };
-    print $FILEHANDLE catdir( $parameter_href->{conda_prefix_path}, 'bin' ),
-      "\n\n";
+    
+    gnu_link(
+        {
+            FILEHANDLE     => $FILEHANDLE,
+            target_path    => catfile(
+                $parameter_href->{conda_prefix_path},
+                'TIDDIT-' . $parameter_href->{tiddit}, qw{ bin TIDDIT }
+            ),
+            link_path => catfile(
+                $parameter_href->{conda_prefix_path}, qw{ bin TIDDIT }
+            ),
+            symbolic => 1,
+            force => 1,
+        }
+    );
+
+    print $FILEHANDLE $NEWLINE;
 
     ## Clean-up
     gnu_rm(
@@ -3679,77 +3701,6 @@ sub check_conda_bin_file_exists {
         print STDERR 'Writting install instructions for ' . $program_name, "\n";
         return 0;
     }
-    return;
-}
-
-sub create_softlink {
-
-##create_softlink
-
-##Function : Create softlink
-##Returns  : ""
-##Arguments: $parameter_href, $FILEHANDLE, $binary, $softlink
-##         : $parameter_href => Holds all parameters
-##         : $FILEHANDLE     => FILEHANDLE to write to
-##         : $binary         => The binary file
-##         : $softlink       => The name of the softlink
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $FILEHANDLE;
-    my $binary;
-    my $softlink;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
-        binary =>
-          { required => 1, defined => 1, strict_type => 1, store => \$binary },
-        softlink => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$softlink
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
-
-    my $pwd = cwd();
-
-    ## Add softlink
-    print $FILEHANDLE '## Move to directory and create softlink', "\n";
-    gnu_cd(
-        {
-            directory_path =>
-              catdir( $parameter_href->{conda_prefix_path}, 'bin' ),
-            FILEHANDLE => $FILEHANDLE,
-        }
-    );
-    print $FILEHANDLE "\n";
-
-    print $FILEHANDLE 'ln -f -s ';
-    print $FILEHANDLE $binary . q{ } . $softlink;
-    print $FILEHANDLE "\n\n";
-
-    ## Move to back
-    print $FILEHANDLE '## Move to original working directory', "\n";
-    gnu_cd(
-        {
-            directory_path => $pwd,
-            FILEHANDLE     => $FILEHANDLE,
-        }
-    );
-    print $FILEHANDLE "\n\n";
-
     return;
 }
 
