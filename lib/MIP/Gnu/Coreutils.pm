@@ -37,6 +37,7 @@ BEGIN {
 Readonly my $SPACE     => q{ };
 Readonly my $COMMA     => q{,};
 Readonly my $EMPTY_STR => q{};
+Readonly my $DOUBLE_QUOTE => q{"};
 
 sub gnu_cp {
 
@@ -644,7 +645,8 @@ sub gnu_echo {
     }
 
     ## Strings
-    push @commands, q?"? . join( $EMPTY_STR, @{$strings_ref} ) . q?"?;
+    push @commands, 
+      $DOUBLE_QUOTE . join $EMPTY_STR, @{$strings_ref} . $DOUBLE_QUOTE;
 
     ## Outfile
     if ($outfile_path) {

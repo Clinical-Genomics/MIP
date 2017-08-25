@@ -958,7 +958,9 @@ sub install_bioconda_modules {
             my @snpeff_binaries = qw(snpEff.jar snpEff.config);
 
             foreach my $binary (@snpeff_binaries) {
-
+                
+                my $target_path = catfile(
+                    $parameter_href->{conda_prefix_path},
                 gnu_link(
                     {
                         FILEHANDLE     => $FILEHANDLE,
