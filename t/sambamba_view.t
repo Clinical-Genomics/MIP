@@ -26,7 +26,7 @@ use lib catdir( dirname($Bin), 'lib' );
 use Script::Utils qw{help};
 
 ## Constants
-Readonly my $SPACE => q{ };
+Readonly my $SPACE   => q{ };
 Readonly my $NEWLINE => qq{\n};
 
 our $USAGE = build_usage( {} );
@@ -43,8 +43,7 @@ GetOptions(
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        say {*STDOUT} basename($PROGRAM_NAME) . $SPACE . $VERSION,
-          $NEWLINE;
+        say {*STDOUT} basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
 
         exit;
     },    #Display version number
@@ -68,7 +67,7 @@ BEGIN {
     my %perl_module;
 
     $perl_module{'Script::Utils'} = [qw{help}];
-    
+
     #PERL MODULES
     while ( my ( $module, $module_import ) = each %perl_module ) {
 
@@ -86,11 +85,11 @@ BEGIN {
     }
 }
 
-use MIP::Program::Alignment::Sambamba qw{sambamba_sort};
+use MIP::Program::Alignment::Sambamba qw{sambamba_view};
 use MIP::Test::Commands qw{test_function};
 
 diag(
-"Test sambamba_sort MIP::Program::Alignment::Sambamba::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test sambamba_view MIP::Program::Alignment::Sambamba::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments
@@ -106,47 +105,52 @@ my %base_argument = (
 ## Can be duplicated with %base and/or %specific to enable testing of each individual argument
 my %required_argument = (
     FILEHANDLE => {
-        input            => undef,
-        expected_output  => $function_base_command,
+        input           => undef,
+        expected_output => $function_base_command,
     },
     infile_path => {
-        input            => q{infile.test},
-        expected_output  => q{infile.test},
+        input           => q{infile.test},
+        expected_output => q{infile.test},
     },
 );
 
 ## Specific arguments
 my %specific_argument = (
-    stderrfile_path      => {
-        input            => q{stderrfile.test},
-        expected_output  => q{2> stderrfile.test},
+    stderrfile_path => {
+        input           => q{stderrfile.test},
+        expected_output => q{2> stderrfile.test},
+    },
+    with_header => {
+        input           => 1,
+        expected_output => q{--with-header},
     },
     show_progress => {
-		input            => 1,
-		expected_output  => q{--show-progress},
+        input           => 1,
+        expected_output => q{--show-progress},
     },
-    memory_limit => {
-		input			 => q{4G},
-		expected_output  => q{--memory-limit=4G},
-	},
-	temp_directory => {
-		input            => q{temp},
-	    expected_output  => q{--tmpdir=temp},
+    output_format => {
+        input           => q{bam},
+        expected_output => q{--format bam},
     },
-    outfile_path => {
-		input            => q{outfile.test},
-		expected_output  => q{--out=outfile.test},
+    referencefile_path => {
+        input           => q{pathToRef.test},
+        expected_output => q{--ref-filename=pathToRef.test},
+
+    },
+    regions_ref => {
+        inputs_ref      => [qw{1:1000000-2000000 2:1000-5000}],
+        expected_output => q{1:1000000-2000000 2:1000-5000},
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&sambamba_sort;
+my $module_function_cref = \&sambamba_view;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
 
 foreach my $argument_href (@arguments) {
-	
+
     my @commands = test_function(
         {
             argument_href          => $argument_href,
@@ -194,4 +198,3 @@ sub build_usage {
     -v/--version Display version
 END_USAGE
 }
-

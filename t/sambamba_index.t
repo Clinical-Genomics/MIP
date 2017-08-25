@@ -26,7 +26,7 @@ use lib catdir( dirname($Bin), 'lib' );
 use Script::Utils qw{help};
 
 ## Constants
-Readonly my $SPACE => q{ };
+Readonly my $SPACE   => q{ };
 Readonly my $NEWLINE => qq{\n};
 
 our $USAGE = build_usage( {} );
@@ -43,8 +43,7 @@ GetOptions(
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        say {*STDOUT} basename($PROGRAM_NAME) . $SPACE . $VERSION,
-          $NEWLINE;
+        say {*STDOUT} basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
 
         exit;
     },    #Display version number
@@ -68,7 +67,7 @@ BEGIN {
     my %perl_module;
 
     $perl_module{'Script::Utils'} = [qw{help}];
-    
+
     #PERL MODULES
     while ( my ( $module, $module_import ) = each %perl_module ) {
 
@@ -86,11 +85,11 @@ BEGIN {
     }
 }
 
-use MIP::Program::Alignment::Sambamba qw{sambamba_flagstat};
+use MIP::Program::Alignment::Sambamba qw{sambamba_index};
 use MIP::Test::Commands qw{test_function};
 
 diag(
-"Test sambamba_flagstat MIP::Program::Alignment::Sambamba::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test sambamba_index MIP::Program::Alignment::Sambamba::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments
@@ -117,21 +116,24 @@ my %required_argument = (
 
 ## Specific arguments
 my %specific_argument = (
-
-    outfile_path => {
-		input            => q{outfile.test},
-		expected_output  => q{> outfile.test},
+    stderrfile_path => {
+        input           => q{stderrfile.test},
+        expected_output => q{2> stderrfile.test},
+    },
+    show_progress => {
+        input           => 1,
+        expected_output => q{--show-progress},
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&sambamba_flagstat;
+my $module_function_cref = \&sambamba_index;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
 
 foreach my $argument_href (@arguments) {
-	
+
     my @commands = test_function(
         {
             argument_href          => $argument_href,

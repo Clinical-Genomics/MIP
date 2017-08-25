@@ -26,7 +26,7 @@ use lib catdir( dirname($Bin), 'lib' );
 use Script::Utils qw{help};
 
 ## Constants
-Readonly my $SPACE => q{ };
+Readonly my $SPACE   => q{ };
 Readonly my $NEWLINE => qq{\n};
 
 our $USAGE = build_usage( {} );
@@ -43,8 +43,7 @@ GetOptions(
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        say {*STDOUT} basename($PROGRAM_NAME) . $SPACE . $VERSION,
-          $NEWLINE;
+        say {*STDOUT} basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
 
         exit;
     },    #Display version number
@@ -68,7 +67,7 @@ BEGIN {
     my %perl_module;
 
     $perl_module{'Script::Utils'} = [qw{help}];
-    
+
     #PERL MODULES
     while ( my ( $module, $module_import ) = each %perl_module ) {
 
@@ -86,31 +85,15 @@ BEGIN {
     }
 }
 
-use MIP::Program::Alignment::Sambamba qw{sambamba_depth};
+use MIP::Program::Alignment::Sambamba qw{sambamba_flagstat};
 use MIP::Test::Commands qw{test_function};
 
 diag(
-"Test sambamba_depth MIP::Program::Alignment::Sambamba::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test sambamba_flagstat MIP::Program::Alignment::Sambamba::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments
 my $function_base_command = q{sambamba};
-
-
-## Default(s)
-    my $min_base_quality;
-    my $mode;
-    my $fix_mate_overlap;
-
-    ## Flatten argument(s)
-    my $depth_cutoffs_ref;
-    my $FILEHANDLE;
-    my $infile_path;
-    my $outfile_path;
-    my $stderrfile_path;
-    my $region;
-    my $filter;
-    my $stderrfile_path_append;
 
 my %base_argument = (
     FILEHANDLE => {
@@ -134,48 +117,20 @@ my %required_argument = (
 ## Specific arguments
 my %specific_argument = (
 
-    stderrfile_path => {
-        input            => q{stderrfile.test},
-        expected_output  => q{2> stderrfile.test},
-    },
-    depth_cutoffs_ref => {
-		inputs_ref       => [q{25 100}],
-        expected_output  => q{--cov-threshold 25 100},
-    },
     outfile_path => {
-		input            => q{outfile.test},
-		expected_output  => q{--output-filename=outfile.test},
-    },
-    region => {
-		input            => q{1:23000-2500000},
-		expected_output  => q{--regions 1:23000-2500000},
-    },
-    filter => {
-		input            => q{1:23000-2500000},
-		expected_output  => q{--filter 1:23000-2500000},
-	},
-	min_base_quality => {
-		input            => q{25},
-		expected_output  => q{--min-base-quality 25},
-    },
-    fix_mate_overlap => {
-		input            => 1,
-		expected_output  => q{--fix-mate-overlaps},
-    },
-    mode => {
-		inputs_ref       => [],
-		expected_output  => q{region},
+        input           => q{outfile.test},
+        expected_output => q{> outfile.test},
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&sambamba_depth;
+my $module_function_cref = \&sambamba_flagstat;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
 
 foreach my $argument_href (@arguments) {
-	
+
     my @commands = test_function(
         {
             argument_href          => $argument_href,
@@ -223,4 +178,3 @@ sub build_usage {
     -v/--version Display version
 END_USAGE
 }
-
