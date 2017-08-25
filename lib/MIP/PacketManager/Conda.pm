@@ -19,6 +19,7 @@ use IO::Handle;
 use File::Basename qw{ dirname basename fileparse };
 use File::Spec::Functions qw{ catfile catdir devnull };
 use Readonly;
+use List::Util qw{ none };
 use IPC::Cmd qw{ run };
 
 ## MIPs lib/
@@ -279,26 +280,27 @@ sub conda_check {
 ## Function  : Check if Conda is installed, the path to conda is correct
 ##             and if a conda environment is activated; Exit if true
 ## Returns   :
-## Arguments : $conda_dir_path
-##           : $conda_dir_path => Path to conda directory
+## Arguments : $conda_dir_path_ref
+##           : $conda_dir_path_ref => Path to conda directory
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $conda_dir_path;
+    my $conda_dir_path_ref;
 
     my $tmpl = {
-        conda_dir_path => {
+        conda_dir_path_ref => {
+            default     => [],
             required    => 1,
             strict_type => 1,
-            store       => \$conda_dir_path,
+            store       => \$conda_dir_path_ref,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Search for conda in PATH and exit if not present
-    if ( $ENV{PATH} =~ /conda/xms ) {
+    if ( $ENV{PATH} =~ /conda/ ) {
         say STDERR q{Program check: conda installed};
     }
     else {
@@ -307,9 +309,9 @@ sub conda_check {
     }
 
     # Search for conda directory in supplied path to conda
-    if ( !-d $conda_dir_path ) {
+    if ( none { -d $_ } @{$conda_dir_path_ref} ) {
         say STDERR q{Could not find miniconda directory in:} . $SPACE
-          . $conda_dir_path;
+          . join $SPACE, @{$conda_dir_path_ref};
         exit 1;
     }
 
