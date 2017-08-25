@@ -41,7 +41,9 @@ $parameter{bash_set_errexit} = 0;
 $parameter{bash_set_nounset} = 0;
 
 ## Conda
-$parameter{conda_dir_path} = catdir( $ENV{HOME}, 'miniconda' );
+$parameter{conda_dir_path} = [ catdir( $ENV{HOME}, 'miniconda'), 
+                               catdir( $ENV{HOME}, 'miniconda2'),
+                               catdir( $ENV{HOME}, 'miniconda3') ];
 $parameter{python_version} = '2.7';
 
 ## Bioconda channel
@@ -151,7 +153,7 @@ GetOptions(
     'see|bash_set_errexit'          => \$parameter{bash_set_errexit},
     'snu|bash_set_nounset'          => \$parameter{bash_set_nounset},
     'env|conda_environment:s'       => \$parameter{conda_environment},
-    'cdp|conda_dir_path:s'          => \$parameter{conda_dir_path},
+    'cdp|conda_dir_path:s'          => \@{ $parameter{conda_dir_path} },
     'cdu|conda_update'              => \$parameter{conda_update},
     'bcv|bioconda=s'                => \%{ $parameter{bioconda} },
     'pip|pip=s'                     => \%{ $parameter{pip} },
@@ -274,7 +276,7 @@ print STDOUT q{Will write install instructions to '} . $file_name_path, "'\n";
 ## Check existance of conda environment
 conda_check(
     {
-        conda_dir_path  => $parameter{conda_dir_path},
+        conda_dir_path_ref  => $parameter{conda_dir_path},
     }
 );
 
