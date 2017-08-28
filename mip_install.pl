@@ -30,7 +30,6 @@ use MIP::PacketManager::Conda qw{ conda_create conda_source_activate conda_sourc
 use Script::Utils qw(help set_default_array_parameters);
 use MIP::Check::Unix qw{ check_binary_in_path };
 
-
 our $USAGE = build_usage( {} );
 
 ### Set parameter default
