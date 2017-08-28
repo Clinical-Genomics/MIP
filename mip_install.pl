@@ -26,9 +26,9 @@ use MIP::Language::Shell qw(create_bash_file);
 use Program::Download::Wget qw(wget);
 use MIP::Gnu::Bash qw(gnu_cd);
 use MIP::Gnu::Coreutils qw(gnu_cp gnu_rm gnu_mv gnu_mkdir gnu_link );
-use MIP::PacketManager::Conda qw{ conda_create conda_source_activate conda_source_deactivate };
+use MIP::PacketManager::Conda qw{ conda_create conda_source_activate conda_source_deactivate conda_update conda_check };
 use Script::Utils qw(help set_default_array_parameters);
-
+use MIP::Check::Unix qw{ check_binary_in_path };
 
 our $USAGE = build_usage( {} );
 
@@ -41,7 +41,9 @@ $parameter{bash_set_errexit} = 0;
 $parameter{bash_set_nounset} = 0;
 
 ## Conda
-$parameter{conda_dir_path} = catdir( $ENV{HOME}, 'miniconda' );
+$parameter{conda_dir_path} = [ catdir( $ENV{HOME}, 'miniconda'), 
+                               catdir( $ENV{HOME}, 'miniconda2'),
+                               catdir( $ENV{HOME}, 'miniconda3') ];
 $parameter{python_version} = '2.7';
 
 ## Bioconda channel
@@ -144,14 +146,14 @@ $array_parameter{perl_modules}{default}              = [
     'File::Copy::Recursive',     # VEP
 ];
 
-my $VERSION = '1.2.6';
+my $VERSION = '1.2.7';
 
 ###User Options
 GetOptions(
     'see|bash_set_errexit'          => \$parameter{bash_set_errexit},
     'snu|bash_set_nounset'          => \$parameter{bash_set_nounset},
     'env|conda_environment:s'       => \$parameter{conda_environment},
-    'cdp|conda_dir_path:s'          => \$parameter{conda_dir_path},
+    'cdp|conda_dir_path:s'          => \@{ $parameter{conda_dir_path} },
     'cdu|conda_update'              => \$parameter{conda_update},
     'bcv|bioconda=s'                => \%{ $parameter{bioconda} },
     'pip|pip=s'                     => \%{ $parameter{pip} },
@@ -271,20 +273,39 @@ create_bash_file(
 
 print STDOUT q{Will write install instructions to '} . $file_name_path, "'\n";
 
-## Check existance of conda environment
-check_conda(
+## Scan PATH for conda
+my $binary = q{conda};
+check_binary_in_path(
     {
-        parameter_href => \%parameter,
-        FILEHANDLE     => $FILEHANDLE,
+        binary => $binary,
     }
 );
 
+## Check existance of conda environment
+conda_check(
+    {
+        conda_dir_path_ref  => $parameter{conda_dir_path},
+    }
+);
+
+## Optionally update conda
+if ( $parameter{conda_update} ) {
+    say $FILEHANDLE q{### Updating Conda};
+    conda_update(
+        {
+            FILEHANDLE => $FILEHANDLE,
+        }
+    );
+    say $FILEHANDLE $NEWLINE;
+}
+
+
 if ( exists( $parameter{conda_environment} ) ) {
 
-    ## Check Conda environment
+    ## Check conda environment
     if ( !-d catdir( $parameter{conda_prefix_path} ) ) {
 
-        ## Create Conda environment and install pip
+        ## Create conda environment and install pip
         say $FILEHANDLE q{## Creating conda environment: } 
           . $parameter{conda_environment} 
           . q{and install packages}; 
@@ -300,7 +321,7 @@ if ( exists( $parameter{conda_environment} ) ) {
     }
 }
 
-## Install modules into Conda environment using channel Bioconda
+## Install modules into conda environment using channel Bioconda
 install_bioconda_modules(
     {
         parameter_href => \%parameter,
@@ -612,7 +633,7 @@ sub build_usage {
 
     return <<"END_USAGE";
  $script_name [options]
-    -env/--conda_environment Conda environment (Default: "")
+    -env/--conda_environment conda environment (Default: "")
     -cdp/--conda_dir_path The conda directory path (Default: "HOME/miniconda")
     -cdu/--conda_update Update conda before installing (Supply flag to enable)
     -bvc/--bioconda Set the module version of the programs that can be installed with bioconda (e.g. 'bwa=0.7.12')
@@ -731,86 +752,11 @@ sub print_parameters {
     return;
 }
 
-sub check_conda {
-
-##check_conda
-
-##Function : Check existance of conda environment
-##Returns  : ""
-##Arguments: $parameter_href, $FILEHANDLE
-##         : $parameter_href => Holds all parameters
-##         : $FILEHANDLE     => Filehandle to write to
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
-
-    my $program = 'conda';
-
-    if ( $ENV{PATH} =~ /conda/ ) {
-
-        print STDERR 'Program check: ' . $program . " installed\n";
-    }
-    else {
-
-        print STDERR 'Could not detect ' . $program . " in your PATH\n";
-        exit 1;
-    }
-
-    ##Deactivate any activate env prior to installation
-    my $detect_active_conda_env =
-      q?perl -nae 'if( ($_!~/^root/) && ($_=~/\*/) ) {print $F[0]}'?;
-    my $ret = `conda info --envs | $detect_active_conda_env`;
-
-    if ($ret) {
-
-        print STDOUT 'Found activated conda env: ' . $ret . "\n";
-        print STDOUT 'Please exit conda env: ' . $ret
-          . " with 'source deactivate' before executing install script\n";
-        exit 1;
-    }
-
-    ## Check Conda path
-    if ( !-d $parameter_href->{conda_dir_path} ) {
-
-        print STDERR 'Could not find miniconda directory in: '
-          . catdir( $parameter_href->{conda_dir_path} ), "\n";
-        exit 1;
-    }
-
-    print STDERR 'Writting install instructions for Conda packages', "\n";
-
-    ## Update Conda
-    if ( $parameter_href->{conda_update} ) {
-
-        print $FILEHANDLE '### Update Conda', "\n";
-        print $FILEHANDLE 'conda update -y conda ';
-        print $FILEHANDLE "\n\n";
-    }
-    return;
-}
-
-
 sub install_bioconda_modules {
 
 ##install_bioconda_modules
 
-##Function : Install modules into Conda environment using channel Bioconda
+##Function : Install modules into conda environment using channel Bioconda
 ##Returns  : ""
 ##Arguments: $parameter_href
 ##         : $parameter_href => Holds all parameters
@@ -840,12 +786,12 @@ sub install_bioconda_modules {
     {
 
         ## Install into conda environment using bioconda channel
-        print $FILEHANDLE '### Installing into Conda environment: '
+        print $FILEHANDLE '### Installing into conda environment: '
           . $parameter_href->{conda_environment}, "\n";
     }
     else {
 
-        print $FILEHANDLE '### Installing into Conda main environment', "\n";
+        print $FILEHANDLE '### Installing into conda main environment', "\n";
     }
     print $FILEHANDLE 'conda install ';
 
