@@ -676,7 +676,7 @@ sub read_infile_vcf {
             'TSL',       'Existing_variation',
             'LoF_flags', 'MOTIF_NAME',
             'MOTIF_POS', 'HIGH_INF_POS',
-            'MOTIF_SCORE_CHANGE',
+            'MOTIF_SCORE_CHANGE', 'LoF_filter',
         );
         if ( any { $_ eq $key } @todo_keys ) {
 
