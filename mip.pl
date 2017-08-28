@@ -104,7 +104,7 @@ eval_parameter_hash(
     }
 );
 
-our $VERSION = "v5.0.5";    #Set MIP version
+our $VERSION = "v5.0.6";    #Set MIP version
 
 ## Directories, files, job_ids and sample_info
 my ( %infile, %indir_path, %infile_lane_prefix, %lane,
