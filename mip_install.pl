@@ -144,7 +144,7 @@ $array_parameter{perl_modules}{default}              = [
     'File::Copy::Recursive',     # VEP
 ];
 
-my $VERSION = '1.2.6';
+my $VERSION = '1.2.7';
 
 ###User Options
 GetOptions(
