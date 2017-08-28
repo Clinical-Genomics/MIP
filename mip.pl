@@ -25570,7 +25570,7 @@ sub mfastqc {
     use MIP::IO::Files qw(migrate_files);
     use MIP::Processmanagement::Processes qw(print_wait);
     use MIP::Gnu::Coreutils qw(gnu_cp);
-    use Program::Qc::Fastqc qw(fastqc);
+    use MIP::Program::Qc::Fastqc qw{fastqc};
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_no_dependency_dead_end);
