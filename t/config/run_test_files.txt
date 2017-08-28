@@ -1,9 +1,11 @@
 unix_standard_streams.t
 unix_write_to_file.t
 analysis_get_overall_analysis_type.t
+chanjo_sex.t
 conda_create.t
 conda_source_activate.t
 conda_source_deactivate.t
+conda_update.t
 create_fam_file.t
 cluster_check_max_core_number.t
 cluster_get_core_number.t
@@ -48,6 +50,12 @@ processes_create_job_id_string_for_sample_id.t
 processes_limit_job_id_string.t
 record_add_program_metafile_to_sample_info.t
 record_add_program_outfile_to_sample_info.t
+sambamba_depth.t
+sambamba_flagstat.t
+sambamba_index.t
+sambamba_markdup.t
+sambamba_sort.t
+sambamba_view.t
 shell_build_shebang.t
 shell_create_housekeeping_function.t
 shell_create_error_trap_function.t
