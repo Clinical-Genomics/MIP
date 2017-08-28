@@ -28,6 +28,7 @@ use MIP::Gnu::Bash qw(gnu_cd);
 use MIP::Gnu::Coreutils qw(gnu_cp gnu_rm gnu_mv gnu_mkdir);
 use MIP::PacketManager::Conda qw{ conda_create conda_source_activate conda_source_deactivate conda_update conda_check };
 use Script::Utils qw(help set_default_array_parameters);
+use MIP::Check::Unix qw{ check_binary_in_path };
 
 
 our $USAGE = build_usage( {} );
@@ -272,6 +273,14 @@ create_bash_file(
 );
 
 print STDOUT q{Will write install instructions to '} . $file_name_path, "'\n";
+
+## Scan PATH for conda
+my $binary = q{conda};
+check_binary_in_path(
+    {
+        binary => $binary,
+    }
+);
 
 ## Check existance of conda environment
 conda_check(
