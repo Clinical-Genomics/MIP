@@ -137,8 +137,8 @@ my %specific_argument = (
         expected_output => q{2> stderrfile.test},
     },
     depth_cutoffs_ref => {
-        inputs_ref      => [q{25 100}],
-        expected_output => q{--cov-threshold 25 100},
+        inputs_ref      => [qw{25 100}],
+        expected_output => q{--cov-threshold 25 --cov-threshold 100},
     },
     outfile_path => {
         input           => q{outfile.test},

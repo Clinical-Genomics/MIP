@@ -31,9 +31,10 @@ use lib catdir( dirname($Bin), 'lib' );
 use MIP::Unix::Standard_streams qw{unix_standard_streams};
 use MIP::Unix::Write_to_file qw{unix_write_to_file};
 
-## Constants
 use Params::Check qw{check allow last_error};
 use Readonly;
+
+## Constants
 Readonly my $SPACE => q{ };
 
 sub sambamba_view {
@@ -50,7 +51,7 @@ sub sambamba_view {
 ##          : $stderrfile_path    => Stderrfile path
 ##          : $referencefile_path => Reference for writing CRAM
 ##          : $with_header        => Include header
-##         : $show_progress      => Show progress
+##          : $show_progress      => Show progress
 ##          : $output_format      => Output format
 
     my ($arg_href) = @_;
@@ -374,7 +375,7 @@ sub sambamba_markdup {
 ##          : $show_progress      => Show progress
 ##          : $hash_table_size    => Size of hash table for finding read pairs
 ##          : $overflow_list_size => Size of the overflow list where reads, thrown from the hash table, get a second chance to meet their pairs
-##          : $io_buffer_size      => Two buffers of BUFFER_SIZE *megabytes* each are used for reading and writing BAM during the second pass
+##          : $io_buffer_size     => Two buffers of BUFFER_SIZE *megabytes* each are used for reading and writing BAM during the second pass
 
     my ($arg_href) = @_;
 
@@ -576,7 +577,7 @@ sub sambamba_depth {
 ##          : $region            => List or regions of interest or a single region in form chr:beg-end
 ##          : $filter            => Set custom filter for alignments
 ##          : $fix_mate_overlap  => Detect overlaps of mate reads and handle them on per-base basis
-##          : $min_base_quality  => don't count bases with lower base quality
+##          : $min_base_quality  => Don't count bases with lower base quality
 ##          : $mode              => Mode unit to print the statistics on
 
     my ($arg_href) = @_;
@@ -643,11 +644,11 @@ sub sambamba_depth {
 
         push @commands, q{--regions} . $SPACE . $region;
     }
-    if (@$depth_cutoffs_ref) {
+    if ( @{ $depth_cutoffs_ref } ) {
 
         push @commands,
           q{--cov-threshold} . $SPACE . join q{ --cov-threshold} . $SPACE,
-          @{$depth_cutoffs_ref};
+          @{ $depth_cutoffs_ref };
     }
     if ($min_base_quality) {
 
