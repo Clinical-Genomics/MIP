@@ -2,41 +2,42 @@ package MIP::Gnu::Coreutils;
 
 use strict;
 use warnings;
-use warnings qw( FATAL utf8 );
+use warnings qw{ FATAL utf8 };
 use utf8;    #Allow unicode characters in this script
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
+use open qw{ :encoding(UTF-8) :std };
+use charnames qw{ :full :short };
 use Carp;
 use autodie;
-use Params::Check qw[check allow last_error];
+use Params::Check qw{ check allow last_error };
 $Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 use Readonly;
 
-use FindBin qw($Bin);                 #Find directory of script
-use File::Basename qw(dirname);
-use File::Spec::Functions qw(catdir);
+use FindBin qw{ $Bin };                 #Find directory of script
+use File::Basename qw{ dirname };
+use File::Spec::Functions qw{ catdir };
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), 'lib' );
-use MIP::Unix::Standard_streams qw(unix_standard_streams);
-use MIP::Unix::Write_to_file qw(unix_write_to_file);
+use MIP::Unix::Standard_streams qw{ unix_standard_streams };
+use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
-    use base qw(Exporter);
+    use base qw{ Exporter };
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw(gnu_cp gnu_rm gnu_mv gnu_mkdir gnu_cat gnu_echo gnu_split gnu_sort gnu_printf gnu_sleep);
+      qw{ gnu_cp gnu_rm gnu_mv gnu_mkdir gnu_cat gnu_echo gnu_split gnu_sort gnu_printf gnu_sleep gnu_link };
 }
 
 ## Constants
 Readonly my $SPACE     => q{ };
 Readonly my $COMMA     => q{,};
 Readonly my $EMPTY_STR => q{};
+Readonly my $DOUBLE_QUOTE => q{"};
 
 sub gnu_cp {
 
@@ -127,33 +128,33 @@ sub gnu_cp {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## gnu_cp
     # Stores commands depending on input parameters
-    my @commands = qw(cp);
+    my @commands = q{cp};
 
     # Preserve the specified attributes
     if ( @{$preserve_attributes_ref} ) {
         push @commands,
-          '--preserve=' . join $COMMA, @{$preserve_attributes_ref};
+          q{--preserve=} . join $COMMA, @{$preserve_attributes_ref};
     }
 
     elsif ($preserve) {
-        push @commands, '-p';
+        push @commands, q{-p};
     }
 
     if ($recursive) {
-        push @commands, '--recursive';
+        push @commands, q{--recursive};
     }
 
     if ($force) {
-        push @commands, '--force';
+        push @commands, q{--force};
     }
 
     #Explain what is being done
     if ($verbose) {
-        push @commands, '--verbose';
+        push @commands, q{--verbose};
     }
 
     push @commands, $infile_path;
@@ -244,19 +245,19 @@ sub gnu_mv {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## gnu_mv
     # Stores commands depending on input parameters
-    my @commands = qw(mv);
+    my @commands = q{mv};
 
     if ($force) {
-        push @commands, '--force';
+        push @commands, q{--force};
     }
 
     #Explain what is being done
     if ($verbose) {
-        push @commands, '--verbose';
+        push @commands, q{--verbose};
     }
 
     push @commands, $infile_path;
@@ -348,23 +349,23 @@ sub gnu_rm {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## gnu_rm
     # Stores commands depending on input parameters
-    my @commands = qw(rm);
+    my @commands = q{rm};
 
     if ($recursive) {
-        push @commands, '--recursive';
+        push @commands, q{--recursive};
     }
 
     if ($force) {
-        push @commands, '--force';
+        push @commands, q{--force};
     }
 
     # Explain what is being done
     if ($verbose) {
-        push @commands, '--verbose';
+        push @commands, q{--verbose};
     }
 
     ## Infile
@@ -447,20 +448,20 @@ sub gnu_mkdir {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## gnu_mkdir
     # Stores commands depending on input parametersr
-    my @commands = qw(mkdir);
+    my @commands = q{mkdir};
 
     # Make parent directories as needed
     if ($parents) {
-        push @commands, '--parents';
+        push @commands, q{--parents};
     }
 
     # Explain what is being done
     if ($verbose) {
-        push @commands, '--verbose';
+        push @commands, q{--verbose};
     }
 
     ## Indirectory
@@ -532,18 +533,18 @@ sub gnu_cat {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## gnu_cat
     # Stores commands depending on input parameters
-    my @commands = qw(cat);
+    my @commands = q{cat};
 
     ## Infiles
     push @commands, join $SPACE, @{$infile_paths_ref};
 
     ## Outfile
     if ($outfile_path) {
-        push @commands, '> ' . $outfile_path;
+        push @commands, q{>} . $SPACE . $outfile_path;
     }
 
     push @commands,
@@ -628,27 +629,28 @@ sub gnu_echo {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Echo
     # Stores commands depending on input parameters
-    my @commands = qw(echo);
+    my @commands = q{echo};
 
     ##Options
     if ($enable_interpretation) {
-        push @commands, '-e';
+        push @commands, q{-e};
     }
 
     if ($no_trailing_newline) {
-        push @commands, '-n';
+        push @commands, q{-n};
     }
 
     ## Strings
-    push @commands, q?"? . join( $EMPTY_STR, @{$strings_ref} ) . q?"?;
+    push @commands, 
+      $DOUBLE_QUOTE . join( $EMPTY_STR, @{$strings_ref} ) . $DOUBLE_QUOTE;
 
     ## Outfile
     if ($outfile_path) {
-        push @commands, '> ' . $outfile_path;
+        push @commands, q{>} . $SPACE . $outfile_path;
     }
 
     push @commands,
@@ -756,31 +758,31 @@ sub gnu_split {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## gnu_split
     # Stores commands depending on input parameters
-    my @commands = qw(split);
+    my @commands = q{split};
 
     ## Options
     if ($lines) {
-        push @commands, '--lines=' . $lines;
+        push @commands, q{--lines=} . $lines;
     }
 
     if ($numeric_suffixes) {
-        push @commands, '--numeric-suffixes';
+        push @commands, q{--numeric-suffixes};
     }
 
     if ($suffix_length) {
-        push @commands, '--suffix-length=' . $suffix_length;
+        push @commands, q{--suffix-length=} . $suffix_length;
     }
 
     if ($quiet) {
-        push @commands, '--quiet';
+        push @commands, q{--quiet};
     }
 
     if ($verbose) {
-        push @commands, '--verbose';
+        push @commands, q{--verbose};
     }
 
     ## Infile
@@ -868,15 +870,16 @@ sub gnu_sort {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## gnu_sort
     # Stores commands depending on input parameters
-    my @commands = qw(sort);
+    my @commands = q{sort};
 
     ## Options
     if ( @{$keys_ref} ) {
-        push @commands, '--key ' . join ' --key ', @{$keys_ref};
+        push @commands, q{--key} . $SPACE 
+          . join $SPACE . q{--key} . $SPACE, @{$keys_ref};
     }
 
     ## Infile
@@ -886,7 +889,7 @@ sub gnu_sort {
 
     ## Outfile
     if ($outfile_path) {
-        push @commands, '> ' . $outfile_path;
+        push @commands, q{>} . $SPACE . $outfile_path;
     }
 
     push @commands,
@@ -954,11 +957,11 @@ sub gnu_printf {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## gnu_printf
     # Stores commands depending on input parametersf
-    my @commands = qw(printf);
+    my @commands = q{printf};
 
     ## Options
     if ($format_string) {
@@ -990,8 +993,8 @@ sub gnu_sleep {
 
 ##gnu_sleep
 
-##Function : Perl wrapper for writing sleep recipe to already open $FILEHANDLE or return commands array. Based on sleep 8.Returns.
-##4  : "@commands"
+##Function : Perl wrapper for writing sleep recipe to already open $FILEHANDLE or return commands array. Based on sleep 8.4
+## Returns : "@commands"
 ##Arguments: $seconds_to_sleep, $stderrfile_path, $stderrfile_path_append, $stdoutfile_path, $FILEHANDLE
 ##         : $seconds_to_sleep       => Seconds to sleep
 ##         : $outfile_path           => Outfile path
@@ -1036,17 +1039,127 @@ sub gnu_sleep {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## gnu_sleep
     # Stores commands depending on input parametersf
-    my @commands = qw(sleep);
+    my @commands = q{sleep};
 
     ## Options
     if ($seconds_to_sleep) {
 
         push @commands, $seconds_to_sleep;
     }
+
+    #Redirect stdout to program specific stdout file
+    push @commands,
+      unix_standard_streams(
+        {
+            stdoutfile_path        => $stdoutfile_path,
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+
+    return @commands;
+}
+
+sub gnu_link {
+
+##gnu_ln
+
+##Function : Perl wrapper for writing link recipe to already open $FILEHANDLE or return commands array. Based on link 8.4
+## Returns : "@commands"
+##Arguments: $symbolic, $force, $link_path, $target_path, $stderrfile_path, $stderrfile_path_append, $stdoutfile_path, $FILEHANDLE
+##         : $symbolic               => Create a symbolic link
+##         : $force                  => Remove existing destination files
+##         : $link_path              => Path to link
+##         : $target_path            => Path to target
+##         : $stderrfile_path        => Stderrfile path
+##         : $stderrfile_path_append => Append to stderrinfo to file
+##         : $stdoutfile_path        => Stdoutfile path
+##         : $FILEHANDLE             => Filehandle to write to
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+
+    ## Flatten argument(s)
+    my $symbolic;
+    my $force;
+    my $link_path;
+    my $target_path;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+    my $FILEHANDLE;
+
+    my $tmpl = {
+        symbolic => {
+            default => 0,
+            allow => [0, 1],
+            strict_type => 1,
+            store => \$symbolic
+        },
+        force => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$force
+        },
+        link_path => {
+            required => 1,
+            strict_type => 1,
+            store => \$link_path
+        },
+        target_path => {
+            required => 1,
+            strict_type => 1,
+            store => \$target_path,
+        },
+        stderrfile_path => {
+            strict_type => 1,
+            store       => \$stderrfile_path
+        },
+        stderrfile_path_append => {
+            strict_type => 1,
+            store       => \$stderrfile_path_append
+        },
+        stdoutfile_path => {
+            strict_type => 1,
+            store       => \$stdoutfile_path
+        },
+        FILEHANDLE => {
+            store => \$FILEHANDLE
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## gnu_link
+    # Stores commands depending on input parametersf
+    my @commands = q{link};
+
+    ## Options
+    if ($symbolic) {
+        push @commands, q{--symbolic};
+    }
+
+    if ($force) {
+        push @commands, q{--force};
+    }
+
+    #Add target and link path
+    push @commands, $target_path;
+    push @commands, $link_path;
 
     #Redirect stdout to program specific stdout file
     push @commands,
