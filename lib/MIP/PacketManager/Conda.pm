@@ -20,7 +20,7 @@ use File::Basename qw{ dirname basename fileparse };
 use File::Spec::Functions qw{ catfile catdir devnull };
 use Readonly;
 use List::Util qw{ none };
-use IPC::Cmd qw{ run };
+use IPC::Cmd qw{ can_run run };
 
 ## MIPs lib/
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
@@ -277,8 +277,8 @@ sub conda_check {
 
 ## conda_check
 
-## Function  : Check if Conda is installed, the path to conda is correct
-##             and if a conda environment is activated; Exit if true
+## Function  : Check if the path to conda is correct and if a 
+##           : conda environment is active (exit if true)
 ## Returns   :
 ## Arguments : $conda_dir_path_ref
 ##           : $conda_dir_path_ref => Path to conda directory
@@ -296,17 +296,8 @@ sub conda_check {
             store       => \$conda_dir_path_ref,
         },
     };
-
+    
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    # Search for conda in PATH and exit if not present
-    if ( $ENV{PATH} =~ /conda/ ) {
-        say STDERR q{Program check: conda installed};
-    }
-    else {
-        say STDERR q{Could not detect conda in your PATH};
-        exit 1;
-    }
 
     # Search for conda directory in supplied path to conda
     if ( none { -d $_ } @{$conda_dir_path_ref} ) {
@@ -341,7 +332,8 @@ sub conda_check {
           . q{with 'source deactivate' before executing install script};
         exit 1;
     }
-
+    
+    return;
 }
 
 1;
