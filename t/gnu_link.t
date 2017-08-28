@@ -13,7 +13,7 @@ use Params::Check qw{check allow last_error};
 
 use FindBin qw{$Bin};    #Find directory of script
 use File::Basename qw{dirname basename};
-use File::Spec::Functions qw{catdir};
+use File::Spec::Functions qw{catdir catfile};
 use Getopt::Long;
 use Test::More;
 use Readonly;
@@ -114,12 +114,12 @@ my %base_argument = (
 ## Can be duplicated with %base and/or %specific to enable testing of each individual argument
 my %required_argument = (
     link_path => {
-        input           => q{/test/path/to/link},
-        expected_output => q{/test/path/to/link},
+        input           => catfile(qw{test path to link}),
+        expected_output => q{test/path/to/link},
     },
     target_path => {
-        input           => q{/test/path/to/target},
-        expected_output => q{/test/path/to/target},
+        input           => catfile(qw{test path to target}),
+        expected_output => q{test/path/to/target},
     },
 );
 

@@ -646,7 +646,7 @@ sub gnu_echo {
 
     ## Strings
     push @commands, 
-      $DOUBLE_QUOTE . join $EMPTY_STR, @{$strings_ref} . $DOUBLE_QUOTE;
+      $DOUBLE_QUOTE . join( $EMPTY_STR, @{$strings_ref} ) . $DOUBLE_QUOTE;
 
     ## Outfile
     if ($outfile_path) {

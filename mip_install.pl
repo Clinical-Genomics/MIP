@@ -887,24 +887,22 @@ sub install_bioconda_modules {
             );
 
             foreach my $binary (@bwakit_binaries) {
-
+                # Specifying target and link paths
+                my $target_path = catfile(
+                    $parameter_href->{conda_prefix_path}, q{share},
+                    q{bwakit-} . $parameter_href->{bioconda}{bwakit}
+                    . $parameter_href->{bioconda_bwakit_patch}, $binary
+                );
+                my $link_path = catfile(
+                    $parameter_href->{conda_prefix_path}, q{bin}, $binary
+                );
                 gnu_link(
                     {
-                        FILEHANDLE     => $FILEHANDLE,
-                        target_path    => catfile(
-                            $parameter_href->{conda_prefix_path},
-                            'share',
-                            'bwakit-'
-                              . $parameter_href->{bioconda}{bwakit}
-                              . $parameter_href->{bioconda_bwakit_patch},
-                            $binary
-                        ),
-                        link_path => catfile(
-                            $parameter_href->{conda_prefix_path}, 
-                              q{bin}, $binary
-                        ),
-                        symbolic => 1,
-                        force => 1,
+                        FILEHANDLE  => $FILEHANDLE,
+                        target_path => $target_path,
+                        link_path   => $link_path,
+                        symbolic    => 1,
+                        force       => 1,
                     }
                 );
                 print $FILEHANDLE $NEWLINE;
@@ -930,53 +928,50 @@ sub install_bioconda_modules {
             );
             print $FILEHANDLE "\n\n";
         }
-        if ( $program eq 'picard' ) {
 
+        if ( $program eq 'picard' ) {
+            # Specifying target and link paths
+            my $target_path = catfile(
+                $parameter_href->{conda_prefix_path}, q{share}, q{picard-} 
+                . $parameter_href->{bioconda}{picard} 
+                . $parameter_href->{bioconda_picard_patch}, q{picard.jar}
+            );
+            my $link_path = catfile(
+                $parameter_href->{conda_prefix_path}, q{picard.jar}
+            );
             gnu_link(
                 {
-                    FILEHANDLE     => $FILEHANDLE,
-                    target_path         => catfile(
-                        $parameter_href->{conda_prefix_path},
-                        q{share},
-                        q{picard-}
-                          . $parameter_href->{bioconda}{picard}
-                          . $parameter_href->{bioconda_picard_patch},
-                        q{picard.jar}
-                    ),
-                    link_path => catfile(
-                         $parameter_href->{conda_prefix_path}, q{picard.jar}
-                    ),
-                    symbolic => 1,
-                    force => 1,
+                    FILEHANDLE  => $FILEHANDLE,
+                    target_path => $target_path,
+                    link_path   => $link_path,
+                    symbolic    => 1,
+                    force       => 1,
                 }
             );
             print $FILEHANDLE $NEWLINE;
         }
-        if ( $program eq 'snpeff' ) {
 
+        if ( $program eq 'snpeff' ) {
             ## Define binaries
             my @snpeff_binaries = qw(snpEff.jar snpEff.config);
-
+            
             foreach my $binary (@snpeff_binaries) {
-                
+                # Specifying target and link paths
                 my $target_path = catfile(
-                    $parameter_href->{conda_prefix_path},
+                    $parameter_href->{conda_prefix_path}, q{share}, 
+                    q{snpeff-} . $parameter_href->{bioconda}{snpeff} 
+                    . $parameter_href->{bioconda_snpeff_patch}, $binary
+                );
+                my $link_path = catfile(
+                    $parameter_href->{conda_prefix_path}, $binary
+                );
                 gnu_link(
                     {
-                        FILEHANDLE     => $FILEHANDLE,
-                        target_path    => catfile(
-                            $parameter_href->{conda_prefix_path},
-                            'share',
-                            'snpeff-'
-                              . $parameter_href->{bioconda}{snpeff}
-                              . $parameter_href->{bioconda_snpeff_patch},
-                            $binary
-                        ),
-                        link_path => catfile(
-                            $parameter_href->{conda_prefix_path}, $binary
-                        ),
-                        symbolic => 1,
-                        force => 1,
+                        FILEHANDLE  => $FILEHANDLE,
+                        target_path => $target_path,
+                        link_path   => $link_path,
+                        symbolic    => 1,
+                        force       => 1,
                     }
                 );
                 print $FILEHANDLE $NEWLINE;
@@ -1017,7 +1012,8 @@ sub install_bioconda_modules {
                   )
                 {
 
-                    ## Write instructions to download snpeff database. This is done by install script to avoid race conditin when doing first analysis run in MIP
+                    ## Write instructions to download snpeff database. 
+                    ## This is done by install script to avoid race conditin when doing first analysis run in MIP
                     snpeff_download(
                         {
                             parameter_href     => $parameter_href,
@@ -1028,58 +1024,56 @@ sub install_bioconda_modules {
                 }
             }
         }
-        if ( $program eq 'snpsift' ) {
 
+        if ( $program eq 'snpsift' ) {
             ## Define binaries
             my @snpsift_binaries = qw(SnpSift.jar);
-
+            
             foreach my $binary (@snpsift_binaries) {
-
+                ## Specifying target and link paths
+                my $target_path = catfile(
+                    $parameter_href->{conda_prefix_path}, q{share}, 
+                    q{snpsift-} . $parameter_href->{bioconda}{snpsift}
+                    . $parameter_href->{bioconda_snpsift_patch}, $binary
+                );
+                my $link_path = catfile(
+                    $parameter_href->{conda_prefix_path}, $binary
+                );
                 gnu_link(
                     {
-                        FILEHANDLE     => $FILEHANDLE,
-                        target_path    => catfile(
-                            $parameter_href->{conda_prefix_path},
-                            'share',
-                            'snpsift-'
-                              . $parameter_href->{bioconda}{snpsift}
-                              . $parameter_href->{bioconda_snpsift_patch},
-                            $binary
-                        ),
-                        link_path => catfile(
-                            $parameter_href->{conda_prefix_path}, $binary
-                        ),
-                        symbolic => 1,
-                        force => 1,
+                        FILEHANDLE  => $FILEHANDLE,
+                        target_path => $target_path,
+                        link_path   => $link_path,
+                        symbolic    => 1,
+                        force       => 1,
                     }
                 );
                 print $FILEHANDLE $NEWLINE;
             }
             print $FILEHANDLE $NEWLINE;
         }
+
         if ( $program eq 'manta' ) {
-
+            ## Define binaries
             my @manta_binaries = qw(configManta.py configManta.py.ini);
-
+            
             foreach my $binary (@manta_binaries) {
-
+                ## Specifying target and link paths
+                my $target_path = catfile(
+                    $parameter_href->{conda_prefix_path}, q{share}, q{manta-}
+                    . $parameter_href->{bioconda}{manta}
+                    . $parameter_href->{bioconda_manta_patch}, q{bin}, $binary
+                );
+                my $link_path = catfile(
+                    $parameter_href->{conda_prefix_path}, $binary
+                );
                 gnu_link(
                     {
-                        FILEHANDLE     => $FILEHANDLE,
-                        target_path    => catfile(
-                            $parameter_href->{conda_prefix_path},
-                            'share',
-                            'manta-'
-                              . $parameter_href->{bioconda}{manta}
-                              . $parameter_href->{bioconda_manta_patch},
-                            'bin',
-                            $binary
-                        ),
-                        link_path => catfile(
-                            $parameter_href->{conda_prefix_path}, $binary
-                        ),
-                        symbolic => 1,
-                        force => 1,
+                        FILEHANDLE  => $FILEHANDLE,
+                        target_path => $target_path,
+                        link_path   => $link_path,
+                        symbolic    => 1,
+                        force       => 1,
                     }
                 );
                 print $FILEHANDLE $NEWLINE;
@@ -1622,19 +1616,21 @@ sub picardtools {
     );
     print $FILEHANDLE "\n\n";
 
+    ## Specifying target and link paths
+    my $target_path = catfile(
+        $parameter_href->{conda_prefix_path}, q{share}, q{picard-tools-} 
+        . $parameter_href->{picardtools}, q{picard.jar}
+    );
+    my $link_path = catfile(
+        $parameter_href->{conda_prefix_path}, q{picard.jar}
+    );
     gnu_link(
         {
-            FILEHANDLE     => $FILEHANDLE,
-            target_path    => catfile(
-                $parameter_href->{conda_prefix_path},
-                'share', 'picard-tools-' . $parameter_href->{picardtools},
-                'picard.jar'
-            ),
-            link_path => catfile(
-                $parameter_href->{conda_prefix_path}, 'picard.jar'
-            ),
-            symbolic => 1,
-            force => 1,
+            FILEHANDLE  => $FILEHANDLE,
+            target_path => $target_path,
+            link_path   => $link_path,
+            symbolic    => 1,
+            force       => 1,
         }
     );
     print $FILEHANDLE $NEWLINE;
@@ -1755,15 +1751,18 @@ sub sambamba {
     );
     print $FILEHANDLE "\n\n";
 
+    ## Specifying target and link paths 
+    my $target_path = q{sambamba_v} . $parameter_href->{bioconda}{sambamba};
+    my $link_path = catfile(
+        $parameter_href->{conda_prefix_path}, q{sambamba}
+    );
     gnu_link(
         {
-            FILEHANDLE     => $FILEHANDLE,
-            target_path    => 'sambamba_v' . $parameter_href->{bioconda}{sambamba},
-            link_path => catfile(
-                $parameter_href->{conda_prefix_path},'sambamba',
-            ),
-            symbolic => 1,
-            force => 1,
+            FILEHANDLE  => $FILEHANDLE,
+            target_path => $target_path,
+            link_path   => $link_path,
+            symbolic    => 1,
+            force       => 1,
         }
     );
     print $FILEHANDLE $NEWLINE;
@@ -2221,28 +2220,28 @@ sub snpeff {
     my @snpeff_binaries = qw(snpEff.jar SnpSift.jar snpEff.config);
 
     foreach my $binary (@snpeff_binaries) {
-
+        ## Specifying target and link path
+        my $target_path = catfile(
+            $parameter_href->{conda_prefix_path}, q{share},  q{snpEff.} 
+            . $parameter_href->{snpeff}, $binary
+        );
+        my $link_path = catfile(
+            $parameter_href->{conda_prefix_path}, $binary
+        );
         gnu_link(
             {
-                FILEHANDLE     => $FILEHANDLE,
-                target_path         => catfile(
-                    $parameter_href->{conda_prefix_path},  'share',
-                    'snpEff.' . $parameter_href->{snpeff}, $binary
-                ),
-                link_path => catfile(
-                    $parameter_href->{conda_prefix_path}, $binary
-                ),
-                symbolic => 1,
-                gorce => 1,
+                FILEHANDLE  => $FILEHANDLE,
+                target_path => $target_path,
+                link_path   => $link_path,
+                symbolic    => 1,
+                gorce       => 1,
             }
         );
         print $FILEHANDLE $NEWLINE;
     }
 
     foreach
-      my $genome_version ( @{ $parameter_href->{snpeff_genome_versions} } )
-    {
-
+      my $genome_version ( @{ $parameter_href->{snpeff_genome_versions} } ) {
         ## Check and if required add the vertebrate mitochondrial codon table to snpeff config
         check_mt_codon_table(
             {
@@ -2266,7 +2265,8 @@ sub snpeff {
           )
         {
 
-            ## Write instructions to download snpeff database. This is done by install script to avoid race conditin when doing first analysis run in MIP
+            ## Write instructions to download snpeff database. 
+            ## This is done by install script to avoid race conditin when doing first analysis run in MIP
             snpeff_download(
                 {
                     parameter_href     => $parameter_href,
@@ -3022,18 +3022,21 @@ sub tiddit {
     my $cwd = cwd();
     print $FILEHANDLE '## Make available from conda environment', "\n";
     
+    ## Specifying target and link_path
+    my $target_path = catfile(
+        $parameter_href->{conda_prefix_path}, q{TIDDIT-} 
+        . $parameter_href->{tiddit}, qw{ bin TIDDIT }
+    );
+    my $link_path = catfile(
+        $parameter_href->{conda_prefix_path}, qw{ bin TIDDIT }
+    );
     gnu_link(
         {
-            FILEHANDLE     => $FILEHANDLE,
-            target_path    => catfile(
-                $parameter_href->{conda_prefix_path},
-                'TIDDIT-' . $parameter_href->{tiddit}, qw{ bin TIDDIT }
-            ),
-            link_path => catfile(
-                $parameter_href->{conda_prefix_path}, qw{ bin TIDDIT }
-            ),
-            symbolic => 1,
-            force => 1,
+            FILEHANDLE  => $FILEHANDLE,
+            target_path => $target_path,
+            link_path   => $link_path,
+            symbolic    => 1,
+            force       => 1,
         }
     );
 
