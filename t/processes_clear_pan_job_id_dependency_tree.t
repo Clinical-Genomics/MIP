@@ -85,10 +85,10 @@ BEGIN {
 }
 
 use MIP::Processmanagement::Processes
-  qw{clear_sample_id_pan_job_id_dependency_tree};
+  qw{clear_pan_job_id_dependency_tree};
 
 diag(
-"Test clear_sample_id_pan_job_id_dependency_tree $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test clear_pan_job_id_dependency_tree $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments
@@ -112,8 +112,8 @@ my %job_id = (
 
 ### Clear pan job id dependency for sample id
 
-## Add job_ids from MAIN chain to job_id_string
-clear_sample_id_pan_job_id_dependency_tree(
+## Clear job_ids from MAIN chain to job_id_string
+clear_pan_job_id_dependency_tree(
     {
         job_id_href         => \%job_id,
         family_id_chain_key => $family_id_chain_key,
@@ -121,10 +121,9 @@ clear_sample_id_pan_job_id_dependency_tree(
     }
 );
 
-my $result_ref      = $job_id{$family_id_chain_key}{$pan_chain_key};
+my $result          = scalar @{ $job_id{$family_id_chain_key}{$pan_chain_key} };
 my $expected_result = 0;
-is( @{$result_ref}, $expected_result,
-    q{Cleared job_id from pan job_id chain} );
+is( $result, $expected_result, q{Cleared job_ids from pan job_id chain} );
 
 done_testing();
 

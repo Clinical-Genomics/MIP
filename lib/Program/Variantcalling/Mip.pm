@@ -78,7 +78,7 @@ sub vcfparser {
 	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
 	range_feature_file_path => { strict_type => 1, store => \$range_feature_file_path },
 	select_feature_file_path => { strict_type => 1, store => \$select_feature_file_path },
-	select_feature_matching_column => { allow => qr/^\d+$/,
+	select_feature_matching_column => { allow => [undef, qr/^\d+$/],
 					    strict_type => 1, store => \$select_feature_matching_column },
 	select_outfile => { strict_type => 1, store => \$select_outfile },
 	FILEHANDLE => { store => \$FILEHANDLE },
