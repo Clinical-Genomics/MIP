@@ -76,7 +76,7 @@ sub chanjo_sex {
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
         log_file_path   => { strict_type => 1, store => \$log_file_path },
         chr_prefix      => {
-            allow       => [qw{undef chr}],
+            allow       => [undef, qw{chr}],
             strict_type => 1,
             store       => \$chr_prefix
         },

@@ -29,6 +29,7 @@ our $USAGE = build_usage( {} );
 ##Constants
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
+Readonly my $EMPTY_STR  => q{};
 Readonly my $UNDERSCORE => q{_};
 
 my $VERBOSE = 1;
@@ -68,7 +69,7 @@ BEGIN {
 
     $perl_module{'Script::Utils'} = [qw{help}];
 
-  MODULES:
+  PERL_MODULES:
     while ( my ( $module, $module_import ) = each %perl_module ) {
         use_ok( $module, @{$module_import} )
           or BAIL_OUT q{Cannot load } . $module;
@@ -84,63 +85,58 @@ BEGIN {
 }
 
 use MIP::Processmanagement::Processes
-  qw{add_family_merged_job_id_to_family_id_dependency_tree};
+  qw{clear_sample_id_parallel_job_id_dependency_tree};
 
 diag(
-"Test add_family_merged_job_id_to_family_id_dependency_tree $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test clear_sample_id_parallel_job_id_dependency_tree $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments
-my $sample_id           = q{sample3};
+my $family_id           = q{family1};
+my $sample_id           = q{sample1};
 my $path                = q{MAIN};
-my $family_id_chain_key = q{family1} . $UNDERSCORE . $path;
+my $family_id_chain_key = $family_id . $UNDERSCORE . $path;
 my $sample_id_chain_key = $sample_id . $UNDERSCORE . $path;
+my $infile_index        = 0;
+my $sample_id_parallel_chain_key =
+  $sample_id . $UNDERSCORE . q{parallel} . $UNDERSCORE . $path . $infile_index;
+my $pan_chain_key = $family_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
+
+my %infile_lane_prefix = (
+    sample1 => [qw{1_lane1 1_lane2}],
+    sample2 => [qw{2_lane1}],
+    sample3 => [qw{3_lane4 3_lane5}],
+);
 
 my %job_id = (
     $family_id_chain_key => {
-        $sample_id_chain_key => [qw{job_id_1 job_id_2}],
-        q{sample2_MAIN}      => [qw{job_id_3}],
-        q{sample3_MAIN}      => [qw{job_id_4 job_id_5}],
-        $family_id_chain_key => [qw{job_id_6}],
+        q{sample1} . $UNDERSCORE . $path => [qw{job_id_1 job_id_2}],
+        q{sample2} . $UNDERSCORE . $path => [qw{job_id_3}],
+        q{sample3} . $UNDERSCORE . $path => [qw{job_id_4 job_id_5 job_id_8}],
+        q{sample4} . $UNDERSCORE . $path => [undef],
+        $sample_id_parallel_chain_key    => [qw{job_id_10 job_id_11}],
+        $pan_chain_key                   => [qw{job_id_1 job_id_2}],
+        $family_id_chain_key             => [qw{job_id_6}],
     },
 );
 
-### Family_merged jobs
+### Clear parallel job id dependency for sample id
 
-my $chain_key_family_merged_job =
-  $family_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
-
-add_family_merged_job_id_to_family_id_dependency_tree(
+## Clear parallel sample job_ids in the the sample_id chain
+clear_sample_id_parallel_job_id_dependency_tree(
     {
-        job_id_href         => \%job_id,
-        family_id_chain_key => $family_id_chain_key,
-        sample_id_chain_key => $sample_id_chain_key,
+        job_id_href             => \%job_id,
+        infile_lane_prefix_href => \%infile_lane_prefix,
+        family_id_chain_key     => $family_id_chain_key,
+        sample_id               => $sample_id,
+        path                    => $path,
     }
 );
 
-my $no_family_merged_push_result = join $SPACE,
-  @{ $job_id{$family_id_chain_key}{$family_id_chain_key} };
-is( $no_family_merged_push_result, q{job_id_6}, q{No family_merged job_id} );
-
-## Add previous merged job
-$job_id{$family_id_chain_key}{$chain_key_family_merged_job} =
-  [qw{job_id_0 job_id_1}];
-
-add_family_merged_job_id_to_family_id_dependency_tree(
-    {
-        job_id_href         => \%job_id,
-        family_id_chain_key => $family_id_chain_key,
-        sample_id_chain_key => $sample_id_chain_key,
-    }
-);
-
-my $family_merged_push_result = join $SPACE,
-  @{ $job_id{$family_id_chain_key}{$family_id_chain_key} };
-is(
-    $family_merged_push_result,
-    q{job_id_6 job_id_0 job_id_1},
-    q{Pushed family_merged job_id}
-);
+my $result =
+  scalar @{ $job_id{$family_id_chain_key}{$sample_id_parallel_chain_key} };
+my $expected_result = 0;
+is( $result, $expected_result, q{Cleared job_ids from parallel job_id chain} );
 
 done_testing();
 
