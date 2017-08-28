@@ -7,12 +7,9 @@ use utf8;
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
 use Carp;
-use English qw{ -no_match_vars };
 use Params::Check qw{ check allow last_error };
 $Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 
-use Getopt::Long;
-use IO::Handle;
 use IPC::Cmd qw{ can_run };
 
 ## MIPs lib/
