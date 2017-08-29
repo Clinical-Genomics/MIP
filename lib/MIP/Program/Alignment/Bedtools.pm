@@ -109,7 +109,7 @@ sub bedtools_genomecov {
     ## Output
     if ($outfile_path) {
 
-        #Specify output filename
+        # Specify output filename
         push @commands, q{>} . $SPACE . $outfile_path;
     }
 
