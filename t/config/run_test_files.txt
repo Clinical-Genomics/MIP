@@ -4,6 +4,7 @@ analysis_get_overall_analysis_type.t
 conda_create.t
 conda_source_activate.t
 conda_source_deactivate.t
+conda_update.t
 create_fam_file.t
 cluster_check_max_core_number.t
 cluster_get_core_number.t
