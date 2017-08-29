@@ -78,10 +78,10 @@ my @broadcasts;    #Holds all set parameters info after add_to_active_parameter
 my $date_time       = localtime;
 my $date_time_stamp = $date_time->datetime;
 my $date            = $date_time->ymd;
-my $script =
-  fileparse( basename( $PROGRAM_NAME, '.pl' ) )
-  ;                #Catches script name and removes ending
-my $definitions_file = catfile( $Bin, qw(definitions define_parameters.yaml) );
+
+# Catches script name and removes ending
+my $script = fileparse( basename( $PROGRAM_NAME, q{.pl} ) );
+my $definitions_file = catfile( $Bin, qw{definitions define_parameters.yaml} );
 chomp( $date_time_stamp, $date, $script );
 
 ####Set program parameters
@@ -107,7 +107,8 @@ eval_parameter_hash(
     }
 );
 
-our $VERSION = "v5.0.8";    #Set MIP version
+# Set MIP version
+our $VERSION = "v5.0.9";
 
 ## Directories, files, job_ids and sample_info
 my ( %infile, %indir_path, %infile_lane_prefix, %lane,
@@ -822,7 +823,7 @@ foreach my $parameter ( keys %parameter ) {
   KEY:
     foreach my $parameter_name (@parameter_key_to_check) {
 
-        if ( exists( $parameter{$parameter}{$parameter_name} ) ) {
+        if ( exists $parameter{$parameter}{$parameter_name} ) {
 
             ## Test if element from query array exists truth hash
             check_element_exists_in_hash(
@@ -943,6 +944,16 @@ check_program_mode(
     {
         parameter_href        => \%parameter,
         active_parameter_href => \%active_parameter
+    }
+);
+
+## Update program mode depending on dry_run_all flag
+use MIP::Update::Programs qw{update_program_mode_with_dry_run_all};
+update_program_mode_with_dry_run_all(
+    {
+        active_parameter_href => \%active_parameter,
+        programs_ref          => \@{ $parameter{dynamic_parameter}{program} },
+        dry_run_all           => $active_parameter{dry_run_all},
     }
 );
 
@@ -1601,7 +1612,7 @@ if ( $active_parameter{psambamba_depth} > 0 ) {
 
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
-        sambamba_depth(
+        msambamba_depth(
             {
                 parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
@@ -3153,9 +3164,7 @@ sub msacct {
 
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_chain_job_ids_dependency_add_to_path(
             {
@@ -3476,9 +3485,7 @@ sub analysisrunstatus {
 
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_chain_job_ids_dependency_add_to_path(
             {
@@ -3793,9 +3800,7 @@ sub mmultiqc {
 
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_chain_job_ids_dependency_add_to_path(
             {
@@ -3942,9 +3947,7 @@ sub mqccollect {
 
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         ## Collect QC metadata info for later use
         my $qc_metric_outfile = $$family_id_ref . q{_qc_metrics.yaml};
@@ -4476,9 +4479,7 @@ q?perl -nae 'unless($_=~/##contig=<ID=NC_007605,length=171823>/ || $_=~/##contig
 
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_job_sample_id_dependency_family_dead_end(
             {
@@ -4892,9 +4893,7 @@ sub endvariantannotationblock {
             }
         );
 
-        if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-            && ( !$active_parameter_href->{dry_run_all} ) )
-        {
+        if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
             if ( $vcfparser_outfile_counter == 1 ) {
 
@@ -4949,9 +4948,7 @@ sub endvariantannotationblock {
 
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_job_sample_id_dependency_add_to_family(
             {
@@ -5491,9 +5488,7 @@ sub rankvariant {
             say $FILEHANDLE q{wait}, "\n";
         }
 
-        if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-            && ( !$active_parameter_href->{dry_run_all} ) )
-        {
+        if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
             my $qc_genmod_outfile =
                 $outfile_prefix . q{_}
@@ -5537,9 +5532,7 @@ sub rankvariant {
 
         close($FILEHANDLE);
 
-        if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-            && ( !$active_parameter_href->{dry_run_all} ) )
-        {
+        if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
             slurm_submit_job_sample_id_dependency_add_to_family(
                 {
@@ -6047,9 +6040,7 @@ sub gatk_variantevalexome {
     );
     say $FILEHANDLE q{wait}, "\n";
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         ## Collect QC metadata info for later use
         my $qc_exome_outfile =
@@ -6067,9 +6058,7 @@ sub gatk_variantevalexome {
     }
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_job_sample_id_dependency_family_dead_end(
             {
@@ -6366,9 +6355,7 @@ sub gatk_variantevalall {
     );
     say $FILEHANDLE q{wait}, "\n";
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         ## Collect QC metadata info for later use
         add_program_outfile_to_sample_info(
@@ -6384,9 +6371,7 @@ sub gatk_variantevalall {
     }
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_job_sample_id_dependency_family_dead_end(
             {
@@ -6952,9 +6937,7 @@ sub snpeff {
         }
     }
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         ## Collect QC metadata info for later use
         my $qc_snpeff_outfile =
@@ -6976,9 +6959,7 @@ sub snpeff {
 
         close($FILEHANDLE);
 
-        if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-            && ( !$active_parameter_href->{dry_run_all} ) )
-        {
+        if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
             slurm_submit_job_sample_id_dependency_add_to_family(
                 {
@@ -7459,9 +7440,7 @@ sub annovar {
 
         close($FILEHANDLE);
 
-        if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-            && ( !$active_parameter_href->{dry_run_all} ) )
-        {
+        if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
             slurm_submit_job_sample_id_dependency_add_to_family(
                 {
@@ -7829,9 +7808,7 @@ sub mvcfparser {
     );
     say $FILEHANDLE q{wait}, "\n";
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         ## Clear old vcfparser entry if present
         if ( defined( $sample_info_href->{$program_name} ) ) {
@@ -7920,9 +7897,7 @@ sub mvcfparser {
         close($FILEHANDLE);
     }
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
@@ -8295,9 +8270,7 @@ sub varianteffectpredictor {
         print $XARGSFILEHANDLE "\n";
     }
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         ## Collect QC metadata info for later use
         my $qc_vep_summary_outfile =
@@ -8373,9 +8346,7 @@ sub varianteffectpredictor {
         say $FILEHANDLE q{wait}, "\n";
     }
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
@@ -8614,9 +8585,7 @@ sub gatk_readbackedphasing {
 
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_job_sample_id_dependency_add_to_family(
             {
@@ -8785,9 +8754,7 @@ sub gatk_phasebytransmission {
 
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_job_sample_id_dependency_add_to_family(
             {
@@ -9028,9 +8995,7 @@ sub mpeddy {
     );
     say $FILEHANDLE "\n";
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         my %peddy_output = (
             ped_check => 'csv',
@@ -9056,9 +9021,7 @@ sub mpeddy {
 
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_job_sample_id_dependency_family_dead_end(
             {
@@ -9453,9 +9416,7 @@ sub mplink {
     );
     say $FILEHANDLE "\n";
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         if ( scalar( @{ $active_parameter_href->{sample_ids} } ) > 1 )
         {    #Only perform if more than 1 sample
@@ -9504,9 +9465,7 @@ sub mplink {
 
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_job_sample_id_dependency_family_dead_end(
             {
@@ -9740,9 +9699,7 @@ sub variant_integrity {
             );
             say $FILEHANDLE "\n";
 
-            if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-                && ( !$active_parameter_href->{dry_run_all} ) )
-            {
+            if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
                 ## Collect QC metadata info for later use
                 add_program_outfile_to_sample_info(
@@ -9778,9 +9735,7 @@ sub variant_integrity {
                 );
                 say $FILEHANDLE "\n";
 
-                if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-                    && ( !$active_parameter_href->{dry_run_all} ) )
-                {
+                if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
                     ## Collect QC metadata info for later use
                     add_program_outfile_to_sample_info(
@@ -9798,9 +9753,7 @@ sub variant_integrity {
 
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_job_sample_id_dependency_family_dead_end(
             {
@@ -10107,8 +10060,7 @@ sub vt {
         );
 
         if (   ( $contig_index == 0 )
-            && ( $active_parameter_href->{ "p" . $program_name } == 1 )
-            && ( !$active_parameter_href->{dry_run_all} ) )
+            && ( $active_parameter_href->{ "p" . $program_name } == 1 ) )
         {
 
             my ( $volume, $directory, $stderr_file ) =
@@ -10228,9 +10180,7 @@ sub vt {
 
         close($FILEHANDLE);
     }
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
@@ -10572,9 +10522,7 @@ sub rhocall {
 
         close($FILEHANDLE);
     }
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
@@ -10914,9 +10862,7 @@ sub prepareforvariantannotationblock {
 
         close($FILEHANDLE);
     }
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
@@ -11241,9 +11187,7 @@ sub gatk_combinevariantcallsets {
 
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         $sample_info_href->{vcf_file}{ready_vcf}{path} =
           catfile( $outfamily_directory, $outfile_prefix . $outfile_suffix );
@@ -11944,9 +11888,7 @@ sub gatk_variantrecalibration {
 
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         ## Collect QC metadata info for later use
         # Disabled pedigreeCheck to not include relationship test is qccollect
@@ -12286,9 +12228,7 @@ sub gatk_concatenate_genotypegvcfs {
 
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         if ( $active_parameter_href->{gatk_concatenate_genotypegvcfs_bcf_file}
             eq 1 )
@@ -12630,9 +12570,7 @@ sub gatk_genotypegvcfs {
 
         close($FILEHANDLE);
 
-        if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-            && ( !$active_parameter_href->{dry_run_all} ) )
-        {
+        if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
             slurm_submit_job_sample_id_dependency_step_in_parallel_to_family(
                 {
@@ -12818,9 +12756,7 @@ sub rcoverageplots {
 
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_job_sample_id_dependency_dead_end(
             {
@@ -13050,9 +12986,7 @@ sub bedtools_genomecov {
 
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_job_sample_id_dependency_dead_end(
             {
@@ -13311,9 +13245,7 @@ sub picardtools_collecthsmetrics {
     );
     say $FILEHANDLE q{wait}, "\n";
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         ## Collect QC metadata info for later use
         add_program_outfile_to_sample_info(
@@ -13329,9 +13261,7 @@ sub picardtools_collecthsmetrics {
     }
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_job_sample_id_dependency_dead_end(
             {
@@ -13585,9 +13515,7 @@ sub picardtools_collectmultiplemetrics {
     }
     say $FILEHANDLE q{wait}, "\n";
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         ## Collect QC metadata info for later use
         add_program_outfile_to_sample_info(
@@ -13613,9 +13541,7 @@ sub picardtools_collectmultiplemetrics {
     }
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_job_sample_id_dependency_dead_end(
             {
@@ -13835,9 +13761,7 @@ sub chanjo_sexcheck {
     );
     say $FILEHANDLE "\n";
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         ## Collect QC metadata info for later use
         add_program_outfile_to_sample_info(
@@ -13864,9 +13788,7 @@ sub chanjo_sexcheck {
     }
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_job_sample_id_dependency_dead_end(
             {
@@ -13882,7 +13804,7 @@ sub chanjo_sexcheck {
     }
 }
 
-sub sambamba_depth {
+sub msambamba_depth {
 
 ##sambamba_depth
 
@@ -13996,7 +13918,7 @@ sub sambamba_depth {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
-    use Program::Alignment::Sambamba qw(depth);
+    use MIP::Program::Alignment::Sambamba qw(sambamba_depth);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_dead_end);
@@ -14097,7 +14019,7 @@ sub sambamba_depth {
     }
     $sambamba_filter .= q?'?;
 
-    depth(
+    sambamba_depth(
         {
             depth_cutoffs_ref =>
               \@{ $active_parameter_href->{sambamba_depth_cutoffs} },
@@ -14125,9 +14047,7 @@ sub sambamba_depth {
     );
     say $FILEHANDLE q{wait}, "\n";
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         my $qc_sambamba_path =
           catfile( $outsample_directory, $outfile_prefix . $outfile_suffix );
@@ -14144,9 +14064,7 @@ sub sambamba_depth {
 
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_job_sample_id_dependency_dead_end(
             {
@@ -14638,9 +14556,7 @@ sub sv_reformat {
             }
         );
 
-        if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-            && ( !$active_parameter_href->{dry_run_all} ) )
-        {
+        if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
             if ( $vcfparser_outfile_counter == 1 ) {
 
@@ -14690,9 +14606,7 @@ sub sv_reformat {
     }
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_job_sample_id_dependency_add_to_family(
             {
@@ -15319,9 +15233,7 @@ sub sv_rankvariant {
     }
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         if ( defined( $active_parameter_href->{sv_rank_model_file} ) )
         {    #Add to Sample_info
@@ -15750,9 +15662,7 @@ sub sv_vcfparser {
         say $FILEHANDLE q{wait}, "\n";
     }
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         ## Clear old vcfparser entry if present
         if ( exists( $sample_info_href->{$program_name} ) ) {
@@ -15886,9 +15796,7 @@ sub sv_vcfparser {
     }
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_job_sample_id_dependency_add_to_family(
             {
@@ -16291,9 +16199,7 @@ q?if($alt=~ /\<|\[|\]|\>/) { $alt=~ s/\<|\>//g; $alt=~ s/\:.+//g; if($start >= $
         }
     }
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         my $outfile_sample_info_prefix = $outfile_prefix;
 
@@ -16358,9 +16264,7 @@ q?if($alt=~ /\<|\[|\]|\>/) { $alt=~ s/\<|\>//g; $alt=~ s/\:.+//g; if($start >= $
 
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_job_sample_id_dependency_add_to_family(
             {
@@ -17029,9 +16933,7 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
           . $alt_file_tag
           . $outfile_suffix, "\n";
 
-        if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-            && ( !$active_parameter_href->{dry_run_all} ) )
-        {
+        if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
             add_program_outfile_to_sample_info(
                 {
@@ -17121,9 +17023,7 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
 
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         my $qc_svdb_outfile =
           $$family_id_ref . $outfile_tag . $call_type . $outfile_suffix;
@@ -17619,9 +17519,7 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
 
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         add_program_outfile_to_sample_info(
             {
@@ -18487,9 +18385,7 @@ sub delly_reformat {
     );
     say $FILEHANDLE q{wait}, "\n";
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         add_program_outfile_to_sample_info(
             {
@@ -18502,9 +18398,7 @@ sub delly_reformat {
     }
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_job_sample_id_dependency_add_to_family(
             {
@@ -18876,9 +18770,7 @@ sub delly_call {
 
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_job_sample_id_dependency_add_to_sample(
             {
@@ -19183,9 +19075,7 @@ sub manta {
     );
     say $FILEHANDLE q{wait}, "\n";
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         add_program_outfile_to_sample_info(
             {
@@ -19198,9 +19088,7 @@ sub manta {
     }
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_job_sample_id_dependency_add_to_family(
             {
@@ -19510,9 +19398,7 @@ sub tiddit {
 
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         add_program_outfile_to_sample_info(
             {
@@ -19917,9 +19803,7 @@ q?\'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %M
 
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         ## Collect samtools version in qccollect
         add_program_outfile_to_sample_info(
@@ -20295,9 +20179,7 @@ sub freebayes {
 
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         add_program_outfile_to_sample_info(
             {
@@ -20711,9 +20593,7 @@ sub gatk_haplotypecaller {
     );
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_job_sample_id_dependency_add_to_sample(
             {
@@ -21245,9 +21125,7 @@ sub gatk_baserecalibration {
         }
     );
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         my $most_complete_format_key =
           "most_complete_" . substr( $outfile_suffix, 1 );
@@ -21260,9 +21138,7 @@ sub gatk_baserecalibration {
 
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_job_sample_id_dependency_add_to_sample(
             {
@@ -21698,9 +21574,7 @@ sub gatk_realigner {
             }
         );
 
-        if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-            && ( !$active_parameter_href->{dry_run_all} ) )
-        {
+        if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
             my $most_complete_format_key =
               "most_complete_" . substr( $outfile_suffix, 1 );
@@ -21732,9 +21606,7 @@ sub gatk_realigner {
 
         close($FILEHANDLE);
 
-        if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-            && ( !$active_parameter_href->{dry_run_all} ) )
-        {
+        if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
             slurm_submit_job_sample_id_dependency_add_to_sample(
                 {
@@ -21895,7 +21767,7 @@ sub pmarkduplicates {
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
     use MIP::IO::Files qw(migrate_file);
-    use Program::Alignment::Sambamba qw(flagstat);
+    use MIP::Program::Alignment::Sambamba qw(sambamba_flagstat);
     use MIP::Gnu::Coreutils qw(gnu_cat);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
@@ -22047,7 +21919,7 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
             print $XARGSFILEHANDLE "; ";
 
             ## Process BAM with sambamba flagstat to produce metric file for downstream analysis
-            flagstat(
+            sambamba_flagstat(
                 {
                     infile_path => $outfile_path_prefix . "_"
                       . $contig
@@ -22070,7 +21942,7 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
 
         $markduplicates_program = "sambamba_markdup";
 
-        use Program::Alignment::Sambamba qw(markdup);
+        use MIP::Program::Alignment::Sambamba qw(sambamba_markdup);
 
         ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
             {
@@ -22085,7 +21957,7 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
 
         foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
-            markdup(
+            sambamba_markdup(
                 {
                     infile_path => $file_path_prefix . "_"
                       . $contig
@@ -22110,7 +21982,7 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
             print $XARGSFILEHANDLE "; ";
 
             ## Process BAM with sambamba flagstat to produce metric file for downstream analysis
-            flagstat(
+            sambamba_flagstat(
                 {
                     infile_path => $outfile_path_prefix . "_"
                       . $contig
@@ -22153,9 +22025,7 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
     );
     say $FILEHANDLE q{wait}, "\n";
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         ## Collect QC metadata info for later use
         add_program_outfile_to_sample_info(
@@ -22229,9 +22099,7 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
 
         close($FILEHANDLE);
 
-        if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-            && ( !$active_parameter_href->{dry_run_all} ) )
-        {
+        if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
             slurm_submit_job_sample_id_dependency_add_to_sample(
                 {
@@ -22649,9 +22517,7 @@ sub picardtools_mergesamfiles {
         }
     }
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
@@ -22852,7 +22718,6 @@ sub picardtools_mergesamfiles {
                         (
                             $active_parameter_href->{ "p" . $program_name } == 1
                         )
-                        && ( !$active_parameter_href->{dry_run_all} )
                       )
                     {
 
@@ -23049,9 +22914,7 @@ sub picardtools_mergesamfiles {
                         }
                       );
                 }
-                if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-                    && ( !$active_parameter_href->{dry_run_all} ) )
-                {
+                if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
                     if ( !$$reduce_io_ref ) {   #Run as individual sbatch script
 
@@ -23116,9 +22979,7 @@ sub picardtools_mergesamfiles {
 
         close($FILEHANDLE);
 
-        if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-            && ( !$active_parameter_href->{dry_run_all} ) )
-        {
+        if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
             slurm_submit_job_sample_id_dependency_add_to_sample(
                 {
@@ -23344,9 +23205,7 @@ sub bwa_sampe {
 
         close($FILEHANDLE);
 
-        if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-            && ( !$active_parameter_href->{dry_run_all} ) )
-        {
+        if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
             $sample_info_href->{sample}{$sample_id}{most_complete_bam}{path} =
               catfile( $outsample_directory, $infile_prefix . ".bam" );
@@ -23519,9 +23378,7 @@ sub bwa_aln {
 
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_job_sample_id_dependency_add_to_sample(
             {
@@ -23806,9 +23663,7 @@ sub picardtools_mergerapidreads {
 
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_job_sample_id_dependency_add_to_family(
             {
@@ -23958,7 +23813,7 @@ sub bwa_mem {
     use Program::Alignment::Bwa qw(mem run_bwamem);
     use Program::Alignment::Samtools qw(view stats);
     use Program::Variantcalling::Bedtools qw (intersectbed);
-    use Program::Alignment::Sambamba qw(sort);
+    use MIP::Program::Alignment::Sambamba qw(sambamba_sort);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_step_in_parallel);
@@ -24224,9 +24079,7 @@ sub bwa_mem {
 
                 close($FILEHANDLE);
 
-                if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-                    && ( !$active_parameter_href->{dry_run_all} ) )
-                {
+                if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
                     slurm_submit_job_sample_id_dependency_step_in_parallel(
                         {
@@ -24413,7 +24266,7 @@ sub bwa_mem {
             $paired_end_tracker++;
 
             ## Sort the output from bwa mem|run-bwamem
-            Program::Alignment::Sambamba::sort(
+            sambamba_sort(
                 {
                     infile_path   => $sambamba_sort_infile,
                     outfile_path  => $outfile_path_prefix . $outfile_suffix,
@@ -24523,9 +24376,7 @@ q?perl -ne '$raw; $map; chomp($_); print $_, "\n"; if($_=~/raw total sequences:\
 
             close($FILEHANDLE);
 
-            if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-                && ( !$active_parameter_href->{dry_run_all} ) )
-            {
+            if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
                 $sample_info_href->{sample}{$$sample_id_ref}{most_complete_bam}
                   {path} = catfile( $outsample_directory,
@@ -25423,9 +25274,7 @@ sub madeline {
       . " ";
 
     ## Collect QC metadata info for active program for later use
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         my $qc_madelaine_path =
           catfile( $outfamily_directory, $$family_id_ref . "_madeline.xml" );
@@ -25440,9 +25289,7 @@ sub madeline {
 
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_job_no_dependency_dead_end(
             {
@@ -25570,7 +25417,7 @@ sub mfastqc {
     use MIP::IO::Files qw(migrate_files);
     use MIP::Processmanagement::Processes qw(print_wait);
     use MIP::Gnu::Coreutils qw(gnu_cp);
-    use Program::Qc::Fastqc qw(fastqc);
+    use MIP::Program::Qc::Fastqc qw{fastqc};
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_no_dependency_dead_end);
@@ -25673,9 +25520,7 @@ sub mfastqc {
         say $FILEHANDLE q{&}, "\n";
 
         ## Collect QC metadata info for active program for later use
-        if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-            && ( !$active_parameter_href->{dry_run_all} ) )
-        {
+        if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
             my $qc_fastqc_outdirectory =
               catdir( $outsample_directory, $file_at_lane_level . q{_fastqc} );
@@ -25728,9 +25573,7 @@ sub mfastqc {
 
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_job_no_dependency_dead_end(
             {
@@ -25946,9 +25789,7 @@ sub gzip_fastq {
     }
     say $FILEHANDLE q{wait}, "\n";
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         my $slurm_path = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -26264,9 +26105,7 @@ q?for ((file_counter=0; file_counter<${#splitted_files[@]}; file_counter++)); do
         );
         say $FILEHANDLE "\n";
 
-        if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-            && ( !$active_parameter_href->{dry_run_all} ) )
-        {
+        if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
             my $slurm_path = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -26742,9 +26581,7 @@ sub build_annovar_prerequisites {
       "\n";    #Cleaning up temp directory
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         my $slurm_path = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -27095,9 +26932,7 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
 
         close($FILEHANDLE);
 
-        if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-            && ( !$active_parameter_href->{dry_run_all} ) )
-        {
+        if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
             my $slurm_path = q{MAIN};
 
@@ -27313,9 +27148,7 @@ sub build_bwa_prerequisites {
     }
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         my $slurm_path = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -27871,9 +27704,7 @@ sub build_human_genome_prerequisites {
 
         close($FILEHANDLE);
 
-        if (   ( $active_parameter_href->{ "p" . $program } == 1 )
-            && ( !$active_parameter_href->{dry_run_all} ) )
-        {
+        if ( $active_parameter_href->{ "p" . $program } == 1 ) {
 
             my $slurm_path = q{MAIN};
 
@@ -34754,7 +34585,7 @@ sub split_and_index_aligment_file {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use Program::Alignment::Sambamba qw(view index);
+    use MIP::Program::Alignment::Sambamba qw(sambamba_view sambamba_index);
 
     my $xargs_file_name;
 
@@ -34775,7 +34606,7 @@ sub split_and_index_aligment_file {
     ## Split by contig
     foreach my $contig (@$contigs_ref) {
 
-        Program::Alignment::Sambamba::view(
+        sambamba_view(
             {
                 infile_path =>
                   catfile( $$temp_directory_ref, $infile . $file_suffix ),
@@ -34796,7 +34627,7 @@ sub split_and_index_aligment_file {
         );
         print $XARGSFILEHANDLE "; ";    #Seperate commands
 
-        Program::Alignment::Sambamba::index(
+        sambamba_index(
             {
                 infile_path =>
                   catfile( $$temp_directory_ref, $infile . $file_suffix ),
@@ -35131,9 +34962,7 @@ sub add_most_complete_vcf {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         if ( $vcfparser_outfile_counter == 1 ) {
 
@@ -38309,6 +38138,7 @@ sub check_program_mode {
 
     my @allowed_values = ( 0, 1, 2 );
 
+  PROGRAMS:
     foreach my $program ( @{ $parameter_href->{dynamic_parameter}{program} } ) {
 
         if (
@@ -38319,11 +38149,11 @@ sub check_program_mode {
           )
         {    #If element is not part of array
 
-            $log->fatal( "'"
+            $log->fatal( q{'}
                   . $active_parameter_href->{$program}
-                  . "' Is not an allowed mode for program '--"
+                  . q{' Is not an allowed mode for program '--}
                   . $program
-                  . "'. Set to: "
+                  . q{'. Set to: }
                   . join( "|", @allowed_values ) );
             exit 1;
         }

@@ -93,9 +93,6 @@ diag(
 ## Base arguments
 my $function_base_command = q{chanjo};
 
-#my $filename = 'test.txt';
-#open(my $fh, '>', $filename) or die "Could not open file '$filename' $!";
-
 my %base_argument = (
     FILEHANDLE => {
         input           => undef,
