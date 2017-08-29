@@ -67,7 +67,7 @@ sub check_binary_in_path {
         }
         else {
 
-            say {STDERR} q{Program check: } . $binary . q{ in PATH};
+            say STDERR q{Program check: } . $binary . q{ in PATH};
         }
         return 1;
     }
@@ -80,7 +80,7 @@ sub check_binary_in_path {
         }
         else {
 
-            say {STDERR} q{Could not detect } . $binary . q{ in PATH};
+            say STDERR q{Could not detect } . $binary . q{ in PATH};
         }
         exit 1;
     }
