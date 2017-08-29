@@ -25,7 +25,7 @@ use Script::Utils qw{help};
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 ## Constants
 Readonly my $SPACE   => q{ };
@@ -85,9 +85,8 @@ use MIP::Test::Commands qw{test_function};
 diag(
     q{Test conda_create }
       . $MIP::PacketManager::Conda::VERSION
-      . q{, Perl}
-      . $PERL_VERSION,
-    $EXECUTABLE_NAME
+      . q{, Perl } . $PERL_VERSION
+      . $SPACE . $EXECUTABLE_NAME
 );
 
 ## Base arguments
@@ -120,10 +119,6 @@ my %specific_argument = (
     env_name => {
         input           => q{test_env},
         expected_output => q{--name test_env},
-    },
-    python_version => {
-        input           => '3.6',
-        expected_output => q{python=3.6},
     },
     quiet => {
         input           => 1,
