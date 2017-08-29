@@ -18,7 +18,6 @@ use File::Basename qw{dirname basename};
 use File::Spec::Functions qw{catdir};
 use Getopt::Long;
 use Test::More;
-use FileHandle;
 use Readonly;
 
 ## MIPs lib/
@@ -62,7 +61,6 @@ GetOptions(
 BEGIN {
 
 ### Check all internal dependency modules and imports
-## Modules with import
 
     my %perl_module;
 
@@ -75,7 +73,6 @@ BEGIN {
           or BAIL_OUT 'Cannot load ' . $module;
     }
 
-## Modules
     my @modules = ('MIP::Program::Alignment::Bedtools');
 
     #MODULES

@@ -3,6 +3,7 @@ package MIP::Program::Alignment::Bedtools;
 use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
+use Carp;
 use utf8;    #Allow unicode characters in this script
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
@@ -31,7 +32,6 @@ use MIP::Unix::Standard_streams qw{unix_standard_streams};
 use MIP::Unix::Write_to_file qw{unix_write_to_file};
 
 use Params::Check qw{check allow last_error};
-$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 use Readonly;
 
 ## Constants
@@ -87,13 +87,13 @@ sub bedtools_genomecov {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or die qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
 
     ## Array @commands stores commands depending on input parameters
     my @commands = qw{bedtools genomecov};
 
     ## Options
-    if ( defined($max_coverage) ) {
+    if ( defined $max_coverage ) {
 
         push @commands, q{-max} . $SPACE . $max_coverage;
     }
@@ -113,28 +113,22 @@ sub bedtools_genomecov {
         push @commands, q{>} . $SPACE . $outfile_path;
     }
 
-    if ($stderrfile_path) {
+    # Redirect stderr output to program specific stderr file
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+        }
+      );
 
-        # Redirect stderr output to program specific stderr file
-        push @commands,
-          unix_standard_streams(
-            {
-                stderrfile_path        => $stderrfile_path,
-                stderrfile_path_append => $stderrfile_path_append,
-            }
-          );
-    }
-
-    if ($FILEHANDLE) {
-
-        unix_write_to_file(
-            {
-                commands_ref => \@commands,
-                separator    => $SPACE,
-                FILEHANDLE   => $FILEHANDLE,
-            }
-        );
-    }
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
     return @commands;
 }
 
