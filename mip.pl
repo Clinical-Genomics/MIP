@@ -78,10 +78,10 @@ my @broadcasts;    #Holds all set parameters info after add_to_active_parameter
 my $date_time       = localtime;
 my $date_time_stamp = $date_time->datetime;
 my $date            = $date_time->ymd;
-my $script =
-  fileparse( basename( $PROGRAM_NAME, '.pl' ) )
-  ;                #Catches script name and removes ending
-my $definitions_file = catfile( $Bin, qw(definitions define_parameters.yaml) );
+
+# Catches script name and removes ending
+my $script = fileparse( basename( $PROGRAM_NAME, q{.pl} ) );
+my $definitions_file = catfile( $Bin, qw{definitions define_parameters.yaml} );
 chomp( $date_time_stamp, $date, $script );
 
 ####Set program parameters
@@ -107,7 +107,8 @@ eval_parameter_hash(
     }
 );
 
-our $VERSION = "v5.0.9";    #Set MIP version
+# Set MIP version
+our $VERSION = "v5.0.9";
 
 ## Directories, files, job_ids and sample_info
 my ( %infile, %indir_path, %infile_lane_prefix, %lane,
@@ -822,7 +823,7 @@ foreach my $parameter ( keys %parameter ) {
   KEY:
     foreach my $parameter_name (@parameter_key_to_check) {
 
-        if ( exists( $parameter{$parameter}{$parameter_name} ) ) {
+        if ( exists $parameter{$parameter}{$parameter_name} ) {
 
             ## Test if element from query array exists truth hash
             check_element_exists_in_hash(
@@ -943,6 +944,16 @@ check_program_mode(
     {
         parameter_href        => \%parameter,
         active_parameter_href => \%active_parameter
+    }
+);
+
+## Update program mode depending on dry_run_all flag
+use MIP::Update::Programs qw{update_program_mode_with_dry_run_all};
+update_program_mode_with_dry_run_all(
+    {
+        active_parameter_href => \%active_parameter,
+        programs_ref          => \@{ $parameter{dynamic_parameter}{program} },
+        dry_run_all           => $active_parameter{dry_run_all},
     }
 );
 
@@ -25673,9 +25684,7 @@ sub mfastqc {
         say $FILEHANDLE q{&}, "\n";
 
         ## Collect QC metadata info for active program for later use
-        if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-            && ( !$active_parameter_href->{dry_run_all} ) )
-        {
+        if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
             my $qc_fastqc_outdirectory =
               catdir( $outsample_directory, $file_at_lane_level . q{_fastqc} );
@@ -25728,9 +25737,7 @@ sub mfastqc {
 
     close($FILEHANDLE);
 
-    if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
-        && ( !$active_parameter_href->{dry_run_all} ) )
-    {
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         slurm_submit_job_no_dependency_dead_end(
             {
@@ -38309,6 +38316,7 @@ sub check_program_mode {
 
     my @allowed_values = ( 0, 1, 2 );
 
+  PROGRAMS:
     foreach my $program ( @{ $parameter_href->{dynamic_parameter}{program} } ) {
 
         if (
@@ -38319,11 +38327,11 @@ sub check_program_mode {
           )
         {    #If element is not part of array
 
-            $log->fatal( "'"
+            $log->fatal( q{'}
                   . $active_parameter_href->{$program}
-                  . "' Is not an allowed mode for program '--"
+                  . q{' Is not an allowed mode for program '--}
                   . $program
-                  . "'. Set to: "
+                  . q{'. Set to: }
                   . join( "|", @allowed_values ) );
             exit 1;
         }
