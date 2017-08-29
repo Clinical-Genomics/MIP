@@ -35010,10 +35010,13 @@ sub check_command_in_path {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Check::Unix qw{check_binary_in_path};
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger('MIP');
 
-    my %seen;    #Track program paths that have already been checked
+    # Track program paths that have already been checked
+    my %seen;
 
     foreach my $parameter_name ( keys %$active_parameter_href ) {
 
@@ -35032,19 +35035,12 @@ sub check_command_in_path {
 
                     unless ( $seen{$program} ) {
 
-                        if ( can_run($program) ) {    #IPC::Cmd
-
-                            $log->info(
-                                "Program check: " . $program . " installed\n" );
-                            $seen{$program} = 1;
-                        }
-                        else {
-
-                            $log->fatal( "Could not detect "
-                                  . $program
-                                  . " in your Path\n" );
-                            exit 1;
-                        }
+                        $seen{$program} = check_binary_in_path(
+                            {
+                                binary => $program,
+                                log    => $log,
+                            }
+                        );
                     }
                 }
             }
