@@ -79,7 +79,6 @@ sub conda_create {
         },
         env_name => {
             default     => q{},
-            defined     => 1,
             strict_type => 1,
             store       => \$env_name
         },
