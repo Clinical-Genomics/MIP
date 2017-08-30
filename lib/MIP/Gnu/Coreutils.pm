@@ -1184,14 +1184,17 @@ sub gnu_link {
 
 sub gnu_chmod {
 
-##enable_executable
+## gnu_chmod
 
-##Function : Perl wrapper for writing chmod recipe to already open $FILEHANDLE or return commands array. Based on sleep 8.4
+##Function : Perl wrapper for writing chmod recipe to already open $FILEHANDLE or return commands array. Based on chmod 8.4
 ##Returns  : "@commands"
-##Arguments: $parameter_href, $FILEHANDLE, $binary
-##         : $parameter_href => Holds all parameters
+##Arguments: $file_path, $permission, $FILEHANDLE, $stderrfile_path, $stderfile_path_append, $stdoutfile_path,
+##         : $file_path  => path to file
+##         : $permission => permisions for the file
 ##         : $FILEHANDLE     => FILEHANDLE to write to
-##         : $binary         => The binary file
+##         : $stderrfile_path        => Stderrfile path
+##         : $stderrfile_path_append => Append to stderrinfo to file
+##         : $stdoutfile_path        => Stdoutfile path
 
     my ($arg_href) = @_;
 
@@ -1243,7 +1246,7 @@ sub gnu_chmod {
     # Add the file path
     push @commands, $file_path;
 
-    #Redirect stdout to program specific stdout file
+    # Redirect stdout to program specific stdout file
     push @commands,
       unix_standard_streams(
         {

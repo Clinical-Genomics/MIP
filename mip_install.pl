@@ -1035,7 +1035,7 @@ sub install_bioconda_modules {
             gnu_chmod(
                 {
                     file_path => $file_path,
-                    permission => 'a+x',
+                    permission => q{a+x},
                     FILEHANDLE => $FILEHANDLE,
                 }
             );
