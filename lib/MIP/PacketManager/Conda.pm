@@ -425,13 +425,15 @@ sub conda_install {
         }
     );
 
-    
-    ## Install all bioconda packages
-    foreach my $program ( keys %{ $parameter_href->{bioconda} } ) {
+   
 
-        print $FILEHANDLE $program . '='
-          . $parameter_href->{bioconda}{$program} . q{ };
-    }
+
+    ## Install all bioconda packages
+    #foreach my $program ( keys %{ $parameter_href->{bioconda} } ) {
+
+    #    print $FILEHANDLE $program . '='
+    #     . $parameter_href->{bioconda}{$program} . q{ };
+    #}
 
     print $FILEHANDLE "\n\n";
 
