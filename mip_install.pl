@@ -25,7 +25,7 @@ use lib catdir( $Bin, 'lib' );        #Add MIPs internal lib
 use MIP::Language::Shell qw(create_bash_file);
 use Program::Download::Wget qw(wget);
 use MIP::Gnu::Bash qw(gnu_cd);
-use MIP::Gnu::Coreutils qw(gnu_cp gnu_rm gnu_mv gnu_mkdir gnu_link );
+use MIP::Gnu::Coreutils qw(gnu_cp gnu_rm gnu_mv gnu_mkdir gnu_link gnu_chmod );
 use MIP::PacketManager::Conda qw{ conda_create conda_source_activate conda_source_deactivate conda_update conda_check };
 use Script::Utils qw(help set_default_array_parameters);
 use MIP::Check::Unix qw{ check_binary_in_path };
@@ -213,17 +213,25 @@ GetOptions(
     }
   );
 
+
+## Establish path to conda and check for active conda env
+my $conda_dir_path = conda_check(
+    {
+        conda_dir_path_ref  => $parameter{conda_dir_path},
+    }
+);
+
 ## Update default parameter dependent on other parameters
 if (   ( exists $parameter{conda_environment} )
     && ( $parameter{conda_environment} ) )
 {
 
-    $parameter{conda_prefix_path} = catdir( $parameter{conda_dir_path},
+    $parameter{conda_prefix_path} = catdir( $conda_dir_path,
         'envs', $parameter{conda_environment} );
 }
 else {
 
-    $parameter{conda_prefix_path} = $parameter{conda_dir_path};
+    $parameter{conda_prefix_path} = $conda_dir_path;
 }
 
 if ( !$parameter{vep_cache_dir} ) {
@@ -281,13 +289,6 @@ check_binary_in_path(
     }
 );
 
-## Check existance of conda environment
-conda_check(
-    {
-        conda_dir_path_ref  => $parameter{conda_dir_path},
-    }
-);
-
 ## Optionally update conda
 if ( $parameter{conda_update} ) {
     say $FILEHANDLE q{### Updating Conda};
@@ -299,7 +300,6 @@ if ( $parameter{conda_update} ) {
     say $FILEHANDLE $NEWLINE;
 }
 
-
 if ( exists( $parameter{conda_environment} ) ) {
 
     ## Check conda environment
@@ -308,7 +308,7 @@ if ( exists( $parameter{conda_environment} ) ) {
         ## Create conda environment and install pip
         say $FILEHANDLE q{## Creating conda environment: } 
           . $parameter{conda_environment} 
-          . q{and install packages}; 
+          . q{ and install packages}; 
         conda_create(
             {
                 env_name => $parameter{conda_environment},
@@ -1027,13 +1027,19 @@ sub install_bioconda_modules {
             print $FILEHANDLE $NEWLINE;
 
             ## Make file executable
-            enable_executable(
+            say {$FILEHANDLE} 
+              q{## Changing mode of configManta.py to executable};
+              my $file_path = catfile( 
+                  $parameter_href->{conda_prefix_path}, qw{bin configManta.py} 
+              );
+            gnu_chmod(
                 {
-                    parameter_href => $parameter_href,
-                    FILEHANDLE     => $FILEHANDLE,
-                    binary         => q?configManta.py?,
+                    file_path => $file_path,
+                    permission => q{a+x},
+                    FILEHANDLE => $FILEHANDLE,
                 }
             );
+            print {$FILEHANDLE} $NEWLINE;
         }
     }
     return;
@@ -3652,69 +3658,6 @@ sub check_conda_bin_file_exists {
         print STDERR 'Writting install instructions for ' . $program_name, "\n";
         return 0;
     }
-    return;
-}
-
-sub enable_executable {
-
-##enable_executable
-
-##Function : Make file executable
-##Returns  : ""
-##Arguments: $parameter_href, $FILEHANDLE, $binary
-##         : $parameter_href => Holds all parameters
-##         : $FILEHANDLE     => FILEHANDLE to write to
-##         : $binary         => The binary file
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $FILEHANDLE;
-    my $binary;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
-        binary =>
-          { required => 1, defined => 1, strict_type => 1, store => \$binary },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
-
-    my $pwd = cwd();
-
-    ## Enable executable
-    print $FILEHANDLE '## Enable executable', "\n";
-    gnu_cd(
-        {
-            directory_path =>
-              catdir( $parameter_href->{conda_prefix_path}, 'bin' ),
-            FILEHANDLE => $FILEHANDLE,
-        }
-    );
-    print $FILEHANDLE "\n";
-
-    print $FILEHANDLE 'chmod a+x ';
-    print $FILEHANDLE $binary . q{ };
-    print $FILEHANDLE "\n\n";
-
-    ## Move to back
-    print $FILEHANDLE '## Move to original working directory', "\n";
-    gnu_cd(
-        {
-            directory_path => $pwd,
-            FILEHANDLE     => $FILEHANDLE,
-        }
-    );
-    print $FILEHANDLE "\n\n";
-
     return;
 }
 

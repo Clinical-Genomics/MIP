@@ -12,7 +12,7 @@ use Params::Check qw{ check allow last_error };
 $Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 use Readonly;
 
-use FindBin qw{ $Bin };                 #Find directory of script
+use FindBin qw{ $Bin };               #Find directory of script
 use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir };
 
@@ -26,17 +26,17 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ gnu_cp gnu_rm gnu_mv gnu_mkdir gnu_cat gnu_echo gnu_split gnu_sort gnu_printf gnu_sleep gnu_link };
+      qw{ gnu_cp gnu_rm gnu_mv gnu_mkdir gnu_cat gnu_echo gnu_split gnu_sort gnu_printf gnu_sleep gnu_link gnu_chmod };
 }
 
 ## Constants
-Readonly my $SPACE     => q{ };
-Readonly my $COMMA     => q{,};
-Readonly my $EMPTY_STR => q{};
+Readonly my $SPACE        => q{ };
+Readonly my $COMMA        => q{,};
+Readonly my $EMPTY_STR    => q{};
 Readonly my $DOUBLE_QUOTE => q{"};
 
 sub gnu_cp {
@@ -645,7 +645,7 @@ sub gnu_echo {
     }
 
     ## Strings
-    push @commands, 
+    push @commands,
       $DOUBLE_QUOTE . join( $EMPTY_STR, @{$strings_ref} ) . $DOUBLE_QUOTE;
 
     ## Outfile
@@ -729,12 +729,12 @@ sub gnu_split {
             store       => \$prefix
         },
         lines => {
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xms,
             strict_type => 1,
             store       => \$lines
         },
         suffix_length => {
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xms,
             strict_type => 1,
             store       => \$suffix_length
         },
@@ -878,8 +878,8 @@ sub gnu_sort {
 
     ## Options
     if ( @{$keys_ref} ) {
-        push @commands, q{--key} . $SPACE 
-          . join $SPACE . q{--key} . $SPACE, @{$keys_ref};
+        push @commands, q{--key} . $SPACE . join $SPACE . q{--key} . $SPACE,
+          @{$keys_ref};
     }
 
     ## Infile
@@ -1018,7 +1018,7 @@ sub gnu_sleep {
     my $tmpl = {
         seconds_to_sleep => {
             default     => 0,
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xms,
             strict_type => 1,
             store       => \$seconds_to_sleep
         },
@@ -1104,10 +1104,10 @@ sub gnu_link {
 
     my $tmpl = {
         symbolic => {
-            default => 0,
-            allow => [0, 1],
+            default     => 0,
+            allow       => [ 0, 1 ],
             strict_type => 1,
-            store => \$symbolic
+            store       => \$symbolic
         },
         force => {
             default     => 0,
@@ -1116,14 +1116,14 @@ sub gnu_link {
             store       => \$force
         },
         link_path => {
-            required => 1,
+            required    => 1,
             strict_type => 1,
-            store => \$link_path
+            store       => \$link_path
         },
         target_path => {
-            required => 1,
+            required    => 1,
             strict_type => 1,
-            store => \$target_path,
+            store       => \$target_path,
         },
         stderrfile_path => {
             strict_type => 1,
@@ -1180,6 +1180,92 @@ sub gnu_link {
     );
 
     return @commands;
+}
+
+sub gnu_chmod {
+
+## gnu_chmod
+
+##Function : Perl wrapper for writing chmod recipe to already open $FILEHANDLE or return commands array. Based on chmod 8.4
+##Returns  : "@commands"
+##Arguments: $file_path, $permission, $FILEHANDLE, $stderrfile_path, $stderfile_path_append, $stdoutfile_path,
+##         : $file_path  => path to file
+##         : $permission => permisions for the file
+##         : $FILEHANDLE     => FILEHANDLE to write to
+##         : $stderrfile_path        => Stderrfile path
+##         : $stderrfile_path_append => Append to stderrinfo to file
+##         : $stdoutfile_path        => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_path;
+    my $permission;
+    my $FILEHANDLE;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+
+    my $tmpl = {
+        file_path => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$file_path,
+        },
+        permission => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$permission
+        },
+        FILEHANDLE => {
+            store => \$FILEHANDLE
+        },
+        stderrfile_path => {
+            strict_type => 1,
+            store       => \$stderrfile_path
+        },
+        stderrfile_path_append => {
+            strict_type => 1,
+            store       => \$stderrfile_path_append
+        },
+        stdoutfile_path => {
+            strict_type => 1,
+            store       => \$stdoutfile_path
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @commands = q{chmod};
+
+    # Add the permission
+    push @commands, $permission;
+
+    # Add the file path
+    push @commands, $file_path;
+
+    # Redirect stdout to program specific stdout file
+    push @commands,
+      unix_standard_streams(
+        {
+            stdoutfile_path        => $stdoutfile_path,
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+
+    return @commands;
+
 }
 
 1;

@@ -15,6 +15,7 @@ fastqc.t
 file_check_file_version_exist.t
 gnu_cat.t
 gnu_cd.t
+gnu_chmod.t
 gnu_cp.t
 gnu_echo.t
 gnu_grep.t
