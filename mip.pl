@@ -1633,7 +1633,7 @@ if ( $active_parameter{pbedtools_genomecov} > 0 ) {    #Run bedtools genomecov
 
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
-        bedtools_genomecov(
+        mbedtools_genomecov(
             {
                 parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
@@ -12773,9 +12773,9 @@ sub rcoverageplots {
     return;
 }
 
-sub bedtools_genomecov {
+sub mbedtools_genomecov {
 
-##bedtools_genomecov
+## mbedtools_genomecov
 
 ##Function : Calculates coverage on BAM files.
 ##Returns  : ""
@@ -12886,7 +12886,7 @@ sub bedtools_genomecov {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
-    use Program::Alignment::Bedtools qw(genomecov);
+    use MIP::Program::Alignment::Bedtools qw(bedtools_genomecov);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_dead_end);
 
@@ -12960,7 +12960,7 @@ sub bedtools_genomecov {
 
     ## Bedtools Genomecov
     say $FILEHANDLE "## Calculate coverage metrics on alignment";
-    genomecov(
+    bedtools_genomecov(
         {
             infile_path  => $file_path_prefix . $infile_suffix,
             outfile_path => $outfile_path_prefix,

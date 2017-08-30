@@ -1,6 +1,7 @@
 unix_standard_streams.t
 unix_write_to_file.t
 analysis_get_overall_analysis_type.t
+bedtools_genomecov.t
 chanjo_sex.t
 conda_create.t
 conda_source_activate.t
