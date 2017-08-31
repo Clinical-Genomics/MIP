@@ -37,6 +37,7 @@ use Readonly;
 
 ## Constants
 Readonly my $SPACE => q{ };
+Readonly my $COMMA => q{,};
 
 sub samtools_view {
 
@@ -84,7 +85,9 @@ sub samtools_view {
         },
         outfile_path    => { strict_type => 1, store => \$outfile_path },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        thread_number   => {
+        stderrfile_path_append =>
+          { strict_type => 1, store => \$stderrfile_path },
+        thread_number => {
             allow       => qr/^\d+$/,
             strict_type => 1,
             store       => \$thread_number
@@ -97,7 +100,7 @@ sub samtools_view {
             store       => \$with_header
         },
         output_format => {
-            default     => 'bam',
+            default     => q{bam},
             allow       => [qw{sam bam cram json}],
             strict_type => 1,
             store       => \$output_format
@@ -148,7 +151,7 @@ sub samtools_view {
     if ($outfile_path) {
 
         #Specify output filename
-        push @commands, q{-o} . $outfile_path;
+        push @commands, q{-o} . $SPACE . $outfile_path;
     }
 
     if ($uncompressed_bam_output) {
@@ -215,6 +218,8 @@ sub samtools_index {
         },
         outfile_path    => { strict_type => 1, store => \$outfile_path },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+        stderrfile_path_append =>
+          { strict_type => 1, store => \$stderrfile_path },
         FILEHANDLE => { store       => \$FILEHANDLE },
         bai_format => { strict_type => 1, store => \$bai_format },
     };
@@ -291,6 +296,8 @@ sub samtools_stats {
         },
         outfile_path    => { strict_type => 1, store => \$outfile_path },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+        stderrfile_path_append =>
+          { strict_type => 1, store => \$stderrfile_path },
         FILEHANDLE               => { store => \$FILEHANDLE },
         auto_detect_input_format => {
             default     => 0,
@@ -402,6 +409,8 @@ sub samtools_mpileup {
             store       => \$referencefile_path
         },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+        stderrfile_path_append =>
+          { strict_type => 1, store => \$stderrfile_path_append },
         FILEHANDLE => { store       => \$FILEHANDLE },
         region     => { strict_type => 1, store => \$region },
         output_bcf => { strict_type => 1, store => \$output_bcf },
@@ -434,7 +443,7 @@ sub samtools_mpileup {
 
     if ( @{$output_tags_ref} ) {
 
-        push @commands, q{--output-tags} . $SPACE . join q{,},
+        push @commands, q{--output-tags} . $SPACE . join $COMMA,
           @{$output_tags_ref};
     }
 
@@ -517,6 +526,8 @@ sub samtools_faidx {
         },
         outfile_path    => { strict_type => 1, store => \$outfile_path },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+        stderrfile_path_append =>
+          { strict_type => 1, store => \$stderrfile_path },
         FILEHANDLE => { store => \$FILEHANDLE },
     };
 

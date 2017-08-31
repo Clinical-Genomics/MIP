@@ -66,8 +66,7 @@ BEGIN {
 
     $perl_module{'Script::Utils'} = [qw{help}];
 
-    #PERL MODULES
-    while ( my ( $module, $module_import ) = each %perl_module ) {
+  PERL_MODULES: while ( my ( $module, $module_import ) = each %perl_module ) {
 
         use_ok( $module, @{$module_import} )
           or BAIL_OUT 'Cannot load ' . $module;
@@ -75,8 +74,7 @@ BEGIN {
 
     my @modules = ('MIP::Program::Alignment::Samtools');
 
-    #MODULES
-    for my $module (@modules) {
+  MODULES: for my $module (@modules) {
 
         require_ok($module) or BAIL_OUT 'Cannot load ' . $module;
     }
@@ -118,8 +116,8 @@ my %specific_argument = (
         expected_output => q{2> stderrfile.test},
     },
     outfile_path => {
-        input           => q{outfilePath},
-        expected_output => q{-ooutfilePath},
+        input           => q{outfilepath},
+        expected_output => q{-o outfilepath},
     },
     regions_ref => {
         inputs_ref      => [qw{1:1000000-2000000 2:1000-5000}],
@@ -144,6 +142,10 @@ my %specific_argument = (
     uncompressed_bam_output => {
         input           => q{1},
         expected_output => q{-u},
+    },
+    stderrfile_path_append => {
+        input           => q{stderrfile_path_append},
+        expected_output => q{2> stderrfile_path_append},
     },
 );
 

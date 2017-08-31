@@ -66,8 +66,7 @@ BEGIN {
 
     $perl_module{'Script::Utils'} = [qw{help}];
 
-    #PERL MODULES
-    while ( my ( $module, $module_import ) = each %perl_module ) {
+  PERL_MODULES: while ( my ( $module, $module_import ) = each %perl_module ) {
 
         use_ok( $module, @{$module_import} )
           or BAIL_OUT 'Cannot load ' . $module;
@@ -75,8 +74,7 @@ BEGIN {
 
     my @modules = ('MIP::Program::Alignment::Samtools');
 
-    #MODULES
-    for my $module (@modules) {
+  MODULES: for my $module (@modules) {
 
         require_ok($module) or BAIL_OUT 'Cannot load ' . $module;
     }
@@ -120,6 +118,10 @@ my %specific_argument = (
     bai_format => {
         input           => q{1},
         expected_output => q{-b},
+    },
+    stderrfile_path_append => {
+        input           => q{stderrfile_path_append},
+        expected_output => q{2> stderrfile_path_append},
     },
 );
 

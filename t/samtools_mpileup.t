@@ -66,8 +66,7 @@ BEGIN {
 
     $perl_module{'Script::Utils'} = [qw{help}];
 
-    #PERL MODULES
-    while ( my ( $module, $module_import ) = each %perl_module ) {
+  PERL_MODULES: while ( my ( $module, $module_import ) = each %perl_module ) {
 
         use_ok( $module, @{$module_import} )
           or BAIL_OUT 'Cannot load ' . $module;
@@ -75,8 +74,7 @@ BEGIN {
 
     my @modules = ('MIP::Program::Alignment::Samtools');
 
-    #MODULES
-    for my $module (@modules) {
+  MODULES: for my $module (@modules) {
 
         require_ok($module) or BAIL_OUT 'Cannot load ' . $module;
     }
@@ -114,8 +112,8 @@ my %required_argument = (
         expected_output => q{--output-tags tag1,tag2,etc},
     },
     referencefile_path => {
-        input           => q{fastaRef},
-        expected_output => q{--fasta-ref fastaRef},
+        input           => q{fastaref},
+        expected_output => q{--fasta-ref fastaref},
     },
 );
 
@@ -123,8 +121,8 @@ my %required_argument = (
 my %specific_argument = (
 
     outfile_path => {
-        input           => q{outPath},
-        expected_output => q{--output outPath},
+        input           => q{outpath},
+        expected_output => q{--output outpath},
     },
     stderrfile_path => {
         input           => q{stderrfile.test},
@@ -146,7 +144,10 @@ my %specific_argument = (
         input           => q{45},
         expected_output => q{--adjust-MQ 45},
     },
-
+    stderrfile_path_append => {
+        input           => q{stderrfile_path_append},
+        expected_output => q{2>> stderrfile_path_append},
+    },
 );
 
 ## Coderef - enables generalized use of generate call
