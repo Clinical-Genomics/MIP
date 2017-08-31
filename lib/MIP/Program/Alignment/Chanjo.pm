@@ -21,7 +21,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     use base qw {Exporter};
 
@@ -41,14 +41,15 @@ sub chanjo_sex {
 
 ##Function : Perl wrapper for writing chanjo sex recipe to $FILEHANDLE. Based on chanjo 4.0.0
 ##Returns  : "@commands"
-##Arguments: $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $log_file_path, $chr_prefix, $log_level
-##         : $FILEHANDLE      => Sbatch filehandle to write to
-##         : $infile_path     => Infile path
-##         : $outfile_path    => Outfile path
-##         : $stderrfile_path => Stderrfile path
-##         : $log_file_path   => Log file path
-##         : $chr_prefix      => Chromosome prefix
-##         : $log_level       => Level of logging
+##Arguments: $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $stderrfile_path_append, $log_file_path, $chr_prefix, $log_level
+##         : $FILEHANDLE             => Sbatch filehandle to write to
+##         : $infile_path            => Infile path
+##         : $outfile_path           => Outfile path
+##         : $stderrfile_path        => Stderrfile path
+##         : $stderrfile_path_append => Stderrfile path append
+##         : $log_file_path          => Log file path
+##         : $chr_prefix             => Chromosome prefix
+##         : $log_level              => Level of logging
 
     my ($arg_href) = @_;
 
@@ -60,9 +61,9 @@ sub chanjo_sex {
     my $infile_path;
     my $outfile_path;
     my $stderrfile_path;
+    my $stderrfile_path_append;
     my $log_file_path;
     my $chr_prefix;
-    my $stderrfile_path_append;
 
     my $tmpl = {
         FILEHANDLE  => { required => 1, store => \$FILEHANDLE },
@@ -74,9 +75,11 @@ sub chanjo_sex {
         },
         outfile_path    => { strict_type => 1, store => \$outfile_path },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        log_file_path   => { strict_type => 1, store => \$log_file_path },
-        chr_prefix      => {
-            allow       => [undef, qw{chr}],
+        stderrfile_path_append =>
+          { strict_type => 1, store => \$stderrfile_path_append },
+        log_file_path => { strict_type => 1, store => \$log_file_path },
+        chr_prefix    => {
+            allow       => [ undef, qw{chr} ],
             strict_type => 1,
             store       => \$chr_prefix
         },
@@ -117,26 +120,22 @@ sub chanjo_sex {
 
         push @commands, q{>} . $SPACE . $outfile_path;
     }
-    if ($stderrfile_path) {
 
-        push @commands,
-          unix_standard_streams(
-            {
-                stderrfile_path        => $stderrfile_path,
-                stderrfile_path_append => $stderrfile_path_append,
-            }
-          );
-    }
-    if ($FILEHANDLE) {
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+        }
+      );
 
-        unix_write_to_file(
-            {
-                commands_ref => \@commands,
-                separator    => $SPACE,
-                FILEHANDLE   => $FILEHANDLE,
-            }
-        );
-    }
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
     return @commands;
 }
 

@@ -1314,7 +1314,7 @@ if ( $active_parameter{pbwa_mem} > 0 ) {    #Run BWA Mem
     }
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
-        bwa_mem(
+        mbwa_mem(
             {
                 parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
@@ -23687,9 +23687,9 @@ sub picardtools_mergerapidreads {
     }
 }
 
-sub bwa_mem {
+sub mbwa_mem {
 
-##bwa_mem
+##mbwa_mem
 
 ##Function : Performs alignment of single and paired-end as well as interleaved fastq(.gz) files.
 ##Returns  : ""
@@ -23818,7 +23818,7 @@ sub bwa_mem {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
-    use Program::Alignment::Bwa qw(mem run_bwamem);
+    use MIP::Program::Alignment::Bwa qw(bwa_mem run_bwamem);
     use Program::Alignment::Samtools qw(view stats);
     use Program::Variantcalling::Bedtools qw (intersectbed);
     use MIP::Program::Alignment::Sambamba qw(sambamba_sort);
@@ -24209,7 +24209,7 @@ sub bwa_mem {
 
             if ( $bwa_binary eq "bwa mem" ) { #Prior to ALTs in reference genome
 
-                mem(
+                bwa_mem(
                     {
                         infile_path        => $fastq_file_path,
                         second_infile_path => $second_fastq_file_path,
