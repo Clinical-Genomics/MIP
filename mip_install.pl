@@ -383,7 +383,7 @@ my $target_link_paths_href = create_target_paths(
 );
 say {$FILEHANDLE} q{## Creating symbolic links for bioconda packages};
 TARGET_AND_LINK_PATHS:
-while ( (my $target_path, my $link_path) = each %{$target_link_paths_href} ) {
+while ( my ($target_path, $link_path) = each %{$target_link_paths_href} ) {
     gnu_ln(
         {
             FILEHANDLE  => $FILEHANDLE,
@@ -3533,7 +3533,7 @@ sub create_package_array {
 ##         : Also checks that the version number makes sense
 ##Returns  : "@packages"
 ##Arguments: package_href
-##         : $package_href => ref to hash with packages
+##         : $package_href => Ref to hash with packages
 
     my ($arg_href) = @_;
 
