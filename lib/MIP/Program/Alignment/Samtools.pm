@@ -56,6 +56,7 @@ sub samtools_view {
 ##          : $output_format            => Output format
 ##          : $auto_detect_input_format => Ignored (input format is auto-detected)
 ##          : $uncompressed_bam_output  => Uncompressed bam output
+##          : $stderrfile_path_append   => Stderrfile path append
 
     my ($arg_href) = @_;
 
@@ -86,7 +87,7 @@ sub samtools_view {
         outfile_path    => { strict_type => 1, store => \$outfile_path },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
         stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path },
+          { strict_type => 1, store => \$stderrfile_path_append },
         thread_number => {
             allow       => qr/^\d+$/,
             strict_type => 1,
@@ -198,6 +199,7 @@ sub samtools_index {
 ##          : $stderrfile_path => Stderrfile path
 ##          : $FILEHANDLE      => Sbatch filehandle to write to
 ##          : $bai_format      => Generate BAI-format index for BAM files
+##          : $stderrfile_path_append   => Stderrfile path append
 
     my ($arg_href) = @_;
 
@@ -219,7 +221,7 @@ sub samtools_index {
         outfile_path    => { strict_type => 1, store => \$outfile_path },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
         stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path },
+          { strict_type => 1, store => \$stderrfile_path_append },
         FILEHANDLE => { store       => \$FILEHANDLE },
         bai_format => { strict_type => 1, store => \$bai_format },
     };
@@ -271,6 +273,7 @@ sub samtools_stats {
 ##          : $stderrfile_path          => Stderrfile path
 ##          : $FILEHANDLE               => Sbatch filehandle to write to
 ##          : $auto_detect_input_format => Ignored (input format is auto-detected)
+##          : $stderrfile_path_append   => Stderrfile path append
 
     my ($arg_href) = @_;
 
@@ -297,7 +300,7 @@ sub samtools_stats {
         outfile_path    => { strict_type => 1, store => \$outfile_path },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
         stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path },
+          { strict_type => 1, store => \$stderrfile_path_append },
         FILEHANDLE               => { store => \$FILEHANDLE },
         auto_detect_input_format => {
             default     => 0,
@@ -368,6 +371,7 @@ sub samtools_mpileup {
 ##          : $output_bcf                       => Generate genotype likelihoods in BCF format
 ##          : $per_sample_increased_sensitivity => Apply -m and -F per-sample for increased sensitivity
 ##          : $adjust_mq                        => Adjust mapping quality
+##          : $stderrfile_path_append   => Stderrfile path append
 
     my ($arg_href) = @_;
 
@@ -527,7 +531,7 @@ sub samtools_faidx {
         outfile_path    => { strict_type => 1, store => \$outfile_path },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
         stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path },
+          { strict_type => 1, store => \$stderrfile_path_append },
         FILEHANDLE => { store => \$FILEHANDLE },
     };
 

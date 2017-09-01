@@ -68,7 +68,8 @@ BEGIN {
 
     $perl_module{'Script::Utils'} = [qw{help}];
 
-    PERL_MODULES: while ( my ( $module, $module_import ) = each %perl_module ) {
+  PERL_MODULES:
+    while ( my ( $module, $module_import ) = each %perl_module ) {
 
         use_ok( $module, @{$module_import} )
           or BAIL_OUT 'Cannot load ' . $module;
@@ -77,7 +78,8 @@ BEGIN {
 ## Modules
     my @modules = ('MIP::Program::Alignment::Sambamba');
 
-    MODULES: for my $module (@modules) {
+  MODULES:
+    for my $module (@modules) {
 
         require_ok($module) or BAIL_OUT 'Cannot load ' . $module;
     }
@@ -138,6 +140,10 @@ my %specific_argument = (
     regions_ref => {
         inputs_ref      => [qw{1:1000000-2000000 2:1000-5000}],
         expected_output => q{1:1000000-2000000 2:1000-5000},
+    },
+    stderrfile_path_append => {
+        input           => q{stderrfile_path_append},
+        expected_output => q{2>> stderrfile_path_append},
     },
 );
 

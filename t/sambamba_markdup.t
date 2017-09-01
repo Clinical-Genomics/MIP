@@ -68,7 +68,8 @@ BEGIN {
 
     $perl_module{'Script::Utils'} = [qw{help}];
 
-    PERL_MODULES: while ( my ( $module, $module_import ) = each %perl_module ) {
+  PERL_MODULES:
+    while ( my ( $module, $module_import ) = each %perl_module ) {
 
         use_ok( $module, @{$module_import} )
           or BAIL_OUT 'Cannot load ' . $module;
@@ -76,8 +77,9 @@ BEGIN {
 
 ## Modules
     my @modules = ('MIP::Program::Alignment::Sambamba');
-    
-    MODULES: for my $module (@modules) {
+
+  MODULES:
+    for my $module (@modules) {
 
         require_ok($module) or BAIL_OUT 'Cannot load ' . $module;
     }
@@ -142,6 +144,10 @@ my %specific_argument = (
         input           => 1,
         expected_output => q{--show-progress},
     },
+    stderrfile_path_append => {
+        input           => q{stderrfile_path_append},
+        expected_output => q{2>> stderrfile_path_append},
+    },
 );
 
 ## Coderef - enables generalized use of generate call
@@ -199,4 +205,3 @@ sub build_usage {
     -v/--version Display version
 END_USAGE
 }
-

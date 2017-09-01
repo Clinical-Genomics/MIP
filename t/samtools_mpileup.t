@@ -66,7 +66,8 @@ BEGIN {
 
     $perl_module{'Script::Utils'} = [qw{help}];
 
-  PERL_MODULES: while ( my ( $module, $module_import ) = each %perl_module ) {
+  PERL_MODULES:
+    while ( my ( $module, $module_import ) = each %perl_module ) {
 
         use_ok( $module, @{$module_import} )
           or BAIL_OUT 'Cannot load ' . $module;
@@ -74,7 +75,8 @@ BEGIN {
 
     my @modules = ('MIP::Program::Alignment::Samtools');
 
-  MODULES: for my $module (@modules) {
+  MODULES:
+    for my $module (@modules) {
 
         require_ok($module) or BAIL_OUT 'Cannot load ' . $module;
     }
@@ -205,4 +207,3 @@ sub build_usage {
     -v/--version Display version
 END_USAGE
 }
-

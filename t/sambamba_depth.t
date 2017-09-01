@@ -68,7 +68,8 @@ BEGIN {
 
     $perl_module{'Script::Utils'} = [qw{help}];
 
-    PERL_MODULES: while ( my ( $module, $module_import ) = each %perl_module ) {
+  PERL_MODULES:
+    while ( my ( $module, $module_import ) = each %perl_module ) {
 
         use_ok( $module, @{$module_import} )
           or BAIL_OUT 'Cannot load ' . $module;
@@ -77,7 +78,8 @@ BEGIN {
 ## Modules
     my @modules = ('MIP::Program::Alignment::Sambamba');
 
-    MODULES: for my $module (@modules) {
+  MODULES:
+    for my $module (@modules) {
 
         require_ok($module) or BAIL_OUT 'Cannot load ' . $module;
     }
@@ -92,21 +94,6 @@ diag(
 
 ## Base arguments
 my $function_base_command = q{sambamba};
-
-## Default(s)
-my $min_base_quality;
-my $mode;
-my $fix_mate_overlap;
-
-## Flatten argument(s)
-my $depth_cutoffs_ref;
-my $FILEHANDLE;
-my $infile_path;
-my $outfile_path;
-my $stderrfile_path;
-my $region;
-my $filter;
-my $stderrfile_path_append;
 
 my %base_argument = (
     FILEHANDLE => {
@@ -161,6 +148,10 @@ my %specific_argument = (
     mode => {
         inputs_ref      => [],
         expected_output => q{region},
+    },
+    stderrfile_path_append => {
+        input           => q{stderrfile_path_append},
+        expected_output => q{2>> stderrfile_path_append},
     },
 );
 
@@ -219,4 +210,3 @@ sub build_usage {
     -v/--version Display version
 END_USAGE
 }
-

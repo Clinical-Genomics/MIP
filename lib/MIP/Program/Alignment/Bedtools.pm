@@ -50,6 +50,7 @@ sub bedtools_genomecov {
 ##          : $stderrfile_path    => Stderrfile path
 ##          : $FILEHANDLE         => Sbatch filehandle to write to
 ##          : $max_coverage       => Combine all positions with a depth >= max into a single bin in the histogram
+##          : $stderrfile_path_append   => Stderrfile path append
 
     my ($arg_href) = @_;
 
@@ -79,6 +80,8 @@ sub bedtools_genomecov {
             store       => \$referencefile_path
         },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+        stderrfile_path_append =>
+          { strict_type => 1, store => \$stderrfile_path_append },
         FILEHANDLE   => { store => \$FILEHANDLE },
         max_coverage => {
             allow       => qr/^\d+$/,

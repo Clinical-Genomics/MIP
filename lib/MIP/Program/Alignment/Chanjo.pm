@@ -27,7 +27,6 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{chanjo_sex};
-
 }
 
 use Params::Check qw{check allow last_error};
@@ -49,6 +48,7 @@ sub chanjo_sex {
 ##         : $log_file_path   => Log file path
 ##         : $chr_prefix      => Chromosome prefix
 ##         : $log_level       => Level of logging
+##         : $stderrfile_path_append   => Stderrfile path append
 
     my ($arg_href) = @_;
 
@@ -74,9 +74,11 @@ sub chanjo_sex {
         },
         outfile_path    => { strict_type => 1, store => \$outfile_path },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        log_file_path   => { strict_type => 1, store => \$log_file_path },
-        chr_prefix      => {
-            allow       => [undef, qw{chr}],
+        stderrfile_path_append =>
+          { strict_type => 1, store => \$stderrfile_path_append },
+        log_file_path => { strict_type => 1, store => \$log_file_path },
+        chr_prefix    => {
+            allow       => [ undef, qw{chr} ],
             strict_type => 1,
             store       => \$chr_prefix
         },
@@ -117,26 +119,23 @@ sub chanjo_sex {
 
         push @commands, q{>} . $SPACE . $outfile_path;
     }
-    if ($stderrfile_path) {
 
-        push @commands,
-          unix_standard_streams(
-            {
-                stderrfile_path        => $stderrfile_path,
-                stderrfile_path_append => $stderrfile_path_append,
-            }
-          );
-    }
-    if ($FILEHANDLE) {
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+        }
+      );
 
-        unix_write_to_file(
-            {
-                commands_ref => \@commands,
-                separator    => $SPACE,
-                FILEHANDLE   => $FILEHANDLE,
-            }
-        );
-    }
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+
     return @commands;
 }
 
