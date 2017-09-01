@@ -40,14 +40,14 @@ sub chanjo_sex {
 
 ##Function : Perl wrapper for writing chanjo sex recipe to $FILEHANDLE. Based on chanjo 4.0.0
 ##Returns  : "@commands"
-##Arguments: $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $log_file_path, $chr_prefix, $log_level
-##         : $FILEHANDLE      => Sbatch filehandle to write to
-##         : $infile_path     => Infile path
-##         : $outfile_path    => Outfile path
-##         : $stderrfile_path => Stderrfile path
-##         : $log_file_path   => Log file path
-##         : $chr_prefix      => Chromosome prefix
-##         : $log_level       => Level of logging
+##Arguments: $FILEHANDLE, $infile_path, $stdout_path, $stderrfile_path, $log_file_path, $chr_prefix, $log_level
+##         : $FILEHANDLE               => Sbatch filehandle to write to
+##         : $infile_path              => Infile path
+##         : $stdout_path              => Standard outfile path
+##         : $stderrfile_path          => Stderrfile path
+##         : $log_file_path            => Log file path
+##         : $chr_prefix               => Chromosome prefix
+##         : $log_level                => Level of logging
 ##         : $stderrfile_path_append   => Stderrfile path append
 
     my ($arg_href) = @_;
@@ -58,7 +58,7 @@ sub chanjo_sex {
     ## Flatten argument(s)
     my $FILEHANDLE;
     my $infile_path;
-    my $outfile_path;
+    my $stdout_path;
     my $stderrfile_path;
     my $log_file_path;
     my $chr_prefix;
@@ -72,7 +72,7 @@ sub chanjo_sex {
             strict_type => 1,
             store       => \$infile_path
         },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
+        stdout_path     => { strict_type => 1, store => \$stdout_path },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
         stderrfile_path_append =>
           { strict_type => 1, store => \$stderrfile_path_append },
@@ -115,16 +115,12 @@ sub chanjo_sex {
     ##Infile
     push @commands, $infile_path;
 
-    if ($outfile_path) {
-
-        push @commands, q{>} . $SPACE . $outfile_path;
-    }
-
     push @commands,
       unix_standard_streams(
         {
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
+            stdout_path            => $stdout_path,
         }
       );
 

@@ -195,17 +195,17 @@ sub samtools_index {
 ## Function : Perl wrapper for writing samtools index recipe to $FILEHANDLE. Based on samtools 1.3.1 (using htslib 1.3.1).
 ## Returns  : "@commands"
 ## Arguments: $infile_path, $stderrfile_path, $FILEHANDLE, $bai_format
-##          : $infile_path     => Infile path
-##          : $stderrfile_path => Stderrfile path
-##          : $FILEHANDLE      => Sbatch filehandle to write to
-##          : $bai_format      => Generate BAI-format index for BAM files
+##          : $infile_path              => Infile path
+##          : $stderrfile_path          => Stderrfile path
+##          : $FILEHANDLE               => Sbatch filehandle to write to
+##          : $bai_format               => Generate BAI-format index for BAM files
 ##          : $stderrfile_path_append   => Stderrfile path append
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $infile_path;
-    my $outfile_path;
+    my $stdout_path;
     my $stderrfile_path;
     my $FILEHANDLE;
     my $bai_format;
@@ -218,7 +218,7 @@ sub samtools_index {
             strict_type => 1,
             store       => \$infile_path
         },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
+        stdout_path     => { strict_type => 1, store => \$stdout_path },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
         stderrfile_path_append =>
           { strict_type => 1, store => \$stderrfile_path_append },
@@ -247,6 +247,7 @@ sub samtools_index {
         {
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
+            stdout_path            => $stdout_path
         }
       );
 
@@ -371,7 +372,7 @@ sub samtools_mpileup {
 ##          : $output_bcf                       => Generate genotype likelihoods in BCF format
 ##          : $per_sample_increased_sensitivity => Apply -m and -F per-sample for increased sensitivity
 ##          : $adjust_mq                        => Adjust mapping quality
-##          : $stderrfile_path_append   => Stderrfile path append
+##          : $stderrfile_path_append           => Stderrfile path append
 
     my ($arg_href) = @_;
 
@@ -503,11 +504,12 @@ sub samtools_faidx {
 ## Function : Perl wrapper for writing samtools faidx recipe to $FILEHANDLE. Based on samtools 1.3.1 (using htslib 1.3.1).
 ## Returns  : "@commands"
 ## Arguments: $regions_ref, $infile_path, $outfile_path, $stderrfile_path, $FILEHANDLE
-##          : $regions_ref     => The regions to process {REF}
-##          : $infile_path     => Infile path
-##          : $outfile_path    => Outfile path
-##          : $stderrfile_path => Stderrfile path
-##          : $FILEHANDLE      => Sbatch filehandle to write to
+##          : $regions_ref                      => The regions to process {REF}
+##          : $infile_path                      => Infile path
+##          : $outfile_path                     => Outfile path
+##          : $stderrfile_path                  => Stderrfile path
+##          : $FILEHANDLE                       => Sbatch filehandle to write to
+##          : $stderrfile_path_append           => Stderrfile path append
 
     my ($arg_href) = @_;
 

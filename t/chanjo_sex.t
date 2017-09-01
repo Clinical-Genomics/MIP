@@ -88,7 +88,7 @@ use MIP::Program::Alignment::Chanjo qw{chanjo_sex};
 use MIP::Test::Commands qw{test_function};
 
 diag(
-"Test gnu_sed MIP::Program::Alignment::Chanjo::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test chanjo_sex MIP::Program::Alignment::Chanjo::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments
@@ -115,7 +115,7 @@ my %required_argument = (
 
 ## Specific arguments
 my %specific_argument = (
-    outfile_path => {
+    stdout_path => {
         input           => q{outfile.test},
         expected_output => q{> outfile.test},
     },

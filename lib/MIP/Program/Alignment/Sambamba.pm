@@ -44,15 +44,15 @@ sub sambamba_view {
 ## Function : Perl wrapper for writing sambamba view recipe to $FILEHANDLE. Based on sambamba 0.6.5
 ## Returns  : "@commands"
 ## Arguments: $regions_ref, $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $with_header, $show_progress, $output_format, $referencefile_path
-##          : $regions_ref        => The regions to process {REF}
-##          : $FILEHANDLE         => Sbatch filehandle to write to
-##          : $infile_path        => Infile path
-##          : $outfile_path       => Outfile path
-##          : $stderrfile_path    => Stderrfile path
-##          : $referencefile_path => Reference for writing CRAM
-##          : $with_header        => Include header
-##          : $show_progress      => Show progress
-##          : $output_format      => Output format
+##          : $regions_ref              => The regions to process {REF}
+##          : $FILEHANDLE               => Sbatch filehandle to write to
+##          : $infile_path              => Infile path
+##          : $outfile_path             => Outfile path
+##          : $stderrfile_path          => Stderrfile path
+##          : $referencefile_path       => Reference for writing CRAM
+##          : $with_header              => Include header
+##          : $show_progress            => Show progress
+##          : $output_format            => Output format
 ##          : $stderrfile_path_append   => Stderrfile path append
 
     my ($arg_href) = @_;
@@ -176,10 +176,10 @@ sub sambamba_index {
 ## Function : Perl wrapper for writing sambamba index recipe to $FILEHANDLE. Based on sambamba 0.6.5
 ## Returns  : "@commands"
 ## Arguments: $FILEHANDLE, $infile_path, $stderrfile_path, $show_progress
-##          : $FILEHANDLE      => Sbatch filehandle to write to
-##          : $infile_path     => Infile path
-##          : $stderrfile_path => Stderrfile path
-##          : $show_progress   => Show progress
+##          : $FILEHANDLE               => Sbatch filehandle to write to
+##          : $infile_path              => Infile path
+##          : $stderrfile_path          => Stderrfile path
+##          : $show_progress            => Show progress
 ##          : $stderrfile_path_append   => Stderrfile path append
 
     my ($arg_href) = @_;
@@ -252,13 +252,13 @@ sub sambamba_sort {
 ## Function : Perl wrapper for writing sambamba sort recipe to $FILEHANDLE. Based on sambamba 0.6.5
 ## Returns  : "@commands"
 ## Arguments: $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $show_progress, $memory_limit, $temp_directory
-##          : $FILEHANDLE      => Sbatch filehandle to write to
-##          : $infile_path     => Infile path
-##          : $outfile_path    => Outfile path
-##          : $stderrfile_path => Stderrfile path
-##          : $show_progress   => Show progress
-##          : $memory_limit    => Approximate total memory limit for all threads
-##          : $temp_directory  => Directory for storing intermediate files; default is system directory for temporary files
+##          : $FILEHANDLE               => Sbatch filehandle to write to
+##          : $infile_path              => Infile path
+##          : $outfile_path             => Outfile path
+##          : $stderrfile_path          => Stderrfile path
+##          : $show_progress            => Show progress
+##          : $memory_limit             => Approximate total memory limit for all threads
+##          : $temp_directory           => Directory for storing intermediate files; default is system directory for temporary files
 ##          : $stderrfile_path_append   => Stderrfile path append
 
     my ($arg_href) = @_;
@@ -362,16 +362,16 @@ sub sambamba_markdup {
 
 ## Function : Perl wrapper for writing sambamba markdup recipe to $FILEHANDLE. Based on sambamba 0.6.5
 ## Returns  : "@commands"
-## Arguments: $infile_path, $outfile_path, $stderrfile_path, $FILEHANDLE, temp_directory, $show_progress, $hash_table_size, $overflow_list_size, $io_buffer_size
-##          : $infile_path        => Infile path
-##          : $outfile_path       => Outfile path
-##          : $stderrfile_path    => Stderrfile path
-##          : $FILEHANDLE         => Sbatch filehandle to write to
-##          : $temp_directory     => Specify directory for temporary files
-##          : $show_progress      => Show progress
-##          : $hash_table_size    => Size of hash table for finding read pairs
-##          : $overflow_list_size => Size of the overflow list where reads, thrown from the hash table, get a second chance to meet their pairs
-##          : $io_buffer_size     => Two buffers of BUFFER_SIZE *megabytes* each are used for reading and writing BAM during the second pass
+## Arguments: $infile_path, $stdout_path, $stderrfile_path, $FILEHANDLE, temp_directory, $show_progress, $hash_table_size, $overflow_list_size, $io_buffer_size
+##          : $infile_path              => Infile path
+##          : $stdout_path              => Outfile path
+##          : $stderrfile_path          => Stderrfile path
+##          : $FILEHANDLE               => Sbatch filehandle to write to
+##          : $temp_directory           => Specify directory for temporary files
+##          : $show_progress            => Show progress
+##          : $hash_table_size          => Size of hash table for finding read pairs
+##          : $overflow_list_size       => Size of the overflow list where reads, thrown from the hash table, get a second chance to meet their pairs
+##          : $io_buffer_size           => Two buffers of BUFFER_SIZE *megabytes* each are used for reading and writing BAM during the second pass
 ##          : $stderrfile_path_append   => Stderrfile path append
 
     my ($arg_href) = @_;
@@ -381,7 +381,7 @@ sub sambamba_markdup {
 
     ## Flatten argument(s)
     my $infile_path;
-    my $outfile_path;
+    my $stdout_path;
     my $stderrfile_path;
     my $FILEHANDLE;
     my $temp_directory;
@@ -397,7 +397,7 @@ sub sambamba_markdup {
             strict_type => 1,
             store       => \$infile_path
         },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
+        stdout_path     => { strict_type => 1, store => \$stdout_path },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
         stderrfile_path_append =>
           { strict_type => 1, store => \$stderrfile_path_append },
@@ -460,18 +460,13 @@ sub sambamba_markdup {
     ## Infile
     push @commands, $infile_path;
 
-    ## Outfile
-    if ($outfile_path) {
-
-        push @commands, $outfile_path;
-    }
-
     # Redirect stderr output to program specific stderr file
     push @commands,
       unix_standard_streams(
         {
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
+            stdout_path            => $stdout_path,
         }
       );
 
@@ -492,10 +487,10 @@ sub sambamba_flagstat {
 ## Function : Perl wrapper for writing sambamba flagstat recipe to $FILEHANDLE. Based on sambamba 0.6.5
 ## Returns  : "@commands"
 ## Arguments: $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $show_progress, $memory_limit, $temp_directory
-##          : $FILEHANDLE      => Sbatch filehandle to write to
-##          : $infile_path     => Infile path
-##          : $outfile_path    => Outfile path
-##          : $stderrfile_path => Stderrfile path
+##          : $FILEHANDLE               => Sbatch filehandle to write to
+##          : $infile_path              => Infile path
+##          : $outfile_path             => Outfile path
+##          : $stderrfile_path          => Stderrfile path
 ##          : $stderrfile_path_append   => Stderrfile path append
 
     my ($arg_href) = @_;
@@ -563,16 +558,16 @@ sub sambamba_depth {
 ## Function : Perl wrapper for writing sambamba depth recipe to $FILEHANDLE. Based on sambamba 0.6.5
 ## Returns  : "@commands"
 ## Arguments: $depth_cutoffs_ref, $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $region, $filter, $min_base_quality, $mode, $fix_mate_overlap
-##          : $depth_cutoffs_ref => Multiple thresholds can be provided, for each one an extra column will be added, the percentage of bases in the region where coverage is more than this value {REF}
-##          : $FILEHANDLE        => Sbatch filehandle to write to
-##          : $infile_path       => Infile path
-##          : $outfile_path      => Outfile path
-##          : $stderrfile_path   => Stderrfile path
-##          : $region            => List or regions of interest or a single region in form chr:beg-end
-##          : $filter            => Set custom filter for alignments
-##          : $fix_mate_overlap  => Detect overlaps of mate reads and handle them on per-base basis
-##          : $min_base_quality  => Don't count bases with lower base quality
-##          : $mode              => Mode unit to print the statistics on
+##          : $depth_cutoffs_ref        => Multiple thresholds can be provided, for each one an extra column will be added, the percentage of bases in the region where coverage is more than this value {REF}
+##          : $FILEHANDLE               => Sbatch filehandle to write to
+##          : $infile_path              => Infile path
+##          : $outfile_path             => Outfile path
+##          : $stderrfile_path          => Stderrfile path
+##          : $region                   => List or regions of interest or a single region in form chr:beg-end
+##          : $filter                   => Set custom filter for alignments
+##          : $fix_mate_overlap         => Detect overlaps of mate reads and handle them on per-base basis
+##          : $min_base_quality         => Don't count bases with lower base quality
+##          : $mode                     => Mode unit to print the statistics on
 ##          : $stderrfile_path_append   => Stderrfile path append
 
     my ($arg_href) = @_;

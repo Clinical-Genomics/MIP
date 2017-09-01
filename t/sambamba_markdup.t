@@ -124,7 +124,7 @@ my %specific_argument = (
         input           => q{temp},
         expected_output => q{--tmpdir=temp},
     },
-    outfile_path => {
+    stdout_path => {
         input           => q{outfile.test},
         expected_output => q{outfile.test},
     },
