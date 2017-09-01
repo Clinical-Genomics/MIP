@@ -43,11 +43,11 @@ $parameter{bash_set_nounset} = 0;
 
 ## Conda
 $parameter{conda_dir_path} = [
-    catdir( $ENV{HOME}, 'miniconda' ),
-    catdir( $ENV{HOME}, 'miniconda2' ),
-    catdir( $ENV{HOME}, 'miniconda3' )
+    catdir( $ENV{HOME}, q{miniconda} ),
+    catdir( $ENV{HOME}, q{miniconda2} ),
+    catdir( $ENV{HOME}, q{miniconda3} )
 ];
-$parameter{conda_packages}{python} = '2.7';
+$parameter{conda_packages}{python} = q{2.7};
 $parameter{conda_packages}{pip}    = undef;
 
 ## Bioconda channel
@@ -228,12 +228,10 @@ my $conda_dir_path = conda_check(
 if (   ( exists $parameter{conda_environment} )
     && ( $parameter{conda_environment} ) )
 {
-
     $parameter{conda_prefix_path} =
-      catdir( $conda_dir_path, 'envs', $parameter{conda_environment} );
+      catdir( $conda_dir_path, q{envs}, $parameter{conda_environment} );
 }
 else {
-
     $parameter{conda_prefix_path} = $conda_dir_path;
 }
 
@@ -307,7 +305,7 @@ if ( $parameter{conda_update} ) {
 ## Create an array for conda packages that are to be installed from provided hash
 my @packages = create_package_array(
     {
-        hash_ref => $parameter{conda_packages},
+        package_href => $parameter{conda_packages},
     }
 );
 
@@ -319,7 +317,7 @@ if ( exists( $parameter{conda_environment} )
         ## Create conda environment and install packages
         say $FILEHANDLE q{## Creating conda environment: }
           . $parameter{conda_environment}
-          . q{and install packages};
+          . q{ and install packages};
         conda_create(
             {
                 env_name     => $parameter{conda_environment},
@@ -361,13 +359,12 @@ else {
 ## Create an array for conda packages that are to be installed from provided hash
 @packages = create_package_array(
     {
-        hash_ref => $parameter{bioconda},
+        package_href => $parameter{bioconda},
     }
 );
 say {$FILEHANDLE} q{## Installing bioconda modules in conda environment};
 conda_install(
     {
-        parameter_href => \%parameter,
         FILEHANDLE     => $FILEHANDLE,
         packages_ref   => \@packages,
         conda_channel  => q{bioconda},
@@ -385,12 +382,13 @@ my $target_link_paths_href = create_target_paths(
     }
 );
 say {$FILEHANDLE} q{## Creating symbolic links for bioconda packages};
-while ( each %{$target_link_paths_href} ) {
+TARGET_AND_LINK_PATHS:
+while ( (my $target_path, my $link_path) = each %{$target_link_paths_href} ) {
     gnu_link(
         {
             FILEHANDLE  => $FILEHANDLE,
-            target_path => $_,
-            link_path   => $target_link_paths_href->{$_},
+            target_path => $target_path,
+            link_path   => $link_path,
             symbolic    => 1,
             force       => 1,
         }
@@ -3531,24 +3529,24 @@ sub create_package_array {
 
 ## create_package_list
 
-##Function : Takes a hash reference and creates an array with keys and values joined by "=" if value is defined.
+##Function : Takes a reference to hash of packages and creates an array with keys and values joined by "=" if value is defined.
 ##         : Also checks that the version number makes sense
 ##Returns  : "@packages"
-##Arguments: hash_ref
-##         : $hash_ref => ref to hash
+##Arguments: package_href
+##         : $package_href => ref to hash with packages
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $hash_ref;
+    my $package_href;
 
     my $tmpl = {
-        hash_ref => {
+        package_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$hash_ref
+            store       => \$package_href
         },
     };
 
@@ -3556,17 +3554,17 @@ sub create_package_array {
 
     my @packages;
 
-  PACKAGES:
-    foreach ( keys %{$hash_ref} ) {
-        if ( defined $hash_ref->{$_} ) {
+    PACKAGES:
+    foreach ( keys %{$package_href} ) {
+        if ( defined $package_href->{$_} ) {
 
             # Check that the version number matches pattern
-            if ( $hash_ref->{$_} !~ qr/\d+.\d+ | \d+.\d+.\d+/xms ) {
+            if ( $package_href->{$_} !~ qr/\d+.\d+ | \d+.\d+.\d+/xms ) {
                 croak q{The version number does not match defiend pattern for }
                   . q{package: }
                   . $_;
             }
-            push @packages, $_ . q{=} . $hash_ref->{$_};
+            push @packages, $_ . q{=} . $package_href->{$_};
         }
         else {
             push @packages, $_;
