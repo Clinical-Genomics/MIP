@@ -13,20 +13,13 @@ $Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 
 use Getopt::Long;
 use Cwd;
-use Cwd qw{ abs_path };
-use FindBin qw{ $Bin };               #Find directory of script
 use IO::Handle;
-use File::Basename qw{ dirname basename fileparse };
-use File::Spec::Functions qw{ catfile catdir devnull };
 use Readonly;
 use List::Util qw{ none first };
 use IPC::Cmd qw{ can_run run };
 
 ## MIPs lib/
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
-use Program::Download::Wget qw{ wget };
-use MIP::Gnu::Bash qw{ gnu_cd };
-use MIP::Gnu::Coreutils qw{ gnu_cp gnu_rm gnu_mv gnu_mkdir gnu_link gnu_chmod };
 
 ## Constants
 Readonly my $SPACE   => q{ };

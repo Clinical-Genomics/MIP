@@ -79,10 +79,10 @@ BEGIN {
     }
 }
 
-use MIP::Gnu::Coreutils qw{gnu_link};
+use MIP::Gnu::Coreutils qw{gnu_ln};
 use MIP::Test::Commands qw{test_function};
 
-diag(   q{Test gnu_link }
+diag(   q{Test gnu_ln }
       . $MIP::Gnu::Coreutils::VERSION
       . q{, Perl }
       . $PERL_VERSION
@@ -90,7 +90,7 @@ diag(   q{Test gnu_link }
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{link};
+my $function_base_command = q{ln};
 
 my %base_argument = (
     stderrfile_path => {
@@ -135,7 +135,7 @@ my %specific_argument = (
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&gnu_link;
+my $module_function_cref = \&gnu_ln;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%required_argument, \%specific_argument );

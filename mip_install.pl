@@ -25,7 +25,7 @@ use lib catdir( $Bin, 'lib' );        #Add MIPs internal lib
 use MIP::Language::Shell qw(create_bash_file);
 use Program::Download::Wget qw(wget);
 use MIP::Gnu::Bash qw(gnu_cd);
-use MIP::Gnu::Coreutils qw(gnu_cp gnu_rm gnu_mv gnu_mkdir gnu_link gnu_chmod );
+use MIP::Gnu::Coreutils qw(gnu_cp gnu_rm gnu_mv gnu_mkdir gnu_ln gnu_chmod );
 use MIP::PacketManager::Conda
   qw{ conda_create conda_source_activate conda_source_deactivate conda_update conda_check conda_install };
 use Script::Utils qw(help set_default_array_parameters);
@@ -384,7 +384,7 @@ my $target_link_paths_href = create_target_paths(
 say {$FILEHANDLE} q{## Creating symbolic links for bioconda packages};
 TARGET_AND_LINK_PATHS:
 while ( (my $target_path, my $link_path) = each %{$target_link_paths_href} ) {
-    gnu_link(
+    gnu_ln(
         {
             FILEHANDLE  => $FILEHANDLE,
             target_path => $target_path,
@@ -1360,7 +1360,7 @@ sub picardtools {
     );
     my $link_path =
       catfile( $parameter_href->{conda_prefix_path}, q{picard.jar} );
-    gnu_link(
+    gnu_ln(
         {
             FILEHANDLE  => $FILEHANDLE,
             target_path => $target_path,
@@ -1490,7 +1490,7 @@ sub sambamba {
     my $target_path = q{sambamba_v} . $parameter_href->{bioconda}{sambamba};
     my $link_path =
       catfile( $parameter_href->{conda_prefix_path}, q{sambamba} );
-    gnu_link(
+    gnu_ln(
         {
             FILEHANDLE  => $FILEHANDLE,
             target_path => $target_path,
@@ -1961,7 +1961,7 @@ sub snpeff {
         );
         my $link_path =
           catfile( $parameter_href->{conda_prefix_path}, $binary );
-        gnu_link(
+        gnu_ln(
             {
                 FILEHANDLE  => $FILEHANDLE,
                 target_path => $target_path,
@@ -2764,7 +2764,7 @@ sub tiddit {
     );
     my $link_path =
       catfile( $parameter_href->{conda_prefix_path}, qw{ bin TIDDIT } );
-    gnu_link(
+    gnu_ln(
         {
             FILEHANDLE  => $FILEHANDLE,
             target_path => $target_path,
