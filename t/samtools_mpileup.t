@@ -18,7 +18,6 @@ use File::Basename qw{dirname basename};
 use File::Spec::Functions qw{catdir};
 use Getopt::Long;
 use Test::More;
-use FileHandle;
 use Readonly;
 
 ## MIPs lib/
@@ -62,7 +61,6 @@ GetOptions(
 BEGIN {
 
 ### Check all internal dependency modules and imports
-## Modules with import
 
     my %perl_module;
 
@@ -75,8 +73,7 @@ BEGIN {
           or BAIL_OUT 'Cannot load ' . $module;
     }
 
-## Modules
-    my @modules = ('MIP::Program::Alignment::Sambamba');
+    my @modules = ('MIP::Program::Alignment::Samtools');
 
   MODULES:
     for my $module (@modules) {
@@ -85,15 +82,15 @@ BEGIN {
     }
 }
 
-use MIP::Program::Alignment::Sambamba qw{sambamba_markdup};
+use MIP::Program::Alignment::Samtools qw{samtools_mpileup};
 use MIP::Test::Commands qw{test_function};
 
 diag(
-"Test sambamba_markdup MIP::Program::Alignment::Sambamba::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test samtools_mpileup MIP::Program::Alignment::Samtools::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments
-my $function_base_command = q{sambamba};
+my $function_base_command = q{samtools};
 
 my %base_argument = (
     FILEHANDLE => {
@@ -108,41 +105,46 @@ my %required_argument = (
         input           => undef,
         expected_output => $function_base_command,
     },
-    infile_path => {
-        input           => q{infile.test},
-        expected_output => q{infile.test},
+    infile_paths_ref => {
+        inputs_ref      => [],
+        expected_output => q{},
+    },
+    output_tags_ref => {
+        inputs_ref      => [qw{tag1 tag3 etc}],
+        expected_output => q{--output-tags tag1,tag2,etc},
+    },
+    referencefile_path => {
+        input           => q{fastaref},
+        expected_output => q{--fasta-ref fastaref},
     },
 );
 
 ## Specific arguments
 my %specific_argument = (
+
+    outfile_path => {
+        input           => q{outpath},
+        expected_output => q{--output outpath},
+    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
     },
-    temp_directory => {
-        input           => q{temp},
-        expected_output => q{--tmpdir=temp},
+    region => {
+        input           => q{3:45000-67000},
+        expected_output => q{--region 3:45000-67000},
     },
-    stdout_path => {
-        input           => q{outfile.test},
-        expected_output => q{outfile.test},
+    output_bcf => {
+        input           => q{1},
+        expected_output => q{--BCF},
     },
-    hash_table_size => {
-        input           => q{8},
-        expected_output => q{--hash-table-size=8},
+    per_sample_increased_sensitivity => {
+        input           => q{1},
+        expected_output => q{--per-sample-mF},
     },
-    overflow_list_size => {
-        input           => q{8},
-        expected_output => q{--overflow-list-size=8},
-    },
-    io_buffer_size => {
-        input           => q{16},
-        expected_output => q{--io-buffer-size=16},
-    },
-    show_progress => {
-        input           => 1,
-        expected_output => q{--show-progress},
+    adjust_mq => {
+        input           => q{45},
+        expected_output => q{--adjust-MQ 45},
     },
     stderrfile_path_append => {
         input           => q{stderrfile_path_append},
@@ -151,7 +153,7 @@ my %specific_argument = (
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&sambamba_markdup;
+my $module_function_cref = \&samtools_mpileup;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

@@ -18,7 +18,6 @@ use File::Basename qw{dirname basename};
 use File::Spec::Functions qw{catdir};
 use Getopt::Long;
 use Test::More;
-use FileHandle;
 use Readonly;
 
 ## MIPs lib/
@@ -62,7 +61,6 @@ GetOptions(
 BEGIN {
 
 ### Check all internal dependency modules and imports
-## Modules with import
 
     my %perl_module;
 
@@ -75,8 +73,7 @@ BEGIN {
           or BAIL_OUT 'Cannot load ' . $module;
     }
 
-## Modules
-    my @modules = ('MIP::Program::Alignment::Sambamba');
+    my @modules = ('MIP::Program::Alignment::Samtools');
 
   MODULES:
     for my $module (@modules) {
@@ -85,15 +82,15 @@ BEGIN {
     }
 }
 
-use MIP::Program::Alignment::Sambamba qw{sambamba_markdup};
+use MIP::Program::Alignment::Samtools qw{samtools_view};
 use MIP::Test::Commands qw{test_function};
 
 diag(
-"Test sambamba_markdup MIP::Program::Alignment::Sambamba::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test samtools_view MIP::Program::Alignment::Samtools::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments
-my $function_base_command = q{sambamba};
+my $function_base_command = q{samtools};
 
 my %base_argument = (
     FILEHANDLE => {
@@ -120,29 +117,33 @@ my %specific_argument = (
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
     },
-    temp_directory => {
-        input           => q{temp},
-        expected_output => q{--tmpdir=temp},
+    outfile_path => {
+        input           => q{outfilepath},
+        expected_output => q{-o outfilepath},
     },
-    stdout_path => {
-        input           => q{outfile.test},
-        expected_output => q{outfile.test},
+    regions_ref => {
+        inputs_ref      => [qw{1:1000000-2000000 2:1000-5000}],
+        expected_output => q{1:1000000-2000000 2:1000-5000},
     },
-    hash_table_size => {
-        input           => q{8},
-        expected_output => q{--hash-table-size=8},
+    thread_number => {
+        input           => q{6},
+        expected_output => q{--threads 6},
     },
-    overflow_list_size => {
-        input           => q{8},
-        expected_output => q{--overflow-list-size=8},
+    with_header => {
+        input           => q{1},
+        expected_output => q{-h},
     },
-    io_buffer_size => {
-        input           => q{16},
-        expected_output => q{--io-buffer-size=16},
+    output_format => {
+        input           => q{sam},
+        expected_output => q{--output-fmt SAM},
     },
-    show_progress => {
-        input           => 1,
-        expected_output => q{--show-progress},
+    auto_detect_input_format => {
+        input           => q{1},
+        expected_output => q{-S},
+    },
+    uncompressed_bam_output => {
+        input           => q{1},
+        expected_output => q{-u},
     },
     stderrfile_path_append => {
         input           => q{stderrfile_path_append},
@@ -151,7 +152,7 @@ my %specific_argument = (
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&sambamba_markdup;
+my $module_function_cref = \&samtools_view;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

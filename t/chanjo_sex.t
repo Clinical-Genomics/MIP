@@ -26,7 +26,7 @@ use lib catdir( dirname($Bin), 'lib' );
 use Script::Utils qw{help};
 
 ## Constants
-Readonly my $SPACE => q{ };
+Readonly my $SPACE   => q{ };
 Readonly my $NEWLINE => qq{\n};
 
 our $USAGE = build_usage( {} );
@@ -43,8 +43,7 @@ GetOptions(
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        say {*STDOUT} basename($PROGRAM_NAME) . $SPACE . $VERSION,
-          $NEWLINE;
+        say {*STDOUT} basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
 
         exit;
     },    #Display version number
@@ -68,6 +67,7 @@ BEGIN {
 
     $perl_module{'Script::Utils'} = [qw{help}];
 
+  PERL_MODULES:
     while ( my ( $module, $module_import ) = each %perl_module ) {
 
         use_ok( $module, @{$module_import} )
@@ -77,6 +77,7 @@ BEGIN {
 ## Modules
     my @modules = ('MIP::Program::Alignment::Chanjo');
 
+  MODULES:
     for my $module (@modules) {
 
         require_ok($module) or BAIL_OUT 'Cannot load ' . $module;
@@ -87,7 +88,7 @@ use MIP::Program::Alignment::Chanjo qw{chanjo_sex};
 use MIP::Test::Commands qw{test_function};
 
 diag(
-"Test gnu_sed MIP::Program::Alignment::Chanjo::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test chanjo_sex MIP::Program::Alignment::Chanjo::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments
@@ -114,7 +115,7 @@ my %required_argument = (
 
 ## Specific arguments
 my %specific_argument = (
-    outfile_path => {
+    stdout_path => {
         input           => q{outfile.test},
         expected_output => q{> outfile.test},
     },
@@ -135,7 +136,10 @@ my %specific_argument = (
         input           => q{INFO},
         expected_output => q{--log-level INFO},
     },
-
+    stderrfile_path_append => {
+        input           => q{stderrfile_path_append},
+        expected_output => q{2>> stderrfile_path_append},
+    },
 );
 
 ## Coderef - enables generalized use of generate call
@@ -145,7 +149,7 @@ my $module_function_cref = \&chanjo_sex;
 my @arguments = ( \%base_argument, \%specific_argument );
 
 foreach my $argument_href (@arguments) {
-	
+
     my @commands = test_function(
         {
             argument_href          => $argument_href,
