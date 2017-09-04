@@ -44,13 +44,13 @@ sub bedtools_genomecov {
 ## Function : Perl wrapper for writing bedtools genomecov recipe to $FILEHANDLE. Based on bedtools 2.26.0.
 ## Returns  : "@commands"
 ## Arguments: $infile_path, $stdout_path, $referencefile_path, $stderrfile_path, $FILEHANDLE, $max_coverage
-##          : $infile_path             => Infile paths
-##          : $stdout_path             => Standard outfile path
-##          : $referencefile_path      => Genome reference file
-##          : $stderrfile_path         => Stderrfile path
-##          : $FILEHANDLE              => Sbatch filehandle to write to
-##          : $max_coverage            => Combine all positions with a depth >= max into a single bin in the histogram
-##          : $stderrfile_path_append  => Stderrfile path append
+##          : $infile_path            => Infile paths
+##          : $stdout_path            => Standard outfile path
+##          : $referencefile_path     => Genome reference file
+##          : $stderrfile_path        => Stderrfile path
+##          : $FILEHANDLE             => Sbatch filehandle to write to
+##          : $max_coverage           => Combine all positions with a depth >= max into a single bin in the histogram
+##          : $stderrfile_path_append => Stderrfile path append
 
     my ($arg_href) = @_;
 
