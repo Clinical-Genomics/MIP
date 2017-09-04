@@ -33,7 +33,8 @@ use Time::Piece;
 
 ## Third party module(s)
 use Path::Iterator::Rule;
-use List::Util qw(any all uniq);
+use List::Util qw(any all);
+use List::MoreUtils qw (uniq);
 
 ##MIPs lib/
 use lib catdir( $Bin, 'lib' );        #Add MIPs internal lib
@@ -1245,19 +1246,27 @@ if ( $active_parameter{pfastqc} > 0 ) {    #Run FastQC
 
     $log->info("[Fastqc]\n");
 
+    use MIP::Recipes::Fastqc qw{analysis_fastqc};
+
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
-        mfastqc(
+        my $program_name = lc q{fastqc};
+        my $outsample_direcotry =
+          catdir( $active_parameter{outdata_dir}, $sample_id, $program_name );
+        analysis_fastqc(
             {
-                parameter_href          => \%parameter,
-                active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
-                infile_href             => \%infile,
-                indir_path_href         => \%indir_path,
+                parameter_href        => \%parameter,
+                active_parameter_href => \%active_parameter,
+                sample_info_href      => \%sample_info,
+                infiles_ref           => \@{ $infile{$sample_id} },
+
+                #                indir_path_href         => \%indir_path,
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
-                sample_id_ref           => \$sample_id,
-                program_name            => "fastqc",
+                insample_directory      => $indir_path{$sample_id},
+                outsample_directory     => $outsample_direcotry,
+                sample_id               => $sample_id,
+                program_name            => $program_name,
             }
         );
     }
@@ -1306,7 +1315,7 @@ if ( $active_parameter{pbwa_mem} > 0 ) {    #Run BWA Mem
     }
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
-        bwa_mem(
+        mbwa_mem(
             {
                 parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
@@ -23679,9 +23688,9 @@ sub picardtools_mergerapidreads {
     }
 }
 
-sub bwa_mem {
+sub mbwa_mem {
 
-##bwa_mem
+##mbwa_mem
 
 ##Function : Performs alignment of single and paired-end as well as interleaved fastq(.gz) files.
 ##Returns  : ""
@@ -23810,8 +23819,8 @@ sub bwa_mem {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
-    use Program::Alignment::Bwa qw(mem run_bwamem);
     use MIP::Program::Alignment::Samtools qw(samtools_view samtools_stats);
+    use MIP::Program::Alignment::Bwa qw(bwa_mem run_bwamem);
     use Program::Variantcalling::Bedtools qw (intersectbed);
     use MIP::Program::Alignment::Sambamba qw(sambamba_sort);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
@@ -24201,7 +24210,7 @@ sub bwa_mem {
 
             if ( $bwa_binary eq "bwa mem" ) { #Prior to ALTs in reference genome
 
-                mem(
+                bwa_mem(
                     {
                         infile_path        => $fastq_file_path,
                         second_infile_path => $second_fastq_file_path,
@@ -25286,290 +25295,6 @@ sub madeline {
             }
         );
     }
-
-    close($FILEHANDLE);
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        slurm_submit_job_no_dependency_dead_end(
-            {
-                job_id_href      => $job_id_href,
-                sbatch_file_name => $file_name,
-                log              => $log,
-            }
-        );
-    }
-}
-
-sub mfastqc {
-
-##mfastqc
-
-##Function : Raw sequence quality analysis using FASTQC.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_href, $indir_path_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name
-##         : $parameter_href          => The parameter hash {REF}
-##         : $active_parameter_href   => The active parameters for this analysis hash {REF}
-##         : $sample_info_href        => Info on samples and family hash {REF}
-##         : $infile_href             => The infiles hash {REF}
-##         : $indir_path_href         => The indirectories path(s) hash {REF}
-##         : $infile_lane_prefix_href => The infile(s) without the ".ending" {REF}
-##         : $job_id_href             => The job_id hash {REF}
-##         : $sample_id_ref           => The sample_id {REF}
-##         : $program_name            => The program name
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $infile_href;
-    my $indir_path_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $sample_id_ref;
-    my $program_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
-        infile_href => {
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_href
-        },
-        indir_path_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$indir_path_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        sample_id_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$sample_id_ref
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
-
-    use MIP::Check::Cluster qw(check_max_core_number);
-    use MIP::Cluster qw(update_core_number_to_seq_mode);
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::IO::Files qw(migrate_files);
-    use MIP::Processmanagement::Processes qw(print_wait);
-    use MIP::Gnu::Coreutils qw(gnu_cp);
-    use MIP::Program::Qc::Fastqc qw{fastqc};
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_no_dependency_dead_end);
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    my $core_number =
-      $active_parameter_href->{module_core_number}{ "p" . $program_name };
-
-    ## Filehandles
-    # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
-
-    foreach my $infile ( @{ $infile_lane_prefix_href->{$$sample_id_ref} } ) {
-
-        ## Update the number of cores to be used in the analysis according to sequencing mode requirements
-        $core_number = update_core_number_to_seq_mode(
-            {
-                core_number => $core_number,
-                sequence_run_type =>
-                  $sample_info_href->{sample}{$$sample_id_ref}{file}{$infile}
-                  {sequence_run_type},
-            }
-        );
-    }
-
-    ## Limit number of cores requested to the maximum number of cores available per node
-    $core_number = check_max_core_number(
-        {
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-            core_number_requested => $core_number,
-        }
-    );
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $$sample_id_ref,
-            program_name          => $program_name,
-            program_directory     => lc($program_name),
-            core_number           => $core_number,
-            process_time =>
-              $active_parameter_href->{module_time}{ "p" . $program_name },
-            temp_directory => $$temp_directory_ref,
-        }
-    );
-
-    ## Assign directories
-    my $insample_directory  = $indir_path_href->{$$sample_id_ref};
-    my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $$sample_id_ref, lc($program_name) );
-
-    ## Assign suffix
-    my $infile_suffix = $parameter_href->{ "p" . $program_name }{infile_suffix};
-
-    ## Copies files from source to destination
-    migrate_files(
-        {
-            infiles_ref  => \@{ $infile_href->{$$sample_id_ref} },
-            outfile_path => $$temp_directory_ref,
-            FILEHANDLE   => $FILEHANDLE,
-            indirectory  => $insample_directory,
-            core_number  => $core_number,
-        }
-    );
-
-    say $FILEHANDLE q{## } . $program_name;
-
-    my $process_batches_count = 1;
-
-    while ( my ( $index, $infile ) =
-        each( @{ $infile_href->{$$sample_id_ref} } ) )
-    {
-
-        $process_batches_count = print_wait(
-            {
-                process_counter       => $index,
-                max_process_number    => $core_number,
-                process_batches_count => $process_batches_count,
-                FILEHANDLE            => $FILEHANDLE,
-            }
-        );
-
-        ## Removes ".file_ending" in filename.FILENDING(.gz)
-        my $file_at_lane_level =
-          fileparse( $infile, qr/$infile_suffix|$infile_suffix\.gz/ );
-
-        fastqc(
-            {
-                infile_path       => catfile( $$temp_directory_ref, $infile ),
-                outdirectory_path => $$temp_directory_ref,
-                extract           => 1,
-                FILEHANDLE        => $FILEHANDLE,
-            }
-        );
-        say $FILEHANDLE q{&}, "\n";
-
-        ## Collect QC metadata info for active program for later use
-        if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-            my $qc_fastqc_outdirectory =
-              catdir( $outsample_directory, $file_at_lane_level . q{_fastqc} );
-            add_program_outfile_to_sample_info(
-                {
-                    sample_info_href => $sample_info_href,
-                    sample_id        => $$sample_id_ref,
-                    program_name     => q{fastqc},
-                    infile           => $infile,
-                    outdirectory     => $qc_fastqc_outdirectory,
-                    outfile          => q{fastqc_data.txt},
-                }
-            );
-        }
-    }
-    say $FILEHANDLE q{wait}, "\n";
-
-    ## Copies files from temporary folder to source.
-    $process_batches_count = 1;
-    while ( my ( $index, $infile ) =
-        each( @{ $infile_href->{$$sample_id_ref} } ) )
-    {
-
-        $process_batches_count = print_wait(
-            {
-                process_counter       => $index,
-                max_process_number    => $core_number,
-                process_batches_count => $process_batches_count,
-                FILEHANDLE            => $FILEHANDLE,
-            }
-        );
-
-        ## Removes ".file_ending" in filename.FILENDING(.gz)
-        my $file_at_lane_level =
-          fileparse( $infile, qr/$infile_suffix|$infile_suffix\.gz/ );
-
-        gnu_cp(
-            {
-                FILEHANDLE  => $FILEHANDLE,
-                recursive   => 1,
-                infile_path => catfile(
-                    $$temp_directory_ref, $file_at_lane_level . q{_fastqc}
-                ),
-                outfile_path => $outsample_directory,
-            }
-        );
-        say $FILEHANDLE q{&}, "\n";
-    }
-    say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
 

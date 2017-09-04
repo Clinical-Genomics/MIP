@@ -13,13 +13,9 @@ $Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 
 use Getopt::Long;
 use Cwd;
-use Cwd qw{ abs_path };
-use FindBin qw{ $Bin };               #Find directory of script
 use IO::Handle;
-use File::Basename qw{ dirname basename fileparse };
-use File::Spec::Functions qw{ catfile catdir devnull };
 use Readonly;
-use List::Util qw{ none };
+use List::Util qw{ none first };
 use IPC::Cmd qw{ can_run run };
 
 ## MIPs lib/
@@ -35,11 +31,11 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{conda_create conda_source_activate conda_source_deactivate conda_update conda_check};
+      qw{conda_create conda_source_activate conda_source_deactivate conda_update conda_check conda_install };
 }
 
 sub conda_create {
@@ -53,7 +49,6 @@ sub conda_create {
 ##         : $packages_ref    => Packages to be installed
 ##         : $FILEHANDLE      => Filehandle to write to
 ##         : $env_name        => Name of environment to create
-##         : $python_version  => Python version to install
 ##         : $quiet           => Do not display progress bar
 ##         : $no_confirmation => Do not ask for confirmation
 
@@ -61,7 +56,6 @@ sub conda_create {
 
     ## Flatten argument(s)
     my $env_name;
-    my $python_version;
     my $quiet;
     my $no_confirmation;
     my $packages_ref;
@@ -81,12 +75,6 @@ sub conda_create {
             default     => q{},
             strict_type => 1,
             store       => \$env_name
-        },
-        python_version => {
-            default     => '2.7',
-            allow       => [qr/\d+.\d+ | \d+.\d+.\d+/xms],
-            strict_type => 1,
-            store       => \$python_version
         },
         quiet => {
             default     => 1,
@@ -118,11 +106,6 @@ sub conda_create {
 
     if ($no_confirmation) {
         push @commands, q{--yes};
-    }
-
-    # Add python version
-    if ($python_version) {
-        push @commands, q{python=} . $python_version;
     }
 
     if ( @{$packages_ref} ) {
@@ -276,9 +259,9 @@ sub conda_check {
 
 ## conda_check
 
-## Function  : Check if the path to conda is correct and if a 
-##           : conda environment is active (exit if true)
-## Returns   :
+## Function  : Check if the path to conda is correct and if a conda
+##           : environment is active (exit if true). Returns path to conda.
+## Returns   : $conda_dir_path
 ## Arguments : $conda_dir_path_ref
 ##           : $conda_dir_path_ref => Path to conda directory
 
@@ -295,14 +278,19 @@ sub conda_check {
             store       => \$conda_dir_path_ref,
         },
     };
-    
+
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $conda_dir_path;
 
     # Search for conda directory in supplied path to conda
     if ( none { -d $_ } @{$conda_dir_path_ref} ) {
         say STDERR q{Could not find miniconda directory in:} . $SPACE
           . join $SPACE, @{$conda_dir_path_ref};
         exit 1;
+    }
+    else {
+        $conda_dir_path = first { -d $_ } @{$conda_dir_path_ref};
     }
 
     ## Deactivate any activate env prior to installation
@@ -331,8 +319,101 @@ sub conda_check {
           . q{with 'source deactivate' before executing install script};
         exit 1;
     }
-    
-    return;
+
+    return $conda_dir_path;
+}
+
+sub conda_install {
+
+## conda_install
+
+##Function : Install packages into conda environment
+##Returns  : @commands
+##Arguments: $packages_ref, $conda_channel, $FILEHANDLE, $env_name, $quiet, $no_cofirmation
+
+##         : $packages_ref    => Packages to be installed
+##         : $conda_channel   => Search for packages in specified conda channel
+##         : $FILEHANDLE      => Filehandle to write to
+##         : $env_name        => Name of environment to create
+##         : $quiet           => Do not display progress bar
+##         : $no_confirmation => Do not ask for confirmation
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $packages_ref;
+    my $conda_channel;
+    my $env_name;
+    my $FILEHANDLE;
+    my $quiet;
+    my $no_confirmation;
+
+    my $tmpl = {
+        packages_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => [],
+            strict_type => 1,
+            store       => \$packages_ref
+        },
+        conda_channel => {
+            defined     => 1,
+            strict_type => 1,
+            store       => \$conda_channel
+        },
+        env_name => {
+            strict_type => 1,
+            store       => \$env_name
+        },
+        FILEHANDLE => {
+            required => 1,
+            store    => \$FILEHANDLE
+        },
+        quiet => {
+            default     => 1,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$quiet
+        },
+        no_confirmation => {
+            default     => 1,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$no_confirmation
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @commands = q{conda install};
+
+    if ($env_name) {
+        push @commands, q{--name} . $SPACE . $env_name;
+    }
+
+    if ($quiet) {
+        #Do not display progress bar
+        push @commands, q{--quiet};
+    }
+
+    if ($no_confirmation) {
+        push @commands, q{--yes};
+    }
+
+    if ($conda_channel) {
+        push @commands, q{--channel} . $SPACE . $conda_channel;
+    }
+
+    push @commands, join $SPACE, @{$packages_ref};
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+    return @commands;
 }
 
 1;

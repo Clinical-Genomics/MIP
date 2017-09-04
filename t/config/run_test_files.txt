@@ -2,8 +2,10 @@ unix_standard_streams.t
 unix_write_to_file.t
 analysis_get_overall_analysis_type.t
 bedtools_genomecov.t
+bwa.t
 chanjo_sex.t
 conda_create.t
+conda_install.t
 conda_source_activate.t
 conda_source_deactivate.t
 conda_update.t
@@ -15,11 +17,12 @@ fastqc.t
 file_check_file_version_exist.t
 gnu_cat.t
 gnu_cd.t
+gnu_chmod.t
 gnu_cp.t
 gnu_echo.t
 gnu_grep.t
 gnu_less.t
-gnu_link.t
+gnu_ln.t
 gnu_mkdir.t
 gnu_mv.t
 gnu_printf.t
