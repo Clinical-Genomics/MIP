@@ -62,6 +62,11 @@ sambamba_index.t
 sambamba_markdup.t
 sambamba_sort.t
 sambamba_view.t
+samtools_faidx.t
+samtools_index.t
+samtools_mpileup.t
+samtools_stats.t
+samtools_view.t
 shell_build_shebang.t
 shell_create_housekeeping_function.t
 shell_create_error_trap_function.t
