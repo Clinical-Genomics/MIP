@@ -81,11 +81,11 @@ BEGIN {
     }
 }
 
-use MIP::Program::Alignment::Bwa qw{bwa_mem};
+use MIP::Program::Alignment::Bwa qw{run_bwamem};
 use MIP::Test::Commands qw{test_function};
 
 diag(
-    q{Test bwa_mem }
+    q{Test run_bwamem }
       . $MIP::Program::Alignment::Bwa::VERSION
       . q{, Perl}
       . $PERL_VERSION,
@@ -93,7 +93,7 @@ diag(
 );
 
 ## Base arguments
-my $function_base_command = q{bwa};
+my $function_base_command = q{run-bwamem};
 
 ## Read group header line
 my @read_group_headers = (
@@ -104,10 +104,6 @@ my @read_group_headers = (
 );
 
 my %base_argument = (
-    stdoutfile_path => {
-        input           => q{test_outfile.bam},
-        expected_output => q{1> test_outfile.bam},
-    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
@@ -136,6 +132,10 @@ my %required_argument = (
         input           => q{GRCh37_homo_sapiens_-d5-.fasta},
         expected_output => q{GRCh37_homo_sapiens_-d5-.fasta},
     },
+    outfiles_prefix_path => {
+        input           => q{test_outfile.bam},
+        expected_output => q{-o test_outfile.bam},
+    },
 );
 
 my %specific_argument = (
@@ -143,13 +143,9 @@ my %specific_argument = (
         input           => 2,
         expected_output => q{-t 2},
     },
-    interleaved_fastq_file => {
+    hla_typing => {
         input           => 1,
-        expected_output => q{-p},
-    },
-    mark_split_as_secondary => {
-        input           => 1,
-        expected_output => q{-M},
+        expected_output => q{-H},
     },
     read_group_header => {
         input => ( join $SPACE, @read_group_headers ),
@@ -164,9 +160,9 @@ my %specific_argument = (
         input           => q{test_infile_2.fastq},
         expected_output => q{test_infile_2.fastq},
     },
-    stdoutfile_path => {
+    outfiles_prefix_path => {
         input           => q{test_outfile.bam},
-        expected_output => q{1> test_outfile.bam},
+        expected_output => q{-o test_outfile.bam},
     },
     stderrfile_path => {
         input           => q{stderrfile.test},
@@ -179,7 +175,7 @@ my %specific_argument = (
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&bwa_mem;
+my $module_function_cref = \&run_bwamem;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%required_argument, \%specific_argument );

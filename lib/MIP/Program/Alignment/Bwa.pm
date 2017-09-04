@@ -42,11 +42,11 @@ sub bwa_mem {
 
 ##Function : Perl wrapper for writing bwa mem recipe to $FILEHANDLE. Based on bwa 0.7.15-r1140.
 ##Returns  : "@commands"
-##Arguments: $infile_path, $idxbase, $second_infile_path, $outfile_path, $stderrfile_path, $stderrfile_path, $stderrfile_path_append, $FILEHANDLE, $thread_number, $read_group_header, $mark_split_as_secondary, $interleaved_fastq_file
+##Arguments: $infile_path, $idxbase, $second_infile_path, $stdoutfile_path, $stderrfile_path, $stderrfile_path, $stderrfile_path_append, $FILEHANDLE, $thread_number, $read_group_header, $mark_split_as_secondary, $interleaved_fastq_file
 ##         : $infile_path             => Infile path (read 1 or interleaved i.e. read 1 and 2)
 ##         : $idxbase                 => Idxbase (human genome references and bwa mem idx files)
 ##         : $second_infile_path      => Second infile path (read 2)
-##         : $outfile_path            => Outfile path
+##         : $stdoutfile_path         => Stdoutfile path
 ##         : $stderrfile_path         => Stderrfile path
 ##         : $stderrfile_path_append  => Stderrfile path append
 ##         : $FILEHANDLE              => Sbatch filehandle to write to
@@ -65,7 +65,7 @@ sub bwa_mem {
     my $infile_path;
     my $idxbase;
     my $second_infile_path;
-    my $outfile_path;
+    my $stdoutfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $FILEHANDLE;
@@ -83,7 +83,7 @@ sub bwa_mem {
           { required => 1, defined => 1, strict_type => 1, store => \$idxbase },
         second_infile_path =>
           { strict_type => 1, store => \$second_infile_path },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
+        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
         stderrfile_path_append =>
           { strict_type => 1, store => \$stderrfile_path_append },
@@ -151,7 +151,7 @@ sub bwa_mem {
     push @commands,
       unix_standard_streams(
         {
-            stdoutfile_path        => $outfile_path,
+            stdoutfile_path        => $stdoutfile_path,
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
         }
@@ -259,11 +259,9 @@ sub run_bwamem {
         # Read group header line
         push @commands, q{-R} . $SPACE . $read_group_header;
     }
-    if ($outfiles_prefix_path) {
 
-        # Outfiles prefix
-        push @commands, q{-o} . $SPACE . $outfiles_prefix_path;
-    }
+    # Outfiles prefix
+    push @commands, q{-o} . $SPACE . $outfiles_prefix_path;
 
     ## Human reference genome and bwa mem files
     push @commands, $idxbase;
