@@ -15,7 +15,6 @@ use Getopt::Long;
 use Cwd;
 use IO::Handle;
 use Readonly;
-use List::Util qw{ none first };
 use IPC::Cmd qw{ can_run run };
 
 ## MIPs lib/
@@ -259,39 +258,9 @@ sub conda_check {
 
 ## conda_check
 
-## Function  : Check if the path to conda is correct and if a conda
-##           : environment is active (exit if true). Returns path to conda.
-## Returns   : $conda_dir_path
-## Arguments : $conda_dir_path_ref
-##           : $conda_dir_path_ref => Path to conda directory
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $conda_dir_path_ref;
-
-    my $tmpl = {
-        conda_dir_path_ref => {
-            default     => [],
-            required    => 1,
-            strict_type => 1,
-            store       => \$conda_dir_path_ref,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $conda_dir_path;
-
-    # Search for conda directory in supplied path to conda
-    if ( none { -d $_ } @{$conda_dir_path_ref} ) {
-        say STDERR q{Could not find miniconda directory in:} . $SPACE
-          . join $SPACE, @{$conda_dir_path_ref};
-        exit 1;
-    }
-    else {
-        $conda_dir_path = first { -d $_ } @{$conda_dir_path_ref};
-    }
+## Function  : Check if a conda environment is active (exit if true).
+## Returns   : 
+## Arguments : 
 
     ## Deactivate any activate env prior to installation
     #   Perl options:
@@ -320,7 +289,7 @@ sub conda_check {
         exit 1;
     }
 
-    return $conda_dir_path;
+    return;
 }
 
 sub conda_install {

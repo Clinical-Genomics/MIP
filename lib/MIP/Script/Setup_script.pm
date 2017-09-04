@@ -229,7 +229,7 @@ sub setup_script {
     use MIP::Workloadmanager::Slurm qw(slurm_build_sbatch_header);
     use MIP::Gnu::Bash qw(gnu_set);
     use MIP::Gnu::Coreutils qw(gnu_echo gnu_mkdir gnu_sleep);
-    use MIP::Check::File qw(check_file_version_exist);
+    use MIP::Check::Path qw(check_file_version_exist);
 
     ##Constants
     Readonly my $MAX_SECONDS_TO_SLEEP => 60;
