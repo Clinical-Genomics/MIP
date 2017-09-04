@@ -32,7 +32,7 @@ Readonly my $NEWLINE => qq{\n};
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '0.0.0';
+our $VERSION = '1.0.0';
 
 ###User Options
 GetOptions(
@@ -88,7 +88,7 @@ use MIP::Program::Alignment::Chanjo qw{chanjo_sex};
 use MIP::Test::Commands qw{test_function};
 
 diag(
-"Test chanjo_sex MIP::Program::Alignment::Chanjo::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test chanjo_sex $MIP::Program::Alignment::Chanjo::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments
