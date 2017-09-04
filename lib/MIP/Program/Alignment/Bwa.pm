@@ -147,15 +147,11 @@ sub bwa_mem {
 
         push @commands, $second_infile_path;
     }
-    if ($outfile_path) {
-
-        # Outfile
-        push @commands, q{>} . $SPACE . $outfile_path;
-    }
 
     push @commands,
       unix_standard_streams(
         {
+            stdoutfile_path        => $outfile_path,
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
         }
