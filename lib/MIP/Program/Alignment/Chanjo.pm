@@ -41,14 +41,14 @@ sub chanjo_sex {
 ##Function : Perl wrapper for writing chanjo sex recipe to $FILEHANDLE. Based on chanjo 4.0.0
 ##Returns  : "@commands"
 ##Arguments: $FILEHANDLE, $infile_path, $stdout_path, $stderrfile_path, $log_file_path, $chr_prefix, $log_level
-##         : $FILEHANDLE               => Sbatch filehandle to write to
-##         : $infile_path              => Infile path
-##         : $stdout_path              => Standard outfile path
-##         : $stderrfile_path          => Stderrfile path
-##         : $log_file_path            => Log file path
-##         : $chr_prefix               => Chromosome prefix
-##         : $log_level                => Level of logging
-##         : $stderrfile_path_append   => Stderrfile path append
+##         : $FILEHANDLE             => Sbatch filehandle to write to
+##         : $infile_path            => Infile path
+##         : $stdout_path            => Standard outfile path
+##         : $stderrfile_path        => Stderrfile path
+##         : $log_file_path          => Log file path
+##         : $chr_prefix             => Chromosome prefix
+##         : $log_level              => Level of logging
+##         : $stderrfile_path_append => Stderrfile path append
 
     my ($arg_href) = @_;
 

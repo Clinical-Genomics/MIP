@@ -195,11 +195,11 @@ sub samtools_index {
 ## Function : Perl wrapper for writing samtools index recipe to $FILEHANDLE. Based on samtools 1.3.1 (using htslib 1.3.1).
 ## Returns  : "@commands"
 ## Arguments: $infile_path, $stderrfile_path, $FILEHANDLE, $bai_format
-##          : $infile_path              => Infile path
-##          : $stderrfile_path          => Stderrfile path
-##          : $FILEHANDLE               => Sbatch filehandle to write to
-##          : $bai_format               => Generate BAI-format index for BAM files
-##          : $stderrfile_path_append   => Stderrfile path append
+##          : $infile_path            => Infile path
+##          : $stderrfile_path        => Stderrfile path
+##          : $FILEHANDLE             => Sbatch filehandle to write to
+##          : $bai_format             => Generate BAI-format index for BAM files
+##          : $stderrfile_path_append => Stderrfile path append
 
     my ($arg_href) = @_;
 
@@ -504,12 +504,12 @@ sub samtools_faidx {
 ## Function : Perl wrapper for writing samtools faidx recipe to $FILEHANDLE. Based on samtools 1.3.1 (using htslib 1.3.1).
 ## Returns  : "@commands"
 ## Arguments: $regions_ref, $infile_path, $outfile_path, $stderrfile_path, $FILEHANDLE
-##          : $regions_ref                      => The regions to process {REF}
-##          : $infile_path                      => Infile path
-##          : $outfile_path                     => Outfile path
-##          : $stderrfile_path                  => Stderrfile path
-##          : $FILEHANDLE                       => Sbatch filehandle to write to
-##          : $stderrfile_path_append           => Stderrfile path append
+##          : $regions_ref            => The regions to process {REF}
+##          : $infile_path            => Infile path
+##          : $outfile_path           => Outfile path
+##          : $stderrfile_path        => Stderrfile path
+##          : $FILEHANDLE             => Sbatch filehandle to write to
+##          : $stderrfile_path_append => Stderrfile path append
 
     my ($arg_href) = @_;
 
