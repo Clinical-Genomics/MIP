@@ -30,7 +30,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ gnu_cp gnu_rm gnu_mv gnu_mkdir gnu_cat gnu_echo gnu_split gnu_sort gnu_printf gnu_sleep gnu_link gnu_chmod };
+      qw{ gnu_cp gnu_rm gnu_mv gnu_mkdir gnu_cat gnu_echo gnu_split gnu_sort gnu_printf gnu_sleep gnu_ln gnu_chmod };
 }
 
 ## Constants
@@ -1072,11 +1072,11 @@ sub gnu_sleep {
     return @commands;
 }
 
-sub gnu_link {
+sub gnu_ln {
 
 ##gnu_ln
 
-##Function : Perl wrapper for writing link recipe to already open $FILEHANDLE or return commands array. Based on link 8.4
+##Function : Perl wrapper for writing ln recipe to already open $FILEHANDLE or return commands array. Based on ln 8.4
 ## Returns : "@commands"
 ##Arguments: $symbolic, $force, $link_path, $target_path, $stderrfile_path, $stderrfile_path_append, $stdoutfile_path, $FILEHANDLE
 ##         : $symbolic               => Create a symbolic link
@@ -1144,9 +1144,9 @@ sub gnu_link {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## gnu_link
+    ## gnu_ln
     # Stores commands depending on input parametersf
-    my @commands = q{link};
+    my @commands = q{ln};
 
     ## Options
     if ($symbolic) {
