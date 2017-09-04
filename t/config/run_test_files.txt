@@ -4,6 +4,7 @@ analysis_get_overall_analysis_type.t
 bedtools_genomecov.t
 chanjo_sex.t
 conda_create.t
+conda_install.t
 conda_source_activate.t
 conda_source_deactivate.t
 conda_update.t
@@ -20,7 +21,7 @@ gnu_cp.t
 gnu_echo.t
 gnu_grep.t
 gnu_less.t
-gnu_link.t
+gnu_ln.t
 gnu_mkdir.t
 gnu_mv.t
 gnu_printf.t

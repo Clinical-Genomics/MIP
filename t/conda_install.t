@@ -13,7 +13,7 @@ use Params::Check qw{check allow last_error};
 
 use FindBin qw{$Bin};    #Find directory of script
 use File::Basename qw{dirname basename};
-use File::Spec::Functions qw{catdir catfile};
+use File::Spec::Functions qw{catdir};
 use Getopt::Long;
 use Test::More;
 use Readonly;
@@ -71,7 +71,7 @@ BEGIN {
     }
 
 ##Modules
-    my @modules = (q{MIP::Gnu::Coreutils});
+    my @modules = (q{MIP::PacketManager::Conda});
 
   MODULES:
     for my $module (@modules) {
@@ -79,32 +79,20 @@ BEGIN {
     }
 }
 
-use MIP::Gnu::Coreutils qw{gnu_link};
+use MIP::PacketManager::Conda qw{conda_install};
 use MIP::Test::Commands qw{test_function};
 
-diag(   q{Test gnu_link }
-      . $MIP::Gnu::Coreutils::VERSION
+diag(   q{Test conda_install from Conda.pm v}
+      . $MIP::PacketManager::Conda::VERSION
       . q{, Perl }
       . $PERL_VERSION
       . $SPACE
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{link};
+my $function_base_command = q{conda install};
 
 my %base_argument = (
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
-    },
-    stderrfile_path_append => {
-        input           => q{stderrfile.test},
-        expected_output => q{2>> stderrfile.test},
-    },
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{> stdoutfile.test},
-    },
     FILEHANDLE => {
         input           => undef,
         expected_output => $function_base_command,
@@ -113,29 +101,37 @@ my %base_argument = (
 
 ## Can be duplicated with %base and/or %specific to enable testing of each individual argument
 my %required_argument = (
-    link_path => {
-        input           => catfile(qw{test path to link}),
-        expected_output => q{test/path/to/link},
+    packages_ref => {
+        inputs_ref      => [qw{ test_package_1=1.2.3 test_package_2=1.2 }],
+        expected_output => q{test_package_1=1.2.3 test_package_2=1.2},
     },
-    target_path => {
-        input           => catfile(qw{test path to target}),
-        expected_output => q{test/path/to/target},
+    FILEHANDLE => {
+        input           => undef,
+        expected_output => $function_base_command,
     },
 );
 
 my %specific_argument = (
-    symbolic => {
-        input           => 1,
-        expected_output => q{--symbolic},
+    env_name => {
+        input           => q{test_env},
+        expected_output => q{--name test_env},
     },
-    force => {
+    quiet => {
         input           => 1,
-        expected_output => q{--force},
+        expected_output => q{--quiet},
+    },
+    no_confirmation => {
+        input           => 1,
+        expected_output => q{--yes},
+    },
+    packages_ref => {
+        inputs_ref      => [qw{ test_package_1 test_package_2}],
+        expected_output => q{test_package_1 test_package_2},
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&gnu_link;
+my $module_function_cref = \&conda_install;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%required_argument, \%specific_argument );
