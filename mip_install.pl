@@ -3632,6 +3632,8 @@ sub create_target_paths {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my %target_link_paths;
+    my $target_path;
+    my $link_path;
 
     my %binaries = (
         bwakit => [
@@ -3655,17 +3657,27 @@ sub create_target_paths {
       BINARIES:
         foreach my $binary ( @{ $binaries{$program} } ) {
             ## Construct target path
-            my $target_path = catfile(
-                $parameter_href->{conda_prefix_path},
-                q{share},
-                $program . q{-}
-                  . $parameter_href->{bioconda}{$program}
-                  . $parameter_href->{ q{bioconda_} . $program . q{_patch} },
-                $binary
-            );
+            if ( $program eq q{manta} ) {
+                $target_path = catfile(
+                    $parameter_href->{conda_prefix_path},
+                    q{share}, $program . q{-}
+                    . $parameter_href->{bioconda}{$program}
+                    . $parameter_href->{ q{bioconda_} . $program . q{_patch} },
+                    q{bin}, $binary
+                );
+            }
+            else {
+                $target_path = catfile(
+                    $parameter_href->{conda_prefix_path},
+                    q{share}, $program . q{-}
+                    . $parameter_href->{bioconda}{$program}
+                    . $parameter_href->{ q{bioconda_} . $program . q{_patch} },
+                    $binary
+                );
+            }
             ## Construct link_path
-            my $link_path =
-              catfile( $parameter_href->{conda_prefix_path}, q{bin}, $binary );
+            $link_path = catfile( 
+                $parameter_href->{conda_prefix_path}, q{bin}, $binary );
             ## Add paths to hash
             $target_link_paths{$target_path} = $link_path;
         }
@@ -3726,7 +3738,7 @@ sub finishing_bioconda_package_install {
             outfile_path => $outfile_path,
         }
     );
-    print {$FILEHANDLE} $NEWLINE;
+    say {$FILEHANDLE} $NEWLINE;
 
     ## Custom snpeff - Download necessary databases
 # Check and if required add the vertebrate mitochondrial codon table to snpeff config
@@ -3770,6 +3782,7 @@ sub finishing_bioconda_package_install {
             );
         }
     }
+    print {$FILEHANDLE} $NEWLINE;
 
     ## Custom manta
     # Make file executable
