@@ -18,7 +18,6 @@ use File::Basename qw{dirname basename};
 use File::Spec::Functions qw{catdir};
 use Getopt::Long;
 use Test::More;
-use FileHandle;
 use Readonly;
 
 ## MIPs lib/
@@ -62,7 +61,7 @@ GetOptions(
 BEGIN {
 
 ### Check all internal dependency modules and imports
-## Modules with import
+
     my %perl_module;
 
     $perl_module{'Script::Utils'} = [qw{help}];
@@ -74,8 +73,7 @@ BEGIN {
           or BAIL_OUT 'Cannot load ' . $module;
     }
 
-## Modules
-    my @modules = ('MIP::Program::Alignment::Chanjo');
+    my @modules = ('MIP::Program::Alignment::Samtools');
 
   MODULES:
     for my $module (@modules) {
@@ -84,15 +82,15 @@ BEGIN {
     }
 }
 
-use MIP::Program::Alignment::Chanjo qw{chanjo_sex};
+use MIP::Program::Alignment::Samtools qw{samtools_mpileup};
 use MIP::Test::Commands qw{test_function};
 
 diag(
-"Test chanjo_sex MIP::Program::Alignment::Chanjo::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test samtools_mpileup MIP::Program::Alignment::Samtools::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments
-my $function_base_command = q{chanjo};
+my $function_base_command = q{samtools};
 
 my %base_argument = (
     FILEHANDLE => {
@@ -107,34 +105,46 @@ my %required_argument = (
         input           => undef,
         expected_output => $function_base_command,
     },
-    infile_path => {
-        input           => q{infile.test},
-        expected_output => q{infile.test},
+    infile_paths_ref => {
+        inputs_ref      => [],
+        expected_output => q{},
+    },
+    output_tags_ref => {
+        inputs_ref      => [qw{tag1 tag3 etc}],
+        expected_output => q{--output-tags tag1,tag2,etc},
+    },
+    referencefile_path => {
+        input           => q{fastaref},
+        expected_output => q{--fasta-ref fastaref},
     },
 );
 
 ## Specific arguments
 my %specific_argument = (
+
     outfile_path => {
-        input           => q{outfile.test},
-        expected_output => q{> outfile.test},
+        input           => q{outpath},
+        expected_output => q{--output outpath},
     },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
     },
-
-    log_file_path => {
-        input           => q{logfile.test},
-        expected_output => q{--log-file logfile.test},
+    region => {
+        input           => q{3:45000-67000},
+        expected_output => q{--region 3:45000-67000},
     },
-    chr_prefix => {
-        input           => q{chr},
-        expected_output => q{--prefix chr},
+    output_bcf => {
+        input           => q{1},
+        expected_output => q{--BCF},
     },
-    log_level => {
-        input           => q{INFO},
-        expected_output => q{--log-level INFO},
+    per_sample_increased_sensitivity => {
+        input           => q{1},
+        expected_output => q{--per-sample-mF},
+    },
+    adjust_mq => {
+        input           => q{45},
+        expected_output => q{--adjust-MQ 45},
     },
     stderrfile_path_append => {
         input           => q{stderrfile_path_append},
@@ -143,7 +153,7 @@ my %specific_argument = (
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&chanjo_sex;
+my $module_function_cref = \&samtools_mpileup;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

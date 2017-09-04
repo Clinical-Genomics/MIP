@@ -33,7 +33,8 @@ use Time::Piece;
 
 ## Third party module(s)
 use Path::Iterator::Rule;
-use List::Util qw(any all uniq);
+use List::Util qw(any all);
+use List::MoreUtils qw (uniq);
 
 ##MIPs lib/
 use lib catdir( $Bin, 'lib' );        #Add MIPs internal lib
@@ -2011,7 +2012,7 @@ if ( $active_parameter{psamtools_mpileup} > 0 ) {    #Run samtools mpileup
         }
     );
 
-    samtools_mpileup(
+    msamtools_mpileup(
         {
             parameter_href          => \%parameter,
             active_parameter_href   => \%active_parameter,
@@ -17200,7 +17201,7 @@ sub cnvnator {
     use MIP::Processmanagement::Processes qw(print_wait);
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
-    use Program::Alignment::Samtools qw(faidx);
+    use MIP::Program::Alignment::Samtools qw(samtools_faidx);
     use Program::Variantcalling::Cnvnator
       qw(read_extraction histogram statistics partition calling convert_to_vcf);
     use Program::Variantcalling::Bcftools qw(annotate);
@@ -19431,9 +19432,9 @@ sub tiddit {
     }
 }
 
-sub samtools_mpileup {
+sub msamtools_mpileup {
 
-##samtools_mpileup
+## msamtools_mpileup
 
 ##Function : samtools_mpileup
 ##Returns  : ""
@@ -19549,7 +19550,7 @@ sub samtools_mpileup {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
-    use Program::Alignment::Samtools qw(mpileup);
+    use MIP::Program::Alignment::Samtools qw(samtools_mpileup);
     use Program::Variantcalling::Bcftools qw(call filter norm);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
@@ -22270,7 +22271,7 @@ sub picardtools_mergesamfiles {
     use MIP::IO::Files qw(migrate_files);
     use Program::Alignment::Picardtools qw(mergesamfiles);
     use MIP::Gnu::Coreutils qw(gnu_mv);
-    use Program::Alignment::Samtools qw(index);
+    use MIP::Program::Alignment::Samtools qw(samtools_index);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_sample);
 
@@ -22505,7 +22506,7 @@ sub picardtools_mergesamfiles {
                 print $XARGSFILEHANDLE "; ";
 
                 ## Index
-                Program::Alignment::Samtools::index(
+                samtools_index(
                     {
                         infile_path => catfile(
                             $$temp_directory_ref,
@@ -23060,7 +23061,7 @@ sub bwa_sampe {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_files);
-    use Program::Alignment::Samtools qw(view);
+    use MIP::Program::Alignment::Samtools qw(samtools_view);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_step_in_parallel);
 
@@ -23179,7 +23180,7 @@ sub bwa_sampe {
 
         ## Convert SAM to BAM using samtools view
         say $FILEHANDLE "## Convert SAM to BAM";
-        view(
+        samtools_view(
             {
                 infile_path => catfile(
                     $active_parameter_href->{temp_directory},
@@ -23818,8 +23819,8 @@ sub mbwa_mem {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
+    use MIP::Program::Alignment::Samtools qw(samtools_view samtools_stats);
     use MIP::Program::Alignment::Bwa qw(bwa_mem run_bwamem);
-    use Program::Alignment::Samtools qw(view stats);
     use Program::Variantcalling::Bedtools qw (intersectbed);
     use MIP::Program::Alignment::Sambamba qw(sambamba_sort);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
@@ -24037,7 +24038,7 @@ sub mbwa_mem {
 
                 print $FILEHANDLE
                   "| ";    #Pipe SAM to BAM conversion of aligned reads
-                Program::Alignment::Samtools::view(
+                samtools_view(
                     {
                         infile_path => "-",
                         FILEHANDLE  => $FILEHANDLE,
@@ -24227,7 +24228,7 @@ sub mbwa_mem {
                 print $FILEHANDLE
                   "| ";    #Pipe SAM to BAM conversion of aligned reads
 
-                Program::Alignment::Samtools::view(
+                samtools_view(
                     {
                         infile_path => "-",
                         FILEHANDLE  => $FILEHANDLE,
@@ -24325,7 +24326,7 @@ sub mbwa_mem {
 
             if ( $active_parameter_href->{bwa_mem_bamstats} ) {
 
-                stats(
+                samtools_stats(
                     {
                         infile_path => $outfile_path_prefix . $outfile_suffix,
                         FILEHANDLE  => $FILEHANDLE,
@@ -24357,7 +24358,7 @@ q?perl -ne '$raw; $map; chomp($_); print $_, "\n"; if($_=~/raw total sequences:\
             {
 
                 say $FILEHANDLE "## Create CRAM file from SAM|BAM";
-                view(
+                samtools_view(
                     {
                         infile_path  => $outfile_path_prefix . $outfile_suffix,
                         outfile_path => $outfile_path_prefix . ".cram",
@@ -34148,7 +34149,7 @@ sub split_bam {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use Program::Alignment::Samtools qw(view);
+    use MIP::Program::Alignment::Samtools qw(samtools_view);
     use Language::Java qw(core);
 
     my $xargs_file_name;
@@ -34168,7 +34169,7 @@ sub split_bam {
     ## Split by contig
     foreach my $contig (@$contigs_ref) {
 
-        view(
+        samtools_view(
             {
                 infile_path =>
                   catfile( $$temp_directory_ref, $infile . ".bam" ),
