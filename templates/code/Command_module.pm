@@ -1,14 +1,14 @@
-#package MIP::PATH::TO::MODULE                                # adjust code here
+package MIP::PATH::TO::MODULE;
 
 use strict;
 use warnings;
-use warnings qw( FATAL utf8 );
+use warnings qw{ FATAL utf8 };
 use utf8;    #Allow unicode characters in this script
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
+use open qw{  :encoding(UTF-8) :st};
+use charnames qw{ :full :short };
 use Carp;
 use English qw{-no_match_vars};
-use Params::Check qw[check allow last_error];
+use Params::Check qw{check allow last_error};
 
 use Readonly;
 
@@ -17,36 +17,35 @@ use File::Basename qw{dirname};
 use File::Spec::Functions qw{catdir};
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
+use lib catdir( dirname($Bin), q{lib} );
 use MIP::Unix::Standard_streams qw{unix_standard_streams};
 use MIP::Unix::Write_to_file qw{unix_write_to_file};
 
 BEGIN {
     require Exporter;
-    use base qw(Exporter);
+    use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(MIP::PATH::TO::MODULE);               # adjust code here
+    our @EXPORT_OK = qw{ MIP::PATH::TO::MODULE };
 }
 
-## Constants (add as many as you need)
+## Constants
 Readonly my $SPACE => q{ };
 
+sub name_of_subroutine {
 
-sub name_of_subroutine {                                      # adjust code here
+## name_of_subroutine
 
-##bwa_mem
-
-##Function : Perl wrapper for generic commands module.
-##Returns  : "@commands"
-##Arguments: $stdoutfile_path, $stderrfile_path, stderrfile_path_append, $FILEHANDLE
-##         : $stdoutfile_path        => Stdoutfile path
-##         : $stderrfile_path        => Stderrfile path
-##         : $stderrfile_path_append => Append stderr info to file path
-##         : $FILEHANDLE             => Filehandle to write to
+## Function : Perl wrapper for generic commands module.
+## Returns  : "@commands"
+## Arguments: $stdoutfile_path, $stderrfile_path, stderrfile_path_append, $FILEHANDLE
+##          : $stdoutfile_path        => Stdoutfile path
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $FILEHANDLE             => Filehandle to write to
 
     my ($arg_href) = @_;
 
@@ -58,39 +57,19 @@ sub name_of_subroutine {                                      # adjust code here
     my $stderrfile_path_append;
     my $FILEHANDLE;
 
-    # initialize other command arguments here
-    my $array_argument;
-    my $scalar_argument;
-
     my $tmpl = {
         stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
         stderrfile_path_append =>
           { strict_type => 1, store => \$stderrfile_path_append },
-        FILEHANDLE    => { store => \$FILEHANDLE },
+        FILEHANDLE => { store => \$FILEHANDLE },
 
-        # add all the above command arguments here, following this specification:
-        #array_argument => {
-        #  default     => qw{ option1 },
-        #  allow       => [qw{option1 option2 option3}],
-        #  strict_type => 1,
-        #  store       => \$array_argument
-        #},
-
-        #scalar_argument => { strict_type => 1, store => \$scalar_argument },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
 
     # Stores commands depending on input parameters
-    my @commands = qw(BASE_COMMAND);
-
-    ##Options (add one for each argument specified above).
-    #if ($argument_provided) {
-
-        # Add argument to commands
-        #push @commands, q{>} . $SPACE . $argument_provided;
-    #}
+    my @commands = qw{ BASE_COMMAND };
 
     push @commands,
       unix_standard_streams(
