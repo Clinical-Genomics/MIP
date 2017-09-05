@@ -36,6 +36,7 @@ use Readonly;
 
 ## Constants
 Readonly my $SPACE => q{ };
+Readonly my $GREATER => q{>};
 
 sub bedtools_genomecov {
 
@@ -43,9 +44,9 @@ sub bedtools_genomecov {
 
 ## Function : Perl wrapper for writing bedtools genomecov recipe to $FILEHANDLE. Based on bedtools 2.26.0.
 ## Returns  : "@commands"
-## Arguments: $infile_path, $outfile_path, $referencefile_path, $stderrfile_path, $FILEHANDLE, $max_coverage
+## Arguments: $infile_path, $stdoutfile_path, $referencefile_path, $stderrfile_path, $FILEHANDLE, $max_coverage
 ##          : $infile_path            => Infile paths
-##          : $outfile_path           => Outfile path
+##          : $stdoutfile_path         => Outfile path
 ##          : $referencefile_path     => Genome reference file
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $FILEHANDLE             => Sbatch filehandle to write to
@@ -59,7 +60,7 @@ sub bedtools_genomecov {
 
     ## Flatten argument(s)
     my $infile_path;
-    my $outfile_path;
+    my $stdoutfile_path;
     my $referencefile_path;
     my $stderrfile_path;
     my $FILEHANDLE;
@@ -72,7 +73,7 @@ sub bedtools_genomecov {
             strict_type => 1,
             store       => \$infile_path
         },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
+        stdoutfile_path    => { strict_type => 1, store => \$stdoutfile_path },
         referencefile_path => {
             required    => 1,
             defined     => 1,
@@ -109,19 +110,13 @@ sub bedtools_genomecov {
         push @commands, q{-g} . $SPACE . $referencefile_path;
     }
 
-    ## Output
-    if($outfile_path) {
-
-        #Specify output filename
-        push @commands, q{>} . $SPACE . $outfile_path;
-    }
-
     # Redirect stderr output to program specific stderr file
     push @commands,
       unix_standard_streams(
         {
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
         }
       );
 

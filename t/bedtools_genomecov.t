@@ -126,9 +126,9 @@ my %specific_argument = (
         input           => q{500},
         expected_output => q{-max 500},
     },
-    outfile_path => {
-        input           => q{outfilePath},
-        expected_output => q{> outfilePath},
+    stdoutfile_path => {
+        input           => q{stdoutfile_path},
+        expected_output => q{1> stdoutfile_path},
     },
     stderrfile_path_append => {
         input           => q{stderrfile_path_append},
