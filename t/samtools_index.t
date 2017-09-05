@@ -31,7 +31,7 @@ Readonly my $NEWLINE => qq{\n};
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '0.0.0';
+our $VERSION = '1.0.0';
 
 ###User Options
 GetOptions(
@@ -86,7 +86,7 @@ use MIP::Program::Alignment::Samtools qw{samtools_index};
 use MIP::Test::Commands qw{test_function};
 
 diag(
-"Test samtools_index MIP::Program::Alignment::Samtools::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test samtools_index $MIP::Program::Alignment::Samtools::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments
@@ -125,6 +125,10 @@ my %specific_argument = (
         input           => q{stderrfile_path_append},
         expected_output => q{2>> stderrfile_path_append},
     },
+    stdoutfile_path => {
+        input           => q{outfile_path},
+        expected_output => q{1> outfile_path},
+    }
 );
 
 ## Coderef - enables generalized use of generate call

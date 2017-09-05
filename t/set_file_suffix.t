@@ -1,7 +1,5 @@
 #!/usr/bin/env perl
 
-#### Copyright 2017 Henrik Stranneheim
-
 use Modern::Perl qw{2014};
 use warnings qw{FATAL utf8};
 use autodie;
@@ -18,21 +16,21 @@ use File::Basename qw{dirname basename};
 use File::Spec::Functions qw{catdir};
 use Getopt::Long;
 use Test::More;
-use FileHandle;
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), 'lib' );
 use Script::Utils qw{help};
 
-## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
-
 our $USAGE = build_usage( {} );
 
+##Constants
+Readonly my $NEWLINE    => qq{\n};
+Readonly my $SPACE      => q{ };
+Readonly my $UNDERSCORE => q{_};
+
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = q{1.0.0};
 
 ###User Options
 GetOptions(
@@ -43,8 +41,8 @@ GetOptions(
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        say {*STDOUT} basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
-
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
+          $NEWLINE;
         exit;
     },    #Display version number
     'vb|verbose' => $VERBOSE,
@@ -62,87 +60,57 @@ GetOptions(
 BEGIN {
 
 ### Check all internal dependency modules and imports
-## Modules with import
 
+    ## Modules with import
     my %perl_module;
 
     $perl_module{'Script::Utils'} = [qw{help}];
 
   PERL_MODULES:
     while ( my ( $module, $module_import ) = each %perl_module ) {
-
         use_ok( $module, @{$module_import} )
-          or BAIL_OUT 'Cannot load ' . $module;
+          or BAIL_OUT q{Cannot load } . $module;
     }
 
-## Modules
-    my @modules = ('MIP::Program::Alignment::Sambamba');
+    ## Modules
+    my @modules = ('MIP::Set::File');
 
   MODULES:
     for my $module (@modules) {
-
-        require_ok($module) or BAIL_OUT 'Cannot load ' . $module;
+        require_ok($module) or BAIL_OUT q{Cannot load } . $module;
     }
 }
 
-use MIP::Program::Alignment::Sambamba qw{sambamba_index};
-use MIP::Test::Commands qw{test_function};
+use MIP::Set::File qw{set_file_suffix};
 
 diag(
-"Test sambamba_index $MIP::Program::Alignment::Sambamba::VERSION, Perl $^V, $EXECUTABLE_NAME"
+    "Test set_file_suffix $MIP::Set::File::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments
-my $function_base_command = q{sambamba};
+my $suffix_key   = q{alignment_file_suffix};
+my $job_id_chain = q{MAIN};
+my $file_suffix  = q{.bam};
 
-my %base_argument = (
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
-    },
+my %parameter;
+
+### Set to arbitrary job id chain key
+
+my $job_id_returned = q{job_id_7};
+
+my $returned_file_suffix = set_file_suffix(
+    {
+        parameter_href => \%parameter,
+        suffix_key     => $suffix_key,
+        job_id_chain   => $job_id_chain,
+        file_suffix    => $file_suffix,
+    }
 );
 
-## Can be duplicated with %base and/or %specific to enable testing of each individual argument
-my %required_argument = (
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
-    },
-    infile_path => {
-        input           => q{infile.test},
-        expected_output => q{infile.test},
-    },
-);
+my $set_file_suffix = $parameter{$suffix_key}{$job_id_chain};
+is( $returned_file_suffix, $file_suffix, q{Returned file_suffix} );
 
-## Specific arguments
-my %specific_argument = (
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
-    },
-    show_progress => {
-        input           => 1,
-        expected_output => q{--show-progress},
-    },
-);
-
-## Coderef - enables generalized use of generate call
-my $module_function_cref = \&sambamba_index;
-
-## Test both base and function specific arguments
-my @arguments = ( \%base_argument, \%specific_argument );
-
-foreach my $argument_href (@arguments) {
-
-    my @commands = test_function(
-        {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-        }
-    );
-}
+is( $set_file_suffix, $file_suffix, q{Set file_suffix} );
 
 done_testing();
 
