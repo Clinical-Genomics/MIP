@@ -2,31 +2,32 @@ package MIP::QC::Record;
 
 use strict;
 use warnings;
-use warnings qw( FATAL utf8 );
+use warnings qw{FATAL utf8};
 use utf8;    # Allow unicode characters in this script
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
+use open qw{ :encoding(UTF-8) :std };
+use charnames qw{ :full :short };
 use Carp;
 use autodie;
-use Params::Check qw[check allow last_error];
+use Params::Check qw{check allow last_error};
 
-use FindBin qw($Bin);    # Find directory of script
-use File::Basename qw(dirname);
-use File::Spec::Functions qw(catdir);
+use FindBin qw{$Bin};    # Find directory of script
+use File::Basename qw{dirname};
+use File::Spec::Functions qw{catdir};
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
+use lib catdir( dirname($Bin), q{lib} );
 
 BEGIN {
-    use base qw (Exporter);
+
     require Exporter;
+    use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
+      qw{add_program_outfile_to_sample_info add_program_metafile_to_sample_info add_processing_metafile_to_sample_info};
 
 }
 
@@ -88,11 +89,11 @@ sub add_program_outfile_to_sample_info {
             strict_type => 1,
             store       => \$version
         },
-        infile    => { strict_type => 1, store => \$infile },
         sample_id => { strict_type => 1, store => \$sample_id },
+        infile    => { strict_type => 1, store => \$infile },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Set the key and value pair to add to sample_info hash
     my %parameter = (
@@ -140,8 +141,8 @@ sub add_program_metafile_to_sample_info {
 ##         : $program_name     => Program name
 ##         : $metafile_tag     => Id tag of meta file
 ##         : $path             => Path of file
-##         : $directory     => Directory of the file
-##         : $file          => File name
+##         : $directory        => Directory of the file
+##         : $file             => File name
 ##         : $version          => Version of file
 ##         : $sample_id        => Sample_id for data at sample level {Optional}
 ##         : $infile           => Infile for data at sample level {Optional}
@@ -195,11 +196,11 @@ sub add_program_metafile_to_sample_info {
             strict_type => 1,
             store       => \$version
         },
-        infile    => { strict_type => 1, store => \$infile },
         sample_id => { strict_type => 1, store => \$sample_id },
+        infile    => { strict_type => 1, store => \$infile },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Set the key and value pair to add to sample_info hash
     my %parameter = (
@@ -230,6 +231,79 @@ sub add_program_metafile_to_sample_info {
 
                 $sample_info_href->{program}{$program_name}{$metafile_tag}
                   {$parameter_key} = $parameter_value;
+            }
+        }
+    }
+    return;
+}
+
+sub add_processing_metafile_to_sample_info {
+
+##add_processing_metafile_to_sample_info
+
+##Function : Adds metafile path from sample_id|family_id processing to sample_info to track all metafiles and extract downstream
+##Returns  : ""
+##Arguments: $sample_info_href, $metafile_tag, $path, $sample_id
+##         : $sample_info_href => Records on samples and family hash {REF}
+##         : $metafile_tag     => Id tag of meta file
+##         : $path             => Path of file
+##         : $sample_id        => Sample_id for data at sample level {Optional}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $sample_info_href;
+    my $metafile_tag;
+    my $path;
+    my $sample_id;
+
+    my $tmpl = {
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href
+        },
+        metafile_tag => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$metafile_tag
+        },
+        path => {
+            strict_type => 1,
+            store       => \$path
+        },
+        sample_id => { strict_type => 1, store => \$sample_id },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Set the key and value pair to add to sample_info hash
+    my %parameter = ( path => $path, );
+
+    if ( defined $sample_id ) {
+
+      SAMPLE_PARAMETER:
+        while ( my ( $parameter_key, $parameter_value ) = each %parameter ) {
+
+            if ( defined $parameter_value ) {
+
+                $sample_info_href->{sample}{$sample_id}{$metafile_tag}
+                  {$parameter_key} = $parameter_value;
+            }
+        }
+    }
+    else {
+
+      FAMILY_PARAMETER:
+        while ( my ( $parameter_key, $parameter_value ) = each %parameter ) {
+
+            if ( defined $parameter_value ) {
+
+                $sample_info_href->{$metafile_tag}{$parameter_key} =
+                  $parameter_value;
             }
         }
     }

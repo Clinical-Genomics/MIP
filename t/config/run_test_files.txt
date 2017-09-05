@@ -56,6 +56,7 @@ processes_limit_job_id_string.t
 programs_update_program_mode_with_dry_run_all.t
 record_add_program_metafile_to_sample_info.t
 record_add_program_outfile_to_sample_info.t
+record_add_processing_metafile_to_sample_info.t
 sambamba_depth.t
 sambamba_flagstat.t
 sambamba_index.t
@@ -67,6 +68,7 @@ samtools_index.t
 samtools_mpileup.t
 samtools_stats.t
 samtools_view.t
+set_file_suffix.t
 shell_build_shebang.t
 shell_create_housekeeping_function.t
 shell_create_error_trap_function.t
