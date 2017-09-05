@@ -35,8 +35,7 @@ use Params::Check qw{check allow last_error};
 use Readonly;
 
 ## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $GREATER => q{>};
+Readonly my $SPACE => q{ };
 
 sub bedtools_genomecov {
 
