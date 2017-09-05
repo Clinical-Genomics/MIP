@@ -66,7 +66,7 @@ BEGIN {
 
     $perl_module{'Script::Utils'} = [qw{help}];
 
-    #PERL MODULES
+  PERL_MODULES:
     while ( my ( $module, $module_import ) = each %perl_module ) {
 
         use_ok( $module, @{$module_import} )
@@ -75,7 +75,7 @@ BEGIN {
 
     my @modules = ('MIP::Program::Alignment::Bedtools');
 
-    #MODULES
+  MODULES:
     for my $module (@modules) {
 
         require_ok($module) or BAIL_OUT 'Cannot load ' . $module;
@@ -123,12 +123,16 @@ my %specific_argument = (
         expected_output => q{2> stderrfile.test},
     },
     max_coverage => {
-		input           => q{500},
+        input           => q{500},
         expected_output => q{-max 500},
     },
-    outfile_path => {
-		input           => q{outfilePath},
+    stdout_path => {
+        input           => q{outfilePath},
         expected_output => q{> outfilePath},
+    },
+    stderrfile_path_append => {
+        input           => q{stderrfile_path_append},
+        expected_output => q{2>> stderrfile_path_append},
     },
 );
 
@@ -187,4 +191,3 @@ sub build_usage {
     -v/--version Display version
 END_USAGE
 }
-

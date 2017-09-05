@@ -1,7 +1,5 @@
 #!/usr/bin/env perl
 
-#### Copyright 2017 Henrik Stranneheim
-
 use Modern::Perl qw{2014};
 use warnings qw{FATAL utf8};
 use autodie;
@@ -18,36 +16,37 @@ use File::Basename qw{dirname basename};
 use File::Spec::Functions qw{catdir};
 use Getopt::Long;
 use Test::More;
-use FileHandle;
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), 'lib' );
 use Script::Utils qw{help};
 
-## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
-
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '0.0.0';
+our $VERSION = '1.0.0';
+
+## Constants
+Readonly my $SPACE        => q{ };
+Readonly my $TAB          => q{\t};
+Readonly my $DOUBLE_QUOTE => q{"};
+Readonly my $NEWLINE      => qq{\n};
 
 ###User Options
 GetOptions(
-    'h|help' => sub {
+    q{h|help} => sub {
         done_testing();
         say {*STDOUT} $USAGE;
         exit;
     },    #Display help text
-    'v|version' => sub {
+    q{v|version} => sub {
         done_testing();
-        say {*STDOUT} basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
-
+        say {*STDOUT} $NEWLINE, basename($PROGRAM_NAME),
+          $SPACE, $VERSION, $NEWLINE;
         exit;
     },    #Display version number
-    'vb|verbose' => $VERBOSE,
+    q{vb|verbose} => $VERBOSE,
   )
   or (
     done_testing(),
@@ -62,39 +61,57 @@ GetOptions(
 BEGIN {
 
 ### Check all internal dependency modules and imports
-## Modules with import
+##Modules with import
     my %perl_module;
 
     $perl_module{'Script::Utils'} = [qw{help}];
 
   PERL_MODULES:
     while ( my ( $module, $module_import ) = each %perl_module ) {
-
         use_ok( $module, @{$module_import} )
-          or BAIL_OUT 'Cannot load ' . $module;
+          or BAIL_OUT q{Cannot load } . $module;
     }
 
 ## Modules
-    my @modules = ('MIP::Program::Alignment::Chanjo');
+    my @modules = (q{MIP::Program::Alignment::Bwa});
 
   MODULES:
     for my $module (@modules) {
-
-        require_ok($module) or BAIL_OUT 'Cannot load ' . $module;
+        require_ok($module) or BAIL_OUT q{Cannot load } . $module;
     }
 }
 
-use MIP::Program::Alignment::Chanjo qw{chanjo_sex};
+use MIP::Program::Alignment::Bwa qw{run_bwamem};
 use MIP::Test::Commands qw{test_function};
 
 diag(
-"Test chanjo_sex MIP::Program::Alignment::Chanjo::VERSION, Perl $^V, $EXECUTABLE_NAME"
+    q{Test run_bwamem }
+      . $MIP::Program::Alignment::Bwa::VERSION
+      . q{, Perl}
+      . $PERL_VERSION,
+    $EXECUTABLE_NAME
 );
 
 ## Base arguments
-my $function_base_command = q{chanjo};
+my $function_base_command = q{run-bwamem};
+
+## Read group header line
+my @read_group_headers = (
+    $DOUBLE_QUOTE . q{@RG},
+    q{ID:} . q{1_140128_H8AHNADXX_1-1-2A_GATCAG_1} . $TAB,
+    q{SM:} . q{1-1-2A},
+    q{PL:} . q{ILLUMINA} . $DOUBLE_QUOTE,
+);
 
 my %base_argument = (
+    stderrfile_path => {
+        input           => q{stderrfile.test},
+        expected_output => q{2> stderrfile.test},
+    },
+    stderrfile_path_append => {
+        input           => q{stderrfile.test},
+        expected_output => q{2>> stderrfile.test},
+    },
     FILEHANDLE => {
         input           => undef,
         expected_output => $function_base_command,
@@ -108,54 +125,69 @@ my %required_argument = (
         expected_output => $function_base_command,
     },
     infile_path => {
-        input           => q{infile.test},
-        expected_output => q{infile.test},
+        input           => q{test_infile.fastq},
+        expected_output => q{test_infile.fastq},
+    },
+    idxbase => {
+        input           => q{GRCh37_homo_sapiens_-d5-.fasta},
+        expected_output => q{GRCh37_homo_sapiens_-d5-.fasta},
+    },
+    outfiles_prefix_path => {
+        input           => q{test_outfile.bam},
+        expected_output => q{-o test_outfile.bam},
     },
 );
 
-## Specific arguments
 my %specific_argument = (
-    outfile_path => {
-        input           => q{outfile.test},
-        expected_output => q{> outfile.test},
+    thread_number => {
+        input           => 2,
+        expected_output => q{-t 2},
+    },
+    hla_typing => {
+        input           => 1,
+        expected_output => q{-H},
+    },
+    read_group_header => {
+        input => ( join $SPACE, @read_group_headers ),
+        expected_output =>
+          ( q{-R} . $SPACE . join $SPACE, @read_group_headers ),
+    },
+    infile_path => {
+        input           => q{test_infile_1.fastq},
+        expected_output => q{test_infile_1.fastq},
+    },
+    second_infile_path => {
+        input           => q{test_infile_2.fastq},
+        expected_output => q{test_infile_2.fastq},
+    },
+    outfiles_prefix_path => {
+        input           => q{test_outfile.bam},
+        expected_output => q{-o test_outfile.bam},
     },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
     },
-
-    log_file_path => {
-        input           => q{logfile.test},
-        expected_output => q{--log-file logfile.test},
-    },
-    chr_prefix => {
-        input           => q{chr},
-        expected_output => q{--prefix chr},
-    },
-    log_level => {
-        input           => q{INFO},
-        expected_output => q{--log-level INFO},
-    },
     stderrfile_path_append => {
-        input           => q{stderrfile_path_append},
-        expected_output => q{2>> stderrfile_path_append},
+        input           => q{stderrfile.test},
+        expected_output => q{2>> stderrfile.test},
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&chanjo_sex;
+my $module_function_cref = \&run_bwamem;
 
 ## Test both base and function specific arguments
-my @arguments = ( \%base_argument, \%specific_argument );
+my @arguments = ( \%required_argument, \%specific_argument );
 
 foreach my $argument_href (@arguments) {
-
     my @commands = test_function(
         {
             argument_href          => $argument_href,
             required_argument_href => \%required_argument,
             module_function_cref   => $module_function_cref,
             function_base_command  => $function_base_command,
+            do_test_base_command   => 1,
         }
     );
 }
@@ -188,7 +220,7 @@ sub build_usage {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
 
     return <<"END_USAGE";
  $program_name [options]

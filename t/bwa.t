@@ -104,7 +104,7 @@ my @read_group_headers = (
 );
 
 my %base_argument = (
-    outfile_path => {
+    stdoutfile_path => {
         input           => q{test_outfile.bam},
         expected_output => q{1> test_outfile.bam},
     },
@@ -164,7 +164,7 @@ my %specific_argument = (
         input           => q{test_infile_2.fastq},
         expected_output => q{test_infile_2.fastq},
     },
-    outfile_path => {
+    stdoutfile_path => {
         input           => q{test_outfile.bam},
         expected_output => q{1> test_outfile.bam},
     },

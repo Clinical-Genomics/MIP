@@ -18,7 +18,6 @@ use File::Basename qw{dirname basename};
 use File::Spec::Functions qw{catdir};
 use Getopt::Long;
 use Test::More;
-use FileHandle;
 use Readonly;
 
 ## MIPs lib/
@@ -62,7 +61,7 @@ GetOptions(
 BEGIN {
 
 ### Check all internal dependency modules and imports
-## Modules with import
+
     my %perl_module;
 
     $perl_module{'Script::Utils'} = [qw{help}];
@@ -74,8 +73,7 @@ BEGIN {
           or BAIL_OUT 'Cannot load ' . $module;
     }
 
-## Modules
-    my @modules = ('MIP::Program::Alignment::Chanjo');
+    my @modules = ('MIP::Program::Alignment::Samtools');
 
   MODULES:
     for my $module (@modules) {
@@ -84,15 +82,15 @@ BEGIN {
     }
 }
 
-use MIP::Program::Alignment::Chanjo qw{chanjo_sex};
+use MIP::Program::Alignment::Samtools qw{samtools_index};
 use MIP::Test::Commands qw{test_function};
 
 diag(
-"Test chanjo_sex MIP::Program::Alignment::Chanjo::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test samtools_index MIP::Program::Alignment::Samtools::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments
-my $function_base_command = q{chanjo};
+my $function_base_command = q{samtools};
 
 my %base_argument = (
     FILEHANDLE => {
@@ -115,26 +113,13 @@ my %required_argument = (
 
 ## Specific arguments
 my %specific_argument = (
-    outfile_path => {
-        input           => q{outfile.test},
-        expected_output => q{> outfile.test},
-    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
     },
-
-    log_file_path => {
-        input           => q{logfile.test},
-        expected_output => q{--log-file logfile.test},
-    },
-    chr_prefix => {
-        input           => q{chr},
-        expected_output => q{--prefix chr},
-    },
-    log_level => {
-        input           => q{INFO},
-        expected_output => q{--log-level INFO},
+    bai_format => {
+        input           => q{1},
+        expected_output => q{-b},
     },
     stderrfile_path_append => {
         input           => q{stderrfile_path_append},
@@ -143,7 +128,7 @@ my %specific_argument = (
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&chanjo_sex;
+my $module_function_cref = \&samtools_index;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
