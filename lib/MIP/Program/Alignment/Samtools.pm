@@ -16,7 +16,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Inherit from Exporter to export functions and variables
     use base qw {Exporter};
@@ -194,9 +194,10 @@ sub samtools_index {
 
 ## Function : Perl wrapper for writing samtools index recipe to $FILEHANDLE. Based on samtools 1.3.1 (using htslib 1.3.1).
 ## Returns  : "@commands"
-## Arguments: $infile_path, $stderrfile_path, $FILEHANDLE, $bai_format
+## Arguments: $infile_path, $stderrfile_path, stdoutfile_path, $FILEHANDLE, $bai_format
 ##          : $infile_path            => Infile path
 ##          : $stderrfile_path        => Stderrfile path
+##          : $stdoutfile_path        => Stdoutfile path
 ##          : $FILEHANDLE             => Sbatch filehandle to write to
 ##          : $bai_format             => Generate BAI-format index for BAM files
 ##          : $stderrfile_path_append => Stderrfile path append
@@ -205,7 +206,7 @@ sub samtools_index {
 
     ## Flatten argument(s)
     my $infile_path;
-    my $stdout_path;
+    my $stdoutfile_path;
     my $stderrfile_path;
     my $FILEHANDLE;
     my $bai_format;
@@ -218,7 +219,7 @@ sub samtools_index {
             strict_type => 1,
             store       => \$infile_path
         },
-        stdout_path     => { strict_type => 1, store => \$stdout_path },
+        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
         stderrfile_path_append =>
           { strict_type => 1, store => \$stderrfile_path_append },
@@ -247,7 +248,7 @@ sub samtools_index {
         {
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
-            stdout_path            => $stdout_path
+            stdoutfile_path        => $stdoutfile_path,
         }
       );
 
