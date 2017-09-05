@@ -30,8 +30,13 @@ use MIP::PacketManager::Conda
   qw{ conda_create conda_source_activate conda_source_deactivate conda_update conda_check conda_install };
 use Script::Utils qw(help set_default_array_parameters);
 use MIP::Check::Unix qw{ check_binary_in_path };
+use MIP::Check::Path qw{ check_dir_path_exist };
 
 our $USAGE = build_usage( {} );
+
+## Constants
+Readonly my $SPACE   => q{ };
+Readonly my $NEWLINE => qq{\n};
 
 ### Set parameter default
 
@@ -48,7 +53,7 @@ $parameter{conda_dir_path} = [
     catdir( $ENV{HOME}, q{miniconda3} )
 ];
 $parameter{conda_packages}{python} = q{2.7};
-$parameter{conda_packages}{pip}    = undef;
+$parameter{conda_packages}{pip} = undef;
 
 ## Bioconda channel
 $parameter{bioconda}{bwa}       = '0.7.15';
@@ -79,7 +84,7 @@ $parameter{bioconda}{cmake} = '3.3.1';
 ## Bioconda pathes
 # For correct softlinking in share and bin in conda env
 $parameter{bioconda_bwakit_patch}  = '-0';
-$parameter{bioconda_snpeff_patch}  = 'p-1';
+$parameter{bioconda_snpeff_patch}  = 'q-0';
 $parameter{bioconda_snpsift_patch} = 'p-0';
 $parameter{bioconda_picard_patch}  = '-1';
 $parameter{bioconda_manta_patch}   = '-0';
@@ -217,12 +222,18 @@ GetOptions(
     }
   );
 
-## Establish path to conda and check for active conda env
-my $conda_dir_path = conda_check(
+## Establish path to conda
+my @conda_dir_paths = check_dir_path_exist(
     {
-        conda_dir_path_ref => $parameter{conda_dir_path},
+        dir_paths_ref => $parameter{conda_dir_path},
     }
 );
+my $conda_dir_path = $conda_dir_paths[0];
+if (not defined $conda_dir_path) {
+    say STDERR q{Could not find miniconda directory in:} . $SPACE
+      . join $SPACE, @{$parameter{conda_dir_path}};
+    exit 1;
+}
 
 ## Update default parameter dependent on other parameters
 if (   ( exists $parameter{conda_environment} )
@@ -251,9 +262,6 @@ Script::Utils::set_default_array_parameters(
     }
 );
 
-## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
 
 ##########
 ###MAIN###
@@ -305,7 +313,8 @@ if ( $parameter{conda_update} ) {
 ## Create an array for conda packages that are to be installed from provided hash
 my @packages = create_package_array(
     {
-        package_href => $parameter{conda_packages},
+        package_href              => $parameter{conda_packages},
+        package_version_separator => q{=},
     }
 );
 
@@ -359,7 +368,8 @@ else {
 ## Create an array for conda packages that are to be installed from provided hash
 @packages = create_package_array(
     {
-        package_href => $parameter{bioconda},
+        package_href              => $parameter{bioconda},
+        package_version_separator => q{=},
     }
 );
 say {$FILEHANDLE} q{## Installing bioconda modules in conda environment};
@@ -3529,16 +3539,19 @@ sub create_package_array {
 
 ## create_package_list
 
-##Function : Takes a reference to hash of packages and creates an array with keys and values joined by "=" if value is defined.
-##         : Also checks that the version number makes sense
-##Returns  : "@packages"
-##Arguments: package_href
-##         : $package_href => Ref to hash with packages
+##Function  : Takes a reference to hash of packages and creates an array with 
+##          : package and version joined with a supplied separator if value is defined.
+##          : Also checks that the version number makes sense
+##Returns   : "@packages"
+##Arguments : $package_href, $package_version_separator
+##          : $package_href              => Ref to hash with packages
+##          : $package_version_separator => Scalar separating the package and the version 
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $package_href;
+    my $package_version_separator;
 
     my $tmpl = {
         package_href => {
@@ -3547,6 +3560,12 @@ sub create_package_array {
             default     => {},
             strict_type => 1,
             store       => \$package_href
+        },
+        package_version_separator => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$package_version_separator
         },
     };
 
@@ -3564,7 +3583,8 @@ sub create_package_array {
                   . q{package: }
                   . $_;
             }
-            push @packages, $_ . q{=} . $package_href->{$_};
+            push @packages, $_ . $package_version_separator
+              . $package_href->{$_};
         }
         else {
             push @packages, $_;
@@ -3612,6 +3632,8 @@ sub create_target_paths {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my %target_link_paths;
+    my $target_path;
+    my $link_path;
 
     my %binaries = (
         bwakit => [
@@ -3635,17 +3657,27 @@ sub create_target_paths {
       BINARIES:
         foreach my $binary ( @{ $binaries{$program} } ) {
             ## Construct target path
-            my $target_path = catfile(
-                $parameter_href->{conda_prefix_path},
-                q{share},
-                $program . q{-}
-                  . $parameter_href->{bioconda}{$program}
-                  . $parameter_href->{ q{bioconda_} . $program . q{_patch} },
-                $binary
-            );
+            if ( $program eq q{manta} ) {
+                $target_path = catfile(
+                    $parameter_href->{conda_prefix_path},
+                    q{share}, $program . q{-}
+                    . $parameter_href->{bioconda}{$program}
+                    . $parameter_href->{ q{bioconda_} . $program . q{_patch} },
+                    q{bin}, $binary
+                );
+            }
+            else {
+                $target_path = catfile(
+                    $parameter_href->{conda_prefix_path},
+                    q{share}, $program . q{-}
+                    . $parameter_href->{bioconda}{$program}
+                    . $parameter_href->{ q{bioconda_} . $program . q{_patch} },
+                    $binary
+                );
+            }
             ## Construct link_path
-            my $link_path =
-              catfile( $parameter_href->{conda_prefix_path}, q{bin}, $binary );
+            $link_path = catfile( 
+                $parameter_href->{conda_prefix_path}, q{bin}, $binary );
             ## Add paths to hash
             $target_link_paths{$target_path} = $link_path;
         }
@@ -3706,7 +3738,7 @@ sub finishing_bioconda_package_install {
             outfile_path => $outfile_path,
         }
     );
-    print {$FILEHANDLE} $NEWLINE;
+    say {$FILEHANDLE} $NEWLINE;
 
     ## Custom snpeff - Download necessary databases
 # Check and if required add the vertebrate mitochondrial codon table to snpeff config
@@ -3750,6 +3782,7 @@ sub finishing_bioconda_package_install {
             );
         }
     }
+    print {$FILEHANDLE} $NEWLINE;
 
     ## Custom manta
     # Make file executable
