@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
 use utf8;    #Allow unicode characters in this script
-use open qw{  :encoding(UTF-8) :st};
+use open qw{  :encoding(UTF-8) :std};
 use charnames qw{ :full :short };
 use Carp;
 use English qw{-no_match_vars};
@@ -29,7 +29,7 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ MIP::PATH::TO::MODULE };
+    our @EXPORT_OK = qw{ comma_separated_subroutines };
 }
 
 ## Constants
