@@ -31,6 +31,8 @@ use MIP::PacketManager::Conda
 use Script::Utils qw(help set_default_array_parameters);
 use MIP::Check::Unix qw{ check_binary_in_path };
 use MIP::Check::Path qw{ check_dir_path_exist };
+use MIP::Recipes::Install::Conda qw{ setup_conda_env };
+
 
 our $USAGE = build_usage( {} );
 
@@ -155,7 +157,7 @@ $array_parameter{perl_modules}{default}              = [
     'File::Copy::Recursive',     # VEP
 ];
 
-my $VERSION = '1.2.8';
+my $VERSION = '1.2.9';
 
 ###User Options
 GetOptions(
@@ -290,83 +292,21 @@ create_bash_file(
 
 print STDOUT q{Will write install instructions to '} . $file_name_path, "'\n";
 
-## Scan PATH for conda
-my $binary = q{conda};
-check_binary_in_path(
+
+## Seting up conda environment and installing default packages
+setup_conda_env(
     {
-        binary => $binary,
+        conda_packages_href => $parameter{conda_packages},
+        conda_env => $parameter{conda_environment},
+        conda_env_path => $parameter{conda_prefix_path},
+        FILEHANDLE => $FILEHANDLE,
+        conda_update => $parameter{conda_update},
     }
 );
-
-## Optionally update conda
-if ( $parameter{conda_update} ) {
-    say $FILEHANDLE q{### Updating Conda};
-    conda_update(
-        {
-            FILEHANDLE => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE $NEWLINE;
-}
-
-## Create conda environment if specified in command line, else install packages in root
-## Create an array for conda packages that are to be installed from provided hash
-my @packages = create_package_array(
-    {
-        package_href              => $parameter{conda_packages},
-        package_version_separator => q{=},
-    }
-);
-
-if ( exists( $parameter{conda_environment} )
-    && $parameter{conda_environment} )
-{
-    ## Check for existing conda environment
-    if ( !-d catdir( $parameter{conda_prefix_path} ) ) {
-        ## Create conda environment and install packages
-        say $FILEHANDLE q{## Creating conda environment: }
-          . $parameter{conda_environment}
-          . q{ and install packages};
-        conda_create(
-            {
-                env_name     => $parameter{conda_environment},
-                packages_ref => \@packages,
-                FILEHANDLE   => $FILEHANDLE,
-            }
-        );
-        say $FILEHANDLE $NEWLINE;
-    }
-    else {
-        say STDERR q{Conda environment: } . $parameter{conda_environment}
-          . q{ already exists};
-        say STDERR q{Will try to install packages into existing envronment};
-        say {$FILEHANDLE}
-          q{## Installing conda packages into existing environment};
-        conda_install(
-            {
-                packages_ref => \@packages,
-                FILEHANDLE   => $FILEHANDLE,
-                env_name     => $parameter{conda_environment},
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
-}
-else {
-    say {$FILEHANDLE}
-      q{## Installing and/or updating python and packages in conda root};
-    conda_install(
-        {
-            packages_ref => \@packages,
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE $NEWLINE;
-}
 
 ## Install modules into conda environment using channel Bioconda
 ## Create an array for conda packages that are to be installed from provided hash
-@packages = create_package_array(
+my @packages = create_package_array(
     {
         package_href              => $parameter{bioconda},
         package_version_separator => q{=},
