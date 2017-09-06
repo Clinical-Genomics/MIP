@@ -15,7 +15,7 @@ This is a basic template for writing tests for modules that do not return a comm
 This templates is for testing modules that returns a ´@commands´ array which, consists of the base command followed by testable arguments. The arguments can be of three types either base, required or specific. The ´@command´ array is used by the test_function subroutine in the Commands module in order to control that the expected output is generated. The required arguments are always supplied to the test function, either by themselves or in conjunction with a base or specific argument. The testable arguments can either be a Scalar or an Array.
 
 ## Using the templates
-Change all occurrences of barewords that is written in capital letters to the appropriate variable. Notable exceptions are the words MIP, USAGE and VERSION.
+Change all occurrences of barewords that are written in capital letters to the appropriate variable. Notable exceptions are the words MIP, USAGE and VERSION.
 
 
 ### Examples
