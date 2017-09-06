@@ -16,7 +16,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Inherit from Exporter to export functions and variables
     use base qw {Exporter};
@@ -362,9 +362,9 @@ sub sambamba_markdup {
 
 ## Function : Perl wrapper for writing sambamba markdup recipe to $FILEHANDLE. Based on sambamba 0.6.5
 ## Returns  : "@commands"
-## Arguments: $infile_path, $stdout_path, $stderrfile_path, $FILEHANDLE, temp_directory, $show_progress, $hash_table_size, $overflow_list_size, $io_buffer_size
+## Arguments: $infile_path, $stdoutfile_path, $stderrfile_path, $FILEHANDLE, temp_directory, $show_progress, $hash_table_size, $overflow_list_size, $io_buffer_size
 ##          : $infile_path            => Infile path
-##          : $stdout_path            => Outfile path
+##          : $stdoutfile_path        => Standard outfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $FILEHANDLE             => Sbatch filehandle to write to
 ##          : $temp_directory         => Specify directory for temporary files
@@ -381,7 +381,7 @@ sub sambamba_markdup {
 
     ## Flatten argument(s)
     my $infile_path;
-    my $stdout_path;
+    my $stdoutfile_path;
     my $stderrfile_path;
     my $FILEHANDLE;
     my $temp_directory;
@@ -397,7 +397,7 @@ sub sambamba_markdup {
             strict_type => 1,
             store       => \$infile_path
         },
-        stdout_path     => { strict_type => 1, store => \$stdout_path },
+        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
         stderrfile_path_append =>
           { strict_type => 1, store => \$stderrfile_path_append },
@@ -466,7 +466,7 @@ sub sambamba_markdup {
         {
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
-            stdout_path            => $stdout_path,
+            stdoutfile_path        => $stdoutfile_path,
         }
       );
 

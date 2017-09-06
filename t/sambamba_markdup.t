@@ -32,7 +32,7 @@ Readonly my $NEWLINE => qq{\n};
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '0.0.0';
+our $VERSION = '1.0.0';
 
 ###User Options
 GetOptions(
@@ -89,7 +89,7 @@ use MIP::Program::Alignment::Sambamba qw{sambamba_markdup};
 use MIP::Test::Commands qw{test_function};
 
 diag(
-"Test sambamba_markdup MIP::Program::Alignment::Sambamba::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test sambamba_markdup $MIP::Program::Alignment::Sambamba::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 ## Base arguments
@@ -124,9 +124,9 @@ my %specific_argument = (
         input           => q{temp},
         expected_output => q{--tmpdir=temp},
     },
-    stdout_path => {
-        input           => q{outfile.test},
-        expected_output => q{outfile.test},
+    stdoutfile_path => {
+        input           => q{outfile_path},
+        expected_output => q{1> outfile_path},
     },
     hash_table_size => {
         input           => q{8},

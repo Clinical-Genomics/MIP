@@ -71,7 +71,7 @@ BEGIN {
     }
 
     ## Modules
-    my @modules = ('MIP::Check::File');
+    my @modules = ('MIP::Check::Path');
 
     for my $module (@modules) {
 
@@ -79,10 +79,10 @@ BEGIN {
     }
 }
 
-use MIP::Check::File qw(check_file_version_exist);
+use MIP::Check::Path qw(check_file_version_exist);
 
 diag(
-"Test check_file_version_exist $MIP::Check::File::VERSION, Perl $^V, $EXECUTABLE_NAME"
+"Test check_file_version_exist $MIP::Check::Path::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
 
 # Create anonymous filehandle
