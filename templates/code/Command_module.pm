@@ -66,7 +66,7 @@ sub name_of_subroutine {
 
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Stores commands depending on input parameters
     my @commands = qw{ BASE_COMMAND };
