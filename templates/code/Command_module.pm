@@ -29,7 +29,7 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ comma_separated_subroutines };
+    our @EXPORT_OK = qw{ space separated subroutines };
 }
 
 ## Constants
