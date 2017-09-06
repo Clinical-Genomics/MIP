@@ -522,7 +522,7 @@ sub analysis_bwa_mem {
             say {$FILEHANDLE} q{wait}, $NEWLINE;
         }
 
-        close {$FILEHANDLE};
+        close $FILEHANDLE;
 
         if ( $mip_program_mode == 1 ) {
 
