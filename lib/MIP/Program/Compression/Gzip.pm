@@ -41,16 +41,16 @@ sub gzip {
 
 ## Function : Perl wrapper for writing gzip recipe to $FILEHANDLE or return commands array. Based on gzip 1.3.12.
 ## Returns  : "@commands"
-## Arguments: $FILEHANDLE, $stdout, $decompress, $infile_path, $outfile_path, $quiet, $verbose
-##          : $FILEHANDLE   => Filehandle to write to
+## Arguments: $FILEHANDLE, $stdout, $stderrfile_path, $stderrfile_path_append, $decompress, $infile_path, $outfile_path, $quiet, $verbose
+##          : $FILEHANDLE             => Filehandle to write to
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
-##          : $stdout       => Write on standard output, keep original files unchanged
-##          : $decompress   => Decompress
-##          : $infile_path  => Infile path
-##          : $outfile_path => Outfile path. Write documents to FILE
-##          : $quiet        => Suppress all warnings
-##          : $verbose      => Verbosity
+##          : $stdout                 => Write on standard output, keep original files unchanged
+##          : $decompress             => Decompress
+##          : $infile_path            => Infile path
+##          : $outfile_path           => Outfile path. Write documents to FILE
+##          : $quiet                  => Suppress all warnings
+##          : $verbose                => Verbosity
 
     my ($arg_href) = @_;
 
