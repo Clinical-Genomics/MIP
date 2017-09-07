@@ -11,7 +11,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Inherit from Exporter to export functions and variables
     our @ISA = qw(Exporter);
@@ -32,14 +32,15 @@ sub merge {
 
 ##merge
 
-##Function : Perl wrapper for writing svdb merge recipe to $FILEHANDLE or return commands array. Based on svdb 0.1.2.
+##Function : Perl wrapper for writing svdb merge recipe to $FILEHANDLE or return commands array. Based on svdb 1.0.7.
 ##Returns  : "@commands"
-##Arguments: $infile_paths_ref, $outfile_path, $stderrfile_path, $FILEHANDLE, $priority
+##Arguments: $infile_paths_ref, $outfile_path, $stderrfile_path, $FILEHANDLE, $priority, $notag
 ##         : $infile_paths_ref => Infile path {REF}
 ##         : $outfile_path     => Outfile path
 ##         : $stderrfile_path  => Stderr file path to write to {OPTIONAL}
 ##         : $FILEHANDLE       => Filehandle to write to
 ##         : $priority         => Priority order of structural variant calls
+##         : $notag            => Do not add the the VARID and set entries to the info field
 
     my ($arg_href) = @_;
 
@@ -49,12 +50,14 @@ sub merge {
     my $stderrfile_path;
     my $FILEHANDLE;
     my $priority;
+    my $notag;
 
     my $tmpl = {
 	infile_paths_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$infile_paths_ref },
 	outfile_path => { strict_type => 1, store => \$outfile_path },
 	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
 	priority => { strict_type => 1, store => \$priority },
+		notag => { strict_type => 1, store => \$notag },
 	FILEHANDLE => { store => \$FILEHANDLE },
     };
 
@@ -67,6 +70,11 @@ sub merge {
     if ($priority) {
 
 	push(@commands, "--priority ".$priority);  #Priority order of structural variant calls
+    }
+    if ($notag) {
+
+        # Do not tag variant with origin file
+	push @commands, q{--notag };
     }
 
     ## Infile
@@ -81,7 +89,7 @@ sub merge {
 	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
     }
     if($FILEHANDLE) {
-	
+
 	print $FILEHANDLE join(" ", @commands)." ";
     }
     return @commands;
