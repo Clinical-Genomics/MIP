@@ -41,16 +41,16 @@ sub gzip {
 
 ## Function : Perl wrapper for writing gzip recipe to $FILEHANDLE or return commands array. Based on gzip 1.3.12.
 ## Returns  : "@commands"
-## Arguments: $quiet, $verbose, $infile_path, $FILEHANDLE, $stdout, $stderrfile_path, $stderrfile_path_append, $decompress, $infile_path, $outfile_path
+## Arguments: $quiet, $verbose, $infile_path, $stdout, $decompress, $outfile_path, $FILEHANDLE, $stderrfile_path, $stderrfile_path_append
 ##          : $quiet                  => Suppress all warnings
 ##          : $verbose                => Verbosity
+##          : $infile_path            => Infile path
+##          : $stdout                 => Write on standard output, keep original files unchanged
+##          : $decompress             => Decompress
+##          : $outfile_path           => Outfile path. Write documents to FILE
 ##          : $FILEHANDLE             => Filehandle to write to (scalar undefined)
 ##          : $stderrfile_path        => Stderrfile path (scalar )
 ##          : $stderrfile_path_append => Append stderr info to file path
-##          : $stdout                 => Write on standard output, keep original files unchanged
-##          : $decompress             => Decompress
-##          : $infile_path            => Infile path
-##          : $outfile_path           => Outfile path. Write documents to FILE
 
     my ($arg_href) = @_;
 
@@ -60,15 +60,15 @@ sub gzip {
 
     ## Flatten argument(s)
     my $infile_path;
-    my $FILEHANDLE;
-    my $stderrfile_path;
-    my $stderrfile_path_append;
     my $stdout;
     my $decompress;
     my $outfile_path;
+    my $FILEHANDLE;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
 
     my $tmpl = {
-        quiet => {
+        quiet        => {
             default     => 0,
             allow       => [ 0, 1 ],
             strict_type => 1,
@@ -86,13 +86,13 @@ sub gzip {
             strict_type => 1,
             store       => \$infile_path
         },
+        stdout      => { strict_type => 1, store => \$stdout },
+        decompress  => { strict_type => 1, store => \$decompress },
+        outfile_path => { strict_type => 1, store => \$outfile_path },
         FILEHANDLE      => { store       => \$FILEHANDLE },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
         stderrfile_path_append =>
           { strict_type => 1, store => \$stderrfile_path_append },
-        stdout       => { strict_type => 1, store => \$stdout },
-        decompress   => { strict_type => 1, store => \$decompress },
-        outfile_path => { strict_type => 1, store => \$outfile_path },
 
     };
 
@@ -117,12 +117,13 @@ sub gzip {
         push @commands, q{--decompress};
     }
 
-    if ($stdout) {    #Write to stdout stream
+     #Write to stdout stream
+    if ($stdout) {
 
         push @commands, q{--stdout};
     }
 
-    ## FILE
+    ## Infile
     push @commands, $infile_path;
 
     ## Outfile
