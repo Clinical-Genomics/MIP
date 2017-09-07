@@ -65,7 +65,7 @@ $parameter{bioconda}{cmake} = '3.3.1';
 ## Bioconda pathes
 # For correct softlinking in share and bin in conda env
 $parameter{bioconda_bwakit_patch}  = '-0';
-$parameter{bioconda_snpeff_patch}  = 'p-1';
+$parameter{bioconda_snpeff_patch}  = 'q-0';
 $parameter{bioconda_snpsift_patch} = 'p-0';
 $parameter{bioconda_picard_patch}  = '-1';
 $parameter{bioconda_manta_patch}   = '-0';
@@ -94,7 +94,7 @@ $parameter{cnvnator}               = '0.3.3';
 $parameter{cnvnator_root_binary} =
   'root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz';
 $parameter{tiddit} = '1.1.5';
-$parameter{svdb}   = '1.0.6';
+$parameter{svdb}   = '1.0.7';
 
 ## Define default parameters
 my %array_parameter;
@@ -609,7 +609,7 @@ sub build_usage {
     -cnvn/--cnvnator Set the cnvnator version (Default: 0.3.3)
     -cnvnr/--cnvnator_root_binary Set the cnvnator root binary (Default: "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz")
     -tid/--tiddit Set the tiddit version (Default: "1.1.5")
-    -svdb/--svdb Set the svdb version (Default: "1.0.6")
+    -svdb/--svdb Set the svdb version (Default: "1.0.7")
 
     ## Utility
     -psh/--prefer_shell Shell will be used for overlapping shell and biconda installations (Supply flag to enable)
@@ -3090,7 +3090,7 @@ sub svdb {
     print $FILEHANDLE '## Download Svdb', "\n";
     Program::Download::Wget::wget(
         {
-            url => 'https://github.com/J35P312/SVDB/archive/'
+            url => 'https://github.com/J35P312/SVDB/archive/SVDB-'
               . $parameter_href->{svdb} . '.zip',
             FILEHANDLE   => $FILEHANDLE,
             quiet        => $parameter_href->{quiet},
@@ -3121,7 +3121,7 @@ sub svdb {
     print $FILEHANDLE '## Move to Svdb directory', "\n";
     gnu_cd(
         {
-            directory_path => 'SVDB-' . $parameter_href->{svdb},
+            directory_path => 'SVDB-SVDB-' . $parameter_href->{svdb},
             FILEHANDLE     => $FILEHANDLE,
         }
     );
