@@ -41,17 +41,17 @@ sub pigz {
 
 ## Function : Perl wrapper for writing pigz recipe to $FILEHANDLE or return commands array. Based on pigz 2.3.1.
 ## Returns  : "@commands"
-## Arguments: $FILEHANDLE, $stdout, $stderrfile_path, $stderrfile_path_append, $decompress, $infile_path, $outfile_path, $processes, $quiet, $verbose
+## Arguments:  $quiet, $verbose, $infile_path, $stdout, $decompress,  $outfile_path, $processes, $FILEHANDLE, $stderrfile_path, $stderrfile_path_append
+##          : $quiet                  => Suppress all warnings
+##          : $verbose                => Verbosity
+##          : $infile_path            => Infile path
+##          : $stdout                 => Write on standard output, keep original files unchanged
+##          : $decompress             => Decompress
+##          : $outfile_path           => Outfile path
+##          : $processes              => Allow up to n compression threads
 ##          : $FILEHANDLE             => Filehandle to write to
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
-##          : $stdout                 => Write on standard output, keep original files unchanged
-##          : $decompress             => Decompress
-##          : $infile_path            => Infile path
-##          : $outfile_path           => Outfile path
-##          : $processes              => Allow up to n compression threads
-##          : $quiet                  => Suppress all warnings
-##          : $verbose                => Verbosity
 
     my ($arg_href) = @_;
 
@@ -60,34 +60,16 @@ sub pigz {
     my $verbose;
 
     ## Flatten argument(s)
+    my $infile_path;
+    my $stdout;
+    my $decompress;
+    my $outfile_path;
+    my $processes;
     my $FILEHANDLE;
     my $stderrfile_path;
     my $stderrfile_path_append;
-    my $stdout;
-    my $decompress;
-    my $infile_path;
-    my $outfile_path;
-    my $processes;
 
     my $tmpl = {
-        FILEHANDLE      => { store       => \$FILEHANDLE },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        stdout      => { strict_type => 1, store => \$stdout },
-        decompress  => { strict_type => 1, store => \$decompress },
-        infile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$infile_path
-        },
-        outfile_path => { strict_type => 1, store => \$outfile_path },
-        processes    => {
-            allow       => qr/^\d+$/,
-            strict_type => 1,
-            store       => \$processes
-        },
         quiet => {
             default     => 0,
             allow       => [ 0, 1 ],
@@ -100,11 +82,29 @@ sub pigz {
             strict_type => 1,
             store       => \$verbose
         },
+        infile_path => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$infile_path
+        },
+        stdout       => { strict_type => 1, store => \$stdout },
+        decompress   => { strict_type => 1, store => \$decompress },
+        outfile_path => { strict_type => 1, store => \$outfile_path },
+        processes    => {
+            allow       => qr/^\d+$/,
+            strict_type => 1,
+            store       => \$processes
+        },
+        FILEHANDLE      => { store       => \$FILEHANDLE },
+        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+        stderrfile_path_append =>
+          { strict_type => 1, store => \$stderrfile_path_append },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## pigz
+    # Stores commands depending on input parameters
     my @commands = qw{pigz};    #Stores commands depending on input parameters
 
     ## Options
@@ -133,7 +133,7 @@ sub pigz {
         push @commands, q{--stdout};
     }
 
-    ## FILE
+    ## Infile
     push @commands, $infile_path;
 
     ## Outfile
