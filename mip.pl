@@ -113,7 +113,7 @@ eval_parameter_hash(
 );
 
 # Set MIP version
-our $VERSION = "v5.0.9";
+our $VERSION = 'v5.0.7';
 
 ## Directories, files, job_ids and sample_info
 my ( %infile, %indir_path, %infile_lane_prefix, %lane,
@@ -19424,6 +19424,7 @@ sub tiddit {
             infile_paths_ref => \@infile_paths,
             outfile_path     => $outfile_path_prefix . $outfile_suffix,
             FILEHANDLE       => $FILEHANDLE,
+	 notag => 1,
         }
     );
     say $FILEHANDLE "\n";
