@@ -49,14 +49,13 @@ sub name_of_subroutine {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-
     ## Flatten argument(s)
     my $stdoutfile_path;
     my $FILEHANDLE;
     my $stderrfile_path;
     my $stderrfile_path_append;
 
+    ## Default(s)
 
     my $tmpl = {
         stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },

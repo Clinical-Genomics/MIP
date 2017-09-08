@@ -41,9 +41,7 @@ sub gzip {
 
 ## Function : Perl wrapper for writing gzip recipe to $FILEHANDLE or return commands array. Based on gzip 1.3.12.
 ## Returns  : "@commands"
-## Arguments: $quiet, $verbose, $infile_path, $stdout, $decompress, $outfile_path, $FILEHANDLE, $stderrfile_path, $stderrfile_path_append
-##          : $quiet                  => Suppress all warnings
-##          : $verbose                => Verbosity
+## Arguments: $infile_path, $stdout, $decompress, $outfile_path, $FILEHANDLE, $stderrfile_path, $stderrfile_path_append, $quiet, $verbose
 ##          : $infile_path            => Infile path
 ##          : $stdout                 => Write on standard output, keep original files unchanged
 ##          : $decompress             => Decompress
@@ -51,12 +49,10 @@ sub gzip {
 ##          : $FILEHANDLE             => Filehandle to write to (scalar undefined)
 ##          : $stderrfile_path        => Stderrfile path (scalar )
 ##          : $stderrfile_path_append => Append stderr info to file path
+##          : $quiet                  => Suppress all warnings
+##          : $verbose                => Verbosity
 
     my ($arg_href) = @_;
-
-    ## Default(s)
-    my $quiet;
-    my $verbose;
 
     ## Flatten argument(s)
     my $infile_path;
@@ -65,10 +61,26 @@ sub gzip {
     my $outfile_path;
     my $FILEHANDLE;
     my $stderrfile_path;
-    my $stderrfile_path_append;
+
+    ## Default(s)
+    my $quiet;
+    my $verbose;
 
     my $tmpl = {
-        quiet        => {
+        infile_path => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$infile_path
+        },
+        stdout       => { strict_type => 1, store => \$stdout },
+        decompress   => { strict_type => 1, store => \$decompress },
+        outfile_path => { strict_type => 1, store => \$outfile_path },
+        FILEHANDLE      => { store       => \$FILEHANDLE },
+        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+        stderrfile_path_append =>
+          { strict_type => 1, store => \$stderrfile_path_append },
+        quiet => {
             default     => 0,
             allow       => [ 0, 1 ],
             strict_type => 1,
@@ -80,19 +92,6 @@ sub gzip {
             strict_type => 1,
             store       => \$verbose
         },
-        infile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$infile_path
-        },
-        stdout      => { strict_type => 1, store => \$stdout },
-        decompress  => { strict_type => 1, store => \$decompress },
-        outfile_path => { strict_type => 1, store => \$outfile_path },
-        FILEHANDLE      => { store       => \$FILEHANDLE },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
 
     };
 
@@ -117,7 +116,7 @@ sub gzip {
         push @commands, q{--decompress};
     }
 
-     #Write to stdout stream
+    #Write to stdout stream
     if ($stdout) {
 
         push @commands, q{--stdout};

@@ -41,9 +41,7 @@ sub pigz {
 
 ## Function : Perl wrapper for writing pigz recipe to $FILEHANDLE or return commands array. Based on pigz 2.3.1.
 ## Returns  : "@commands"
-## Arguments:  $quiet, $verbose, $infile_path, $stdout, $decompress,  $outfile_path, $processes, $FILEHANDLE, $stderrfile_path, $stderrfile_path_append
-##          : $quiet                  => Suppress all warnings
-##          : $verbose                => Verbosity
+## Arguments: $infile_path, $stdout, $decompress,  $outfile_path, $processes, $FILEHANDLE, $stderrfile_path, $stderrfile_path_append, $quiet, $verbose
 ##          : $infile_path            => Infile path
 ##          : $stdout                 => Write on standard output, keep original files unchanged
 ##          : $decompress             => Decompress
@@ -52,12 +50,10 @@ sub pigz {
 ##          : $FILEHANDLE             => Filehandle to write to
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
+##          : $quiet                  => Suppress all warnings
+##          : $verbose                => Verbosity
 
     my ($arg_href) = @_;
-
-    ## Default(s)
-    my $quiet;
-    my $verbose;
 
     ## Flatten argument(s)
     my $infile_path;
@@ -69,19 +65,11 @@ sub pigz {
     my $stderrfile_path;
     my $stderrfile_path_append;
 
+    ## Default(s)
+    my $quiet;
+    my $verbose;
+
     my $tmpl = {
-        quiet => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$quiet
-        },
-        verbose => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$verbose
-        },
         infile_path => {
             required    => 1,
             defined     => 1,
@@ -100,6 +88,18 @@ sub pigz {
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
         stderrfile_path_append =>
           { strict_type => 1, store => \$stderrfile_path_append },
+        quiet => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$quiet
+        },
+        verbose => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$verbose
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
