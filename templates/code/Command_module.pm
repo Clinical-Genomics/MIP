@@ -41,20 +41,21 @@ sub name_of_subroutine {
 
 ## Function : Perl wrapper for generic commands module.
 ## Returns  : "@commands"
-## Arguments: $stdoutfile_path, $FILEHANDLE, $stderrfile_path, stderrfile_path_append
+
+## Arguments: $stdoutfile_path, $stderrfile_path, stderrfile_path_append, $FILEHANDLE
 ##          : $stdoutfile_path        => Stdoutfile path
-##          : $FILEHANDLE             => Filehandle to write to
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
+##          : $FILEHANDLE             => Filehandle to write to
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $stdoutfile_path;
-    my $FILEHANDLE;
     my $stderrfile_path;
     my $stderrfile_path_append;
-
+    my $FILEHANDLE;
+    
     ## Default(s)
 
     my $tmpl = {

@@ -113,7 +113,7 @@ eval_parameter_hash(
 );
 
 # Set MIP version
-our $VERSION = "v5.0.9";
+our $VERSION = 'v5.0.7';
 
 ## Directories, files, job_ids and sample_info
 my ( %infile, %indir_path, %infile_lane_prefix, %lane,
@@ -6068,7 +6068,7 @@ sub gatk_variantevalexome {
 
         ## Collect QC metadata info for later use
         my $qc_exome_outfile =
-          $outfile_tag . $call_type . q{_exome} . $outfile_suffix;
+          $outfile_prefix . $call_type . q{_exome} . $outfile_suffix;
         add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
@@ -6390,7 +6390,7 @@ sub gatk_variantevalall {
                 program_name     => 'variantevalall',
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile          => $outfile_tag . $call_type . $outfile_suffix,
+                outfile => $outfile_prefix . $call_type . $outfile_suffix,
             }
         );
     }
@@ -13290,7 +13290,7 @@ sub picardtools_collecthsmetrics {
                 program_name     => 'collecthsmetrics',
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile          => $outfile_tag,
+                outfile          => $outfile_prefix,
             }
         );
     }
@@ -13560,7 +13560,9 @@ sub picardtools_collectmultiplemetrics {
                 program_name     => 'collectmultiplemetrics',
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile => $outfile_tag . $DOT . q{alignment_summary_metrics},
+                outfile          => $outfile_prefix
+                  . $DOT
+                  . q{alignment_summary_metrics},
             }
         );
         add_program_outfile_to_sample_info(
@@ -13570,7 +13572,7 @@ sub picardtools_collectmultiplemetrics {
                 program_name     => 'collectmultiplemetricsinsertsize',
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile => $outfile_tag . $DOT . q{insert_size_metrics},
+                outfile => $outfile_prefix . $DOT . q{insert_size_metrics},
             }
         );
     }
@@ -13806,7 +13808,7 @@ sub chanjo_sexcheck {
                 program_name     => q{chanjo_sexcheck},
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile          => $outfile_tag . $outfile_suffix,
+                outfile          => $outfile_prefix . $outfile_suffix,
             }
         );
         add_program_metafile_to_sample_info(
@@ -13817,7 +13819,7 @@ sub chanjo_sexcheck {
                 infile           => $infile,
                 metafile_tag     => q{log},
                 directory        => $outsample_directory,
-                file             => $infile_tag . q{_chanjo_sexcheck.log},
+                file             => $infile_prefix . q{_chanjo_sexcheck.log},
             }
         );
     }
@@ -19422,6 +19424,7 @@ sub tiddit {
             infile_paths_ref => \@infile_paths,
             outfile_path     => $outfile_path_prefix . $outfile_suffix,
             FILEHANDLE       => $FILEHANDLE,
+	 notag => 1,
         }
     );
     say $FILEHANDLE "\n";
@@ -22079,7 +22082,7 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
                 program_name     => 'markduplicates',
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
-                outfile          => $outfile_tag . q{_metric},
+                outfile          => $outfile_prefix . q{_metric},
             }
         );
 
