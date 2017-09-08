@@ -112,7 +112,7 @@ $parameter{rhocall_path}           = catdir( $ENV{HOME}, 'rhocall' );
 $parameter{cnvnator}               = '0.3.3';
 $parameter{cnvnator_root_binary} =
   'root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz';
-$parameter{tiddit} = '1.1.5';
+$parameter{tiddit} = '1.1.6';
 $parameter{svdb}   = '1.0.7';
 
 ## Define default parameters
@@ -749,7 +749,7 @@ sub build_usage {
     -rhcp/--rhocall_path Set the path to where to install rhocall (Defaults: "HOME/rhocall")
     -cnvn/--cnvnator Set the cnvnator version (Default: 0.3.3)
     -cnvnr/--cnvnator_root_binary Set the cnvnator root binary (Default: "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz")
-    -tid/--tiddit Set the tiddit version (Default: "1.1.5")
+    -tid/--tiddit Set the tiddit version (Default: "1.1.6")
     -svdb/--svdb Set the svdb version (Default: "1.0.7")
 
     ## Utility
