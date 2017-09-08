@@ -331,6 +331,7 @@ sub conda_install {
             store       => \$conda_channel
         },
         env_name => {
+            default     => q{},
             strict_type => 1,
             store       => \$env_name
         },

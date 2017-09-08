@@ -31,7 +31,8 @@ use MIP::PacketManager::Conda
 use Script::Utils qw(help set_default_array_parameters);
 use MIP::Check::Unix qw{ check_binary_in_path };
 use MIP::Check::Path qw{ check_dir_path_exist };
-use MIP::Recipes::Install::Conda qw{ setup_conda_env };
+use MIP::Recipes::Install::Conda 
+  qw{ setup_conda_env install_bioconda_packages finish_bioconda_package_install };
 
 
 our $USAGE = build_usage( {} );
@@ -85,11 +86,11 @@ $parameter{bioconda}{cmake} = '3.3.1';
 
 ## Bioconda pathes
 # For correct softlinking in share and bin in conda env
-$parameter{bioconda_bwakit_patch}  = '-0';
-$parameter{bioconda_snpeff_patch}  = 'q-0';
-$parameter{bioconda_snpsift_patch} = 'p-0';
-$parameter{bioconda_picard_patch}  = '-1';
-$parameter{bioconda_manta_patch}   = '-0';
+$parameter{bioconda_patches}{bioconda_bwakit_patch}  = '-0';
+$parameter{bioconda_patches}{bioconda_snpeff_patch}  = 'q-0';
+$parameter{bioconda_patches}{bioconda_snpsift_patch} = 'p-0';
+$parameter{bioconda_patches}{bioconda_picard_patch}  = '-1';
+$parameter{bioconda_patches}{bioconda_manta_patch}   = '-0';
 
 ## Perl Modules
 $parameter{perl_version} = '5.18.2';
@@ -304,57 +305,30 @@ setup_conda_env(
     }
 );
 
-## Install modules into conda environment using channel Bioconda
-## Create an array for conda packages that are to be installed from provided hash
-my @packages = create_package_array(
+## Installing bioconda packages
+install_bioconda_packages(
     {
-        package_href              => $parameter{bioconda},
-        package_version_separator => q{=},
+        bioconda_packages_href => $parameter{bioconda},
+        bioconda_patches_href  => $parameter{bioconda_patches},       
+        conda_env              => $parameter{conda_environment},
+        conda_env_path         => $parameter{conda_prefix_path},
+        FILEHANDLE             => $FILEHANDLE,
     }
 );
-say {$FILEHANDLE} q{## Installing bioconda modules in conda environment};
-conda_install(
-    {
-        FILEHANDLE     => $FILEHANDLE,
-        packages_ref   => \@packages,
-        conda_channel  => q{bioconda},
-        env_name       => $parameter{conda_environment},
-    }
-);
-say {$FILEHANDLE} $NEWLINE;
-
-## Linking bioconda packages
-# Creating target-link paths
-my $target_link_paths_href = create_target_paths(
-    {
-        parameter_href       => \%parameter,
-        programs_to_link_ref => [qw{ bwakit picard snpeff snpsift manta }],
-    }
-);
-say {$FILEHANDLE} q{## Creating symbolic links for bioconda packages};
-TARGET_AND_LINK_PATHS:
-while ( my ($target_path, $link_path) = each %{$target_link_paths_href} ) {
-    gnu_ln(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            target_path => $target_path,
-            link_path   => $link_path,
-            symbolic    => 1,
-            force       => 1,
-        }
-    );
-    print {$FILEHANDLE} $NEWLINE;
-}
-print $FILEHANDLE $NEWLINE;
 
 ## Custom solutions for BWA, SnpEff and Manta
 ## Copying files, downloading necessary databases and make files executable
-finishing_bioconda_package_install(
+finish_bioconda_package_install(
     {
-        parameter_href => \%parameter,
-        FILEHANDLE     => $FILEHANDLE,
+        bioconda_packages_href      => $parameter{bioconda},
+        bioconda_patches_href       => $parameter{bioconda_patches},
+        conda_env                   => $parameter{conda_environment},
+        conda_env_path              => $parameter{conda_prefix_path},
+        FILEHANDLE                  => $FILEHANDLE,
+        snpeff_genome_versions_ref  => $parameter{snpeff_genome_versions},
     }
 );
+
 print {$FILEHANDLE} $NEWLINE;
 
 if ( @{ $parameter{select_programs} } ) {
@@ -3665,7 +3639,7 @@ sub finishing_bioconda_package_install {
         q{share},
         q{bwakit-}
           . $parameter_href->{bioconda}{bwakit}
-          . $parameter_href->{bioconda_bwakit_patch},
+          . $parameter_href->{bioconda_patches}{bioconda_bwakit_patch},
         q{resource-human-HLA}
     );
     my $outfile_path = catdir( $parameter_href->{conda_prefix_path}, q{bin} );
@@ -3686,10 +3660,10 @@ sub finishing_bioconda_package_install {
     foreach
       my $genome_version ( @{ $parameter_href->{snpeff_genome_versions} } )
     {
-        my $share_dir = catdir( $parameter_href->{conda_prefix_path}, 'share',
+        my $share_dir = catdir( $parameter_href->{bioconda_patches}{conda_prefix_path}, 'share',
                 'snpeff-'
               . $parameter_href->{bioconda}{snpeff}
-              . $parameter_href->{bioconda_snpeff_patch} );
+              . $parameter_href->{bioconda_patches}{bioconda_snpeff_patch} );
         check_mt_codon_table(
             {
                 parameter_href     => $parameter_href,
@@ -3705,7 +3679,7 @@ sub finishing_bioconda_package_install {
                 'share',
                 'snpeff-'
                   . $parameter_href->{bioconda}{snpeff}
-                  . $parameter_href->{bioconda_snpeff_patch},
+                  . $parameter_href->{bioconda_patches}{bioconda_snpeff_patch},
                 'data',
                 $genome_version
             )
