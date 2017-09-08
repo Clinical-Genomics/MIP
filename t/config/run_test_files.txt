@@ -34,6 +34,8 @@ gnu_sort.t
 gnu_split.t
 gnu_trap.t
 gnu_wait.t
+gzip.t
+pigz.t
 processes_print_wait.t
 processes_add_job_id_dependency_tree.t
 processes_add_pan_job_id_to_sample_id_dependency_tree.t
