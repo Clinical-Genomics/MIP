@@ -30,8 +30,8 @@ BEGIN {
 }
 
 ##Constants
-Readonly my $NEWLINE => qq{\n};
 Readonly my $DOT     => q{.};
+Readonly my $NEWLINE => qq{\n};
 
 sub analysis_gzip_fastq {
 

@@ -1180,31 +1180,36 @@ check_vt_for_references(
     }
 );
 
+## Split of fastq files in batches
 if ( $active_parameter{psplit_fastq_file} > 0 )
-{    #Split of fastq files in batches
+{
 
-    $log->info( '[Split fastq files in batches]', "\n" );
+    $log->info( q{[Split fastq files in batches]}, $NEWLINE );
+
+    use MIP::Recipes::Split_fastq_file qw{analysis_split_fastq_file};
+
+    my $program_name = lc q{split_fastq_file};
 
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
         ## Split input fastq files into batches of reads, versions and compress. Moves original file to subdirectory
-        split_fastq_file(
+        analysis_split_fastq_file(
             {
                 parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
                 infile_href             => \%infile,
-                indir_path_href         => \%indir_path,
-                infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
-                sample_id_ref           => \$sample_id,
-                program_name            => 'split_fastq_file',
+	     insample_directory      => $indir_path{$sample_id},
+	     outsample_directory     => $indir_path{$sample_id},
+                sample_id           => $sample_id,
+                program_name            => $program_name,
                 sequence_read_batch =>
                   $active_parameter{split_fastq_file_read_batch},
             }
         );
     }
-    exit;    #End here if this module is turned on
+    # End here if this module is turned on
+    exit;
 }
 
 ## GZip of fastq files
@@ -1212,7 +1217,7 @@ if (   ( $active_parameter{pgzip_fastq} > 0 )
     && ( $uncompressed_file_switch eq q{uncompressed} ) )
 {
 
-    $log->info( q{[Gzip for fastq files]} . $NEWLINE );
+    $log->info( q{[Gzip for fastq files]}, $NEWLINE );
 
     use MIP::Recipes::Gzip_fastq qw{analysis_gzip_fastq};
 
@@ -1254,7 +1259,7 @@ if (   ( $active_parameter{pgzip_fastq} > 0 )
 # Run FastQC
 if ( $active_parameter{pfastqc} > 0 ) {
 
-    $log->info( q{[Fastqc]} . $NEWLINE );
+    $log->info( q{[Fastqc]}, $NEWLINE );
 
     use MIP::Recipes::Fastqc qw{analysis_fastqc};
 
@@ -1283,7 +1288,7 @@ if ( $active_parameter{pfastqc} > 0 ) {
 
 if ( $active_parameter{pmadeline} > 0 ) {    #Run madeline
 
-    $log->info( q{[Madeline]} . $NEWLINE );
+    $log->info( q{[Madeline]},  $NEWLINE );
 
     madeline(
         {
@@ -1300,7 +1305,7 @@ if ( $active_parameter{pmadeline} > 0 ) {    #Run madeline
 # Run BWA Mem
 if ( $active_parameter{pbwa_mem} > 0 ) {
 
-    $log->info( q{[BWA Mem]} . $NEWLINE );
+    $log->info( q{[BWA Mem]},  $NEWLINE );
 
     use MIP::Recipes::Bwa_mem qw{analysis_bwa_mem};
     my $program_name = lc q{bwa_mem};
@@ -24574,323 +24579,7 @@ sub madeline {
     }
 }
 
-sub split_fastq_file {
 
-##split_fastq_file
-
-##Function : Split input fastq files into batches of reads, versions and compress. Moves original file to subdirectory.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_href, $indir_path_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, sequence_read_batch
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $infile_href                => Infiles hash {REF}
-##         : $indir_path_href            => Indirectories path(s) hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $sample_id_ref              => Sample id {REF}
-##         : $program_name               => Program name
-##         : $sequence_read_batch        => Number of sequences in each fastq batch
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-    my $sequence_read_batch;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $infile_href;
-    my $indir_path_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $sample_id_ref;
-    my $program_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
-        infile_href => {
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_href
-        },
-        indir_path_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$indir_path_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        sample_id_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$sample_id_ref
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref
-        },
-        sequence_read_batch => {
-            default     => 2500000,
-            allow       => qr/^\d+$/,
-            strict_type => 1,
-            store       => \$sequence_read_batch
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::IO::Files qw(migrate_file);
-    use MIP::Gnu::Coreutils qw(gnu_cp gnu_rm gnu_mv gnu_split gnu_mkdir);
-    use MIP::Program::Compression::Pigz qw(pigz);
-
-    my $core_number =
-      $active_parameter_href->{module_core_number}{ "p" . $program_name };
-
-    ## Filehandles
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    foreach my $fastq_file ( @{ $infile_href->{$$sample_id_ref} } ) {
-
-        ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        my ($file_name) = setup_script(
-            {
-                active_parameter_href => $active_parameter_href,
-                job_id_href           => $job_id_href,
-                FILEHANDLE            => $FILEHANDLE,
-                directory_id          => $$sample_id_ref,
-                program_name          => $program_name,
-                program_directory     => lc($program_name),
-                core_number           => $core_number,
-                process_time =>
-                  $active_parameter_href->{module_time}{ "p" . $program_name },
-                temp_directory => $$temp_directory_ref,
-            }
-        );
-
-        ## Assign directories
-        my $insample_directory  = $indir_path_href->{$$sample_id_ref};
-        my $outsample_directory = $indir_path_href->{$$sample_id_ref};
-
-        ## Assign file_tags
-        my $infile_path = catfile( $insample_directory,  $fastq_file );
-        my $file_path   = catfile( $$temp_directory_ref, $fastq_file );
-
-        ## Assign suffix
-        my $infile_suffix =
-          $parameter_href->{ "p" . $program_name }{infile_suffix};
-        my $outfile_suffix = get_file_suffix(
-            {
-                parameter_href => $parameter_href,
-                suffix_key     => "outfile_suffix",
-                program_name   => "p" . $program_name,
-            }
-        );
-
-        say $FILEHANDLE "## " . $program_name;
-
-        my %fastq_file_info;
-
-        ## Detect fastq file info for later rebuild of filename
-        if ( $fastq_file =~
-            /(\d+)_(\d+)_([^_]+)_([^_]+)_([^_]+)_(\d)$infile_suffix/ )
-        {
-
-            %fastq_file_info = (
-                lane      => $1,
-                date      => $2,
-                flowcell  => $3,
-                sample_id => $4,
-                index     => $5,
-                direction => $6,
-            );
-        }
-        ## Removes ".file_ending" in filename.FILENDING(.gz)
-        my $file_prefix =
-          fileparse( $fastq_file, qr/$infile_suffix|$infile_suffix\.gz/ )
-          . "_splitted_";
-
-        ## Copies file to temporary directory.
-        migrate_file(
-            {
-                FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $infile_path,
-                outfile_path => $$temp_directory_ref,
-            }
-        );
-        say $FILEHANDLE "wait ";
-
-        ## Decompress file and split
-        pigz(
-            {
-                infile_path => $file_path,
-                decompress  => 1,
-                processes   => $core_number,
-                stdout      => 1,
-                FILEHANDLE  => $FILEHANDLE,
-            }
-        );
-        print $FILEHANDLE "| ";    #Pipe
-
-        gnu_split(
-            {
-                infile_path      => "-",
-                lines            => ( $sequence_read_batch * 4 ),
-                numeric_suffixes => 1,
-                suffix_length    => 4,
-                FILEHANDLE       => $FILEHANDLE,
-                prefix => catfile( $$temp_directory_ref, $file_prefix ),
-            }
-        );
-        say $FILEHANDLE "\n";
-
-        ## Remove original files
-        gnu_rm(
-            {
-                infile_path => $file_path,
-                force       => 1,
-                FILEHANDLE  => $FILEHANDLE,
-            }
-        );
-        say $FILEHANDLE "\n";
-
-        ## Find all splitted files
-        say $FILEHANDLE "splitted_files=("
-          . catfile( $$temp_directory_ref, "*_splitted_*" )
-          . ")", "\n";
-
-        ## Iterate through array using a counter
-        say $FILEHANDLE
-q?for ((file_counter=0; file_counter<${#splitted_files[@]}; file_counter++)); do ?;
-
-        ## Rename each element of array to include splitted suffix in flowcell id
-        print $FILEHANDLE "\t" . q?mv ${splitted_files[$file_counter]} ?;
-        print $FILEHANDLE catfile( $$temp_directory_ref, "" );
-        print $FILEHANDLE $fastq_file_info{lane} . "_";
-        print $FILEHANDLE $fastq_file_info{date} . "_";
-        print $FILEHANDLE $fastq_file_info{flowcell} . q?"-SP"$file_counter"?;
-        print $FILEHANDLE "_" . $fastq_file_info{sample_id} . "_";
-        print $FILEHANDLE $fastq_file_info{index} . "_";
-        print $FILEHANDLE $fastq_file_info{direction} . $infile_suffix;
-        say $FILEHANDLE q?"?, "\n";
-
-        say $FILEHANDLE "\t" . q?echo "${splitted_files[$file_counter]}" ?;
-        say $FILEHANDLE "done";
-
-        ## Compress file again
-        pigz(
-            {
-                infile_path =>
-                  catfile( $$temp_directory_ref, "*" . $infile_suffix ),
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say $FILEHANDLE "\n";
-
-        ## Copies files from temporary folder to source
-        gnu_cp(
-            {
-                FILEHANDLE => $FILEHANDLE,
-                infile_path =>
-                  catfile( $$temp_directory_ref, "*-SP*" . $outfile_suffix ),
-                outfile_path => $outsample_directory,
-            }
-        );
-        say $FILEHANDLE "\n";
-
-        ## Move original file to not be included in subsequent analysis
-        gnu_mkdir(
-            {
-                indirectory_path => $infile_path,
-                parents          => 1,
-                FILEHANDLE       => $FILEHANDLE,
-            }
-        );
-        say $FILEHANDLE "\n";
-
-        gnu_mv(
-            {
-                infile_path  => $infile_path,
-                outfile_path => catfile(
-                    $insample_directory, "original_fastq_files",
-                    $fastq_file
-                ),
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say $FILEHANDLE "\n";
-
-        if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-            my $slurm_path = $parameter_href->{ "p" . $program_name }{chain};
-
-            slurm_submit_job_no_dependency_add_to_sample(
-                {
-                    job_id_href      => $job_id_href,
-                    family_id        => $$family_id_ref,
-                    sample_id        => $$sample_id_ref,
-                    path             => $slurm_path,
-                    log              => $log,
-                    sbatch_file_name => $file_name
-                }
-            );
-        }
-    }
-    close($FILEHANDLE);
-}
 
 sub build_annovar_prerequisites {
 
