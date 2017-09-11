@@ -2,43 +2,46 @@ package MIP::Language::Shell;
 
 use strict;
 use warnings;
-use warnings qw(FATAL utf8);
-use 5.018;    #Require at least perl 5.18
-use utf8;     #Allow unicode characters in this script
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
+use warnings qw{FATAL utf8};
+use 5.018;
+use utf8;    #Allow unicode characters in this script
+use open qw{ :encoding(UTF-8) :std };
+use charnames qw{ :full :short };
 use Carp;
-use English qw(-no_match_vars);
-use Params::Check qw(check allow last_error);
-$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
+use English qw{-no_match_vars};
+use Params::Check qw{check allow last_error};
 
 use Cwd;
-use FindBin qw($Bin);                 #Find directory of script
-use File::Basename qw(dirname basename);
-use File::Spec::Functions qw(catfile catdir devnull);
+use FindBin qw{$Bin};
+use File::Basename qw{dirname basename};
+use File::Spec::Functions qw{catfile catdir devnull};
 use Readonly;
 
 ##MIPs lib/
-use lib catdir( $Bin, 'lib' );        #Add MIPs internal lib
+# Add MIPs internal lib
+use lib catdir( $Bin, q{lib} );
 
 BEGIN {
 
-    use base qw(Exporter);
     require Exporter;
+    use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(create_bash_file build_shebang
+    our @EXPORT_OK = qw{create_bash_file build_shebang
       create_housekeeping_function create_error_trap_function
-      enable_trap clear_trap track_progress
-    );
+      enable_trap clear_trap track_progress quote_bash_variable
+    };
 }
 
 ## Constants
-Readonly my $SPACE => q{ };
-Readonly my $COMMA => q{,};
+Readonly my $COMMA        => q{,};
+Readonly my $NEWLINE      => qq{\n};
+Readonly my $SINGLE_QUOTE => q{'};
+Readonly my $SPACE        => q{ };
+Readonly my $TAB          => qq{\t};
 
 sub create_bash_file {
 
@@ -80,7 +83,7 @@ sub create_bash_file {
         FILEHANDLE => { required => 1, store => \$FILEHANDLE },
         log        => { store    => \$log },
         remove_dir => {
-            allow       => qr/^\S+$/x,
+            allow       => qr/ ^\S+$ /xsm,
             strict_type => 1,
             store       => \$remove_dir
         },
@@ -110,7 +113,7 @@ sub create_bash_file {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Gnu::Bash qw(gnu_set);
 
@@ -136,7 +139,7 @@ sub create_bash_file {
     create_housekeeping_function(
         {
             remove_dir         => $remove_dir,
-            trap_function_name => 'finish',
+            trap_function_name => q{finish},
             FILEHANDLE         => $FILEHANDLE,
         }
     );
@@ -145,7 +148,7 @@ sub create_bash_file {
     enable_trap(
         {
             FILEHANDLE         => $FILEHANDLE,
-            trap_signals_ref   => ['DEBUG'],
+            trap_signals_ref   => [qw{DEBUG}],
             trap_function_call => q{previous_command="$BASH_COMMAND"},
         }
     );
@@ -155,12 +158,14 @@ sub create_bash_file {
 
     if ( ( defined $log ) && ($log) ) {
 
-        $log->info( q{Created bash file: '} . catfile($file_name), q{'}, "\n" );
+        say $log->info( q{Created bash file: '} . catfile($file_name),
+            $SINGLE_QUOTE );
     }
     else {
 
-        print {*STDERR} q{Created bash file: '} . catfile($file_name), q{'},
-          "\n";
+        print {*STDERR} q{Created bash file: '} . catfile($file_name),
+          $SINGLE_QUOTE,
+          $NEWLINE;
     }
     return;
 }
@@ -195,7 +200,7 @@ sub build_shebang {
         bash_bin_path => {
             default =>
               catfile( dirname( dirname( devnull() ) ), qw(usr bin env bash) ),
-            allow       => qr/^\S+$/,
+            allow       => qr/ ^\S+$ /sxm,
             strict_type => 1,
             store       => \$bash_bin_path
         },
@@ -212,13 +217,13 @@ sub build_shebang {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Unix::Write_to_file qw(unix_write_to_file);
 
     ## Build shebang
-    my @commands =
-      ( q{#!} . $bash_bin_path ); #Stores commands depending on input parameters
+    # Stores commands depending on input parameters
+    my @commands = ( q{#!} . $bash_bin_path );
 
     ##Invoke as login shell
     if ($invoke_login_shell) {
@@ -242,10 +247,10 @@ sub create_housekeeping_function {
 
 ##Function : Create housekeeping function which removes entire directory when finished
 ##Returns  : ""
-##Arguments: $job_ids_ref, $sacct_format_fields_ref, $log_file_path_ref, $FILEHANDLE, $remove_dir, $trap_function_call, $trap_signals_ref, $trap_function_name
+##Arguments: $job_ids_ref, $sacct_format_fields_ref, $log_file_path, $FILEHANDLE, $remove_dir, $trap_function_call, $trap_signals_ref, $trap_function_name
 ##         : $job_ids_ref             => Job ids
 ##         : $sacct_format_fields_ref => Format and fields of sacct output
-##         : $log_file_path_ref       => Log file to write job_id progress to {REF}
+##         : $log_file_path           => Log file to write job_id progress to {REF}
 ##         : $FILEHANDLE              => Filehandle to write to
 ##         : $remove_dir              => Directory to remove when caught by trap function
 ##         : $trap_function_call      => Trap function call
@@ -262,7 +267,7 @@ sub create_housekeeping_function {
     ## Flatten argument(s)
     my $job_ids_ref;
     my $sacct_format_fields_ref;
-    my $log_file_path_ref;
+    my $log_file_path;
     my $FILEHANDLE;
     my $remove_dir;
 
@@ -274,8 +279,7 @@ sub create_housekeeping_function {
             strict_type => 1,
             store       => \$sacct_format_fields_ref
         },
-        log_file_path_ref =>
-          { default => \$$, strict_type => 1, store => \$log_file_path_ref },
+        log_file_path      => { strict_type => 1, store => \$log_file_path },
         FILEHANDLE         => { required    => 1, store => \$FILEHANDLE },
         remove_dir         => { strict_type => 1, store => \$remove_dir },
         trap_function_call => {
@@ -298,18 +302,18 @@ sub create_housekeeping_function {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Gnu::Coreutils qw(gnu_rm);
 
     ## Create housekeeping function and trap
-    say {$FILEHANDLE} $trap_function_name . q?() {?, "\n";
+    say {$FILEHANDLE} $trap_function_name . q?() {?, $NEWLINE;
 
     if ( ( defined $remove_dir ) && ($remove_dir) ) {
 
-        say   {$FILEHANDLE} "\t" . q{local directory="$1"};
-        say   {$FILEHANDLE} "\t" . q{## Perform exit housekeeping};
-        print {$FILEHANDLE} "\t";
+        say   {$FILEHANDLE} $TAB . q{local directory="$1"};
+        say   {$FILEHANDLE} $TAB . q{## Perform exit housekeeping};
+        print {$FILEHANDLE} $TAB;
 
         gnu_rm(
             {
@@ -319,12 +323,12 @@ sub create_housekeeping_function {
                 FILEHANDLE  => $FILEHANDLE,
             }
         );
-        say {$FILEHANDLE} "\n";
+        say {$FILEHANDLE} $NEWLINE;
     }
     if (   ( defined $job_ids_ref )
         && ( @{$job_ids_ref} )
-        && ( defined ${$log_file_path_ref} )
-        && ( ${$log_file_path_ref} ) )
+        && ( defined $log_file_path )
+        && ($log_file_path) )
     {
 
         ## Output SLURM info on each job via sacct command
@@ -334,11 +338,12 @@ sub create_housekeeping_function {
                 job_ids_ref             => \@{$job_ids_ref},
                 sacct_format_fields_ref => \@{$sacct_format_fields_ref},
                 FILEHANDLE              => $FILEHANDLE,
-                log_file_path_ref       => $log_file_path_ref,
+                log_file_path           => $log_file_path,
             }
         );
     }
 
+    ## End of trap function
     say {$FILEHANDLE} q?}?;
 
     ## Enable trap function with trap signal(s)
@@ -358,10 +363,10 @@ sub create_error_trap_function {
 
 ##Function : Create error handling function and trap
 ##Returns  : ""
-##Arguments: $job_ids_ref, sacct_format_fields_ref, $log_file_path_ref, $FILEHANDLE, $trap_function_call, $trap_signals_ref, $trap_function_name
+##Arguments: $job_ids_ref, sacct_format_fields_ref, $log_file_path, $FILEHANDLE, $trap_function_call, $trap_signals_ref, $trap_function_name
 ##         : $job_ids_ref             => Job ids
 ##         : $sacct_format_fields_ref => Format and fields of sacct output
-##         : $log_file_path_ref       => Log file to write job_id progress to {REF}
+##         : $log_file_path           => Log file to write job_id progress to {REF}
 ##         : $FILEHANDLE              => Filehandle to write to
 ##         : $trap_function_call      => Trap function call
 ##         : $trap_signals_ref        => Array with signals to enable trap for {REF}
@@ -376,7 +381,7 @@ sub create_error_trap_function {
     ## Flatten argument(s)
     my $job_ids_ref;
     my $sacct_format_fields_ref;
-    my $log_file_path_ref;
+    my $log_file_path;
     my $FILEHANDLE;
     my $trap_function_call;
 
@@ -388,9 +393,8 @@ sub create_error_trap_function {
             strict_type => 1,
             store       => \$sacct_format_fields_ref
         },
-        log_file_path_ref =>
-          { default => \$$, strict_type => 1, store => \$log_file_path_ref },
-        FILEHANDLE         => { required => 1, store => \$FILEHANDLE },
+        log_file_path      => { strict_type => 1, store => \$log_file_path },
+        FILEHANDLE         => { required    => 1, store => \$FILEHANDLE },
         trap_function_call => {
             default     => q{$(error "$previous_command" "$?")},
             strict_type => 1,
@@ -408,17 +412,17 @@ sub create_error_trap_function {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Create error handling function and trap
-    say {$FILEHANDLE} $trap_function_name . q?() {?, "\n";
-    say {$FILEHANDLE} "\t" . q{local program="$1"},     "\n";
-    say {$FILEHANDLE} "\t" . q{local return_code="$2"}, "\n";
+    say {$FILEHANDLE} $trap_function_name . q?() {?,    $NEWLINE;
+    say {$FILEHANDLE} $TAB . q{local program="$1"},     $NEWLINE;
+    say {$FILEHANDLE} $TAB . q{local return_code="$2"}, $NEWLINE;
 
     if (   ( defined $job_ids_ref )
         && ( @{$job_ids_ref} )
-        && ( defined ${$log_file_path_ref} )
-        && ( ${$log_file_path_ref} ) )
+        && ( defined $log_file_path )
+        && ($log_file_path) )
     {
 
         ## Output SLURM info on each job via sacct command
@@ -428,15 +432,15 @@ sub create_error_trap_function {
                 job_ids_ref             => \@{$job_ids_ref},
                 sacct_format_fields_ref => \@{$sacct_format_fields_ref},
                 FILEHANDLE              => $FILEHANDLE,
-                log_file_path_ref       => $log_file_path_ref,
+                log_file_path           => $log_file_path,
             }
         );
     }
 
-    say {$FILEHANDLE} "\t" . q{## Display error message and exit};
-    say {$FILEHANDLE} "\t"
+    say {$FILEHANDLE} $TAB . q{## Display error message and exit};
+    say {$FILEHANDLE} $TAB
       . q?echo "${program}: ${return_code}: Unknown Error - ExitCode=$return_code" 1>&2?;
-    say {$FILEHANDLE} "\t" . q{exit 1};
+    say {$FILEHANDLE} $TAB . q{exit 1};
     say {$FILEHANDLE} q?}?;
 
     ## Enable trap function with trap signal(s)
@@ -482,18 +486,18 @@ sub clear_trap {
     use MIP::Gnu::Bash qw(gnu_trap);
 
     ## Clear trap for signal ERR
-    print {$FILEHANDLE} "\n## Clear trap for signal(s) "
-      . join( $SPACE, @{$trap_signals_ref} ), "\n";
+    say {$FILEHANDLE} $NEWLINE . q{## Clear trap for signal(s) } . join $SPACE,
+      @{$trap_signals_ref};
 
     gnu_trap(
         {
             trap_signals_ref   => $trap_signals_ref,
-            trap_function_call => '-',
+            trap_function_call => q{-},
             FILEHANDLE         => $FILEHANDLE,
         }
     );
     gnu_trap( { FILEHANDLE => $FILEHANDLE, } );
-    say {$FILEHANDLE} "\n";
+    say {$FILEHANDLE} $NEWLINE;
     return;
 }
 
@@ -531,12 +535,12 @@ sub enable_trap {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Gnu::Bash qw(gnu_trap);
 
-    print {$FILEHANDLE} "\n## Enable trap for signal(s) "
-      . join( $SPACE, @{$trap_signals_ref} ), "\n";
+    say {$FILEHANDLE} $NEWLINE . q{## Enable trap for signal(s) } . join $SPACE,
+      @{$trap_signals_ref};
 
     gnu_trap(
         {
@@ -545,7 +549,7 @@ sub enable_trap {
             FILEHANDLE         => $FILEHANDLE,
         }
     );
-    say {$FILEHANDLE} "\n";
+    say {$FILEHANDLE} $NEWLINE;
     return;
 }
 
@@ -555,10 +559,10 @@ sub track_progress {
 
 ##Function : Output SLURM info on each job via sacct command and write to log file(.status)
 ##Returns  : ""
-##Arguments: $job_ids_ref, $sacct_format_fields_ref, $log_file_path_ref, $FILEHANDLE
+##Arguments: $job_ids_ref, $sacct_format_fields_ref, $log_file_path, $FILEHANDLE
 ##         : $job_ids_ref             => Job ids
 ##         : $sacct_format_fields_ref => Format and fields of sacct output
-##         : $log_file_path_ref       => The log file {REF}
+##         : $log_file_path           => The log file {REF}
 ##         : $FILEHANDLE              => Sbatch filehandle to write to
 
     my ($arg_href) = @_;
@@ -568,7 +572,7 @@ sub track_progress {
 
     ## Flatten argument(s)
     my $job_ids_ref;
-    my $log_file_path_ref;
+    my $log_file_path;
     my $FILEHANDLE;
 
     my $tmpl = {
@@ -583,12 +587,11 @@ sub track_progress {
             strict_type => 1,
             store       => \$sacct_format_fields_ref
         },
-        log_file_path_ref =>
-          { default => \$$, strict_type => 1, store => \$log_file_path_ref },
+        log_file_path => { strict_type => 1, store => \$log_file_path },
         FILEHANDLE => { store => \$FILEHANDLE },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Workloadmanager::Slurm qw(slurm_sacct slurm_reformat_sacct_output);
 
@@ -600,7 +603,7 @@ sub track_progress {
         ## Remove "%digits" from headers
         foreach my $element (@reformat_sacct_headers) {
 
-            $element =~ s/%\d+//g;
+            $element =~ s/%\d+//gsxm;
         }
         my @commands = slurm_sacct(
             {
@@ -613,12 +616,45 @@ sub track_progress {
             {
                 commands_ref               => \@commands,
                 reformat_sacct_headers_ref => \@reformat_sacct_headers,
-                log_file_path_ref          => $log_file_path_ref,
+                log_file_path              => $log_file_path,
                 FILEHANDLE                 => $FILEHANDLE,
             }
         );
     }
     return;
+}
+
+sub quote_bash_variable {
+
+##quote_bash_variable
+
+##Function : Double quote incoming variables in string
+##Returns  : "String with double quoted variables"
+##Arguments: $string_with_variable_to_quote
+##         : $string_with_variable_to_quote => String to find variables in
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $string_with_variable_to_quote;
+
+    my $tmpl = {
+        string_with_variable_to_quote => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$string_with_variable_to_quote
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $string_with_double_quoted_variable = $string_with_variable_to_quote;
+
+    ## Find and double quote variables in string
+    $string_with_double_quoted_variable =~ s/(\$\w+)/"$1"/gsxm;
+
+    return $string_with_double_quoted_variable;
 }
 
 1;

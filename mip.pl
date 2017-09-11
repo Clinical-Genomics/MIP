@@ -689,7 +689,7 @@ foreach my $order_parameter_element (@order_parameters) {
         if ( defined( $active_parameter{pedigree_file} ) ) {
 
             ## Retrieve logger object now that log_file has been set
-            my $log = Log::Log4perl->get_logger('MIP');
+            my $log = Log::Log4perl->get_logger(q{MIP});
 
             make_path(
                 catdir(
@@ -726,7 +726,7 @@ foreach my $order_parameter_element (@order_parameters) {
 }
 
 ## Retrieve logger object now that log_file has been set
-my $log = Log::Log4perl->get_logger('MIP');
+my $log = Log::Log4perl->get_logger(q{MIP});
 
 ###Checks
 
@@ -1180,31 +1180,36 @@ check_vt_for_references(
     }
 );
 
-if ( $active_parameter{psplit_fastq_file} > 0 )
-{    #Split of fastq files in batches
+## Split of fastq files in batches
+if ( $active_parameter{psplit_fastq_file} > 0 ) {
 
-    $log->info( '[Split fastq files in batches]', "\n" );
+    $log->info( q{[Split fastq files in batches]}, $NEWLINE );
+
+    use MIP::Recipes::Split_fastq_file qw{analysis_split_fastq_file};
+
+    my $program_name = lc q{split_fastq_file};
 
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
         ## Split input fastq files into batches of reads, versions and compress. Moves original file to subdirectory
-        split_fastq_file(
+        analysis_split_fastq_file(
             {
-                parameter_href          => \%parameter,
-                active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
-                infile_href             => \%infile,
-                indir_path_href         => \%indir_path,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                sample_id_ref           => \$sample_id,
-                program_name            => 'split_fastq_file',
+                parameter_href        => \%parameter,
+                active_parameter_href => \%active_parameter,
+                infile_href           => \%infile,
+                job_id_href           => \%job_id,
+                insample_directory    => $indir_path{$sample_id},
+                outsample_directory   => $indir_path{$sample_id},
+                sample_id             => $sample_id,
+                program_name          => $program_name,
                 sequence_read_batch =>
                   $active_parameter{split_fastq_file_read_batch},
             }
         );
     }
-    exit;    #End here if this module is turned on
+
+    # End here if this module is turned on
+    exit;
 }
 
 ## GZip of fastq files
@@ -1212,7 +1217,7 @@ if (   ( $active_parameter{pgzip_fastq} > 0 )
     && ( $uncompressed_file_switch eq q{uncompressed} ) )
 {
 
-    $log->info( q{[Gzip for fastq files]} . $NEWLINE );
+    $log->info( q{[Gzip for fastq files]}, $NEWLINE );
 
     use MIP::Recipes::Gzip_fastq qw{analysis_gzip_fastq};
 
@@ -1254,7 +1259,7 @@ if (   ( $active_parameter{pgzip_fastq} > 0 )
 # Run FastQC
 if ( $active_parameter{pfastqc} > 0 ) {
 
-    $log->info( q{[Fastqc]} . $NEWLINE );
+    $log->info( q{[Fastqc]}, $NEWLINE );
 
     use MIP::Recipes::Fastqc qw{analysis_fastqc};
 
@@ -1283,7 +1288,7 @@ if ( $active_parameter{pfastqc} > 0 ) {
 
 if ( $active_parameter{pmadeline} > 0 ) {    #Run madeline
 
-    $log->info( q{[Madeline]} . $NEWLINE );
+    $log->info( q{[Madeline]}, $NEWLINE );
 
     madeline(
         {
@@ -1300,7 +1305,7 @@ if ( $active_parameter{pmadeline} > 0 ) {    #Run madeline
 # Run BWA Mem
 if ( $active_parameter{pbwa_mem} > 0 ) {
 
-    $log->info( q{[BWA Mem]} . $NEWLINE );
+    $log->info( q{[BWA Mem]}, $NEWLINE );
 
     use MIP::Recipes::Bwa_mem qw{analysis_bwa_mem};
     my $program_name = lc q{bwa_mem};
@@ -4652,6 +4657,7 @@ sub endvariantannotationblock {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Set::File qw{set_file_suffix};
+    use MIP::Get::File qw{get_file_suffix};
     use Program::Htslib qw(bgzip tabix);
     use MIP::Gnu::Software::Gnu_grep qw(gnu_grep);
     use MIP::QC::Record qw(add_program_metafile_to_sample_info);
@@ -5122,6 +5128,7 @@ sub rankvariant {
 
     use MIP::Cluster qw(get_core_number);
     use MIP::Set::File qw{set_file_suffix};
+    use MIP::Get::File qw{get_file_suffix};
     use Program::Variantcalling::Genmod qw(annotate models score compound);
     use MIP::QC::Record
       qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
@@ -5129,7 +5136,7 @@ sub rankvariant {
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -5703,6 +5710,7 @@ sub gatk_variantevalexome {
     use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
     use MIP::Set::File qw{set_file_suffix};
+    use MIP::Get::File qw{get_file_suffix};
     use MIP::Gnu::Coreutils qw(gnu_cat gnu_sort);
     use Program::Variantcalling::Bedtools qw(intersectbed);
     use Program::Variantcalling::Gatk qw(varianteval);
@@ -6218,6 +6226,7 @@ sub gatk_variantevalall {
     use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
     use MIP::Set::File qw{set_file_suffix};
+    use MIP::Get::File qw{get_file_suffix};
     use Program::Variantcalling::Gatk qw(varianteval);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
@@ -6542,6 +6551,7 @@ sub snpeff {
     use MIP::Cluster qw(get_core_number);
     use MIP::IO::Files qw(migrate_file);
     use MIP::Set::File qw{set_file_suffix};
+    use MIP::Get::File qw{get_file_suffix};
     use Program::Variantcalling::Snpeff qw(ann);
     use Program::Variantcalling::Snpsift qw(annotate dbnsfp);
     use Program::Variantcalling::Mip qw(vcfparser);
@@ -7621,6 +7631,7 @@ sub mvcfparser {
     use MIP::Cluster qw(get_core_number);
     use MIP::IO::Files qw(migrate_file);
     use MIP::Set::File qw{set_file_suffix};
+    use MIP::Get::File qw{get_file_suffix};
     use Program::Variantcalling::Mip qw(vcfparser);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
@@ -8084,6 +8095,7 @@ sub varianteffectpredictor {
     use MIP::Cluster qw(get_core_number);
     use MIP::IO::Files qw(migrate_file);
     use MIP::Set::File qw{set_file_suffix};
+    use MIP::Get::File qw{get_file_suffix};
     use Program::Variantcalling::Vep qw(variant_effect_predictor);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
@@ -8909,6 +8921,7 @@ sub mpeddy {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Get::File qw{get_file_suffix};
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Peddy qw(peddy);
@@ -9177,6 +9190,7 @@ sub mplink {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::Get::File qw{get_file_suffix};
     use Program::Variantcalling::Bcftools qw(view annotate);
     use Program::Variantcalling::Vt qw(vt_uniq);
     use Program::Variantcalling::Plink qw(plink);
@@ -9621,6 +9635,7 @@ sub variant_integrity {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::Get::File qw{get_file_suffix};
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Variant_integrity qw(mendel father);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
@@ -9931,6 +9946,7 @@ sub vt {
     use Readonly;
     use MIP::Cluster qw(get_core_number);
     use MIP::Set::File qw{set_file_suffix};
+    use MIP::Get::File qw{get_file_suffix};
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use Program::Variantcalling::Genmod qw(annotate filter);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
@@ -10369,6 +10385,7 @@ sub rhocall {
     use MIP::Cluster qw(get_core_number);
     use MIP::IO::Files qw(migrate_file);
     use MIP::Set::File qw{set_file_suffix};
+    use MIP::Get::File qw{get_file_suffix};
     use Program::Variantcalling::Bcftools qw(roh);
     use Program::Variantcalling::Rhocall qw(aggregate annotate);
     use MIP::Processmanagement::Slurm_processes
@@ -10712,6 +10729,7 @@ sub prepareforvariantannotationblock {
     use MIP::Cluster qw(get_core_number);
     use MIP::IO::Files qw(migrate_files);
     use MIP::Set::File qw{set_file_suffix};
+    use MIP::Get::File qw{get_file_suffix};
     use Program::Htslib qw(bgzip tabix);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
@@ -11033,6 +11051,7 @@ sub gatk_combinevariantcallsets {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use MIP::Set::File qw{set_file_suffix};
+    use MIP::Get::File qw{get_file_suffix};
     use Language::Java qw(core);
     use Program::Variantcalling::Gatk qw(combinevariants);
     use MIP::Processmanagement::Slurm_processes
@@ -11359,6 +11378,7 @@ sub gatk_variantrecalibration {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use MIP::Set::File qw{set_file_suffix};
+    use MIP::Get::File qw{get_file_suffix};
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use Language::Java qw(core);
     use Program::Variantcalling::Bcftools qw(norm);
@@ -12069,6 +12089,7 @@ sub gatk_concatenate_genotypegvcfs {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use MIP::Set::File qw{set_file_suffix};
+    use MIP::Get::File qw{get_file_suffix};
     use Language::Java qw(core);
     use Program::Variantcalling::Gatk qw(selectvariants);
     use MIP::Processmanagement::Slurm_processes
@@ -12402,6 +12423,7 @@ sub gatk_genotypegvcfs {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
+    use MIP::Get::File qw{get_file_suffix};
     use MIP::Set::File qw{set_file_suffix};
     use Language::Java qw(core);
     use Program::Variantcalling::Gatk qw(genotypegvcfs);
@@ -12926,6 +12948,7 @@ sub mbedtools_genomecov {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
+    use MIP::Get::File qw{get_file_suffix};
     use MIP::Program::Alignment::Bedtools qw(bedtools_genomecov);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_dead_end);
@@ -13155,6 +13178,7 @@ sub picardtools_collecthsmetrics {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::Get::File qw{get_file_suffix};
     use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
     use Program::Alignment::Picardtools qw(collecthsmetrics);
@@ -13430,6 +13454,7 @@ sub picardtools_collectmultiplemetrics {
 
     use Readonly;
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::Get::File qw{get_file_suffix};
     use MIP::IO::Files qw(migrate_file);
     use Language::Java qw(core);
     use Program::Alignment::Picardtools qw(collectmultiplemetrics);
@@ -13711,6 +13736,7 @@ sub chanjo_sexcheck {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::Get::File qw{get_file_suffix};
     use MIP::Program::Alignment::Chanjo qw(chanjo_sex);
     use MIP::QC::Record
       qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
@@ -13959,6 +13985,7 @@ sub msambamba_depth {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::Get::File qw{get_file_suffix};
     use MIP::IO::Files qw(migrate_file);
     use MIP::Program::Alignment::Sambamba qw(sambamba_depth);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
@@ -14248,6 +14275,7 @@ sub sv_reformat {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::Get::File qw{get_file_suffix};
     use MIP::IO::Files qw(migrate_file);
     use Program::Htslib qw(bgzip tabix);
     use MIP::Gnu::Software::Gnu_grep qw( gnu_grep);
@@ -14790,6 +14818,7 @@ sub sv_rankvariant {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::Get::File qw{get_file_suffix};
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Genmod qw(annotate models score compound);
     use MIP::QC::Record
@@ -14798,7 +14827,7 @@ sub sv_rankvariant {
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -15445,6 +15474,7 @@ sub sv_vcfparser {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::Get::File qw{get_file_suffix};
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Mip qw(vcfparser);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
@@ -15976,6 +16006,7 @@ sub sv_varianteffectpredictor {
     use Readonly;
     use MIP::Cluster qw(get_core_number);
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::Get::File qw{get_file_suffix};
     use MIP::IO::Files qw(migrate_file);
     use Program::Variantcalling::Vep qw(variant_effect_predictor);
     use MIP::QC::Record
@@ -16437,6 +16468,7 @@ sub sv_combinevariantcallsets {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
+    use MIP::Get::File qw{get_file_suffix};
     use MIP::Set::File qw{set_file_suffix};
     use Program::Variantcalling::Svdb qw(merge query);
     use Program::Variantcalling::Bcftools qw (merge view annotate);
@@ -17235,6 +17267,7 @@ sub cnvnator {
     use MIP::Processmanagement::Processes qw(print_wait);
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
+    use MIP::Get::File qw{get_file_suffix};
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Program::Alignment::Samtools qw(samtools_faidx);
     use Program::Variantcalling::Cnvnator
@@ -17712,6 +17745,7 @@ sub delly_reformat {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
+    use MIP::Get::File qw{get_file_suffix};
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use Program::Variantcalling::Delly qw(call merge filter);
@@ -18587,6 +18621,7 @@ sub delly_call {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
+    use MIP::Get::File qw{get_file_suffix};
     use MIP::Set::File qw{set_file_suffix};
     use Program::Variantcalling::Delly qw(call);
     use MIP::Processmanagement::Slurm_processes
@@ -18941,6 +18976,7 @@ sub manta {
     use MIP::Processmanagement::Processes qw(print_wait);
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
+    use MIP::Get::File qw{get_file_suffix};
     use MIP::Set::File qw{set_file_suffix};
     use Program::Variantcalling::Manta qw(config workflow);
     use MIP::Program::Compression::Gzip qw(gzip);
@@ -19267,6 +19303,7 @@ sub tiddit {
     use MIP::Cluster qw(get_core_number);
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
+    use MIP::Get::File qw{get_file_suffix};
     use MIP::Set::File qw{set_file_suffix};
     use Program::Variantcalling::Tiddit qw(sv);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
@@ -19590,6 +19627,7 @@ sub msamtools_mpileup {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
+    use MIP::Get::File qw{get_file_suffix};
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Program::Alignment::Samtools qw(samtools_mpileup);
     use Program::Variantcalling::Bcftools qw(call filter norm);
@@ -20009,6 +20047,7 @@ sub freebayes {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
+    use MIP::Get::File qw{get_file_suffix};
     use MIP::Set::File qw{set_file_suffix};
     use Program::Variantcalling::Freebayes qw(calling);
     use Program::Variantcalling::Bcftools qw(filter norm);
@@ -20384,6 +20423,7 @@ sub gatk_haplotypecaller {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Set::File qw{set_file_suffix};
+    use MIP::Get::File qw{get_file_suffix};
     use Program::Alignment::Gatk qw(haplotypecaller);
     use MIP::Processmanagement::Slurm_processes
       qw{slurm_submit_job_sample_id_dependency_add_to_sample};
@@ -20791,6 +20831,7 @@ sub gatk_baserecalibration {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
+    use MIP::Get::File qw{get_file_suffix};
     use Program::Alignment::Gatk qw(baserecalibrator printreads);
     use Program::Alignment::Picardtools qw(gatherbamfiles);
     use MIP::Gnu::Coreutils qw(gnu_rm);
@@ -21330,6 +21371,7 @@ sub gatk_realigner {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::Get::File qw{get_file_suffix};
     use Program::Alignment::Gatk qw(realignertargetcreator indelrealigner);
     use MIP::Processmanagement::Slurm_processes
       qw{slurm_submit_job_sample_id_dependency_add_to_sample};
@@ -21819,6 +21861,7 @@ sub pmarkduplicates {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::IO::Files qw(migrate_file);
+    use MIP::Get::File qw{get_file_suffix};
     use MIP::Program::Alignment::Sambamba qw(sambamba_flagstat);
     use MIP::Gnu::Coreutils qw(gnu_cat);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
@@ -22312,6 +22355,7 @@ sub picardtools_mergesamfiles {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::IO::Files qw(migrate_files);
+    use MIP::Get::File qw{get_file_suffix};
     use Program::Alignment::Picardtools qw(mergesamfiles);
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use MIP::Program::Alignment::Samtools qw(samtools_index);
@@ -22319,7 +22363,7 @@ sub picardtools_mergesamfiles {
       qw(slurm_submit_job_sample_id_dependency_add_to_sample);
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -23854,7 +23898,7 @@ sub variantannotationblock {
     my $time = 80;
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Filehandles
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
@@ -24267,7 +24311,7 @@ sub bamcalibrationblock {
     my $time        = 80;
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Filehandles
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
@@ -24574,324 +24618,6 @@ sub madeline {
     }
 }
 
-sub split_fastq_file {
-
-##split_fastq_file
-
-##Function : Split input fastq files into batches of reads, versions and compress. Moves original file to subdirectory.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_href, $indir_path_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, sequence_read_batch
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $infile_href                => Infiles hash {REF}
-##         : $indir_path_href            => Indirectories path(s) hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $sample_id_ref              => Sample id {REF}
-##         : $program_name               => Program name
-##         : $sequence_read_batch        => Number of sequences in each fastq batch
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-    my $sequence_read_batch;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $infile_href;
-    my $indir_path_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $sample_id_ref;
-    my $program_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
-        infile_href => {
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_href
-        },
-        indir_path_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$indir_path_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        sample_id_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$sample_id_ref
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref
-        },
-        sequence_read_batch => {
-            default     => 2500000,
-            allow       => qr/^\d+$/,
-            strict_type => 1,
-            store       => \$sequence_read_batch
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::IO::Files qw(migrate_file);
-    use MIP::Gnu::Coreutils qw(gnu_cp gnu_rm gnu_mv gnu_split gnu_mkdir);
-    use MIP::Program::Compression::Pigz qw(pigz);
-
-    my $core_number =
-      $active_parameter_href->{module_core_number}{ "p" . $program_name };
-
-    ## Filehandles
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    foreach my $fastq_file ( @{ $infile_href->{$$sample_id_ref} } ) {
-
-        ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        my ($file_name) = setup_script(
-            {
-                active_parameter_href => $active_parameter_href,
-                job_id_href           => $job_id_href,
-                FILEHANDLE            => $FILEHANDLE,
-                directory_id          => $$sample_id_ref,
-                program_name          => $program_name,
-                program_directory     => lc($program_name),
-                core_number           => $core_number,
-                process_time =>
-                  $active_parameter_href->{module_time}{ "p" . $program_name },
-                temp_directory => $$temp_directory_ref,
-            }
-        );
-
-        ## Assign directories
-        my $insample_directory  = $indir_path_href->{$$sample_id_ref};
-        my $outsample_directory = $indir_path_href->{$$sample_id_ref};
-
-        ## Assign file_tags
-        my $infile_path = catfile( $insample_directory,  $fastq_file );
-        my $file_path   = catfile( $$temp_directory_ref, $fastq_file );
-
-        ## Assign suffix
-        my $infile_suffix =
-          $parameter_href->{ "p" . $program_name }{infile_suffix};
-        my $outfile_suffix = get_file_suffix(
-            {
-                parameter_href => $parameter_href,
-                suffix_key     => "outfile_suffix",
-                program_name   => "p" . $program_name,
-            }
-        );
-
-        say $FILEHANDLE "## " . $program_name;
-
-        my %fastq_file_info;
-
-        ## Detect fastq file info for later rebuild of filename
-        if ( $fastq_file =~
-            /(\d+)_(\d+)_([^_]+)_([^_]+)_([^_]+)_(\d)$infile_suffix/ )
-        {
-
-            %fastq_file_info = (
-                lane      => $1,
-                date      => $2,
-                flowcell  => $3,
-                sample_id => $4,
-                index     => $5,
-                direction => $6,
-            );
-        }
-        ## Removes ".file_ending" in filename.FILENDING(.gz)
-        my $file_prefix =
-          fileparse( $fastq_file, qr/$infile_suffix|$infile_suffix\.gz/ )
-          . "_splitted_";
-
-        ## Copies file to temporary directory.
-        migrate_file(
-            {
-                FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $infile_path,
-                outfile_path => $$temp_directory_ref,
-            }
-        );
-        say $FILEHANDLE "wait ";
-
-        ## Decompress file and split
-        pigz(
-            {
-                infile_path => $file_path,
-                decompress  => 1,
-                processes   => $core_number,
-                stdout      => 1,
-                FILEHANDLE  => $FILEHANDLE,
-            }
-        );
-        print $FILEHANDLE "| ";    #Pipe
-
-        gnu_split(
-            {
-                infile_path      => "-",
-                lines            => ( $sequence_read_batch * 4 ),
-                numeric_suffixes => 1,
-                suffix_length    => 4,
-                FILEHANDLE       => $FILEHANDLE,
-                prefix => catfile( $$temp_directory_ref, $file_prefix ),
-            }
-        );
-        say $FILEHANDLE "\n";
-
-        ## Remove original files
-        gnu_rm(
-            {
-                infile_path => $file_path,
-                force       => 1,
-                FILEHANDLE  => $FILEHANDLE,
-            }
-        );
-        say $FILEHANDLE "\n";
-
-        ## Find all splitted files
-        say $FILEHANDLE "splitted_files=("
-          . catfile( $$temp_directory_ref, "*_splitted_*" )
-          . ")", "\n";
-
-        ## Iterate through array using a counter
-        say $FILEHANDLE
-q?for ((file_counter=0; file_counter<${#splitted_files[@]}; file_counter++)); do ?;
-
-        ## Rename each element of array to include splitted suffix in flowcell id
-        print $FILEHANDLE "\t" . q?mv ${splitted_files[$file_counter]} ?;
-        print $FILEHANDLE catfile( $$temp_directory_ref, "" );
-        print $FILEHANDLE $fastq_file_info{lane} . "_";
-        print $FILEHANDLE $fastq_file_info{date} . "_";
-        print $FILEHANDLE $fastq_file_info{flowcell} . q?"-SP"$file_counter"?;
-        print $FILEHANDLE "_" . $fastq_file_info{sample_id} . "_";
-        print $FILEHANDLE $fastq_file_info{index} . "_";
-        print $FILEHANDLE $fastq_file_info{direction} . $infile_suffix;
-        say $FILEHANDLE q?"?, "\n";
-
-        say $FILEHANDLE "\t" . q?echo "${splitted_files[$file_counter]}" ?;
-        say $FILEHANDLE "done";
-
-        ## Compress file again
-        pigz(
-            {
-                infile_path =>
-                  catfile( $$temp_directory_ref, "*" . $infile_suffix ),
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say $FILEHANDLE "\n";
-
-        ## Copies files from temporary folder to source
-        gnu_cp(
-            {
-                FILEHANDLE => $FILEHANDLE,
-                infile_path =>
-                  catfile( $$temp_directory_ref, "*-SP*" . $outfile_suffix ),
-                outfile_path => $outsample_directory,
-            }
-        );
-        say $FILEHANDLE "\n";
-
-        ## Move original file to not be included in subsequent analysis
-        gnu_mkdir(
-            {
-                indirectory_path => $infile_path,
-                parents          => 1,
-                FILEHANDLE       => $FILEHANDLE,
-            }
-        );
-        say $FILEHANDLE "\n";
-
-        gnu_mv(
-            {
-                infile_path  => $infile_path,
-                outfile_path => catfile(
-                    $insample_directory, "original_fastq_files",
-                    $fastq_file
-                ),
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say $FILEHANDLE "\n";
-
-        if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-            my $slurm_path = $parameter_href->{ "p" . $program_name }{chain};
-
-            slurm_submit_job_no_dependency_add_to_sample(
-                {
-                    job_id_href      => $job_id_href,
-                    family_id        => $$family_id_ref,
-                    sample_id        => $$sample_id_ref,
-                    path             => $slurm_path,
-                    log              => $log,
-                    sbatch_file_name => $file_name
-                }
-            );
-        }
-    }
-    close($FILEHANDLE);
-}
-
 sub build_annovar_prerequisites {
 
 ##build_annovar_prerequisites
@@ -24999,7 +24725,7 @@ sub build_annovar_prerequisites {
       qw(slurm_submit_job_no_dependency_add_to_samples);
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
     $parameter_href->{annovar_build_reference}{build_file} =
@@ -25480,7 +25206,7 @@ sub build_ptchs_metric_prerequisites {
       qw(slurm_submit_job_no_dependency_add_to_samples);
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my $file_name;
 
@@ -25845,7 +25571,7 @@ sub build_bwa_prerequisites {
       qw(slurm_submit_job_no_dependency_add_to_samples);
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
     my $random_integer =
@@ -26282,7 +26008,7 @@ sub build_human_genome_prerequisites {
       qw(slurm_submit_job_no_dependency_add_to_samples);
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my $file_name;
     my $submit_switch;
@@ -26571,7 +26297,7 @@ sub read_yaml_pedigree_file {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Defines which values are allowed
     my %allowed_values = (
@@ -26838,7 +26564,7 @@ sub collect_infiles {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     $log->info("Reads from platform:\n");
 
@@ -27030,7 +26756,7 @@ sub infiles_reformat {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my $uncompressed_file_counter = 0
       ; #Used to decide later if any inputfiles needs to be compressed before starting analysis
@@ -27229,7 +26955,7 @@ sub check_sample_id_match {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my %seen = ( $infile_sample_id => 1 );    #Add input as first increment
 
@@ -27290,7 +27016,7 @@ sub get_run_info {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my $fastq_header_regexp =
 q?perl -nae 'chomp($_); if($_=~/^(@\w+):(\w+):(\w+):(\w+)\S+\s(\w+):\w+:\w+:(\w+)/) {print $1." ".$2." ".$3." ".$4." ".$5." ".$6."\n";} if($.=1) {last;}' ?;
@@ -27642,7 +27368,7 @@ sub detect_interleaved {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my $interleaved_regexp =
 q?perl -nae 'chomp($_); if( ($_=~/^@\S+:\w+:\w+:\w+\S+\s(\w+):\w+:\w+:\w+/) && ($.==5) ) {print $1."\n";last;} elsif ($.==6) {last;}' ?;
@@ -27764,7 +27490,7 @@ sub add_to_active_parameter {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my $element_separator_ref =
       \$parameter_href->{$parameter_name}{element_separator};
@@ -28250,7 +27976,7 @@ sub check_parameter_files {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -29318,7 +29044,7 @@ sub check_pedigree_members {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my %command;
 
@@ -29440,7 +29166,7 @@ sub write_cmd_mip_log {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my $cmd_line = $$script_ref . " ";
 
@@ -29615,7 +29341,7 @@ sub determine_nr_of_rapid_nodes {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my $number_nodes         = 0;  #Nodes to allocate
     my $read_position_weight = 1;  #Scales the read_start and read_stop position
@@ -29700,7 +29426,7 @@ sub check_unique_ids {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my %seen;    #Hash to test duplicate sample_ids later
 
@@ -29922,7 +29648,7 @@ sub parse_human_genome_reference {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     if ( $$human_genome_reference_ref =~ /GRCh(\d+\.\d+|\d+)_homo_sapiens_/ )
     {    #Used to change capture kit genome reference version later
@@ -30095,7 +29821,7 @@ sub check_existance {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     if ( $item_type_to_check eq "directory" ) {
 
@@ -30315,7 +30041,7 @@ sub check_target_bed_file_exist {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     if ( $file !~ /.bed$/ ) {
 
@@ -30382,7 +30108,7 @@ sub compare_array_elements {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     if ( scalar(@$elements_ref) != scalar(@$array_queries_ref) ) {
 
@@ -30947,7 +30673,7 @@ sub collect_select_file_contigs {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my $pquery_seq_dict =
 q?perl -nae 'if ($_=~/contig\=(\w+)/) {print $1, ",";} if($_=~/#CHROM/) {last;}' ?;
@@ -31017,7 +30743,7 @@ sub size_sort_select_file_contigs {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my @sorted_contigs;
 
@@ -31173,7 +30899,7 @@ sub print_supported_annovar_table_names {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     if ( $active_parameter_href->{log_file} ) {
 
@@ -32088,7 +31814,7 @@ sub check_annovar_tables {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my $path;
 
@@ -32700,7 +32426,7 @@ sub check_email_address {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     $$email_ref =~
       /[ |\t|\r|\n]*\"?([^\"]+\"?@[^ <>\t]+\.[^ <>\t][^ <>\t]+)[ |\t|\r|\n]*/;
@@ -33042,7 +32768,7 @@ sub xargs_command {
     use Language::Java qw(core);
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my $xargs_file_name;
 
@@ -33592,7 +33318,7 @@ sub collect_gene_panels {
     if ( defined($aggregate_gene_panel_file) ) {
 
         ## Retrieve logger object
-        my $log = Log::Log4perl->get_logger('MIP');
+        my $log = Log::Log4perl->get_logger(q{MIP});
 
         my %gene_panel;    #Collect each gene panel features
         my %header = (
@@ -33781,7 +33507,7 @@ sub check_command_in_path {
     use MIP::Check::Unix qw{check_binary_in_path};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     # Track program paths that have already been checked
     my %seen;
@@ -34725,7 +34451,7 @@ sub check_vep_directories {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     if ( $$vep_directory_path_ref =~ /ensembl-tools-release-(\d+)/ ) {
 
@@ -35252,7 +34978,7 @@ sub check_vt_for_references {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my %seen;    #Avoid checking the same reference multiple times
 
@@ -35416,7 +35142,7 @@ sub check_vt {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my %vt_regexp;
 
@@ -36116,7 +35842,7 @@ sub detect_trio {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my %trio;
 
@@ -36317,7 +36043,7 @@ sub check_prioritize_variant_callers {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my @priority_calls =
       split( ",", $active_parameter_href->{$$parameter_names_ref} );
@@ -36527,7 +36253,7 @@ sub check_aligner {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my %aligner;
 
@@ -36898,7 +36624,7 @@ sub check_program_mode {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my @allowed_values = ( 0, 1, 2 );
 
@@ -37029,7 +36755,7 @@ sub check_sample_id_in_parameter_path {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     foreach my $parameter_name (@$parameter_names_ref)
     {    #Lopp through all hash parameters supplied
@@ -37126,7 +36852,7 @@ sub check_sample_id_in_parameter {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     foreach my $parameter_name (@$parameter_names_ref)
     {    #Lopp through all hash parameters supplied
@@ -37220,7 +36946,7 @@ sub get_exom_target_bed_file {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my %seen;
 
@@ -37918,7 +37644,7 @@ sub check_founder_id {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
   SAMPLE:
     foreach my $pedigree_sample_href ( @{ $pedigree_href->{samples} } ) {
@@ -38119,7 +37845,7 @@ sub check_vcfanno_toml {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     open( $FILEHANDLE, "<", $vcfanno_file_toml )
       or
@@ -38185,7 +37911,7 @@ sub check_snpsift_keys {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     foreach my $file ( keys %$snpsift_annotation_outinfo_key_href ) {
 
@@ -38242,7 +37968,7 @@ sub check_key_exists_in_hash {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     foreach my $key ( keys %$query_href ) {
 
@@ -38297,7 +38023,7 @@ sub check_element_exists_in_hash {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     foreach my $element (@$queryies) {
 
@@ -38309,82 +38035,6 @@ sub check_element_exists_in_hash {
                   . "' - Does not exist as module program parameter in MIP" );
             exit 1;
         }
-    }
-}
-
-sub get_file_suffix {
-
-##get_file_suffix
-
-##Function : Return the current file suffix for this jobid chain or program
-##Returns  : "$file_suffix"
-##Arguments: $parameter_href, $suffix_key, $job_id_chain, $program_name
-##         : $parameter_href => Holds all parameters
-##         : $suffix_key     => Suffix key
-##         : $job_id_chain    => Job id chain for program
-##         : $program_name   => Program name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $suffix_key;
-    my $job_id_chain;
-    my $program_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        suffix_key => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$suffix_key
-        },
-        jobid_chain  => { strict_type => 1, store => \$job_id_chain },
-        program_name => { strict_type => 1, store => \$program_name },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
-
-    my $file_suffix;
-
-    ## Jobid chain specific suffix
-    if ( defined($job_id_chain) ) {
-
-        $file_suffix = $parameter_href->{$suffix_key}{$job_id_chain};
-    }
-    elsif ( defined($program_name) ) {    # Program  specific
-
-        $file_suffix = $parameter_href->{$program_name}{$suffix_key};
-    }
-    if ( ( defined($file_suffix) ) && ($file_suffix) ) {
-
-        return $file_suffix;
-    }
-    else {
-
-        if ( defined($job_id_chain) ) {
-
-            print $log->fatal(
-                "Could not get requested infile_suffix for jobid_chain:"
-                  . $job_id_chain );
-        }
-        elsif ( defined($program_name) ) {
-
-            print $log->fatal(
-                "Could not get requested infile_suffix for program:"
-                  . $program_name );
-        }
-        exit 1;
     }
 }
 
@@ -38431,7 +38081,7 @@ sub update_program_mode {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     if ( $$consensus_analysis_type_ref ne "wgs" ) {
 
@@ -38761,7 +38411,7 @@ sub CheckTemplateFilesPaths {
     my $parameter_name = $_[1];
 
     ## Retrieve logger object now that log_file has been set
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     open( my $TF, "<", $$file_name_ref )
       or $log->logdie( "Can't open '" . $$file_name_ref . "':" . $! . "\n" );
