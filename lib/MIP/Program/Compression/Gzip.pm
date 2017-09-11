@@ -2,7 +2,7 @@ package MIP::Program::Compression::Gzip;
 
 use strict;
 use warnings;
-use warnings qw{ FATAL utf8 };
+use warnings qw{FATAL utf8};
 use utf8;    #Allow unicode characters in this script
 use open qw{  :encoding(UTF-8) :std};
 use charnames qw( :full :short );
@@ -61,6 +61,7 @@ sub gzip {
     my $outfile_path;
     my $FILEHANDLE;
     my $stderrfile_path;
+    my $stderrfile_path_append;
 
     ## Default(s)
     my $quiet;

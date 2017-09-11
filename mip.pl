@@ -1207,40 +1207,45 @@ if ( $active_parameter{psplit_fastq_file} > 0 )
     exit;    #End here if this module is turned on
 }
 
+## GZip of fastq files
 if (   ( $active_parameter{pgzip_fastq} > 0 )
-    && ( $uncompressed_file_switch eq 'uncompressed' ) )
-{            #GZip of fastq files
+    && ( $uncompressed_file_switch eq q{uncompressed} ) )
+{
 
-    $log->info( '[Gzip for fastq files]', "\n" );
+    $log->info( q{[Gzip for fastq files]} . $NEWLINE );
+
+    use MIP::Recipes::Gzip_fastq qw{analysis_gzip_fastq};
+
+    my $program_name = lc q{gzip_fastq};
 
   SAMPLES:
-    foreach my $sample_id ( @{ $active_parameter{sample_ids} } )
-    {        #Restrict to subset if subset supplied
+    foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
+        ## Determine which sample id had the uncompressed files
       INFILES:
-        foreach my $infile ( @{ $infile{$sample_id} } )
-        {    #To determine which sample_id had the uncompressed files
+        foreach my $infile ( @{ $infile{$sample_id} } ) {
 
             my $infile_suffix = $parameter{pgzip_fastq}{infile_suffix};
 
             if ( $infile =~ /$infile_suffix$/ ) {
 
                 ## Automatically gzips fastq files
-                gzip_fastq(
+                analysis_gzip_fastq(
                     {
                         parameter_href          => \%parameter,
                         active_parameter_href   => \%active_parameter,
                         sample_info_href        => \%sample_info,
                         infile_href             => \%infile,
-                        indir_path_href         => \%indir_path,
                         infile_lane_prefix_href => \%infile_lane_prefix,
                         job_id_href             => \%job_id,
+                        insample_directory      => $indir_path{$sample_id},
                         sample_id               => $sample_id,
-                        program_name            => "gzip_fastq"
+                        program_name            => $program_name,
                     }
                 );
-                last
-                  ; #Return to sample_id loop i.e. only call subroutine gzip_fastq once per sample_id
+
+                # Call once per sample_id
+                last INFILES;
             }
         }
     }
@@ -17356,7 +17361,7 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
             }
         );
 
-        faidx(
+        samtools_faidx(
             {
                 regions_ref => [$contig],
                 infile_path => $active_parameter_href->{human_genome_reference},
@@ -18938,7 +18943,7 @@ sub manta {
     use MIP::IO::Files qw(migrate_file);
     use MIP::Set::File qw{set_file_suffix};
     use Program::Variantcalling::Manta qw(config workflow);
-    use Program::Compression::Gzip qw(gzip);
+    use MIP::Program::Compression::Gzip qw(gzip);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
@@ -19424,7 +19429,7 @@ sub tiddit {
             infile_paths_ref => \@infile_paths,
             outfile_path     => $outfile_path_prefix . $outfile_suffix,
             FILEHANDLE       => $FILEHANDLE,
-	 notag => 1,
+            notag            => 1,
         }
     );
     say $FILEHANDLE "\n";
@@ -24569,227 +24574,6 @@ sub madeline {
     }
 }
 
-sub gzip_fastq {
-
-##gzip_fastq
-
-##Function : Automatically gzips fastq files.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_href, $indir_path_href, $infile_lane_prefix_href, $job_id_href, $sample_id, $program_name
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $infile_href                => Infiles hash {REF}
-##         : $indir_path_href            => Indirectories path(s) hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $sample_id                  => Sample id
-##         : $program_name               => Program name
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $infile_href;
-    my $indir_path_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $sample_id;
-    my $program_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
-        infile_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_href
-        },
-        indir_path_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$indir_path_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        sample_id => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$sample_id
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Cluster qw(update_core_number_to_seq_mode);
-    use MIP::Script::Setup_script qw(setup_script);
-    use Program::Compression::Gzip qw(gzip);
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    ## Filehandles
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    ## Adjust according to number of infiles to process
-    my $time =
-      $active_parameter_href->{module_time}{ "p" . $program_name } *
-      scalar( @{ $infile_href->{$sample_id} } )
-      ;    #One full lane on Hiseq takes approx. 2 h for gzip to process
-    my $core_number =
-      $active_parameter_href->{module_core_number}{ "p" . $program_name };
-
-    foreach my $infile ( @{ $infile_lane_prefix_href->{$sample_id} } ) {
-
-        ## Update the number of cores to be used in the analysis according to sequencing mode requirements
-        $core_number = update_core_number_to_seq_mode(
-            {
-                core_number => $core_number,
-                sequence_run_type =>
-                  \$sample_info_href->{sample}{$sample_id}{file}{$infile}
-                  {sequence_run_type},
-            }
-        );
-    }
-
-    ## Limit number of cores requested to the maximum number of cores available per node
-    $core_number = check_max_core_number(
-        {
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-            core_number_requested => $core_number,
-        }
-    );
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $sample_id,
-            program_name          => $program_name,
-            program_directory     => lc($program_name),
-            core_number           => $core_number,
-            process_time          => $time,
-        }
-    );
-
-    ## Assign directories
-    my $insample_directory = $indir_path_href->{$sample_id};
-
-    ## Assign suffix
-    my $infile_suffix = $parameter_href->{ "p" . $program_name }{infile_suffix};
-
-    my $process_batches_count     = 1;
-    my $uncompressed_file_counter = 0
-      ; #Used to print wait at the right times since infiles cannot be used (can be a mixture of .gz and .fast files)
-
-    ## Gzip
-    say $FILEHANDLE "## " . $program_name;
-
-    foreach my $infile ( @{ $infile_href->{$sample_id} } ) {
-
-        if ( $infile =~ /$infile_suffix$/ )
-        { #For files ending with .fastq required since there can be a mixture (also .fastq.gz) within the sample dir
-
-            if ( $uncompressed_file_counter == $process_batches_count *
-                $active_parameter_href->{max_cores_per_node} )
-            {    #Using only $active_parameter{max_cores_per_node} cores
-
-                say $FILEHANDLE q{wait}, "\n";
-                $process_batches_count = $process_batches_count + 1;
-            }
-
-            ## Perl wrapper for writing gzip recipe to $FILEHANDLE
-            gzip(
-                {
-                    infile_path => catfile( $insample_directory, $infile ),
-                    FILEHANDLE  => $FILEHANDLE,
-                }
-            );
-            say $FILEHANDLE q{&};
-            $uncompressed_file_counter++;
-            $infile .= ".gz"
-              ; #Add ".gz" to original fastq ending, since this will execute before fastQC and bwa.
-        }
-    }
-    say $FILEHANDLE q{wait}, "\n";
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        my $slurm_path = $parameter_href->{ "p" . $program_name }{chain};
-
-        slurm_submit_job_no_dependency_add_to_sample(
-            {
-                job_id_href      => $job_id_href,
-                family_id        => $$family_id_ref,
-                sample_id        => $sample_id,
-                path             => $slurm_path,
-                log              => $log,
-                sbatch_file_name => $file_name
-            }
-        );
-    }
-}
-
 sub split_fastq_file {
 
 ##split_fastq_file
@@ -24911,7 +24695,7 @@ sub split_fastq_file {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use MIP::Gnu::Coreutils qw(gnu_cp gnu_rm gnu_mv gnu_split gnu_mkdir);
-    use Program::Compression::Pigz qw(pigz);
+    use MIP::Program::Compression::Pigz qw(pigz);
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -26492,7 +26276,7 @@ sub build_human_genome_prerequisites {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Gnu::Bash qw(gnu_cd);
     use MIP::Gnu::Coreutils qw(gnu_rm);
-    use Program::Compression::Gzip qw(gzip);
+    use MIP::Program::Compression::Gzip qw(gzip);
     use Language::Java qw(core);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_no_dependency_add_to_samples);
