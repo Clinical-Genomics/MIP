@@ -777,19 +777,19 @@ sub _snpeff_download {
 
     ## Build base java command
     my $java_jar = catfile( $conda_env_path, qw{ bin snpEff.jar} );
-    core(
+    my @commands = core(
         {
             memory_allocation => q{Xmx2g},
-            FILEHANDLE        => $FILEHANDLE,
             java_jar          => $java_jar,
         }
     );
 
     ## Build rest of java command
-    my @commands = qw{ download -v };
+    push @commands, qw{ download -v };
     push @commands, $genome_version, q{-c};
     push @commands, catfile( $conda_env_path, qw{bin snpEff.config} );
 
+    say STDERR @commands;
     ## Write rest of java commadn to $FILEHANDLE
     unix_write_to_file(
         {
