@@ -74,9 +74,9 @@ $parameter{bioconda_manta_patch}   = '-0';
 $parameter{perl_version} = '5.18.2';
 
 ## PIP
-$parameter{pip}{genmod}            = '3.7.1';
+$parameter{pip}{genmod}            = '3.7.2';
 $parameter{pip}{variant_integrity} = '0.0.4';
-$parameter{pip}{chanjo}            = '4.0.0';
+$parameter{pip}{chanjo}            = '4.1.3';
 
 ## Programs currently installable by SHELL
 $parameter{mip_scripts}            = 'Your current MIP version';
@@ -584,7 +584,7 @@ sub build_usage {
     -cdp/--conda_dir_path The conda directory path (Default: "HOME/miniconda")
     -cdu/--conda_update Update conda before installing (Supply flag to enable)
     -bvc/--bioconda Set the module version of the programs that can be installed with bioconda (e.g. 'bwa=0.7.12')
-    -pip/--pip Set the module version of the programs that can be installed with pip (e.g. 'genmod=3.7.01')
+    -pip/--pip Set the module version of the programs that can be installed with pip (e.g. 'genmod=3.7.2')
     -pyv/--python_version Set the env python version (Default: "2.7")
 
     ## SHELL
