@@ -20,23 +20,23 @@ Readonly my $SPACE => q{ };
 BEGIN {
 
     require Exporter;
-    use base qw{Exporter};
+    use base qw{ Exporter };
 
     # Set the version for version checking
     our $VERSION = 1.0.1;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{core};
+    our @EXPORT_OK = qw{ java_core };
 
 }
 
-sub core {
+sub java_core {
 
-##core
+## java_core
 
-##Function : Perl wrapper for writing GATK realignertargetcreator recipe to $FILEHANDLE. Based on java openjdk version "1.8.0_92".
-##Returns  : @commands
-##Arguments: $memory_allocation, $FILEHANDLE, $temp_directory, $java_jar, $java_use_large_pages
+## Function : Perl wrapper for writing java recipe to $FILEHANDLE. Based on java openjdk version "1.8.0_92".
+## Returns  : @commands
+## Arguments: $memory_allocation, $FILEHANDLE, $temp_directory, $java_jar, $java_use_large_pages
 ##         : $memory_allocation    => Memory allocation for java
 ##         : $FILEHANDLE           => Filehandle to write to
 ##         : $temp_directory       => Redirect tmp files to java temp {Optional}
@@ -81,22 +81,23 @@ sub core {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Java core
-    my @commands = q{java};    #Stores commands depending on input parameters
+    # Stores commands depending on input parameters
+    my @commands = q{java};
 
     push @commands, q{-} . $memory_allocation;
 
-    #UseLargePages for requiring large memory pages (cross-platform flag)
+    # UseLargePages for requiring large memory pages (cross-platform flag)
     if ($java_use_large_pages) {
         push @commands, q{-XX:-UseLargePages};
     }
 
-    #Temporary directory
+    # Temporary directory
     if ( defined $temp_directory ) {
         push @commands, q{-Djava.io.tmpdir=} . $temp_directory;
     }
 
     if ( defined $java_jar ) {
-        push @commands, q{-jar } . $java_jar;
+        push @commands, q{-jar} . $SPACE . $java_jar;
     }
 
     if ($FILEHANDLE) {

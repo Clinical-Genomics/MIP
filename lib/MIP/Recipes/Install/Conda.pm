@@ -14,11 +14,12 @@ use Readonly;
 ## Constants
 Readonly my $SPACE   => q{ };
 Readonly my $NEWLINE => qq{\n};
+Readonly my $DOT     => q{.};
 
 BEGIN {
 
     require Exporter;
-    use base qw{Exporter};
+    use base qw{ Exporter };
 
     # Set the version for version checking
     our $VERSION = 1.0.0;
@@ -38,7 +39,7 @@ sub setup_conda_env {
 ## Function  : Creates necessary conda environment and install package(s) from the default channel.
 ## Returns   :
 ## Arguments : $conda_packages_href, $conda_env, $conda_env_path, $FILEHANDLE, $conda_update
-##           : $conda_packages_href => Ref to hash holding conda packages and their version numbers
+##           : $conda_packages_href => Hash with conda packages and their version numbers {REF}
 ##           : $conda_env           => Name of conda environment
 ##           : $conda_env_path      => Path to conda environment (could bee path to root env)
 ##           : $FILEHANDLE          => Filehandle to wrire to
@@ -95,7 +96,7 @@ sub setup_conda_env {
         }
     );
 
-    ## Check for active conda environment
+    ## Check for active conda environment (exit if true)
     conda_check();
 
     ## Optionally update conda
@@ -170,11 +171,11 @@ sub install_bioconda_packages {
 ## Function  : Install conda packages from the bioconda channel into a conda environment.
 ## Returns   :
 ## Arguments : $bioconda_packages_href, $bioconda_patches_href, $conda_env, $conda_env_path, $FILEHANDLE
-##           : $bioconda_packages_href => Ref to hash holding bioconda packages and their version numbers
-##           : $bioconda_patches_href  => Ref to hash holding the patches for the bioconda packages
+##           : $bioconda_packages_href => Hash holding bioconda packages and their version numbers {REF}
+##           : $bioconda_patches_href  => Hash holding the patches for the bioconda packages {REF}
 ##           : $conda_env              => Name of conda environment
 ##           : $conda_env_path         => Path to conda environment (could bee path to root env)
-##           : $FILEHANDLE             => Filehandle to wrire to
+##           : $FILEHANDLE             => Filehandle to write to
 
     my ($arg_href) = @_;
 
@@ -245,7 +246,7 @@ sub install_bioconda_packages {
 
     ## Link bioconda packages
     # Creating target-link paths
-    my $target_link_paths_href = _create_target_link_paths(
+    my %target_link_paths = _create_target_link_paths(
         {
             bioconda_packages_href => $bioconda_packages_href,
             bioconda_patches_href  => $bioconda_patches_href,
@@ -254,8 +255,7 @@ sub install_bioconda_packages {
     );
     say {$FILEHANDLE} q{## Creating symbolic links for bioconda packages};
   TARGET_AND_LINK_PATHS:
-    while ( my ( $target_path, $link_path ) = each %{$target_link_paths_href} )
-    {
+    while ( my ( $target_path, $link_path ) = each %target_link_paths ) {
         gnu_ln(
             {
                 FILEHANDLE  => $FILEHANDLE,
@@ -276,12 +276,12 @@ sub finish_bioconda_package_install {
 
 ## finish_bioconda_package_install
 
-## Function  : Custom solutions to finish the install of BWA, SnpEff and Manta
-## Returns   :
+## Function   : Custom solutions to finish the install of BWA, SnpEff and Manta
+## Returns    :
 ## Argumemnts : $bioconda_packages_href, $bioconda_patches_href, $conda_env_path, $FILEHANDLE
-##            : $bioconda_packages_href     => Ref to package hash
-##            : $bioconda_patches_href      => Ref to hash with package patches
-##            : $snpeff_genome_versions_ref => Ref to hash with the genome versins of the snpeff databases
+##            : $bioconda_packages_href     => Hash with bioconda packages {REF}
+##            : $bioconda_patches_href      => Hash with package patches {REF}
+##            : $snpeff_genome_versions_ref => Hash with the genome versins of the snpeff databases {REF}
 ##            : $conda_env_path             => Path to conda environment
 ##            : $FILEHANDLE                 => Filehandle to write to
 ##            : $conda_env                  => Name of conda env
@@ -430,7 +430,7 @@ sub _create_package_array {
 ##          : Also checks that the version number makes sense
 ##Returns   : "@packages"
 ##Arguments : $package_href, $package_version_separator
-##          : $package_href              => Ref to hash with packages
+##          : $package_href              => Hash with packages {Hash}
 ##          : $package_version_separator => Scalar separating the package and the version
 
     my ($arg_href) = @_;
@@ -488,10 +488,10 @@ sub _create_target_link_paths {
 ## Function   : Creates paths to bioconda target binaries and links.
 ##            : Custom solutions for bwakit picard snpeff snpsift manta.
 ##            : Returns a hash ref consisting of the paths.
-## Returns    : \%target_link_paths
+## Returns    : %target_link_paths
 ## Argumemnts : $bioconda_packages_href, $bioconda_patches_href, $conda_env_path
-##            : $bioconda_packages_href => Ref to package hash
-##            : $bioconda_patches_href  => Ref to hash with package patches
+##            : $bioconda_packages_href => Hash with bioconda packages {REF}
+##            : $bioconda_patches_href  => Hash with bioconda package patches {REF}
 ##            : $conda_env_path         => Path to conda environment
 
     my ($arg_href) = @_;
@@ -529,8 +529,6 @@ sub _create_target_link_paths {
     use File::Spec::Functions qw{ catfile };
 
     my %target_link_paths;
-    my $target_path;
-    my $link_path;
 
     my %binaries = (
         bwakit => [
@@ -553,6 +551,7 @@ sub _create_target_link_paths {
 
       BINARIES:
         foreach my $binary ( @{ $binaries{$program} } ) {
+            my $target_path;
             ## Construct target path
             if ( $program eq q{manta} ) {
                 $target_path = catfile(
@@ -580,12 +579,12 @@ sub _create_target_link_paths {
                 );
             }
             ## Construct link_path
-            $link_path = catfile( $conda_env_path, q{bin}, $binary );
+            my $link_path = catfile( $conda_env_path, q{bin}, $binary );
             ## Add paths to hash
             $target_link_paths{$target_path} = $link_path;
         }
     }
-    return \%target_link_paths;
+    return %target_link_paths;
 }
 
 sub _check_mt_codon_table {
@@ -689,10 +688,11 @@ sub _check_mt_codon_table {
         say {$FILEHANDLE} $add_regexp
           . $SPACE
           . catfile( $share_dir, $config_file ) . q{ > }
-          . catfile( $share_dir, $config_file . q{.tmp} );
+          . catfile( $share_dir, $config_file . $DOT . q{tmp} );
         gnu_mv(
             {
-                infile_path  => catfile( $share_dir, $config_file . q{.tmp} ),
+                infile_path =>
+                  catfile( $share_dir, $config_file . $DOT . q{tmp} ),
                 outfile_path => catfile( $share_dir, $config_file ),
                 FILEHANDLE   => $FILEHANDLE,
             }
@@ -704,7 +704,9 @@ sub _check_mt_codon_table {
         say STDERR q{Found MT.codonTable in}
           . $SPACE
           . catfile( $share_dir, q{snpEff.config} )
-          . q{. Skipping addition to snpEff config};
+          . $DOT
+          . $SPACE
+          . q{Skipping addition to snpEff config};
     }
     return;
 }
@@ -713,7 +715,7 @@ sub _snpeff_download {
 
 ##_snpeff_download
 
-##Function : Write instructions to download snpeff database. This is done by install script to avoid race conditin when doing first analysis run in MIP
+##Function : Write instructions to download snpeff database. This is done by install script to avoid race condition when doing first analysis run in MIP
 ##Returns  : ""
 ##Arguments: $FILEHANDLE, $genome_version, $conda_env, $conda_env_path
 ##         : $FILEHANDLE      => FILEHANDLE to write to
@@ -758,7 +760,7 @@ sub _snpeff_download {
 
     use MIP::PacketManager::Conda
       qw { conda_source_activate conda_source_deactivate };
-    use Language::Java qw{ core };
+    use Language::Java qw{ java_core };
     use File::Spec::Functions qw{ catfile };
     use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -777,7 +779,7 @@ sub _snpeff_download {
 
     ## Build base java command
     my $java_jar = catfile( $conda_env_path, qw{ bin snpEff.jar} );
-    my @commands = core(
+    my @commands = java_core(
         {
             memory_allocation => q{Xmx2g},
             java_jar          => $java_jar,
