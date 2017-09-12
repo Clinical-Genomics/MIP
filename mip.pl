@@ -32764,7 +32764,7 @@ sub xargs_command {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Gnu::Coreutils qw(gnu_cat);
-    use Program::Gnu::Findutils qw(xargs);
+    use MIP::Gnu::Findutils qw(xargs);
     use Language::Java qw(core);
 
     ## Retrieve logger object
@@ -32789,7 +32789,7 @@ sub xargs_command {
     print $FILEHANDLE "| ";    #Pipe
 
     my @commands;
-    if ( ( defined($first_command) ) && ( $first_command eq "java" ) ) {
+    if ( ( defined $first_command ) && ( $first_command eq q{java} ) ) {
 
         ## Writes java core commands to filehandle.
         @commands = core(

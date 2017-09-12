@@ -15,6 +15,7 @@ cluster_get_core_number.t
 cluster_update_core_number_to_seq_mode.t
 fastqc.t
 file_check_file_version_exist.t
+findutils_xargs.t
 gnu_cat.t
 gnu_cd.t
 gnu_chmod.t
