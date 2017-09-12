@@ -114,10 +114,10 @@ sub slurm_reformat_sacct_output {
 
 ##Function : Removes ".batch" lines in sacct output.
 ##Returns  : ""
-##Arguments: $commands_ref, reformat_sacct_headers_ref, $log_file_path_ref, $FILEHANDLE
+##Arguments: $commands_ref, reformat_sacct_headers_ref, $log_file_path, $FILEHANDLE
 ##         : $commands_ref               => Commands to stream to perl oneliner
 ##         : $reformat_sacct_headers_ref => Reformated sacct headers
-##         : $log_file_path_ref          => The log file {REF}
+##         : $log_file_path              => The log file {REF}
 ##         : $FILEHANDLE                 => Sbatch filehandle to write to
 
     my ($arg_href) = @_;
@@ -126,7 +126,7 @@ sub slurm_reformat_sacct_output {
     my $commands_ref;
     my $reformat_sacct_headers_ref;
     my $FILEHANDLE;
-    my $log_file_path_ref;
+    my $log_file_path;
 
     my $tmpl = {
         commands_ref => {
@@ -143,8 +143,8 @@ sub slurm_reformat_sacct_output {
             strict_type => 1,
             store       => \$reformat_sacct_headers_ref
         },
-        log_file_path_ref =>
-          { default => \$$, strict_type => 1, store => \$log_file_path_ref },
+        log_file_path =>
+          { strict_type => 1, store => \$log_file_path },
         FILEHANDLE => { required => 1, store => \$FILEHANDLE },
     };
 
@@ -171,7 +171,7 @@ sub slurm_reformat_sacct_output {
       q?if ($.>=3 && $F[0]!~/.batch/) {print join("\t", @F), "\n"}' ?;
 
     #Write to log_file.status
-    print {$FILEHANDLE} q{> } . ${$log_file_path_ref} . q{.status}, "\n\n";
+    print {$FILEHANDLE} q{> } . $log_file_path . q{.status}, "\n\n";
     return;
 }
 

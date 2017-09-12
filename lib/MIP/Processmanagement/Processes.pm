@@ -232,7 +232,7 @@ sub add_sample_ids_job_ids_to_job_id_dependency_string {
 
       INFILES:
         while ( my ($infile_index) =
-            each $infile_lane_prefix_href->{$sample_id} )
+            each @{$infile_lane_prefix_href->{$sample_id} } )
         {
 
             # Create key
