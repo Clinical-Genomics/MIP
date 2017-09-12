@@ -25,7 +25,7 @@ use Script::Utils qw{help};
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 ## Constants
 Readonly my $SPACE   => q{ };
@@ -134,7 +134,7 @@ my %specific_argument = (
 my $module_function_cref = \&conda_install;
 
 ## Test both base and function specific arguments
-my @arguments = ( \%required_argument, \%specific_argument );
+my @arguments = ( \%base_argument, \%specific_argument );
 
 foreach my $argument_href (@arguments) {
     my @commands = test_function(

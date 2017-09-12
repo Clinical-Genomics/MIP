@@ -146,7 +146,7 @@ my %specific_argument = (
 my $module_function_cref = \&NAME_OF_SUB_ROUTINE;
 
 ## Test both base and function specific arguments
-my @arguments = ( \%required_argument, \%specific_argument );
+my @arguments = ( \%base_argument, \%specific_argument );
 
 HASHES_OF_ARGUMENTS:
 foreach my $argument_href (@arguments) {
