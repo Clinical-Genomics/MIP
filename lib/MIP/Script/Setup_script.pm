@@ -36,7 +36,6 @@ BEGIN {
 Readonly my $EMPTY_STR => q{};
 Readonly my $SPACE     => q{ };
 
-
 sub setup_script {
 
 ##setup_script
@@ -230,6 +229,7 @@ sub setup_script {
     use MIP::Gnu::Bash qw(gnu_set);
     use MIP::Gnu::Coreutils qw(gnu_echo gnu_mkdir gnu_sleep);
     use MIP::Check::Path qw(check_file_version_exist);
+    use MIP::Language::Shell qw{quote_bash_variable};
 
     ##Constants
     Readonly my $MAX_SECONDS_TO_SLEEP => 60;
@@ -389,18 +389,20 @@ sub setup_script {
 
         say {$FILEHANDLE} q{## Create temporary directory};
 
-        # Quote any bash variables in path
-        $temp_directory =~ s/(\$\w+)/"$1"/g;
+        ## Double quote incoming variables in string
+        my $temp_directory_quoted =
+          quote_bash_variable(
+            { string_with_variable_to_quote => $temp_directory, } );
 
         # Assign batch variable
-        say {$FILEHANDLE} q{readonly TEMP_DIRECTORY=} . $temp_directory;
+        say {$FILEHANDLE} q{readonly TEMP_DIRECTORY=} . $temp_directory_quoted;
 
         # Update perl scalar to bash variable
-        $temp_directory = q{"$TEMP_DIRECTORY"};
+        my $temp_directory_bash = q{"$TEMP_DIRECTORY"};
 
         gnu_mkdir(
             {
-                indirectory_path => $temp_directory,
+                indirectory_path => $temp_directory_bash,
                 parents          => 1,
                 FILEHANDLE       => $FILEHANDLE,
             }
@@ -412,12 +414,13 @@ sub setup_script {
                 job_ids_ref => \@{ $job_id_href->{PAN}{PAN} },
                 sacct_format_fields_ref =>
                   \@{ $active_parameter_href->{sacct_format_fields} },
-                log_file_path_ref  => \$active_parameter_href->{log_file},
+                log_file_path      => $active_parameter_href->{log_file},
                 FILEHANDLE         => $FILEHANDLE,
-                remove_dir         => $temp_directory,
+                remove_dir         => $temp_directory_bash,
                 trap_signals_ref   => [qw(EXIT TERM INT)],
                 trap_function_name => 'finish',
-                trap_function_call => q{$(finish } . $temp_directory . q{)},
+                trap_function_call => q{$(finish }
+                  . $temp_directory_bash . q{)},
             }
         );
     }
@@ -439,7 +442,7 @@ sub setup_script {
                 job_ids_ref => \@{ $job_id_href->{PAN}{PAN} },
                 sacct_format_fields_ref =>
                   \@{ $active_parameter_href->{sacct_format_fields} },
-                log_file_path_ref  => \$active_parameter_href->{log_file},
+                log_file_path      => $active_parameter_href->{log_file},
                 FILEHANDLE         => $FILEHANDLE,
                 trap_signals_ref   => ['ERR'],
                 trap_function_name => 'error',

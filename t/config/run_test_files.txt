@@ -15,6 +15,7 @@ cluster_get_core_number.t
 cluster_update_core_number_to_seq_mode.t
 fastqc.t
 file_check_file_version_exist.t
+findutils_xargs.t
 gnu_cat.t
 gnu_cd.t
 gnu_chmod.t
@@ -34,6 +35,8 @@ gnu_sort.t
 gnu_split.t
 gnu_trap.t
 gnu_wait.t
+gzip.t
+pigz.t
 processes_print_wait.t
 processes_add_job_id_dependency_tree.t
 processes_add_pan_job_id_to_sample_id_dependency_tree.t

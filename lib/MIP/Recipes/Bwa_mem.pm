@@ -30,6 +30,8 @@ BEGIN {
 }
 
 ##Constants
+Readonly my $ASTERIX      => q{*};
+Readonly my $DOT          => q{.};
 Readonly my $DOUBLE_QUOTE => q{"};
 Readonly my $EMPTY_STR    => q{};
 Readonly my $NEWLINE      => qq{\n};
@@ -272,7 +274,7 @@ sub analysis_bwa_mem {
 
         # Split to enable submission to %sample_info_qc later
         my ( $volume, $directory, $stderr_file ) =
-          File::Spec->splitpath( $program_info_path . q{.stderr.txt} );
+          File::Spec->splitpath( $program_info_path . $DOT . q{stderr.txt} );
 
         ## Copies file to temporary directory.
         say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
@@ -408,7 +410,7 @@ sub analysis_bwa_mem {
 
             ## Set sambamba sort input; Sort directly from run-bwakit
             $sambamba_sort_infile =
-              $file_path_prefix . q{.aln} . $outfile_suffix;
+              $file_path_prefix . $DOT . q{aln} . $outfile_suffix;
         }
         ## Increment paired end tracker
         $paired_end_tracker++;
@@ -434,7 +436,8 @@ sub analysis_bwa_mem {
             ## BAMS, bwa_mem logs etc.
             migrate_file(
                 {
-                    infile_path  => $outfile_path_prefix . q{.*},
+                    infile_path => $outfile_path_prefix . $DOT . $ASTERIX,
+                    ,
                     outfile_path => $outsample_directory,
                     FILEHANDLE   => $FILEHANDLE,
                 }
@@ -444,9 +447,11 @@ sub analysis_bwa_mem {
         if ( $bwa_binary eq q{run-bwamem} ) {
 
             my @outfiles = (
-                $outfile_path_prefix . substr( $outfile_suffix, 0, 2 ) . q{*},
-                $file_path_prefix . q{.log*},
-                $file_path_prefix . q{.hla*},
+                $outfile_path_prefix
+                  . substr( $outfile_suffix, 0, 2 )
+                  . $ASTERIX,
+                $file_path_prefix . $DOT . q{log} . $ASTERIX,
+                $file_path_prefix . $DOT . q{hla} . $ASTERIX,
             );
             foreach my $outfile (@outfiles) {
 
@@ -475,7 +480,7 @@ sub analysis_bwa_mem {
             ## Collect raw total sequences and reads mapped from samtools stats and calculate the percentage. Write it to stdout
             _add_percentage_mapped_reads_from_samtools(
                 {
-                    outfile_path => $outfile_path_prefix . q{.stats},
+                    outfile_path => $outfile_path_prefix . $DOT . q{stats},
                     FILEHANDLE   => $FILEHANDLE,
                 }
             );
@@ -485,7 +490,7 @@ sub analysis_bwa_mem {
             say {$FILEHANDLE} q{## Copy file from temporary directory};
             migrate_file(
                 {
-                    infile_path  => $outfile_path_prefix . q{.stats},
+                    infile_path  => $outfile_path_prefix . $DOT . q{stats},
                     outfile_path => $outsample_directory,
                     FILEHANDLE   => $FILEHANDLE,
                 }
@@ -501,7 +506,7 @@ sub analysis_bwa_mem {
             samtools_view(
                 {
                     infile_path  => $outfile_path_prefix . $outfile_suffix,
-                    outfile_path => $outfile_path_prefix . q{.cram},
+                    outfile_path => $outfile_path_prefix . $DOT . q{cram},
                     referencefile_path => $referencefile_path,
                     output_format      => q{cram},
                     FILEHANDLE         => $FILEHANDLE,
@@ -514,7 +519,7 @@ sub analysis_bwa_mem {
             say {$FILEHANDLE} q{## Copy file from temporary directory};
             migrate_file(
                 {
-                    infile_path  => $outfile_path_prefix . q{.cram},
+                    infile_path  => $outfile_path_prefix . $DOT . q{cram},
                     outfile_path => $outsample_directory,
                     FILEHANDLE   => $FILEHANDLE,
                 }
@@ -526,13 +531,15 @@ sub analysis_bwa_mem {
 
         if ( $mip_program_mode == 1 ) {
 
+            my $most_complete_format_key =
+              q{most_complete} . $UNDERSCORE . substr $outfile_suffix, 1;
             my $qc_metafile_path =
               catfile( $outsample_directory, $infile_prefix . $outfile_suffix );
             add_processing_metafile_to_sample_info(
                 {
                     sample_info_href => $sample_info_href,
                     sample_id        => $sample_id,
-                    metafile_tag     => q{most_complete_bam},
+                    metafile_tag     => $most_complete_format_key,
                     path             => $qc_metafile_path,
                 }
             );
@@ -543,7 +550,7 @@ sub analysis_bwa_mem {
 
                 # Required for analysisRunStatus check downstream
                 my $qc_cram_path = catfile( $outsample_directory,
-                    $infile_prefix . $outfile_tag . q{.cram} );
+                    $infile_prefix . $outfile_tag . $DOT . q{cram} );
                 add_program_metafile_to_sample_info(
                     {
                         sample_info_href => $sample_info_href,
@@ -559,6 +566,8 @@ sub analysis_bwa_mem {
             if ( $active_parameter_href->{bwa_mem_bamstats} ) {
 
                 ## Collect QC metadata info for later use
+                my $qc_stats_outfile =
+                  $infile_prefix . $outfile_tag . $DOT . q{stats};
                 add_program_outfile_to_sample_info(
                     {
                         sample_info_href => $sample_info_href,
@@ -566,7 +575,7 @@ sub analysis_bwa_mem {
                         program_name     => q{bamstats},
                         infile           => $infile_prefix,
                         outdirectory     => $outsample_directory,
-                        outfile          => $outfile_tag . q{.stats},
+                        outfile          => $qc_stats_outfile,
                     }
                 );
             }
@@ -586,6 +595,7 @@ sub analysis_bwa_mem {
             }
             if ( $bwa_binary eq q{run-bwamem} ) {
 
+                my $qc_bwa_log = $infile_prefix . $DOT . q{log.bwamem};
                 add_program_outfile_to_sample_info(
                     {
                         sample_info_href => $sample_info_href,
@@ -593,7 +603,7 @@ sub analysis_bwa_mem {
                         program_name     => $program_name,
                         infile           => $infile_prefix,
                         outdirectory     => $outsample_directory,
-                        outfile          => q{.log.bwamem},
+                        outfile          => $qc_bwa_log,
                     }
                 );
             }
@@ -713,16 +723,16 @@ sub _add_percentage_mapped_reads_from_samtools {
 
     ## Add percentage mapped reads to samtools stats output
     # Execute perl
-    print {$FILEHANDLE} q{perl -ne '};
+    print {$FILEHANDLE} q?perl -ne '?;
 
     # Initiate variables
-    print {$FILEHANDLE} q{$raw; $map; };
+    print {$FILEHANDLE} q?$raw; $map; ?;
 
     # Remove newline
-    print {$FILEHANDLE} q{chomp $_; };
+    print {$FILEHANDLE} q?chomp $_; ?;
 
     # Always relay incoming line to stdout
-    print {$FILEHANDLE} q{print $_, "\n"; };
+    print {$FILEHANDLE} q?print $_, qq{\n}; ?;
 
     # Find raw total sequences
     print {$FILEHANDLE} q?if ($_=~/raw total sequences:\s+(\d+)/) { ?;
@@ -743,7 +753,8 @@ sub _add_percentage_mapped_reads_from_samtools {
     print {$FILEHANDLE} q?my $percentage = ($map / $raw ) * 100; ?;
 
     # Write calculation to stdout
-    print {$FILEHANDLE} q?print "percentage mapped reads:\t".$percentage."\n"?;
+    print {$FILEHANDLE}
+      q?print qq{percentage mapped reads:\t} . $percentage . qq{\n}?;
 
     # End elsif
     print {$FILEHANDLE} q?} ?;

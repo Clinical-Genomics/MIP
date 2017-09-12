@@ -122,7 +122,7 @@ _build_test_file_recipe(
         reformat_sacct_headers_ref => \@reformat_sacct_headers,
         FILEHANDLE                 => $FILEHANDLE,
         bash_file_path             => $bash_file_path,
-        log_file_path_ref          => \$log_file_path,
+        log_file_path              => $log_file_path,
     }
 );
 
@@ -154,9 +154,9 @@ close $FILEHANDLE;
 
 ok( can_run('rm'), 'Checking can run rm binary' );
 
-$cmds_ref = [ 'rm', $bash_file_path, $outfile];
-( $success, $error_message, $full_buf_ref, $stdout_buf_ref, $stderr_buf_ref )
-  = run( command => $cmds_ref, verbose => $VERBOSE );
+$cmds_ref = [ 'rm', $bash_file_path, $outfile ];
+( $success, $error_message, $full_buf_ref, $stdout_buf_ref, $stderr_buf_ref ) =
+  run( command => $cmds_ref, verbose => $VERBOSE );
 
 done_testing();
 
@@ -202,10 +202,10 @@ sub _build_test_file_recipe {
 
 ##Function : Builds the test file for testing the housekeeping function
 ##Returns  : ""
-##Arguments: $commands_ref, reformat_sacct_headers_ref, $log_file_path_ref, $FILEHANDLE, $bash_file_path
+##Arguments: $commands_ref, reformat_sacct_headers_ref, $log_file_path, $FILEHANDLE, $bash_file_path
 ##         : $commands_ref               => Commands to stream to perl oneliner
 ##         : $reformat_sacct_headers_ref => Reformated sacct headers
-##         : $log_file_path_ref          => The log file {REF}
+##         : $log_file_path              => The log file {REF}
 ##         : $FILEHANDLE                 => Sbatch filehandle to write to
 ##         : $bash_file_path             => Test file to write recipe to
 
@@ -215,7 +215,7 @@ sub _build_test_file_recipe {
     my $commands_ref;
     my $reformat_sacct_headers_ref;
     my $FILEHANDLE;
-    my $log_file_path_ref;
+    my $log_file_path;
     my $bash_file_path;
 
     my $tmpl = {
@@ -233,10 +233,9 @@ sub _build_test_file_recipe {
             strict_type => 1,
             store       => \$reformat_sacct_headers_ref
         },
-        log_file_path_ref =>
-          { default => \$$, strict_type => 1, store => \$log_file_path_ref },
-        FILEHANDLE     => { required => 1, store => \$FILEHANDLE },
-        bash_file_path => { required => 1, store => \$bash_file_path },
+        log_file_path  => { strict_type => 1, store => \$log_file_path },
+        FILEHANDLE     => { required    => 1, store => \$FILEHANDLE },
+        bash_file_path => { required    => 1, store => \$bash_file_path },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
@@ -244,21 +243,24 @@ sub _build_test_file_recipe {
     # Add bash shebang
     build_shebang(
         {
-            FILEHANDLE  => $FILEHANDLE,
+            FILEHANDLE => $FILEHANDLE,
         }
     );
 
     ## Set shell attributes
-    gnu_set({FILEHANDLE         => $FILEHANDLE,
-	     set_errexit        => 1,
-	     set_nounset        => 1,
-	    });
+    gnu_set(
+        {
+            FILEHANDLE  => $FILEHANDLE,
+            set_errexit => 1,
+            set_nounset => 1,
+        }
+    );
 
     slurm_reformat_sacct_output(
         {
             commands_ref               => \@commands,
             reformat_sacct_headers_ref => \@reformat_sacct_headers,
-            log_file_path_ref          => \$log_file_path,
+            log_file_path              => $log_file_path,
             FILEHANDLE                 => $FILEHANDLE,
         }
     );
