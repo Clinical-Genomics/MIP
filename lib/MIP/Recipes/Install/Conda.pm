@@ -789,7 +789,6 @@ sub _snpeff_download {
     push @commands, $genome_version, q{-c};
     push @commands, catfile( $conda_env_path, qw{bin snpEff.config} );
 
-    say STDERR @commands;
     ## Write rest of java commadn to $FILEHANDLE
     unix_write_to_file(
         {
@@ -815,4 +814,3 @@ sub _snpeff_download {
 }
 
 1;
-
