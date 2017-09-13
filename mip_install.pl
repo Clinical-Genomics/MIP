@@ -84,19 +84,19 @@ $parameter{bioconda}{cmake} = '3.3.1';
 
 ## Bioconda pathes
 # For correct softlinking in share and bin in conda env
-$parameter{bioconda_patches}{bioconda_bwakit_patch}  = '-0';
-$parameter{bioconda_patches}{bioconda_snpeff_patch}  = 'q-0';
-$parameter{bioconda_patches}{bioconda_snpsift_patch} = 'p-0';
-$parameter{bioconda_patches}{bioconda_picard_patch}  = '-1';
-$parameter{bioconda_patches}{bioconda_manta_patch}   = '-0';
+$parameter{bioconda_patches}{bioconda_bwakit_patch}  = q{-0};
+$parameter{bioconda_patches}{bioconda_snpeff_patch}  = q{q-0};
+$parameter{bioconda_patches}{bioconda_snpsift_patch} = q{p-0};
+$parameter{bioconda_patches}{bioconda_picard_patch}  = q{-1};
+$parameter{bioconda_patches}{bioconda_manta_patch}   = q{-0};
 
 ## Perl Modules
 $parameter{perl_version} = '5.18.2';
 
 ## PIP
-$parameter{pip}{genmod}            = '3.7.1';
-$parameter{pip}{variant_integrity} = '0.0.4';
-$parameter{pip}{chanjo}            = '4.0.0';
+$parameter{pip}{genmod}            = q{3.7.2};
+$parameter{pip}{variant_integrity} = q{0.0.4};
+$parameter{pip}{chanjo}            = q{4.2.0};
 
 ## Programs currently installable by SHELL
 $parameter{mip_scripts}            = 'Your current MIP version';
@@ -113,8 +113,8 @@ $parameter{rhocall_path}           = catdir( $ENV{HOME}, 'rhocall' );
 $parameter{cnvnator}               = '0.3.3';
 $parameter{cnvnator_root_binary} =
   'root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz';
-$parameter{tiddit} = '1.1.5';
-$parameter{svdb}   = '1.0.6';
+$parameter{tiddit} = q{1.1.6};
+$parameter{svdb}   = q{1.0.7};
 
 ## Define default parameters
 my %array_parameter;
@@ -635,7 +635,7 @@ sub build_usage {
     -cdp/--conda_dir_path The conda directory path (Default: "HOME/miniconda")
     -cdu/--conda_update Update conda before installing (Supply flag to enable)
     -bvc/--bioconda Set the module version of the programs that can be installed with bioconda (e.g. 'bwa=0.7.12')
-    -pip/--pip Set the module version of the programs that can be installed with pip (e.g. 'genmod=3.7.01')
+    -pip/--pip Set the module version of the programs that can be installed with pip (e.g. 'genmod=3.7.2')
     -pyv/--python_version Set the env python version (Default: "2.7")
 
     ## SHELL
@@ -659,7 +659,7 @@ sub build_usage {
     -rhcp/--rhocall_path Set the path to where to install rhocall (Defaults: "HOME/rhocall")
     -cnvn/--cnvnator Set the cnvnator version (Default: 0.3.3)
     -cnvnr/--cnvnator_root_binary Set the cnvnator root binary (Default: "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz")
-    -tid/--tiddit Set the tiddit version (Default: "1.1.5")
+    -tid/--tiddit Set the tiddit version (Default: "1.1.6")
     -svdb/--svdb Set the svdb version (Default: "1.0.6")
 
     ## Utility
@@ -2807,8 +2807,7 @@ sub svdb {
     print $FILEHANDLE '## Download Svdb', "\n";
     Program::Download::Wget::wget(
         {
-            url => 'https://github.com/J35P312/SVDB/archive/'
-              . $parameter_href->{svdb} . '.zip',
+            url          => 'https://github.com/J35P312/SVDB/archive/SVDB-',
             FILEHANDLE   => $FILEHANDLE,
             quiet        => $parameter_href->{quiet},
             verbose      => $parameter_href->{verbose},
@@ -2838,7 +2837,7 @@ sub svdb {
     print $FILEHANDLE '## Move to Svdb directory', "\n";
     gnu_cd(
         {
-            directory_path => 'SVDB-' . $parameter_href->{svdb},
+            directory_path => 'SVDB-SVDB-' . $parameter_href->{svdb},
             FILEHANDLE     => $FILEHANDLE,
         }
     );

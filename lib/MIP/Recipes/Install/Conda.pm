@@ -12,9 +12,10 @@ use Params::Check qw{ check allow last_error };
 use Readonly;
 
 ## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
-Readonly my $DOT     => q{.};
+Readonly my $SPACE      => q{ };
+Readonly my $NEWLINE    => qq{\n};
+Readonly my $DOT        => q{.};
+Readonly my $UNDERSCORE => q{_};
 
 BEGIN {
 
@@ -41,8 +42,8 @@ sub setup_conda_env {
 ## Arguments : $conda_packages_href, $conda_env, $conda_env_path, $FILEHANDLE, $conda_update
 ##           : $conda_packages_href => Hash with conda packages and their version numbers {REF}
 ##           : $conda_env           => Name of conda environment
-##           : $conda_env_path      => Path to conda environment (could bee path to root env)
-##           : $FILEHANDLE          => Filehandle to wrire to
+##           : $conda_env_path      => Path to conda environment (default: conda root)
+##           : $FILEHANDLE          => Filehandle to write to
 ##           : $conda_update        => Update Conda if defined
 
     my ($arg_href) = @_;
@@ -87,7 +88,7 @@ sub setup_conda_env {
 
     use MIP::Check::Unix qw{ check_binary_in_path };
     use MIP::PacketManager::Conda
-      qw{ conda_create conda_update conda_check conda_install };
+      qw{ conda_create conda_update conda_check_env_status conda_install };
 
     ## Scan the PATH for conda
     check_binary_in_path(
@@ -97,7 +98,7 @@ sub setup_conda_env {
     );
 
     ## Check for active conda environment (exit if true)
-    conda_check();
+    conda_check_env_status();
 
     ## Optionally update conda
     if ($conda_update) {
@@ -121,7 +122,7 @@ sub setup_conda_env {
 
     if ( defined $conda_env ) {
         ## Check for existing conda environment
-        if ( !-d $conda_env_path ) {
+        if ( not -d $conda_env_path ) {
             ## Create conda environment and install packages
             say {$FILEHANDLE} q{## Creating conda environment: }
               . $conda_env
@@ -174,12 +175,10 @@ sub install_bioconda_packages {
 ##           : $bioconda_packages_href => Hash holding bioconda packages and their version numbers {REF}
 ##           : $bioconda_patches_href  => Hash holding the patches for the bioconda packages {REF}
 ##           : $conda_env              => Name of conda environment
-##           : $conda_env_path         => Path to conda environment (could bee path to root env)
+##           : $conda_env_path         => Path to conda environment (default: conda root)
 ##           : $FILEHANDLE             => Filehandle to write to
 
     my ($arg_href) = @_;
-
-    ## Defaults
 
     ## Flatten argument(s)
     my $bioconda_packages_href;
@@ -278,7 +277,7 @@ sub finish_bioconda_package_install {
 
 ## Function   : Custom solutions to finish the install of BWA, SnpEff and Manta
 ## Returns    :
-## Argumemnts : $bioconda_packages_href, $bioconda_patches_href, $conda_env_path, $FILEHANDLE
+## Argumemnts : $bioconda_packages_href, $bioconda_patches_href, $conda_env_path, $FILEHANDLE, $conda_env
 ##            : $bioconda_packages_href     => Hash with bioconda packages {REF}
 ##            : $bioconda_patches_href      => Hash with package patches {REF}
 ##            : $snpeff_genome_versions_ref => Hash with the genome versins of the snpeff databases {REF}
@@ -379,18 +378,9 @@ sub finish_bioconda_package_install {
                 genome_version => $genome_version,
             }
         );
-        if (
-            !-d catdir(
-                $conda_env_path,
-                q{share},
-                q{snpeff-}
-                  . $bioconda_packages_href->{snpeff}
-                  . $bioconda_patches_href->{bioconda_snpeff_patch},
-                q{data},
-                $genome_version
-            )
-          )
-        {
+
+        my $snpeff_genome_dir = catdir( $share_dir, q{data}, $genome_version );
+        if ( not -d $snpeff_genome_dir ) {
             ## Write instructions to download snpeff database.
             ## This is done by install script to avoid race conditin when doing first analysis run in MIP
             say {$FILEHANDLE} q{## Downloading snpeff database};
@@ -559,11 +549,14 @@ sub _create_target_link_paths {
                     q{share},
                     $program . q{-}
                       . $bioconda_packages_href->{$program}
-                      . $bioconda_patches_href->{ q{bioconda_}
+                      . $bioconda_patches_href->{
+                            q{bioconda}
+                          . $UNDERSCORE
                           . $program
-                          . q{_patch} },
-                    q{bin},
-                    $binary
+                          . $UNDERSCORE
+                          . q{patch}
+                      },
+                    q{bin}, $binary
                 );
             }
             else {
@@ -572,9 +565,13 @@ sub _create_target_link_paths {
                     q{share},
                     $program . q{-}
                       . $bioconda_packages_href->{$program}
-                      . $bioconda_patches_href->{ q{bioconda_}
+                      . $bioconda_patches_href->{
+                            q{bioconda}
+                          . $UNDERSCORE
                           . $program
-                          . q{_patch} },
+                          . $UNDERSCORE
+                          . q{patch}
+                      },
                     $binary
                 );
             }
@@ -658,16 +655,16 @@ sub _check_mt_codon_table {
       # Search for  genome version .reference match
       . q?'if($_=~/? . $genome_version . q?.reference/) {?
 
-      # print matching element
+      # Print matching element
       . q?print $_;? . $SPACE
 
-      # print MT codon table that is being downloaded
+      # Print MT codon table that is being downloaded
       . q?print "?
       . $genome_version
       . q?.MT.codonTable : Vertebrate_Mitochondrial\n"}?
       . $SPACE
 
-      # if no match: print line
+      # If no match: print line
       . q?else {print $_;}' ?;
 
     my @ret =
@@ -677,7 +674,8 @@ sub _check_mt_codon_table {
         @ret = run( command => ( $detect_regexp, $share_dir / $config_file ) );
     }
 
-    if ( !$success ) {    #No MT.codonTable in config
+    #No MT.codonTable in config
+    if ( not $success ) {
         say {$FILEHANDLE} q{## Adding }
           . $genome_version
           . q{.MT.codonTable : Vertebrate_Mitochondrial to }
