@@ -34,7 +34,8 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{conda_create conda_source_activate conda_source_deactivate conda_update conda_check conda_install };
+      qw{ conda_create conda_source_activate conda_source_deactivate
+      conda_update conda_check_env_status conda_install };
 }
 
 sub conda_create {
@@ -254,13 +255,13 @@ sub conda_update {
     return @commands;
 }
 
-sub conda_check {
+sub conda_check_env_status {
 
-## conda_check
+## conda_check_env_status
 
 ## Function  : Check if a conda environment is active (exit if true).
-## Returns   : 
-## Arguments : 
+## Returns   :
+## Arguments :
 
     ## Deactivate any activate env prior to installation
     #   Perl options:
@@ -331,6 +332,7 @@ sub conda_install {
             store       => \$conda_channel
         },
         env_name => {
+            default     => undef,
             strict_type => 1,
             store       => \$env_name
         },
@@ -361,6 +363,7 @@ sub conda_install {
     }
 
     if ($quiet) {
+
         #Do not display progress bar
         push @commands, q{--quiet};
     }
