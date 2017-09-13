@@ -113,7 +113,7 @@ eval_parameter_hash(
 );
 
 # Set MIP version
-our $VERSION = 'v5.0.7';
+our $VERSION = 'v5.0.8';
 
 ## Directories, files, job_ids and sample_info
 my ( %infile, %indir_path, %infile_lane_prefix, %lane,
@@ -18210,8 +18210,24 @@ sub delly_reformat {
                             FILEHANDLE => $XARGSFILEHANDLE,
                         }
                     );
-                    say $XARGSFILEHANDLE "\n";
-                }
+                    print $XARGSFILEHANDLE q{;} . q{ };
+
+		    Program::Variantcalling::Bcftools::index(
+							     {
+							      infile_path => $outfile_path_prefix . "_"
+							      . $contig . "_"
+							      . $sv_type
+							      . $suffix{pdelly_call},
+							      stderrfile_path => $xargs_file_name . q{.}
+							      . $contig . q{.}
+							      . $sv_type
+							      . "_" . q{index.stderr.txt},
+							      output_type => q{csi},
+							      FILEHANDLE  => $XARGSFILEHANDLE,
+							     }
+							    );
+		    say $XARGSFILEHANDLE "\n";
+		  }
             }
             else {
 
@@ -18238,6 +18254,20 @@ sub delly_reformat {
                         FILEHANDLE => $XARGSFILEHANDLE,
                     }
                 );
+		print $XARGSFILEHANDLE q{;} . q{ };
+
+		Program::Variantcalling::Bcftools::index(
+							 {
+							  infile_path => $outfile_path_prefix . "_"
+							  . $sv_type
+							  . $suffix{pdelly_call},
+							  stderrfile_path => $xargs_file_name . q{.}
+							  . $sv_type
+							  . "_" . q{index.stderr.txt},
+							  output_type => q{csi},
+							  FILEHANDLE  => $XARGSFILEHANDLE,
+							 }
+							);
                 say $XARGSFILEHANDLE "\n";
             }
         }
