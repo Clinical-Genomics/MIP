@@ -25,7 +25,7 @@ use Script::Utils qw{help};
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.2';
 
 ## Constants
 Readonly my $SPACE   => q{ };
@@ -85,23 +85,14 @@ use MIP::Test::Commands qw{test_function};
 diag(
     q{Test conda_create }
       . $MIP::PacketManager::Conda::VERSION
-      . q{, Perl}
-      . $PERL_VERSION,
-    $EXECUTABLE_NAME
+      . q{, Perl } . $PERL_VERSION
+      . $SPACE . $EXECUTABLE_NAME
 );
 
 ## Base arguments
 my $function_base_command = q{conda create};
 
 my %base_argument = (
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
-    },
-    stderrfile_path_append => {
-        input           => q{stderrfile.test},
-        expected_output => q{2>> stderrfile.test},
-    },
     FILEHANDLE => {
         input           => undef,
         expected_output => $function_base_command,
@@ -121,10 +112,6 @@ my %specific_argument = (
         input           => q{test_env},
         expected_output => q{--name test_env},
     },
-    python_version => {
-        input           => '3.6',
-        expected_output => q{python=3.6},
-    },
     quiet => {
         input           => 1,
         expected_output => q{--quiet},
@@ -143,7 +130,7 @@ my %specific_argument = (
 my $module_function_cref = \&conda_create;
 
 ## Test both base and function specific arguments
-my @arguments = ( \%required_argument, \%specific_argument );
+my @arguments = ( \%base_argument, \%specific_argument );
 
 foreach my $argument_href (@arguments) {
     my @commands = test_function(

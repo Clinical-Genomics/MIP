@@ -104,7 +104,7 @@ sub test_function {
 
         ## SCALAR
         if ( exists $argument_href->{$argument}{input} ) {
-
+            
             $input_value = $argument_href->{$argument}{input};
         }
         ## ARRAY
@@ -142,7 +142,7 @@ sub test_function {
             }
 
             ## Special case for test of FILEHANDLE. Does not return @commands
-            if ( $argument eq 'FILEHANDLE' ) {
+            if ( $argument eq q{FILEHANDLE} ) {
 
                 test_write_to_file(
                     {
@@ -161,7 +161,7 @@ sub test_function {
         else {
 
             ## Special case for test of FILEHANDLE. Does not return @commands
-            if ( $argument eq 'FILEHANDLE' ) {
+            if ( $argument eq q{FILEHANDLE} ) {
 
                 test_write_to_file(
                     {
@@ -213,14 +213,14 @@ sub test_function {
             if ( exists $is_argument{$expected_return} ) {
 
                 is( $is_argument{$expected_return},
-                    $expected_return, 'Argument: ' . $argument );
+                    $expected_return, q{Argument: } . $argument );
             }
             else {
 
                 is(
                     join( $SPACE, @commands ),
                     $expected_return,
-                    'Argument: ' . $argument
+                    q{Argument: } . $argument
                 );
 
                 say STDERR q{#}

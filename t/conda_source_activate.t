@@ -25,7 +25,7 @@ use Script::Utils qw{help};
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 ## Constants
 Readonly my $SPACE   => q{ };
@@ -94,14 +94,6 @@ diag(
 my $function_base_command = q{source activate};
 
 my %base_argument = (
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
-    },
-    stderrfile_path_append => {
-        input           => q{stderrfile.test},
-        expected_output => q{2>> stderrfile.test},
-    },
     FILEHANDLE => {
         input           => undef,
         expected_output => $function_base_command,
@@ -114,9 +106,6 @@ my %required_argument = (
         input           => undef,
         expected_output => $function_base_command,
     },
-);
-
-my %specific_argument = (
     env_name => {
         input           => q{test_env},
         expected_output => q{test_env},
@@ -127,7 +116,7 @@ my %specific_argument = (
 my $module_function_cref = \&conda_source_activate;
 
 ## Test both base and function specific arguments
-my @arguments = ( \%required_argument, \%specific_argument );
+my @arguments = ( \%base_argument );
 
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
