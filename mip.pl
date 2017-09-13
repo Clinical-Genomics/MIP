@@ -18210,8 +18210,24 @@ sub delly_reformat {
                             FILEHANDLE => $XARGSFILEHANDLE,
                         }
                     );
-                    say $XARGSFILEHANDLE "\n";
-                }
+                    print $XARGSFILEHANDLE q{;} . q{ };
+
+		    Program::Variantcalling::Bcftools::index(
+							     {
+							      infile_path => $outfile_path_prefix . "_"
+							      . $contig . "_"
+							      . $sv_type
+							      . $suffix{pdelly_call},
+							      stderrfile_path => $xargs_file_name . q{.}
+							      . $contig . q{.}
+							      . $sv_type
+							      . "_" . q{index.stderr.txt},
+							      output_type => q{csi},
+							      FILEHANDLE  => $XARGSFILEHANDLE,
+							     }
+							    );
+		    say $XARGSFILEHANDLE "\n";
+		  }
             }
             else {
 
@@ -18238,6 +18254,20 @@ sub delly_reformat {
                         FILEHANDLE => $XARGSFILEHANDLE,
                     }
                 );
+		print $XARGSFILEHANDLE q{;} . q{ };
+
+		Program::Variantcalling::Bcftools::index(
+							 {
+							  infile_path => $outfile_path_prefix . "_"
+							  . $sv_type
+							  . $suffix{pdelly_call},
+							  stderrfile_path => $xargs_file_name . q{.}
+							  . $sv_type
+							  . "_" . q{index.stderr.txt},
+							  output_type => q{csi},
+							  FILEHANDLE  => $XARGSFILEHANDLE,
+							 }
+							);
                 say $XARGSFILEHANDLE "\n";
             }
         }
