@@ -4128,7 +4128,7 @@ sub evaluation {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use MIP::Gnu::Coreutils qw(gnu_cat);
-    use Language::Java qw(core);
+    use MIP::Language::Java qw{java_core};
     use Program::Variantcalling::Gatk
       qw(selectvariants leftalignandtrimvariants);
     use Program::Variantcalling::Bcftools qw(stats);
@@ -4231,7 +4231,7 @@ sub evaluation {
       "## Generate '.idx' for downstream Picard by failling this process";
 
     ## Writes java core commands to filehandle.
-    core(
+    java_core(
         {
             FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
@@ -4297,7 +4297,7 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
     say $FILEHANDLE "## Create "
       . $active_parameter_href->{nist_high_confidence_call_set_bed}
       . ".interval_list";
-    core(
+    java_core(
         {
             FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
@@ -4325,7 +4325,7 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
     say $FILEHANDLE "## GATK SelectVariants";
 
     ## Writes java core commands to filehandle.
-    core(
+    java_core(
         {
             FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
@@ -4357,7 +4357,7 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
     say $FILEHANDLE "## GATK LeftAlignAndTrimVariants";
 
     ## Writes java core commands to filehandle.
-    core(
+    java_core(
         {
             FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
@@ -4408,7 +4408,7 @@ q?perl -nae 'unless($_=~/##contig=<ID=NC_007605,length=171823>/ || $_=~/##contig
       "## Generate '.idx' for downstream Picard by failling this process";
 
     ## Writes java core commands to filehandle.
-    core(
+    java_core(
         {
             FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
@@ -4437,7 +4437,7 @@ q?perl -nae 'unless($_=~/##contig=<ID=NC_007605,length=171823>/ || $_=~/##contig
 
     say $FILEHANDLE
 "## Picard GenotypeConcordance - Genome restricted by union - good quality ";
-    core(
+    java_core(
         {
             FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
@@ -4466,7 +4466,7 @@ q?perl -nae 'unless($_=~/##contig=<ID=NC_007605,length=171823>/ || $_=~/##contig
     say $FILEHANDLE "\n";
 
     say $FILEHANDLE "## Picard GenotypeConcordance - Genome - good quality ";
-    core(
+    java_core(
         {
             FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
@@ -5708,7 +5708,7 @@ sub gatk_variantevalexome {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
-    use Language::Java qw(core);
+    use MIP::Language::Java qw{java_core};
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Gnu::Coreutils qw(gnu_cat gnu_sort);
@@ -5806,7 +5806,7 @@ sub gatk_variantevalexome {
     say $FILEHANDLE "## GATK SelectVariants";
 
     ## Writes java core commands to filehandle.
-    core(
+    java_core(
         {
             FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
@@ -6030,7 +6030,7 @@ sub gatk_variantevalexome {
     say $FILEHANDLE "## GATK varianteval";
 
     ## Writes java core commands to filehandle.
-    core(
+    java_core(
         {
             FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
@@ -6224,7 +6224,7 @@ sub gatk_variantevalall {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
-    use Language::Java qw(core);
+    use MIP::Language::Java qw{java_core};
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
     use Program::Variantcalling::Gatk qw(varianteval);
@@ -6318,7 +6318,7 @@ sub gatk_variantevalall {
     say $FILEHANDLE "## GATK SelectVariants";
 
     ## Writes java core commands to filehandle.
-    core(
+    java_core(
         {
             FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
@@ -6349,7 +6349,7 @@ sub gatk_variantevalall {
     say $FILEHANDLE "## GATK varianteval";
 
     ## Writes java core commands to filehandle.
-    core(
+    java_core(
         {
             FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
@@ -8468,7 +8468,7 @@ sub gatk_readbackedphasing {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
-    use Language::Java qw(core);
+    use MIP::Language::Java qw{java_core};
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
 
@@ -8554,7 +8554,7 @@ sub gatk_readbackedphasing {
     say $FILEHANDLE "## GATK ReadBackedPhasing";
 
     ## Writes java core commands to filehandle.
-    core(
+    java_core(
         {
             FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx4g",
@@ -8679,7 +8679,7 @@ sub gatk_phasebytransmission {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
-    use Language::Java qw(core);
+    use MIP::Language::Java qw{java_core};
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
 
@@ -8741,7 +8741,7 @@ sub gatk_phasebytransmission {
     say $FILEHANDLE "## GATK PhaseByTransmission";
 
     ## Writes java core commands to filehandle.
-    core(
+    java_core(
         {
             FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx4g",
@@ -11052,7 +11052,7 @@ sub gatk_combinevariantcallsets {
     use MIP::IO::Files qw(migrate_file);
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
-    use Language::Java qw(core);
+    use MIP::Language::Java qw{java_core};
     use Program::Variantcalling::Gatk qw(combinevariants);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
@@ -11176,7 +11176,7 @@ sub gatk_combinevariantcallsets {
     say $FILEHANDLE "## GATK CombineVariants";
 
     ## Writes java core commands to filehandle.
-    core(
+    java_core(
         {
             FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
@@ -11380,7 +11380,7 @@ sub gatk_variantrecalibration {
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Gnu::Coreutils qw(gnu_mv);
-    use Language::Java qw(core);
+    use MIP::Language::Java qw{java_core};
     use Program::Variantcalling::Bcftools qw(norm);
     use Program::Variantcalling::Gatk
       qw(variantrecalibrator applyrecalibration selectvariants calculategenotypeposteriors);
@@ -11514,7 +11514,7 @@ sub gatk_variantrecalibration {
         say $FILEHANDLE "## GATK VariantRecalibrator";
 
         ## Writes java core commands to filehandle.
-        core(
+        java_core(
             {
                 FILEHANDLE        => $FILEHANDLE,
                 memory_allocation => "Xmx10g",
@@ -11635,7 +11635,7 @@ sub gatk_variantrecalibration {
         say $FILEHANDLE "## GATK ApplyRecalibration";
 
         ## Writes java core commands to filehandle.
-        core(
+        java_core(
             {
                 FILEHANDLE        => $FILEHANDLE,
                 memory_allocation => "Xmx10g",
@@ -11737,7 +11737,7 @@ sub gatk_variantrecalibration {
         say $FILEHANDLE "## GATK SelectVariants";
 
         ## Writes java core commands to filehandle.
-        core(
+        java_core(
             {
                 FILEHANDLE        => $FILEHANDLE,
                 memory_allocation => "Xmx2g",
@@ -11775,7 +11775,7 @@ sub gatk_variantrecalibration {
             say $FILEHANDLE "\n\n#GATK SelectVariants", "\n";
 
             ## Writes java core commands to filehandle.
-            core(
+            java_core(
                 {
                     FILEHANDLE        => $FILEHANDLE,
                     memory_allocation => "Xmx2g",
@@ -11829,7 +11829,7 @@ sub gatk_variantrecalibration {
         say $FILEHANDLE "## GATK CalculateGenotypePosteriors";
 
         ## Writes java core commands to filehandle.
-        core(
+        java_core(
             {
                 FILEHANDLE        => $FILEHANDLE,
                 memory_allocation => "Xmx6g",
@@ -12090,7 +12090,7 @@ sub gatk_concatenate_genotypegvcfs {
     use MIP::IO::Files qw(migrate_file);
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
-    use Language::Java qw(core);
+    use MIP::Language::Java qw{java_core};
     use Program::Variantcalling::Gatk qw(selectvariants);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
@@ -12209,7 +12209,7 @@ sub gatk_concatenate_genotypegvcfs {
             say $FILEHANDLE "##GATK SelectVariants", "\n";
 
             ## Writes java core commands to filehandle.
-            core(
+            java_core(
                 {
                     FILEHANDLE        => $FILEHANDLE,
                     memory_allocation => "Xmx2g",
@@ -12425,7 +12425,7 @@ sub gatk_genotypegvcfs {
     use MIP::IO::Files qw(migrate_file);
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Set::File qw{set_file_suffix};
-    use Language::Java qw(core);
+    use MIP::Language::Java qw{java_core};
     use Program::Variantcalling::Gatk qw(genotypegvcfs);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_step_in_parallel_to_family);
@@ -12586,7 +12586,7 @@ sub gatk_genotypegvcfs {
         }
 
         ## Writes java core commands to filehandle.
-        core(
+        java_core(
             {
                 FILEHANDLE        => $FILEHANDLE,
                 memory_allocation => "Xmx24g",
@@ -13180,7 +13180,7 @@ sub picardtools_collecthsmetrics {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Get::File qw{get_file_suffix};
     use MIP::IO::Files qw(migrate_file);
-    use Language::Java qw(core);
+    use MIP::Language::Java qw{java_core};
     use Program::Alignment::Picardtools qw(collecthsmetrics);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
@@ -13270,7 +13270,7 @@ sub picardtools_collecthsmetrics {
     );
 
     ## Writes java core commands to filehandle.
-    core(
+    java_core(
         {
             FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx4g",
@@ -13456,7 +13456,7 @@ sub picardtools_collectmultiplemetrics {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Get::File qw{get_file_suffix};
     use MIP::IO::Files qw(migrate_file);
-    use Language::Java qw(core);
+    use MIP::Language::Java qw{java_core};
     use Program::Alignment::Picardtools qw(collectmultiplemetrics);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
@@ -13537,7 +13537,7 @@ sub picardtools_collectmultiplemetrics {
     say $FILEHANDLE "## Collecting multiple metrics on alignment";
 
     ## Writes java core commands to filehandle.
-    core(
+    java_core(
         {
             FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx4g",
@@ -20865,7 +20865,7 @@ sub gatk_baserecalibration {
     use Program::Alignment::Gatk qw(baserecalibrator printreads);
     use Program::Alignment::Picardtools qw(gatherbamfiles);
     use MIP::Gnu::Coreutils qw(gnu_rm);
-    use Language::Java qw(core);
+    use MIP::Language::Java qw{java_core};
     use MIP::Processmanagement::Slurm_processes
       qw{slurm_submit_job_sample_id_dependency_add_to_sample};
 
@@ -21201,7 +21201,7 @@ sub gatk_baserecalibration {
     } @{ $file_info_href->{contigs} };
 
     ## Writes java core commands to filehandle.
-    core(
+    java_core(
         {
             FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx4g",
@@ -23626,7 +23626,7 @@ sub picardtools_mergerapidreads {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Processmanagement::Processes qw(print_wait);
-    use Language::Java qw(core);
+    use MIP::Language::Java qw{java_core};
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
 
@@ -23699,7 +23699,7 @@ sub picardtools_mergerapidreads {
 
                 if ( $read_batch_processes_count eq 0 ) {
 
-                    core(
+                    java_core(
                         {
                             FILEHANDLE        => $FILEHANDLE,
                             memory_allocation => "Xmx4g",
@@ -23741,7 +23741,7 @@ sub picardtools_mergerapidreads {
         else
         { #Still needs to rename file to be included in potential merge of BAM files in next step
 
-            core(
+            java_core(
                 {
                     FILEHANDLE        => $FILEHANDLE,
                     memory_allocation => "Xmx4g",
@@ -25230,7 +25230,7 @@ sub build_ptchs_metric_prerequisites {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Gnu::Coreutils qw(gnu_rm gnu_cat);
-    use Language::Java qw(core);
+    use MIP::Language::Java qw{java_core};
     use Program::Interval::Picardtools qw(intervallisttools);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_no_dependency_add_to_samples);
@@ -25282,7 +25282,7 @@ sub build_ptchs_metric_prerequisites {
 
         say $FILEHANDLE "## CreateSequenceDictionary from reference";
 
-        core(
+        java_core(
             {
                 FILEHANDLE        => $FILEHANDLE,
                 memory_allocation => "Xmx2g",
@@ -25329,7 +25329,7 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
           "\n";                    #Remove unnecessary info and reformat
 
         say $FILEHANDLE "## Create" . $$infile_list_ending_ref;
-        core(
+        java_core(
             {
                 FILEHANDLE        => $FILEHANDLE,
                 memory_allocation => "Xmx2g",
@@ -25373,7 +25373,7 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
         );
 
         say $FILEHANDLE "#Create" . $$padded_infile_list_ending_ref;
-        core(
+        java_core(
             {
                 FILEHANDLE        => $FILEHANDLE,
                 memory_allocation => "Xmx2g",
@@ -26033,7 +26033,7 @@ sub build_human_genome_prerequisites {
     use MIP::Gnu::Bash qw(gnu_cd);
     use MIP::Gnu::Coreutils qw(gnu_rm);
     use MIP::Program::Compression::Gzip qw(gzip);
-    use Language::Java qw(core);
+    use MIP::Language::Java qw{java_core};
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_no_dependency_add_to_samples);
 
@@ -26135,7 +26135,7 @@ sub build_human_genome_prerequisites {
                     $file_info_href->{human_genome_reference_name_prefix} );
 
                 say $FILEHANDLE "#CreateSequenceDictionary from reference";
-                core(
+                java_core(
                     {
                         FILEHANDLE        => $FILEHANDLE,
                         memory_allocation => "Xmx2g",
@@ -31170,7 +31170,7 @@ sub concatenate_vcfs {
     my $outfile               = $_[5];
     my $reorder_swith         = $_[6];
 
-    use Language::Java qw(core);
+    use MIP::Language::Java qw{java_core};
 
     unless ( defined($infile_postfix) ) {
 
@@ -31182,7 +31182,7 @@ sub concatenate_vcfs {
     }
 
     ## Writes java core commands to filehandle.
-    core(
+    java_core(
         {
             FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx4g",
@@ -31274,7 +31274,7 @@ sub concatenate_variants {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use Language::Java qw(core);
+    use MIP::Language::Java qw{java_core};
     use Program::Variantcalling::Gatk qw(catvariants);
 
     unless ( defined($infile_postfix) ) {
@@ -31289,7 +31289,7 @@ sub concatenate_variants {
     say $FILEHANDLE "## GATK CatVariants";
 
     ## Writes java core commands to filehandle.
-    core(
+    java_core(
         {
             FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx4g",
@@ -31368,13 +31368,13 @@ sub sort_vcf {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use Language::Java qw(core);
+    use MIP::Language::Java qw{java_core};
     use Program::Variantcalling::Picardtools qw(sortvcf);
 
     say $FILEHANDLE "## Picard SortVcf";
 
     ## Writes java core commands to filehandle.
-    core(
+    java_core(
         {
             FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
@@ -32795,7 +32795,7 @@ sub xargs_command {
 
     use MIP::Gnu::Coreutils qw(gnu_cat);
     use MIP::Gnu::Findutils qw(xargs);
-    use Language::Java qw(core);
+    use MIP::Language::Java qw{java_core};
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -32822,7 +32822,7 @@ sub xargs_command {
     if ( ( defined $first_command ) && ( $first_command eq q{java} ) ) {
 
         ## Writes java core commands to filehandle.
-        @commands = core(
+        @commands = java_core(
             {
                 memory_allocation    => $memory_allocation,
                 java_use_large_pages => $java_use_large_pages,
@@ -32949,7 +32949,7 @@ sub split_bam {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Program::Alignment::Samtools qw(samtools_view);
-    use Language::Java qw(core);
+    use MIP::Language::Java qw{java_core};
 
     my $xargs_file_name;
 
@@ -32988,7 +32988,7 @@ sub split_bam {
         print $XARGSFILEHANDLE "; ";    #Wait
 
         ## Writes java core commands to filehandle.
-        core(
+        java_core(
             {
                 FILEHANDLE        => $XARGSFILEHANDLE,
                 memory_allocation => "Xmx4g",
@@ -38253,7 +38253,7 @@ sub MergeTargetListFlag {
 
         say $FILEHANDLE "\n## Generate merged interval_list\n";
 
-        core(
+        java_core(
             {
                 FILEHANDLE        => $FILEHANDLE,
                 memory_allocation => "Xmx2g",
@@ -38356,7 +38356,7 @@ sub GATKTargetListFlag {
 
         say $FILEHANDLE "\n## Generate merged interval_list\n";
 
-        core(
+        java_core(
             {
                 FILEHANDLE        => $FILEHANDLE,
                 memory_allocation => "Xmx2g",
