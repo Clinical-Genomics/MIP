@@ -259,8 +259,8 @@ sub conda_check {
 ## conda_check
 
 ## Function  : Check if a conda environment is active (exit if true).
-## Returns   : 
-## Arguments : 
+## Returns   :
+## Arguments :
 
     ## Deactivate any activate env prior to installation
     #   Perl options:
@@ -331,6 +331,7 @@ sub conda_install {
             store       => \$conda_channel
         },
         env_name => {
+            default     => undef,
             strict_type => 1,
             store       => \$env_name
         },
@@ -361,6 +362,7 @@ sub conda_install {
     }
 
     if ($quiet) {
+
         #Do not display progress bar
         push @commands, q{--quiet};
     }
