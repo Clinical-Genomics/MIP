@@ -1617,10 +1617,11 @@ else {
 
 if ( $active_parameter{pchanjo_sexcheck} > 0 ) {
 
-    $log->info("[Chanjo sexcheck]\n");
+    say $log->info(q{[Chanjo sexcheck]});
     use MIP::Recipes::Chanjo_sex_check qw{analysis_chanjo_sex_check};;
     my $program_name = lc q{chanjo_sexcheck};
 
+    SAMPLE_IDS:
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
       my $outsample_directory = catdir( $active_parameter{outdata_dir},
