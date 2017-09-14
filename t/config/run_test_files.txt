@@ -2,7 +2,7 @@ unix_standard_streams.t
 unix_write_to_file.t
 analysis_get_overall_analysis_type.t
 bedtools_genomecov.t
-bwa.t
+bwa_mem.t
 chanjo_sex.t
 conda_create.t
 conda_install.t
@@ -79,3 +79,4 @@ slurm_sacct.t
 slurm_sbatch.t
 slurm_build_sbatch_header.t
 slurm_reformat_sacct_output.t
+vep.t

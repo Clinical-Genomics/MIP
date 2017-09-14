@@ -54,6 +54,8 @@ use MIP::File::Format::Pedigree qw{ create_fam_file };
 use MIP::Check::Cluster qw{ check_max_core_number };
 use MIP::Get::Analysis qw{ get_overall_analysis_type };
 
+use MIP::Recipes::Vep qw{analysis_vep};
+
 our $USAGE = build_usage( {} );
 
 BEGIN {
@@ -76,8 +78,9 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $NEWLINE => qq{\n};
 Readonly my $DOT     => q{.};
+Readonly my $NEWLINE => qq{\n};
+Readonly my $TAB     => qq{\t};
 
 ####Script parameters
 
@@ -2514,16 +2517,13 @@ else {
         );
     }
     ## Run varianteffectpredictor {family-level}
-    if ( $active_parameter{pvarianteffectpredictor} > 0 )
-    {
+    if ( $active_parameter{pvarianteffectpredictor} > 0 ) {
 
-        $log->info(q{[Varianteffectpredictor]} . $NEWLINE);
+        $log->info( q{[Varianteffectpredictor]} . $NEWLINE );
 
-	use MIP::Recipes::Vep qw{analysis_vep};
+        my $program_name = lc q{varianteffectpredictor};
 
-	my $program_name = lc q{varianteffectpredictor};
-
-        varianteffectpredictor(
+        analysis_vep(
             {
                 parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
@@ -3386,17 +3386,12 @@ sub analysisrunstatus {
     say $FILEHANDLE q?done ?, "\n";
 
     ## Test varianteffectpredictor fork status. If varianteffectpredictor is unable to fork it will prematurely end the analysis and we will lose variants.
-    if (
-        defined(
-            $sample_info_href->{program}{varianteffectpredictor}{outfile}
-        )
-      )
+    if ( defined( $sample_info_href->{program}{varianteffectpredictor}{path} ) )
     {
 
-        my $variant_effect_predictor_file = catfile(
-            $sample_info_href->{program}{varianteffectpredictor}{outdirectory},
-            $sample_info_href->{program}{varianteffectpredictor}{outfile}
-        );
+        my $variant_effect_predictor_file =
+          catfile( $sample_info_href->{program}{varianteffectpredictor}{path},
+          );
 
         print $FILEHANDLE q?if grep -q "WARNING Unable to fork" ?
           ;    #not output the matched text only return the exit status code
@@ -15333,7 +15328,7 @@ sub sv_varianteffectpredictor {
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Recipes::Xargs qw{ xargs_command };
     use MIP::IO::Files qw(migrate_file);
-    use Program::Variantcalling::Vep qw(variant_effect_predictor);
+    use MIP::Program::Variantcalling::Vep qw(variant_effect_predictor);
     use MIP::QC::Record
       qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
@@ -23291,10 +23286,11 @@ sub variantannotationblock {
             }
         );
     }
-    if ( $active_parameter_href->{pvarianteffectpredictor} > 0 )
-    {    #Run varianteffectpredictor. Done per family
 
-        $log->info("\t[Varianteffectpredictor]\n");
+    # Run varianteffectpredictor. Family-level
+    if ( $active_parameter_href->{pvarianteffectpredictor} > 0 ) {
+
+        $log->info( $TAB . q{[Varianteffectpredictor]} . $NEWLINE );
     }
     if ( $active_parameter_href->{pvcfparser} > 0 )
     {    #Run pvcfparser. Done per family
@@ -23436,8 +23432,11 @@ sub variantannotationblock {
             }
         );
     }
-    if ( $active_parameter_href->{pvarianteffectpredictor} > 0 )
-    {    #Run varianteffectpredictor. Done per family
+
+    # Run varianteffectpredictor. Family-level
+    if ( $active_parameter_href->{pvarianteffectpredictor} > 0 ) {
+
+        my $program_name = lc q{varianteffectpredictor};
 
         ($xargs_file_counter) = varianteffectpredictor(
             {
@@ -23448,12 +23447,12 @@ sub variantannotationblock {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 call_type               => $call_type,
-                program_name            => "varianteffectpredictor",
+                program_name            => $program_name,
                 file_path               => $file_path,
                 program_info_path       => $program_info_path,
                 FILEHANDLE              => $FILEHANDLE,
                 xargs_file_counter      => $xargs_file_counter,
-                stderr_path             => $program_info_path . ".stderr.txt",
+                stderr_path => $program_info_path . $DOT . q{stderr.txt},
             }
         );
     }
