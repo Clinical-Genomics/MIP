@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.0.0;
+    our $VERSION = 1.0.1;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
