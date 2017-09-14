@@ -1,7 +1,5 @@
 package MIP::Check::Path;
 
-#### Copyright 2017 Henrik Stranneheim
-
 use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -11,7 +9,6 @@ use charnames qw{ :full :short };
 use Carp;
 use autodie;
 use Params::Check qw{ check allow last_error };
-$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 
 BEGIN {
 
@@ -29,60 +26,54 @@ sub check_file_version_exist {
 
 ##check_file_version_exist
 
-##Function : Check if a file with with a filename consisting of $file_path_prefix_ref.$file_counter.$file_path_suffix_ref exist. If so bumps the version number and return new file path and version number.
-##Returns  : "$file_path, $file_name_counter"
-##Arguments: $file_path_prefix_ref, $file_path_suffix_ref
-##         : $file_path_prefix_ref => The file path {REF}
-##         : $file_path_suffix_ref => The file ending {REF}
+##Function : Check if a file with with a filename consisting of $file_path_prefix.$file_counter.$file_path_suffix exist. If so bumps the version number and return new file path and version number.
+##Returns  : "$file_path, $file_name_version"
+##Arguments: $file_path_prefix, $file_path_suffix
+##         : $file_path_prefix => File path prefix
+##         : $file_path_suffix => File path suffix
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $file_path_prefix_ref;
-    my $file_path_suffix_ref;
+    my $file_path_prefix;
+    my $file_path_suffix;
 
     my $tmpl = {
-        file_path_prefix_ref => {
+        file_path_prefix => {
             required    => 1,
             defined     => 1,
-            default     => \$$,
             strict_type => 1,
-            store       => \$file_path_prefix_ref
+            store       => \$file_path_prefix
         },
-        file_path_suffix_ref => {
+        file_path_suffix => {
             required    => 1,
             defined     => 1,
-            default     => \$$,
             strict_type => 1,
-            store       => \$file_path_suffix_ref
+            store       => \$file_path_suffix
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Nr of sbatch scripts with identical filenames i.e. version number
-    my $file_name_counter = 0;
+    my $file_name_version = 0;
 
-    my $file_path =
-      ${$file_path_prefix_ref} . $file_name_counter . ${$file_path_suffix_ref};
+    my $file_path = $file_path_prefix . $file_name_version . $file_path_suffix;
 
   FILE_PATHS:
     while ( -e $file_path ) {
 
-        $file_name_counter++;
+        $file_name_version++;
 
         # New file_path to test for existence
-        $file_path =
-            ${$file_path_prefix_ref}
-          . $file_name_counter
-          . ${$file_path_suffix_ref};
+        $file_path = $file_path_prefix . $file_name_version . $file_path_suffix;
     }
-    return ( $file_path, $file_name_counter );
+    return ( $file_path, $file_name_version );
 }
 
 sub check_dir_path_exist {
 
-## conda_check
+## check_dir_path_exist
 
 ## Function  : Checks if any of the supplied paths exists. Returns an array that holds the existing paths.
 ## Returns   : @existing_dir_paths
@@ -108,8 +99,8 @@ sub check_dir_path_exist {
     my @existing_dir_paths;
 
     # Search for directory in supplied paths
-    @existing_dir_paths = grep { -d $_ } @{$dir_paths_ref};
-    
+    @existing_dir_paths = grep { -d } @{$dir_paths_ref};
+
     return @existing_dir_paths;
 }
 
