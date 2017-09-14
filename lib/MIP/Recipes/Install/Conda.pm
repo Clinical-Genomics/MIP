@@ -338,6 +338,9 @@ sub finish_bioconda_package_install {
 
     use File::Spec::Functions qw{ catdir catfile };
     use MIP::Gnu::Coreutils qw{ gnu_cp gnu_chmod };
+    use MIP::PacketManager::Conda
+      qw{ conda_source_activate conda_source_deactivate };
+    use MIP::Program::Variantcalling::SnpEff qw{ snpeff_download };
 
     ## Custom BWA
     say {$FILEHANDLE} q{## Custom BWA solutions};
@@ -381,17 +384,43 @@ sub finish_bioconda_package_install {
 
         my $snpeff_genome_dir = catdir( $share_dir, q{data}, $genome_version );
         if ( not -d $snpeff_genome_dir ) {
-            ## Write instructions to download snpeff database.
-            ## This is done by install script to avoid race conditin when doing first analysis run in MIP
-            say {$FILEHANDLE} q{## Downloading snpeff database};
-            _snpeff_download(
+            ## Only activate conda environment if supplied by user
+            if ($conda_env) {
+                ## Activate conda environment
+                say {$FILEHANDLE} q{## Activate conda environment};
+                conda_source_activate(
+                    {
+                        FILEHANDLE => $FILEHANDLE,
+                        env_name   => $conda_env,
+                    }
+                );
+                say {$FILEHANDLE} $NEWLINE;
+            }
+        }
+        ## Write instructions to download snpeff database.
+        ## This is done by install script to avoid race conditin when doing first analysis run in MIP
+        say {$FILEHANDLE} q{## Downloading snpeff database};
+        my $jar_path = catfile( $conda_env_path, qw{ bin snpEff.jar} );
+        my $config_file_path =
+          catfile( $conda_env_path, qw{bin snpEff.config} );
+        snpeff_download(
+            {
+                FILEHANDLE              => $FILEHANDLE,
+                genome_version_database => $genome_version,
+                jar_path                => $jar_path,
+                config_file_path        => $config_file_path,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+        ## Deactivate conda environment if conda_environment exists
+        if ($conda_env) {
+            say {$FILEHANDLE} q{## Deactivate conda environment};
+            conda_source_deactivate(
                 {
-                    FILEHANDLE     => $FILEHANDLE,
-                    genome_version => $genome_version,
-                    conda_env      => $conda_env,
-                    conda_env_path => $conda_env_path,
+                    FILEHANDLE => $FILEHANDLE,
                 }
             );
+            say {$FILEHANDLE} $NEWLINE;
         }
     }
 
@@ -687,10 +716,11 @@ sub _check_mt_codon_table {
           . $SPACE
           . catfile( $share_dir, $config_file ) . q{ > }
           . catfile( $share_dir, $config_file . $DOT . q{tmp} );
+
+        my $infile_path = catfile( $share_dir, $config_file . $DOT . q{tmp} );
         gnu_mv(
             {
-                infile_path =>
-                  catfile( $share_dir, $config_file . $DOT . q{tmp} ),
+                infile_path  => $infile_path,
                 outfile_path => catfile( $share_dir, $config_file ),
                 FILEHANDLE   => $FILEHANDLE,
             }
@@ -705,110 +735,6 @@ sub _check_mt_codon_table {
           . $DOT
           . $SPACE
           . q{Skipping addition to snpEff config};
-    }
-    return;
-}
-
-sub _snpeff_download {
-
-##_snpeff_download
-
-##Function : Write instructions to download snpeff database. This is done by install script to avoid race condition when doing first analysis run in MIP
-##Returns  : ""
-##Arguments: $FILEHANDLE, $genome_version, $conda_env, $conda_env_path
-##         : $FILEHANDLE      => FILEHANDLE to write to
-##         : $genome_version  => snpeff genome version
-##         : $conda_env       => name of conda env
-##         : $coonda_env_path => path to conda env
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $FILEHANDLE;
-    my $genome_version;
-    my $conda_env;
-    my $conda_env_path;
-
-    my $tmpl = {
-        FILEHANDLE => {
-            required => 1,
-            defined  => 1,
-            store    => \$FILEHANDLE
-        },
-        genome_version => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$genome_version
-        },
-        conda_env => {
-            required => 1,
-            store    => \$conda_env
-        },
-        conda_env_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$conda_env_path,
-        },
-
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::PacketManager::Conda
-      qw { conda_source_activate conda_source_deactivate };
-    use MIP::Language::Java qw{ java_core };
-    use File::Spec::Functions qw{ catfile };
-    use MIP::Unix::Write_to_file qw{ unix_write_to_file };
-
-    ## Only activate conda environment if supplied by user
-    if ($conda_env) {
-        ## Activate conda environment
-        say {$FILEHANDLE} q{## Activate conda environment};
-        conda_source_activate(
-            {
-                FILEHANDLE => $FILEHANDLE,
-                env_name   => $conda_env,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
-
-    ## Build base java command
-    my $java_jar = catfile( $conda_env_path, qw{ bin snpEff.jar} );
-    my @commands = java_core(
-        {
-            memory_allocation => q{Xmx2g},
-            java_jar          => $java_jar,
-        }
-    );
-
-    ## Build rest of java command
-    push @commands, qw{ download -v };
-    push @commands, $genome_version, q{-c};
-    push @commands, catfile( $conda_env_path, qw{bin snpEff.config} );
-
-    ## Write rest of java commadn to $FILEHANDLE
-    unix_write_to_file(
-        {
-            commands_ref => \@commands,
-            separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-
-    say {$FILEHANDLE} $NEWLINE;
-
-    ## Deactivate conda environment if conda_environment exists
-    if ($conda_env) {
-        say {$FILEHANDLE} q{## Deactivate conda environment};
-        conda_source_deactivate(
-            {
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
     }
     return;
 }
