@@ -60,11 +60,11 @@ our $USAGE = build_usage( {} );
 BEGIN {
 
     my @modules = (
-        'YAML',               'Path::Iterator::Rule',
-        'List::Util',         'File::Format::Yaml',
-        'Log::Log4perl',      'Check::Check_modules',
-        'File::Format::Yaml', 'File::Parse::Parse',
-        'MIP_log::Log4perl',  'Script::Utils',
+        qw{ YAML Path::Iterator::Rule
+          List::Util         File::Format::Yaml
+          Log::Log4perl      Check::Check_modules
+          File::Format::Yaml File::Parse::Parse
+          MIP_log::Log4perl  Script::Utils }
     );
 
     ## Evaluate that all modules required are installed
@@ -78,14 +78,21 @@ BEGIN {
 
 ## Constants
 Readonly my $NEWLINE => qq{\n};
+Readonly my $DOT     => q{.};
 
 ####Script parameters
 
-my %parameter;         #Holds all parameters for MIP
-my %active_parameter;  #Holds all active parameters after the value has been set
+# Holds all parameters for MIP
+my %parameter;
 
-my @order_parameters;  #To add/write parameters in the correct order
-my @broadcasts;    #Holds all set parameters info after add_to_active_parameter
+# Holds all active parameters after the value has been set
+my %active_parameter;
+
+# To add/write parameters in the correct order
+my @order_parameters;
+
+# Holds all set parameters info after add_to_active_parameter
+my @broadcasts;
 
 ## Add date_time_stamp for later use in log and qc_metrics yaml file
 my $date_time       = localtime;
@@ -93,8 +100,9 @@ my $date_time_stamp = $date_time->datetime;
 my $date            = $date_time->ymd;
 
 # Catches script name and removes ending
-my $script = fileparse( basename( $PROGRAM_NAME, q{.pl} ) );
-my $definitions_file = catfile( $Bin, qw{definitions define_parameters.yaml} );
+my $script = fileparse( basename( $PROGRAM_NAME, $DOT . q{pl} ) );
+my $definitions_file =
+  catfile( $Bin, qw{ definitions define_parameters.yaml } );
 chomp( $date_time_stamp, $date, $script );
 
 ####Set program parameters
@@ -4666,6 +4674,7 @@ sub endvariantannotationblock {
 
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
+    use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use Program::Htslib qw(bgzip tabix);
     use MIP::Gnu::Software::Gnu_grep qw(gnu_grep);
     use MIP::QC::Record qw(add_program_metafile_to_sample_info);
@@ -5137,6 +5146,7 @@ sub rankvariant {
     use MIP::Cluster qw(get_core_number);
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
+    use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use MIP::Recipes::Xargs qw{ xargs_command };
     use Program::Variantcalling::Genmod qw(annotate models score compound);
     use MIP::QC::Record
@@ -5503,7 +5513,7 @@ sub rankvariant {
                     FILEHANDLE        => $FILEHANDLE,
                     XARGSFILEHANDLE   => $XARGSFILEHANDLE,
                     contigs_ref       => \@contigs_size_ordered,
-                    file_name         => $file_path,
+                    file_path         => $file_path,
                     program_info_path => $program_info_path,
                     core_number => $active_parameter_href->{max_cores_per_node},
                     xargs_file_counter => $xargs_file_counter,
@@ -6557,7 +6567,7 @@ sub snpeff {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw(get_core_number);
-    use MIP::IO::Files qw(migrate_file);
+    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Recipes::Xargs qw{ xargs_command };
@@ -6956,7 +6966,7 @@ sub snpeff {
                     FILEHANDLE        => $FILEHANDLE,
                     XARGSFILEHANDLE   => $XARGSFILEHANDLE,
                     contigs_ref       => $vcfparser_contigs_ref,
-                    file_name         => $file_path,
+                    file_path         => $file_path,
                     program_info_path => $program_info_path,
                     core_number => $active_parameter_href->{max_cores_per_node},
                     xargs_file_counter => $xargs_file_counter,
@@ -7164,6 +7174,7 @@ sub annovar {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Gnu::Coreutils qw(gnu_mv);
+    use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use MIP::Recipes::Xargs qw{ xargs_command };
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
@@ -7635,7 +7646,7 @@ sub mvcfparser {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw(get_core_number);
-    use MIP::IO::Files qw(migrate_file);
+    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Recipes::Xargs qw{ xargs_command };
@@ -8099,7 +8110,7 @@ sub varianteffectpredictor {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw(get_core_number);
-    use MIP::IO::Files qw(migrate_file);
+    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Recipes::Xargs qw{ xargs_command };
@@ -10391,7 +10402,7 @@ sub rhocall {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw(get_core_number);
-    use MIP::IO::Files qw(migrate_file);
+    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Recipes::Xargs qw{ xargs_command };
@@ -14285,7 +14296,7 @@ sub sv_reformat {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Get::File qw{get_file_suffix};
-    use MIP::IO::Files qw(migrate_file);
+    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use Program::Htslib qw(bgzip tabix);
     use MIP::Gnu::Software::Gnu_grep qw( gnu_grep);
     use MIP::Processmanagement::Slurm_processes
@@ -14828,7 +14839,7 @@ sub sv_rankvariant {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Recipes::Xargs qw{ xargs_command };
-    use MIP::IO::Files qw(migrate_file);
+    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use Program::Variantcalling::Genmod qw(annotate models score compound);
     use MIP::QC::Record
       qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
@@ -15485,7 +15496,7 @@ sub sv_vcfparser {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Recipes::Xargs qw{ xargs_command };
-    use MIP::IO::Files qw(migrate_file);
+    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use Program::Variantcalling::Mip qw(vcfparser);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
@@ -17278,7 +17289,7 @@ sub cnvnator {
 
     use MIP::Processmanagement::Processes qw(print_wait);
     use MIP::Script::Setup_script qw(setup_script);
-    use MIP::IO::Files qw(migrate_file);
+    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Recipes::Xargs qw{ xargs_command };
@@ -17757,7 +17768,7 @@ sub delly_reformat {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Script::Setup_script qw(setup_script);
-    use MIP::IO::Files qw(migrate_file);
+    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Recipes::Xargs qw{ xargs_command };
@@ -17970,7 +17981,7 @@ sub delly_reformat {
                         FILEHANDLE        => $FILEHANDLE,
                         XARGSFILEHANDLE   => $XARGSFILEHANDLE,
                         contigs_ref       => \@contigs,
-                        file_name         => $file_path,
+                        file_path         => $file_path,
                         program_info_path => $program_info_path,
                         core_number       => ( $core_number - 1 )
                         ,    #Compensate for cp of entire BAM TRA, see above
@@ -18662,7 +18673,7 @@ sub delly_call {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Script::Setup_script qw(setup_script);
-    use MIP::IO::Files qw(migrate_file);
+    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Set::File qw{set_file_suffix};
     use Program::Variantcalling::Delly qw(call);
@@ -18790,7 +18801,7 @@ sub delly_call {
                 FILEHANDLE        => $FILEHANDLE,
                 XARGSFILEHANDLE   => $XARGSFILEHANDLE,
                 contigs_ref       => \@contigs,
-                file_name         => $file_path,
+                file_path         => $file_path,
                 program_info_path => $program_info_path,
                 core_number       => ( $core_number - 1 )
                 ,    #Compensate for cp of entire BAM (INS, TRA), see above
@@ -19668,7 +19679,7 @@ sub msamtools_mpileup {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Script::Setup_script qw(setup_script);
-    use MIP::IO::Files qw(migrate_file);
+    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Recipes::Xargs qw{ xargs_command };
@@ -20091,7 +20102,7 @@ sub freebayes {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Script::Setup_script qw(setup_script);
-    use MIP::IO::Files qw(migrate_file);
+    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Recipes::Xargs qw{ xargs_command };
@@ -20472,6 +20483,7 @@ sub gatk_haplotypecaller {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
+    use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use MIP::Recipes::Xargs qw{ xargs_command };
     use Program::Alignment::Gatk qw(haplotypecaller);
     use MIP::Processmanagement::Slurm_processes
@@ -20879,7 +20891,7 @@ sub gatk_baserecalibration {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Script::Setup_script qw(setup_script);
-    use MIP::IO::Files qw(migrate_file);
+    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Recipes::Xargs qw{ xargs_command };
     use Program::Alignment::Gatk qw(baserecalibrator printreads);
@@ -21422,6 +21434,7 @@ sub gatk_realigner {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Get::File qw{get_file_suffix};
+    use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use MIP::Recipes::Xargs qw{ xargs_command };
     use Program::Alignment::Gatk qw(realignertargetcreator indelrealigner);
     use MIP::Processmanagement::Slurm_processes
@@ -21911,7 +21924,7 @@ sub pmarkduplicates {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::IO::Files qw(migrate_file);
+    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Recipes::Xargs qw{ xargs_command };
     use MIP::Program::Alignment::Sambamba qw(sambamba_flagstat);
@@ -22406,7 +22419,7 @@ sub picardtools_mergesamfiles {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::IO::Files qw(migrate_files);
+    use MIP::IO::Files qw(migrate_files xargs_migrate_contig_files);
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Recipes::Xargs qw{ xargs_command };
     use Program::Alignment::Picardtools qw(mergesamfiles);
@@ -32586,157 +32599,6 @@ sub add_capture_kit {
             return $capture_kit;
         }
     }
-}
-
-sub xargs_migrate_contig_files {
-
-##xargs_migrate_contig_files
-
-##Function : Migrates file(s) to or from temporary directory (depending on supplied arguments) using xargs.
-##Returns  : "xargs_file_counter"
-##Arguments: $contigs_ref, $FILEHANDLE, $XARGSFILEHANDLE, $file_path, $temp_directory, $program_info_path, $infile, $indirectory, $outfile, $outdirectory, $core_number, $first_command, $xargs_file_counter, $file_ending
-##         : $contigs_ref        => Contigs to iterate over {REF}
-##         : $FILEHANDLE         => Sbatch filehandle to write to
-##         : $XARGSFILEHANDLE    => XARGS filehandle to write to
-##         : $file_path          => File name
-##         : $temp_directory     => Temporary directory
-##         : $program_info_path  => The program info path
-##         : $infile             => Infile name without ending attached
-##         : $indirectory        => In directory
-##         : $outfile            => OutFile name without ending attached
-##         : $outdirectory       => Out directory
-##         : $core_number        => The number of cores to use
-##         : $first_command      => The inital command
-##         : $xargs_file_counter => The xargs file counter
-##         : $file_ending        => File ending
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $file_ending;
-    my $xargs_file_counter;
-    my $core_number;
-
-    ## Flatten argument(s)
-    my $contigs_ref;
-    my $FILEHANDLE;
-    my $XARGSFILEHANDLE;
-    my $file_path;
-    my $temp_directory;
-    my $program_info_path;
-    my $infile;
-    my $indirectory;
-    my $outfile;
-    my $outdirectory;
-    my $first_command;
-
-    my $tmpl = {
-        contigs_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$contigs_ref
-        },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
-        XARGSFILEHANDLE =>
-          { required => 1, defined => 1, store => \$XARGSFILEHANDLE },
-        file_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$file_path
-        },
-        temp_directory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$temp_directory
-        },
-        program_info_path => { strict_type => 1, store => \$program_info_path },
-        infile            => { strict_type => 1, store => \$infile },
-        indirectory       => { strict_type => 1, store => \$indirectory },
-        outfile           => { strict_type => 1, store => \$outfile },
-        outdirectory      => { strict_type => 1, store => \$outdirectory },
-        xargs_file_counter => {
-            default     => 0,
-            allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
-            store       => \$xargs_file_counter
-        },
-        core_number => {
-            default     => 1,
-            allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
-            store       => \$core_number
-        },
-        first_command => { strict_type => 1, store => \$first_command },
-        file_ending   => {
-            default     => ".vcf*",
-            strict_type => 1,
-            store       => \$file_ending
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::IO::Files qw(migrate_file);
-    use MIP::Recipes::Xargs qw{ xargs_command };
-
-    my $xargs_file_path_prefix;
-
-    ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
-        {
-            FILEHANDLE         => $FILEHANDLE,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_path          => $file_path,
-            program_info_path  => $program_info_path,
-            core_number        => $core_number,
-            xargs_file_counter => $xargs_file_counter,
-            first_command      => $first_command,
-        }
-    );
-
-    foreach my $contig (@$contigs_ref) {
-
-        if ( defined($infile) ) {
-
-            ## Copy file(s) to temporary directory.
-            migrate_file(
-                {
-                    FILEHANDLE  => $XARGSFILEHANDLE,
-                    infile_path => catfile(
-                        $indirectory, $infile . q{_} . $contig . $file_ending
-                    ),
-                    outfile_path    => $temp_directory,
-                    xargs           => 'xargs',
-                    stderrfile_path => $xargs_file_path_prefix . q{.}
-                      . $contig
-                      . q{.stderr.txt},
-                }
-            );
-        }
-        if ( ( defined($outfile) ) && ( defined($outdirectory) ) ) {
-
-            ## Copy file(s) from temporary directory.
-            migrate_file(
-                {
-                    infile_path => catfile(
-                        $temp_directory,
-                        $outfile . q{_} . $contig . $file_ending
-                    ),
-                    outfile_path    => $outdirectory,
-                    FILEHANDLE      => $XARGSFILEHANDLE,
-                    xargs           => 'xargs',
-                    stderrfile_path => $xargs_file_path_prefix . q{.}
-                      . $contig
-                      . q{.stderr.txt},
-                }
-            );
-        }
-    }
-    return $xargs_file_counter;
 }
 
 sub split_bam {
