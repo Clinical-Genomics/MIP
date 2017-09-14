@@ -2,15 +2,15 @@ package MIP::Recipes::Chanjo_sex_check;
 
 use strict;
 use warnings;
-use warnings qw{FATAL utf8};
+use warnings qw{ FATAL utf8 };
 use utf8;
-use open qw{:encoding(UTF-8) :std};
-use autodie qw{:all};
-use charnames qw{:full :short};
+use open qw{ :encoding(UTF-8) :std };
+use autodie qw{ :all };
+use charnames qw{ :full :short };
 use Carp;
-use English qw{-no_match_vars};
-use Params::Check qw{check allow last_error};
-use File::Spec::Functions qw(catdir catfile devnull);
+use English qw{ -no_match_vars };
+use Params::Check qw{ check allow last_error };
+use File::Spec::Functions qw{ catdir catfile devnull };
 
 ## CPANM
 use Readonly;
@@ -18,13 +18,13 @@ use Readonly;
 BEGIN {
 
     require Exporter;
-    use base qw{Exporter};
+    use base qw{ Exporter };
 
     # Set the version for version checking
     our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = q{analysis_chanjo_sex_check};
+    our @EXPORT_OK = q{ analysis_chanjo_sex_check };
 
 }
 
@@ -38,27 +38,24 @@ sub analysis_chanjo_sex_check {
 
 ## Function : Predicts gender from BAM files.
 ## Returns  : ""
-## Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id, $program_name, family_id, $temp_directory_ref, $outaligner_dir
+## Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id, family_id, $insample_directory, $outsample_directory, $outaligner_dir, $program_name
 ##          : $parameter_href             => Parameter hash {REF}
 ##          : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##          : $sample_info_href           => Info on samples and family hash {REF}
 ##          : $file_info_href             => The file_info hash {REF}
 ##          : $infile_lane_prefix_href    => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href                => Job id hash {REF}
+##          : $sample_id                  => Sample id
 ##          : $insample_directory         => In sample directory
 ##          : $outsample_directory        => Out sample directory
-##          : $sample_id                  => Sample id
 ##          : $program_name               => Program name
 ##          : $family_id                  => Family id
-##          : $temp_directory_ref         => Temporary directory {REF}
 ##          : $outaligner_dir             => Outaligner_dir used in the analysis
 
     my ($arg_href) = @_;
 
     ## Default(s)
     my $family_id;
-    my $temp_directory_ref;
-
     my $outaligner_dir;
 
     ## Flatten argument(s)
@@ -116,6 +113,12 @@ sub analysis_chanjo_sex_check {
             strict_type => 1,
             store       => \$job_id_href
         },
+        sample_id => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$sample_id
+        },
         insample_directory => {
             required    => 1,
             defined     => 1,
@@ -128,12 +131,6 @@ sub analysis_chanjo_sex_check {
             strict_type => 1,
             store       => \$outsample_directory
         },
-        sample_id => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$sample_id
-        },
         program_name => {
             required    => 1,
             defined     => 1,
@@ -145,11 +142,6 @@ sub analysis_chanjo_sex_check {
             strict_type => 1,
             store       => \$family_id
         },
-        temp_directory_ref => {
-            default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref
-        },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
@@ -159,13 +151,13 @@ sub analysis_chanjo_sex_check {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Script::Setup_script qw{setup_script};
-    use MIP::Get::File qw{get_file_suffix};
-    use MIP::Program::Alignment::Chanjo qw{chanjo_sex};
+    use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Get::File qw{ get_file_suffix };
+    use MIP::Program::Alignment::Chanjo qw{ chanjo_sex };
     use MIP::QC::Record
-      qw{add_program_outfile_to_sample_info add_program_metafile_to_sample_info};
+      qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info };
     use MIP::Processmanagement::Slurm_processes
-      qw{slurm_submit_job_sample_id_dependency_dead_end};
+      qw{ slurm_submit_job_sample_id_dependency_dead_end };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -197,14 +189,12 @@ sub analysis_chanjo_sex_check {
     my $infile_prefix  = $infile . $infile_tag;
     my $outfile_prefix = $infile . $outfile_tag;
 
-    ## Assign suffix
+    ## Get infile_suffix from baserecalibration jobid chain
     my $infile_suffix = get_file_suffix(
         {
             parameter_href => $parameter_href,
             suffix_key     => q{alignment_file_suffix},
-
-            # Get infile_suffix from baserecalibration jobid chain
-            jobid_chain => $parameter_href->{pgatk_baserecalibration}{chain},
+            jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain},
         }
     );
     my $outfile_suffix = get_file_suffix(
@@ -216,9 +206,13 @@ sub analysis_chanjo_sex_check {
     );
 
     my $infile_name  = $infile_prefix . $infile_suffix;
-    my $infile_path  = catfile( $insample_directory, $infile_name );
     my $outfile_name = $outfile_prefix . $outfile_suffix;
+
+    my $infile_path  = catfile( $insample_directory,  $infile_name );
     my $outfile_path = catfile( $outsample_directory, $outfile_name );
+
+    my $log_file_path = catfile( $outsample_directory,
+        $infile_prefix . $UNDERSCORE . q{chanjo_sexcheck.log} );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ( $file_name, $program_info_path ) = setup_script(
@@ -251,12 +245,9 @@ sub analysis_chanjo_sex_check {
             infile_path  => $infile_path,
             outfile_path => $outfile_path,
             log_level    => $active_parameter_href->{chanjo_sexcheck_log_level},
-            log_file_path => catfile(
-                $outsample_directory,
-                $infile_prefix . $UNDERSCORE . q{chanjo_sexcheck.log}
-            ),
-            chr_prefix => $chr_prefix,
-            FILEHANDLE => $FILEHANDLE,
+            log_file_path => $log_file_path,
+            chr_prefix    => $chr_prefix,
+            FILEHANDLE    => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;

@@ -1617,7 +1617,7 @@ else {
 
 if ( $active_parameter{pchanjo_sexcheck} > 0 ) {
 
-    say $log->info(q{[Chanjo sexcheck]});
+    say $log->info(q{[Chanjo sexcheck]} . $NEWLINE);
     use MIP::Recipes::Chanjo_sex_check qw{analysis_chanjo_sex_check};;
     my $program_name = lc q{chanjo_sexcheck};
 
@@ -1635,9 +1635,9 @@ if ( $active_parameter{pchanjo_sexcheck} > 0 ) {
                 file_info_href          => \%file_info,
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
+                sample_id               => $sample_id,
                 insample_directory      => $indir_path{$sample_id},
                 outsample_directory     => $outsample_directory,
-                sample_id               => $sample_id,
                 program_name            => $program_name,
             }
         );
