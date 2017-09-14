@@ -1633,15 +1633,21 @@ else {
 
 if ( $active_parameter{pchanjo_sexcheck} > 0 ) {
 
-    $log->info(q{[Chanjo sexcheck]} . $NEWLINE);
-    use MIP::Recipes::Chanjo_sex_check qw{analysis_chanjo_sex_check};;
+    $log->info( q{[Chanjo sexcheck]} . $NEWLINE );
+
+    use MIP::Recipes::Chanjo_sex_check qw{analysis_chanjo_sex_check};
+
     my $program_name = lc q{chanjo_sexcheck};
 
-    SAMPLE_IDS:
+  SAMPLE_IDS:
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
-      my $outsample_directory = catdir( $active_parameter{outdata_dir},
-          $sample_id, $active_parameter{outaligner_dir} );
+        my $insample_directory = catdir( $active_parameter{outdata_dir},
+            $sample_id, $active_parameter{outaligner_dir} );
+        my $outsample_directory = catdir(
+            $active_parameter{outdata_dir},    $sample_id,
+            $active_parameter{outaligner_dir}, q{coveragereport}
+        );
 
         analysis_chanjo_sex_check(
             {
@@ -1652,14 +1658,13 @@ if ( $active_parameter{pchanjo_sexcheck} > 0 ) {
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
                 sample_id               => $sample_id,
-                insample_directory      => $indir_path{$sample_id},
+                insample_directory      => $insample_directory,
                 outsample_directory     => $outsample_directory,
                 program_name            => $program_name,
             }
         );
     }
 }
-
 
 if ( $active_parameter{psambamba_depth} > 0 ) {
 

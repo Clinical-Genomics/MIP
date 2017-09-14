@@ -21,10 +21,10 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = q{ analysis_chanjo_sex_check };
+    our @EXPORT_OK = qw{ analysis_chanjo_sex_check };
 
 }
 
@@ -151,6 +151,7 @@ sub analysis_chanjo_sex_check {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use List::MoreUtils qw { any };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Get::File qw{ get_file_suffix };
     use MIP::Program::Alignment::Chanjo qw{ chanjo_sex };
@@ -177,12 +178,11 @@ sub analysis_chanjo_sex_check {
     my $FILEHANDLE = IO::Handle->new();
 
     ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$sample_id}{$mip_program_name}{merge_infile};
+    my $infile = $file_info_href->{$sample_id}{merge_infile};
 
     ## Assign file_tags
     my $infile_tag =
-      $file_info_href->{$sample_id}{$mip_program_name}{pgatk_baserecalibration}
-      {file_tag};
+      $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag =
       $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
 
@@ -205,11 +205,11 @@ sub analysis_chanjo_sex_check {
         }
     );
 
-    # Files
+    ## Files
     my $infile_name  = $infile_prefix . $infile_suffix;
     my $outfile_name = $outfile_prefix . $outfile_suffix;
 
-    # Paths
+    ## Paths
     my $infile_path  = catfile( $insample_directory,  $infile_name );
     my $outfile_path = catfile( $outsample_directory, $outfile_name );
     my $log_file_path = catfile( $outsample_directory,
