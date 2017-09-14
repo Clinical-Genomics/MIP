@@ -40,8 +40,7 @@ use Time::Piece;
 
 ## Third party module(s)
 use Path::Iterator::Rule;
-use List::Util qw{ any all };
-use List::MoreUtils qw{ uniq };
+use List::MoreUtils qw { any uniq all };
 use Readonly;
 
 ##MIPs lib/
@@ -1634,11 +1633,17 @@ else {
 
 if ( $active_parameter{pchanjo_sexcheck} > 0 ) {
 
-    $log->info("[Chanjo sexcheck]\n");
+    $log->info(q{[Chanjo sexcheck]} . $NEWLINE);
+    use MIP::Recipes::Chanjo_sex_check qw{analysis_chanjo_sex_check};;
+    my $program_name = lc q{chanjo_sexcheck};
 
+    SAMPLE_IDS:
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
-        chanjo_sexcheck(
+      my $outsample_directory = catdir( $active_parameter{outdata_dir},
+          $sample_id, $active_parameter{outaligner_dir} );
+
+        analysis_chanjo_sex_check(
             {
                 parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
@@ -1646,12 +1651,15 @@ if ( $active_parameter{pchanjo_sexcheck} > 0 ) {
                 file_info_href          => \%file_info,
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
-                sample_id_ref           => \$sample_id,
-                program_name            => "chanjo_sexcheck",
+                sample_id               => $sample_id,
+                insample_directory      => $indir_path{$sample_id},
+                outsample_directory     => $outsample_directory,
+                program_name            => $program_name,
             }
         );
     }
 }
+
 
 if ( $active_parameter{psambamba_depth} > 0 ) {
 
@@ -13624,254 +13632,6 @@ sub picardtools_collectmultiplemetrics {
                 infile           => $infile,
                 outdirectory     => $outsample_directory,
                 outfile => $outfile_prefix . $DOT . q{insert_size_metrics},
-            }
-        );
-    }
-    close($FILEHANDLE);
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        slurm_submit_job_sample_id_dependency_dead_end(
-            {
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                family_id               => $$family_id_ref,
-                sample_id               => $$sample_id_ref,
-                path                    => $job_id_chain,
-                sbatch_file_name        => $file_path,
-                log                     => $log,
-            }
-        );
-    }
-}
-
-sub chanjo_sexcheck {
-
-##chanjo_sexcheck
-
-##Function : Predict gender from BAM files.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $sample_id_ref              => Sample id {REF}
-##         : $program_name               => Program name
-##         : $family_id_ref              => Family id {REF}
-##         : $temp_directory_ref         => Temporary directory {REF}
-##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-    my $outaligner_dir_ref;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $sample_id_ref;
-    my $program_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        sample_id_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$sample_id_ref
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref
-        },
-        outaligner_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::Get::File qw{get_file_suffix};
-    use MIP::Program::Alignment::Chanjo qw(chanjo_sex);
-    use MIP::QC::Record
-      qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_sample_id_dependency_dead_end);
-
-    my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
-
-    ## Filehandles
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    ## Assign directories
-    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $$sample_id_ref, $$outaligner_dir_ref );
-    my $outsample_directory = catdir(
-        $active_parameter_href->{outdata_dir}, $$sample_id_ref,
-        $$outaligner_dir_ref,                  "coveragereport"
-    );
-
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};    #Alias
-
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$$sample_id_ref}{ "p" . $program_name }{file_tag};
-    my $infile_prefix  = $infile . $infile_tag;
-    my $outfile_prefix = $infile . $outfile_tag;
-
-    ## Assign suffix
-    my $infile_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => "alignment_file_suffix",
-            jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain}
-            ,    #Get infile_suffix from baserecalibration jobid chain
-        }
-    );
-    my $outfile_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => "outfile_suffix",
-            program_name   => "p" . $program_name,
-        }
-    );
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $$sample_id_ref,
-            program_name          => $program_name,
-            program_directory =>
-              catfile( lc($$outaligner_dir_ref), "coveragereport" ),
-            core_number => $active_parameter_href->{module_core_number}
-              { "p" . $program_name },
-            process_time =>
-              $active_parameter_href->{module_time}{ "p" . $program_name },
-        }
-    );
-
-    ## chanjo_sexcheck
-    say $FILEHANDLE "## Predicting sex from alignment";
-
-    ## Get parameters
-
-    my $chr_prefix;
-    if ( any { $_ eq "chrX" } @{ $file_info_href->{contigs_size_ordered} } )
-    {    #If element is part of array
-
-        $chr_prefix = "chr";
-    }
-    chanjo_sex(
-        {
-            infile_path =>
-              catfile( $insample_directory, $infile_prefix . $infile_suffix ),
-            outfile_path => catfile(
-                $outsample_directory, $outfile_prefix . $outfile_suffix
-            ),
-            log_level => $active_parameter_href->{chanjo_sexcheck_log_level},
-            log_file_path => catfile(
-                $outsample_directory, $infile_prefix . "_chanjo_sexcheck.log"
-            ),
-            chr_prefix => $chr_prefix,
-            FILEHANDLE => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE "\n";
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                sample_id        => $$sample_id_ref,
-                program_name     => q{chanjo_sexcheck},
-                infile           => $infile,
-                outdirectory     => $outsample_directory,
-                outfile          => $outfile_prefix . $outfile_suffix,
-            }
-        );
-        add_program_metafile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                sample_id        => $$sample_id_ref,
-                program_name     => q{chanjo_sexcheck},
-                infile           => $infile,
-                metafile_tag     => q{log},
-                directory        => $outsample_directory,
-                file             => $infile_prefix . q{_chanjo_sexcheck.log},
             }
         );
     }
