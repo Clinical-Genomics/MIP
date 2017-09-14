@@ -1617,7 +1617,7 @@ else {
 
 if ( $active_parameter{pchanjo_sexcheck} > 0 ) {
 
-    say $log->info(q{[Chanjo sexcheck]} . $NEWLINE);
+    $log->info(q{[Chanjo sexcheck]} . $NEWLINE);
     use MIP::Recipes::Chanjo_sex_check qw{analysis_chanjo_sex_check};;
     my $program_name = lc q{chanjo_sexcheck};
 

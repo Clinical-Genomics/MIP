@@ -205,12 +205,13 @@ sub analysis_chanjo_sex_check {
         }
     );
 
+    # Files
     my $infile_name  = $infile_prefix . $infile_suffix;
     my $outfile_name = $outfile_prefix . $outfile_suffix;
 
+    # Paths
     my $infile_path  = catfile( $insample_directory,  $infile_name );
     my $outfile_path = catfile( $outsample_directory, $outfile_name );
-
     my $log_file_path = catfile( $outsample_directory,
         $infile_prefix . $UNDERSCORE . q{chanjo_sexcheck.log} );
 
