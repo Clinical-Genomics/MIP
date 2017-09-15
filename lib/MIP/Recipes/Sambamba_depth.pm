@@ -133,7 +133,7 @@ sub analysis_sambamba_depth {
             store       => \$temp_directory
         },
         outaligner_dir => {
-            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
+            default     => $arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
             store       => \$outaligner_dir
         },
