@@ -54,7 +54,13 @@ use MIP::File::Format::Pedigree qw{ create_fam_file };
 use MIP::Check::Cluster qw{ check_max_core_number };
 use MIP::Get::Analysis qw{ get_overall_analysis_type };
 
-use MIP::Recipes::Vep qw{analysis_vep};
+##Recipes
+use MIP::Recipes::Split_fastq_file qw{analysis_split_fastq_file};
+use MIP::Recipes::Gzip_fastq qw{analysis_gzip_fastq};
+use MIP::Recipes::Fastqc qw{analysis_fastqc};
+use MIP::Recipes::Bwa_mem qw{analysis_bwa_mem};
+use MIP::Recipes::Chanjo_sex_check qw{analysis_chanjo_sex_check};
+use MIP::Recipes::Vep qw{analysis_vep analysis_vep_rio};
 
 our $USAGE = build_usage( {} );
 
@@ -1203,8 +1209,6 @@ if ( $active_parameter{psplit_fastq_file} > 0 ) {
 
     $log->info( q{[Split fastq files in batches]}, $NEWLINE );
 
-    use MIP::Recipes::Split_fastq_file qw{analysis_split_fastq_file};
-
     my $program_name = lc q{split_fastq_file};
 
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
@@ -1236,8 +1240,6 @@ if (   ( $active_parameter{pgzip_fastq} > 0 )
 {
 
     $log->info( q{[Gzip for fastq files]}, $NEWLINE );
-
-    use MIP::Recipes::Gzip_fastq qw{analysis_gzip_fastq};
 
     my $program_name = lc q{gzip_fastq};
 
@@ -1278,8 +1280,6 @@ if (   ( $active_parameter{pgzip_fastq} > 0 )
 if ( $active_parameter{pfastqc} > 0 ) {
 
     $log->info( q{[Fastqc]}, $NEWLINE );
-
-    use MIP::Recipes::Fastqc qw{analysis_fastqc};
 
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
@@ -1325,7 +1325,6 @@ if ( $active_parameter{pbwa_mem} > 0 ) {
 
     $log->info( q{[BWA Mem]}, $NEWLINE );
 
-    use MIP::Recipes::Bwa_mem qw{analysis_bwa_mem};
     my $program_name = lc q{bwa_mem};
 
     if ( $active_parameter{dry_run_all} != 1 ) {
@@ -1637,8 +1636,6 @@ else {
 if ( $active_parameter{pchanjo_sexcheck} > 0 ) {
 
     $log->info( q{[Chanjo sexcheck]} . $NEWLINE );
-
-    use MIP::Recipes::Chanjo_sex_check qw{analysis_chanjo_sex_check};
 
     my $program_name = lc q{chanjo_sexcheck};
 
@@ -3386,12 +3383,18 @@ sub analysisrunstatus {
     say $FILEHANDLE q?done ?, "\n";
 
     ## Test varianteffectpredictor fork status. If varianteffectpredictor is unable to fork it will prematurely end the analysis and we will lose variants.
-    if ( defined( $sample_info_href->{program}{varianteffectpredictor}{path} ) )
+    if (
+        defined(
+            $sample_info_href->{program}{varianteffectpredictor}{stderrfile}
+              {path}
+        )
+      )
     {
 
-        my $variant_effect_predictor_file =
-          catfile( $sample_info_href->{program}{varianteffectpredictor}{path},
-          );
+        my $variant_effect_predictor_file = catfile(
+            $sample_info_href->{program}{varianteffectpredictor}{stderrfile}
+              {path},
+        );
 
         print $FILEHANDLE q?if grep -q "WARNING Unable to fork" ?
           ;    #not output the matched text only return the exit status code
@@ -23438,7 +23441,7 @@ sub variantannotationblock {
 
         my $program_name = lc q{varianteffectpredictor};
 
-        ($xargs_file_counter) = varianteffectpredictor(
+        ($xargs_file_counter) = analysis_vep_rio(
             {
                 parameter_href          => $parameter_href,
                 active_parameter_href   => $active_parameter_href,
