@@ -53,6 +53,7 @@ use Script::Utils qw{ help };
 use MIP::File::Format::Pedigree qw{ create_fam_file };
 use MIP::Check::Cluster qw{ check_max_core_number };
 use MIP::Get::Analysis qw{ get_overall_analysis_type };
+use MIP::Check::Parameter qw{ check_allowed_temp_directory };
 
 our $USAGE = build_usage( {} );
 
