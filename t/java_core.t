@@ -41,8 +41,11 @@ GetOptions(
     },    #Display help text
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME)
-          . $SPACE . $VERSION . $NEWLINE;
+        say {*STDOUT} $NEWLINE
+          . basename($PROGRAM_NAME)
+          . $SPACE
+          . $VERSION
+          . $NEWLINE;
         exit;
     },    #Display version number
     q{vb|verbose} => $VERBOSE,
@@ -72,7 +75,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::PATH::TO::MODULE});
+    my @modules = (q{MIP::Language::Java});
 
   MODULES:
     for my $module (@modules) {
@@ -80,31 +83,23 @@ BEGIN {
     }
 }
 
-use MIP::PATH::TO:MODULE qw{ SUB_ROUTINE };
+use File::Spec::Functions qw{ catdir };
+use MIP::Language::Java qw{ java_core };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test SUB_ROUTINE from MODULE_NAME v}
-      . $PATH::TO::MODULE::VERSION . $COMMA . $SPACE
-      . q{Perl} . $SPACE . $PERL_VERSION
-      . $SPACE . $EXECUTABLE_NAME );
-
+diag(   q{Test java_core from Java.pm v}
+      . $MIP::Language::Java::VERSION
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+      . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{BASE_COMMAND};
+my $function_base_command = q{java};
 
 my %base_argument = (
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
-    },
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
-    },
-    stderrfile_path_append => {
-        input           => q{stderrfile.test},
-        expected_output => q{2>> stderrfile.test},
-    },
     FILEHANDLE => {
         input           => undef,
         expected_output => $function_base_command,
@@ -114,28 +109,24 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    ARRAY => {
-        inputs_ref      => [ qw{ TEST_STRING_1 TEST_STRING_2 } ],
-        expected_output => q{PROGRAM OUTPUT},
-    },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
-    },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
+    memory_allocation => {
+        input           => q{Xmx2g},
+        expected_output => q{-Xmx2g},
     },
 );
 
 my %specific_argument = (
-    ARRAY => {
-        inputs_ref      => [ qw{ TEST_STRING_1 TEST_STRING_2 } ],
-        expected_output => q{PROGRAM OUTPUT},
+    temp_directory => {
+        input           => catdir(qw{ path to temp dir }),
+        expected_output => q{-Djava.io.tmpdir=path/to/temp/dir},
     },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
+    java_jar => {
+        input           => q{test.jar},
+        expected_output => q{-jar test.jar},
+    },
+    java_use_large_pages => {
+        input           => 1,
+        expected_output => q{-XX:-UseLargePages},
     },
     FILEHANDLE => {
         input           => undef,
@@ -144,7 +135,7 @@ my %specific_argument = (
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&NAME_OF_SUB_ROUTINE;
+my $module_function_cref = \&java_core;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

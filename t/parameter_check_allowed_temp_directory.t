@@ -3,7 +3,7 @@
 use Modern::Perl qw{ 2014 };
 use warnings qw{ FATAL utf8 };
 use autodie;
-use 5.018;    #Require at least perl 5.18
+use 5.018;
 use utf8;
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
@@ -11,7 +11,7 @@ use Carp;
 use English qw{ -no_match_vars };
 use Params::Check qw{ check allow last_error };
 
-use FindBin qw{ $Bin };    #Find directory of script
+use FindBin qw{ $Bin };
 use File::Basename qw{ dirname basename };
 use File::Spec::Functions qw{ catdir };
 use Getopt::Long;
@@ -28,9 +28,9 @@ my $VERBOSE = 1;
 our $VERSION = '1.0.0';
 
 ## Constants
+Readonly my $COMMA   => q{,};
 Readonly my $SPACE   => q{ };
 Readonly my $NEWLINE => qq{\n};
-Readonly my $COMMA   => q{,};
 
 ###User Options
 GetOptions(
@@ -41,8 +41,11 @@ GetOptions(
     },    #Display help text
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME)
-          . $SPACE . $VERSION . $NEWLINE;
+        say {*STDOUT} $NEWLINE
+          . basename($PROGRAM_NAME)
+          . $SPACE
+          . $VERSION
+          . $NEWLINE;
         exit;
     },    #Display version number
     q{vb|verbose} => $VERBOSE,
@@ -60,7 +63,7 @@ GetOptions(
 BEGIN {
 
 ### Check all internal dependency modules and imports
-## Modules with import
+##Modules with import
     my %perl_module;
 
     $perl_module{q{Script::Utils}} = [qw{ help }];
@@ -71,8 +74,8 @@ BEGIN {
           or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 
-## Modules
-    my @modules = (q{MIP::PATH::TO::MODULE});
+##Modules
+    my @modules = (q{MIP::Check::Parameter});
 
   MODULES:
     for my $module (@modules) {
@@ -80,18 +83,40 @@ BEGIN {
     }
 }
 
-use MIP::PATH::TO:MODULE qw{ SUB_ROUTINE };
+use MIP::Check::Parameter qw{check_allowed_temp_directory};
 
-diag(   q{Test SUB_ROUTINE from MODULE_NAME v}
-      . $PATH::TO::MODULE::VERSION . $COMMA . $SPACE 
-      . q{Perl} . $SPACE . $PERL_VERSION
-      . $SPACE . $EXECUTABLE_NAME );
+diag(   q{Test check_allowed_temp_directory from Parameter v}
+      . $MIP::Check::Parameter::VERSION
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+      . $EXECUTABLE_NAME );
 
-  
-######################## 
-#### YOUR TEST HERE ####
-########################
+my @forbidden_temp_directories = qw{ /scratch /scratch/ };
 
+TEMP_DIRECTORIES:
+foreach my $temp_directory (@forbidden_temp_directories) {
+
+    my $temp_directory_status =
+      check_allowed_temp_directory( { temp_directory => $temp_directory, } );
+
+    is( $temp_directory_status, 0,
+        q{Croaked forbidden temp_directory: } . $temp_directory );
+}
+
+my @allowed_temp_directories = qw{ /scratch/$SLURM_JOBID };
+
+TEMP_DIRECTORIES:
+foreach my $temp_directory (@allowed_temp_directories) {
+
+    my $temp_directory_status =
+      check_allowed_temp_directory( { temp_directory => $temp_directory, } );
+
+    is( $temp_directory_status, 1,
+        q{Passed allowed temp_directory: } . $temp_directory );
+}
 
 done_testing();
 
@@ -101,12 +126,12 @@ done_testing();
 
 sub build_usage {
 
-## build_usage
+##build_usage
 
-## Function  : Build the USAGE instructions
-## Returns   : ""
-## Arguments : $program_name
-##          : $program_name => Name of the script
+##Function : Build the USAGE instructions
+##Returns  : ""
+##Arguments: $program_name
+##         : $program_name => Name of the script
 
     my ($arg_href) = @_;
 

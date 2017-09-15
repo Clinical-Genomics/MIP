@@ -2807,7 +2807,7 @@ sub svdb {
     print $FILEHANDLE '## Download Svdb', "\n";
     Program::Download::Wget::wget(
         {
-            url          => 'https://github.com/J35P312/SVDB/archive/SVDB-',
+            url          => 'https://github.com/J35P312/SVDB/archive/SVDB-' . $parameter_href->{svdb} . '.zip',
             FILEHANDLE   => $FILEHANDLE,
             quiet        => $parameter_href->{quiet},
             verbose      => $parameter_href->{verbose},

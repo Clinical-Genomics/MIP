@@ -53,6 +53,7 @@ use Script::Utils qw{ help };
 use MIP::File::Format::Pedigree qw{ create_fam_file };
 use MIP::Check::Cluster qw{ check_max_core_number };
 use MIP::Get::Analysis qw{ get_overall_analysis_type };
+use MIP::Check::Parameter qw{ check_allowed_temp_directory };
 
 our $USAGE = build_usage( {} );
 
@@ -128,7 +129,7 @@ eval_parameter_hash(
 );
 
 # Set MIP version
-our $VERSION = 'v5.0.8';
+our $VERSION = 'v5.0.9';
 
 ## Directories, files, job_ids and sample_info
 my ( %infile, %indir_path, %infile_lane_prefix, %lane,
@@ -790,6 +791,20 @@ detect_founders(
 if ( exists( $active_parameter{email} ) ) {    #Allow no malformed email adress
 
     check_email_address( { email_ref => \$active_parameter{email}, } );
+}
+
+if (
+    not check_allowed_temp_directory(
+        { temp_directory => $active_parameter{temp_directory}, }
+    )
+  )
+{
+
+    $log->fatal( q{'--temp_directory }
+          . $active_parameter{temp_directory}
+          . q{' is not allowed because MIP will remove the temp directory after processing.}
+          . "\n" );
+    exit 1;
 }
 
 ## Parameters that have keys as MIP program names
