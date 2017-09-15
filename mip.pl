@@ -41,6 +41,7 @@ use Check::Check_modules qw(check_modules);
 use File::Format::Yaml qw(load_yaml write_yaml);
 use MIP_log::Log4perl qw(initiate_logger);
 use Script::Utils qw(help);
+use MIP::Check::Parameter qw{check_allowed_temp_directory};
 
 our $USAGE = build_usage( {} );
 
@@ -105,7 +106,7 @@ eval_parameter_hash(
 );
 
 # Set MIP version
-our $VERSION = 'v5.0.8';
+our $VERSION = 'v5.0.9';
 
 ## Directories, files, job_ids and sample_info
 my ( %infile, %indir_path, %infile_lane_prefix, %lane,
@@ -767,6 +768,20 @@ detect_founders(
 if ( exists( $active_parameter{email} ) ) {    #Allow no malformed email adress
 
     check_email_address( { email_ref => \$active_parameter{email}, } );
+}
+
+if (
+    not check_allowed_temp_directory(
+        { temp_directory => $active_parameter{temp_directory}, }
+    )
+  )
+{
+
+    $log->fatal( q{'--temp_directory }
+          . $active_parameter{temp_directory}
+          . q{' is not allowed because MIP will remove the temp directory after processing.}
+          . "\n" );
+    exit 1;
 }
 
 ## Parameters that have keys as MIP program names
@@ -17981,22 +17996,22 @@ sub delly_reformat {
                     );
                     print $XARGSFILEHANDLE q{;} . q{ };
 
-		    Program::Variantcalling::Bcftools::index(
-							     {
-							      infile_path => $outfile_path_prefix . "_"
-							      . $contig . "_"
-							      . $sv_type
-							      . $suffix{pdelly_call},
-							      stderrfile_path => $xargs_file_name . q{.}
-							      . $contig . q{.}
-							      . $sv_type
-							      . "_" . q{index.stderr.txt},
-							      output_type => q{csi},
-							      FILEHANDLE  => $XARGSFILEHANDLE,
-							     }
-							    );
-		    say $XARGSFILEHANDLE "\n";
-		  }
+                    Program::Variantcalling::Bcftools::index(
+                        {
+                            infile_path => $outfile_path_prefix . "_"
+                              . $contig . "_"
+                              . $sv_type
+                              . $suffix{pdelly_call},
+                            stderrfile_path => $xargs_file_name . q{.}
+                              . $contig . q{.}
+                              . $sv_type . "_"
+                              . q{index.stderr.txt},
+                            output_type => q{csi},
+                            FILEHANDLE  => $XARGSFILEHANDLE,
+                        }
+                    );
+                    say $XARGSFILEHANDLE "\n";
+                }
             }
             else {
 
@@ -18023,20 +18038,20 @@ sub delly_reformat {
                         FILEHANDLE => $XARGSFILEHANDLE,
                     }
                 );
-		print $XARGSFILEHANDLE q{;} . q{ };
+                print $XARGSFILEHANDLE q{;} . q{ };
 
-		Program::Variantcalling::Bcftools::index(
-							 {
-							  infile_path => $outfile_path_prefix . "_"
-							  . $sv_type
-							  . $suffix{pdelly_call},
-							  stderrfile_path => $xargs_file_name . q{.}
-							  . $sv_type
-							  . "_" . q{index.stderr.txt},
-							  output_type => q{csi},
-							  FILEHANDLE  => $XARGSFILEHANDLE,
-							 }
-							);
+                Program::Variantcalling::Bcftools::index(
+                    {
+                        infile_path => $outfile_path_prefix . "_"
+                          . $sv_type
+                          . $suffix{pdelly_call},
+                        stderrfile_path => $xargs_file_name . q{.}
+                          . $sv_type . "_"
+                          . q{index.stderr.txt},
+                        output_type => q{csi},
+                        FILEHANDLE  => $XARGSFILEHANDLE,
+                    }
+                );
                 say $XARGSFILEHANDLE "\n";
             }
         }
@@ -19255,7 +19270,7 @@ sub tiddit {
             infile_paths_ref => \@infile_paths,
             outfile_path     => $outfile_path_prefix . $outfile_suffix,
             FILEHANDLE       => $FILEHANDLE,
-	 notag => 1,
+            notag            => 1,
         }
     );
     say $FILEHANDLE "\n";
