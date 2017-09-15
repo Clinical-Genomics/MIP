@@ -55,30 +55,19 @@ sub snpeff_download {
 
     ## Flatten argument(s)
     my $FILEHANDLE;
-    my $memory_allocation;
-    my $config_file_path;
     my $genome_version_database;
     my $jar_path;
-    my $verbose;
+    my $config_file_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
+    my $memory_allocation;
+    my $verbose;
 
     my $tmpl = {
         FILEHANDLE => {
             required => 1,
             store    => \$FILEHANDLE,
-        },
-        memory_allocation => {
-            default     => q{Xmx2g},
-            defined     => 1,
-            strict_type => 1,
-            store       => \$memory_allocation,
-        },
-        config_file_path => {
-            defined     => 1,
-            strict_type => 1,
-            store       => \$config_file_path,
         },
         genome_version_database => {
             required    => 1,
@@ -92,11 +81,10 @@ sub snpeff_download {
             strict_type => 1,
             store       => \$jar_path,
         },
-        verbose => {
-            default     => 1,
-            allow       => [ 0, 1 ],
+        config_file_path => {
+            defined     => 1,
             strict_type => 1,
-            store       => \$verbose,
+            store       => \$config_file_path,
         },
         stderrfile_path => {
             strict_type => 1,
@@ -109,6 +97,18 @@ sub snpeff_download {
         stdoutfile_path => {
             strict_type => 1,
             store       => \$stdoutfile_path
+        },
+        memory_allocation => {
+            default     => q{Xmx2g},
+            defined     => 1,
+            strict_type => 1,
+            store       => \$memory_allocation,
+        },
+        verbose => {
+            default     => 1,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$verbose,
         },
     };
 

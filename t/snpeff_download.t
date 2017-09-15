@@ -112,7 +112,7 @@ my $snpeff_download_base = join $SPACE,
 my %base_argument = (
     stdoutfile_path => {
         input           => q{stdoutfile.test},
-        expected_output => '1> stdoutfile.test',
+        expected_output => q{1> stdoutfile.test},
     },
     stderrfile_path => {
         input           => q{stderrfile.test},
