@@ -1,29 +1,34 @@
 package MIP::Check::Parameter;
 
-#### Copyright 2017 Henrik Stranneheim
-
 use strict;
 use warnings;
-use warnings qw(FATAL utf8);
-use utf8;    #Allow unicode characters in this script
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
+use warnings qw{ FATAL utf8 };
+
+# Allow unicode characters in this script
+use utf8;
+use open qw{ :encoding(UTF-8) :std };
+use charnames qw{ :full :short };
 use Carp;
 use autodie;
-use Params::Check qw[check allow last_error];
-$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
+use Params::Check qw{ check allow last_error };
+
+use Readonly;
 
 BEGIN {
 
-    use base qw(Exporter);
     require Exporter;
+    use base qw{ Exporter };
 
     # Set the version for version checking
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(check_allowed_array_values);
+    our @EXPORT_OK =
+      qw{ check_allowed_array_values check_allowed_temp_directory};
 }
+
+##Constants
+Readonly my $NEWLINE => qq{\n};
 
 sub check_allowed_array_values {
 
@@ -32,8 +37,8 @@ sub check_allowed_array_values {
 ##Function : Check that the array values are allowed
 ##Returns  : ""
 ##Arguments: $allowed_values_ref, $values_ref
-##         : $allowed_values_ref => Allowed values for parameter
-##         : $values_ref         => Values for parameter
+##         : $allowed_values_ref => Allowed values for parameter {REF}
+##         : $values_ref         => Values for parameter {REF}
 
     my ($arg_href) = @_;
 
@@ -58,7 +63,7 @@ sub check_allowed_array_values {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my %is_allowed;
 
@@ -68,11 +73,51 @@ sub check_allowed_array_values {
   VALUES:
     foreach my $value ( @{$values_ref} ) {
 
-      # Test if value is allowed
-        if (! exists $is_allowed{$value} ) {
+        # Test if value is allowed
+        if ( not exists $is_allowed{$value} ) {
 
-	  return 0;
+            return 0;
         }
+    }
+
+    # All ok
+    return 1;
+}
+
+sub check_allowed_temp_directory {
+
+##check_allowed_temp_directory
+
+##Function : Check that the temp directory value is allowed
+##Returns  : ""
+##Arguments: $temp_directory
+##         : $temp_directory => Temp directory
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $temp_directory;
+
+    my $tmpl = {
+        temp_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$temp_directory
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %is_not_allowed = (
+        q{/scratch}  => undef,
+        q{/scratch/} => undef,
+    );
+
+    # Test if value is allowed
+    if ( exists $is_not_allowed{$temp_directory} ) {
+
+        return 0;
     }
 
     # All ok
