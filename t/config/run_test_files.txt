@@ -18,7 +18,6 @@ file_check_file_version_exist.t
 findutils_xargs.t
 gnu_cat.t
 gnu_cd.t
-<<<<<<< HEAD
 gnu_chmod.t
 gnu_cp.t
 gnu_echo.t
@@ -37,6 +36,7 @@ gnu_split.t
 gnu_trap.t
 gnu_wait.t
 gzip.t
+java_core.t
 parameter_check_allowed_temp_directory.t
 pigz.t
 processes_print_wait.t
