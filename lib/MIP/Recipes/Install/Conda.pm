@@ -671,7 +671,7 @@ sub _check_mt_codon_table {
       my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf );
 
     if ( -f catfile( $share_dir, $config_file ) ) {
-        @ret = run( command => ( $detect_regexp, $share_dir / $config_file ) );
+        @ret = run( command => [ $detect_regexp, $share_dir, $config_file ] );
     }
 
     #No MT.codonTable in config
