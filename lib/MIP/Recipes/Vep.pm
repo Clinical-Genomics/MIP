@@ -169,7 +169,7 @@ sub analysis_vep {
     use MIP::Get::File qw{ get_file_suffix };
     use MIP::Recipes::Xargs qw{ xargs_command };
     use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
-    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
+    use MIP::QC::Record qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info};
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
 
