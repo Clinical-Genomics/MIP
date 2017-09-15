@@ -9,9 +9,9 @@ use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
 use Carp;
 use English qw{ -no_match_vars };
-use Params::Check qw{check allow last_error};
+use Params::Check qw{ check allow last_error };
 
-use FindBin qw{$Bin};    #Find directory of script
+use FindBin qw{ $Bin };    #Find directory of script
 use File::Basename qw{ dirname basename };
 use File::Spec::Functions qw{ catdir };
 use Getopt::Long;

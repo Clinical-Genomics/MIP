@@ -37,7 +37,7 @@ sub cpanm_install {
 ## Function  : Perl wrapper for writing cpanm recipe to $FILEHANDLE.
 ## Returns   : ""
 ## Arguments : $modules_ref, $FILEHANDLE, $force, $quiet
-##           : $modules_ref => Array with perl modules {REF}
+##           : $modules_ref => Perl modules {REF}
 ##           : $FILEHANDLE  => Filehandle to write to
 ##           : $force       => Force install
 ##           : $quiet       => Supress output
@@ -76,7 +76,7 @@ sub cpanm_install {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Base command
     my @commands = q{cpanm};
