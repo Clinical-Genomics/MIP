@@ -37,6 +37,7 @@ gnu_trap.t
 gnu_wait.t
 gzip.t
 java_core.t
+parameter_check_allowed_temp_directory.t
 pigz.t
 processes_print_wait.t
 processes_add_job_id_dependency_tree.t
