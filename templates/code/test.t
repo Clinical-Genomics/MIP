@@ -1,26 +1,26 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{2014};
-use warnings qw{FATAL utf8};
+use Modern::Perl qw{ 2014 };
+use warnings qw{ FATAL utf8 };
 use autodie;
 use 5.018;    #Require at least perl 5.18
 use utf8;
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
 use Carp;
-use English qw{-no_match_vars};
-use Params::Check qw{check allow last_error};
+use English qw{ -no_match_vars };
+use Params::Check qw{ check allow last_error };
 
-use FindBin qw{$Bin};    #Find directory of script
-use File::Basename qw{dirname basename};
-use File::Spec::Functions qw{catdir};
+use FindBin qw{ $Bin };    #Find directory of script
+use File::Basename qw{ dirname basename };
+use File::Spec::Functions qw{ catdir };
 use Getopt::Long;
 use Test::More;
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use Script::Utils qw{help};
+use Script::Utils qw{ help };
 
 our $USAGE = build_usage( {} );
 
@@ -60,10 +60,10 @@ GetOptions(
 BEGIN {
 
 ### Check all internal dependency modules and imports
-##Modules with import
+## Modules with import
     my %perl_module;
 
-    $perl_module{q{Script::Utils}} = [qw{help}];
+    $perl_module{q{Script::Utils}} = [qw{ help }];
 
   PERL_MODULES:
     while ( my ( $module, $module_import ) = each %perl_module ) {
@@ -71,7 +71,7 @@ BEGIN {
           or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 
-##Modules
+## Modules
     my @modules = (q{MIP::PATH::TO::MODULE});
 
   MODULES:
@@ -80,7 +80,7 @@ BEGIN {
     }
 }
 
-use MIP::PATH::TO:MODULE qw{SUB_ROUTINE};
+use MIP::PATH::TO:MODULE qw{ SUB_ROUTINE };
 
 diag(   q{Test SUB_ROUTINE from MODULE_NAME v}
       . $PATH::TO::MODULE::VERSION . $COMMA . $SPACE 
@@ -101,12 +101,12 @@ done_testing();
 
 sub build_usage {
 
-##build_usage
+## build_usage
 
-##Function : Build the USAGE instructions
-##Returns  : ""
-##Arguments: $program_name
-##         : $program_name => Name of the script
+## Function  : Build the USAGE instructions
+## Returns   : ""
+## Arguments : $program_name
+##          : $program_name => Name of the script
 
     my ($arg_href) = @_;
 
