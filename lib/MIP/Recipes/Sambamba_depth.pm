@@ -30,7 +30,7 @@ BEGIN {
 
 ##Constants
 Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => qq{\n};
+Readonly my $SPACE   => qq{ };
 
 sub analysis_sambamba_depth {
 
