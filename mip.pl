@@ -1689,7 +1689,14 @@ if ( $active_parameter{psambamba_depth} > 0 ) {
 
     my $program_name = lc q{sambamba_depth};
 
+    SAMPLE_IDS:
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
+
+        my $insample_directory = catdir( $active_parameter{outdata_dir},
+            $sample_id, $active_parameter{outaligner_dir} );
+        my $outsample_directory = catdir(
+            $active_parameter{outdata_dir},    $sample_id,
+            $active_parameter{outaligner_dir}, q{coveragereport} );
 
         analysis_sambamba_depth(
             {
@@ -1700,6 +1707,8 @@ if ( $active_parameter{psambamba_depth} > 0 ) {
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
                 sample_id               => $sample_id,
+                insample_directory      => $insample_directory,
+                outsample_directory     => $outsample_directory,
                 program_name            => $program_name,
             }
         );

@@ -30,12 +30,13 @@ BEGIN {
 
 ##Constants
 Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => qq{\n};
 
 sub analysis_sambamba_depth {
 
 ## Function : Generate coverage bed outfile for each individual.
 ## Returns  : ""
-## Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id, $program_name, family_id, $temp_directory, $outaligner_dir
+## Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id, $insample_directory, $outsample_directory, $program_name, family_id, $temp_directory, $outaligner_dir
 ##          : $parameter_href             => Parameter hash {REF}
 ##          : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##          : $sample_info_href           => Info on samples and family hash {REF}
@@ -43,6 +44,8 @@ sub analysis_sambamba_depth {
 ##          : $infile_lane_prefix_href    => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href                => Job id hash {REF}
 ##          : $sample_id                  => Sample id
+##          : $insample_directory         => In sample directory
+##          : $outsample_directory        => Out sample directory
 ##          : $outaligner_dir             => Outaligner_dir used in the analysis
 ##          : $program_name               => Program name
 ##          : $family_id                  => Family id
@@ -64,6 +67,8 @@ sub analysis_sambamba_depth {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $sample_id;
+    my $insample_directory;
+    my $outsample_directory;
     my $program_name;
 
     my $tmpl = {
@@ -116,6 +121,18 @@ sub analysis_sambamba_depth {
             strict_type => 1,
             store       => \$sample_id
         },
+        insample_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$insample_directory
+        },
+        outsample_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$outsample_directory
+        },
         program_name => {
             required    => 1,
             defined     => 1,
@@ -166,12 +183,6 @@ sub analysis_sambamba_depth {
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
-
-    ## Assign directories
-    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $sample_id, $outaligner_dir );
-    my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $sample_id, $outaligner_dir, q{coveragereport} );
 
     ## Add merged infile name after merging all BAM files per sample_id
     my $infile = $file_info_href->{$sample_id}{merge_infile};
@@ -238,8 +249,10 @@ sub analysis_sambamba_depth {
     say {$FILEHANDLE} q{## Annotating bed from alignment};
 
     ## Get parameters
-    my $sambamba_filter = q?'mapping_quality >= ?
-      . $active_parameter_href->{sambamba_depth_mapping_quality} . q? ?;
+    my $sambamba_filter =
+        q{'mapping_quality >= }
+      . $active_parameter_href->{sambamba_depth_mapping_quality}
+      . $SPACE;
 
     #Do not include duplicates in coverage calculation
     if ( $active_parameter_href->{sambamba_depth_noduplicates} ) {
@@ -252,7 +265,7 @@ sub analysis_sambamba_depth {
 
         $sambamba_filter .= q{and not failed_quality_control};
     }
-    $sambamba_filter .= q?'?;
+    $sambamba_filter .= q{'};
 
     sambamba_depth(
         {
