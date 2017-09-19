@@ -9696,7 +9696,7 @@ sub variant_integrity {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Get::File qw{get_file_suffix};
     use MIP::IO::Files qw(migrate_file);
-    use Program::Variantcalling::Variant_integrity qw(mendel father);
+    use MIP::Program::Variantcalling::Variant_integrity qw(variant_integrity_mendel variant_integrity_father);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_family_dead_end);
@@ -9792,7 +9792,7 @@ sub variant_integrity {
 
         if ( $parameter_href->{dynamic_parameter}{trio} ) {
 
-            mendel(
+            variant_integrity_mendel(
                 {
                     infile_path  => $file_path_prefix . $infile_suffix,
                     outfile_path => catfile(
@@ -9827,7 +9827,7 @@ sub variant_integrity {
 
             if ( $father_info ne 0 ) {    #Father is included in analysis
 
-                father(
+                variant_integrity_father(
                     {
                         infile_path  => $file_path_prefix . $infile_suffix,
                         outfile_path => catfile(
