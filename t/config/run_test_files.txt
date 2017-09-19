@@ -83,3 +83,5 @@ slurm_sbatch.t
 slurm_build_sbatch_header.t
 slurm_reformat_sacct_output.t
 snpeff_download.t
+variant_integrity_father.t
+variant_integrity_mendel.t
