@@ -28,6 +28,7 @@ use MIP::Gnu::Bash qw(gnu_cd);
 use MIP::Gnu::Coreutils qw(gnu_cp gnu_rm gnu_mv gnu_mkdir gnu_ln gnu_chmod );
 use MIP::PacketManager::Conda
   qw{ conda_source_activate conda_source_deactivate };
+use MIP::PacketManager::Cpanm qw { cpanm_install };
 use Script::Utils qw(help set_default_array_parameters);
 use MIP::Check::Path qw{ check_dir_path_exist };
 use MIP::Recipes::Install::Conda
@@ -127,36 +128,36 @@ $array_parameter{snpeff_genome_versions}{default} =
   [qw(GRCh37.75 GRCh38.86)];
 $array_parameter{reference_genome_versions}{default} = [qw(GRCh37 hg38)];
 $array_parameter{perl_modules}{default}              = [
-    'Modern::Perl',              # MIP
-    'IPC::System::Simple',       # MIP
-    'Path::Iterator::Rule',      # MIP
-    'YAML',                      # MIP
-    'Log::Log4perl',             # MIP
-    'List::Util',                # MIP
-    'List::MoreUtils',           # MIP
-    'Readonly',                  # MIP
-    'Scalar::Util::Numeric',     # MIP
-    'Set::IntervalTree',         # MIP/vcfParser.pl
-    'Net::SSLeay',               # VEP
-    'LWP::Simple',               # VEP
-    'LWP::Protocol::https',      # VEP
-    'PerlIO::gzip',              # VEP
-    'IO::Uncompress::Gunzip',    # VEP
-    'HTML::Lint',                # VEP
-    'Archive::Zip',              # VEP
-    'Archive::Extract',          # VEP
-    'DBI',                       # VEP
-    'JSON',                      # VEP
-    'DBD::mysql',                # VEP
-    'CGI',                       # VEP
-    'Sereal::Encoder',           # VEP
-    'Sereal::Decoder',           # VEP
-    'Bio::Root::Version',        # VEP
-    'Module::Build',             # VEP
-    'File::Copy::Recursive',     # VEP
+    qw{ Modern::Perl },              # MIP
+    qw{ IPC::System::Simple },       # MIP
+    qw{ Path::Iterator::Rule },      # MIP
+    qw{ YAML },                      # MIP
+    qw{ Log::Log4perl },             # MIP
+    qw{ List::Util },                # MIP
+    qw{ List::MoreUtils },           # MIP
+    qw{ Readonly },                  # MIP
+    qw{ Scalar::Util::Numeric },     # MIP
+    qw{ Set::IntervalTree },         # MIP/vcfParser.pl
+    qw{ Net::SSLeay },               # VEP
+    qw{ LWP::Simple },               # VEP
+    qw{ LWP::Protocol::https },      # VEP
+    qw{ PerlIO::gzip },              # VEP
+    qw{ IO::Uncompress::Gunzip },    # VEP
+    qw{ HTML::Lint },                # VEP
+    qw{ Archive::Zip },              # VEP
+    qw{ Archive::Extract },          # VEP
+    qw{ DBI },                       # VEP
+    qw{ JSON },                      # VEP
+    qw{ DBD::mysql },                # VEP
+    qw{ CGI },                       # VEP
+    qw{ Sereal::Encoder },           # VEP
+    qw{ Sereal::Decoder },           # VEP
+    qw{ Bio::Root::Version },        # VEP
+    qw{ Module::Build },             # VEP
+    qw{ File::Copy::Recursive },     # VEP
 ];
 
-my $VERSION = '1.2.9';
+my $VERSION = '1.2.10';
 
 ###User Options
 GetOptions(
@@ -324,8 +325,6 @@ finish_bioconda_package_install(
         snpeff_genome_versions_ref => $parameter{snpeff_genome_versions},
     }
 );
-
-print {$FILEHANDLE} $NEWLINE;
 
 if ( @{ $parameter{select_programs} } ) {
 
@@ -816,12 +815,14 @@ sub perl {
                 );
             }
 
-            perl_modules(
+            say {$FILEHANDLE} q{## Installing perl modules via cpanm};
+            cpanm_install(
                 {
-                    parameter_href => $parameter_href,
-                    FILEHANDLE     => $FILEHANDLE,
+                    modules_ref => $parameter{perl_modules},
+                    FILEHANDLE  => $FILEHANDLE,
                 }
             );
+            say {$FILEHANDLE} $NEWLINE;
         }
     }
     else {
@@ -837,12 +838,14 @@ sub perl {
             );
         }
 
-        perl_modules(
+        say {$FILEHANDLE} q{## Installing perl modules via cpanm};
+        cpanm_install(
             {
-                parameter_href => $parameter_href,
-                FILEHANDLE     => $FILEHANDLE,
+                modules_ref => $parameter{perl_modules},
+                FILEHANDLE  => $FILEHANDLE,
             }
         );
+        say {$FILEHANDLE} $NEWLINE;
     }
     return;
 }
@@ -1028,49 +1031,6 @@ sub install_perl_cpnam {
     print $FILEHANDLE q{PERL5LIB=~/perl-}
       . $parameter_href->{perl_version}
       . q{/lib/perl5};
-    print $FILEHANDLE "\n\n";
-
-    return;
-}
-
-sub perl_modules {
-
-##perl_modules
-
-##Function : Install perl modules via cpanm
-##Returns  : ""
-##Arguments: $parameter_href, $FILEHANDLE
-##         : $parameter_href => Holds all parameters
-##         : $FILEHANDLE     => Filehandle to write to
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
-
-    ## Install perl modules via cpanm
-    print $FILEHANDLE '## Install perl modules via cpanm', "\n";
-    print $FILEHANDLE 'cpanm ';
-
-    if ( $parameter_href->{perl_modules_force} ) {
-
-        print $FILEHANDLE '--force ';
-    }
-    print $FILEHANDLE join( q{ }, @{ $parameter_href->{perl_modules} } ) . q{ };
     print $FILEHANDLE "\n\n";
 
     return;
@@ -2807,7 +2767,7 @@ sub svdb {
     print $FILEHANDLE '## Download Svdb', "\n";
     Program::Download::Wget::wget(
         {
-            url          => 'https://github.com/J35P312/SVDB/archive/SVDB-',
+            url          => 'https://github.com/J35P312/SVDB/archive/SVDB-' . $parameter_href->{svdb} . '.zip',
             FILEHANDLE   => $FILEHANDLE,
             quiet        => $parameter_href->{quiet},
             verbose      => $parameter_href->{verbose},

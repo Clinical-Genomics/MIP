@@ -4,59 +4,76 @@
 
 ###Copyright 2011 Henrik Stranneheim
 
-use 5.018;    #Require at least perl 5.18
-use Modern::Perl qw(2014);
-use autodie qw(open close :all);
-use English qw(-no_match_vars);
+# Require at least perl 5.18
+use 5.018;
+use Modern::Perl qw{ 2014 };
+use autodie qw{ open close :all };
+use English qw{ -no_match_vars };
 use Carp;
 
-##Unicode boilerplate
-use warnings qw( FATAL utf8 );
-use utf8;     #Allow unicode characters in this script
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
+## Unicode boilerplate
+use warnings qw{ FATAL utf8 };
+
+# Allow unicode characters in this script
+use utf8;
+use open qw{ :encoding(UTF-8) :std };
+use charnames qw{ :full :short };
 
 use Getopt::Long;
 use POSIX;
-use Params::Check qw[check allow last_error];
+use Params::Check qw{ check allow last_error };
 $Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 use Cwd;
-use Cwd qw(abs_path);                 #Import absolute path function
-use File::Basename qw(dirname basename fileparse);
-use File::Spec::Functions qw(catdir catfile devnull);
-use File::Path qw(make_path);
-use File::Copy qw(copy);
-use FindBin qw($Bin);                 #Find directory of script
-use IPC::Cmd qw[can_run run];
-use IPC::System::Simple;              #Required for autodie :all
+use Cwd qw{ abs_path };
+use File::Basename qw{ dirname basename fileparse };
+use File::Spec::Functions qw{ catdir catfile devnull };
+use File::Path qw{ make_path };
+use File::Copy qw{ copy };
+
+# Find directory of script
+use FindBin qw{ $Bin };
+use IPC::Cmd qw{ can_run run};
+
+# Required for autodie :all
+use IPC::System::Simple;
 use Time::Piece;
 
 ## Third party module(s)
 use Path::Iterator::Rule;
-use List::Util qw(any all);
-use List::MoreUtils qw (uniq);
+use List::MoreUtils qw { any uniq all };
 use Readonly;
 
 ##MIPs lib/
-use lib catdir( $Bin, 'lib' );        #Add MIPs internal lib
-use Check::Check_modules qw(check_modules);
-use File::Format::Yaml qw(load_yaml write_yaml);
-use MIP_log::Log4perl qw(initiate_logger);
-use Script::Utils qw(help);
-use MIP::File::Format::Pedigree qw(create_fam_file);
-use MIP::Check::Cluster qw(check_max_core_number);
-use MIP::Get::Analysis qw(get_overall_analysis_type);
+# Add MIPs internal lib
+use lib catdir( $Bin, q{lib} );
+use Check::Check_modules qw{ check_modules };
+use File::Format::Yaml qw{ load_yaml write_yaml };
+use MIP_log::Log4perl qw{ initiate_logger };
+use Script::Utils qw{ help };
+use MIP::File::Format::Pedigree qw{ create_fam_file };
+use MIP::Check::Cluster qw{ check_max_core_number };
+use MIP::Get::Analysis qw{ get_overall_analysis_type };
+use MIP::Check::Parameter qw{ check_allowed_temp_directory };
+use MIP::Delete::List qw{ delete_male_contig };
+
+##Recipes
+use MIP::Recipes::Split_fastq_file qw{analysis_split_fastq_file};
+use MIP::Recipes::Gzip_fastq qw{analysis_gzip_fastq};
+use MIP::Recipes::Fastqc qw{analysis_fastqc};
+use MIP::Recipes::Bwa_mem qw{analysis_bwa_mem};
+use MIP::Recipes::Chanjo_sex_check qw{analysis_chanjo_sex_check};
+use MIP::Recipes::Vep qw{analysis_vep analysis_vep_rio analysis_vep_sv};
 
 our $USAGE = build_usage( {} );
 
 BEGIN {
 
     my @modules = (
-        'YAML',               'Path::Iterator::Rule',
-        'List::Util',         'File::Format::Yaml',
-        'Log::Log4perl',      'Check::Check_modules',
-        'File::Format::Yaml', 'File::Parse::Parse',
-        'MIP_log::Log4perl',  'Script::Utils',
+        qw{ YAML Path::Iterator::Rule
+          List::Util         File::Format::Yaml
+          Log::Log4perl      Check::Check_modules
+          File::Format::Yaml File::Parse::Parse
+          MIP_log::Log4perl  Script::Utils }
     );
 
     ## Evaluate that all modules required are installed
@@ -69,15 +86,23 @@ BEGIN {
 }
 
 ## Constants
+Readonly my $DOT     => q{.};
 Readonly my $NEWLINE => qq{\n};
+Readonly my $TAB     => qq{\t};
 
 ####Script parameters
 
-my %parameter;         #Holds all parameters for MIP
-my %active_parameter;  #Holds all active parameters after the value has been set
+# Holds all parameters for MIP
+my %parameter;
 
-my @order_parameters;  #To add/write parameters in the correct order
-my @broadcasts;    #Holds all set parameters info after add_to_active_parameter
+# Holds all active parameters after the value has been set
+my %active_parameter;
+
+# To add/write parameters in the correct order
+my @order_parameters;
+
+# Holds all set parameters info after add_to_active_parameter
+my @broadcasts;
 
 ## Add date_time_stamp for later use in log and qc_metrics yaml file
 my $date_time       = localtime;
@@ -85,8 +110,9 @@ my $date_time_stamp = $date_time->datetime;
 my $date            = $date_time->ymd;
 
 # Catches script name and removes ending
-my $script = fileparse( basename( $PROGRAM_NAME, q{.pl} ) );
-my $definitions_file = catfile( $Bin, qw{definitions define_parameters.yaml} );
+my $script = fileparse( basename( $PROGRAM_NAME, $DOT . q{pl} ) );
+my $definitions_file =
+  catfile( $Bin, qw{ definitions define_parameters.yaml } );
 chomp( $date_time_stamp, $date, $script );
 
 ####Set program parameters
@@ -113,7 +139,7 @@ eval_parameter_hash(
 );
 
 # Set MIP version
-our $VERSION = 'v5.0.8';
+our $VERSION = 'v5.0.9';
 
 ## Directories, files, job_ids and sample_info
 my ( %infile, %indir_path, %infile_lane_prefix, %lane,
@@ -777,6 +803,20 @@ if ( exists( $active_parameter{email} ) ) {    #Allow no malformed email adress
     check_email_address( { email_ref => \$active_parameter{email}, } );
 }
 
+if (
+    not check_allowed_temp_directory(
+        { temp_directory => $active_parameter{temp_directory}, }
+    )
+  )
+{
+
+    $log->fatal( q{'--temp_directory }
+          . $active_parameter{temp_directory}
+          . q{' is not allowed because MIP will remove the temp directory after processing.}
+          . "\n" );
+    exit 1;
+}
+
 ## Parameters that have keys as MIP program names
 my @parameter_keys_to_check = (qw(module_time module_core_number));
 foreach my $parameter_name (@parameter_keys_to_check) {
@@ -1052,9 +1092,9 @@ set_contigs(
 
 ## Detect the gender included in current analysis
 (
-    $active_parameter{male_found},
-    $active_parameter{female_found},
-    $active_parameter{other_found}
+    $active_parameter{found_male},
+    $active_parameter{found_female},
+    $active_parameter{found_other}
   )
   = detect_sample_id_gender(
     {
@@ -1062,12 +1102,12 @@ set_contigs(
         sample_info_href      => \%sample_info,
     }
   );
+
 ## Removes contig_names from contigs array if no male or 'other' found
-remove_contigs(
+@{ $file_info{select_file_contigs} } = delete_male_contig(
     {
-        active_parameter_href => \%active_parameter,
-        contigs_ref           => \@{ $file_info{select_file_contigs} },
-        contig_names_ref      => ['Y'],
+        contigs_ref => \@{ $file_info{select_file_contigs} },
+        found_male  => $active_parameter{found_male},
     }
 );
 
@@ -1185,8 +1225,6 @@ if ( $active_parameter{psplit_fastq_file} > 0 ) {
 
     $log->info( q{[Split fastq files in batches]}, $NEWLINE );
 
-    use MIP::Recipes::Split_fastq_file qw{analysis_split_fastq_file};
-
     my $program_name = lc q{split_fastq_file};
 
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
@@ -1218,8 +1256,6 @@ if (   ( $active_parameter{pgzip_fastq} > 0 )
 {
 
     $log->info( q{[Gzip for fastq files]}, $NEWLINE );
-
-    use MIP::Recipes::Gzip_fastq qw{analysis_gzip_fastq};
 
     my $program_name = lc q{gzip_fastq};
 
@@ -1260,8 +1296,6 @@ if (   ( $active_parameter{pgzip_fastq} > 0 )
 if ( $active_parameter{pfastqc} > 0 ) {
 
     $log->info( q{[Fastqc]}, $NEWLINE );
-
-    use MIP::Recipes::Fastqc qw{analysis_fastqc};
 
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
@@ -1307,7 +1341,6 @@ if ( $active_parameter{pbwa_mem} > 0 ) {
 
     $log->info( q{[BWA Mem]}, $NEWLINE );
 
-    use MIP::Recipes::Bwa_mem qw{analysis_bwa_mem};
     my $program_name = lc q{bwa_mem};
 
     if ( $active_parameter{dry_run_all} != 1 ) {
@@ -1618,11 +1651,21 @@ else {
 
 if ( $active_parameter{pchanjo_sexcheck} > 0 ) {
 
-    $log->info("[Chanjo sexcheck]\n");
+    $log->info( q{[Chanjo sexcheck]} . $NEWLINE );
 
+    my $program_name = lc q{chanjo_sexcheck};
+
+  SAMPLE_IDS:
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
-        chanjo_sexcheck(
+        my $insample_directory = catdir( $active_parameter{outdata_dir},
+            $sample_id, $active_parameter{outaligner_dir} );
+        my $outsample_directory = catdir(
+            $active_parameter{outdata_dir},    $sample_id,
+            $active_parameter{outaligner_dir}, q{coveragereport}
+        );
+
+        analysis_chanjo_sex_check(
             {
                 parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
@@ -1630,8 +1673,10 @@ if ( $active_parameter{pchanjo_sexcheck} > 0 ) {
                 file_info_href          => \%file_info,
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
-                sample_id_ref           => \$sample_id,
-                program_name            => "chanjo_sexcheck",
+                sample_id               => $sample_id,
+                insample_directory      => $insample_directory,
+                outsample_directory     => $outsample_directory,
+                program_name            => $program_name,
             }
         );
     }
@@ -1639,11 +1684,22 @@ if ( $active_parameter{pchanjo_sexcheck} > 0 ) {
 
 if ( $active_parameter{psambamba_depth} > 0 ) {
 
-    $log->info("[Sambamba depth]\n");
+    $log->info( q{[Sambamba depth]} . $NEWLINE );
 
+    use MIP::Recipes::Sambamba_depth qw{ analysis_sambamba_depth };
+
+    my $program_name = lc q{sambamba_depth};
+
+    SAMPLE_IDS:
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
-        msambamba_depth(
+        my $insample_directory = catdir( $active_parameter{outdata_dir},
+            $sample_id, $active_parameter{outaligner_dir} );
+        my $outsample_directory = catdir(
+            $active_parameter{outdata_dir},    $sample_id,
+            $active_parameter{outaligner_dir}, q{coveragereport} );
+
+        analysis_sambamba_depth(
             {
                 parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
@@ -1651,8 +1707,10 @@ if ( $active_parameter{psambamba_depth} > 0 ) {
                 file_info_href          => \%file_info,
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
-                sample_id_ref           => \$sample_id,
-                program_name            => "sambamba_depth",
+                sample_id               => $sample_id,
+                insample_directory      => $insample_directory,
+                outsample_directory     => $outsample_directory,
+                program_name            => $program_name,
             }
         );
     }
@@ -1948,12 +2006,14 @@ if ( $active_parameter{psv_combinevariantcallsets} > 0 )
     );
 }
 
-if ( $active_parameter{psv_varianteffectpredictor} > 0 )
-{    #Run sv_varianteffectpredictor. Done per family
+# Run sv_varianteffectpredictor. Family-level
+if ( $active_parameter{psv_varianteffectpredictor} > 0 ) {
 
-    $log->info("[SV varianteffectpredictor]\n");
+    $log->info( q{[SV varianteffectpredictor]} . $NEWLINE );
 
-    sv_varianteffectpredictor(
+    my $program_name = lc q{sv_varianteffectpredictor};
+
+    analysis_vep_sv(
         {
             parameter_href          => \%parameter,
             active_parameter_href   => \%active_parameter,
@@ -1961,7 +2021,7 @@ if ( $active_parameter{psv_varianteffectpredictor} > 0 )
             file_info_href          => \%file_info,
             infile_lane_prefix_href => \%infile_lane_prefix,
             job_id_href             => \%job_id,
-            program_name            => "sv_varianteffectpredictor",
+            program_name            => $program_name,
         }
     );
 }
@@ -2404,11 +2464,10 @@ my @file_info_contig_keys = ( "contigs_size_ordered", "contigs" );
 foreach my $key (@file_info_contig_keys) {
 
     ## Removes contig_names from contigs array if no male or 'other' found
-    remove_contigs(
+    @{ $file_info{$key} } = delete_male_contig(
         {
-            active_parameter_href => \%active_parameter,
-            contigs_ref           => \@{ $file_info{$key} },
-            contig_names_ref      => ["Y"],
+            contigs_ref => \@{ $file_info{$key} },
+            found_male  => $active_parameter{found_male},
         }
     );
 }
@@ -2484,12 +2543,14 @@ else {
             }
         );
     }
-    if ( $active_parameter{pvarianteffectpredictor} > 0 )
-    {    #Run varianteffectpredictor. Done per family
+    ## Run varianteffectpredictor {family-level}
+    if ( $active_parameter{pvarianteffectpredictor} > 0 ) {
 
-        $log->info("[Varianteffectpredictor]\n");
+        $log->info( q{[Varianteffectpredictor]} . $NEWLINE );
 
-        varianteffectpredictor(
+        my $program_name = lc q{varianteffectpredictor};
+
+        analysis_vep(
             {
                 parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
@@ -2497,8 +2558,8 @@ else {
                 file_info_href          => \%file_info,
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
-                call_type               => "BOTH",
-                program_name            => "varianteffectpredictor",
+                call_type               => q{BOTH},
+                program_name            => $program_name,
             }
         );
     }
@@ -3168,7 +3229,7 @@ sub msacct {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = setup_script(
+    my ($file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -3202,7 +3263,7 @@ sub msacct {
                 job_id_href         => $job_id_href,
                 path                => $job_id_chain,
                 log                 => $log,
-                sbatch_file_name    => $file_name,
+                sbatch_file_name    => $file_path,
                 job_dependency_type => q{afterany},
             }
         );
@@ -3298,7 +3359,7 @@ sub analysisrunstatus {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = setup_script(
+    my ($file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -3354,14 +3415,15 @@ sub analysisrunstatus {
     ## Test varianteffectpredictor fork status. If varianteffectpredictor is unable to fork it will prematurely end the analysis and we will lose variants.
     if (
         defined(
-            $sample_info_href->{program}{varianteffectpredictor}{outfile}
+            $sample_info_href->{program}{varianteffectpredictor}{stderrfile}
+              {path}
         )
       )
     {
 
         my $variant_effect_predictor_file = catfile(
-            $sample_info_href->{program}{varianteffectpredictor}{outdirectory},
-            $sample_info_href->{program}{varianteffectpredictor}{outfile}
+            $sample_info_href->{program}{varianteffectpredictor}{stderrfile}
+              {path},
         );
 
         print $FILEHANDLE q?if grep -q "WARNING Unable to fork" ?
@@ -3523,7 +3585,7 @@ sub analysisrunstatus {
                 job_id_href      => $job_id_href,
                 path             => $job_id_chain,
                 log              => $log,
-                sbatch_file_name => $file_name,
+                sbatch_file_name => $file_path,
             }
         );
     }
@@ -3641,14 +3703,14 @@ sub removeredundantfiles {
     use MIP::Script::Setup_script qw(setup_script);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
-    my $xargs_file_name;
+    my $xargs_file_path_prefix;
 
     ## Filehandles
     my $FILEHANDLE      = IO::Handle->new();    #Create anonymous filehandle
     my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = setup_script(
+    my ($file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -3791,7 +3853,7 @@ sub mmultiqc {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = setup_script(
+    my ($file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -3838,7 +3900,7 @@ sub mmultiqc {
                 job_id_href      => $job_id_href,
                 path             => $job_id_chain,
                 log              => $log,
-                sbatch_file_name => $file_name,
+                sbatch_file_name => $file_path,
             }
         );
     }
@@ -3940,7 +4002,7 @@ sub mqccollect {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = setup_script(
+    my ($file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -3997,7 +4059,7 @@ sub mqccollect {
                 job_id_href      => $job_id_href,
                 path             => $job_id_chain,
                 log              => $log,
-                sbatch_file_name => $file_name,
+                sbatch_file_name => $file_path,
             }
         );
     }
@@ -4143,7 +4205,7 @@ sub evaluation {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = setup_script(
+    my ($file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -4520,7 +4582,7 @@ q?perl -nae 'unless($_=~/##contig=<ID=NC_007605,length=171823>/ || $_=~/##contig
                 family_id        => $$family_id_ref,
                 path             => $job_id_chain,
                 log              => $log,
-                sbatch_file_name => $file_name,
+                sbatch_file_name => $file_path,
             }
         );
     }
@@ -4532,7 +4594,7 @@ sub endvariantannotationblock {
 
 ##Function : Concatenate ouput from variant annotation block.
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -4541,7 +4603,7 @@ sub endvariantannotationblock {
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $program_name               => Program name
 ##         : $program_info_path          => The program info path
-##         : $file_name                  => File name
+##         : $file_path                  => File path
 ##         : $FILEHANDLE                 => Sbatch filehandle to write to
 ##         : $family_id_ref              => Family id {REF}
 ##         : $temp_directory_ref         => Temporary directory {REF}
@@ -4569,7 +4631,7 @@ sub endvariantannotationblock {
     my $job_id_href;
     my $program_name;
     my $program_info_path;
-    my $file_name;
+    my $file_path;
     my $FILEHANDLE;
 
     my $tmpl = {
@@ -4622,7 +4684,7 @@ sub endvariantannotationblock {
             store       => \$program_name
         },
         program_info_path => { strict_type => 1, store => \$program_info_path },
-        file_name         => { strict_type => 1, store => \$file_name },
+        file_path         => { strict_type => 1, store => \$file_path },
         FILEHANDLE    => { store => \$FILEHANDLE },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
@@ -4648,7 +4710,7 @@ sub endvariantannotationblock {
           { default => "BOTH", strict_type => 1, store => \$call_type },
         xargs_file_counter => {
             default     => 0,
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
             store       => \$xargs_file_counter
         },
@@ -4658,6 +4720,8 @@ sub endvariantannotationblock {
 
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
+    use MIP::Delete::List qw{ delete_contig_elements };
+    use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use Program::Htslib qw(bgzip tabix);
     use MIP::Gnu::Software::Gnu_grep qw(gnu_grep);
     use MIP::QC::Record qw(add_program_metafile_to_sample_info);
@@ -4667,7 +4731,7 @@ sub endvariantannotationblock {
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $xargs_file_name;
+    my $xargs_file_path_prefix;
     my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
     my $vcfparser_analysis_type  = "";
     my $contigs_size_ordered_ref = \@{ $file_info_href->{contigs_size_ordered} }
@@ -4689,7 +4753,7 @@ sub endvariantannotationblock {
         use MIP::IO::Files qw(migrate_file);
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = setup_script(
+        ( $file_path, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -4763,12 +4827,11 @@ sub endvariantannotationblock {
             {    #Remove MT|M since no exome kit so far has mitochondrial probes
 
                 ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-                @contigs = remove_element(
+                @contigs = delete_contig_elements(
                     {
                         elements_ref =>
                           \@{ $file_info_href->{select_file_contigs} },
-                        remove_contigs_ref => [ "MT", "M" ],
-                        contig_switch      => 1,
+                        remove_contigs_ref => [qw{ MT M }],
                     }
                 );
             }
@@ -4783,7 +4846,7 @@ sub endvariantannotationblock {
                     FILEHANDLE         => $FILEHANDLE,
                     XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                     contigs_ref        => $contigs_size_ordered_ref,
-                    file_name          => $file_name,
+                    file_path          => $file_path,
                     program_info_path  => $program_info_path,
                     core_number        => $core_number,
                     xargs_file_counter => $xargs_file_counter,
@@ -4991,7 +5054,7 @@ sub endvariantannotationblock {
                 family_id        => $$family_id_ref,
                 path             => $job_id_chain,
                 log              => $log,
-                sbatch_file_name => $file_name,
+                sbatch_file_name => $file_path,
             }
         );
     }
@@ -5009,7 +5072,7 @@ sub rankvariant {
 
 ##Function : Annotate and score variants depending on mendelian inheritance, frequency and phenotype etc.
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -5018,7 +5081,7 @@ sub rankvariant {
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $program_name               => Program name
 ##         : $program_info_path          => The program info path
-##         : $file_name                  => File name
+##         : $file_path                  => File path
 ##         : $FILEHANDLE                 => Sbatch filehandle to write to
 ##         : $family_id_ref              => Family id {REF}
 ##         : $temp_directory_ref         => Temporary directory {REF}
@@ -5044,7 +5107,7 @@ sub rankvariant {
     my $job_id_href;
     my $program_name;
     my $program_info_path;
-    my $file_name;
+    my $file_path;
     my $FILEHANDLE;
 
     my $tmpl = {
@@ -5097,7 +5160,7 @@ sub rankvariant {
             store       => \$program_name
         },
         program_info_path => { strict_type => 1, store => \$program_info_path },
-        file_name         => { strict_type => 1, store => \$file_name },
+        file_path         => { strict_type => 1, store => \$file_path },
         FILEHANDLE    => { store => \$FILEHANDLE },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
@@ -5118,7 +5181,7 @@ sub rankvariant {
           { default => "BOTH", strict_type => 1, store => \$call_type },
         xargs_file_counter => {
             default     => 0,
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
             store       => \$xargs_file_counter
         },
@@ -5129,6 +5192,9 @@ sub rankvariant {
     use MIP::Cluster qw(get_core_number);
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
+    use MIP::Delete::List qw{ delete_contig_elements };
+    use MIP::IO::Files qw{ xargs_migrate_contig_files };
+    use MIP::Recipes::Xargs qw{ xargs_command };
     use Program::Variantcalling::Genmod qw(annotate models score compound);
     use MIP::QC::Record
       qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
@@ -5141,7 +5207,7 @@ sub rankvariant {
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
-    my $xargs_file_name;
+    my $xargs_file_path_prefix;
     my $vcfparser_analysis_type = "";
     my @contigs_size_ordered    = @{ $file_info_href->{contigs_size_ordered} }
       ;    #Set default for size ordered contigs
@@ -5178,7 +5244,7 @@ sub rankvariant {
         use MIP::IO::Files qw(migrate_file);
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = setup_script(
+        ( $file_path, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -5264,22 +5330,20 @@ sub rankvariant {
             {    #Remove MT|M since no exome kit so far has mitochondrial probes
 
                 ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-                @contigs = remove_element(
+                @contigs = delete_contig_elements(
                     {
                         elements_ref =>
                           \@{ $file_info_href->{select_file_contigs} },
-                        remove_contigs_ref => [ "MT", "M" ],
-                        contig_switch      => 1,
+                        remove_contigs_ref => [q{ MT M }],
                     }
                 );
 
                 ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-                @contigs_size_ordered = remove_element(
+                @contigs_size_ordered = delete_contig_elements(
                     {
                         elements_ref =>
                           \@{ $file_info_href->{sorted_select_file_contigs} },
-                        remove_contigs_ref => [ "MT", "M" ],
-                        contig_switch      => 1,
+                        remove_contigs_ref => [qw{ MT M }],
                     }
                 );
             }
@@ -5294,7 +5358,7 @@ sub rankvariant {
                     FILEHANDLE         => $FILEHANDLE,
                     XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                     contigs_ref        => \@contigs_size_ordered,
-                    file_name          => $file_name,
+                    file_path          => $file_path,
                     program_info_path  => $program_info_path,
                     core_number        => $core_number,
                     xargs_file_counter => $xargs_file_counter,
@@ -5311,11 +5375,11 @@ sub rankvariant {
         say $FILEHANDLE "## GeneMod";
 
         ## Create file commands for xargs
-        ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+        ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
                 FILEHANDLE         => $FILEHANDLE,
                 XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                file_name          => $file_name,
+                file_path          => $file_path,
                 program_info_path  => $program_info_path,
                 core_number        => $genmod_core_number,
                 xargs_file_counter => $xargs_file_counter,
@@ -5376,7 +5440,7 @@ sub rankvariant {
                       },
                     infile_path     => $genmod_indata,
                     outfile_path    => $genmod_outfile_path,
-                    stderrfile_path => $xargs_file_name . "."
+                    stderrfile_path => $xargs_file_path_prefix . "."
                       . $contig
                       . $genmod_module
                       . ".stderr.txt",
@@ -5418,7 +5482,7 @@ sub rankvariant {
                         infile_path => $genmod_indata,
                         outfile_path =>
                           catfile( dirname( devnull() ), "stdout" ),
-                        stderrfile_path => $xargs_file_name . "."
+                        stderrfile_path => $xargs_file_path_prefix . "."
                           . $contig
                           . $genmod_module
                           . ".stderr.txt",
@@ -5445,7 +5509,7 @@ sub rankvariant {
                         infile_path => $genmod_indata,
                         outfile_path =>
                           catfile( dirname( devnull() ), "stdout" ),
-                        stderrfile_path => $xargs_file_name . "."
+                        stderrfile_path => $xargs_file_path_prefix . "."
                           . $contig
                           . $genmod_module
                           . ".stderr.txt ",
@@ -5471,7 +5535,7 @@ sub rankvariant {
                           . $contig
                           . $vcfparser_analysis_type
                           . $infile_suffix,
-                        stderrfile_path => $xargs_file_name . "."
+                        stderrfile_path => $xargs_file_path_prefix . "."
                           . $contig
                           . $genmod_module
                           . ".stderr.txt",
@@ -5489,13 +5553,12 @@ sub rankvariant {
 
             ## Copies file from temporary directory. Per contig
             say $FILEHANDLE "## Copy file from temporary directory";
-            ( $xargs_file_counter, $xargs_file_name ) =
-              xargs_migrate_contig_files(
+            ($xargs_file_counter) = xargs_migrate_contig_files(
                 {
                     FILEHANDLE        => $FILEHANDLE,
                     XARGSFILEHANDLE   => $XARGSFILEHANDLE,
                     contigs_ref       => \@contigs_size_ordered,
-                    file_name         => $file_name,
+                    file_path         => $file_path,
                     program_info_path => $program_info_path,
                     core_number => $active_parameter_href->{max_cores_per_node},
                     xargs_file_counter => $xargs_file_counter,
@@ -5505,7 +5568,7 @@ sub rankvariant {
                     outdirectory   => $outfamily_directory,
                     temp_directory => $$temp_directory_ref,
                 }
-              );
+            );
         }
         else {
 
@@ -5578,7 +5641,7 @@ sub rankvariant {
                     family_id        => $$family_id_ref,
                     path             => $job_id_chain,
                     log              => $log,
-                    sbatch_file_name => $file_name,
+                    sbatch_file_name => $file_path,
                 }
             );
         }
@@ -5724,7 +5787,7 @@ sub gatk_variantevalexome {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = setup_script(
+    my ($file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -6105,7 +6168,7 @@ sub gatk_variantevalexome {
                 family_id        => $$family_id_ref,
                 path             => $job_id_chain,
                 log              => $log,
-                sbatch_file_name => $file_name,
+                sbatch_file_name => $file_path,
             }
         );
     }
@@ -6238,7 +6301,7 @@ sub gatk_variantevalall {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = setup_script(
+    my ($file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -6420,7 +6483,7 @@ sub gatk_variantevalall {
                 family_id        => $$family_id_ref,
                 path             => $job_id_chain,
                 log              => $log,
-                sbatch_file_name => $file_name,
+                sbatch_file_name => $file_path,
             }
         );
     }
@@ -6432,7 +6495,7 @@ sub snpeff {
 
 ##Function : snpeff annotates variants from different sources.
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -6441,7 +6504,7 @@ sub snpeff {
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $program_name               => Program name
 ##         : $program_info_path          => The program info path
-##         : $file_name                  => File name
+##         : $file_path                  => File path
 ##         : $FILEHANDLE                 => Sbatch filehandle to write to
 ##         : $family_id_ref              => Family id {REF}
 ##         : $temp_directory_ref         => Temporary directory {REF}
@@ -6466,7 +6529,7 @@ sub snpeff {
     my $job_id_href;
     my $program_name;
     my $program_info_path;
-    my $file_name;
+    my $file_path;
     my $FILEHANDLE;
 
     my $tmpl = {
@@ -6519,7 +6582,7 @@ sub snpeff {
             store       => \$program_name
         },
         program_info_path => { strict_type => 1, store => \$program_info_path },
-        file_name         => { strict_type => 1, store => \$file_name },
+        file_path         => { strict_type => 1, store => \$file_path },
         FILEHANDLE    => { store => \$FILEHANDLE },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
@@ -6540,7 +6603,7 @@ sub snpeff {
           { default => "BOTH", strict_type => 1, store => \$call_type },
         xargs_file_counter => {
             default     => 0,
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
             store       => \$xargs_file_counter
         },
@@ -6549,9 +6612,10 @@ sub snpeff {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw(get_core_number);
-    use MIP::IO::Files qw(migrate_file);
+    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
+    use MIP::Recipes::Xargs qw{ xargs_command };
     use Program::Variantcalling::Snpeff qw(ann);
     use Program::Variantcalling::Snpsift qw(annotate dbnsfp);
     use Program::Variantcalling::Mip qw(vcfparser);
@@ -6560,7 +6624,7 @@ sub snpeff {
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
-    my $xargs_file_name;
+    my $xargs_file_path_prefix;
     my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
 
     ## Get core number depending on user supplied input exists or not and max number of cores
@@ -6583,7 +6647,7 @@ sub snpeff {
         use MIP::Script::Setup_script qw(setup_script);
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = setup_script(
+        ( $file_path, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -6660,13 +6724,12 @@ sub snpeff {
 
             ## Copy file(s) to temporary directory
             say $FILEHANDLE "## Copy file(s) to temporary directory";
-            ( $xargs_file_counter, $xargs_file_name ) =
-              xargs_migrate_contig_files(
+            ($xargs_file_counter) = xargs_migrate_contig_files(
                 {
                     FILEHANDLE         => $FILEHANDLE,
                     XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                     contigs_ref        => $vcfparser_contigs_ref,
-                    file_name          => $file_name,
+                    file_path          => $file_path,
                     program_info_path  => $program_info_path,
                     core_number        => $core_number,
                     xargs_file_counter => $xargs_file_counter,
@@ -6676,7 +6739,7 @@ sub snpeff {
                     indirectory    => $infamily_directory,
                     temp_directory => $$temp_directory_ref,
                 }
-              );
+            );
         }
 
         ## SnpSift Annotation
@@ -6688,11 +6751,11 @@ sub snpeff {
         {    #Annotate using snpeff
 
             ## Create file commands for xargs
-            ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+            ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
                 {
                     FILEHANDLE         => $FILEHANDLE,
                     XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                    file_name          => $file_name,
+                    file_path          => $file_path,
                     program_info_path  => $program_info_path,
                     core_number        => $core_number,
                     xargs_file_counter => $xargs_file_counter,
@@ -6727,7 +6790,7 @@ sub snpeff {
                           . $vcfparser_analysis_type
                           . $infile_suffix . "."
                           . $xargs_file_counter,
-                        stderrfile_path => $xargs_file_name . "."
+                        stderrfile_path => $xargs_file_path_prefix . "."
                           . $contig
                           . ".stderr.txt",
                         FILEHANDLE => $XARGSFILEHANDLE,
@@ -6743,11 +6806,11 @@ sub snpeff {
         {
 
             ## Create file commands for xargs
-            ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+            ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
                 {
                     FILEHANDLE         => $FILEHANDLE,
                     XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                    file_name          => $file_name,
+                    file_path          => $file_path,
                     program_info_path  => $program_info_path,
                     core_number        => $core_number,
                     xargs_file_counter => $xargs_file_counter,
@@ -6821,7 +6884,7 @@ sub snpeff {
                         database_path   => $annotation_file,
                         name_prefix     => $name_prefix,
                         info            => $info_key,
-                        stderrfile_path => $xargs_file_name . "."
+                        stderrfile_path => $xargs_file_path_prefix . "."
                           . $contig
                           . ".stderr.txt",
                         append_stderr_info => 1,
@@ -6840,11 +6903,11 @@ sub snpeff {
             say $FILEHANDLE "## SnpSiftDnNSFP Annotation";
 
             ## Create file commands for xargs
-            ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+            ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
                 {
                     FILEHANDLE         => $FILEHANDLE,
                     XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                    file_name          => $file_name,
+                    file_path          => $file_path,
                     program_info_path  => $program_info_path,
                     core_number        => $core_number,
                     xargs_file_counter => $xargs_file_counter,
@@ -6885,7 +6948,7 @@ sub snpeff {
                         ),
                         database_path =>
                           $active_parameter_href->{snpsift_dbnsfp_file},
-                        stderrfile_path => $xargs_file_name . "."
+                        stderrfile_path => $xargs_file_path_prefix . "."
                           . $contig
                           . ".stderr.txt",
                         append_stderr_info => 1,
@@ -6903,11 +6966,11 @@ sub snpeff {
           "## Add INFO headers and FIX_INFO for annotations using vcfparser";
 
         ## Create file commands for xargs
-        ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+        ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
                 FILEHANDLE         => $FILEHANDLE,
                 XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                file_name          => $file_name,
+                file_path          => $file_path,
                 program_info_path  => $program_info_path,
                 core_number        => $core_number,
                 xargs_file_counter => $xargs_file_counter,
@@ -6929,7 +6992,7 @@ sub snpeff {
                       . $contig
                       . $vcfparser_analysis_type
                       . $outfile_suffix,
-                    stderrfile_path => $xargs_file_name . "."
+                    stderrfile_path => $xargs_file_path_prefix . "."
                       . $contig
                       . ".stderr.txt ",
                     append_stderr_info => 1,
@@ -6943,13 +7006,12 @@ sub snpeff {
 
             ## Copies file from temporary directory. Per contig
             say $FILEHANDLE "## Copy file from temporary directory";
-            ( $xargs_file_counter, $xargs_file_name ) =
-              xargs_migrate_contig_files(
+            ($xargs_file_counter) = xargs_migrate_contig_files(
                 {
                     FILEHANDLE        => $FILEHANDLE,
                     XARGSFILEHANDLE   => $XARGSFILEHANDLE,
                     contigs_ref       => $vcfparser_contigs_ref,
-                    file_name         => $file_name,
+                    file_path         => $file_path,
                     program_info_path => $program_info_path,
                     core_number => $active_parameter_href->{max_cores_per_node},
                     xargs_file_counter => $xargs_file_counter,
@@ -6959,7 +7021,7 @@ sub snpeff {
                     outdirectory   => $outfamily_directory,
                     temp_directory => $$temp_directory_ref,
                 }
-              );
+            );
         }
         else {
 
@@ -7011,7 +7073,7 @@ sub snpeff {
                     family_id        => $$family_id_ref,
                     path             => $job_id_chain,
                     log              => $log,
-                    sbatch_file_name => $file_name,
+                    sbatch_file_name => $file_path,
                 }
             );
         }
@@ -7030,7 +7092,7 @@ sub annovar {
 
 ##Function : Annotate and filter SNVs by gene, region and databases.
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $annovar_table_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $annovar_table_href, $program_name, $program_info_path, $file_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -7040,7 +7102,7 @@ sub annovar {
 ##         : $annovar_table_href         => annovar_table_href {REF}
 ##         : $program_name               => Program name
 ##         : $program_info_path          => The program info path
-##         : $file_name                  => File name
+##         : $file_path                  => File path
 ##         : $FILEHANDLE                 => Sbatch filehandle to write to
 ##         : $family_id_ref              => Family id {REF}
 ##         : $temp_directory_ref         => Temporary directory {REF}
@@ -7067,7 +7129,7 @@ sub annovar {
     my $annovar_table_href;
     my $program_name;
     my $program_info_path;
-    my $file_name;
+    my $file_path;
     my $FILEHANDLE;
 
     my $tmpl = {
@@ -7127,7 +7189,7 @@ sub annovar {
             store       => \$program_name
         },
         program_info_path => { strict_type => 1, store => \$program_info_path },
-        file_name         => { strict_type => 1, store => \$file_name },
+        file_path         => { strict_type => 1, store => \$file_path },
         FILEHANDLE    => { store => \$FILEHANDLE },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
@@ -7148,7 +7210,7 @@ sub annovar {
           { default => "BOTH", strict_type => 1, store => \$call_type },
         xargs_file_counter => {
             default     => 0,
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
             store       => \$xargs_file_counter
         },
@@ -7157,13 +7219,15 @@ sub annovar {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Gnu::Coreutils qw(gnu_mv);
+    use MIP::IO::Files qw{ xargs_migrate_contig_files };
+    use MIP::Recipes::Xargs qw{ xargs_command };
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
     my $time            = 20;
-    my $xargs_file_name;
+    my $xargs_file_path_prefix;
 
     ## Set the number of cores to allocate per sbatch job.
     my $core_number = $active_parameter_href->{max_cores_per_node};
@@ -7175,7 +7239,7 @@ sub annovar {
         use MIP::Script::Setup_script qw(setup_script);
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = setup_script(
+        ( $file_path, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -7228,13 +7292,12 @@ sub annovar {
 
             ## Copy file(s) to temporary directory
             say $FILEHANDLE "## Copy file(s) to temporary directory";
-            ( $xargs_file_counter, $xargs_file_name ) =
-              xargs_migrate_contig_files(
+            ($xargs_file_counter) = xargs_migrate_contig_files(
                 {
                     FILEHANDLE         => $FILEHANDLE,
                     XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                     contigs_ref        => $vcfparser_contigs_ref,
-                    file_name          => $file_name,
+                    file_path          => $file_path,
                     program_info_path  => $program_info_path,
                     core_number        => $core_number,
                     xargs_file_counter => $xargs_file_counter,
@@ -7243,18 +7306,18 @@ sub annovar {
                     indirectory => $infamily_directory,
                     temp_directory => $$temp_directory_ref,
                 }
-              );
+            );
         }
 
         ## annovar
         say $FILEHANDLE "## annovar";
 
         ## Create file commands for xargs
-        ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+        ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
                 FILEHANDLE         => $FILEHANDLE,
                 XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                file_name          => $file_name,
+                file_path          => $file_path,
                 program_info_path  => $program_info_path,
                 core_number        => $core_number,
                 xargs_file_counter => $xargs_file_counter,
@@ -7406,7 +7469,7 @@ sub annovar {
                 }
             }
             print $XARGSFILEHANDLE "2> "
-              . $xargs_file_name . "."
+              . $xargs_file_path_prefix . "."
               . $contig
               . ".stderr.txt "
               ;    #Redirect xargs output to program specific stderr file
@@ -7441,13 +7504,12 @@ sub annovar {
 
             ## Copies file from temporary directory.
             say $FILEHANDLE "## Copy file from temporary directory";
-            ( $xargs_file_counter, $xargs_file_name ) =
-              xargs_migrate_contig_files(
+            ($xargs_file_counter) = xargs_migrate_contig_files(
                 {
                     FILEHANDLE         => $FILEHANDLE,
                     XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                     contigs_ref        => $vcfparser_contigs_ref,
-                    file_name          => $file_name,
+                    file_path          => $file_path,
                     program_info_path  => $program_info_path,
                     core_number        => $core_number,
                     xargs_file_counter => $xargs_file_counter,
@@ -7456,7 +7518,7 @@ sub annovar {
                     outdirectory => $outfamily_directory,
                     temp_directory => $$temp_directory_ref,
                 }
-              );
+            );
         }
 
         ## Adds the most complete vcf file to sample_info
@@ -7492,7 +7554,7 @@ sub annovar {
                     family_id => $$family_id_ref,
                     path => $parameter_href->{ "p" . $program_name }{chain},
                     log  => $log,
-                    sbatch_file_name => $file_name,
+                    sbatch_file_name => $file_path,
                 }
             );
         }
@@ -7511,7 +7573,7 @@ sub mvcfparser {
 
 ##Function : Vcfparser performs parsing of varianteffectpredictor annotated variants
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -7520,7 +7582,7 @@ sub mvcfparser {
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $program_name               => Program name
 ##         : $program_info_path          => The program info path
-##         : $file_name                  => File name
+##         : $file_path                  => File path
 ##         : $FILEHANDLE                 => Sbatch filehandle to write to
 ##         : $family_id_ref              => Family id {REF}
 ##         : $temp_directory_ref         => Temporary directory {REF}
@@ -7546,7 +7608,7 @@ sub mvcfparser {
     my $job_id_href;
     my $program_info_path;
     my $program_name;
-    my $file_name;
+    my $file_path;
     my $FILEHANDLE;
 
     my $tmpl = {
@@ -7599,7 +7661,7 @@ sub mvcfparser {
             store       => \$program_name
         },
         program_info_path => { strict_type => 1, store => \$program_info_path },
-        file_name         => { strict_type => 1, store => \$file_name },
+        file_path         => { strict_type => 1, store => \$file_path },
         FILEHANDLE    => { store => \$FILEHANDLE },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
@@ -7620,7 +7682,7 @@ sub mvcfparser {
           { default => "BOTH", strict_type => 1, store => \$call_type },
         xargs_file_counter => {
             default     => 0,
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
             store       => \$xargs_file_counter
         },
@@ -7629,16 +7691,17 @@ sub mvcfparser {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw(get_core_number);
-    use MIP::IO::Files qw(migrate_file);
+    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
+    use MIP::Recipes::Xargs qw{ xargs_command };
     use Program::Variantcalling::Mip qw(vcfparser);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
-    my $xargs_file_name;
+    my $xargs_file_path_prefix;
     my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
 
     ## Get core number depending on user supplied input exists or not and max number of cores
@@ -7661,7 +7724,7 @@ sub mvcfparser {
         use MIP::Script::Setup_script qw(setup_script);
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = setup_script(
+        ( $file_path, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -7719,12 +7782,12 @@ sub mvcfparser {
 
         ## Copy file(s) to temporary directory
         say $FILEHANDLE "## Copy file(s) to temporary directory";
-        ( $xargs_file_counter, $xargs_file_name ) = xargs_migrate_contig_files(
+        ($xargs_file_counter) = xargs_migrate_contig_files(
             {
                 FILEHANDLE      => $FILEHANDLE,
                 XARGSFILEHANDLE => $XARGSFILEHANDLE,
                 contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
-                file_name   => $file_name,
+                file_path   => $file_path,
                 program_info_path  => $program_info_path,
                 core_number        => $core_number,
                 xargs_file_counter => $xargs_file_counter,
@@ -7739,11 +7802,11 @@ sub mvcfparser {
     say $FILEHANDLE "## vcfparser";
 
     ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             FILEHANDLE         => $FILEHANDLE,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_name          => $file_name,
+            file_path          => $file_path,
             program_info_path  => $program_info_path,
             core_number        => $core_number,
             xargs_file_counter => $xargs_file_counter,
@@ -7823,7 +7886,7 @@ sub mvcfparser {
                 outfile_path => $outfile_path_prefix . "_"
                   . $contig
                   . $infile_suffix,
-                stderrfile_path => $xargs_file_name . "."
+                stderrfile_path => $xargs_file_path_prefix . "."
                   . $contig
                   . ".stderr.txt ",
                 range_feature_file_path =>
@@ -7919,13 +7982,12 @@ sub mvcfparser {
 
             ## Copies file from temporary directory.
             say $FILEHANDLE "## Copy file(s) from temporary directory";
-            ( $xargs_file_counter, $xargs_file_name ) =
-              xargs_migrate_contig_files(
+            ($xargs_file_counter) = xargs_migrate_contig_files(
                 {
                     FILEHANDLE         => $FILEHANDLE,
                     XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                     contigs_ref        => @vcfparser_contigs_ref,
-                    file_name          => $file_name,
+                    file_path          => $file_path,
                     program_info_path  => $program_info_path,
                     core_number        => $core_number,
                     xargs_file_counter => $xargs_file_counter,
@@ -7935,7 +7997,7 @@ sub mvcfparser {
                     outdirectory   => $outfamily_directory,
                     temp_directory => $$temp_directory_ref,
                 }
-              );
+            );
         }
         close($FILEHANDLE);
     }
@@ -7953,476 +8015,10 @@ sub mvcfparser {
                     family_id        => $$family_id_ref,
                     path             => $job_id_chain,
                     log              => $log,
-                    sbatch_file_name => $file_name,
+                    sbatch_file_name => $file_path,
                 }
             );
         }
-    }
-    if ($$reduce_io_ref) {
-
-        return
-          $xargs_file_counter
-          ; #Track the number of created xargs scripts per module for Block algorithm
-    }
-}
-
-sub varianteffectpredictor {
-
-##varianteffectpredictor
-
-##Function : varianteffectpredictor performs annotation of variants.
-##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_name, $stderr_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $program_name               => Program name
-##         : $program_info_path          => The program info path
-##         : $file_name                  => File name
-##         : $stderr_path                => The stderr path of the block script
-##         : $FILEHANDLE                 => Sbatch filehandle to write to
-##         : $family_id_ref              => Family id {REF}
-##         : $temp_directory_ref         => Temporary directory {REF}
-##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => The variant call type
-##         : $xargs_file_counter         => The xargs file counter
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-    my $outaligner_dir_ref;
-    my $call_type;
-    my $xargs_file_counter;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $program_name;
-    my $program_info_path;
-    my $file_name;
-    my $stderr_path;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name
-        },
-        program_info_path => { strict_type => 1, store => \$program_info_path },
-        file_name         => { strict_type => 1, store => \$file_name },
-        stderr_path       => { strict_type => 1, store => \$stderr_path },
-        FILEHANDLE    => { store => \$FILEHANDLE },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref
-        },
-        outaligner_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir_ref
-        },
-        call_type =>
-          { default => "BOTH", strict_type => 1, store => \$call_type },
-        xargs_file_counter => {
-            default     => 0,
-            allow       => qr/^\d+$/,
-            strict_type => 1,
-            store       => \$xargs_file_counter
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Cluster qw(get_core_number);
-    use MIP::IO::Files qw(migrate_file);
-    use MIP::Set::File qw{set_file_suffix};
-    use MIP::Get::File qw{get_file_suffix};
-    use Program::Variantcalling::Vep qw(variant_effect_predictor);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_sample_id_dependency_add_to_family);
-
-    my $reduce_io_ref = \$active_parameter_href->{reduce_io};
-    my $xargs_file_name;
-    my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
-
-    ## Filehandles
-    my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    unless ( defined($FILEHANDLE) ) {           #Run as individual sbatch script
-
-        $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
-    }
-
-    ## Get core number depending on user supplied input exists or not and max number of cores
-    my $core_number = get_core_number(
-        {
-            module_core_number => $active_parameter_href->{module_core_number}
-              { "p" . $program_name },
-            modifier_core_number => scalar( @{ $file_info_href->{contigs} } ),
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-        }
-    );
-
-    my $fork_number = 4;    #Varianteffectpredictor forks
-    $core_number =
-      floor( $core_number / $fork_number );    #Adjust for the number of forks
-
-    if ( !$$reduce_io_ref ) {                  #Run as individual sbatch script
-
-        use MIP::Script::Setup_script qw(setup_script);
-
-        ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = setup_script(
-            {
-                active_parameter_href => $active_parameter_href,
-                job_id_href           => $job_id_href,
-                FILEHANDLE            => $FILEHANDLE,
-                directory_id          => $$family_id_ref,
-                program_name          => $program_name,
-                program_directory     => catfile( lc($$outaligner_dir_ref) ),
-                call_type             => $call_type,
-                core_number           => $core_number,
-                process_time =>
-                  $active_parameter_href->{module_time}{ "p" . $program_name },
-                temp_directory => $$temp_directory_ref
-            }
-        );
-        $stderr_path = $program_info_path . ".stderr.txt";
-    }
-
-    # Split to enable submission to &sample_info_qc later
-    my ( $volume, $directory, $stderr_file ) =
-      File::Spec->splitpath($stderr_path);
-
-    ## Assign directories
-    my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $$family_id_ref, $$outaligner_dir_ref );
-    my $outfamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $$family_id_ref, $$outaligner_dir_ref );
-    $parameter_href->{ "p" . $program_name }{indirectory} =
-      $outfamily_directory;    #Used downstream
-
-    ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{pvt}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$$family_id_ref}{ "p" . $program_name }{file_tag};
-    my $infile_prefix       = $$family_id_ref . $infile_tag . $call_type;
-    my $file_path_prefix    = catfile( $$temp_directory_ref, $infile_prefix );
-    my $outfile_prefix      = $$family_id_ref . $outfile_tag . $call_type;
-    my $outfile_path_prefix = catfile( $$temp_directory_ref, $outfile_prefix );
-
-    ### Assign suffix
-    ## Return the current infile vcf compression suffix for this jobid chain
-    my $infile_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => "variant_file_suffix",
-            jobid_chain    => $job_id_chain,
-        }
-    );
-    my $outfile_suffix = set_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => "variant_file_suffix",
-            job_id_chain   => $job_id_chain,
-            file_suffix =>
-              $parameter_href->{ "p" . $program_name }{outfile_suffix},
-        }
-    );
-
-    if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
-
-        ## Copy file(s) to temporary directory
-        say $FILEHANDLE "## Copy file(s) to temporary directory";
-        ( $xargs_file_counter, $xargs_file_name ) = xargs_migrate_contig_files(
-            {
-                FILEHANDLE      => $FILEHANDLE,
-                XARGSFILEHANDLE => $XARGSFILEHANDLE,
-                contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
-                file_name   => $file_name,
-                program_info_path  => $program_info_path,
-                core_number        => $core_number,
-                xargs_file_counter => $xargs_file_counter,
-                infile             => $infile_prefix,
-                indirectory        => $infamily_directory,
-                temp_directory     => $$temp_directory_ref,
-            }
-        );
-    }
-
-    ## varianteffectpredictor
-    say $FILEHANDLE "## Varianteffectpredictor";
-
-    my $assembly_version = $file_info_href->{human_genome_reference_source}
-      . $file_info_href->{human_genome_reference_version};
-
-    ## Alias genome source and version to be compatible with VEP
-    alias_assembly_version( { assembly_version_ref => \$assembly_version } );
-
-    ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
-        {
-            FILEHANDLE         => $FILEHANDLE,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_name          => $file_name,
-            program_info_path  => $program_info_path,
-            core_number        => $core_number,
-            xargs_file_counter => $xargs_file_counter,
-        }
-    );
-
-    foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
-
-        ## Get parameters
-        ## VEP plugins
-        my @plugins;
-        foreach my $plugin ( @{ $active_parameter_href->{vep_plugins} } ) {
-
-            if ( $plugin eq "LoF" ) {
-
-                push(
-                    @plugins,
-                    $plugin
-                      . ",human_ancestor_fa:"
-                      . catfile(
-                        $active_parameter_href->{vep_directory_cache},
-                        "human_ancestor.fa,filter_position:0.05"
-                      )
-                );
-            }
-            elsif ( $plugin eq "UpDownDistance" )
-            {    #Special case for mitochondrial contig annotation
-
-                if ( $contig =~ /MT|M/ ) {
-
-                    push( @plugins, "UpDownDistance,10,10" );
-                }
-            }
-            else {
-
-                push( @plugins, $plugin );
-            }
-        }
-
-        ## VEPFeatures
-        my @vep_features_ref;
-        foreach my $vep_feature ( @{ $active_parameter_href->{vep_features} } )
-        {
-
-            push( @vep_features_ref, $vep_feature )
-              ;    #Add VEP features to the output.
-
-            if ( ( $contig =~ /MT|M/ ) && ( $vep_feature eq "refseq" ) )
-            {      #Special case for mitochondrial contig annotation
-
-                push( @vep_features_ref, "all_refseq" );
-            }
-        }
-
-        variant_effect_predictor(
-            {
-                regions_ref      => [$contig],
-                plugins_ref      => \@plugins,
-                vep_features_ref => \@vep_features_ref,
-                script_path      => catfile(
-                    $active_parameter_href->{vep_directory_path},
-                    "variant_effect_predictor.pl"
-                ),
-                assembly => $assembly_version,
-                cache_directory =>
-                  $active_parameter_href->{vep_directory_cache},
-                reference_path =>
-                  $active_parameter_href->{human_genome_reference},
-                infile_format  => substr( $outfile_suffix, 1 ),
-                outfile_format => substr( $outfile_suffix, 1 ),
-                fork           => $fork_number,
-                buffer_size    => 20000,
-                infile_path    => $file_path_prefix . "_"
-                  . $contig
-                  . $infile_suffix,
-                outfile_path => $outfile_path_prefix . "_"
-                  . $contig
-                  . $infile_suffix,
-                stderrfile_path => $xargs_file_name . "."
-                  . $contig
-                  . ".stderr.txt",
-                stdoutfile_path => $xargs_file_name . "."
-                  . $contig
-                  . ".stdout.txt",
-                FILEHANDLE => $XARGSFILEHANDLE,
-            }
-        );
-        print $XARGSFILEHANDLE "\n";
-    }
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        ## Collect QC metadata info for later use
-        my $qc_vep_summary_outfile =
-            $outfile_prefix . q{_}
-          . $file_info_href->{contigs_size_ordered}[0]
-          . $infile_suffix
-          . q{_summary.html};
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                program_name     => $program_name . q{summary},
-                outdirectory     => $outfamily_directory,
-                outfile          => $qc_vep_summary_outfile,
-            }
-        );
-        ## Collect QC metadata info for later use
-        my $qc_vep_outfile =
-            $outfile_prefix . q{_}
-          . $file_info_href->{contigs_size_ordered}[0]
-          . $infile_suffix;
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                program_name     => $program_name,
-                outdirectory     => $outfamily_directory,
-                outfile          => $qc_vep_outfile,
-            }
-        );
-    }
-
-    ## QC Data File(s)
-    migrate_file(
-        {
-            infile_path => $outfile_path_prefix . q{_*}
-              . $infile_suffix . q{_s*},
-            outfile_path => $outfamily_directory,
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE q{wait}, "\n";
-
-    close($XARGSFILEHANDLE);
-
-    if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
-
-        ## Copies file from temporary directory.
-        say $FILEHANDLE "## Copy file from temporary directory";
-        migrate_file(
-            {
-                infile_path => $outfile_path_prefix . q{_*}
-                  . $infile_suffix . q{*},
-                outfile_path => $outfamily_directory,
-                FILEHANDLE   => $FILEHANDLE,
-            }
-        );
-        say $FILEHANDLE q{wait}, "\n";
-
-        close($FILEHANDLE);
-    }
-    else {    #Move file for downstream collection of VEP version
-
-        ## Copies file from temporary directory.
-        say $FILEHANDLE "## Copy file from temporary directory";
-        migrate_file(
-            {
-                infile_path => $outfile_path_prefix . q{_}
-                  . $file_info_href->{contigs_size_ordered}[0]
-                  . $infile_suffix,
-                outfile_path => $outfamily_directory,
-                FILEHANDLE   => $FILEHANDLE,
-            }
-        );
-        say $FILEHANDLE q{wait}, "\n";
-    }
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
-
-            slurm_submit_job_sample_id_dependency_add_to_family(
-                {
-                    job_id_href             => $job_id_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    sample_ids_ref =>
-                      \@{ $active_parameter_href->{sample_ids} },
-                    family_id        => $$family_id_ref,
-                    path             => $job_id_chain,
-                    log              => $log,
-                    sbatch_file_name => $file_name,
-                }
-            );
-        }
-        if ($$reduce_io_ref)
-        { #Redirect qccollect search to Block File, since VEP will write stderr there
-
-            $program_name = "variantannotationblock";
-        }
-
-        ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                program_name     => $program_name,
-                outdirectory     => $directory,
-                outfile          => $stderr_file,
-            }
-        );
     }
     if ($$reduce_io_ref) {
 
@@ -8473,7 +8069,7 @@ sub gatk_readbackedphasing {
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = setup_script(
+    my ($file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -8640,7 +8236,7 @@ sub gatk_readbackedphasing {
                 family_id      => $active_parameter_href->{family_id},
                 path => $parameter_href->{ "p" . $program_name }{chain},
                 log  => $log,
-                sbatch_file_name => $file_name,
+                sbatch_file_name => $file_path,
             }
         );
     }
@@ -8684,7 +8280,7 @@ sub gatk_phasebytransmission {
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = setup_script(
+    my ($file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -8809,7 +8405,7 @@ sub gatk_phasebytransmission {
                 family_id      => $active_parameter_href->{family_id},
                 path => $parameter_href->{ "p" . $program_name }{chain},
                 log  => $log,
-                sbatch_file_name => $file_name,
+                sbatch_file_name => $file_path,
             }
         );
     }
@@ -8935,7 +8531,7 @@ sub mpeddy {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = setup_script(
+    my ( $file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -9077,7 +8673,7 @@ sub mpeddy {
                 family_id        => $$family_id_ref,
                 path             => $job_id_chain,
                 log              => $log,
-                sbatch_file_name => $file_name,
+                sbatch_file_name => $file_path,
             }
         );
     }
@@ -9206,7 +8802,7 @@ sub mplink {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = setup_script(
+    my ( $file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -9522,7 +9118,7 @@ sub mplink {
                 family_id        => $$family_id_ref,
                 path             => $job_id_chain,
                 log              => $log,
-                sbatch_file_name => $file_name,
+                sbatch_file_name => $file_path,
             }
         );
     }
@@ -9637,7 +9233,7 @@ sub variant_integrity {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Get::File qw{get_file_suffix};
     use MIP::IO::Files qw(migrate_file);
-    use Program::Variantcalling::Variant_integrity qw(mendel father);
+    use MIP::Program::Variantcalling::Variant_integrity qw(variant_integrity_mendel variant_integrity_father);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_family_dead_end);
@@ -9648,7 +9244,7 @@ sub variant_integrity {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = setup_script(
+    my ( $file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -9733,7 +9329,7 @@ sub variant_integrity {
 
         if ( $parameter_href->{dynamic_parameter}{trio} ) {
 
-            mendel(
+            variant_integrity_mendel(
                 {
                     infile_path  => $file_path_prefix . $infile_suffix,
                     outfile_path => catfile(
@@ -9768,7 +9364,7 @@ sub variant_integrity {
 
             if ( $father_info ne 0 ) {    #Father is included in analysis
 
-                father(
+                variant_integrity_father(
                     {
                         infile_path  => $file_path_prefix . $infile_suffix,
                         outfile_path => catfile(
@@ -9811,7 +9407,7 @@ sub variant_integrity {
                 family_id        => $$family_id_ref,
                 path             => $job_id_chain,
                 log              => $log,
-                sbatch_file_name => $file_name,
+                sbatch_file_name => $file_path,
             }
         );
     }
@@ -9823,7 +9419,7 @@ sub vt {
 
 ##Function : Split multi allelic records into single records and normalize
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_name, $stderr_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_path, $stderr_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -9832,7 +9428,7 @@ sub vt {
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $program_name               => Program name
 ##         : $program_info_path          => The program info path
-##         : $file_name                  => File name
+##         : $file_path                  => File path
 ##         : $stderr_path                => The stderr path of the block script
 ##         : $FILEHANDLE                 => Filehandle to write to
 ##         : $family_id_ref              => Family id {REF}
@@ -9859,7 +9455,7 @@ sub vt {
     my $job_id_href;
     my $program_name;
     my $program_info_path;
-    my $file_name;
+    my $file_path;
     my $stderr_path;
     my $FILEHANDLE;
 
@@ -9913,7 +9509,7 @@ sub vt {
             store       => \$program_name
         },
         program_info_path => { strict_type => 1, store => \$program_info_path },
-        file_name         => { strict_type => 1, store => \$file_name },
+        file_path         => { strict_type => 1, store => \$file_path },
         stderr_path       => { strict_type => 1, store => \$stderr_path },
         FILEHANDLE    => { store => \$FILEHANDLE },
         family_id_ref => {
@@ -9935,7 +9531,7 @@ sub vt {
           { default => "BOTH", strict_type => 1, store => \$call_type },
         xargs_file_counter => {
             default     => 0,
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
             store       => \$xargs_file_counter
         },
@@ -9947,6 +9543,7 @@ sub vt {
     use MIP::Cluster qw(get_core_number);
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
+    use MIP::Recipes::Xargs qw{ xargs_command };
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use Program::Variantcalling::Genmod qw(annotate filter);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
@@ -9957,7 +9554,7 @@ sub vt {
     Readonly my $DOT => q{.};
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
-    my $xargs_file_name;
+    my $xargs_file_path_prefix;
     my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
 
     ## Filehandles
@@ -9983,7 +9580,7 @@ sub vt {
         use MIP::Script::Setup_script qw(setup_script);
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = setup_script(
+        ( $file_path, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -10044,12 +9641,12 @@ sub vt {
 
         ## Copy file(s) to temporary directory
         say $FILEHANDLE "## Copy file(s) to temporary directory";
-        ( $xargs_file_counter, $xargs_file_name ) = xargs_migrate_contig_files(
+        ($xargs_file_counter) = xargs_migrate_contig_files(
             {
                 FILEHANDLE      => $FILEHANDLE,
                 XARGSFILEHANDLE => $XARGSFILEHANDLE,
                 contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
-                file_name   => $file_name,
+                file_path   => $file_path,
                 program_info_path  => $program_info_path,
                 core_number        => $core_number,
                 xargs_file_counter => $xargs_file_counter,
@@ -10064,11 +9661,11 @@ sub vt {
 "## vt - Decompose (split multi allelic records into single records) and/or normalize variants";
 
     ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             FILEHANDLE         => $FILEHANDLE,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_name          => $file_name,
+            file_path          => $file_path,
             program_info_path  => $program_info_path,
             core_number        => $core_number,
             xargs_file_counter => $xargs_file_counter,
@@ -10098,14 +9695,14 @@ sub vt {
                 outfile_path => $outfile_path_prefix . "_"
                   . $contig
                   . $outfile_suffix,
-                decompose       => $active_parameter_href->{vt_decompose},
-                normalize       => $active_parameter_href->{vt_normalize},
-                uniq            => $active_parameter_href->{vt_uniq},
-                gnu_sed         => 1,
-                instream        => 0,
-                cmd_break       => ";",
-                xargs_file_name => $xargs_file_name,
-                contig_ref      => \$contig,
+                decompose => $active_parameter_href->{vt_decompose},
+                normalize => $active_parameter_href->{vt_normalize},
+                uniq      => $active_parameter_href->{vt_uniq},
+                gnu_sed   => 1,
+                instream  => 0,
+                cmd_break => ";",
+                xargs_file_path_prefix => $xargs_file_path_prefix,
+                contig_ref             => \$contig,
             }
         );
 
@@ -10114,7 +9711,7 @@ sub vt {
         {
 
             my ( $volume, $directory, $stderr_file ) =
-              File::Spec->splitpath($xargs_file_name)
+              File::Spec->splitpath($xargs_file_path_prefix)
               ;    #Split to enable submission to &SampleInfoQC later
 
             ## Collect QC metadata info for later use
@@ -10146,7 +9743,7 @@ sub vt {
               . $alt_file_tag
               . $outfile_suffix . " ";
             print $XARGSFILEHANDLE "2>> "
-              . $xargs_file_name . "."
+              . $xargs_file_path_prefix . "."
               . $contig
               . ".stderr.txt "
               ;    #Redirect xargs output to program specific stderr file
@@ -10163,7 +9760,7 @@ sub vt {
                       . $alt_file_tag
                       . $outfile_suffix,
                     outfile_path => catfile( dirname( devnull() ), "stdout" ),
-                    stderrfile_path => $xargs_file_name . "."
+                    stderrfile_path => $xargs_file_path_prefix . "."
                       . $contig
                       . ".stderr.txt",
                     append_stderr_info  => 1,
@@ -10186,7 +9783,7 @@ sub vt {
                       . $contig
                       . $alt_file_tag
                       . $outfile_suffix,
-                    stderrfile_path => $xargs_file_name . "."
+                    stderrfile_path => $xargs_file_path_prefix . "."
                       . $contig
                       . ".stderr.txt",
                     append_stderr_info => 1,
@@ -10243,7 +9840,7 @@ sub vt {
                     family_id        => $$family_id_ref,
                     path             => $job_id_chain,
                     log              => $log,
-                    sbatch_file_name => $file_name,
+                    sbatch_file_name => $file_path,
                 }
             );
         }
@@ -10262,7 +9859,7 @@ sub rhocall {
 
 ##Function : Rhocall performs annotation of autozygosity regions
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_name, $stderr_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_path, $stderr_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -10271,7 +9868,7 @@ sub rhocall {
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $program_name               => Program name
 ##         : $program_info_path          => The program info path
-##         : $file_name                  => File name
+##         : $file_path                  => File path
 ##         : $stderr_path                => The stderr path of the block script
 ##         : $FILEHANDLE                 => Filehandle to write to
 ##         : $family_id_ref              => Family id {REF}
@@ -10298,7 +9895,7 @@ sub rhocall {
     my $job_id_href;
     my $program_name;
     my $program_info_path;
-    my $file_name;
+    my $file_path;
     my $stderr_path;
     my $FILEHANDLE;
 
@@ -10352,7 +9949,7 @@ sub rhocall {
             store       => \$program_name
         },
         program_info_path => { strict_type => 1, store => \$program_info_path },
-        file_name         => { strict_type => 1, store => \$file_name },
+        file_path         => { strict_type => 1, store => \$file_path },
         stderr_path       => { strict_type => 1, store => \$stderr_path },
         FILEHANDLE    => { store => \$FILEHANDLE },
         family_id_ref => {
@@ -10374,7 +9971,7 @@ sub rhocall {
           { default => "BOTH", strict_type => 1, store => \$call_type },
         xargs_file_counter => {
             default     => 0,
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
             store       => \$xargs_file_counter
         },
@@ -10383,16 +9980,17 @@ sub rhocall {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw(get_core_number);
-    use MIP::IO::Files qw(migrate_file);
+    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
+    use MIP::Recipes::Xargs qw{ xargs_command };
     use Program::Variantcalling::Bcftools qw(roh);
     use Program::Variantcalling::Rhocall qw(aggregate annotate);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
-    my $xargs_file_name;
+    my $xargs_file_path_prefix;
     my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
 
     ## Filehandles
@@ -10417,7 +10015,7 @@ sub rhocall {
 
         use MIP::Script::Setup_script qw(setup_script);
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = setup_script(
+        ( $file_path, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -10480,12 +10078,12 @@ sub rhocall {
 
         ## Copy file(s) to temporary directory
         say $FILEHANDLE "## Copy file(s) to temporary directory";
-        ( $xargs_file_counter, $xargs_file_name ) = xargs_migrate_contig_files(
+        ($xargs_file_counter) = xargs_migrate_contig_files(
             {
                 FILEHANDLE      => $FILEHANDLE,
                 XARGSFILEHANDLE => $XARGSFILEHANDLE,
                 contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
-                file_name   => $file_name,
+                file_path   => $file_path,
                 program_info_path  => $program_info_path,
                 core_number        => $core_number,
                 xargs_file_counter => $xargs_file_counter,
@@ -10498,11 +10096,11 @@ sub rhocall {
 
     say $FILEHANDLE "## bcftools rho calculation";
     ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             FILEHANDLE         => $FILEHANDLE,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_name          => $file_name,
+            file_path          => $file_path,
             program_info_path  => $program_info_path,
             core_number        => $core_number,
             xargs_file_counter => $xargs_file_counter,
@@ -10587,7 +10185,7 @@ sub rhocall {
                     family_id        => $$family_id_ref,
                     path             => $job_id_chain,
                     log              => $log,
-                    sbatch_file_name => $file_name,
+                    sbatch_file_name => $file_path,
                 }
             );
         }
@@ -10606,7 +10204,7 @@ sub prepareforvariantannotationblock {
 
 ##Function : Copy files for variantannotationblock to enable restart and skip of modules within block
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_name, $stderr_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_path, $stderr_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -10615,7 +10213,7 @@ sub prepareforvariantannotationblock {
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $program_name               => Program name
 ##         : $program_info_path          => The program info path
-##         : $file_name                  => File name
+##         : $file_path                  => File path
 ##         : $stderr_path                => The stderr path of the block script
 ##         : $FILEHANDLE                 => Filehandle to write to
 ##         : $family_id_ref              => Family id {REF}
@@ -10642,7 +10240,7 @@ sub prepareforvariantannotationblock {
     my $job_id_href;
     my $program_name;
     my $program_info_path;
-    my $file_name;
+    my $file_path;
     my $stderr_path;
     my $FILEHANDLE;
 
@@ -10696,7 +10294,7 @@ sub prepareforvariantannotationblock {
             store       => \$program_name
         },
         program_info_path => { strict_type => 1, store => \$program_info_path },
-        file_name         => { strict_type => 1, store => \$file_name },
+        file_path         => { strict_type => 1, store => \$file_path },
         stderr_path       => { strict_type => 1, store => \$stderr_path },
         FILEHANDLE    => { store => \$FILEHANDLE },
         family_id_ref => {
@@ -10718,7 +10316,7 @@ sub prepareforvariantannotationblock {
           { default => "BOTH", strict_type => 1, store => \$call_type },
         xargs_file_counter => {
             default     => 0,
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
             store       => \$xargs_file_counter
         },
@@ -10730,12 +10328,13 @@ sub prepareforvariantannotationblock {
     use MIP::IO::Files qw(migrate_files);
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
+    use MIP::Recipes::Xargs qw{ xargs_command };
     use Program::Htslib qw(bgzip tabix);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
-    my $xargs_file_name;
+    my $xargs_file_path_prefix;
     my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
 
     ## Filehandles
@@ -10761,7 +10360,7 @@ sub prepareforvariantannotationblock {
         use MIP::Script::Setup_script qw(setup_script);
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = setup_script(
+        ( $file_path, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -10851,11 +10450,11 @@ sub prepareforvariantannotationblock {
     say $FILEHANDLE "\n";
 
     ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             FILEHANDLE         => $FILEHANDLE,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_name          => $file_name,
+            file_path          => $file_path,
             core_number        => $core_number,
             xargs_file_counter => $xargs_file_counter,
         }
@@ -10929,7 +10528,7 @@ sub prepareforvariantannotationblock {
                     family_id        => $$family_id_ref,
                     path             => $job_id_chain,
                     log              => $log,
-                    sbatch_file_name => $file_name,
+                    sbatch_file_name => $file_path,
                 }
             );
         }
@@ -11066,7 +10665,7 @@ sub gatk_combinevariantcallsets {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = setup_script(
+    my ($file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -11263,7 +10862,7 @@ sub gatk_combinevariantcallsets {
                 family_id           => $$family_id_ref,
                 path                => $job_id_chain,
                 log                 => $log,
-                sbatch_file_name    => $file_name,
+                sbatch_file_name    => $file_path,
             }
         );
     }
@@ -11379,6 +10978,7 @@ sub gatk_variantrecalibration {
     use MIP::IO::Files qw(migrate_file);
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
+    use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use MIP::Language::Java qw{java_core};
     use Program::Variantcalling::Bcftools qw(norm);
@@ -11439,7 +11039,7 @@ sub gatk_variantrecalibration {
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = setup_script(
+    my ( $file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -11564,10 +11164,10 @@ sub gatk_variantrecalibration {
 
             ### Special case: Not to be used with hybrid capture. NOTE: Disable when analysing wes + wgs in the same run
             ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-            @annotations = remove_element(
+            @annotations = delete_contig_elements(
                 {
                     elements_ref       => \@annotations,
-                    remove_contigs_ref => ["DP"],
+                    remove_contigs_ref => [qw{ DP }],
                 }
             );
         }
@@ -11977,7 +11577,7 @@ sub gatk_variantrecalibration {
                 family_id        => $$family_id_ref,
                 path             => $job_id_chain,
                 log              => $log,
-                sbatch_file_name => $file_name,
+                sbatch_file_name => $file_path,
             }
         );
     }
@@ -12141,7 +11741,7 @@ sub gatk_concatenate_genotypegvcfs {
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = setup_script(
+    my ($file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -12310,7 +11910,7 @@ sub gatk_concatenate_genotypegvcfs {
                 family_id        => $$family_id_ref,
                 path             => $job_id_chain,
                 log              => $log,
-                sbatch_file_name => $file_name,
+                sbatch_file_name => $file_path,
             }
         );
     }
@@ -12504,7 +12104,7 @@ sub gatk_genotypegvcfs {
           catfile( $$temp_directory_ref, $outfile_prefix );
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        my ($file_name) = setup_script(
+        my ($file_path) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -12643,7 +12243,7 @@ sub gatk_genotypegvcfs {
                     family_id             => $$family_id_ref,
                     path                  => $job_id_chain,
                     log                   => $log,
-                    sbatch_file_name      => $file_name,
+                    sbatch_file_name      => $file_path,
                     sbatch_script_tracker => $sbatch_script_tracker
                 }
             );
@@ -12794,7 +12394,7 @@ sub rcoverageplots {
       $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = setup_script(
+    my ($file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -12827,7 +12427,7 @@ sub rcoverageplots {
                 family_id               => $active_parameter_href->{family_id},
                 sample_id               => $$sample_id_ref,
                 path                    => $job_id_chain,
-                sbatch_file_name        => $file_name,
+                sbatch_file_name        => $file_path,
                 log                     => $log,
             }
         );
@@ -12990,7 +12590,7 @@ sub mbedtools_genomecov {
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = setup_script(
+    my ($file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -13058,7 +12658,7 @@ sub mbedtools_genomecov {
                 family_id               => $$family_id_ref,
                 sample_id               => $$sample_id_ref,
                 path                    => $job_id_chain,
-                sbatch_file_name        => $file_name,
+                sbatch_file_name        => $file_path,
                 log                     => $log,
             }
         );
@@ -13227,7 +12827,7 @@ sub picardtools_collecthsmetrics {
     my $padded_infile_list_ending_ref = \$file_info_href->{exome_target_bed}[1];
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = setup_script(
+    my ($file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -13334,7 +12934,7 @@ sub picardtools_collecthsmetrics {
                 family_id               => $$family_id_ref,
                 sample_id               => $$sample_id_ref,
                 path                    => $job_id_chain,
-                sbatch_file_name        => $file_name,
+                sbatch_file_name        => $file_path,
                 log                     => $log,
             }
         );
@@ -13502,7 +13102,7 @@ sub picardtools_collectmultiplemetrics {
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = setup_script(
+    my ($file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -13617,532 +13217,7 @@ sub picardtools_collectmultiplemetrics {
                 family_id               => $$family_id_ref,
                 sample_id               => $$sample_id_ref,
                 path                    => $job_id_chain,
-                sbatch_file_name        => $file_name,
-                log                     => $log,
-            }
-        );
-    }
-}
-
-sub chanjo_sexcheck {
-
-##chanjo_sexcheck
-
-##Function : Predict gender from BAM files.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $sample_id_ref              => Sample id {REF}
-##         : $program_name               => Program name
-##         : $family_id_ref              => Family id {REF}
-##         : $temp_directory_ref         => Temporary directory {REF}
-##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-    my $outaligner_dir_ref;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $sample_id_ref;
-    my $program_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        sample_id_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$sample_id_ref
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref
-        },
-        outaligner_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::Get::File qw{get_file_suffix};
-    use MIP::Program::Alignment::Chanjo qw(chanjo_sex);
-    use MIP::QC::Record
-      qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_sample_id_dependency_dead_end);
-
-    my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
-
-    ## Filehandles
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    ## Assign directories
-    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $$sample_id_ref, $$outaligner_dir_ref );
-    my $outsample_directory = catdir(
-        $active_parameter_href->{outdata_dir}, $$sample_id_ref,
-        $$outaligner_dir_ref,                  "coveragereport"
-    );
-
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};    #Alias
-
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$$sample_id_ref}{ "p" . $program_name }{file_tag};
-    my $infile_prefix  = $infile . $infile_tag;
-    my $outfile_prefix = $infile . $outfile_tag;
-
-    ## Assign suffix
-    my $infile_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => "alignment_file_suffix",
-            jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain}
-            ,    #Get infile_suffix from baserecalibration jobid chain
-        }
-    );
-    my $outfile_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => "outfile_suffix",
-            program_name   => "p" . $program_name,
-        }
-    );
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $$sample_id_ref,
-            program_name          => $program_name,
-            program_directory =>
-              catfile( lc($$outaligner_dir_ref), "coveragereport" ),
-            core_number => $active_parameter_href->{module_core_number}
-              { "p" . $program_name },
-            process_time =>
-              $active_parameter_href->{module_time}{ "p" . $program_name },
-        }
-    );
-
-    ## chanjo_sexcheck
-    say $FILEHANDLE "## Predicting sex from alignment";
-
-    ## Get parameters
-
-    my $chr_prefix;
-    if ( any { $_ eq "chrX" } @{ $file_info_href->{contigs_size_ordered} } )
-    {    #If element is part of array
-
-        $chr_prefix = "chr";
-    }
-    chanjo_sex(
-        {
-            infile_path =>
-              catfile( $insample_directory, $infile_prefix . $infile_suffix ),
-            outfile_path => catfile(
-                $outsample_directory, $outfile_prefix . $outfile_suffix
-            ),
-            log_level => $active_parameter_href->{chanjo_sexcheck_log_level},
-            log_file_path => catfile(
-                $outsample_directory, $infile_prefix . "_chanjo_sexcheck.log"
-            ),
-            chr_prefix => $chr_prefix,
-            FILEHANDLE => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE "\n";
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                sample_id        => $$sample_id_ref,
-                program_name     => q{chanjo_sexcheck},
-                infile           => $infile,
-                outdirectory     => $outsample_directory,
-                outfile          => $outfile_prefix . $outfile_suffix,
-            }
-        );
-        add_program_metafile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                sample_id        => $$sample_id_ref,
-                program_name     => q{chanjo_sexcheck},
-                infile           => $infile,
-                metafile_tag     => q{log},
-                directory        => $outsample_directory,
-                file             => $infile_prefix . q{_chanjo_sexcheck.log},
-            }
-        );
-    }
-    close($FILEHANDLE);
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        slurm_submit_job_sample_id_dependency_dead_end(
-            {
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                family_id               => $$family_id_ref,
-                sample_id               => $$sample_id_ref,
-                path                    => $job_id_chain,
-                sbatch_file_name        => $file_name,
-                log                     => $log,
-            }
-        );
-    }
-}
-
-sub msambamba_depth {
-
-##sambamba_depth
-
-##Function : Generate coverage bed outfile for each individual.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_prefix_href    => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $sample_id_ref              => Sample id {REF}
-##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $program_name               => Program name
-##         : $family_id_ref              => Family id {REF}
-##         : $temp_directory_ref         => Temporary directory {REF}
-##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-    my $outaligner_dir_ref;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $sample_id_ref;
-    my $program_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        sample_id_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$sample_id_ref
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref
-        },
-        outaligner_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::Get::File qw{get_file_suffix};
-    use MIP::IO::Files qw(migrate_file);
-    use MIP::Program::Alignment::Sambamba qw(sambamba_depth);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_sample_id_dependency_dead_end);
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
-
-    ## Filehandles
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    ## Assign directories
-    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $$sample_id_ref, $$outaligner_dir_ref );
-    my $outsample_directory = catdir(
-        $active_parameter_href->{outdata_dir}, $$sample_id_ref,
-        $$outaligner_dir_ref,                  "coveragereport"
-    );
-
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};    #Alias
-
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$$sample_id_ref}{ "p" . $program_name }{file_tag};
-    my $infile_prefix       = $infile . $infile_tag;
-    my $file_path_prefix    = catfile( $$temp_directory_ref, $infile_prefix );
-    my $outfile_prefix      = $infile . $outfile_tag;
-    my $outfile_path_prefix = catfile( $$temp_directory_ref, $outfile_prefix );
-
-    ## Assign suffix
-    my $infile_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => "alignment_file_suffix",
-            jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain}
-            ,    #Get infile_suffix from baserecalibration jobid chain
-        }
-    );
-    my $outfile_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => "outfile_suffix",
-            program_name   => "p" . $program_name,
-        }
-    );
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $$sample_id_ref,
-            program_name          => $program_name,
-            program_directory =>
-              catfile( lc($$outaligner_dir_ref), "coveragereport" ),
-            core_number => $active_parameter_href->{module_core_number}
-              { "p" . $program_name },
-            process_time =>
-              $active_parameter_href->{module_time}{ "p" . $program_name },
-            temp_directory => $$temp_directory_ref,
-        }
-    );
-
-    ## Copy file(s) to temporary directory
-    say $FILEHANDLE "## Copy file(s) to temporary directory";
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => catfile(
-                $insample_directory,
-                $infile_prefix . substr( $infile_suffix, 0, 2 ) . q{*}
-            ),    #q{.bam} -> ".b*" for getting index as well),
-            outfile_path => $$temp_directory_ref
-        }
-    );
-    say $FILEHANDLE q{wait}, "\n";
-
-    ## sambamba_depth
-    say $FILEHANDLE "## Annotating bed from alignment";
-
-    ## Get parameters
-    my $sambamba_filter = q?'mapping_quality >= ?
-      . $active_parameter_href->{sambamba_depth_mapping_quality} . q? ?;
-    if ( $active_parameter_href->{sambamba_depth_noduplicates} )
-    {    #Do not include duplicates in coverage calculation
-
-        $sambamba_filter .= "and not duplicate ";
-    }
-    if ( $active_parameter_href->{sambamba_depth_quality_control} )
-    {    #Do not include failed quality control reads in coverage calculation
-
-        $sambamba_filter .= "and not failed_quality_control";
-    }
-    $sambamba_filter .= q?'?;
-
-    sambamba_depth(
-        {
-            depth_cutoffs_ref =>
-              \@{ $active_parameter_href->{sambamba_depth_cutoffs} },
-            infile_path      => $file_path_prefix . $infile_suffix,
-            outfile_path     => $outfile_path_prefix . $outfile_suffix,
-            mode             => $active_parameter_href->{sambamba_depth_mode},
-            fix_mate_overlap => 1,
-            min_base_quality =>
-              $active_parameter_href->{sambamba_depth_base_quality},
-            filter     => $sambamba_filter,
-            region     => $active_parameter_href->{sambamba_depth_bed},
-            FILEHANDLE => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE "\n";
-
-    ## Copies file from temporary directory.
-    say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file(
-        {
-            infile_path  => $outfile_path_prefix . $outfile_suffix,
-            outfile_path => $outsample_directory,
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE q{wait}, "\n";
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        my $qc_sambamba_path =
-          catfile( $outsample_directory, $outfile_prefix . $outfile_suffix );
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                sample_id        => $$sample_id_ref,
-                program_name     => $program_name,
-                infile           => $infile,
-                path             => $qc_sambamba_path,
-            }
-        );
-    }
-
-    close($FILEHANDLE);
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        slurm_submit_job_sample_id_dependency_dead_end(
-            {
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                family_id               => $$family_id_ref,
-                sample_id               => $$sample_id_ref,
-                path                    => $job_id_chain,
-                sbatch_file_name        => $file_name,
+                sbatch_file_name        => $file_path,
                 log                     => $log,
             }
         );
@@ -14155,7 +13230,7 @@ sub sv_reformat {
 
 ##Function : Concatenate contig files.
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -14165,7 +13240,6 @@ sub sv_reformat {
 ##         : $family_id_ref              => The family_id_ref {REF}
 ##         : $call_type                  => The variant call type
 ##         : $program_name               => Program name
-##         : $file_name                  => File name
 ##         : $FILEHANDLE                 => Sbatch filehandle to write to
 ##         : $family_id_ref              => Family id {REF}
 ##         : $temp_directory_ref         => Temporary directory {REF}
@@ -14266,7 +13340,7 @@ sub sv_reformat {
           { default => "SV", strict_type => 1, store => \$call_type },
         xargs_file_counter => {
             default     => 0,
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
             store       => \$xargs_file_counter
         },
@@ -14276,7 +13350,8 @@ sub sv_reformat {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Get::File qw{get_file_suffix};
-    use MIP::IO::Files qw(migrate_file);
+    use MIP::Delete::List qw{ delete_contig_elements delete_male_contig };
+    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use Program::Htslib qw(bgzip tabix);
     use MIP::Gnu::Software::Gnu_grep qw( gnu_grep);
     use MIP::Processmanagement::Slurm_processes
@@ -14284,7 +13359,7 @@ sub sv_reformat {
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $xargs_file_name;
+    my $xargs_file_path_prefix;
     my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
 
     ## Filehandles
@@ -14296,7 +13371,7 @@ sub sv_reformat {
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = setup_script(
+    my ( $file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -14343,19 +13418,17 @@ sub sv_reformat {
     my $vcfparser_analysis_type = "";
 
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    my @contigs = remove_element(
+    my @contigs = delete_contig_elements(
         {
             elements_ref       => \@{ $file_info_href->{contigs} },
-            remove_contigs_ref => [ "MT", "M" ],
-            contig_switch      => 1,
+            remove_contigs_ref => [qw{ MT M }],
         }
     );
 
-    my @contigs_size_ordered = remove_element(
+    my @contigs_size_ordered = delete_contig_elements(
         {
             elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
-            remove_contigs_ref => [ "MT", "M" ],
-            contig_switch      => 1,
+            remove_contigs_ref => [qw{ MT M }],
         }
     );
 
@@ -14365,11 +13438,10 @@ sub sv_reformat {
     foreach my $array_ref (@contig_arrays) {
 
         ## Removes contig_names from contigs array if no male or other found
-        remove_contigs(
+        $array_ref = delete_male_contig(
             {
-                active_parameter_href => $active_parameter_href,
-                contigs_ref           => $array_ref,
-                contig_names_ref      => ["Y"],
+                contigs_ref => $array_ref,
+                found_male  => $active_parameter_href->{found_male},
             }
         );
     }
@@ -14386,12 +13458,11 @@ sub sv_reformat {
 
             $vcfparser_analysis_type = ".selected";    #SelectFile variants
 
-            @contigs = remove_element(
+            @contigs = delete_contig_elements(
                 {
                     elements_ref =>
                       \@{ $file_info_href->{select_file_contigs} },
-                    remove_contigs_ref => [ "MT", "M" ],
-                    contig_switch      => 1,
+                    remove_contigs_ref => [qw{ MT M }],
                 }
             );
 
@@ -14404,12 +13475,11 @@ sub sv_reformat {
             );
 
             ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-            @contigs_size_ordered = remove_element(
+            @contigs_size_ordered = delete_contig_elements(
                 {
                     elements_ref =>
                       \@{ $file_info_href->{sorted_select_file_contigs} },
-                    remove_contigs_ref => [ "MT", "M" ],
-                    contig_switch      => 1,
+                    remove_contigs_ref => [qw{ MT M }],
                 }
             );
 
@@ -14433,7 +13503,7 @@ sub sv_reformat {
                     FILEHANDLE         => $FILEHANDLE,
                     XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                     contigs_ref        => \@contigs_size_ordered,
-                    file_name          => $file_name,
+                    file_path          => $file_path,
                     program_info_path  => $program_info_path,
                     core_number        => $core_number,
                     xargs_file_counter => $xargs_file_counter,
@@ -14686,7 +13756,7 @@ sub sv_reformat {
                 family_id        => $$family_id_ref,
                 path             => $job_id_chain,
                 log              => $log,
-                sbatch_file_name => $file_name,
+                sbatch_file_name => $file_path,
             }
         );
     }
@@ -14698,7 +13768,7 @@ sub sv_rankvariant {
 
 ##Function : Annotate and score SV variants depending on mendelian inheritance, frequency and phenotype etc.
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -14708,7 +13778,6 @@ sub sv_rankvariant {
 ##         : $family_id_ref              => The family_id_ref {REF}
 ##         : $call_type                  => The variant call type
 ##         : $program_name               => Program name
-##         : $file_name                  => File name
 ##         : $FILEHANDLE                 => Sbatch filehandle to write to
 ##         : $family_id_ref              => Family id {REF}
 ##         : $temp_directory_ref         => Temporary directory {REF}
@@ -14809,7 +13878,7 @@ sub sv_rankvariant {
           { default => "SV", strict_type => 1, store => \$call_type },
         xargs_file_counter => {
             default     => 0,
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
             store       => \$xargs_file_counter
         },
@@ -14819,7 +13888,9 @@ sub sv_rankvariant {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Get::File qw{get_file_suffix};
-    use MIP::IO::Files qw(migrate_file);
+    use MIP::Delete::List qw{ delete_contig_elements delete_male_contig};
+    use MIP::Recipes::Xargs qw{ xargs_command };
+    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use Program::Variantcalling::Genmod qw(annotate models score compound);
     use MIP::QC::Record
       qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
@@ -14831,7 +13902,7 @@ sub sv_rankvariant {
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $xargs_file_name;
+    my $xargs_file_path_prefix;
     my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
 
     ## Filehandles
@@ -14851,7 +13922,7 @@ sub sv_rankvariant {
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = setup_script(
+    my ( $file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -14895,19 +13966,17 @@ sub sv_rankvariant {
     my $vcfparser_analysis_type = "";
 
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    my @contigs_size_ordered = remove_element(
+    my @contigs_size_ordered = delete_contig_elements(
         {
             elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
-            remove_contigs_ref => [ "MT", "M" ],
-            contig_switch      => 1,
+            remove_contigs_ref => [qw{ MT M }],
         }
     );
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    my @contigs = remove_element(
+    my @contigs = delete_contig_elements(
         {
             elements_ref       => \@{ $file_info_href->{contigs} },
-            remove_contigs_ref => [ "MT", "M" ],
-            contig_switch      => 1,
+            remove_contigs_ref => [qw{ MT M }],
         }
     );
 
@@ -14917,11 +13986,10 @@ sub sv_rankvariant {
     foreach my $array_ref (@contig_arrays) {
 
         ## Removes contig_names from contigs array if no male or other found
-        remove_contigs(
+        $array_ref = delete_male_contig(
             {
-                active_parameter_href => $active_parameter_href,
-                contigs_ref           => $array_ref,
-                contig_names_ref      => ["Y"],
+                contigs_ref => $array_ref,
+                found_male  => $active_parameter_href->{found_male},
             }
         );
     }
@@ -14953,12 +14021,11 @@ sub sv_rankvariant {
 
             ### Always skip MT and Y in select files
             ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-            @contigs = remove_element(
+            @contigs = delete_contig_elements(
                 {
                     elements_ref =>
                       \@{ $file_info_href->{select_file_contigs} },
-                    remove_contigs_ref => [ "MT", "M" ],
-                    contig_switch      => 1,
+                    remove_contigs_ref => [qw{ MT M }],
                 }
             );
 
@@ -14971,12 +14038,11 @@ sub sv_rankvariant {
             );
 
             ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-            @contigs_size_ordered = remove_element(
+            @contigs_size_ordered = delete_contig_elements(
                 {
                     elements_ref =>
                       \@{ $file_info_href->{sorted_select_file_contigs} },
-                    remove_contigs_ref => [ "MT", "M" ],
-                    contig_switch      => 1,
+                    remove_contigs_ref => [qw{ MT M }],
                 }
             );
 
@@ -15000,7 +14066,7 @@ sub sv_rankvariant {
                     FILEHANDLE         => $FILEHANDLE,
                     XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                     contigs_ref        => \@contigs_size_ordered,
-                    file_name          => $file_name,
+                    file_path          => $file_path,
                     program_info_path  => $program_info_path,
                     core_number        => $core_number,
                     xargs_file_counter => $xargs_file_counter,
@@ -15053,11 +14119,11 @@ sub sv_rankvariant {
         say $FILEHANDLE "## Genmod";
 
         ## Create file commands for xargs
-        ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+        ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
                 FILEHANDLE         => $FILEHANDLE,
                 XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                file_name          => $file_name,
+                file_path          => $file_path,
                 program_info_path  => $program_info_path,
                 core_number        => $genmod_core_number,
                 xargs_file_counter => $xargs_file_counter,
@@ -15068,10 +14134,10 @@ sub sv_rankvariant {
         foreach my $contig (@contigs_size_ordered) {
 
             ## Get parameters
-            my $genmod_file_ending_stub    = $infile_prefix;
-            my $genmod_outfile_path_prefix = $outfile_path_prefix;
-            my $genmod_xargs_file_name     = $xargs_file_name;
-            my $genmod_indata              = catfile( $$temp_directory_ref,
+            my $genmod_file_ending_stub       = $infile_prefix;
+            my $genmod_outfile_path_prefix    = $outfile_path_prefix;
+            my $genmod_xargs_file_path_prefix = $xargs_file_path_prefix;
+            my $genmod_indata                 = catfile( $$temp_directory_ref,
                     $genmod_file_ending_stub
                   . $vcfparser_analysis_type
                   . $file_suffix );    #InFile
@@ -15084,7 +14150,8 @@ sub sv_rankvariant {
                 $genmod_file_ending_stub = $infile_prefix . "_" . $contig;
                 $genmod_outfile_path_prefix =
                   $outfile_path_prefix . "_" . $contig;
-                $genmod_xargs_file_name = $xargs_file_name . "." . $contig;
+                $genmod_xargs_file_path_prefix =
+                  $xargs_file_path_prefix . "." . $contig;
 
                 # Infile
                 $genmod_indata = catfile( $$temp_directory_ref,
@@ -15122,7 +14189,7 @@ sub sv_rankvariant {
                 {
                     infile_path     => $genmod_indata,
                     outfile_path    => $genmod_outfile_path,
-                    stderrfile_path => $genmod_xargs_file_name
+                    stderrfile_path => $genmod_xargs_file_path_prefix
                       . $genmod_module
                       . ".stderr.txt",
                     verbosity           => "v",
@@ -15166,7 +14233,7 @@ sub sv_rankvariant {
                         infile_path => $genmod_indata,
                         outfile_path =>
                           catfile( dirname( devnull() ), "stdout" ),
-                        stderrfile_path => $genmod_xargs_file_name
+                        stderrfile_path => $genmod_xargs_file_path_prefix
                           . $genmod_module
                           . ".stderr.txt",
                         family_file => $family_file,
@@ -15196,7 +14263,7 @@ sub sv_rankvariant {
                         infile_path => $genmod_indata,
                         outfile_path =>
                           catfile( dirname( devnull() ), "stdout" ),
-                        stderrfile_path => $genmod_xargs_file_name
+                        stderrfile_path => $genmod_xargs_file_path_prefix
                           . $genmod_module
                           . ".stderr.txt",
                         verbosity   => "v",
@@ -15220,7 +14287,7 @@ sub sv_rankvariant {
                         outfile_path => $genmod_outfile_path_prefix
                           . $vcfparser_analysis_type
                           . $file_suffix,
-                        stderrfile_path => $genmod_xargs_file_name
+                        stderrfile_path => $genmod_xargs_file_path_prefix
                           . $genmod_module
                           . ".stderr.txt",
                         verbosity           => "v",
@@ -15248,13 +14315,12 @@ sub sv_rankvariant {
 
             ## Copies file from temporary directory.
             say $FILEHANDLE "## Copy file(s) from temporary directory";
-            ( $xargs_file_counter, $xargs_file_name ) =
-              xargs_migrate_contig_files(
+            ($xargs_file_counter) = xargs_migrate_contig_files(
                 {
                     FILEHANDLE         => $FILEHANDLE,
                     XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                     contigs_ref        => \@contigs,
-                    file_name          => $file_name,
+                    file_path          => $file_path,
                     program_info_path  => $program_info_path,
                     core_number        => $core_number,
                     xargs_file_counter => $xargs_file_counter,
@@ -15264,7 +14330,7 @@ sub sv_rankvariant {
                     outdirectory   => $outfamily_directory,
                     temp_directory => $$temp_directory_ref,
                 }
-              );
+            );
         }
         else {
 
@@ -15352,7 +14418,7 @@ sub sv_rankvariant {
                 family_id        => $$family_id_ref,
                 path             => $job_id_chain,
                 log              => $log,
-                sbatch_file_name => $file_name,
+                sbatch_file_name => $file_path,
             }
         );
     }
@@ -15364,7 +14430,7 @@ sub sv_vcfparser {
 
 ##Function : sv_vcfparser performs parsing of varianteffectpredictor annotated variants
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $file_name, $program_info_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -15465,7 +14531,7 @@ sub sv_vcfparser {
           { default => "SV", strict_type => 1, store => \$call_type },
         xargs_file_counter => {
             default     => 0,
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
             store       => \$xargs_file_counter
         },
@@ -15475,7 +14541,9 @@ sub sv_vcfparser {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Get::File qw{get_file_suffix};
-    use MIP::IO::Files qw(migrate_file);
+    use MIP::Delete::List qw{ delete_contig_elements delete_male_contig};
+    use MIP::Recipes::Xargs qw{ xargs_command };
+    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use Program::Variantcalling::Mip qw(vcfparser);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
@@ -15485,7 +14553,7 @@ sub sv_vcfparser {
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
-    my $xargs_file_name;
+    my $xargs_file_path_prefix;
     my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
 
     ## Filehandles
@@ -15493,7 +14561,7 @@ sub sv_vcfparser {
     my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = setup_script(
+    my ( $file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -15536,21 +14604,19 @@ sub sv_vcfparser {
     );
 
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    my @contigs = remove_element(
+    my @contigs = delete_contig_elements(
         {
             elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
-            remove_contigs_ref => [ "MT", "M" ],
-            contig_switch      => 1,
+            remove_contigs_ref => [qw{ MT M }],
         }
     );
 
     ### If no males or other remove contig Y from all downstream analysis
     ## Removes contig_names from contigs array if no male or other found
-    remove_contigs(
+    @contigs = delete_male_contig(
         {
-            active_parameter_href => $active_parameter_href,
-            contigs_ref           => \@contigs,
-            contig_names_ref      => ["Y"],
+            contigs_ref => \@contigs,
+            found_male  => $active_parameter_href->{found_male},
         }
     );
 
@@ -15560,12 +14626,12 @@ sub sv_vcfparser {
 
         ## Copy file(s) to temporary directory
         say $FILEHANDLE "## Copy file(s) to temporary directory";
-        ( $xargs_file_counter, $xargs_file_name ) = xargs_migrate_contig_files(
+        ($xargs_file_counter) = xargs_migrate_contig_files(
             {
                 FILEHANDLE         => $FILEHANDLE,
                 XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                 contigs_ref        => \@contigs,
-                file_name          => $file_name,
+                file_path          => $file_path,
                 program_info_path  => $program_info_path,
                 core_number        => $core_number,
                 xargs_file_counter => $xargs_file_counter,
@@ -15596,11 +14662,11 @@ sub sv_vcfparser {
     say $FILEHANDLE "## vcfparser";
 
     ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             FILEHANDLE         => $FILEHANDLE,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_name          => $file_name,
+            file_path          => $file_path,
             program_info_path  => $program_info_path,
             core_number        => $core_number,
             xargs_file_counter => $xargs_file_counter,
@@ -15610,17 +14676,18 @@ sub sv_vcfparser {
     foreach my $contig (@contigs) {
 
         ## Get parameters
-        my $vcfparser_infile_prefix   = $infile_prefix;
-        my $vcfparser_outfile_prefix  = $outfile_prefix;
-        my $vcfparser_xargs_file_name = $xargs_file_name;
+        my $vcfparser_infile_prefix          = $infile_prefix;
+        my $vcfparser_outfile_prefix         = $outfile_prefix;
+        my $vcfparser_xargs_file_path_prefix = $xargs_file_path_prefix;
 
         if (   ( $consensus_analysis_type eq "wgs" )
             || ( $consensus_analysis_type eq "mixed" ) )
         {    #Update endings with contig info
 
-            $vcfparser_infile_prefix   = $infile_prefix . "_" . $contig;
-            $vcfparser_outfile_prefix  = $outfile_prefix . "_" . $contig;
-            $vcfparser_xargs_file_name = $xargs_file_name . "." . $contig;
+            $vcfparser_infile_prefix  = $infile_prefix . "_" . $contig;
+            $vcfparser_outfile_prefix = $outfile_prefix . "_" . $contig;
+            $vcfparser_xargs_file_path_prefix =
+              $xargs_file_path_prefix . "." . $contig;
         }
 
         my $padding;
@@ -15692,7 +14759,8 @@ sub sv_vcfparser {
                     $$temp_directory_ref,
                     $vcfparser_outfile_prefix . $file_suffix
                 ),
-                stderrfile_path => $vcfparser_xargs_file_name . ".stderr.txt",
+                stderrfile_path => $vcfparser_xargs_file_path_prefix
+                  . ".stderr.txt",
                 range_feature_file_path =>
                   $active_parameter_href->{sv_vcfparser_range_feature_file},
                 select_feature_file_path       => $select_file,
@@ -15799,12 +14867,11 @@ sub sv_vcfparser {
             $vcfparser_analysis_type = ".selected";    #Select file variants
 
             ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-            @contigs = remove_element(
+            @contigs = delete_contig_elements(
                 {
                     elements_ref =>
                       \@{ $file_info_href->{sorted_select_file_contigs} },
-                    remove_contigs_ref => [ "MT", "M" ],
-                    contig_switch      => 1,
+                    remove_contigs_ref => [qw{ MT M }],
                 }
             );
         }
@@ -15815,13 +14882,12 @@ sub sv_vcfparser {
 
             ## Copies file from temporary directory.
             say $FILEHANDLE "## Copy file(s) from temporary directory";
-            ( $xargs_file_counter, $xargs_file_name ) =
-              xargs_migrate_contig_files(
+            ($xargs_file_counter) = xargs_migrate_contig_files(
                 {
                     FILEHANDLE         => $FILEHANDLE,
                     XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                     contigs_ref        => \@contigs,
-                    file_name          => $file_name,
+                    file_path          => $file_path,
                     program_info_path  => $program_info_path,
                     core_number        => $core_number,
                     xargs_file_counter => $xargs_file_counter,
@@ -15831,7 +14897,7 @@ sub sv_vcfparser {
                     outdirectory   => $outfamily_directory,
                     temp_directory => $$temp_directory_ref,
                 }
-              );
+            );
         }
         else {
 
@@ -15878,476 +14944,7 @@ sub sv_vcfparser {
                 family_id        => $$family_id_ref,
                 path             => $job_id_chain,
                 log              => $log,
-                sbatch_file_name => $file_name,
-            }
-        );
-    }
-}
-
-sub sv_varianteffectpredictor {
-
-##sv_varianteffectpredictor
-
-##Function : SV varianteffectpredictor performs annotation of SV variants.
-##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, $stderr_path, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $program_name               => Program name
-##         : $program_info_path          => The program info path
-##         : $file_name                  => File name
-##         : $FILEHANDLE                 => Sbatch filehandle to write to
-##         : $stderr_path                => The stderr path of the block script
-##         : $family_id_ref              => Family id {REF}
-##         : $temp_directory_ref         => Temporary directory {REF}
-##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => The variant call type
-##         : $xargs_file_counter         => The xargs file counter
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-    my $outaligner_dir_ref;
-    my $call_type;
-    my $xargs_file_counter;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $program_name;
-    my $stderr_path;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref
-        },
-        outaligner_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir_ref
-        },
-        call_type =>
-          { default => "SV", strict_type => 1, store => \$call_type },
-        xargs_file_counter => {
-            default     => 0,
-            allow       => qr/^\d+$/,
-            strict_type => 1,
-            store       => \$xargs_file_counter
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use Readonly;
-    use MIP::Cluster qw(get_core_number);
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::Get::File qw{get_file_suffix};
-    use MIP::IO::Files qw(migrate_file);
-    use Program::Variantcalling::Vep qw(variant_effect_predictor);
-    use MIP::QC::Record
-      qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_sample_id_dependency_add_to_family);
-
-    ## Constants
-    Readonly my $DOT     => q{.};
-    Readonly my $ASTERIX => q{*};
-
-    my $consensus_analysis_type =
-      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $xargs_file_name;
-    my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
-
-    ## Filehandles
-    my $FILEHANDLE      = IO::Handle->new();    #Create anonymous filehandle
-    my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    my @contigs = remove_element(
-        {
-            elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
-            remove_contigs_ref => [ "MT", "M" ],
-            contig_switch      => 1,
-        }
-    );
-
-    ### If no males or other remove contig Y from all downstream analysis
-    ## Removes contig_names from contigs array if no male or other found
-    remove_contigs(
-        {
-            active_parameter_href => $active_parameter_href,
-            contigs_ref           => \@contigs,
-            contig_names_ref      => ["Y"],
-        }
-    );
-
-    ## Get core number depending on user supplied input exists or not and max number of cores
-    my $core_number = get_core_number(
-        {
-            module_core_number => $active_parameter_href->{module_core_number}
-              { "p" . $program_name },
-            modifier_core_number => scalar(@contigs),
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-        }
-    );
-
-    my $fork_number = 4;    #Varianteffectpredictor forks
-    $core_number =
-      floor( $core_number / $fork_number );    #Adjust for the number of forks
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $$family_id_ref,
-            program_name          => $program_name,
-            program_directory     => catfile( lc($$outaligner_dir_ref) ),
-            call_type             => $call_type,
-            core_number           => $core_number,
-            process_time =>
-              $active_parameter_href->{module_time}{ "p" . $program_name },
-            temp_directory => $$temp_directory_ref
-        }
-    );
-    $stderr_path = $program_info_path . ".stderr.txt";
-
-    my ( $volume, $directory, $stderr_file ) =
-      File::Spec->splitpath($stderr_path)
-      ;    #Split to enable submission to &sample_info_qc later
-
-    ## Assign directories
-    my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $$family_id_ref, $$outaligner_dir_ref );
-    my $outfamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $$family_id_ref, $$outaligner_dir_ref );
-    $parameter_href->{ "p" . $program_name }{indirectory} =
-      $outfamily_directory;    #Used downstream
-
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$$family_id_ref}{psv_combinevariantcallsets}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$$family_id_ref}{ "p" . $program_name }{file_tag};
-    my $infile_prefix       = $$family_id_ref . $infile_tag . $call_type;
-    my $infile_path_prefix  = catfile( $$temp_directory_ref, $infile_prefix );
-    my $outfile_prefix      = $$family_id_ref . $outfile_tag . $call_type;
-    my $outfile_path_prefix = catfile( $$temp_directory_ref, $outfile_prefix );
-
-    ## Assign suffix
-    my $file_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => "variant_file_suffix",
-            jobid_chain    => $job_id_chain,
-        }
-    );
-
-    ## Copy file(s) to temporary directory
-    say $FILEHANDLE "## Copy file(s) to temporary directory";
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => catfile(
-                $infamily_directory, $infile_prefix . $file_suffix . q{*}
-            ),
-            outfile_path => $$temp_directory_ref
-        }
-    );
-    say $FILEHANDLE q{wait}, "\n";
-
-    ## Fix SV with no length as these will fail in the annotation with VEP
-    my $perl_fix_sv_nolengths =
-      q?perl -nae 'my %info; my $start; my $end; my $alt; my @data; ?
-      ;    #Set up variables
-    $perl_fix_sv_nolengths .= q?@data=split("\t", $_); ?;    #Split line
-    $perl_fix_sv_nolengths .=
-      q?$start = $data[1]; $start++; ?;    #Add $start position
-    $perl_fix_sv_nolengths .= q?$alt=$data[4]; ?;    #Add $alt allele
-    $perl_fix_sv_nolengths .=
-q?foreach my $bit (split /\;/, $data[7]) { my ($key, $value) = split /\=/, $bit; $info{$key} = $value; } ?
-      ;    #Add INFO field to %data using $key->$value
-    $perl_fix_sv_nolengths .=
-      q?if(defined($info{END})) { $end = $info{END}; } ?;    #Add $end position
-    $perl_fix_sv_nolengths .=
-q?if($alt=~ /\<|\[|\]|\>/) { $alt=~ s/\<|\>//g; $alt=~ s/\:.+//g; if($start >= $end && $alt=~ /del/i) {} else {print $_} } ?
-      ; #If SV, strip SV type entry and check if no length, then do not print variant else print
-    $perl_fix_sv_nolengths .= q?else {print $_}' ?;    #All other lines - print
-
-    print $FILEHANDLE $perl_fix_sv_nolengths . " ";
-    print $FILEHANDLE $infile_path_prefix . $file_suffix . " ";
-    say $FILEHANDLE "> "
-      . $infile_path_prefix
-      . "_fixedsvlength"
-      . $file_suffix
-      . " ", "\n";
-
-    ## varianteffectpredictor
-    say $FILEHANDLE "## varianteffectpredictor";
-
-    my $assembly_version = $file_info_href->{human_genome_reference_source}
-      . $file_info_href->{human_genome_reference_version};
-
-    ## Alias genome source and version to be compatible with VEP
-    alias_assembly_version( { assembly_version_ref => \$assembly_version } );
-
-    ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
-        {
-            FILEHANDLE         => $FILEHANDLE,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_name          => $file_name,
-            program_info_path  => $program_info_path,
-            core_number        => $core_number,
-            xargs_file_counter => $xargs_file_counter,
-        }
-    );
-
-    foreach my $contig (@contigs) {
-
-        ## Get parameters
-        my $vep_outfile_prefix  = $outfile_prefix;
-        my $vep_xargs_file_name = $xargs_file_name;
-        my @regions;
-
-        ## Contig specific
-        if (   ( $consensus_analysis_type eq "wgs" )
-            || ( $consensus_analysis_type eq "mixed" ) )
-        {    #Update endings with contig info
-
-            $vep_outfile_prefix  = $outfile_prefix . "_" . $contig;
-            $vep_xargs_file_name = $xargs_file_name . "." . $contig;
-            push( @regions, $contig );
-        }
-
-        ## VEP plugins
-        my @plugins;
-        foreach my $plugin ( @{ $active_parameter_href->{sv_vep_plugins} } ) {
-
-            if ( $plugin eq "LoF" ) {
-
-                push(
-                    @plugins,
-                    $plugin
-                      . ",human_ancestor_fa:"
-                      . catfile(
-                        $active_parameter_href->{vep_directory_cache},
-                        "human_ancestor.fa,filter_position:0.05"
-                      )
-                );
-            }
-            elsif ( $plugin eq "UpDownDistance" )
-            {    #Special case for mitochondrial contig annotation
-
-                if ( $contig =~ /MT|M/ ) {
-
-                    push( @plugins, "UpDownDistance,10,10" );
-                }
-            }
-            else {
-
-                push( @plugins, $plugin );
-            }
-        }
-
-        ## VEPFeatures
-        my @vep_features_ref;
-        foreach
-          my $vep_feature ( @{ $active_parameter_href->{sv_vep_features} } )
-        {
-
-            push( @vep_features_ref, $vep_feature )
-              ;    #Add VEP features to the output.
-
-            if ( ( $contig =~ /MT|M/ ) && ( $vep_feature eq "refseq" ) )
-            {      #Special case for mitochondrial contig annotation
-
-                push( @vep_features_ref, "all_refseq" );
-            }
-        }
-
-        variant_effect_predictor(
-            {
-                regions_ref      => \@regions,
-                plugins_ref      => \@plugins,
-                vep_features_ref => \@vep_features_ref,
-                script_path      => catfile(
-                    $active_parameter_href->{vep_directory_path},
-                    "variant_effect_predictor.pl"
-                ),
-                assembly => $assembly_version,
-                cache_directory =>
-                  $active_parameter_href->{vep_directory_cache},
-                reference_path =>
-                  $active_parameter_href->{human_genome_reference},
-                infile_format  => substr( $file_suffix, 1 ),
-                outfile_format => substr( $file_suffix, 1 ),
-                fork           => $fork_number,
-                buffer_size    => 100,
-                infile_path    => $infile_path_prefix
-                  . "_fixedsvlength"
-                  . $file_suffix,
-                outfile_path => catfile(
-                    $$temp_directory_ref, $vep_outfile_prefix . $file_suffix
-                ),
-                stderrfile_path => $vep_xargs_file_name . ".stderr.txt",
-                stdoutfile_path => $vep_xargs_file_name . ".stdout.txt",
-                FILEHANDLE      => $XARGSFILEHANDLE,
-            }
-        );
-        print $XARGSFILEHANDLE "\n";
-
-        if (   ( $consensus_analysis_type eq "wes" )
-            || ( $consensus_analysis_type eq "rapid" ) )
-        {    #Update endings with contig info
-
-            last
-              ; #Only perform once for exome samples to avoid risking contigs lacking variants throwing errors
-        }
-    }
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        my $outfile_sample_info_prefix = $outfile_prefix;
-
-        if (   ( $consensus_analysis_type eq "wgs" )
-            || ( $consensus_analysis_type eq "mixed" ) )
-        {       #Update endings with contig info
-
-            $outfile_sample_info_prefix .= "_" . $contigs[0];
-        }
-
-        ## Collect QC metadata info for later use
-        my $qc_vep_summary_outfile =
-          $outfile_sample_info_prefix . $DOT . q{vcf_summary.html};
-        add_program_metafile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                program_name     => $program_name,
-                metafile_tag     => q{summary},
-                directory        => $outfamily_directory,
-                file             => $qc_vep_summary_outfile,
-            }
-        );
-
-        ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                program_name     => $program_name,
-                outdirectory     => $outfamily_directory,
-                outfile          => $outfile_sample_info_prefix . $file_suffix,
-            }
-        );
-    }
-
-    ## QC Data File(s)
-    migrate_file(
-        {
-            infile_path => $outfile_path_prefix
-              . $ASTERIX
-              . $file_suffix . q{_s*},
-            outfile_path => $outfamily_directory,
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE q{wait}, "\n";
-
-    close($XARGSFILEHANDLE);
-
-    ## Copies file from temporary directory.
-    say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file(
-        {
-            infile_path => $outfile_path_prefix
-              . $ASTERIX
-              . $file_suffix
-              . $ASTERIX,
-            outfile_path => $outfamily_directory,
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE q{wait}, "\n";
-
-    close($FILEHANDLE);
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        slurm_submit_job_sample_id_dependency_add_to_family(
-            {
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                family_id        => $$family_id_ref,
-                path             => $job_id_chain,
-                log              => $log,
-                sbatch_file_name => $file_name,
+                sbatch_file_name => $file_path,
             }
         );
     }
@@ -16487,7 +15084,7 @@ sub sv_combinevariantcallsets {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = setup_script(
+    my ( $file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -17131,7 +15728,7 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
                 family_id           => $$family_id_ref,
                 path                => $job_id_chain,
                 log                 => $log,
-                sbatch_file_name    => $file_name,
+                sbatch_file_name    => $file_path,
             }
         );
     }
@@ -17256,7 +15853,7 @@ sub cnvnator {
         },
         xargs_file_counter => {
             default     => 0,
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
             store       => \$xargs_file_counter
         },
@@ -17266,9 +15863,10 @@ sub cnvnator {
 
     use MIP::Processmanagement::Processes qw(print_wait);
     use MIP::Script::Setup_script qw(setup_script);
-    use MIP::IO::Files qw(migrate_file);
+    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Set::File qw{set_file_suffix};
+    use MIP::Recipes::Xargs qw{ xargs_command };
     use MIP::Program::Alignment::Samtools qw(samtools_faidx);
     use Program::Variantcalling::Cnvnator
       qw(read_extraction histogram statistics partition calling convert_to_vcf);
@@ -17281,7 +15879,7 @@ sub cnvnator {
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
     my $program_outdirectory_name =
       $parameter_href->{ "p" . $program_name }{outdir_name};
-    my $xargs_file_name;
+    my $xargs_file_path_prefix;
     my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
 
     ## Filehandles
@@ -17289,7 +15887,7 @@ sub cnvnator {
     my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = setup_script(
+    my ( $file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -17409,12 +16007,12 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
-    ( $xargs_file_counter, $xargs_file_name ) = xargs_migrate_contig_files(
+    ($xargs_file_counter) = xargs_migrate_contig_files(
         {
             FILEHANDLE         => $FILEHANDLE,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
-            file_name          => $file_name,
+            file_path          => $file_path,
             program_info_path  => $program_info_path,
             core_number        => $core_number,
             xargs_file_counter => $xargs_file_counter,
@@ -17429,11 +16027,11 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
     say $FILEHANDLE "## cnvnator";
 
     ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             FILEHANDLE         => $FILEHANDLE,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_name          => $file_name,
+            file_path          => $file_path,
             program_info_path  => $program_info_path,
             core_number        => $core_number,
             xargs_file_counter => $xargs_file_counter,
@@ -17454,10 +16052,10 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
                 outfile_path    => $root_file,
                 regions_ref     => [$contig],
                 unique          => 1,
-                stdoutfile_path => $xargs_file_name . "."
+                stdoutfile_path => $xargs_file_path_prefix . "."
                   . $contig
                   . ".stdout.txt",
-                stderrfile_path => $xargs_file_name . "."
+                stderrfile_path => $xargs_file_path_prefix . "."
                   . $contig
                   . ".stderr.txt",
                 FILEHANDLE => $XARGSFILEHANDLE,
@@ -17472,10 +16070,10 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
                 cnv_bin_size => $active_parameter_href->{cnv_bin_size},
                 referencedirectory_path => $$temp_directory_ref,
                 FILEHANDLE              => $XARGSFILEHANDLE,
-                stdoutfile_path         => $xargs_file_name . "."
+                stdoutfile_path         => $xargs_file_path_prefix . "."
                   . $contig
                   . "_histogram.stdout.txt",
-                stderrfile_path => $xargs_file_name . "."
+                stderrfile_path => $xargs_file_path_prefix . "."
                   . $contig
                   . "_histogram.stderr.txt",
             }
@@ -17488,10 +16086,10 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
                 regions_ref     => [$contig],
                 cnv_bin_size    => $active_parameter_href->{cnv_bin_size},
                 FILEHANDLE      => $XARGSFILEHANDLE,
-                stdoutfile_path => $xargs_file_name . "."
+                stdoutfile_path => $xargs_file_path_prefix . "."
                   . $contig
                   . "_statistics.stdout.txt",
-                stderrfile_path => $xargs_file_name . "."
+                stderrfile_path => $xargs_file_path_prefix . "."
                   . $contig
                   . "_statistics.stderr.txt",
             }
@@ -17504,10 +16102,10 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
                 regions_ref     => [$contig],
                 cnv_bin_size    => $active_parameter_href->{cnv_bin_size},
                 FILEHANDLE      => $XARGSFILEHANDLE,
-                stdoutfile_path => $xargs_file_name . "."
+                stdoutfile_path => $xargs_file_path_prefix . "."
                   . $contig
                   . "_partition.stdout.txt",
-                stderrfile_path => $xargs_file_name . "."
+                stderrfile_path => $xargs_file_path_prefix . "."
                   . $contig
                   . "_partition.stderr.txt",
             }
@@ -17523,7 +16121,7 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
                 regions_ref     => [$contig],
                 cnv_bin_size    => $active_parameter_href->{cnv_bin_size},
                 FILEHANDLE      => $XARGSFILEHANDLE,
-                stderrfile_path => $xargs_file_name . "."
+                stderrfile_path => $xargs_file_path_prefix . "."
                   . $contig
                   . "_calling.stderr.txt",
             }
@@ -17538,7 +16136,7 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
                 outfile_path => $outfile_path_prefix . "_"
                   . $contig
                   . $outfile_suffix,
-                stderrfile_path => $xargs_file_name . "."
+                stderrfile_path => $xargs_file_path_prefix . "."
                   . $contig
                   . "_convert_to_vcf.stderr.txt",
                 referencedirectory_path => $$temp_directory_ref,
@@ -17615,7 +16213,7 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
                 sample_id               => $$sample_id_ref,
                 path                    => $job_id_chain,
                 log                     => $log,
-                sbatch_file_name        => $file_name
+                sbatch_file_name        => $file_path
             }
         );
     }
@@ -17733,7 +16331,7 @@ sub delly_reformat {
         },
         xargs_file_counter => {
             default     => 0,
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
             store       => \$xargs_file_counter
         },
@@ -17744,9 +16342,11 @@ sub delly_reformat {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Script::Setup_script qw(setup_script);
-    use MIP::IO::Files qw(migrate_file);
+    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
+    use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Set::File qw{set_file_suffix};
+    use MIP::Recipes::Xargs qw{ xargs_command };
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use Program::Variantcalling::Delly qw(call merge filter);
     use Program::Variantcalling::Bcftools qw(merge index);
@@ -17758,7 +16358,7 @@ sub delly_reformat {
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
     my $program_outdirectory_name =
       $parameter_href->{ "p" . $program_name }{outdir_name};
-    my $xargs_file_name;
+    my $xargs_file_path_prefix;
     my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
 
     ## Filehandles
@@ -17766,7 +16366,7 @@ sub delly_reformat {
     my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = setup_script(
+    my ( $file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -17813,11 +16413,10 @@ sub delly_reformat {
     );
 
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    my @contigs = remove_element(
+    my @contigs = delete_contig_elements(
         {
             elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
-            remove_contigs_ref => [ "MT", "M" ],
-            contig_switch      => 1,
+            remove_contigs_ref => [qw{ MT M }],
         }
     );
 
@@ -17887,13 +16486,12 @@ sub delly_reformat {
                         ## Copy file(s) to temporary directory
                         say $FILEHANDLE
                           "## Copy file(s) to temporary directory";
-                        ( $xargs_file_counter, $xargs_file_name ) =
-                          xargs_migrate_contig_files(
+                        ($xargs_file_counter) = xargs_migrate_contig_files(
                             {
                                 FILEHANDLE         => $FILEHANDLE,
                                 XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                                 contigs_ref        => \@contigs,
-                                file_name          => $file_name,
+                                file_path          => $file_path,
                                 program_info_path  => $program_info_path,
                                 core_number        => $core_number,
                                 xargs_file_counter => $xargs_file_counter,
@@ -17902,7 +16500,7 @@ sub delly_reformat {
                                 file_ending        => $file_ending,
                                 temp_directory     => $$temp_directory_ref,
                             }
-                          );
+                        );
                     }
                     else {
 
@@ -17952,13 +16550,12 @@ sub delly_reformat {
 
                 ## Copy file(s) to temporary directory
                 say $FILEHANDLE "## Copy file(s) to temporary directory";
-                ( $xargs_file_counter, $xargs_file_name ) =
-                  xargs_migrate_contig_files(
+                ($xargs_file_counter) = xargs_migrate_contig_files(
                     {
                         FILEHANDLE        => $FILEHANDLE,
                         XARGSFILEHANDLE   => $XARGSFILEHANDLE,
                         contigs_ref       => \@contigs,
-                        file_name         => $file_name,
+                        file_path         => $file_path,
                         program_info_path => $program_info_path,
                         core_number       => ( $core_number - 1 )
                         ,    #Compensate for cp of entire BAM TRA, see above
@@ -17968,7 +16565,7 @@ sub delly_reformat {
                         file_ending        => $file_ending,
                         temp_directory     => $$temp_directory_ref,
                     }
-                  );
+                );
             }
             say $FILEHANDLE q{wait}, "\n";
         }
@@ -17984,11 +16581,11 @@ sub delly_reformat {
         say $FILEHANDLE q?LC_ALL="C"; export LC_ALL ?, "\n\n";
 
         ## Create file commands for xargs
-        ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+        ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
                 FILEHANDLE         => $FILEHANDLE,
                 XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                file_name          => $file_name,
+                file_path          => $file_path,
                 program_info_path  => $program_info_path,
                 core_number        => $core_number,
                 xargs_file_counter => $xargs_file_counter,
@@ -18016,11 +16613,11 @@ sub delly_reformat {
                             outfile_path     => $outfile_path_prefix . "_"
                               . $contig . "_"
                               . $sv_type . ".bcf",
-                            stdoutfile_path => $xargs_file_name . "."
+                            stdoutfile_path => $xargs_file_path_prefix . "."
                               . $contig . "."
                               . $sv_type
                               . ".stdout.txt",
-                            stderrfile_path => $xargs_file_name . "."
+                            stderrfile_path => $xargs_file_path_prefix . "."
                               . $contig . "."
                               . $sv_type
                               . ".stderr.txt",
@@ -18047,10 +16644,10 @@ sub delly_reformat {
                         infile_paths_ref => \@file_paths,
                         outfile_path     => $outfile_path_prefix . "_"
                           . $sv_type . ".bcf",
-                        stdoutfile_path => $xargs_file_name . "."
+                        stdoutfile_path => $xargs_file_path_prefix . "."
                           . $sv_type
                           . ".stdout.txt",
-                        stderrfile_path => $xargs_file_name . "."
+                        stderrfile_path => $xargs_file_path_prefix . "."
                           . $sv_type
                           . ".stderr.txt",
                         sv_type    => $sv_type,
@@ -18070,11 +16667,11 @@ sub delly_reformat {
         foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
             ## Create file commands for xargs
-            ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+            ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
                 {
                     FILEHANDLE         => $FILEHANDLE,
                     XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                    file_name          => $file_name,
+                    file_path          => $file_path,
                     program_info_path  => $program_info_path,
                     core_number        => $core_number,
                     xargs_file_counter => $xargs_file_counter,
@@ -18107,11 +16704,11 @@ sub delly_reformat {
                                   . $contig . "_"
                                   . $sv_type . "_geno"
                                   . $suffix{pdelly_call},
-                                stdoutfile_path => $xargs_file_name . "."
+                                stdoutfile_path => $xargs_file_path_prefix . "."
                                   . $contig . "."
                                   . $sv_type
                                   . ".stdout.txt",
-                                stderrfile_path => $xargs_file_name . "."
+                                stderrfile_path => $xargs_file_path_prefix . "."
                                   . $contig . "."
                                   . $sv_type
                                   . ".stderr.txt",
@@ -18142,10 +16739,10 @@ sub delly_reformat {
                             outfile_path => $file_path_prefix{$sample_id} . "_"
                               . $sv_type . "_geno"
                               . $suffix{pdelly_call},
-                            stdoutfile_path => $xargs_file_name . "."
+                            stdoutfile_path => $xargs_file_path_prefix . "."
                               . $sv_type
                               . ".stdout.txt",
-                            stderrfile_path => $xargs_file_name . "."
+                            stderrfile_path => $xargs_file_path_prefix . "."
                               . $sv_type
                               . ".stderr.txt",
                             sv_type => $sv_type,
@@ -18165,11 +16762,11 @@ sub delly_reformat {
         say $FILEHANDLE "## bcftools merge";
 
         ## Create file commands for xargs
-        ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+        ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
                 FILEHANDLE         => $FILEHANDLE,
                 XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                file_name          => $file_name,
+                file_path          => $file_path,
                 program_info_path  => $program_info_path,
                 core_number        => $core_number,
                 xargs_file_counter => $xargs_file_counter,
@@ -18199,11 +16796,11 @@ sub delly_reformat {
                               . $sv_type
                               . $suffix{pdelly_call},
                             output_type     => "b",
-                            stdoutfile_path => $xargs_file_name . "."
+                            stdoutfile_path => $xargs_file_path_prefix . "."
                               . $contig . "."
                               . $sv_type
                               . ".stdout.txt",
-                            stderrfile_path => $xargs_file_name . "."
+                            stderrfile_path => $xargs_file_path_prefix . "."
                               . $contig . "."
                               . $sv_type
                               . ".stderr.txt",
@@ -18212,22 +16809,22 @@ sub delly_reformat {
                     );
                     print $XARGSFILEHANDLE q{;} . q{ };
 
-		    Program::Variantcalling::Bcftools::index(
-							     {
-							      infile_path => $outfile_path_prefix . "_"
-							      . $contig . "_"
-							      . $sv_type
-							      . $suffix{pdelly_call},
-							      stderrfile_path => $xargs_file_name . q{.}
-							      . $contig . q{.}
-							      . $sv_type
-							      . "_" . q{index.stderr.txt},
-							      output_type => q{csi},
-							      FILEHANDLE  => $XARGSFILEHANDLE,
-							     }
-							    );
-		    say $XARGSFILEHANDLE "\n";
-		  }
+                    Program::Variantcalling::Bcftools::index(
+                        {
+                            infile_path => $outfile_path_prefix . "_"
+                              . $contig . "_"
+                              . $sv_type
+                              . $suffix{pdelly_call},
+                            stderrfile_path => $xargs_file_path_prefix . q{.}
+                              . $contig . q{.}
+                              . $sv_type . "_"
+                              . q{index.stderr.txt},
+                            output_type => q{csi},
+                            FILEHANDLE  => $XARGSFILEHANDLE,
+                        }
+                    );
+                    say $XARGSFILEHANDLE "\n";
+                }
             }
             else {
 
@@ -18245,29 +16842,29 @@ sub delly_reformat {
                           . $sv_type
                           . $suffix{pdelly_call},
                         output_type     => "b",
-                        stdoutfile_path => $xargs_file_name . "."
+                        stdoutfile_path => $xargs_file_path_prefix . "."
                           . $sv_type
                           . ".stdout.txt",
-                        stderrfile_path => $xargs_file_name . "."
+                        stderrfile_path => $xargs_file_path_prefix . "."
                           . $sv_type
                           . ".stderr.txt",
                         FILEHANDLE => $XARGSFILEHANDLE,
                     }
                 );
-		print $XARGSFILEHANDLE q{;} . q{ };
+                print $XARGSFILEHANDLE q{;} . q{ };
 
-		Program::Variantcalling::Bcftools::index(
-							 {
-							  infile_path => $outfile_path_prefix . "_"
-							  . $sv_type
-							  . $suffix{pdelly_call},
-							  stderrfile_path => $xargs_file_name . q{.}
-							  . $sv_type
-							  . "_" . q{index.stderr.txt},
-							  output_type => q{csi},
-							  FILEHANDLE  => $XARGSFILEHANDLE,
-							 }
-							);
+                Program::Variantcalling::Bcftools::index(
+                    {
+                        infile_path => $outfile_path_prefix . "_"
+                          . $sv_type
+                          . $suffix{pdelly_call},
+                        stderrfile_path => $xargs_file_path_prefix . q{.}
+                          . $sv_type . "_"
+                          . q{index.stderr.txt},
+                        output_type => q{csi},
+                        FILEHANDLE  => $XARGSFILEHANDLE,
+                    }
+                );
                 say $XARGSFILEHANDLE "\n";
             }
         }
@@ -18324,7 +16921,7 @@ sub delly_reformat {
                       . $sv_type
                       . "_concat"
                       . $suffix{pdelly_call},
-                    stderrfile_path => $xargs_file_name . "."
+                    stderrfile_path => $xargs_file_path_prefix . "."
                       . $sv_type
                       . "_index.stderr.txt",
                     output_type => "csi",
@@ -18338,11 +16935,11 @@ sub delly_reformat {
         say $FILEHANDLE "## Delly filter";
 
         ## Create file commands for xargs
-        ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+        ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
                 FILEHANDLE         => $FILEHANDLE,
                 XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                file_name          => $file_name,
+                file_path          => $file_path,
                 program_info_path  => $program_info_path,
                 core_number        => $core_number,
                 xargs_file_counter => $xargs_file_counter,
@@ -18363,10 +16960,10 @@ sub delly_reformat {
                           . $sv_type
                           . "_filtered"
                           . $suffix{pdelly_call},
-                        stdoutfile_path => $xargs_file_name . "."
+                        stdoutfile_path => $xargs_file_path_prefix . "."
                           . $sv_type
                           . ".stdout.txt",
-                        stderrfile_path => $xargs_file_name . "."
+                        stderrfile_path => $xargs_file_path_prefix . "."
                           . $sv_type
                           . ".stderr.txt",
                         sv_type     => $sv_type,
@@ -18387,10 +16984,10 @@ sub delly_reformat {
                           . $sv_type
                           . "_filtered"
                           . $suffix{pdelly_call},
-                        stdoutfile_path => $xargs_file_name . "."
+                        stdoutfile_path => $xargs_file_path_prefix . "."
                           . $sv_type
                           . ".stdout.txt",
-                        stderrfile_path => $xargs_file_name . "."
+                        stderrfile_path => $xargs_file_path_prefix . "."
                           . $sv_type
                           . ".stderr.txt",
                         sv_type     => $sv_type,
@@ -18517,7 +17114,7 @@ sub delly_reformat {
                 family_id        => $$family_id_ref,
                 path             => $job_id_chain,
                 log              => $log,
-                sbatch_file_name => $file_name,
+                sbatch_file_name => $file_path,
             }
         );
     }
@@ -18641,7 +17238,7 @@ sub delly_call {
         },
         xargs_file_counter => {
             default     => 0,
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
             store       => \$xargs_file_counter
         },
@@ -18650,9 +17247,10 @@ sub delly_call {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Script::Setup_script qw(setup_script);
-    use MIP::IO::Files qw(migrate_file);
+    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Set::File qw{set_file_suffix};
+    use MIP::Delete::List qw{ delete_contig_elements };
     use Program::Variantcalling::Delly qw(call);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_sample);
@@ -18661,7 +17259,7 @@ sub delly_call {
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
     my $program_outdirectory_name =
       $parameter_href->{ "p" . $program_name }{outdir_name};
-    my $xargs_file_name;
+    my $xargs_file_path_prefix;
     my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
 
     ## Filehandles
@@ -18669,7 +17267,7 @@ sub delly_call {
     my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = setup_script(
+    my ( $file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -18729,11 +17327,10 @@ sub delly_call {
 
     ### Update contigs
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    my @contigs = remove_element(
+    my @contigs = delete_contig_elements(
         {
             elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
-            remove_contigs_ref => [ "MT", "M" ],
-            contig_switch      => 1,
+            remove_contigs_ref => [qw{ MT M }],
         }
     );
 
@@ -18773,12 +17370,12 @@ sub delly_call {
 
         ## Copy file(s) to temporary directory
         say $FILEHANDLE "## Copy file(s) to temporary directory";
-        ( $xargs_file_counter, $xargs_file_name ) = xargs_migrate_contig_files(
+        ($xargs_file_counter) = xargs_migrate_contig_files(
             {
                 FILEHANDLE        => $FILEHANDLE,
                 XARGSFILEHANDLE   => $XARGSFILEHANDLE,
                 contigs_ref       => \@contigs,
-                file_name         => $file_name,
+                file_path         => $file_path,
                 program_info_path => $program_info_path,
                 core_number       => ( $core_number - 1 )
                 ,    #Compensate for cp of entire BAM (INS, TRA), see above
@@ -18796,11 +17393,11 @@ sub delly_call {
     say $FILEHANDLE "## delly";
 
     ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             FILEHANDLE         => $FILEHANDLE,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_name          => $file_name,
+            file_path          => $file_path,
             program_info_path  => $program_info_path,
             core_number        => $core_number,
             xargs_file_counter => $xargs_file_counter,
@@ -18823,11 +17420,11 @@ sub delly_call {
                           . $contig . "_"
                           . $sv_type
                           . $outfile_suffix,
-                        stdoutfile_path => $xargs_file_name . "."
+                        stdoutfile_path => $xargs_file_path_prefix . "."
                           . $contig . "."
                           . $sv_type
                           . ".stdout.txt",
-                        stderrfile_path => $xargs_file_name . "."
+                        stderrfile_path => $xargs_file_path_prefix . "."
                           . $contig . "."
                           . $sv_type
                           . ".stderr.txt",
@@ -18850,10 +17447,10 @@ sub delly_call {
                     outfile_path => $outfile_path_prefix . "_"
                       . $sv_type
                       . $outfile_suffix,
-                    stdoutfile_path => $xargs_file_name . "."
+                    stdoutfile_path => $xargs_file_path_prefix . "."
                       . $sv_type
                       . ".stdout.txt",
-                    stderrfile_path => $xargs_file_name . "."
+                    stderrfile_path => $xargs_file_path_prefix . "."
                       . $sv_type
                       . ".stderr.txt",
                     sv_type => $sv_type,
@@ -18891,7 +17488,7 @@ sub delly_call {
                 sample_id               => $$sample_id_ref,
                 path                    => $job_id_chain,
                 log                     => $log,
-                sbatch_file_name        => $file_name
+                sbatch_file_name        => $file_path
             }
         );
     }
@@ -19026,7 +17623,7 @@ sub manta {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = setup_script(
+    my ($file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -19211,7 +17808,7 @@ sub manta {
                 family_id        => $$family_id_ref,
                 path             => $job_id_chain,
                 log              => $log,
-                sbatch_file_name => $file_name,
+                sbatch_file_name => $file_path,
             }
         );
     }
@@ -19359,7 +17956,7 @@ sub tiddit {
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = setup_script(
+    my ( $file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -19533,7 +18130,7 @@ sub tiddit {
                 family_id        => $$family_id_ref,
                 path             => $job_id_chain,
                 log              => $log,
-                sbatch_file_name => $file_name,
+                sbatch_file_name => $file_path,
             }
         );
     }
@@ -19647,7 +18244,7 @@ sub msamtools_mpileup {
           { default => "BOTH", strict_type => 1, store => \$call_type },
         xargs_file_counter => {
             default     => 0,
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
             store       => \$xargs_file_counter
         },
@@ -19656,9 +18253,10 @@ sub msamtools_mpileup {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Script::Setup_script qw(setup_script);
-    use MIP::IO::Files qw(migrate_file);
+    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Set::File qw{set_file_suffix};
+    use MIP::Recipes::Xargs qw{ xargs_command };
     use MIP::Program::Alignment::Samtools qw(samtools_mpileup);
     use Program::Variantcalling::Bcftools qw(call filter norm);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
@@ -19669,7 +18267,7 @@ sub msamtools_mpileup {
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
     my $program_outdirectory_name =
       $parameter_href->{ "p" . $program_name }{outdir_name};
-    my $xargs_file_name;
+    my $xargs_file_path_prefix;
     my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
 
     ## Filehandles
@@ -19677,7 +18275,7 @@ sub msamtools_mpileup {
     my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = setup_script(
+    my ( $file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -19765,12 +18363,12 @@ sub msamtools_mpileup {
 
         ## Copy file(s) to temporary directory
         say $FILEHANDLE "## Copy file(s) to temporary directory";
-        ( $xargs_file_counter, $xargs_file_name ) = xargs_migrate_contig_files(
+        ($xargs_file_counter) = xargs_migrate_contig_files(
             {
                 FILEHANDLE      => $FILEHANDLE,
                 XARGSFILEHANDLE => $XARGSFILEHANDLE,
                 contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
-                file_name   => $file_name,
+                file_path   => $file_path,
                 program_info_path  => $program_info_path,
                 core_number        => $core_number,
                 xargs_file_counter => $xargs_file_counter,
@@ -19787,11 +18385,11 @@ sub msamtools_mpileup {
     say $FILEHANDLE "## SamTools mpileup";
 
     ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             FILEHANDLE         => $FILEHANDLE,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_name          => $file_name,
+            file_path          => $file_path,
             program_info_path  => $program_info_path,
             core_number        => $core_number,
             xargs_file_counter => $xargs_file_counter,
@@ -19812,7 +18410,7 @@ sub msamtools_mpileup {
                 output_tags_ref  => [ "DV", "AD" ],
                 referencefile_path =>
                   $active_parameter_href->{human_genome_reference},
-                stderrfile_path => $xargs_file_name . "."
+                stderrfile_path => $xargs_file_path_prefix . "."
                   . $contig
                   . ".stderr.txt",
                 output_bcf                       => 1,
@@ -19840,7 +18438,7 @@ sub msamtools_mpileup {
                 multiallelic_caller => 1,
                 samples_file        => $samples_file,
                 constrain           => $constrain,
-                stderrfile_path     => $xargs_file_name . "."
+                stderrfile_path     => $xargs_file_path_prefix . "."
                   . $contig
                   . "_call.stderr.txt",
                 FILEHANDLE => $XARGSFILEHANDLE,
@@ -19850,7 +18448,7 @@ sub msamtools_mpileup {
 
         filter(
             {
-                stderrfile_path => $xargs_file_name . "."
+                stderrfile_path => $xargs_file_path_prefix . "."
                   . $contig
                   . "_filter.stderr.txt",
                 soft_filter => "LowQual",
@@ -19867,7 +18465,7 @@ q?\'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %M
             ## Replace the IUPAC code in alternative allels with N for input stream and writes to stream
             replace_iupac(
                 {
-                    stderr_path => $xargs_file_name . "."
+                    stderr_path => $xargs_file_path_prefix . "."
                       . $contig
                       . "_replace_iupac.stderr.txt",
                     FILEHANDLE => $XARGSFILEHANDLE
@@ -19889,7 +18487,9 @@ q?\'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %M
                   . $outfile_suffix,
                 multiallelic    => "-",
                 stderrfile_path => catfile(
-                    $xargs_file_name . "." . $contig . "_norm.stderr.txt"
+                        $xargs_file_path_prefix . "."
+                      . $contig
+                      . "_norm.stderr.txt"
                 ),
             }
         );
@@ -19958,7 +18558,7 @@ q?\'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %M
                 family_id        => $$family_id_ref,
                 path             => $job_id_chain,
                 log              => $log,
-                sbatch_file_name => $file_name,
+                sbatch_file_name => $file_path,
             }
         );
     }
@@ -20067,7 +18667,7 @@ sub freebayes {
           { default => "BOTH", strict_type => 1, store => \$call_type },
         xargs_file_counter => {
             default     => 0,
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
             store       => \$xargs_file_counter
         },
@@ -20076,9 +18676,10 @@ sub freebayes {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Script::Setup_script qw(setup_script);
-    use MIP::IO::Files qw(migrate_file);
+    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Set::File qw{set_file_suffix};
+    use MIP::Recipes::Xargs qw{ xargs_command };
     use Program::Variantcalling::Freebayes qw(calling);
     use Program::Variantcalling::Bcftools qw(filter norm);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
@@ -20089,7 +18690,7 @@ sub freebayes {
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
     my $program_outdirectory_name =
       $parameter_href->{ "p" . $program_name }{outdir_name};
-    my $xargs_file_name;
+    my $xargs_file_path_prefix;
     my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
 
     ## Filehandles
@@ -20097,7 +18698,7 @@ sub freebayes {
     my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = setup_script(
+    my ( $file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -20172,12 +18773,12 @@ sub freebayes {
 
         ## Copy file(s) to temporary directory
         say $FILEHANDLE "## Copy file(s) to temporary directory";
-        ( $xargs_file_counter, $xargs_file_name ) = xargs_migrate_contig_files(
+        ($xargs_file_counter) = xargs_migrate_contig_files(
             {
                 FILEHANDLE      => $FILEHANDLE,
                 XARGSFILEHANDLE => $XARGSFILEHANDLE,
                 contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
-                file_name   => $file_name,
+                file_path   => $file_path,
                 program_info_path  => $program_info_path,
                 core_number        => $core_number,
                 xargs_file_counter => $xargs_file_counter,
@@ -20194,11 +18795,11 @@ sub freebayes {
     say $FILEHANDLE "## Freebayes";
 
     ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             FILEHANDLE         => $FILEHANDLE,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_name          => $file_name,
+            file_path          => $file_path,
             program_info_path  => $program_info_path,
             core_number        => $core_number,
             xargs_file_counter => $xargs_file_counter,
@@ -20218,7 +18819,7 @@ sub freebayes {
                 infile_paths_ref => \@file_paths,
                 referencefile_path =>
                   $active_parameter_href->{human_genome_reference},
-                stderrfile_path => $xargs_file_name . "."
+                stderrfile_path => $xargs_file_path_prefix . "."
                   . $contig
                   . ".stderr.txt",
                 apply_standard_filter      => 1,
@@ -20230,7 +18831,7 @@ sub freebayes {
 
         filter(
             {
-                stderrfile_path => $xargs_file_name . "."
+                stderrfile_path => $xargs_file_path_prefix . "."
                   . $contig
                   . "_filter.stderr.txt",
                 soft_filter => "LowQual",
@@ -20246,7 +18847,7 @@ sub freebayes {
             ## Replace the IUPAC code in alternative allels with N for input stream and writes to stream
             replace_iupac(
                 {
-                    stderr_path => $xargs_file_name . "."
+                    stderr_path => $xargs_file_path_prefix . "."
                       . $contig
                       . "_filter.stderr.txt",
                     FILEHANDLE => $XARGSFILEHANDLE
@@ -20267,7 +18868,9 @@ sub freebayes {
                   . $outfile_suffix,
                 multiallelic    => "-",
                 stderrfile_path => catfile(
-                    $xargs_file_name . "." . $contig . "_norm.stderr.txt"
+                        $xargs_file_path_prefix . "."
+                      . $contig
+                      . "_norm.stderr.txt"
                 ),
             }
         );
@@ -20326,7 +18929,7 @@ sub freebayes {
                 family_id        => $$family_id_ref,
                 path             => $job_id_chain,
                 log              => $log,
-                sbatch_file_name => $file_name,
+                sbatch_file_name => $file_path,
             }
         );
     }
@@ -20443,7 +19046,7 @@ sub gatk_haplotypecaller {
         },
         xargs_file_counter => {
             default     => 0,
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
             store       => \$xargs_file_counter
         },
@@ -20454,6 +19057,8 @@ sub gatk_haplotypecaller {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
+    use MIP::IO::Files qw{ xargs_migrate_contig_files };
+    use MIP::Recipes::Xargs qw{ xargs_command };
     use Program::Alignment::Gatk qw(haplotypecaller);
     use MIP::Processmanagement::Slurm_processes
       qw{slurm_submit_job_sample_id_dependency_add_to_sample};
@@ -20463,7 +19068,7 @@ sub gatk_haplotypecaller {
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $analysis_type_ref =
       \$active_parameter_href->{analysis_type}{$$sample_id_ref};
-    my $xargs_file_name;
+    my $xargs_file_path_prefix;
     my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
 
     ## Filehandles
@@ -20471,7 +19076,7 @@ sub gatk_haplotypecaller {
     my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = setup_script(
+    my ( $file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -20581,12 +19186,12 @@ sub gatk_haplotypecaller {
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
-    ( $xargs_file_counter, $xargs_file_name ) = xargs_migrate_contig_files(
+    ($xargs_file_counter) = xargs_migrate_contig_files(
         {
             FILEHANDLE         => $FILEHANDLE,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
-            file_name          => $file_name,
+            file_path          => $file_path,
             program_info_path  => $program_info_path,
             core_number        => $core_number,
             xargs_file_counter => $xargs_file_counter,
@@ -20602,11 +19207,11 @@ sub gatk_haplotypecaller {
     say $FILEHANDLE "## GATK HaplotypeCaller";
 
     ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             FILEHANDLE         => $FILEHANDLE,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_name          => $file_name,
+            file_path          => $file_path,
             program_info_path  => $program_info_path,
             core_number        => $core_number,
             xargs_file_counter => $xargs_file_counter,
@@ -20682,7 +19287,7 @@ sub gatk_haplotypecaller {
                 outfile_path => $outfile_path_prefix . "_"
                   . $contig
                   . $outfile_suffix,
-                stderrfile_path => $xargs_file_name . "."
+                stderrfile_path => $xargs_file_path_prefix . "."
                   . $contig
                   . ".stderr.txt",
                 referencefile_path =>
@@ -20698,12 +19303,12 @@ sub gatk_haplotypecaller {
 
     ## Copies file from temporary directory. Per contig
     say $FILEHANDLE "## Copy file from temporary directory";
-    ( $xargs_file_counter, $xargs_file_name ) = xargs_migrate_contig_files(
+    ($xargs_file_counter) = xargs_migrate_contig_files(
         {
             FILEHANDLE         => $FILEHANDLE,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
-            file_name          => $file_name,
+            file_path          => $file_path,
             program_info_path  => $program_info_path,
             core_number        => $core_number,
             xargs_file_counter => $xargs_file_counter,
@@ -20725,7 +19330,7 @@ sub gatk_haplotypecaller {
                 sample_id               => $$sample_id_ref,
                 path                    => $job_id_chain,
                 log                     => $log,
-                sbatch_file_name        => $file_name
+                sbatch_file_name        => $file_path
             }
         );
     }
@@ -20737,7 +19342,7 @@ sub gatk_baserecalibration {
 
 ##Function : GATK baserecalibrator/printreads to recalibrate bases before variant calling. Both BaseRecalibrator/PrintReads will be executed within the same sbatch script.
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, $program_info_path, $file_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $xargs_file_counter
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -20747,7 +19352,7 @@ sub gatk_baserecalibration {
 ##         : $sample_id_ref              => Sample id {REF}
 ##         : $program_name               => Program name
 ##         : $program_info_path          => The program info path
-##         : $file_name                  => File name
+##         : $file_path                  => File path
 ##         : $FILEHANDLE                 => Filehandle to write to
 ##         : $family_id_ref              => Family id {REF}
 ##         : $temp_directory_ref         => Temporary directory {REF}
@@ -20772,7 +19377,7 @@ sub gatk_baserecalibration {
     my $sample_id_ref;
     my $program_name;
     my $program_info_path;
-    my $file_name;
+    my $file_path;
     my $FILEHANDLE;
 
     my $tmpl = {
@@ -20832,7 +19437,7 @@ sub gatk_baserecalibration {
             store       => \$program_name
         },
         program_info_path => { strict_type => 1, store => \$program_info_path },
-        file_name         => { strict_type => 1, store => \$file_name },
+        file_path         => { strict_type => 1, store => \$file_path },
         FILEHANDLE    => { store => \$FILEHANDLE },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
@@ -20851,7 +19456,7 @@ sub gatk_baserecalibration {
         },
         xargs_file_counter => {
             default     => 0,
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
             store       => \$xargs_file_counter
         },
@@ -20860,8 +19465,9 @@ sub gatk_baserecalibration {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Script::Setup_script qw(setup_script);
-    use MIP::IO::Files qw(migrate_file);
+    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Get::File qw{get_file_suffix};
+    use MIP::Recipes::Xargs qw{ xargs_command };
     use Program::Alignment::Gatk qw(baserecalibrator printreads);
     use Program::Alignment::Picardtools qw(gatherbamfiles);
     use MIP::Gnu::Coreutils qw(gnu_rm);
@@ -20874,7 +19480,7 @@ sub gatk_baserecalibration {
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $analysis_type_ref =
       \$active_parameter_href->{analysis_type}{$$sample_id_ref};
-    my $xargs_file_name;
+    my $xargs_file_path_prefix;
     my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
 
     ## Filehandles
@@ -20886,7 +19492,7 @@ sub gatk_baserecalibration {
         $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = setup_script(
+        ( $file_path, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -20966,12 +19572,12 @@ sub gatk_baserecalibration {
 
         ## Copy file(s) to temporary directory
         say $FILEHANDLE "## Copy file(s) to temporary directory";
-        ( $xargs_file_counter, $xargs_file_name ) = xargs_migrate_contig_files(
+        ($xargs_file_counter) = xargs_migrate_contig_files(
             {
                 FILEHANDLE      => $FILEHANDLE,
                 XARGSFILEHANDLE => $XARGSFILEHANDLE,
                 contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
-                file_name   => $file_name,
+                file_path   => $file_path,
                 program_info_path  => $program_info_path,
                 core_number        => $core_number,
                 xargs_file_counter => $xargs_file_counter,
@@ -20999,11 +19605,11 @@ sub gatk_baserecalibration {
     say $FILEHANDLE "## GATK BaseRecalibrator";
 
     ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             FILEHANDLE         => $FILEHANDLE,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_name          => $file_name,
+            file_path          => $file_path,
             program_info_path  => $program_info_path,
             core_number        => $core_number,
             xargs_file_counter => $xargs_file_counter,
@@ -21053,7 +19659,7 @@ sub gatk_baserecalibration {
                   . $contig
                   . $infile_suffix,
                 outfile_path    => $file_path_prefix . "_" . $contig . ".grp",
-                stderrfile_path => $xargs_file_name . "."
+                stderrfile_path => $xargs_file_path_prefix . "."
                   . $contig
                   . ".stderr.txt",
                 referencefile_path =>
@@ -21075,11 +19681,11 @@ sub gatk_baserecalibration {
     say $FILEHANDLE "## GATK PrintReads";
 
     ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             FILEHANDLE         => $FILEHANDLE,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_name          => $file_name,
+            file_path          => $file_path,
             program_info_path  => $program_info_path,
             core_number        => $core_number,
             xargs_file_counter => $xargs_file_counter,
@@ -21137,7 +19743,7 @@ sub gatk_baserecalibration {
                 outfile_path => $outfile_path_prefix . "_"
                   . $contig
                   . $outfile_suffix,
-                stderrfile_path => $xargs_file_name . "."
+                stderrfile_path => $xargs_file_path_prefix . "."
                   . $contig
                   . ".stderr.txt",
                 referencefile_path =>
@@ -21157,12 +19763,12 @@ sub gatk_baserecalibration {
 
     ## Copies file from temporary directory. Per contig for variant callers.
     say $FILEHANDLE "## Copy file from temporary directory";
-    ( $xargs_file_counter, $xargs_file_name ) = xargs_migrate_contig_files(
+    ($xargs_file_counter) = xargs_migrate_contig_files(
         {
             FILEHANDLE         => $FILEHANDLE,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
-            file_name          => $file_name,
+            file_path          => $file_path,
             program_info_path  => $program_info_path,
             core_number        => $core_number,
             xargs_file_counter => $xargs_file_counter,
@@ -21271,7 +19877,7 @@ sub gatk_baserecalibration {
                 sample_id               => $$sample_id_ref,
                 path                    => $job_id_chain,
                 log                     => $log,
-                sbatch_file_name        => $file_name
+                sbatch_file_name        => $file_path
             }
         );
     }
@@ -21283,7 +19889,7 @@ sub gatk_realigner {
 
 ##Function : GATK ReAlignerTargetCreator/IndelRealigner to rearrange reads around INDELs. Both ReAlignerTargetCreator and IndelRealigner will be executed within the same sbatch script.
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id, $program_name, $program_info_path, $file_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $xargs_file_counter
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -21293,7 +19899,7 @@ sub gatk_realigner {
 ##         : $sample_id_ref              => Sample id {REF}
 ##         : $program_name               => Program name
 ##         : $program_info_path          => The program info path
-##         : $file_name                  => File name
+##         : $file_path                  => File path
 ##         : $FILEHANDLE                 => Filehandle to write to
 ##         : $family_id_ref              => Family id {REF}
 ##         : $temp_directory_ref         => Temporary directory {REF}
@@ -21318,7 +19924,7 @@ sub gatk_realigner {
     my $sample_id_ref;
     my $program_name;
     my $program_info_path;
-    my $file_name;
+    my $file_path;
     my $FILEHANDLE;
 
     my $tmpl = {
@@ -21373,7 +19979,7 @@ sub gatk_realigner {
         },
         program_name      => { strict_type => 1, store => \$program_name },
         program_info_path => { strict_type => 1, store => \$program_info_path },
-        file_name         => { strict_type => 1, store => \$file_name },
+        file_path         => { strict_type => 1, store => \$file_path },
         FILEHANDLE    => { store => \$FILEHANDLE },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
@@ -21392,7 +19998,7 @@ sub gatk_realigner {
         },
         xargs_file_counter => {
             default     => 0,
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
             store       => \$xargs_file_counter
         },
@@ -21402,6 +20008,8 @@ sub gatk_realigner {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Get::File qw{get_file_suffix};
+    use MIP::IO::Files qw{ xargs_migrate_contig_files };
+    use MIP::Recipes::Xargs qw{ xargs_command };
     use Program::Alignment::Gatk qw(realignertargetcreator indelrealigner);
     use MIP::Processmanagement::Slurm_processes
       qw{slurm_submit_job_sample_id_dependency_add_to_sample};
@@ -21411,7 +20019,7 @@ sub gatk_realigner {
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $analysis_type_ref =
       \$active_parameter_href->{analysis_type}{$$sample_id_ref};
-    my $xargs_file_name;
+    my $xargs_file_path_prefix;
     my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
 
     ## Filehandles
@@ -21423,7 +20031,7 @@ sub gatk_realigner {
         $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = setup_script(
+        ( $file_path, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -21499,12 +20107,12 @@ sub gatk_realigner {
 
         ## Copy file(s) to temporary directory
         say $FILEHANDLE "## Copy file(s) to temporary directory";
-        ( $xargs_file_counter, $xargs_file_name ) = xargs_migrate_contig_files(
+        ($xargs_file_counter) = xargs_migrate_contig_files(
             {
                 FILEHANDLE      => $FILEHANDLE,
                 XARGSFILEHANDLE => $XARGSFILEHANDLE,
                 contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
-                file_name   => $file_name,
+                file_path   => $file_path,
                 program_info_path  => $program_info_path,
                 core_number        => $core_number,
                 xargs_file_counter => $xargs_file_counter,
@@ -21532,11 +20140,11 @@ sub gatk_realigner {
     );                      #To not exceed maximum
 
     ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             FILEHANDLE         => $FILEHANDLE,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_name          => $file_name,
+            file_path          => $file_path,
             program_info_path  => $program_info_path,
             core_number        => $core_number,
             xargs_file_counter => $xargs_file_counter,
@@ -21585,7 +20193,7 @@ sub gatk_realigner {
                 outfile_path => $outfile_path_prefix . "_"
                   . $contig
                   . ".intervals",
-                stderrfile_path => $xargs_file_name . "."
+                stderrfile_path => $xargs_file_path_prefix . "."
                   . $contig
                   . ".stderr.txt",
                 referencefile_path =>
@@ -21605,11 +20213,11 @@ sub gatk_realigner {
     say $FILEHANDLE "## GATK IndelRealigner";
 
     ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             FILEHANDLE         => $FILEHANDLE,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_name          => $file_name,
+            file_path          => $file_path,
             program_info_path  => $program_info_path,
             core_number        => $core_number,
             xargs_file_counter => $xargs_file_counter,
@@ -21661,7 +20269,7 @@ sub gatk_realigner {
                 target_intervals_file => $outfile_path_prefix . "_"
                   . $contig
                   . ".intervals",
-                stderrfile_path => $xargs_file_name . "."
+                stderrfile_path => $xargs_file_path_prefix . "."
                   . $contig
                   . ".stderr.txt",
                 referencefile_path =>
@@ -21681,12 +20289,12 @@ sub gatk_realigner {
 
         ## Copies file from temporary directory. Per contig
         say $FILEHANDLE "## Copy file from temporary directory";
-        ( $xargs_file_counter, $xargs_file_name ) = xargs_migrate_contig_files(
+        ($xargs_file_counter) = xargs_migrate_contig_files(
             {
                 FILEHANDLE      => $FILEHANDLE,
                 XARGSFILEHANDLE => $XARGSFILEHANDLE,
                 contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
-                file_name   => $file_name,
+                file_path   => $file_path,
                 program_info_path  => $program_info_path,
                 core_number        => $core_number,
                 xargs_file_counter => $xargs_file_counter,
@@ -21740,7 +20348,7 @@ sub gatk_realigner {
                     sample_id               => $$sample_id_ref,
                     path                    => $job_id_chain,
                     log                     => $log,
-                    sbatch_file_name        => $file_name
+                    sbatch_file_name        => $file_path
                 }
             );
         }
@@ -21759,7 +20367,7 @@ sub pmarkduplicates {
 
 ##Function : Mark duplicated reads using Picardtools markduplicates or Sambamba markduplicates in files generated from alignment (sorted, merged).
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $lane_href, $job_id_href, $sample_id_ref, $program_name, $program_info_path, $file_name,, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $lane_href, $job_id_href, $sample_id_ref, $program_name, $program_info_path, $file_path,, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $xargs_file_counter
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -21770,7 +20378,7 @@ sub pmarkduplicates {
 ##         : $sample_id_ref              => Sample id {REF}
 ##         : $program_name               => Program name
 ##         : $program_info_path          => The program info path
-##         : $file_name                  => File name
+##         : $file_path                  => File path
 ##         : $FILEHANDLE                 => Filehandle to write to
 ##         : $family_id_ref              => Family id {REF}
 ##         : $temp_directory_ref         => Temporary directory {REF}
@@ -21796,7 +20404,7 @@ sub pmarkduplicates {
     my $sample_id_ref;
     my $program_name;
     my $program_info_path;
-    my $file_name;
+    my $file_path;
     my $FILEHANDLE;
 
     my $tmpl = {
@@ -21863,7 +20471,7 @@ sub pmarkduplicates {
             store       => \$program_name
         },
         program_info_path => { strict_type => 1, store => \$program_info_path },
-        file_name         => { strict_type => 1, store => \$file_name },
+        file_path         => { strict_type => 1, store => \$file_path },
         FILEHANDLE    => { store => \$FILEHANDLE },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
@@ -21882,7 +20490,7 @@ sub pmarkduplicates {
         },
         xargs_file_counter => {
             default     => 0,
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
             store       => \$xargs_file_counter
         },
@@ -21890,8 +20498,9 @@ sub pmarkduplicates {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::IO::Files qw(migrate_file);
+    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Get::File qw{get_file_suffix};
+    use MIP::Recipes::Xargs qw{ xargs_command };
     use MIP::Program::Alignment::Sambamba qw(sambamba_flagstat);
     use MIP::Gnu::Coreutils qw(gnu_cat);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
@@ -21905,7 +20514,7 @@ sub pmarkduplicates {
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $lanes = join( "", @{ $lane_href->{$$sample_id_ref} } );   #Extract lanes
-    my $xargs_file_name;
+    my $xargs_file_path_prefix;
     my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
 
     ## Filehandles
@@ -21958,7 +20567,7 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
         use MIP::Script::Setup_script qw(setup_script);
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = setup_script(
+        ( $file_path, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -21975,12 +20584,12 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
 
         ## Copy file(s) to temporary directory
         say $FILEHANDLE "## Copy file(s) to temporary directory";
-        ( $xargs_file_counter, $xargs_file_name ) = xargs_migrate_contig_files(
+        ($xargs_file_counter) = xargs_migrate_contig_files(
             {
                 FILEHANDLE      => $FILEHANDLE,
                 XARGSFILEHANDLE => $XARGSFILEHANDLE,
                 contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
-                file_name   => $file_name,
+                file_path   => $file_path,
                 program_info_path  => $program_info_path,
                 core_number        => $core_number,
                 xargs_file_counter => $xargs_file_counter,
@@ -22004,11 +20613,11 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
         use Program::Alignment::Picardtools qw(markduplicates);
 
         ## Create file commands for xargs
-        ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+        ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
                 FILEHANDLE         => $FILEHANDLE,
                 XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                file_name          => $file_name,
+                file_path          => $file_path,
                 program_info_path  => $program_info_path,
                 core_number        => $core_number,
                 xargs_file_counter => $xargs_file_counter,
@@ -22031,7 +20640,7 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
                     outfile_path => $outfile_path_prefix . "_"
                       . $contig
                       . $outfile_suffix,
-                    stderrfile_path => $xargs_file_name . "."
+                    stderrfile_path => $xargs_file_path_prefix . "."
                       . $contig
                       . ".stderr.txt",
                     metrics_file => $outfile_path_prefix . "_"
@@ -22052,7 +20661,7 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
                     outfile_path => $outfile_path_prefix . "_"
                       . $contig
                       . "_metric",
-                    stderrfile_path => $xargs_file_name . "."
+                    stderrfile_path => $xargs_file_path_prefix . "."
                       . $contig
                       . ".stderr.txt",
                     FILEHANDLE => $XARGSFILEHANDLE,
@@ -22069,11 +20678,11 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
 
         use MIP::Program::Alignment::Sambamba qw(sambamba_markdup);
 
-        ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+        ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
                 FILEHANDLE         => $FILEHANDLE,
                 XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                file_name          => $file_name,
+                file_path          => $file_path,
                 program_info_path  => $program_info_path,
                 core_number        => $core_number,
                 xargs_file_counter => $xargs_file_counter,
@@ -22090,7 +20699,7 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
                     outfile_path => $outfile_path_prefix . "_"
                       . $contig
                       . $outfile_suffix,
-                    stderrfile_path => $xargs_file_name . "."
+                    stderrfile_path => $xargs_file_path_prefix . "."
                       . $contig
                       . ".stderr.txt",
                     FILEHANDLE      => $XARGSFILEHANDLE,
@@ -22115,7 +20724,7 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
                     outfile_path => $outfile_path_prefix . "_"
                       . $contig
                       . "_metric",
-                    stderrfile_path => $xargs_file_name . "."
+                    stderrfile_path => $xargs_file_path_prefix . "."
                       . $contig
                       . ".stderr.txt",
                     FILEHANDLE => $XARGSFILEHANDLE,
@@ -22186,12 +20795,12 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
 
         ## Copies file from temporary directory. Per contig
         say $FILEHANDLE "## Copy file from temporary directory";
-        ( $xargs_file_counter, $xargs_file_name ) = xargs_migrate_contig_files(
+        ($xargs_file_counter) = xargs_migrate_contig_files(
             {
                 FILEHANDLE      => $FILEHANDLE,
                 XARGSFILEHANDLE => $XARGSFILEHANDLE,
                 contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
-                file_name   => $file_name,
+                file_path   => $file_path,
                 program_info_path  => $program_info_path,
                 core_number        => $core_number,
                 xargs_file_counter => $xargs_file_counter,
@@ -22234,7 +20843,7 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
                     sample_id               => $$sample_id_ref,
                     path                    => $job_id_chain,
                     log                     => $log,
-                    sbatch_file_name        => $file_name
+                    sbatch_file_name        => $file_path
                 }
             );
         }
@@ -22253,7 +20862,7 @@ sub picardtools_mergesamfiles {
 
 ##Function : Merges all bam files using Picardtools mergesamfiles within each sampleid and files generated previously (option if provided with '-picardtools_mergesamfiles_previous_bams'). The merged files have to be sorted before attempting to merge.
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $lane_href, $job_id_href, $sample_id_ref, $program_name, $program_info_path, $file_name,, $FILEHANDLE, $family_id_ref, $outaligner_dir_ref, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $lane_href, $job_id_href, $sample_id_ref, $program_name, $program_info_path, $file_path,, $FILEHANDLE, $family_id_ref, $outaligner_dir_ref, $xargs_file_counter
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -22264,7 +20873,7 @@ sub picardtools_mergesamfiles {
 ##         : $sample_id_ref              => Sample id {REF}
 ##         : $program_name               => Program name
 ##         : $program_info_path          => The program info path
-##         : $file_name                  => File name
+##         : $file_path                  => File path
 ##         : $FILEHANDLE                 => Filehandle to write to
 ##         : $family_id_ref              => Family id {REF}
 ##         : $temp_directory_ref         => Temporary directory {REF}
@@ -22290,7 +20899,7 @@ sub picardtools_mergesamfiles {
     my $sample_id_ref;
     my $program_name;
     my $program_info_path;
-    my $file_name;
+    my $file_path;
     my $FILEHANDLE;
 
     my $tmpl = {
@@ -22357,7 +20966,7 @@ sub picardtools_mergesamfiles {
             store       => \$program_name
         },
         program_info_path => { strict_type => 1, store => \$program_info_path },
-        file_name         => { strict_type => 1, store => \$file_name },
+        file_path         => { strict_type => 1, store => \$file_path },
         FILEHANDLE    => { store => \$FILEHANDLE },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
@@ -22376,7 +20985,7 @@ sub picardtools_mergesamfiles {
         },
         xargs_file_counter => {
             default     => 0,
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
             store       => \$xargs_file_counter
         },
@@ -22384,8 +20993,9 @@ sub picardtools_mergesamfiles {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::IO::Files qw(migrate_files);
+    use MIP::IO::Files qw(migrate_files xargs_migrate_contig_files);
     use MIP::Get::File qw{get_file_suffix};
+    use MIP::Recipes::Xargs qw{ xargs_command };
     use Program::Alignment::Picardtools qw(mergesamfiles);
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use MIP::Program::Alignment::Samtools qw(samtools_index);
@@ -22401,7 +21011,7 @@ sub picardtools_mergesamfiles {
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $lanes = join( "", @{ $lane_href->{$$sample_id_ref} } );   #Extract lanes
-    my $xargs_file_name;
+    my $xargs_file_path_prefix;
     my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
 
     ## Filehandles
@@ -22414,7 +21024,7 @@ sub picardtools_mergesamfiles {
         use MIP::Script::Setup_script qw(setup_script);
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = setup_script(
+        ( $file_path, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -22480,14 +21090,13 @@ sub picardtools_mergesamfiles {
 
         ## Split BAMs using Samtools
         say $FILEHANDLE "## Split alignment files per contig";
-        ( $xargs_file_counter, $xargs_file_name ) =
-          split_and_index_aligment_file(
+        ($xargs_file_counter) = split_and_index_aligment_file(
             {
                 active_parameter_href => $active_parameter_href,
                 contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
                 FILEHANDLE  => $FILEHANDLE,
                 XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                file_name          => $file_name,
+                file_path          => $file_path,
                 program_info_path  => $program_info_path,
                 core_number        => $core_number,
                 xargs_file_counter => $xargs_file_counter,
@@ -22496,7 +21105,7 @@ sub picardtools_mergesamfiles {
                 output_format      => substr( $infile_suffix, 1 )
                 ,    #Remove "." in suffix
             }
-          );
+        );
     }
 
     if ( scalar( @{ $infile_lane_prefix_href->{$$sample_id_ref} } ) > 1 ) {
@@ -22517,11 +21126,11 @@ sub picardtools_mergesamfiles {
         );           #To not exceed maximum
 
         ## Create file commands for xargs
-        ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+        ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
                 FILEHANDLE         => $FILEHANDLE,
                 XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                file_name          => $file_name,
+                file_path          => $file_path,
                 program_info_path  => $program_info_path,
                 core_number        => $core_number,
                 first_command      => "java",
@@ -22560,7 +21169,7 @@ sub picardtools_mergesamfiles {
                           . $contig
                           . $outfile_suffix
                     ),
-                    stderrfile_path => $xargs_file_name . "."
+                    stderrfile_path => $xargs_file_path_prefix . "."
                       . $contig
                       . ".stderr.txt",
                     threading    => "true",
@@ -22579,11 +21188,11 @@ sub picardtools_mergesamfiles {
 "## Renaming sample instead of merge to streamline handling of filenames downstream";
 
         ## Create file commands for xargs
-        ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+        ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
                 FILEHANDLE         => $FILEHANDLE,
                 XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                file_name          => $file_name,
+                file_path          => $file_path,
                 program_info_path  => $program_info_path,
                 core_number        => $core_number,
                 xargs_file_counter => $xargs_file_counter,
@@ -22708,15 +21317,14 @@ sub picardtools_mergesamfiles {
 
                     ## Split BAMs using Samtools
                     say $FILEHANDLE "## Split alignment files per contig";
-                    ( $xargs_file_counter, $xargs_file_name ) =
-                      split_and_index_aligment_file(
+                    ($xargs_file_counter) = split_and_index_aligment_file(
                         {
                             active_parameter_href => $active_parameter_href,
                             contigs_ref =>
                               \@{ $file_info_href->{contigs_size_ordered} },
                             FILEHANDLE         => $FILEHANDLE,
                             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                            file_name          => $file_name,
+                            file_path          => $file_path,
                             program_info_path  => $program_info_path,
                             core_number        => $core_number,
                             xargs_file_counter => $xargs_file_counter,
@@ -22726,7 +21334,7 @@ sub picardtools_mergesamfiles {
                             output_format => substr( $infile_suffix, 1 )
                             ,    #Remove "." in suffix
                         }
-                      );
+                    );
 
                     ## picardtools_mergesamfiles
                     say $FILEHANDLE "## Merging alignment files";
@@ -22745,11 +21353,12 @@ sub picardtools_mergesamfiles {
                     );           #To not exceed maximum
 
                     ## Create file commands for xargs
-                    ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+                    ( $xargs_file_counter, $xargs_file_path_prefix ) =
+                      xargs_command(
                         {
                             FILEHANDLE         => $FILEHANDLE,
                             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                            file_name          => $file_name,
+                            file_path          => $file_path,
                             program_info_path  => $program_info_path,
                             core_number        => $core_number,
                             xargs_file_counter => $xargs_file_counter,
@@ -22763,7 +21372,7 @@ sub picardtools_mergesamfiles {
                                 "picard.jar"
                             ),
                         }
-                    );
+                      );
 
                     ## Split per contig
                     foreach my $contig (
@@ -22803,7 +21412,7 @@ sub picardtools_mergesamfiles {
                                       . $contig
                                       . $outfile_suffix
                                 ),
-                                stderrfile_path => $xargs_file_name . "."
+                                stderrfile_path => $xargs_file_path_prefix . "."
                                   . $contig
                                   . ".stderr.txt",
                                 threading    => "true",
@@ -22818,14 +21427,13 @@ sub picardtools_mergesamfiles {
 
                         ## Copies file from temporary directory. Per contig
                         say $FILEHANDLE "## Copy file from temporary directory";
-                        ( $xargs_file_counter, $xargs_file_name ) =
-                          xargs_migrate_contig_files(
+                        ($xargs_file_counter) = xargs_migrate_contig_files(
                             {
                                 FILEHANDLE      => $FILEHANDLE,
                                 XARGSFILEHANDLE => $XARGSFILEHANDLE,
                                 contigs_ref =>
                                   \@{ $file_info_href->{contigs_size_ordered} },
-                                file_name          => $file_name,
+                                file_path          => $file_path,
                                 program_info_path  => $program_info_path,
                                 core_number        => $core_number,
                                 xargs_file_counter => $xargs_file_counter,
@@ -22838,7 +21446,7 @@ sub picardtools_mergesamfiles {
                                 temp_directory => $$temp_directory_ref,
                                 file_ending    => $outfile_suffix . "*",
                             }
-                          );
+                        );
                     }
                     if (
                         (
@@ -22926,15 +21534,14 @@ sub picardtools_mergesamfiles {
 
                 ## Split BAMs using Samtools
                 say $FILEHANDLE "## Split alignment files per contig";
-                ( $xargs_file_counter, $xargs_file_name ) =
-                  split_and_index_aligment_file(
+                ($xargs_file_counter) = split_and_index_aligment_file(
                     {
                         active_parameter_href => $active_parameter_href,
                         contigs_ref =>
                           \@{ $file_info_href->{contigs_size_ordered} },
                         FILEHANDLE         => $FILEHANDLE,
                         XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                        file_name          => $file_name,
+                        file_path          => $file_path,
                         program_info_path  => $program_info_path,
                         core_number        => $core_number,
                         xargs_file_counter => $xargs_file_counter,
@@ -22944,14 +21551,15 @@ sub picardtools_mergesamfiles {
                         output_format => substr( $infile_suffix, 1 )
                         ,    #Remove "." in suffix
                     }
-                  );
+                );
 
                 ## Create file commands for xargs
-                ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+                ( $xargs_file_counter, $xargs_file_path_prefix ) =
+                  xargs_command(
                     {
                         FILEHANDLE         => $FILEHANDLE,
                         XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                        file_name          => $file_name,
+                        file_path          => $file_path,
                         program_info_path  => $program_info_path,
                         core_number        => $core_number,
                         xargs_file_counter => $xargs_file_counter,
@@ -22965,7 +21573,7 @@ sub picardtools_mergesamfiles {
                             "picard.jar"
                         ),
                     }
-                );
+                  );
 
                 ## Split per contig
                 foreach
@@ -23003,7 +21611,7 @@ sub picardtools_mergesamfiles {
                                   . $contig
                                   . $outfile_suffix
                             ),
-                            stderrfile_path => $xargs_file_name . "."
+                            stderrfile_path => $xargs_file_path_prefix . "."
                               . $contig
                               . ".stderr.txt",
                             threading    => "true",
@@ -23018,14 +21626,13 @@ sub picardtools_mergesamfiles {
 
                     ## Copies file from temporary directory. Per contig
                     say $FILEHANDLE "## Copy file from temporary directory";
-                    ( $xargs_file_counter, $xargs_file_name ) =
-                      xargs_migrate_contig_files(
+                    ($xargs_file_counter) = xargs_migrate_contig_files(
                         {
                             FILEHANDLE      => $FILEHANDLE,
                             XARGSFILEHANDLE => $XARGSFILEHANDLE,
                             contigs_ref =>
                               \@{ $file_info_href->{contigs_size_ordered} },
-                            file_name          => $file_name,
+                            file_path          => $file_path,
                             program_info_path  => $program_info_path,
                             core_number        => $core_number,
                             xargs_file_counter => $xargs_file_counter,
@@ -23038,7 +21645,7 @@ sub picardtools_mergesamfiles {
                             temp_directory => $$temp_directory_ref,
                             file_ending    => $outfile_suffix . "*",
                         }
-                      );
+                    );
                 }
                 if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -23065,14 +21672,13 @@ sub picardtools_mergesamfiles {
 
             ## Copies file from temporary directory. Per contig
             say $FILEHANDLE "## Copy file from temporary directory";
-            ( $xargs_file_counter, $xargs_file_name ) =
-              xargs_migrate_contig_files(
+            ($xargs_file_counter) = xargs_migrate_contig_files(
                 {
                     FILEHANDLE      => $FILEHANDLE,
                     XARGSFILEHANDLE => $XARGSFILEHANDLE,
                     contigs_ref =>
                       \@{ $file_info_href->{contigs_size_ordered} },
-                    file_name          => $file_name,
+                    file_path          => $file_path,
                     program_info_path  => $program_info_path,
                     core_number        => $core_number,
                     xargs_file_counter => $xargs_file_counter,
@@ -23084,7 +21690,7 @@ sub picardtools_mergesamfiles {
                     temp_directory => $$temp_directory_ref,
                     file_ending    => $outfile_suffix . "*",
                 }
-              );
+            );
         }
     }
 
@@ -23115,7 +21721,7 @@ sub picardtools_mergesamfiles {
                     sample_id               => $$sample_id_ref,
                     path                    => $job_id_chain,
                     log                     => $log,
-                    sbatch_file_name        => $file_name
+                    sbatch_file_name        => $file_path
                 }
             );
         }
@@ -23202,7 +21808,7 @@ sub bwa_sampe {
           ;    #Collect paired-end or single-end sequence run mode
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        my ($file_name) = setup_script(
+        my ($file_path) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -23344,7 +21950,7 @@ sub bwa_sampe {
                     sample_id => $sample_id,
                     path => $parameter_href->{ "p" . $program_name }{chain},
                     log  => $log,
-                    sbatch_file_name      => $file_name,
+                    sbatch_file_name      => $file_path,
                     sbatch_script_tracker => $infile_prefix_index
                 }
             );
@@ -23420,7 +22026,7 @@ sub bwa_aln {
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = setup_script(
+    my ($file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -23514,7 +22120,7 @@ sub bwa_aln {
                 sample_id               => $sample_id,
                 path => $parameter_href->{ "p" . $program_name }{chain},
                 log  => $log,
-                sbatch_file_name => $file_name
+                sbatch_file_name => $file_path
             }
         );
     }
@@ -23634,7 +22240,7 @@ sub picardtools_mergerapidreads {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = setup_script(
+    my ($file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -23799,7 +22405,7 @@ sub picardtools_mergerapidreads {
                 family_id      => $active_parameter_href->{family_id},
                 path => $parameter_href->{ "p" . $program_name }{chain},
                 log  => $log,
-                sbatch_file_name => $file_name,
+                sbatch_file_name => $file_path,
             }
         );
     }
@@ -23913,7 +22519,7 @@ sub variantannotationblock {
           { default => "BOTH", strict_type => 1, store => \$call_type },
         xargs_file_counter => {
             default     => 0,
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
             store       => \$xargs_file_counter
         },
@@ -23924,7 +22530,7 @@ sub variantannotationblock {
     use MIP::Script::Setup_script qw(setup_script);
 
     my $core_number = $active_parameter_href->{max_cores_per_node};
-    my $xargs_file_name;
+    my $xargs_file_path_prefix;
     my $time = 80;
 
     ## Retrieve logger object
@@ -23956,10 +22562,11 @@ sub variantannotationblock {
             }
         );
     }
-    if ( $active_parameter_href->{pvarianteffectpredictor} > 0 )
-    {    #Run varianteffectpredictor. Done per family
 
-        $log->info("\t[Varianteffectpredictor]\n");
+    # Run varianteffectpredictor. Family-level
+    if ( $active_parameter_href->{pvarianteffectpredictor} > 0 ) {
+
+        $log->info( $TAB . q{[Varianteffectpredictor]} . $NEWLINE );
     }
     if ( $active_parameter_href->{pvcfparser} > 0 )
     {    #Run pvcfparser. Done per family
@@ -24030,7 +22637,7 @@ sub variantannotationblock {
     }
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = setup_script(
+    my ( $file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -24044,8 +22651,7 @@ sub variantannotationblock {
     );
 
     ## Copy files for variantannotationblock to enable restart and skip of modules within block
-    ( $xargs_file_counter, $xargs_file_name ) =
-      prepareforvariantannotationblock(
+    ($xargs_file_counter) = prepareforvariantannotationblock(
         {
             parameter_href          => $parameter_href,
             active_parameter_href   => $active_parameter_href,
@@ -24055,16 +22661,16 @@ sub variantannotationblock {
             job_id_href             => $job_id_href,
             call_type               => $call_type,
             program_name            => "prepareforvariantannotationblock",
-            file_name               => $file_name,
+            file_path               => $file_path,
             program_info_path       => $program_info_path,
             FILEHANDLE              => $FILEHANDLE,
             xargs_file_counter      => $xargs_file_counter,
             stderr_path             => $program_info_path . ".stderr.txt",
         }
-      );
+    );
     if ( $active_parameter_href->{prhocall} > 0 ) {    #Run vt. Done per family
 
-        ( $xargs_file_counter, $xargs_file_name ) = rhocall(
+        ($xargs_file_counter) = rhocall(
             {
                 parameter_href          => $parameter_href,
                 active_parameter_href   => $active_parameter_href,
@@ -24074,7 +22680,7 @@ sub variantannotationblock {
                 job_id_href             => $job_id_href,
                 call_type               => $call_type,
                 program_name            => "rhocall",
-                file_name               => $file_name,
+                file_path               => $file_path,
                 program_info_path       => $program_info_path,
                 FILEHANDLE              => $FILEHANDLE,
                 xargs_file_counter      => $xargs_file_counter,
@@ -24084,7 +22690,7 @@ sub variantannotationblock {
     }
     if ( $active_parameter_href->{pvt} > 0 ) {    #Run vt. Done per family
 
-        ( $xargs_file_counter, $xargs_file_name ) = vt(
+        ($xargs_file_counter) = vt(
             {
                 parameter_href          => $parameter_href,
                 active_parameter_href   => $active_parameter_href,
@@ -24094,7 +22700,7 @@ sub variantannotationblock {
                 job_id_href             => $job_id_href,
                 call_type               => $call_type,
                 program_name            => "vt",
-                file_name               => $file_name,
+                file_path               => $file_path,
                 program_info_path       => $program_info_path,
                 FILEHANDLE              => $FILEHANDLE,
                 xargs_file_counter      => $xargs_file_counter,
@@ -24102,10 +22708,13 @@ sub variantannotationblock {
             }
         );
     }
-    if ( $active_parameter_href->{pvarianteffectpredictor} > 0 )
-    {    #Run varianteffectpredictor. Done per family
 
-        ( $xargs_file_counter, $xargs_file_name ) = varianteffectpredictor(
+    # Run varianteffectpredictor. Family-level
+    if ( $active_parameter_href->{pvarianteffectpredictor} > 0 ) {
+
+        my $program_name = lc q{varianteffectpredictor};
+
+        ($xargs_file_counter) = analysis_vep_rio(
             {
                 parameter_href          => $parameter_href,
                 active_parameter_href   => $active_parameter_href,
@@ -24114,19 +22723,19 @@ sub variantannotationblock {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 call_type               => $call_type,
-                program_name            => "varianteffectpredictor",
-                file_name               => $file_name,
+                program_name            => $program_name,
+                file_path               => $file_path,
                 program_info_path       => $program_info_path,
                 FILEHANDLE              => $FILEHANDLE,
                 xargs_file_counter      => $xargs_file_counter,
-                stderr_path             => $program_info_path . ".stderr.txt",
+                stderr_path => $program_info_path . $DOT . q{stderr.txt},
             }
         );
     }
     if ( $active_parameter_href->{pvcfparser} > 0 )
     {    #Run vcfparser. Done per family
 
-        ( $xargs_file_counter, $xargs_file_name ) = mvcfparser(
+        ($xargs_file_counter) = mvcfparser(
             {
                 parameter_href          => $parameter_href,
                 active_parameter_href   => $active_parameter_href,
@@ -24136,7 +22745,7 @@ sub variantannotationblock {
                 job_id_href             => $job_id_href,
                 call_type               => $call_type,
                 program_name            => "vcfparser",
-                file_name               => $file_name,
+                file_path               => $file_path,
                 program_info_path       => $program_info_path,
                 FILEHANDLE              => $FILEHANDLE,
                 xargs_file_counter      => $xargs_file_counter,
@@ -24146,7 +22755,7 @@ sub variantannotationblock {
     if ( $active_parameter_href->{pannovar} > 0 )
     {    #Run annovar. Done per family
 
-        ( $xargs_file_counter, $xargs_file_name ) = annovar(
+        ($xargs_file_counter) = annovar(
             {
                 parameter_href          => $parameter_href,
                 active_parameter_href   => $active_parameter_href,
@@ -24157,7 +22766,7 @@ sub variantannotationblock {
                 annovar_table_href      => $annovar_table_href,
                 call_type               => $call_type,
                 program_name            => "annovar",
-                file_name               => $file_name,
+                file_path               => $file_path,
                 program_info_path       => $program_info_path,
                 FILEHANDLE              => $FILEHANDLE,
                 xargs_file_counter      => $xargs_file_counter,
@@ -24166,7 +22775,7 @@ sub variantannotationblock {
     }
     if ( $active_parameter_href->{psnpeff} > 0 ) {  #Run snpEff. Done per family
 
-        ( $xargs_file_counter, $xargs_file_name ) = snpeff(
+        ($xargs_file_counter) = snpeff(
             {
                 parameter_href          => $parameter_href,
                 active_parameter_href   => $active_parameter_href,
@@ -24176,7 +22785,7 @@ sub variantannotationblock {
                 job_id_href             => $job_id_href,
                 call_type               => $call_type,
                 program_name            => "snpeff",
-                file_name               => $file_name,
+                file_path               => $file_path,
                 program_info_path       => $program_info_path,
                 FILEHANDLE              => $FILEHANDLE,
                 xargs_file_counter      => $xargs_file_counter,
@@ -24186,7 +22795,7 @@ sub variantannotationblock {
     if ( $active_parameter_href->{prankvariant} > 0 )
     {    #Run rankvariant. Done per family
 
-        ( $xargs_file_counter, $xargs_file_name ) = rankvariant(
+        ($xargs_file_counter) = rankvariant(
             {
                 parameter_href          => $parameter_href,
                 active_parameter_href   => $active_parameter_href,
@@ -24196,7 +22805,7 @@ sub variantannotationblock {
                 job_id_href             => $job_id_href,
                 call_type               => $call_type,
                 program_name            => "rankvariant",
-                file_name               => $file_name,
+                file_path               => $file_path,
                 program_info_path       => $program_info_path,
                 FILEHANDLE              => $FILEHANDLE,
                 xargs_file_counter      => $xargs_file_counter,
@@ -24207,7 +22816,7 @@ sub variantannotationblock {
     {    #Run endvariantannotationblock. Done per family
 
         ## Run endvariantannotationblock. Done per family
-        ( $xargs_file_counter, $xargs_file_name ) = endvariantannotationblock(
+        ($xargs_file_counter) = endvariantannotationblock(
             {
                 parameter_href          => $parameter_href,
                 active_parameter_href   => $active_parameter_href,
@@ -24217,7 +22826,7 @@ sub variantannotationblock {
                 job_id_href             => $job_id_href,
                 call_type               => $call_type,
                 program_name            => "endvariantannotationblock",
-                file_name               => $file_name,
+                file_path               => $file_path,
                 program_info_path       => $program_info_path,
                 FILEHANDLE              => $FILEHANDLE,
                 xargs_file_counter      => $xargs_file_counter,
@@ -24392,10 +23001,10 @@ sub bamcalibrationblock {
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
         my $xargs_file_counter = 0;
-        my $xargs_file_name;
+        my $xargs_file_path_prefix;
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        my ( $file_name, $program_info_path ) = setup_script(
+        my ( $file_path, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -24411,7 +23020,7 @@ sub bamcalibrationblock {
 
         ##Always run even for single samples to rename them correctly for standardised downstream processing.
         ##Will also split alignment per contig and copy to temporary directory for -rio 1 block to enable selective removal of block submodules.
-        ( $xargs_file_counter, $xargs_file_name ) = picardtools_mergesamfiles(
+        ($xargs_file_counter) = picardtools_mergesamfiles(
             {
                 parameter_href          => $parameter_href,
                 active_parameter_href   => $active_parameter_href,
@@ -24422,7 +23031,7 @@ sub bamcalibrationblock {
                 job_id_href             => $job_id_href,
                 sample_id_ref           => \$sample_id,
                 program_name            => "picardtools_mergesamfiles",
-                file_name               => $file_name,
+                file_path               => $file_path,
                 program_info_path       => $program_info_path,
                 FILEHANDLE              => $FILEHANDLE,
             }
@@ -24430,7 +23039,7 @@ sub bamcalibrationblock {
 
         if ( $active_parameter{pmarkduplicates} > 0 ) {    #Markduplicates
 
-            ( $xargs_file_counter, $xargs_file_name ) = pmarkduplicates(
+            ($xargs_file_counter) = pmarkduplicates(
                 {
                     parameter_href          => $parameter_href,
                     active_parameter_href   => $active_parameter_href,
@@ -24441,7 +23050,7 @@ sub bamcalibrationblock {
                     job_id_href             => $job_id_href,
                     sample_id_ref           => \$sample_id,
                     program_name            => "markduplicates",
-                    file_name               => $file_name,
+                    file_path               => $file_path,
                     program_info_path       => $program_info_path,
                     FILEHANDLE              => $FILEHANDLE,
                     xargs_file_counter      => $xargs_file_counter,
@@ -24451,7 +23060,7 @@ sub bamcalibrationblock {
         if ( $active_parameter{pgatk_realigner} > 0 )
         {    #Run GATK realignertargetcreator/indelrealigner
 
-            ( $xargs_file_counter, $xargs_file_name ) = gatk_realigner(
+            ($xargs_file_counter) = gatk_realigner(
                 {
                     parameter_href          => $parameter_href,
                     active_parameter_href   => $active_parameter_href,
@@ -24461,7 +23070,7 @@ sub bamcalibrationblock {
                     job_id_href             => $job_id_href,
                     sample_id_ref           => \$sample_id,
                     program_name            => "gatk_realigner",
-                    file_name               => $file_name,
+                    file_path               => $file_path,
                     program_info_path       => $program_info_path,
                     FILEHANDLE              => $FILEHANDLE,
                     xargs_file_counter      => $xargs_file_counter,
@@ -24471,7 +23080,7 @@ sub bamcalibrationblock {
         if ( $active_parameter{pgatk_baserecalibration} > 0 )
         {    #Run GATK baserecalibrator/printreads
 
-            ( $xargs_file_counter, $xargs_file_name ) = gatk_baserecalibration(
+            ($xargs_file_counter) = gatk_baserecalibration(
                 {
                     parameter_href          => $parameter_href,
                     active_parameter_href   => $active_parameter_href,
@@ -24481,7 +23090,7 @@ sub bamcalibrationblock {
                     job_id_href             => $job_id_href,
                     sample_id_ref           => \$sample_id,
                     program_name            => "gatk_baserecalibration",
-                    file_name               => $file_name,
+                    file_path               => $file_path,
                     program_info_path       => $program_info_path,
                     FILEHANDLE              => $FILEHANDLE,
                     xargs_file_counter      => $xargs_file_counter,
@@ -24583,7 +23192,7 @@ sub madeline {
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = setup_script(
+    my ($file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -24641,7 +23250,7 @@ sub madeline {
         slurm_submit_job_no_dependency_dead_end(
             {
                 job_id_href      => $job_id_href,
-                sbatch_file_name => $file_name,
+                sbatch_file_name => $file_path,
                 log              => $log,
             }
         );
@@ -24765,7 +23374,7 @@ sub build_annovar_prerequisites {
         "humandb", "Db_temporary" );    #Temporary download directory
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = setup_script(
+    my ($file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -25115,7 +23724,7 @@ sub build_annovar_prerequisites {
                 sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
                 family_id        => $$family_id_ref,
                 path             => $slurm_path,
-                sbatch_file_name => $file_name,
+                sbatch_file_name => $file_path,
                 log              => $log,
             }
         );
@@ -25238,7 +23847,7 @@ sub build_ptchs_metric_prerequisites {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    my $file_name;
+    my $file_path;
 
     unless ( defined($FILEHANDLE) )
     {    #No supplied FILEHANDLE i.e. create new sbatch script
@@ -25246,7 +23855,7 @@ sub build_ptchs_metric_prerequisites {
         $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ($file_name) = setup_script(
+        ($file_path) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -25467,7 +24076,7 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
                       \@{ $active_parameter_href->{sample_ids} },
                     family_id        => $$family_id_ref,
                     path             => $slurm_path,
-                    sbatch_file_name => $file_name,
+                    sbatch_file_name => $file_path,
                     log              => $log,
                 }
             );
@@ -25608,7 +24217,7 @@ sub build_bwa_prerequisites {
       int( rand(10000) );    #Generate a random integer between 0-10,000.
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = setup_script(
+    my ($file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -25682,7 +24291,7 @@ sub build_bwa_prerequisites {
                 sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
                 family_id        => $$family_id_ref,
                 path             => $slurm_path,
-                sbatch_file_name => $file_name,
+                sbatch_file_name => $file_path,
                 log              => $log,
             }
         );
@@ -26040,7 +24649,7 @@ sub build_human_genome_prerequisites {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    my $file_name;
+    my $file_path;
     my $submit_switch;
 
     unless ( defined($FILEHANDLE) )
@@ -26052,7 +24661,7 @@ sub build_human_genome_prerequisites {
           int( rand(10000) );    #Generate a random integer between 0-10,000.
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ($file_name) = setup_script(
+        ($file_path) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -26239,7 +24848,7 @@ sub build_human_genome_prerequisites {
                       \@{ $active_parameter_href->{sample_ids} },
                     family_id        => $$family_id_ref,
                     path             => $slurm_path,
-                    sbatch_file_name => $file_name,
+                    sbatch_file_name => $file_path,
                     log              => $log,
                 }
             );
@@ -27186,7 +25795,7 @@ sub add_infile_info {
         lane => {
             required    => 1,
             defined     => 1,
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
             store       => \$lane
         },
@@ -27217,7 +25826,7 @@ sub add_infile_info {
         file_index => {
             required    => 1,
             defined     => 1,
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
             store       => \$file_index
         },
@@ -31403,7 +30012,7 @@ sub detect_sample_id_gender {
 ##detect_sample_id_gender
 
 ##Function : Detect gender of the current analysis
-##Returns  : "$male_found $female_found $other_found"
+##Returns  : "$found_male $found_female $found_other"
 ##Arguments: $active_parameter_href, $sample_info_href
 ##         : $active_parameter_href => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href      => Info on samples and family hash {REF}
@@ -31433,29 +30042,29 @@ sub detect_sample_id_gender {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my $male_found   = 0;
-    my $female_found = 0;
-    my $other_found  = 0;
+    my $found_male   = 0;
+    my $found_female = 0;
+    my $found_other  = 0;
 
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
         if ( $sample_info_href->{sample}{$sample_id}{sex} =~ /1|^male/ ) { #Male
 
-            $male_found = 1;                                               #Male
+            $found_male = 1;                                               #Male
         }
         elsif ( $sample_info_href->{sample}{$sample_id}{sex} =~ /2|female/ )
         {    #Female
 
-            $female_found = 1;
+            $found_female = 1;
         }
         else {    #Other
 
-            $male_found =
+            $found_male =
               1;    #Include since it might be male to enable analysis of Y.
-            $other_found = 1;
+            $found_other = 1;
         }
     }
-    return $male_found, $female_found, $other_found;
+    return $found_male, $found_female, $found_other;
 }
 
 sub remove_pedigree_elements {
@@ -32570,309 +31179,20 @@ sub add_capture_kit {
     }
 }
 
-sub xargs_migrate_contig_files {
-
-##xargs_migrate_contig_files
-
-##Function : Migrates file(s) to or from temporary directory (depending on supplied arguments) using xargs.
-##Returns  : "xargs_file_counter"
-##Arguments: $contigs_ref, $FILEHANDLE, $XARGSFILEHANDLE, $file_name, $temp_directory, $program_info_path, $infile, $indirectory, $outfile, $outdirectory, $core_number, $first_command, $xargs_file_counter, $file_ending
-##         : $contigs_ref        => Contigs to iterate over {REF}
-##         : $FILEHANDLE         => Sbatch filehandle to write to
-##         : $XARGSFILEHANDLE    => XARGS filehandle to write to
-##         : $file_name          => File name
-##         : $temp_directory     => Temporary directory
-##         : $program_info_path  => The program info path
-##         : $infile             => Infile name without ending attached
-##         : $indirectory        => In directory
-##         : $outfile            => OutFile name without ending attached
-##         : $outdirectory       => Out directory
-##         : $core_number        => The number of cores to use
-##         : $first_command      => The inital command
-##         : $xargs_file_counter => The xargs file counter
-##         : $file_ending        => File ending
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $file_ending;
-    my $xargs_file_counter;
-    my $core_number;
-
-    ## Flatten argument(s)
-    my $contigs_ref;
-    my $FILEHANDLE;
-    my $XARGSFILEHANDLE;
-    my $file_name;
-    my $temp_directory;
-    my $program_info_path;
-    my $infile;
-    my $indirectory;
-    my $outfile;
-    my $outdirectory;
-    my $first_command;
-
-    my $tmpl = {
-        contigs_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$contigs_ref
-        },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
-        XARGSFILEHANDLE =>
-          { required => 1, defined => 1, store => \$XARGSFILEHANDLE },
-        file_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$file_name
-        },
-        temp_directory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$temp_directory
-        },
-        program_info_path => { strict_type => 1, store => \$program_info_path },
-        infile            => { strict_type => 1, store => \$infile },
-        indirectory       => { strict_type => 1, store => \$indirectory },
-        outfile           => { strict_type => 1, store => \$outfile },
-        outdirectory      => { strict_type => 1, store => \$outdirectory },
-        xargs_file_counter => {
-            default     => 0,
-            allow       => qr/^\d+$/,
-            strict_type => 1,
-            store       => \$xargs_file_counter
-        },
-        core_number => {
-            default     => 1,
-            allow       => qr/^\d+$/,
-            strict_type => 1,
-            store       => \$core_number
-        },
-        first_command => { strict_type => 1, store => \$first_command },
-        file_ending   => {
-            default     => ".vcf*",
-            strict_type => 1,
-            store       => \$file_ending
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::IO::Files qw(migrate_file);
-
-    my $xargs_file_name;
-
-    ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
-        {
-            FILEHANDLE         => $FILEHANDLE,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_name          => $file_name,
-            program_info_path  => $program_info_path,
-            core_number        => $core_number,
-            xargs_file_counter => $xargs_file_counter,
-            first_command      => $first_command,
-        }
-    );
-
-    foreach my $contig (@$contigs_ref) {
-
-        if ( defined($infile) ) {
-
-            ## Copy file(s) to temporary directory.
-            migrate_file(
-                {
-                    FILEHANDLE  => $XARGSFILEHANDLE,
-                    infile_path => catfile(
-                        $indirectory, $infile . q{_} . $contig . $file_ending
-                    ),
-                    outfile_path    => $temp_directory,
-                    xargs           => 'xargs',
-                    stderrfile_path => $xargs_file_name . q{.}
-                      . $contig
-                      . q{.stderr.txt},
-                }
-            );
-        }
-        if ( ( defined($outfile) ) && ( defined($outdirectory) ) ) {
-
-            ## Copy file(s) from temporary directory.
-            migrate_file(
-                {
-                    infile_path => catfile(
-                        $temp_directory,
-                        $outfile . q{_} . $contig . $file_ending
-                    ),
-                    outfile_path    => $outdirectory,
-                    FILEHANDLE      => $XARGSFILEHANDLE,
-                    xargs           => 'xargs',
-                    stderrfile_path => $xargs_file_name . q{.}
-                      . $contig
-                      . q{.stderr.txt},
-                }
-            );
-        }
-    }
-    return $xargs_file_counter;
-}
-
-sub xargs_command {
-
-##xargs_command
-
-##Function : Creates the command line for xargs. Writes to sbatch FILEHANDLE and opens xargs FILEHANDLE
-##Returns  : "xargs_file_counter + 1, $xargs_file_name"
-##Arguments: $FILEHANDLE, $XARGSFILEHANDLE, $file_name, $core_number, $first_command, $program_info_path, $memory_allocation, $java_use_large_pages, $temp_directory, $java_jar, $xargs_file_counter
-##         : $FILEHANDLE           => Sbatch filehandle to write to
-##         : $XARGSFILEHANDLE      => XARGS filehandle to write to
-##         : $file_name            => File name
-##         : $core_number          => The number of cores to use
-##         : $first_command        => The inital command
-##         : $program_info_path    => The program info path
-##         : $memory_allocation    => Memory allocation for java
-##         : $java_use_large_pages => Use java large pages {REF}
-##         : $temp_directory       => Redirect tmp files to java temp {Optional}
-##         : $java_jar             => The JAR
-##         : $xargs_file_counter   => The xargs file counter
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $xargs_file_counter;
-
-    ## Flatten argument(s)
-    my $FILEHANDLE;
-    my $XARGSFILEHANDLE;
-    my $file_name;
-    my $core_number;
-    my $first_command;
-    my $program_info_path;
-    my $memory_allocation;
-    my $java_use_large_pages;
-    my $temp_directory;
-    my $java_jar;
-
-    my $tmpl = {
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
-        XARGSFILEHANDLE =>
-          { required => 1, defined => 1, store => \$XARGSFILEHANDLE },
-        file_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$file_name
-        },
-        core_number => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$core_number
-        },
-        first_command     => { strict_type => 1, store => \$first_command },
-        program_info_path => { strict_type => 1, store => \$program_info_path },
-        memory_allocation => { strict_type => 1, store => \$memory_allocation },
-        java_use_large_pages => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$java_use_large_pages
-        },
-        temp_directory     => { strict_type => 1, store => \$temp_directory },
-        java_jar           => { strict_type => 1, store => \$java_jar },
-        xargs_file_counter => {
-            default     => 0,
-            allow       => qr/^\d+$/,
-            strict_type => 1,
-            store       => \$xargs_file_counter
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Gnu::Coreutils qw(gnu_cat);
-    use MIP::Gnu::Findutils qw(xargs);
-    use MIP::Language::Java qw{java_core};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    my $xargs_file_name;
-
-    ##Check if there is a xargs_file_name to concatenate
-    if ( defined($program_info_path) ) {
-
-        $xargs_file_name = $program_info_path . "." . $xargs_file_counter;
-    }
-
-    ## Read xargs command file
-    gnu_cat(
-        {
-            infile_paths_ref =>
-              [ $file_name . "." . $xargs_file_counter . ".xargs" ],
-            FILEHANDLE => $FILEHANDLE,
-        }
-    );
-    print $FILEHANDLE "| ";    #Pipe
-
-    my @commands;
-    if ( ( defined $first_command ) && ( $first_command eq q{java} ) ) {
-
-        ## Writes java core commands to filehandle.
-        @commands = java_core(
-            {
-                memory_allocation    => $memory_allocation,
-                java_use_large_pages => $java_use_large_pages,
-                temp_directory       => $temp_directory,
-                java_jar             => $java_jar,
-            }
-        );
-    }
-    elsif ($first_command) {
-
-        @commands = ($first_command);
-    }
-
-    xargs(
-        {
-            shell_commands_ref => \@commands,
-            replace_str        => 1,
-            verbose            => 1,
-            max_procs          => $core_number,
-            FILEHANDLE         => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE "\n";
-
-    open( $XARGSFILEHANDLE, ">",
-        $file_name . "." . $xargs_file_counter . ".xargs" )
-      or $log->logdie( "Can't write to '"
-          . $file_name . "."
-          . $xargs_file_counter
-          . ".xargs" . "' :"
-          . $!
-          . "\n\n" );    #Open XARGSFILEHANDLE
-    return ( ( $xargs_file_counter + 1 ), $xargs_file_name )
-      ; #Increment to not overwrite xargs file with next call (if used) and xargs_file_name prefix
-}
-
 sub split_bam {
 
 ##split_bam
 
 ##Function : Split BAM file per contig and index new BAM. Creates the command line for xargs. Writes to sbatch FILEHANDLE and opens xargs FILEHANDLE
 ##Returns  : ""
-##Arguments: $FILEHANDLE, $XARGSFILEHANDLE, $contigs_ref, $xargs_file_counter, $file_name, $program_info_path, $core_number, $infile, $temp_directory_ref
+##Arguments: $FILEHANDLE, $XARGSFILEHANDLE, $contigs_ref, $xargs_file_counter, $file_path, $program_info_path, $core_number, $infile, $temp_directory_ref
 ##         : $active_parameter_href => Active parameters for this analysis hash {REF}
 ##         : $FILEHANDLE            => Sbatch filehandle to write to
 ##         : $XARGSFILEHANDLE       => XARGS filehandle to write to
 ##         : $xargs_file_counter    => The xargs file counter
 ##         : $memory_allocation     => Memory allocation for ja
 ##         : $contigs_ref           => The contigs to process
-##         : $file_name             => File name - ususally sbatch
+##         : $file_path             => File name - ususally sbatch
 ##         : $program_info_path     => The program info path
 ##         : $core_number           => The number of cores to use
 ##         : $infile                => The infile
@@ -32890,7 +31210,7 @@ sub split_bam {
     my $contigs_ref;
     my $FILEHANDLE;
     my $XARGSFILEHANDLE;
-    my $file_name;
+    my $file_path;
     my $program_info_path;
     my $core_number;
     my $infile;
@@ -32913,11 +31233,11 @@ sub split_bam {
         FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
         XARGSFILEHANDLE =>
           { required => 1, defined => 1, store => \$XARGSFILEHANDLE },
-        file_name => {
+        file_path => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$file_name
+            store       => \$file_path
         },
         program_info_path => {
             required    => 1,
@@ -32940,7 +31260,7 @@ sub split_bam {
         },
         xargs_file_counter => {
             default     => 0,
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
             store       => \$xargs_file_counter
         },
@@ -32950,15 +31270,16 @@ sub split_bam {
 
     use MIP::Program::Alignment::Samtools qw(samtools_view);
     use MIP::Language::Java qw{java_core};
+    use MIP::Recipes::Xargs qw{ xargs_command };
 
-    my $xargs_file_name;
+    my $xargs_file_path_prefix;
 
     ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             FILEHANDLE         => $FILEHANDLE,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_name          => $file_name,
+            file_path          => $file_path,
             program_info_path  => $program_info_path,
             core_number        => $core_number,
             xargs_file_counter => $xargs_file_counter,
@@ -32975,7 +31296,7 @@ sub split_bam {
                 outfile_path => catfile(
                     $$temp_directory_ref, $infile . "_" . $contig . q{.bam}
                 ),
-                stderrfile_path => $xargs_file_name . "."
+                stderrfile_path => $xargs_file_path_prefix . "."
                   . $contig
                   . ".stderr.txt",
                 regions_ref              => $contig,
@@ -33006,7 +31327,7 @@ sub split_bam {
           . catfile( $$temp_directory_ref, $infile . "_" . $contig . q{.bam} )
           . " ";    #InFile
         say $XARGSFILEHANDLE "2> "
-          . $xargs_file_name . "."
+          . $xargs_file_path_prefix . "."
           . $contig
           . ".stderr.txt "
           ;         #Redirect xargs output to program specific stderr file
@@ -33019,14 +31340,14 @@ sub split_and_index_aligment_file {
 ##split_and_index_aligment_file
 
 ##Function : Split alignemnt file per contig and index new file. Creates the command line for xargs. Writes to sbatch FILEHANDLE and opens xargs FILEHANDLE
-##Returns  : ""
-##Arguments: $active_parameter_href, $contigs_ref, $FILEHANDLE, $XARGSFILEHANDLE, $memory_allocation, $file_name, $program_info_path, $core_number, $infile, $temp_directory_ref, $xargs_file_counter, $output_format
+##Returns  : $xargs_file_counter
+##Arguments: $active_parameter_href, $contigs_ref, $FILEHANDLE, $XARGSFILEHANDLE, $memory_allocation, $file_path, $program_info_path, $core_number, $infile, $temp_directory_ref, $xargs_file_counter, $output_format
 ##         : $active_parameter_href => Active parameters for this analysis hash {REF}
 ##         : $contigs_ref           => The contigs to process
 ##         : $FILEHANDLE            => Sbatch filehandle to write to
 ##         : $XARGSFILEHANDLE       => XARGS filehandle to write to
 ##         : $memory_allocation     => Memory allocation for ja
-##         : $file_name             => File name - ususally sbatch
+##         : $file_path             => File name - ususally sbatch
 ##         : $program_info_path     => The program info path
 ##         : $core_number           => The number of cores to use
 ##         : $infile                => The infile
@@ -33046,7 +31367,7 @@ sub split_and_index_aligment_file {
     my $contigs_ref;
     my $FILEHANDLE;
     my $XARGSFILEHANDLE;
-    my $file_name;
+    my $file_path;
     my $program_info_path;
     my $core_number;
     my $infile;
@@ -33069,11 +31390,11 @@ sub split_and_index_aligment_file {
         FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
         XARGSFILEHANDLE =>
           { required => 1, defined => 1, store => \$XARGSFILEHANDLE },
-        file_name => {
+        file_path => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$file_name
+            store       => \$file_path
         },
         program_info_path => {
             required    => 1,
@@ -33096,7 +31417,7 @@ sub split_and_index_aligment_file {
         },
         xargs_file_counter => {
             default     => 0,
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
             store       => \$xargs_file_counter
         },
@@ -33109,18 +31430,19 @@ sub split_and_index_aligment_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Recipes::Xargs qw{ xargs_command };
     use MIP::Program::Alignment::Sambamba qw(sambamba_view sambamba_index);
 
-    my $xargs_file_name;
+    my $xargs_file_path_prefix;
 
     my $file_suffix = "." . $output_format;
 
     ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_name ) = xargs_command(
+    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
             FILEHANDLE         => $FILEHANDLE,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_name          => $file_name,
+            file_path          => $file_path,
             program_info_path  => $program_info_path,
             core_number        => $core_number,
             xargs_file_counter => $xargs_file_counter,
@@ -33138,7 +31460,7 @@ sub split_and_index_aligment_file {
                     $$temp_directory_ref,
                     $infile . "_" . $contig . $file_suffix
                 ),
-                stderrfile_path => $xargs_file_name
+                stderrfile_path => $xargs_file_path_prefix
                   . "_view_"
                   . $contig
                   . ".stderr.txt",
@@ -33155,7 +31477,7 @@ sub split_and_index_aligment_file {
             {
                 infile_path =>
                   catfile( $$temp_directory_ref, $infile . $file_suffix ),
-                stderrfile_path => $xargs_file_name
+                stderrfile_path => $xargs_file_path_prefix
                   . "_index_"
                   . $contig
                   . ".stderr.txt",
@@ -33242,50 +31564,50 @@ sub set_contigs {
 
     use MIP::Get::Analysis qw(get_overall_analysis_type);
 
-    if ( $active_parameter_href->{human_genome_reference} =~ /hg\d+/ )
-    {    #Refseq - prefix and M
+    if ( $active_parameter_href->{human_genome_reference} =~ /hg\d+/ ) {
+        ## Refseq - prefix and M
 
-        @{ $file_info_href->{contigs} } = (
-            "chr1",  "chr2",  "chr3",  "chr4",  "chr5",  "chr6",
-            "chr7",  "chr8",  "chr9",  "chr10", "chr11", "chr12",
-            "chr13", "chr14", "chr15", "chr16", "chr17", "chr18",
-            "chr19", "chr20", "chr21", "chr22", "chrX",  "chrY",
-            "chrM"
-        );    #Chr for filtering of bam file
+        # Chr for filtering of bam file
+        @{ $file_info_href->{contigs} } = qw{
+          chr1 chr2 chr3 chr4 chr5 chr6
+          chr7 chr8 chr9 chr10 chr11 chr12
+          chr13 chr14 chr15 chr16 chr17 chr18
+          chr19 chr20 chr21 chr22 chrX chrY
+          chrM };
 
-        @{ $file_info_href->{contigs_size_ordered} } = (
-            "chr1",  "chr2",  "chr3",  "chr4",  "chr5",  "chr6",
-            "chr7",  "chrX",  "chr8",  "chr9",  "chr10", "chr11",
-            "chr12", "chr13", "chr14", "chr15", "chr16", "chr17",
-            "chr18", "chr19", "chr20", "chr21", "chr22", "chrY",
-            "chrM"
-        );    #Chr for filtering of bam file
+        # Chr for filtering of bam file
+        @{ $file_info_href->{contigs_size_ordered} } = qw{
+          chr1 chr2 chr3 chr4 chr5 chr6
+          chr7 chrX chr8 chr9 chr10 chr11
+          chr12 chr13 chr14 chr15 chr16 chr17
+          chr18 chr19 chr20 chr21 chr22 chrY
+          chrM };
     }
-    elsif ( $active_parameter_href->{human_genome_reference} =~ /GRCh\d+/ )
-    {         #Ensembl - no prefix and MT
+    elsif ( $active_parameter_href->{human_genome_reference} =~ /GRCh\d+/ ) {
+        ## Ensembl - no prefix and MT
 
-        @{ $file_info_href->{contigs} } = (
-            "1",  "2",  "3",  "4",  "5",  "6",  "7",  "8",  "9",  "10",
-            "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
-            "21", "22", "X",  "Y",  "MT"
-        );    #Chr for filtering of bam file
+        # Chr for filtering of bam file
+        @{ $file_info_href->{contigs} } = qw{
+          1 2 3 4 5 6 7 8 9 10
+          11 12 13 14 15 16 17 18 19 20
+          21 22 X Y MT };
 
-        @{ $file_info_href->{contigs_size_ordered} } = (
-            "1",  "2",  "3",  "4",  "5",  "6",  "7",  "X",  "8",  "9",
-            "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
-            "20", "21", "22", "Y",  "MT"
-        );    #Chr for filtering of bam file
+        # Chr for filtering of bam file
+        @{ $file_info_href->{contigs_size_ordered} } = qw{
+          1 2 3 4 5 6 7 X 8 9
+          10 11 12 13 14 15 16 17 18 19
+          20 21 22 Y MT };
     }
 
     ## Detect if all samples has the same sequencing type and return consensus if reached
     my $consensus_analysis_type = get_overall_analysis_type(
         { analysis_type_hef => \%{ $active_parameter_href->{analysis_type} }, }
     );
-    if ( $consensus_analysis_type eq "wes" ) {
+    if ( $consensus_analysis_type eq q{wes} ) {
 
-        pop( @{ $file_info_href->{contigs} } );    #Remove Mitochondrial contig
-        pop( @{ $file_info_href->{contigs_size_ordered} } )
-          ;                                        #Remove Mitochondrial contig
+        # Remove Mitochondrial contig
+        pop @{ $file_info_href->{contigs} };
+        pop @{ $file_info_href->{contigs_size_ordered} };
     }
 }
 
@@ -34510,7 +32832,7 @@ sub vt_core {
 
 ##Function : Split multi allelic records into single records and normalize
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_prefix_href, $job_id_href, $infile_path, $outfile_path, $family_id, $FILEHANDLE, $core_number, $decompose, $normalize, $uniq, $max_af, $calculate_af, $gnu_sed, $program, $program_directory, $bgzip, $tabix, $instream, $cmd_break, $xargs_file_name, $contig_ref
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_prefix_href, $job_id_href, $infile_path, $outfile_path, $family_id, $FILEHANDLE, $core_number, $decompose, $normalize, $uniq, $max_af, $calculate_af, $gnu_sed, $program, $program_directory, $bgzip, $tabix, $instream, $cmd_break, $xargs_file_path_prefix, $contig_ref
 ##         : $parameter_href             => Hash with paremters from yaml file {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -34526,14 +32848,14 @@ sub vt_core {
 ##         : $uniq                       => Vt program uniq for removing variant duplication that appear later in file
 ##         : $max_af                     => MIP script for adding MAX_AF to frequency reference used in analysis
 ##         : $calculate_af               => MIP script for adding AF_ to frequency reference used in analysis
-##         : $gnu_sed                        => Sed program for changing vcf #FORMAT field in variant vcfs
+##         : $gnu_sed                    => Sed program for changing vcf #FORMAT field in variant vcfs
 ##         : $program                    => Program name
 ##         : $program_directory          => Program directory to write to in sbatch script
 ##         : $bgzip                      => Compress output from vt using bgzip
 ##         : $tabix                      => Index compressed output using tabix
 ##         : $instream                   => Data to vt is supplied as a unix pipe
 ##         : $cmd_break                  => Command line separator ['"\n\n"'|";"]
-##         : $xargs_file_name            => The xargs sbatch script file name {OPTIONAL}
+##         : $xargs_file_path_prefix            => The xargs sbatch script file name {OPTIONAL}
 ##         : $contig_ref                 => The contig to extract {OPTIONAL, REF}
 
     my ($arg_href) = @_;
@@ -34565,7 +32887,7 @@ sub vt_core {
     my $infile_path;
     my $FILEHANDLE;
     my $contig_ref;
-    my $xargs_file_name;
+    my $xargs_file_path_prefix;
 
     my $tmpl = {
         parameter_href =>
@@ -34599,8 +32921,9 @@ sub vt_core {
             strict_type => 1,
             store       => \$infile_path
         },
-        FILEHANDLE      => { store       => \$FILEHANDLE },
-        xargs_file_name => { strict_type => 1, store => \$xargs_file_name },
+        FILEHANDLE => { store => \$FILEHANDLE },
+        xargs_file_path_prefix =>
+          { strict_type => 1, store => \$xargs_file_path_prefix },
         contig_ref =>
           { default => \$$, strict_type => 1, store => \$contig_ref },
         family_id_ref => {
@@ -34622,7 +32945,7 @@ sub vt_core {
         },
         core_number => {
             default     => 1,
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
             store       => \$core_number
         },
@@ -34702,7 +33025,7 @@ sub vt_core {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    my $file_name;
+    my $file_path;
     my $program_info_path;
     my $random_integer =
       int( rand(10000) );    #Generate a random integer between 0-10,000.
@@ -34712,7 +33035,7 @@ sub vt_core {
         $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_name, $program_info_path ) = setup_script(
+        ( $file_path, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
@@ -34736,11 +33059,11 @@ sub vt_core {
         ## Get parameters
         my $stderrfile_path;
         my $append_stderr_info;
-        if ( ( defined($xargs_file_name) ) && ( defined($$contig_ref) ) )
+        if ( ( defined($xargs_file_path_prefix) ) && ( defined($$contig_ref) ) )
         {    #Write stderr for xargs process
 
             $stderrfile_path =
-                $xargs_file_name . "."
+                $xargs_file_path_prefix . "."
               . $$contig_ref
               . ".stderr.txt"
               ;    #Redirect xargs output to program specific stderr file
@@ -34912,7 +33235,7 @@ sub vt_core {
                       \@{ $active_parameter_href->{sample_ids} },
                     family_id        => $$family_id_ref,
                     path             => $slurm_path,
-                    sbatch_file_name => $file_name,
+                    sbatch_file_name => $file_path,
                     log              => $log,
                 }
             );
@@ -36422,75 +34745,6 @@ sub rename_vcf_samples {
     say $FILEHANDLE "\n";
 }
 
-sub remove_element {
-
-##remove_element
-
-##Function : Removes an element from array and return new array while leaving orginal elements_ref untouched.
-##Returns  : "@array"
-##Tags     : helper, remove, ARRAY, contigs
-##Arguments: $elements_ref, $remove_contigs_ref, $contig_switch
-##         : $elements_ref       => Array to remove an element from {REF}
-##         : $remove_contigs_ref => Remove this contig
-##         : $contig_switch      => Expect contigs in elements_ref
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $elements_ref;
-    my $remove_contigs_ref;
-    my $contig_switch;
-
-    my $tmpl = {
-        elements_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$elements_ref
-        },
-        remove_contigs_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$remove_contigs_ref
-        },
-        contig_switch => {
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$contig_switch
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my @array = @$elements_ref;    #Make local copy
-
-    for ( my $index = 0 ; $index < scalar(@array) ; $index++ ) {
-
-        foreach my $remove_contig (@$remove_contigs_ref) {
-
-            if ($contig_switch)
-            {    #Make sure that contig is removed independent of genome source
-
-                if (   ( $elements_ref->[$index] eq $remove_contig )
-                    || ( $elements_ref->[$index] eq "chr" . $remove_contig ) )
-                {
-
-                    splice( @array, $index, 1 );    #Remove $element from array
-                }
-            }
-            elsif ( ( $elements_ref->[$index] eq $remove_contig ) )
-            {    #Arbitrary element from array
-
-                splice( @array, $index, 1 );    #Remove $element from array
-            }
-        }
-    }
-    return @array;
-}
-
 sub collect_read_length {
 
 ##collect_read_length
@@ -37010,43 +35264,6 @@ sub get_exom_target_bed_file {
             "\n"
         );
         exit 1;
-    }
-}
-
-sub alias_assembly_version {
-
-##alias_assembly_version
-
-##Function : Alias genome source and version to be compatible with VEP
-##Returns  : "$$assembly_version_ref"
-##Arguments: $assembly_version_ref
-##         : $assembly_version_ref => The genome source and version to be checked
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $assembly_version_ref;
-
-    my $tmpl = {
-        assembly_version_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$assembly_version_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    if ( $$assembly_version_ref =~ /hg(\d+)/ ) {
-
-        my $version_number = $1;
-
-        if ( $version_number > 20 ) {
-
-            $$assembly_version_ref = "GRCh" . $version_number;
-        }
     }
 }
 
@@ -37697,63 +35914,6 @@ sub check_founder_id {
                 }
             }
         }
-    }
-}
-
-sub remove_contigs {
-
-##remove_contigs
-
-##Function : Removes contig_names from contigs array if no male or other found
-##Returns  : ""
-##Arguments: $active_parameter_href, $contigs_ref
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $contigs_ref           => Contigs array to update {REF}
-##         : $contig_names_ref      => Contig names to remove {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $contigs_ref;
-    my $contig_names_ref;
-
-    my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        contigs_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$contigs_ref
-        },
-        contig_names_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$contig_names_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Removes contigY|chrY from contigs if no males or 'other' found in analysis
-    if ( !$active_parameter_href->{male_found} ) {
-
-        ## Removes contigs from supplied contigs_ref
-        remove_array_element(
-            {
-                contigs_ref        => $contigs_ref,
-                remove_contigs_ref => $contig_names_ref,
-            }
-        );
     }
 }
 

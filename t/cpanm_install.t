@@ -9,9 +9,9 @@ use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
 use Carp;
 use English qw{ -no_match_vars };
-use Params::Check qw{check allow last_error};
+use Params::Check qw{ check allow last_error };
 
-use FindBin qw{$Bin};    #Find directory of script
+use FindBin qw{ $Bin };    #Find directory of script
 use File::Basename qw{ dirname basename };
 use File::Spec::Functions qw{ catdir };
 use Getopt::Long;
@@ -41,8 +41,11 @@ GetOptions(
     },    #Display help text
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME)
-          . $SPACE . $VERSION . $NEWLINE;
+        say {*STDOUT} $NEWLINE
+          . basename($PROGRAM_NAME)
+          . $SPACE
+          . $VERSION
+          . $NEWLINE;
         exit;
     },    #Display version number
     q{vb|verbose} => $VERBOSE,
@@ -72,7 +75,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::PATH::TO::MODULE});
+    my @modules = (q{MIP::PacketManager::Cpanm});
 
   MODULES:
     for my $module (@modules) {
@@ -80,31 +83,22 @@ BEGIN {
     }
 }
 
-use MIP::PATH::TO:MODULE qw{ SUB_ROUTINE };
+use MIP::PacketManager::Cpanm qw{ cpanm_install };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test SUB_ROUTINE from MODULE_NAME v}
-      . $PATH::TO::MODULE::VERSION . $COMMA . $SPACE
-      . q{Perl} . $SPACE . $PERL_VERSION
-      . $SPACE . $EXECUTABLE_NAME );
-
+diag(   q{Test cpanm_install from Cpanm.pm v}
+      . $MIP::PacketManager::Cpanm::VERSION
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+      . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{BASE_COMMAND};
+my $function_base_command = q{cpanm};
 
 my %base_argument = (
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
-    },
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
-    },
-    stderrfile_path_append => {
-        input           => q{stderrfile.test},
-        expected_output => q{2>> stderrfile.test},
-    },
     FILEHANDLE => {
         input           => undef,
         expected_output => $function_base_command,
@@ -114,13 +108,9 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    ARRAY => {
-        inputs_ref      => [ qw{ TEST_STRING_1 TEST_STRING_2 } ],
-        expected_output => q{PROGRAM OUTPUT},
-    },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
+    modules_ref => {
+        inputs_ref      => [qw{ module_1 module_2 }],
+        expected_output => q{module_1 module_2},
     },
     FILEHANDLE => {
         input           => undef,
@@ -129,22 +119,22 @@ my %required_argument = (
 );
 
 my %specific_argument = (
-    ARRAY => {
-        inputs_ref      => [ qw{ TEST_STRING_1 TEST_STRING_2 } ],
-        expected_output => q{PROGRAM OUTPUT},
+    quiet => {
+        input           => 1,
+        expected_output => q{--quiet},
     },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
+    force => {
+        input           => 1,
+        expected_output => q{--force},
     },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
+    modules_ref => {
+        inputs_ref      => [qw{ module_1 module_2 }],
+        expected_output => q{module_1 module_2},
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&NAME_OF_SUB_ROUTINE;
+my $module_function_cref = \&cpanm_install;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

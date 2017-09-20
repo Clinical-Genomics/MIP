@@ -9,11 +9,11 @@ use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
 use Carp;
 use English qw{ -no_match_vars };
-use Params::Check qw{check allow last_error};
+use Params::Check qw{ check allow last_error };
 
-use FindBin qw{$Bin};    #Find directory of script
+use FindBin qw{ $Bin };    #Find directory of script
 use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{catdir};
 use Getopt::Long;
 use Test::More;
 use Readonly;
@@ -41,8 +41,11 @@ GetOptions(
     },    #Display help text
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME)
-          . $SPACE . $VERSION . $NEWLINE;
+        say {*STDOUT} $NEWLINE
+          . basename($PROGRAM_NAME)
+          . $SPACE
+          . $VERSION
+          . $NEWLINE;
         exit;
     },    #Display version number
     q{vb|verbose} => $VERBOSE,
@@ -60,7 +63,7 @@ GetOptions(
 BEGIN {
 
 ### Check all internal dependency modules and imports
-## Modules with import
+##Modules with import
     my %perl_module;
 
     $perl_module{q{Script::Utils}} = [qw{ help }];
@@ -71,8 +74,8 @@ BEGIN {
           or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 
-## Modules
-    my @modules = (q{MIP::PATH::TO::MODULE});
+##Modules
+    my @modules = (q{MIP::Program::Variantcalling::SnpEff});
 
   MODULES:
     for my $module (@modules) {
@@ -80,17 +83,31 @@ BEGIN {
     }
 }
 
-use MIP::PATH::TO:MODULE qw{ SUB_ROUTINE };
+use File::Spec::Functions qw{ catfile };
+use MIP::Program::Variantcalling::SnpEff qw{ snpeff_download };
+use MIP::Language::Java qw{java_core};
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test SUB_ROUTINE from MODULE_NAME v}
-      . $PATH::TO::MODULE::VERSION . $COMMA . $SPACE
-      . q{Perl} . $SPACE . $PERL_VERSION
-      . $SPACE . $EXECUTABLE_NAME );
-
+diag(   q{Test snpeff_download from SnpEff v}
+      . $MIP::Program::Variantcalling::SnpEff::VERSION
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+      . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{BASE_COMMAND};
+my $function_base_command = q{java};
+
+my $snpeff_download_base = join $SPACE,
+  java_core(
+    {
+        memory_allocation => q{Xmx2g},
+        java_jar          => catfile(qw{ path to jar }),
+    }
+  ),
+  qw{ download };
 
 my %base_argument = (
     stdoutfile_path => {
@@ -114,28 +131,28 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    ARRAY => {
-        inputs_ref      => [ qw{ TEST_STRING_1 TEST_STRING_2 } ],
-        expected_output => q{PROGRAM OUTPUT},
-    },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
+    genome_version_database => {
+        input           => q{test_database},
+        expected_output => q{test_database},
     },
     FILEHANDLE => {
         input           => undef,
         expected_output => $function_base_command,
     },
+    jar_path => {
+        input           => catfile(qw{ path to jar }),
+        expected_output => $snpeff_download_base,
+    },
 );
 
 my %specific_argument = (
-    ARRAY => {
-        inputs_ref      => [ qw{ TEST_STRING_1 TEST_STRING_2 } ],
-        expected_output => q{PROGRAM OUTPUT},
+    config_file_path => {
+        input           => catfile(qw{ path to config }),
+        expected_output => q{-c path/to/config},
     },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
+    verbose => {
+        input           => 1,
+        expected_output => q{-v},
     },
     FILEHANDLE => {
         input           => undef,
@@ -144,7 +161,7 @@ my %specific_argument = (
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&NAME_OF_SUB_ROUTINE;
+my $module_function_cref = \&snpeff_download;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

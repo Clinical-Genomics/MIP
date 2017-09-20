@@ -11,7 +11,7 @@ use Carp;
 use English qw{ -no_match_vars };
 use Params::Check qw{check allow last_error};
 
-use FindBin qw{$Bin};    #Find directory of script
+use FindBin qw{ $Bin };    #Find directory of script
 use File::Basename qw{ dirname basename };
 use File::Spec::Functions qw{ catdir };
 use Getopt::Long;
@@ -41,8 +41,11 @@ GetOptions(
     },    #Display help text
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME)
-          . $SPACE . $VERSION . $NEWLINE;
+        say {*STDOUT} $NEWLINE
+          . basename($PROGRAM_NAME)
+          . $SPACE
+          . $VERSION
+          . $NEWLINE;
         exit;
     },    #Display version number
     q{vb|verbose} => $VERBOSE,
@@ -72,7 +75,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::PATH::TO::MODULE});
+    my @modules = (q{MIP::Program::Variantcalling::Variant_integrity});
 
   MODULES:
     for my $module (@modules) {
@@ -80,23 +83,23 @@ BEGIN {
     }
 }
 
-use MIP::PATH::TO:MODULE qw{ SUB_ROUTINE };
+use MIP::Program::Variantcalling::Variant_integrity
+  qw{ variant_integrity_father };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test SUB_ROUTINE from MODULE_NAME v}
-      . $PATH::TO::MODULE::VERSION . $COMMA . $SPACE
-      . q{Perl} . $SPACE . $PERL_VERSION
-      . $SPACE . $EXECUTABLE_NAME );
-
+diag(   q{Test variant_integrity_father from Variant_integrity v}
+      . $MIP::Program::Variantcalling::Variant_integrity::VERSION
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+      . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{BASE_COMMAND};
+my $function_base_command = q{variant_integrity};
 
 my %base_argument = (
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
-    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
@@ -114,37 +117,33 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    ARRAY => {
-        inputs_ref      => [ qw{ TEST_STRING_1 TEST_STRING_2 } ],
-        expected_output => q{PROGRAM OUTPUT},
+    infile_path => {
+        input           => q{infile.test},
+        expected_output => q{infile.test},
     },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
-    },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
+    family_file => {
+        input           => q{familiyfile},
+        expected_output => q{--family_file familyfile},
     },
 );
 
 my %specific_argument = (
-    ARRAY => {
-        inputs_ref      => [ qw{ TEST_STRING_1 TEST_STRING_2 } ],
-        expected_output => q{PROGRAM OUTPUT},
+    family_type => {
+        input           => q{ped},
+        expected_output => q{--family_type ped},
     },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
+    verbosity => {
+        input           => q{1},
+        expected_output => q{-1},
     },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
+    outfile_path => {
+        input           => q{outfile_father.txt},
+        expected_output => q{--outfile outfile_father.txt},
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&NAME_OF_SUB_ROUTINE;
+my $module_function_cref = \&variant_integrity_father;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

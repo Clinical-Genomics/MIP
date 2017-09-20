@@ -16,7 +16,7 @@ use File::Spec::Functions qw(catdir);
 use Readonly;
 
 ## Third party module(s)
-use List::Util qw(all);
+use List::MoreUtils qw(all);
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), 'lib' );

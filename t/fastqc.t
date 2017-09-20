@@ -1,26 +1,27 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{2014};
-use warnings qw{FATAL utf8};
+use Modern::Perl qw{ 2014 };
+use warnings qw{ FATAL utf8 };
 use autodie;
-use 5.018;    #Require at least perl 5.18
+use 5.018;
 use utf8;
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
 use Carp;
-use English qw{-no_match_vars};
-use Params::Check qw{check allow last_error};
+use English qw{ -no_match_vars };
+use Params::Check qw{ check allow last_error };
 
-use FindBin qw{$Bin};    #Find directory of script
-use File::Basename qw{dirname basename};
-use File::Spec::Functions qw{catdir};
+# Find directory of script
+use FindBin qw{ $Bin };
+use File::Basename qw{ dirname basename };
+use File::Spec::Functions qw{ catdir };
 use Getopt::Long;
 use Test::More;
 use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
-use Script::Utils qw{help};
+use lib catdir( dirname($Bin), q{lib} );
+use Script::Utils qw{ help };
 
 our $USAGE = build_usage( {} );
 
@@ -28,8 +29,9 @@ my $VERBOSE = 1;
 our $VERSION = '1.0.0';
 
 ## Constants
-Readonly my $SPACE   => q{ };
+Readonly my $COMMA   => q{,};
 Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => q{ };
 
 ###User Options
 GetOptions(
@@ -62,7 +64,7 @@ BEGIN {
 ##Modules with import
     my %perl_module;
 
-    $perl_module{'Script::Utils'} = [qw{help}];
+    $perl_module{q{Script::Utils}} = [qw{ help }];
 
   PERL_MODULES:
     while ( my ( $module, $module_import ) = each %perl_module ) {
@@ -82,13 +84,14 @@ BEGIN {
 use MIP::Program::Qc::Fastqc qw{fastqc};
 use MIP::Test::Commands qw{test_function};
 
-diag(
-    q{Test fastqc }
+diag(   q{Test fastqc from Path.pm v}
       . $MIP::Program::Qc::Fastqc::VERSION
-      . q{, Perl}
-      . $PERL_VERSION,
-    $EXECUTABLE_NAME
-);
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+      . $EXECUTABLE_NAME );
 
 ## Base arguments
 my $function_base_command = q{fastqc};

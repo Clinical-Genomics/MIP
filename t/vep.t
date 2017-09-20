@@ -3,17 +3,17 @@
 use Modern::Perl qw{ 2014 };
 use warnings qw{ FATAL utf8 };
 use autodie;
-use 5.018;    #Require at least perl 5.18
+use 5.018;
 use utf8;
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
 use Carp;
 use English qw{ -no_match_vars };
-use Params::Check qw{check allow last_error};
+use Params::Check qw{ check allow last_error };
 
-use FindBin qw{$Bin};    #Find directory of script
+use FindBin qw{ $Bin };
 use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use Getopt::Long;
 use Test::More;
 use Readonly;
@@ -25,12 +25,12 @@ use Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.0;
+our $VERSION = '1.0.0';
 
 ## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
 Readonly my $COMMA   => q{,};
+Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => q{ };
 
 ###User Options
 GetOptions(
@@ -41,8 +41,11 @@ GetOptions(
     },    #Display help text
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME)
-          . $SPACE . $VERSION . $NEWLINE;
+        say {*STDOUT} $NEWLINE
+          . basename($PROGRAM_NAME)
+          . $SPACE
+          . $VERSION
+          . $NEWLINE;
         exit;
     },    #Display version number
     q{vb|verbose} => $VERBOSE,
@@ -60,7 +63,7 @@ GetOptions(
 BEGIN {
 
 ### Check all internal dependency modules and imports
-## Modules with import
+##Modules with import
     my %perl_module;
 
     $perl_module{q{Script::Utils}} = [qw{ help }];
@@ -71,8 +74,8 @@ BEGIN {
           or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 
-## Modules
-    my @modules = (q{MIP::PATH::TO::MODULE});
+##Modules
+    my @modules = (q{MIP::Program::Variantcalling::Vep});
 
   MODULES:
     for my $module (@modules) {
@@ -80,17 +83,23 @@ BEGIN {
     }
 }
 
-use MIP::PATH::TO:MODULE qw{ SUB_ROUTINE };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Program::Variantcalling::Vep qw{variant_effect_predictor};
+use MIP::Test::Commands qw{test_function};
 
-diag(   q{Test SUB_ROUTINE from MODULE_NAME v}
-      . $PATH::TO::MODULE::VERSION . $COMMA . $SPACE
-      . q{Perl} . $SPACE . $PERL_VERSION
-      . $SPACE . $EXECUTABLE_NAME );
+diag(   q{Test variant_effect_predictor from Vep v}
+      . $MIP::Program::Variantcalling::Vep::VERSION
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+      . $EXECUTABLE_NAME );
 
+## Constants
+Readonly my $VARIANT_BUFFERT_SIZE => 20_000;
 
 ## Base arguments
-my $function_base_command = q{BASE_COMMAND};
+my $function_base_command = q{perl};
 
 my %base_argument = (
     stdoutfile_path => {
@@ -114,14 +123,6 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    ARRAY => {
-        inputs_ref      => [ qw{ TEST_STRING_1 TEST_STRING_2 } ],
-        expected_output => q{PROGRAM OUTPUT},
-    },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
-    },
     FILEHANDLE => {
         input           => undef,
         expected_output => $function_base_command,
@@ -129,13 +130,66 @@ my %required_argument = (
 );
 
 my %specific_argument = (
-    ARRAY => {
-        inputs_ref      => [ qw{ TEST_STRING_1 TEST_STRING_2 } ],
-        expected_output => q{PROGRAM OUTPUT},
+    regions_ref => {
+        inputs_ref      => [qw{ 1 2 }],
+        expected_output => q{--chr} . $SPACE . q{1,2},
     },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
+    plugins_ref => {
+        inputs_ref      => [qw{ LoFtool LoF }],
+        expected_output => q{--plugin LoFtool} . $SPACE . q{--plugin LoF},
+    },
+    vep_features_ref => {
+        inputs_ref      => [qw{ tsl hgvs}],
+        expected_output => q{--tsl} . $SPACE . q{--hgvs},
+    },
+    script_path => {
+        input => catfile( q{test_dir}, q{variant_effect_predictor.pl} ),
+        expected_output =>
+          catfile( q{test_dir}, q{variant_effect_predictor.pl} ),
+    },
+    fork => {
+        input           => 1,
+        expected_output => q{--fork} . $SPACE . q{1},
+    },
+    buffer_size => {
+        input           => $VARIANT_BUFFERT_SIZE,
+        expected_output => q{--buffer_size} . $SPACE . $VARIANT_BUFFERT_SIZE,
+    },
+    assembly => {
+        input           => q{GRCh37},
+        expected_output => q{--assembly} . $SPACE . q{GRCh37},
+    },
+    reference_path => {
+        input           => catfile( q{test_dir}, q{hum_ref.pl} ),
+        expected_output => q{--fasta}
+          . $SPACE
+          . catfile( q{test_dir}, q{hum_ref.pl} ),
+    },
+    cache_directory => {
+        input           => catdir( q{test_dir}, q{test_cache_dir} ),
+        expected_output => q{--dir_cache}
+          . $SPACE
+          . catdir( q{test_dir}, q{test_cache_dir} ),
+    },
+    infile_format => {
+        input           => q{vcf},
+        expected_output => q{--format} . $SPACE . q{vcf},
+    },
+    outfile_format => {
+        input           => q{vcf},
+        expected_output => q{--} . q{vcf},
+    },
+    infile_path => {
+        input           => catfile( q{test_dir}, q{infile.vcf} ),
+        expected_output => q{--input_file}
+          . $SPACE
+          . catfile( q{test_dir}, q{infile.vcf} ),
+    },
+    outfile_path => {
+        input           => catfile( q{test_dir}, q{infile.vcf} ),
+        expected_output => q{--output_file}
+          . $SPACE
+          . catfile( q{test_dir}, q{infile.vcf} ),
     },
     FILEHANDLE => {
         input           => undef,
@@ -144,7 +198,7 @@ my %specific_argument = (
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&NAME_OF_SUB_ROUTINE;
+my $module_function_cref = \&variant_effect_predictor;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
@@ -170,12 +224,12 @@ done_testing();
 
 sub build_usage {
 
-## build_usage
+##build_usage
 
-## Function  : Build the USAGE instructions
-## Returns   : ""
-## Arguments : $program_name
-##           : $program_name => Name of the script
+##Function : Build the USAGE instructions
+##Returns  : ""
+##Arguments: $program_name
+##         : $program_name => Name of the script
 
     my ($arg_href) = @_;
 
