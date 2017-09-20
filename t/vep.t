@@ -11,10 +11,9 @@ use Carp;
 use English qw{ -no_match_vars };
 use Params::Check qw{ check allow last_error };
 
-# Find directory of script
 use FindBin qw{ $Bin };
 use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use Getopt::Long;
 use Test::More;
 use Readonly;
@@ -42,8 +41,11 @@ GetOptions(
     },    #Display help text
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE, basename($PROGRAM_NAME),
-          $SPACE, $VERSION, $NEWLINE;
+        say {*STDOUT} $NEWLINE
+          . basename($PROGRAM_NAME)
+          . $SPACE
+          . $VERSION
+          . $NEWLINE;
         exit;
     },    #Display version number
     q{vb|verbose} => $VERBOSE,
@@ -69,23 +71,23 @@ BEGIN {
   PERL_MODULES:
     while ( my ( $module, $module_import ) = each %perl_module ) {
         use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load } . $module;
+          or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 
-## Modules
-    my @modules = (q{MIP::Program::Qc::Fastqc});
+##Modules
+    my @modules = (q{MIP::Program::Variantcalling::Vep});
 
   MODULES:
     for my $module (@modules) {
-        require_ok($module) or BAIL_OUT q{Cannot load } . $module;
+        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 }
 
-use MIP::Program::Qc::Fastqc qw{fastqc};
+use MIP::Program::Variantcalling::Vep qw{variant_effect_predictor};
 use MIP::Test::Commands qw{test_function};
 
-diag(   q{Test fastqc from Path.pm v}
-      . $MIP::Program::Qc::Fastqc::VERSION
+diag(   q{Test variant_effect_predictor from Vep v}
+      . $MIP::Program::Variantcalling::Vep::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -93,10 +95,17 @@ diag(   q{Test fastqc from Path.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+## Constants
+Readonly my $VARIANT_BUFFERT_SIZE => 20_000;
+
 ## Base arguments
-my $function_base_command = q{fastqc};
+my $function_base_command = q{perl};
 
 my %base_argument = (
+    stdoutfile_path => {
+        input           => q{stdoutfile.test},
+        expected_output => q{1> stdoutfile.test},
+    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
@@ -111,43 +120,90 @@ my %base_argument = (
     },
 );
 
-## Can be duplicated with %base and/or %specific to enable testing of each individual argument
+## Can be duplicated with %base_argument and/or %specific_argument
+## to enable testing of each individual argument
 my %required_argument = (
     FILEHANDLE => {
         input           => undef,
         expected_output => $function_base_command,
     },
-    infile_path => {
-        input           => q{test_infile.fastq},
-        expected_output => q{test_infile.fastq},
-    },
 );
 
 my %specific_argument = (
-    quiet => {
-        input           => 1,
-        expected_output => q{--quiet},
+    regions_ref => {
+        inputs_ref      => [qw{ 1 2 }],
+        expected_output => q{--chr} . $SPACE . q{1,2},
     },
-    extract => {
-        input           => 1,
-        expected_output => q{--extract},
+    plugins_ref => {
+        inputs_ref      => [qw{ LoFtool LoF }],
+        expected_output => q{--plugin LoFtool} . $SPACE . q{--plugin LoF},
     },
-    outdirectory_path => {
-        input           => q{test_directory},
-        expected_output => q{--outdir test_directory},
+    vep_features_ref => {
+        inputs_ref      => [qw{ tsl hgvs}],
+        expected_output => q{--tsl} . $SPACE . q{--hgvs},
+    },
+    script_path => {
+        input => catfile( q{test_dir}, q{variant_effect_predictor.pl} ),
+        expected_output =>
+          catfile( q{test_dir}, q{variant_effect_predictor.pl} ),
+    },
+    fork => {
+        input           => 1,
+        expected_output => q{--fork} . $SPACE . q{1},
+    },
+    buffer_size => {
+        input           => $VARIANT_BUFFERT_SIZE,
+        expected_output => q{--buffer_size} . $SPACE . $VARIANT_BUFFERT_SIZE,
+    },
+    assembly => {
+        input           => q{GRCh37},
+        expected_output => q{--assembly} . $SPACE . q{GRCh37},
+    },
+    reference_path => {
+        input           => catfile( q{test_dir}, q{hum_ref.pl} ),
+        expected_output => q{--fasta}
+          . $SPACE
+          . catfile( q{test_dir}, q{hum_ref.pl} ),
+    },
+    cache_directory => {
+        input           => catdir( q{test_dir}, q{test_cache_dir} ),
+        expected_output => q{--dir_cache}
+          . $SPACE
+          . catdir( q{test_dir}, q{test_cache_dir} ),
+    },
+    infile_format => {
+        input           => q{vcf},
+        expected_output => q{--format} . $SPACE . q{vcf},
+    },
+    outfile_format => {
+        input           => q{vcf},
+        expected_output => q{--} . q{vcf},
     },
     infile_path => {
-        input           => q{test_infile.fastq},
-        expected_output => q{test_infile.fastq},
+        input           => catfile( q{test_dir}, q{infile.vcf} ),
+        expected_output => q{--input_file}
+          . $SPACE
+          . catfile( q{test_dir}, q{infile.vcf} ),
+    },
+    outfile_path => {
+        input           => catfile( q{test_dir}, q{infile.vcf} ),
+        expected_output => q{--output_file}
+          . $SPACE
+          . catfile( q{test_dir}, q{infile.vcf} ),
+    },
+    FILEHANDLE => {
+        input           => undef,
+        expected_output => $function_base_command,
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&fastqc;
+my $module_function_cref = \&variant_effect_predictor;
 
 ## Test both base and function specific arguments
-my @arguments = ( \%required_argument, \%specific_argument );
+my @arguments = ( \%base_argument, \%specific_argument );
 
+HASHES_OF_ARGUMENTS:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
@@ -188,7 +244,7 @@ sub build_usage {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     return <<"END_USAGE";
  $program_name [options]

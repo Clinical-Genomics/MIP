@@ -2,7 +2,7 @@ unix_standard_streams.t
 unix_write_to_file.t
 analysis_get_overall_analysis_type.t
 bedtools_genomecov.t
-bwa.t
+bwa_mem.t
 chanjo_sex.t
 conda_create.t
 conda_install.t
@@ -14,7 +14,7 @@ cluster_check_max_core_number.t
 cluster_get_core_number.t
 cluster_update_core_number_to_seq_mode.t
 fastqc.t
-file_check_file_version_exist.t
+path_check_file_version_exist.t
 findutils_xargs.t
 gnu_cat.t
 gnu_cd.t
@@ -38,6 +38,8 @@ gnu_wait.t
 gzip.t
 java_core.t
 parameter_check_allowed_temp_directory.t
+list_delete_contig_elements.t
+list_delete_male_contig.t
 pigz.t
 processes_print_wait.t
 processes_add_job_id_dependency_tree.t
@@ -81,3 +83,4 @@ slurm_sacct.t
 slurm_sbatch.t
 slurm_build_sbatch_header.t
 slurm_reformat_sacct_output.t
+vep.t
