@@ -53,6 +53,7 @@ use Script::Utils qw{ help };
 use MIP::File::Format::Pedigree qw{ create_fam_file };
 use MIP::Check::Cluster qw{ check_max_core_number };
 use MIP::Get::Analysis qw{ get_overall_analysis_type };
+use MIP::Delete::List qw{ delete_male_contig };
 
 ##Recipes
 use MIP::Recipes::Split_fastq_file qw{analysis_split_fastq_file};
@@ -1076,9 +1077,9 @@ set_contigs(
 
 ## Detect the gender included in current analysis
 (
-    $active_parameter{male_found},
-    $active_parameter{female_found},
-    $active_parameter{other_found}
+    $active_parameter{found_male},
+    $active_parameter{found_female},
+    $active_parameter{found_other}
   )
   = detect_sample_id_gender(
     {
@@ -1086,12 +1087,12 @@ set_contigs(
         sample_info_href      => \%sample_info,
     }
   );
+
 ## Removes contig_names from contigs array if no male or 'other' found
-remove_contigs(
+@{ $file_info{select_file_contigs} } = delete_male_contig(
     {
-        active_parameter_href => \%active_parameter,
-        contigs_ref           => \@{ $file_info{select_file_contigs} },
-        contig_names_ref      => ['Y'],
+        contigs_ref => \@{ $file_info{select_file_contigs} },
+        found_male  => $active_parameter{found_male},
     }
 );
 
@@ -1978,10 +1979,9 @@ if ( $active_parameter{psv_combinevariantcallsets} > 0 )
 }
 
 # Run sv_varianteffectpredictor. Family-level
-if ( $active_parameter{psv_varianteffectpredictor} > 0 )
-{
+if ( $active_parameter{psv_varianteffectpredictor} > 0 ) {
 
-    $log->info(q{[SV varianteffectpredictor]} . $NEWLINE);
+    $log->info( q{[SV varianteffectpredictor]} . $NEWLINE );
 
     my $program_name = lc q{sv_varianteffectpredictor};
 
@@ -2436,11 +2436,10 @@ my @file_info_contig_keys = ( "contigs_size_ordered", "contigs" );
 foreach my $key (@file_info_contig_keys) {
 
     ## Removes contig_names from contigs array if no male or 'other' found
-    remove_contigs(
+    @{ $file_info{$key} } = delete_male_contig(
         {
-            active_parameter_href => \%active_parameter,
-            contigs_ref           => \@{ $file_info{$key} },
-            contig_names_ref      => ["Y"],
+            contigs_ref => \@{ $file_info{$key} },
+            found_male  => $active_parameter{found_male},
         }
     );
 }
@@ -4693,7 +4692,7 @@ sub endvariantannotationblock {
 
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
-    use MIP::Remove::List qw{ remove_contig_elements };
+    use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use Program::Htslib qw(bgzip tabix);
     use MIP::Gnu::Software::Gnu_grep qw(gnu_grep);
@@ -4800,12 +4799,11 @@ sub endvariantannotationblock {
             {    #Remove MT|M since no exome kit so far has mitochondrial probes
 
                 ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-                @contigs = remove_contig_elements(
+                @contigs = delete_contig_elements(
                     {
                         elements_ref =>
                           \@{ $file_info_href->{select_file_contigs} },
-                        remove_contigs_ref => [ "MT", "M" ],
-                        contig_switch      => 1,
+                        remove_contigs_ref => [qw{ MT M }],
                     }
                 );
             }
@@ -5166,7 +5164,7 @@ sub rankvariant {
     use MIP::Cluster qw(get_core_number);
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
-    use MIP::Remove::List qw{ remove_contig_elements };
+    use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use MIP::Recipes::Xargs qw{ xargs_command };
     use Program::Variantcalling::Genmod qw(annotate models score compound);
@@ -5304,22 +5302,20 @@ sub rankvariant {
             {    #Remove MT|M since no exome kit so far has mitochondrial probes
 
                 ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-                @contigs = remove_contig_elements(
+                @contigs = delete_contig_elements(
                     {
                         elements_ref =>
                           \@{ $file_info_href->{select_file_contigs} },
-                        remove_contigs_ref => [ "MT", "M" ],
-                        contig_switch      => 1,
+                        remove_contigs_ref => [q{ MT M }],
                     }
                 );
 
                 ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-                @contigs_size_ordered = remove_contig_elements(
+                @contigs_size_ordered = delete_contig_elements(
                     {
                         elements_ref =>
                           \@{ $file_info_href->{sorted_select_file_contigs} },
-                        remove_contigs_ref => [ "MT", "M" ],
-                        contig_switch      => 1,
+                        remove_contigs_ref => [qw{ MT M }],
                     }
                 );
             }
@@ -10954,7 +10950,7 @@ sub gatk_variantrecalibration {
     use MIP::IO::Files qw(migrate_file);
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
-    use MIP::Remove::List qw{ remove_contig_elements };
+    use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use MIP::Language::Java qw{java_core};
     use Program::Variantcalling::Bcftools qw(norm);
@@ -11140,10 +11136,10 @@ sub gatk_variantrecalibration {
 
             ### Special case: Not to be used with hybrid capture. NOTE: Disable when analysing wes + wgs in the same run
             ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-            @annotations = remove_contig_elements(
+            @annotations = delete_contig_elements(
                 {
                     elements_ref       => \@annotations,
-                    remove_contigs_ref => ["DP"],
+                    remove_contigs_ref => [qw{ DP }],
                 }
             );
         }
@@ -13603,7 +13599,7 @@ sub sv_reformat {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Get::File qw{get_file_suffix};
-    use MIP::Remove::List qw{ remove_contig_elements };
+    use MIP::Delete::List qw{ delete_contig_elements delete_male_contig };
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use Program::Htslib qw(bgzip tabix);
     use MIP::Gnu::Software::Gnu_grep qw( gnu_grep);
@@ -13671,19 +13667,17 @@ sub sv_reformat {
     my $vcfparser_analysis_type = "";
 
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    my @contigs = remove_contig_elements(
+    my @contigs = delete_contig_elements(
         {
             elements_ref       => \@{ $file_info_href->{contigs} },
-            remove_contigs_ref => [ "MT", "M" ],
-            contig_switch      => 1,
+            remove_contigs_ref => [qw{ MT M }],
         }
     );
 
-    my @contigs_size_ordered = remove_contig_elements(
+    my @contigs_size_ordered = delete_contig_elements(
         {
             elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
-            remove_contigs_ref => [ "MT", "M" ],
-            contig_switch      => 1,
+            remove_contigs_ref => [qw{ MT M }],
         }
     );
 
@@ -13693,11 +13687,10 @@ sub sv_reformat {
     foreach my $array_ref (@contig_arrays) {
 
         ## Removes contig_names from contigs array if no male or other found
-        remove_contigs(
+        $array_ref = delete_male_contig(
             {
-                active_parameter_href => $active_parameter_href,
-                contigs_ref           => $array_ref,
-                contig_names_ref      => ["Y"],
+                contigs_ref => $array_ref,
+                found_male  => $active_parameter_href->{found_male},
             }
         );
     }
@@ -13714,12 +13707,11 @@ sub sv_reformat {
 
             $vcfparser_analysis_type = ".selected";    #SelectFile variants
 
-            @contigs = remove_contig_elements(
+            @contigs = delete_contig_elements(
                 {
                     elements_ref =>
                       \@{ $file_info_href->{select_file_contigs} },
-                    remove_contigs_ref => [ "MT", "M" ],
-                    contig_switch      => 1,
+                    remove_contigs_ref => [qw{ MT M }],
                 }
             );
 
@@ -13732,12 +13724,11 @@ sub sv_reformat {
             );
 
             ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-            @contigs_size_ordered = remove_contig_elements(
+            @contigs_size_ordered = delete_contig_elements(
                 {
                     elements_ref =>
                       \@{ $file_info_href->{sorted_select_file_contigs} },
-                    remove_contigs_ref => [ "MT", "M" ],
-                    contig_switch      => 1,
+                    remove_contigs_ref => [qw{ MT M }],
                 }
             );
 
@@ -14146,7 +14137,7 @@ sub sv_rankvariant {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Get::File qw{get_file_suffix};
-    use MIP::Remove::List qw{ remove_contig_elements };
+    use MIP::Delete::List qw{ delete_contig_elements delete_male_contig};
     use MIP::Recipes::Xargs qw{ xargs_command };
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use Program::Variantcalling::Genmod qw(annotate models score compound);
@@ -14224,19 +14215,17 @@ sub sv_rankvariant {
     my $vcfparser_analysis_type = "";
 
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    my @contigs_size_ordered = remove_contig_elements(
+    my @contigs_size_ordered = delete_contig_elements(
         {
             elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
-            remove_contigs_ref => [ "MT", "M" ],
-            contig_switch      => 1,
+            remove_contigs_ref => [qw{ MT M }],
         }
     );
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    my @contigs = remove_contig_elements(
+    my @contigs = delete_contig_elements(
         {
             elements_ref       => \@{ $file_info_href->{contigs} },
-            remove_contigs_ref => [ "MT", "M" ],
-            contig_switch      => 1,
+            remove_contigs_ref => [qw{ MT M }],
         }
     );
 
@@ -14246,11 +14235,10 @@ sub sv_rankvariant {
     foreach my $array_ref (@contig_arrays) {
 
         ## Removes contig_names from contigs array if no male or other found
-        remove_contigs(
+        $array_ref = delete_male_contig(
             {
-                active_parameter_href => $active_parameter_href,
-                contigs_ref           => $array_ref,
-                contig_names_ref      => ["Y"],
+                contigs_ref => $array_ref,
+                found_male  => $active_parameter_href->{found_male},
             }
         );
     }
@@ -14282,12 +14270,11 @@ sub sv_rankvariant {
 
             ### Always skip MT and Y in select files
             ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-            @contigs = remove_contig_elements(
+            @contigs = delete_contig_elements(
                 {
                     elements_ref =>
                       \@{ $file_info_href->{select_file_contigs} },
-                    remove_contigs_ref => [ "MT", "M" ],
-                    contig_switch      => 1,
+                    remove_contigs_ref => [qw{ MT M }],
                 }
             );
 
@@ -14300,12 +14287,11 @@ sub sv_rankvariant {
             );
 
             ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-            @contigs_size_ordered = remove_contig_elements(
+            @contigs_size_ordered = delete_contig_elements(
                 {
                     elements_ref =>
                       \@{ $file_info_href->{sorted_select_file_contigs} },
-                    remove_contigs_ref => [ "MT", "M" ],
-                    contig_switch      => 1,
+                    remove_contigs_ref => [qw{ MT M }],
                 }
             );
 
@@ -14804,7 +14790,7 @@ sub sv_vcfparser {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Get::File qw{get_file_suffix};
-    use MIP::Remove::List qw{ remove_contig_elements };
+    use MIP::Delete::List qw{ delete_contig_elements delete_male_contig};
     use MIP::Recipes::Xargs qw{ xargs_command };
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use Program::Variantcalling::Mip qw(vcfparser);
@@ -14867,21 +14853,19 @@ sub sv_vcfparser {
     );
 
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    my @contigs = remove_contig_elements(
+    my @contigs = delete_contig_elements(
         {
             elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
-            remove_contigs_ref => [ "MT", "M" ],
-            contig_switch      => 1,
+            remove_contigs_ref => [qw{ MT M }],
         }
     );
 
     ### If no males or other remove contig Y from all downstream analysis
     ## Removes contig_names from contigs array if no male or other found
-    remove_contigs(
+    @contigs = delete_male_contig(
         {
-            active_parameter_href => $active_parameter_href,
-            contigs_ref           => \@contigs,
-            contig_names_ref      => ["Y"],
+            contigs_ref => \@contigs,
+            found_male  => $active_parameter_href->{found_male},
         }
     );
 
@@ -15132,12 +15116,11 @@ sub sv_vcfparser {
             $vcfparser_analysis_type = ".selected";    #Select file variants
 
             ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-            @contigs = remove_contig_elements(
+            @contigs = delete_contig_elements(
                 {
                     elements_ref =>
                       \@{ $file_info_href->{sorted_select_file_contigs} },
-                    remove_contigs_ref => [ "MT", "M" ],
-                    contig_switch      => 1,
+                    remove_contigs_ref => [qw{ MT M }],
                 }
             );
         }
@@ -16609,7 +16592,7 @@ sub delly_reformat {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
-    use MIP::Remove::List qw{ remove_contig_elements };
+    use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Recipes::Xargs qw{ xargs_command };
@@ -16679,11 +16662,10 @@ sub delly_reformat {
     );
 
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    my @contigs = remove_contig_elements(
+    my @contigs = delete_contig_elements(
         {
             elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
-            remove_contigs_ref => [ "MT", "M" ],
-            contig_switch      => 1,
+            remove_contigs_ref => [qw{ MT M }],
         }
     );
 
@@ -17517,7 +17499,7 @@ sub delly_call {
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Set::File qw{set_file_suffix};
-    use MIP::Remove::List qw{ remove_contig_elements };
+    use MIP::Delete::List qw{ delete_contig_elements };
     use Program::Variantcalling::Delly qw(call);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_sample);
@@ -17594,11 +17576,10 @@ sub delly_call {
 
     ### Update contigs
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    my @contigs = remove_contig_elements(
+    my @contigs = delete_contig_elements(
         {
             elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
-            remove_contigs_ref => [ "MT", "M" ],
-            contig_switch      => 1,
+            remove_contigs_ref => [qw{ MT M }],
         }
     );
 
@@ -30280,7 +30261,7 @@ sub detect_sample_id_gender {
 ##detect_sample_id_gender
 
 ##Function : Detect gender of the current analysis
-##Returns  : "$male_found $female_found $other_found"
+##Returns  : "$found_male $found_female $found_other"
 ##Arguments: $active_parameter_href, $sample_info_href
 ##         : $active_parameter_href => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href      => Info on samples and family hash {REF}
@@ -30310,29 +30291,29 @@ sub detect_sample_id_gender {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my $male_found   = 0;
-    my $female_found = 0;
-    my $other_found  = 0;
+    my $found_male   = 0;
+    my $found_female = 0;
+    my $found_other  = 0;
 
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
         if ( $sample_info_href->{sample}{$sample_id}{sex} =~ /1|^male/ ) { #Male
 
-            $male_found = 1;                                               #Male
+            $found_male = 1;                                               #Male
         }
         elsif ( $sample_info_href->{sample}{$sample_id}{sex} =~ /2|female/ )
         {    #Female
 
-            $female_found = 1;
+            $found_female = 1;
         }
         else {    #Other
 
-            $male_found =
+            $found_male =
               1;    #Include since it might be male to enable analysis of Y.
-            $other_found = 1;
+            $found_other = 1;
         }
     }
-    return $male_found, $female_found, $other_found;
+    return $found_male, $found_female, $found_other;
 }
 
 sub remove_pedigree_elements {
@@ -31832,50 +31813,50 @@ sub set_contigs {
 
     use MIP::Get::Analysis qw(get_overall_analysis_type);
 
-    if ( $active_parameter_href->{human_genome_reference} =~ /hg\d+/ )
-    {    #Refseq - prefix and M
+    if ( $active_parameter_href->{human_genome_reference} =~ /hg\d+/ ) {
+        ## Refseq - prefix and M
 
-        @{ $file_info_href->{contigs} } = (
-            "chr1",  "chr2",  "chr3",  "chr4",  "chr5",  "chr6",
-            "chr7",  "chr8",  "chr9",  "chr10", "chr11", "chr12",
-            "chr13", "chr14", "chr15", "chr16", "chr17", "chr18",
-            "chr19", "chr20", "chr21", "chr22", "chrX",  "chrY",
-            "chrM"
-        );    #Chr for filtering of bam file
+        # Chr for filtering of bam file
+        @{ $file_info_href->{contigs} } = qw{
+          chr1 chr2 chr3 chr4 chr5 chr6
+          chr7 chr8 chr9 chr10 chr11 chr12
+          chr13 chr14 chr15 chr16 chr17 chr18
+          chr19 chr20 chr21 chr22 chrX chrY
+          chrM };
 
-        @{ $file_info_href->{contigs_size_ordered} } = (
-            "chr1",  "chr2",  "chr3",  "chr4",  "chr5",  "chr6",
-            "chr7",  "chrX",  "chr8",  "chr9",  "chr10", "chr11",
-            "chr12", "chr13", "chr14", "chr15", "chr16", "chr17",
-            "chr18", "chr19", "chr20", "chr21", "chr22", "chrY",
-            "chrM"
-        );    #Chr for filtering of bam file
+        # Chr for filtering of bam file
+        @{ $file_info_href->{contigs_size_ordered} } = qw{
+          chr1 chr2 chr3 chr4 chr5 chr6
+          chr7 chrX chr8 chr9 chr10 chr11
+          chr12 chr13 chr14 chr15 chr16 chr17
+          chr18 chr19 chr20 chr21 chr22 chrY
+          chrM };
     }
-    elsif ( $active_parameter_href->{human_genome_reference} =~ /GRCh\d+/ )
-    {         #Ensembl - no prefix and MT
+    elsif ( $active_parameter_href->{human_genome_reference} =~ /GRCh\d+/ ) {
+        ## Ensembl - no prefix and MT
 
-        @{ $file_info_href->{contigs} } = (
-            "1",  "2",  "3",  "4",  "5",  "6",  "7",  "8",  "9",  "10",
-            "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
-            "21", "22", "X",  "Y",  "MT"
-        );    #Chr for filtering of bam file
+        # Chr for filtering of bam file
+        @{ $file_info_href->{contigs} } = qw{
+          1 2 3 4 5 6 7 8 9 10
+          11 12 13 14 15 16 17 18 19 20
+          21 22 X Y MT };
 
-        @{ $file_info_href->{contigs_size_ordered} } = (
-            "1",  "2",  "3",  "4",  "5",  "6",  "7",  "X",  "8",  "9",
-            "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
-            "20", "21", "22", "Y",  "MT"
-        );    #Chr for filtering of bam file
+        # Chr for filtering of bam file
+        @{ $file_info_href->{contigs_size_ordered} } = qw{
+          1 2 3 4 5 6 7 X 8 9
+          10 11 12 13 14 15 16 17 18 19
+          20 21 22 Y MT };
     }
 
     ## Detect if all samples has the same sequencing type and return consensus if reached
     my $consensus_analysis_type = get_overall_analysis_type(
         { analysis_type_hef => \%{ $active_parameter_href->{analysis_type} }, }
     );
-    if ( $consensus_analysis_type eq "wes" ) {
+    if ( $consensus_analysis_type eq q{wes} ) {
 
-        pop( @{ $file_info_href->{contigs} } );    #Remove Mitochondrial contig
-        pop( @{ $file_info_href->{contigs_size_ordered} } )
-          ;                                        #Remove Mitochondrial contig
+        # Remove Mitochondrial contig
+        pop @{ $file_info_href->{contigs} };
+        pop @{ $file_info_href->{contigs_size_ordered} };
     }
 }
 
@@ -36182,63 +36163,6 @@ sub check_founder_id {
                 }
             }
         }
-    }
-}
-
-sub remove_contigs {
-
-##remove_contigs
-
-##Function : Removes contig_names from contigs array if no male or other found
-##Returns  : ""
-##Arguments: $active_parameter_href, $contigs_ref
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $contigs_ref           => Contigs array to update {REF}
-##         : $contig_names_ref      => Contig names to remove {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $contigs_ref;
-    my $contig_names_ref;
-
-    my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        contigs_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$contigs_ref
-        },
-        contig_names_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$contig_names_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Removes contigY|chrY from contigs if no males or 'other' found in analysis
-    if ( !$active_parameter_href->{male_found} ) {
-
-        ## Removes contigs from supplied contigs_ref
-        remove_array_element(
-            {
-                contigs_ref        => $contigs_ref,
-                remove_contigs_ref => $contig_names_ref,
-            }
-        );
     }
 }
 

@@ -320,7 +320,7 @@ sub analysis_vep {
 
                 # Special case for mitochondrial contig annotation
 
-                if ( $contig =~ /MT|M/xsm ) {
+                if ( $contig =~ / MT|M /xsm ) {
 
                     push @plugins, q{UpDownDistance,10,10};
                 }
@@ -341,7 +341,7 @@ sub analysis_vep {
             push @vep_features_ref, $vep_feature;
 
             # Special case for mitochondrial contig annotation
-            if ( ( $contig =~ /MT|M/xsm ) && ( $vep_feature eq q{refseq} ) ) {
+            if ( ( $contig =~ / MT|M /xsm ) && ( $vep_feature eq q{refseq} ) ) {
 
                 push @vep_features_ref, q{all_refseq};
             }
@@ -887,7 +887,7 @@ sub analysis_vep_sv {
 ##         : $job_id_href             => Job id hash {REF}
 ##         : $program_name            => Program name
 ##         : $program_info_path       => The program info path
-##         : $FILEHANDLE              => Sbatch filehandle to write to
+##         : $FILEHANDLE              => Filehandle to write to
 ##         : $family_id               => Family id
 ##         : $temp_directory          => Temporary directory
 ##         : $outaligner_dir          => Outaligner_dir used in the analysis
@@ -993,7 +993,7 @@ sub analysis_vep_sv {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_core_number };
-    use MIP::Remove::List qw{ remove_contig_elements };
+    use MIP::Delete::List qw{ delete_contig_elements delete_male_contig };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Get::File qw{ get_file_suffix };
     use MIP::Recipes::Xargs qw{ xargs_command };
@@ -1027,20 +1027,19 @@ sub analysis_vep_sv {
     my $XARGSFILEHANDLE = IO::Handle->new();
 
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    my @contigs = remove_contig_elements(
+    my @contigs = delete_contig_elements(
         {
             elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
-	 remove_contigs_ref => [qw{ MT M }],
+            remove_contigs_ref => [qw{ MT M }],
         }
     );
 
     ### If no males or other remove contig Y from all downstream analysis
     ## Removes contig_names from contigs array if no male or other found
-    remove_contigs(
+    @contigs = delete_male_contig(
         {
-            active_parameter_href => $active_parameter_href,
-            contigs_ref           => \@contigs,
-            contig_names_ref      => [qw{ Y }],
+            contigs_ref => \@contigs,
+            found_male  => $active_parameter_href->{found_male},
         }
     );
 
@@ -1119,44 +1118,14 @@ sub analysis_vep_sv {
     );
     say {$FILEHANDLE} q{wait}, $NEWLINE;
 
-    ## Fix SV with no length as these will fail in the annotation with VEP
-    my $perl_fix_sv_nolengths =
-
-      # Set up variables
-      q?perl -nae 'my %info; my $start; my $end; my $alt; my @data; ?;
-
-    # Split line
-    $perl_fix_sv_nolengths .= q?@data=split("\t", $_); ?;
-
-    # Add $start position
-    $perl_fix_sv_nolengths .= q?$start = $data[1]; $start++; ?;
-
-    # Add $alt allele
-    $perl_fix_sv_nolengths .= q?$alt=$data[4]; ?;
-
-    # Add INFO field to %data using $key->$value
-    $perl_fix_sv_nolengths .=
-q?foreach my $bit (split /\;/, $data[7]) { my ($key, $value) = split /\=/, $bit; $info{$key} = $value; } ?;
-
-    # Add $end position
-    $perl_fix_sv_nolengths .=
-      q?if(defined($info{END})) { $end = $info{END}; } ?;
-
-# If SV, strip SV type entry and check if no length, then do not print variant else print
-    $perl_fix_sv_nolengths .=
-q?if($alt=~ /\<|\[|\]|\>/) { $alt=~ s/\<|\>//g; $alt=~ s/\:.+//g; if($start >= $end && $alt=~ /del/i) {} else {print $_} } ?;
-
-    # All other lines - print
-    $perl_fix_sv_nolengths .= q?else {print $_}' ?;
-
-    print {$FILEHANDLE} $perl_fix_sv_nolengths . $SPACE;
-    print {$FILEHANDLE} $infile_path_prefix . $file_suffix . $SPACE;
-    say   {$FILEHANDLE} q{> }
-      . $infile_path_prefix
-      . $UNDERSCORE
-      . q{fixedsvlength}
-      . $file_suffix
-      . $SPACE, $NEWLINE;
+    ## Reformat SV with no length as these will fail in the annotation with VEP
+    _reformat_sv_with_no_length(
+        {
+            infile_path_prefix => $infile_path_prefix,
+            file_suffix        => $file_suffix,
+            FILEHANDLE         => $FILEHANDLE,
+        }
+    );
 
     ## varianteffectpredictor
     say {$FILEHANDLE} q{## varianteffectpredictor};
@@ -1275,7 +1244,7 @@ q?if($alt=~ /\<|\[|\]|\>/) { $alt=~ s/\<|\>//g; $alt=~ s/\:.+//g; if($start >= $
                 outfile_path    => $outfile_path,
                 stderrfile_path => $stderrfile_path,
                 stdoutfile_path => $stdoutfile_path,
-	     FILEHANDLE => $XARGSFILEHANDLE,
+                FILEHANDLE      => $XARGSFILEHANDLE,
             }
         );
         print {$XARGSFILEHANDLE} $NEWLINE;
@@ -1288,7 +1257,7 @@ q?if($alt=~ /\<|\[|\]|\>/) { $alt=~ s/\<|\>//g; $alt=~ s/\:.+//g; if($start >= $
         }
     }
 
-    close {$XARGSFILEHANDLE};
+    close $XARGSFILEHANDLE;
 
     ## QC Data File(s)
     migrate_file(
@@ -1407,6 +1376,88 @@ sub _get_assembly_name {
         }
     }
     return $assembly_version;
+}
+
+sub _reformat_sv_with_no_length {
+
+##_reformat_sv_with_no_length
+
+##Function : Reformat SV with no length as these will fail in the annotation with VEP
+##Returns  :
+##Arguments: $infile_path_prefix, file_suffix, $FILEHANDLE
+##         : $infile_path_prefix => Infile path prefix
+##         : $file_suffix        => File suffix
+##         : $FILEHANDLE         => Filehandle to write to
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $infile_path_prefix;
+    my $file_suffix;
+    my $FILEHANDLE;
+
+    my $tmpl = {
+        infile_path_prefix => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$infile_path_prefix
+        },
+        file_suffix => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$file_suffix
+        },
+        FILEHANDLE => { store => \$FILEHANDLE },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Fix SV with no length as these will fail in the annotation with VEP
+    my $perl_fix_sv_nolengths;
+
+    # Set up perl
+    $perl_fix_sv_nolengths .= q?perl -nae '?;
+
+    # Initate variables
+    $perl_fix_sv_nolengths .=
+      q?my %info; my $start; my $end; my $alt; my @data; ?;
+
+    # Split line
+    $perl_fix_sv_nolengths .= q?@data=split("\t", $_); ?;
+
+    # Add $start position
+    $perl_fix_sv_nolengths .= q?$start = $data[1]; $start++; ?;
+
+    # Add $alt allele
+    $perl_fix_sv_nolengths .= q?$alt=$data[4]; ?;
+
+    # Add INFO field to %data using $key->$value
+    $perl_fix_sv_nolengths .=
+q?foreach my $bit (split /\;/, $data[7]) { my ($key, $value) = split /\=/, $bit; $info{$key} = $value; } ?;
+
+    # Add $end position
+    $perl_fix_sv_nolengths .=
+      q?if(defined($info{END})) { $end = $info{END}; } ?;
+
+# If SV, strip SV type entry and check if no length, then do not print variant else print
+    $perl_fix_sv_nolengths .=
+q?if($alt=~ /\<|\[|\]|\>/) { $alt=~ s/\<|\>//g; $alt=~ s/\:.+//g; if($start >= $end && $alt=~ /del/i) {} else {print $_} } ?;
+
+    # All other lines - print
+    $perl_fix_sv_nolengths .= q?else {print $_}' ?;
+
+    print {$FILEHANDLE} $perl_fix_sv_nolengths . $SPACE;
+    print {$FILEHANDLE} $infile_path_prefix . $file_suffix . $SPACE;
+    say   {$FILEHANDLE} q{>}
+      . $SPACE
+      . $infile_path_prefix
+      . $UNDERSCORE
+      . q{fixedsvlength}
+      . $file_suffix
+      . $SPACE, $NEWLINE;
+    return;
 }
 
 1;

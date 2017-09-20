@@ -14,7 +14,7 @@ cluster_check_max_core_number.t
 cluster_get_core_number.t
 cluster_update_core_number_to_seq_mode.t
 fastqc.t
-file_check_file_version_exist.t
+path_check_file_version_exist.t
 findutils_xargs.t
 gnu_cat.t
 gnu_cd.t
@@ -36,6 +36,8 @@ gnu_split.t
 gnu_trap.t
 gnu_wait.t
 gzip.t
+list_delete_contig_elements.t
+list_delete_male_contig.t
 pigz.t
 processes_print_wait.t
 processes_add_job_id_dependency_tree.t
