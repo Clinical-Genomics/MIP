@@ -12,10 +12,23 @@ use Carp;
 use English qw(-no_match_vars);
 use autodie;
 use Test::More;
-use List::Util qw(any);
+use Params::Check qw[check allow last_error];
+$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 
 ## CPAN
 use List::MoreUtils qw(zip);
+use Readonly;
+
+use FindBin qw($Bin);                 #Find directory of script
+use File::Basename qw(dirname);
+use File::Spec::Functions qw(catdir);
+
+## MIPs lib/
+use lib catdir( dirname($Bin), 'lib' );
+use MIP::Test::Writefile qw(test_write_to_file);
+
+## Constants
+Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -23,14 +36,11 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw(test_function);
 }
-
-use Params::Check qw[check allow last_error];
-$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 
 sub test_function {
 
@@ -38,11 +48,12 @@ sub test_function {
 
 ##Function : Test module function by generating arguments and testing output
 ##Returns  : "@commands"
-##Arguments: $argument_href, $required_argument_href, $module_function_cref, $function_base_command
+##Arguments: $argument_href, $required_argument_href, $module_function_cref, $function_base_command, do_test_base_command
 ##         : $argument_href          => Parameters to submit to module method
 ##         : $required_argument_href => Required arguments
 ##         : $module_function_cref   => Module method to test
 ##         : $function_base_command  => Function base command
+##         : $do_test_base_command   => Perform test of base command
 
     my ($arg_href) = @_;
 
@@ -51,6 +62,7 @@ sub test_function {
     my $required_argument_href;
     my $function_base_command;
     my $module_function_cref;
+    my $do_test_base_command;
 
     my $tmpl = {
         argument_href => {
@@ -65,14 +77,20 @@ sub test_function {
             strict_type => 1,
             store       => \$required_argument_href
         },
+        module_function_cref =>
+          { required => 1, defined => 1, store => \$module_function_cref },
         function_base_command => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$function_base_command
         },
-        module_function_cref =>
-          { required => 1, defined => 1, store => \$module_function_cref },
+        do_test_base_command => {
+            default     => 1,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$do_test_base_command
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
@@ -86,7 +104,7 @@ sub test_function {
 
         ## SCALAR
         if ( exists $argument_href->{$argument}{input} ) {
-
+            
             $input_value = $argument_href->{$argument}{input};
         }
         ## ARRAY
@@ -107,8 +125,8 @@ sub test_function {
                 @args = _build_call(
                     {
                         required_argument_href => $required_argument_href,
-                        argument                => $argument,
-                        input_values_ref        => $input_values_ref,
+                        argument               => $argument,
+                        input_values_ref       => $input_values_ref,
                     }
                 );
             }
@@ -117,16 +135,16 @@ sub test_function {
                 @args = _build_call(
                     {
                         required_argument_href => $required_argument_href,
-                        argument                => $argument,
-                        input_value             => $input_value,
+                        argument               => $argument,
+                        input_value            => $input_value,
                     }
                 );
             }
 
             ## Special case for test of FILEHANDLE. Does not return @commands
-            if ( $argument eq 'FILEHANDLE' ) {
+            if ( $argument eq q{FILEHANDLE} ) {
 
-                _test_write_to_file(
+                test_write_to_file(
                     {
                         args_ref             => \@args,
                         module_function_cref => $module_function_cref,
@@ -143,9 +161,9 @@ sub test_function {
         else {
 
             ## Special case for test of FILEHANDLE. Does not return @commands
-            if ( $argument eq 'FILEHANDLE' ) {
+            if ( $argument eq q{FILEHANDLE} ) {
 
-                _test_write_to_file(
+                test_write_to_file(
                     {
                         args_ref => [ $argument, $input_value ],
                         module_function_cref => $module_function_cref,
@@ -178,17 +196,37 @@ sub test_function {
 
         if (@commands) {
 
-            ## Test function_base_command
-            _test_base_command(
-                {
-                    base_command          => $commands[0],
-                    expected_base_command => $function_base_command,
-                }
-            );
+            if ($do_test_base_command) {
 
-            ## Test argument
-            ok( ( any { $_ eq $expected_return } @commands ),
-                'Argument: ' . $argument );
+                ## Test function_base_command
+                _test_base_command(
+                    {
+                        base_command          => $commands[0],
+                        expected_base_command => $function_base_command,
+                    }
+                );
+            }
+
+            # Remap to hash
+            my %is_argument = map { $_ => $_ } @commands;
+
+            if ( exists $is_argument{$expected_return} ) {
+
+                is( $is_argument{$expected_return},
+                    $expected_return, q{Argument: } . $argument );
+            }
+            else {
+
+                is(
+                    join( $SPACE, @commands ),
+                    $expected_return,
+                    q{Argument: } . $argument
+                );
+
+                say STDERR q{#}
+                  . $SPACE x 3
+                  . q{Command line does not contain expected argument.};
+            }
         }
     }
     return;
@@ -239,9 +277,31 @@ sub _build_call {
     check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
 
     ## Collect required keys and values to generate args
-    my @keys = keys %{$required_argument_href};
-    my @values =
-      map { ( $required_argument_href->{$_}{input} ) } @keys;
+    my @keys;
+    my @values;
+    my @possible_input_names = qw(input inputs_ref);
+
+  REQUIRED_ARGUMENT:
+    foreach my $required_argument ( keys %{$required_argument_href} ) {
+
+        # Add required_argument
+        push @keys, $required_argument;
+
+        # Add value
+      POSSIBLE_INPUT_NAMES:
+        foreach my $input_name (@possible_input_names) {
+
+            ## SCALAR or ARRAY_ref
+            if (
+                exists $required_argument_href->{$required_argument}
+                {$input_name} )
+            {
+
+                push @values,
+                  $required_argument_href->{$required_argument}{$input_name};
+            }
+        }
+    }
 
     ### Combine the specific and required argument keys and values to test
     ## SCALAR
@@ -256,7 +316,7 @@ sub _build_call {
     }
 
     ## Interleave arrays to build arguments for submission to function
-    my @args = zip(@keys, @values);
+    my @args = zip( @keys, @values );
 
     return @args;
 }
@@ -296,73 +356,10 @@ sub _test_base_command {
 
     if ( $base_command ne $expected_base_command ) {
 
-        ok(
-            $base_command eq $expected_base_command,
-            'Argument: ' . $expected_base_command
-        );
+        is( $base_command, $expected_base_command,
+            'Argument: ' . $expected_base_command );
         exit 1;
     }
-    return;
-}
-
-sub _test_write_to_file {
-
-## _test_write_to_file
-
-##Function : Test of writing to file using supplied FILEHANDLE
-##Returns  : ""
-##Arguments: $module_function_cref, $args_ref, $base_command
-##         : $module_function_cref => Module method to test
-##         : $args_ref             => Arguments to function call
-##         : $base_command         => First word in command line usually name of executable
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $module_function_cref;
-    my $args_ref;
-    my $base_command;
-
-    my $tmpl = {
-        module_function_cref =>
-          { required => 1, defined => 1, store => \$module_function_cref },
-        args_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$args_ref
-        },
-        base_command => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$base_command
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
-
-    # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
-
-    ## Add new FILEHANDLE to args
-    push @{$args_ref}, 'FILEHANDLE', $FILEHANDLE;
-
-    # For storing info to write
-    my $file_content;
-
-    ## Store file content in memory by using referenced variable
-    open $FILEHANDLE, '>', \$file_content
-      or croak 'Cannot write to ' . $file_content . ': ' . $OS_ERROR;
-
-    $module_function_cref->( { @{$args_ref} } );
-
-    close $FILEHANDLE;
-
-    ## Perform test
-    ok( $file_content =~ /^$base_command/, 'Write commands to file' );
-
     return;
 }
 

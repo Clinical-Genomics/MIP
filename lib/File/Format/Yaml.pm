@@ -22,7 +22,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw(load_yaml write_yaml);
-    
+
 }
 
 use Params::Check qw[check allow last_error];
@@ -30,6 +30,12 @@ use Params::Check qw[check allow last_error];
 
 ## Third party module(s)
 use YAML;
+
+# Localize the current value
+local $YAML::QuoteNumericStrings = $YAML::QuoteNumericStrings;
+
+# Force numeric values to strings in YAML representation
+$YAML::QuoteNumericStrings = 1;
 
 sub load_yaml {
 
@@ -54,7 +60,7 @@ sub load_yaml {
     my %yaml;
 
     open (my $YAML, "<", $yaml_file) or die "can't open ".$yaml_file.":".$!, "\n";
-    local $YAML::QuoteNumericStrings = 1;  #Force numeric values to strings in YAML representation
+
     %yaml = %{ YAML::LoadFile($yaml_file) };  #Load hashreference as hash
 
     close($YAML);
@@ -87,7 +93,7 @@ sub write_yaml {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     open (my $YAML, ">", $$yaml_file_path_ref) or die("Can't open '".$$yaml_file_path_ref."':".$!."\n");
-    local $YAML::QuoteNumericStrings = 1;  #Force numeric values to strings in YAML representation
+
     say $YAML Dump( $yaml_href );
     close($YAML);
 }
