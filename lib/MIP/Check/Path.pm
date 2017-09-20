@@ -12,8 +12,8 @@ use Params::Check qw{ check allow last_error };
 
 BEGIN {
 
-    use base qw{ Exporter };
     require Exporter;
+    use base qw{ Exporter };
 
     # Set the version for version checking
     our $VERSION = 1.01;

@@ -54,6 +54,15 @@ use MIP::File::Format::Pedigree qw{ create_fam_file };
 use MIP::Check::Cluster qw{ check_max_core_number };
 use MIP::Get::Analysis qw{ get_overall_analysis_type };
 use MIP::Check::Parameter qw{ check_allowed_temp_directory };
+use MIP::Delete::List qw{ delete_male_contig };
+
+##Recipes
+use MIP::Recipes::Split_fastq_file qw{analysis_split_fastq_file};
+use MIP::Recipes::Gzip_fastq qw{analysis_gzip_fastq};
+use MIP::Recipes::Fastqc qw{analysis_fastqc};
+use MIP::Recipes::Bwa_mem qw{analysis_bwa_mem};
+use MIP::Recipes::Chanjo_sex_check qw{analysis_chanjo_sex_check};
+use MIP::Recipes::Vep qw{analysis_vep analysis_vep_rio analysis_vep_sv};
 
 our $USAGE = build_usage( {} );
 
@@ -77,8 +86,9 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $NEWLINE => qq{\n};
 Readonly my $DOT     => q{.};
+Readonly my $NEWLINE => qq{\n};
+Readonly my $TAB     => qq{\t};
 
 ####Script parameters
 
@@ -1082,9 +1092,9 @@ set_contigs(
 
 ## Detect the gender included in current analysis
 (
-    $active_parameter{male_found},
-    $active_parameter{female_found},
-    $active_parameter{other_found}
+    $active_parameter{found_male},
+    $active_parameter{found_female},
+    $active_parameter{found_other}
   )
   = detect_sample_id_gender(
     {
@@ -1092,12 +1102,12 @@ set_contigs(
         sample_info_href      => \%sample_info,
     }
   );
+
 ## Removes contig_names from contigs array if no male or 'other' found
-remove_contigs(
+@{ $file_info{select_file_contigs} } = delete_male_contig(
     {
-        active_parameter_href => \%active_parameter,
-        contigs_ref           => \@{ $file_info{select_file_contigs} },
-        contig_names_ref      => ['Y'],
+        contigs_ref => \@{ $file_info{select_file_contigs} },
+        found_male  => $active_parameter{found_male},
     }
 );
 
@@ -1215,8 +1225,6 @@ if ( $active_parameter{psplit_fastq_file} > 0 ) {
 
     $log->info( q{[Split fastq files in batches]}, $NEWLINE );
 
-    use MIP::Recipes::Split_fastq_file qw{analysis_split_fastq_file};
-
     my $program_name = lc q{split_fastq_file};
 
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
@@ -1248,8 +1256,6 @@ if (   ( $active_parameter{pgzip_fastq} > 0 )
 {
 
     $log->info( q{[Gzip for fastq files]}, $NEWLINE );
-
-    use MIP::Recipes::Gzip_fastq qw{analysis_gzip_fastq};
 
     my $program_name = lc q{gzip_fastq};
 
@@ -1290,8 +1296,6 @@ if (   ( $active_parameter{pgzip_fastq} > 0 )
 if ( $active_parameter{pfastqc} > 0 ) {
 
     $log->info( q{[Fastqc]}, $NEWLINE );
-
-    use MIP::Recipes::Fastqc qw{analysis_fastqc};
 
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
@@ -1337,7 +1341,6 @@ if ( $active_parameter{pbwa_mem} > 0 ) {
 
     $log->info( q{[BWA Mem]}, $NEWLINE );
 
-    use MIP::Recipes::Bwa_mem qw{analysis_bwa_mem};
     my $program_name = lc q{bwa_mem};
 
     if ( $active_parameter{dry_run_all} != 1 ) {
@@ -1649,8 +1652,6 @@ else {
 if ( $active_parameter{pchanjo_sexcheck} > 0 ) {
 
     $log->info( q{[Chanjo sexcheck]} . $NEWLINE );
-
-    use MIP::Recipes::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
 
     my $program_name = lc q{chanjo_sexcheck};
 
@@ -2019,12 +2020,14 @@ if ( $active_parameter{psv_combinevariantcallsets} > 0 )
     );
 }
 
-if ( $active_parameter{psv_varianteffectpredictor} > 0 )
-{    #Run sv_varianteffectpredictor. Done per family
+# Run sv_varianteffectpredictor. Family-level
+if ( $active_parameter{psv_varianteffectpredictor} > 0 ) {
 
-    $log->info("[SV varianteffectpredictor]\n");
+    $log->info( q{[SV varianteffectpredictor]} . $NEWLINE );
 
-    sv_varianteffectpredictor(
+    my $program_name = lc q{sv_varianteffectpredictor};
+
+    analysis_vep_sv(
         {
             parameter_href          => \%parameter,
             active_parameter_href   => \%active_parameter,
@@ -2032,7 +2035,7 @@ if ( $active_parameter{psv_varianteffectpredictor} > 0 )
             file_info_href          => \%file_info,
             infile_lane_prefix_href => \%infile_lane_prefix,
             job_id_href             => \%job_id,
-            program_name            => "sv_varianteffectpredictor",
+            program_name            => $program_name,
         }
     );
 }
@@ -2475,11 +2478,10 @@ my @file_info_contig_keys = ( "contigs_size_ordered", "contigs" );
 foreach my $key (@file_info_contig_keys) {
 
     ## Removes contig_names from contigs array if no male or 'other' found
-    remove_contigs(
+    @{ $file_info{$key} } = delete_male_contig(
         {
-            active_parameter_href => \%active_parameter,
-            contigs_ref           => \@{ $file_info{$key} },
-            contig_names_ref      => ["Y"],
+            contigs_ref => \@{ $file_info{$key} },
+            found_male  => $active_parameter{found_male},
         }
     );
 }
@@ -2555,12 +2557,14 @@ else {
             }
         );
     }
-    if ( $active_parameter{pvarianteffectpredictor} > 0 )
-    {    #Run varianteffectpredictor. Done per family
+    ## Run varianteffectpredictor {family-level}
+    if ( $active_parameter{pvarianteffectpredictor} > 0 ) {
 
-        $log->info("[Varianteffectpredictor]\n");
+        $log->info( q{[Varianteffectpredictor]} . $NEWLINE );
 
-        varianteffectpredictor(
+        my $program_name = lc q{varianteffectpredictor};
+
+        analysis_vep(
             {
                 parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
@@ -2568,8 +2572,8 @@ else {
                 file_info_href          => \%file_info,
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
-                call_type               => "BOTH",
-                program_name            => "varianteffectpredictor",
+                call_type               => q{BOTH},
+                program_name            => $program_name,
             }
         );
     }
@@ -3425,14 +3429,15 @@ sub analysisrunstatus {
     ## Test varianteffectpredictor fork status. If varianteffectpredictor is unable to fork it will prematurely end the analysis and we will lose variants.
     if (
         defined(
-            $sample_info_href->{program}{varianteffectpredictor}{outfile}
+            $sample_info_href->{program}{varianteffectpredictor}{stderrfile}
+              {path}
         )
       )
     {
 
         my $variant_effect_predictor_file = catfile(
-            $sample_info_href->{program}{varianteffectpredictor}{outdirectory},
-            $sample_info_href->{program}{varianteffectpredictor}{outfile}
+            $sample_info_href->{program}{varianteffectpredictor}{stderrfile}
+              {path},
         );
 
         print $FILEHANDLE q?if grep -q "WARNING Unable to fork" ?
@@ -4729,6 +4734,7 @@ sub endvariantannotationblock {
 
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
+    use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use Program::Htslib qw(bgzip tabix);
     use MIP::Gnu::Software::Gnu_grep qw(gnu_grep);
@@ -4835,12 +4841,11 @@ sub endvariantannotationblock {
             {    #Remove MT|M since no exome kit so far has mitochondrial probes
 
                 ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-                @contigs = remove_element(
+                @contigs = delete_contig_elements(
                     {
                         elements_ref =>
                           \@{ $file_info_href->{select_file_contigs} },
-                        remove_contigs_ref => [ "MT", "M" ],
-                        contig_switch      => 1,
+                        remove_contigs_ref => [qw{ MT M }],
                     }
                 );
             }
@@ -5201,6 +5206,7 @@ sub rankvariant {
     use MIP::Cluster qw(get_core_number);
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
+    use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use MIP::Recipes::Xargs qw{ xargs_command };
     use Program::Variantcalling::Genmod qw(annotate models score compound);
@@ -5338,22 +5344,20 @@ sub rankvariant {
             {    #Remove MT|M since no exome kit so far has mitochondrial probes
 
                 ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-                @contigs = remove_element(
+                @contigs = delete_contig_elements(
                     {
                         elements_ref =>
                           \@{ $file_info_href->{select_file_contigs} },
-                        remove_contigs_ref => [ "MT", "M" ],
-                        contig_switch      => 1,
+                        remove_contigs_ref => [q{ MT M }],
                     }
                 );
 
                 ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-                @contigs_size_ordered = remove_element(
+                @contigs_size_ordered = delete_contig_elements(
                     {
                         elements_ref =>
                           \@{ $file_info_href->{sorted_select_file_contigs} },
-                        remove_contigs_ref => [ "MT", "M" ],
-                        contig_switch      => 1,
+                        remove_contigs_ref => [qw{ MT M }],
                     }
                 );
             }
@@ -8029,473 +8033,6 @@ sub mvcfparser {
                 }
             );
         }
-    }
-    if ($$reduce_io_ref) {
-
-        return
-          $xargs_file_counter
-          ; #Track the number of created xargs scripts per module for Block algorithm
-    }
-}
-
-sub varianteffectpredictor {
-
-##varianteffectpredictor
-
-##Function : varianteffectpredictor performs annotation of variants.
-##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_path, $stderr_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $program_name               => Program name
-##         : $program_info_path          => The program info path
-##         : $file_path                  => File path
-##         : $stderr_path                => The stderr path of the block script
-##         : $FILEHANDLE                 => Sbatch filehandle to write to
-##         : $family_id_ref              => Family id {REF}
-##         : $temp_directory_ref         => Temporary directory {REF}
-##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => The variant call type
-##         : $xargs_file_counter         => The xargs file counter
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-    my $outaligner_dir_ref;
-    my $call_type;
-    my $xargs_file_counter;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $program_name;
-    my $program_info_path;
-    my $file_path;
-    my $stderr_path;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name
-        },
-        program_info_path => { strict_type => 1, store => \$program_info_path },
-        file_path         => { strict_type => 1, store => \$file_path },
-        stderr_path       => { strict_type => 1, store => \$stderr_path },
-        FILEHANDLE    => { store => \$FILEHANDLE },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref
-        },
-        outaligner_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir_ref
-        },
-        call_type =>
-          { default => "BOTH", strict_type => 1, store => \$call_type },
-        xargs_file_counter => {
-            default     => 0,
-            allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
-            store       => \$xargs_file_counter
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Cluster qw(get_core_number);
-    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
-    use MIP::Set::File qw{set_file_suffix};
-    use MIP::Get::File qw{get_file_suffix};
-    use MIP::Recipes::Xargs qw{ xargs_command };
-    use Program::Variantcalling::Vep qw(variant_effect_predictor);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_sample_id_dependency_add_to_family);
-
-    my $reduce_io_ref = \$active_parameter_href->{reduce_io};
-    my $xargs_file_path_prefix;
-    my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
-
-    ## Filehandles
-    my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    unless ( defined($FILEHANDLE) ) {           #Run as individual sbatch script
-
-        $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
-    }
-
-    ## Get core number depending on user supplied input exists or not and max number of cores
-    my $core_number = get_core_number(
-        {
-            module_core_number => $active_parameter_href->{module_core_number}
-              { "p" . $program_name },
-            modifier_core_number => scalar( @{ $file_info_href->{contigs} } ),
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-        }
-    );
-
-    my $fork_number = 4;    #Varianteffectpredictor forks
-    $core_number =
-      floor( $core_number / $fork_number );    #Adjust for the number of forks
-
-    if ( !$$reduce_io_ref ) {                  #Run as individual sbatch script
-
-        use MIP::Script::Setup_script qw(setup_script);
-
-        ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_path, $program_info_path ) = setup_script(
-            {
-                active_parameter_href => $active_parameter_href,
-                job_id_href           => $job_id_href,
-                FILEHANDLE            => $FILEHANDLE,
-                directory_id          => $$family_id_ref,
-                program_name          => $program_name,
-                program_directory     => catfile( lc($$outaligner_dir_ref) ),
-                call_type             => $call_type,
-                core_number           => $core_number,
-                process_time =>
-                  $active_parameter_href->{module_time}{ "p" . $program_name },
-                temp_directory => $$temp_directory_ref
-            }
-        );
-        $stderr_path = $program_info_path . ".stderr.txt";
-    }
-
-    # Split to enable submission to &sample_info_qc later
-    my ( $volume, $directory, $stderr_file ) =
-      File::Spec->splitpath($stderr_path);
-
-    ## Assign directories
-    my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $$family_id_ref, $$outaligner_dir_ref );
-    my $outfamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $$family_id_ref, $$outaligner_dir_ref );
-    $parameter_href->{ "p" . $program_name }{indirectory} =
-      $outfamily_directory;    #Used downstream
-
-    ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{pvt}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$$family_id_ref}{ "p" . $program_name }{file_tag};
-    my $infile_prefix       = $$family_id_ref . $infile_tag . $call_type;
-    my $file_path_prefix    = catfile( $$temp_directory_ref, $infile_prefix );
-    my $outfile_prefix      = $$family_id_ref . $outfile_tag . $call_type;
-    my $outfile_path_prefix = catfile( $$temp_directory_ref, $outfile_prefix );
-
-    ### Assign suffix
-    ## Return the current infile vcf compression suffix for this jobid chain
-    my $infile_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => "variant_file_suffix",
-            jobid_chain    => $job_id_chain,
-        }
-    );
-    my $outfile_suffix = set_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => "variant_file_suffix",
-            job_id_chain   => $job_id_chain,
-            file_suffix =>
-              $parameter_href->{ "p" . $program_name }{outfile_suffix},
-        }
-    );
-
-    if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
-
-        ## Copy file(s) to temporary directory
-        say $FILEHANDLE "## Copy file(s) to temporary directory";
-        ($xargs_file_counter) = xargs_migrate_contig_files(
-            {
-                FILEHANDLE      => $FILEHANDLE,
-                XARGSFILEHANDLE => $XARGSFILEHANDLE,
-                contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
-                file_path   => $file_path,
-                program_info_path  => $program_info_path,
-                core_number        => $core_number,
-                xargs_file_counter => $xargs_file_counter,
-                infile             => $infile_prefix,
-                indirectory        => $infamily_directory,
-                temp_directory     => $$temp_directory_ref,
-            }
-        );
-    }
-
-    ## varianteffectpredictor
-    say $FILEHANDLE "## Varianteffectpredictor";
-
-    my $assembly_version = $file_info_href->{human_genome_reference_source}
-      . $file_info_href->{human_genome_reference_version};
-
-    ## Alias genome source and version to be compatible with VEP
-    alias_assembly_version( { assembly_version_ref => \$assembly_version } );
-
-    ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
-        {
-            FILEHANDLE         => $FILEHANDLE,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_path          => $file_path,
-            program_info_path  => $program_info_path,
-            core_number        => $core_number,
-            xargs_file_counter => $xargs_file_counter,
-        }
-    );
-
-    foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
-
-        ## Get parameters
-        ## VEP plugins
-        my @plugins;
-        foreach my $plugin ( @{ $active_parameter_href->{vep_plugins} } ) {
-
-            if ( $plugin eq "LoF" ) {
-
-                push(
-                    @plugins,
-                    $plugin
-                      . ",human_ancestor_fa:"
-                      . catfile(
-                        $active_parameter_href->{vep_directory_cache},
-                        "human_ancestor.fa,filter_position:0.05"
-                      )
-                );
-            }
-            elsif ( $plugin eq "UpDownDistance" )
-            {    #Special case for mitochondrial contig annotation
-
-                if ( $contig =~ /MT|M/ ) {
-
-                    push( @plugins, "UpDownDistance,10,10" );
-                }
-            }
-            else {
-
-                push( @plugins, $plugin );
-            }
-        }
-
-        ## VEPFeatures
-        my @vep_features_ref;
-        foreach my $vep_feature ( @{ $active_parameter_href->{vep_features} } )
-        {
-
-            push( @vep_features_ref, $vep_feature )
-              ;    #Add VEP features to the output.
-
-            if ( ( $contig =~ /MT|M/ ) && ( $vep_feature eq "refseq" ) )
-            {      #Special case for mitochondrial contig annotation
-
-                push( @vep_features_ref, "all_refseq" );
-            }
-        }
-
-        variant_effect_predictor(
-            {
-                regions_ref      => [$contig],
-                plugins_ref      => \@plugins,
-                vep_features_ref => \@vep_features_ref,
-                script_path      => catfile(
-                    $active_parameter_href->{vep_directory_path},
-                    "variant_effect_predictor.pl"
-                ),
-                assembly => $assembly_version,
-                cache_directory =>
-                  $active_parameter_href->{vep_directory_cache},
-                reference_path =>
-                  $active_parameter_href->{human_genome_reference},
-                infile_format  => substr( $outfile_suffix, 1 ),
-                outfile_format => substr( $outfile_suffix, 1 ),
-                fork           => $fork_number,
-                buffer_size    => 20000,
-                infile_path    => $file_path_prefix . "_"
-                  . $contig
-                  . $infile_suffix,
-                outfile_path => $outfile_path_prefix . "_"
-                  . $contig
-                  . $infile_suffix,
-                stderrfile_path => $xargs_file_path_prefix . "."
-                  . $contig
-                  . ".stderr.txt",
-                stdoutfile_path => $xargs_file_path_prefix . "."
-                  . $contig
-                  . ".stdout.txt",
-                FILEHANDLE => $XARGSFILEHANDLE,
-            }
-        );
-        print $XARGSFILEHANDLE "\n";
-    }
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        ## Collect QC metadata info for later use
-        my $qc_vep_summary_outfile =
-            $outfile_prefix . q{_}
-          . $file_info_href->{contigs_size_ordered}[0]
-          . $infile_suffix
-          . q{_summary.html};
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                program_name     => $program_name . q{summary},
-                outdirectory     => $outfamily_directory,
-                outfile          => $qc_vep_summary_outfile,
-            }
-        );
-        ## Collect QC metadata info for later use
-        my $qc_vep_outfile =
-            $outfile_prefix . q{_}
-          . $file_info_href->{contigs_size_ordered}[0]
-          . $infile_suffix;
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                program_name     => $program_name,
-                outdirectory     => $outfamily_directory,
-                outfile          => $qc_vep_outfile,
-            }
-        );
-    }
-
-    ## QC Data File(s)
-    migrate_file(
-        {
-            infile_path => $outfile_path_prefix . q{_*}
-              . $infile_suffix . q{_s*},
-            outfile_path => $outfamily_directory,
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE q{wait}, "\n";
-
-    close($XARGSFILEHANDLE);
-
-    if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
-
-        ## Copies file from temporary directory.
-        say $FILEHANDLE "## Copy file from temporary directory";
-        migrate_file(
-            {
-                infile_path => $outfile_path_prefix . q{_*}
-                  . $infile_suffix . q{*},
-                outfile_path => $outfamily_directory,
-                FILEHANDLE   => $FILEHANDLE,
-            }
-        );
-        say $FILEHANDLE q{wait}, "\n";
-
-        close($FILEHANDLE);
-    }
-    else {    #Move file for downstream collection of VEP version
-
-        ## Copies file from temporary directory.
-        say $FILEHANDLE "## Copy file from temporary directory";
-        migrate_file(
-            {
-                infile_path => $outfile_path_prefix . q{_}
-                  . $file_info_href->{contigs_size_ordered}[0]
-                  . $infile_suffix,
-                outfile_path => $outfamily_directory,
-                FILEHANDLE   => $FILEHANDLE,
-            }
-        );
-        say $FILEHANDLE q{wait}, "\n";
-    }
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
-
-            slurm_submit_job_sample_id_dependency_add_to_family(
-                {
-                    job_id_href             => $job_id_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    sample_ids_ref =>
-                      \@{ $active_parameter_href->{sample_ids} },
-                    family_id        => $$family_id_ref,
-                    path             => $job_id_chain,
-                    log              => $log,
-                    sbatch_file_name => $file_path,
-                }
-            );
-        }
-        if ($$reduce_io_ref)
-        { #Redirect qccollect search to Block File, since VEP will write stderr there
-
-            $program_name = "variantannotationblock";
-        }
-
-        ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                program_name     => $program_name,
-                outdirectory     => $directory,
-                outfile          => $stderr_file,
-            }
-        );
     }
     if ($$reduce_io_ref) {
 
@@ -11455,6 +10992,7 @@ sub gatk_variantrecalibration {
     use MIP::IO::Files qw(migrate_file);
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
+    use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use MIP::Language::Java qw{java_core};
     use Program::Variantcalling::Bcftools qw(norm);
@@ -11640,10 +11178,10 @@ sub gatk_variantrecalibration {
 
             ### Special case: Not to be used with hybrid capture. NOTE: Disable when analysing wes + wgs in the same run
             ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-            @annotations = remove_element(
+            @annotations = delete_contig_elements(
                 {
                     elements_ref       => \@annotations,
-                    remove_contigs_ref => ["DP"],
+                    remove_contigs_ref => [qw{ DP }],
                 }
             );
         }
@@ -13595,6 +13133,7 @@ sub sv_reformat {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Get::File qw{get_file_suffix};
+    use MIP::Delete::List qw{ delete_contig_elements delete_male_contig };
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use Program::Htslib qw(bgzip tabix);
     use MIP::Gnu::Software::Gnu_grep qw( gnu_grep);
@@ -13662,19 +13201,17 @@ sub sv_reformat {
     my $vcfparser_analysis_type = "";
 
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    my @contigs = remove_element(
+    my @contigs = delete_contig_elements(
         {
             elements_ref       => \@{ $file_info_href->{contigs} },
-            remove_contigs_ref => [ "MT", "M" ],
-            contig_switch      => 1,
+            remove_contigs_ref => [qw{ MT M }],
         }
     );
 
-    my @contigs_size_ordered = remove_element(
+    my @contigs_size_ordered = delete_contig_elements(
         {
             elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
-            remove_contigs_ref => [ "MT", "M" ],
-            contig_switch      => 1,
+            remove_contigs_ref => [qw{ MT M }],
         }
     );
 
@@ -13684,11 +13221,10 @@ sub sv_reformat {
     foreach my $array_ref (@contig_arrays) {
 
         ## Removes contig_names from contigs array if no male or other found
-        remove_contigs(
+        $array_ref = delete_male_contig(
             {
-                active_parameter_href => $active_parameter_href,
-                contigs_ref           => $array_ref,
-                contig_names_ref      => ["Y"],
+                contigs_ref => $array_ref,
+                found_male  => $active_parameter_href->{found_male},
             }
         );
     }
@@ -13705,12 +13241,11 @@ sub sv_reformat {
 
             $vcfparser_analysis_type = ".selected";    #SelectFile variants
 
-            @contigs = remove_element(
+            @contigs = delete_contig_elements(
                 {
                     elements_ref =>
                       \@{ $file_info_href->{select_file_contigs} },
-                    remove_contigs_ref => [ "MT", "M" ],
-                    contig_switch      => 1,
+                    remove_contigs_ref => [qw{ MT M }],
                 }
             );
 
@@ -13723,12 +13258,11 @@ sub sv_reformat {
             );
 
             ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-            @contigs_size_ordered = remove_element(
+            @contigs_size_ordered = delete_contig_elements(
                 {
                     elements_ref =>
                       \@{ $file_info_href->{sorted_select_file_contigs} },
-                    remove_contigs_ref => [ "MT", "M" ],
-                    contig_switch      => 1,
+                    remove_contigs_ref => [qw{ MT M }],
                 }
             );
 
@@ -14137,6 +13671,7 @@ sub sv_rankvariant {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Get::File qw{get_file_suffix};
+    use MIP::Delete::List qw{ delete_contig_elements delete_male_contig};
     use MIP::Recipes::Xargs qw{ xargs_command };
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use Program::Variantcalling::Genmod qw(annotate models score compound);
@@ -14214,19 +13749,17 @@ sub sv_rankvariant {
     my $vcfparser_analysis_type = "";
 
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    my @contigs_size_ordered = remove_element(
+    my @contigs_size_ordered = delete_contig_elements(
         {
             elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
-            remove_contigs_ref => [ "MT", "M" ],
-            contig_switch      => 1,
+            remove_contigs_ref => [qw{ MT M }],
         }
     );
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    my @contigs = remove_element(
+    my @contigs = delete_contig_elements(
         {
             elements_ref       => \@{ $file_info_href->{contigs} },
-            remove_contigs_ref => [ "MT", "M" ],
-            contig_switch      => 1,
+            remove_contigs_ref => [qw{ MT M }],
         }
     );
 
@@ -14236,11 +13769,10 @@ sub sv_rankvariant {
     foreach my $array_ref (@contig_arrays) {
 
         ## Removes contig_names from contigs array if no male or other found
-        remove_contigs(
+        $array_ref = delete_male_contig(
             {
-                active_parameter_href => $active_parameter_href,
-                contigs_ref           => $array_ref,
-                contig_names_ref      => ["Y"],
+                contigs_ref => $array_ref,
+                found_male  => $active_parameter_href->{found_male},
             }
         );
     }
@@ -14272,12 +13804,11 @@ sub sv_rankvariant {
 
             ### Always skip MT and Y in select files
             ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-            @contigs = remove_element(
+            @contigs = delete_contig_elements(
                 {
                     elements_ref =>
                       \@{ $file_info_href->{select_file_contigs} },
-                    remove_contigs_ref => [ "MT", "M" ],
-                    contig_switch      => 1,
+                    remove_contigs_ref => [qw{ MT M }],
                 }
             );
 
@@ -14290,12 +13821,11 @@ sub sv_rankvariant {
             );
 
             ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-            @contigs_size_ordered = remove_element(
+            @contigs_size_ordered = delete_contig_elements(
                 {
                     elements_ref =>
                       \@{ $file_info_href->{sorted_select_file_contigs} },
-                    remove_contigs_ref => [ "MT", "M" ],
-                    contig_switch      => 1,
+                    remove_contigs_ref => [qw{ MT M }],
                 }
             );
 
@@ -14794,6 +14324,7 @@ sub sv_vcfparser {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Get::File qw{get_file_suffix};
+    use MIP::Delete::List qw{ delete_contig_elements delete_male_contig};
     use MIP::Recipes::Xargs qw{ xargs_command };
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use Program::Variantcalling::Mip qw(vcfparser);
@@ -14856,21 +14387,19 @@ sub sv_vcfparser {
     );
 
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    my @contigs = remove_element(
+    my @contigs = delete_contig_elements(
         {
             elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
-            remove_contigs_ref => [ "MT", "M" ],
-            contig_switch      => 1,
+            remove_contigs_ref => [qw{ MT M }],
         }
     );
 
     ### If no males or other remove contig Y from all downstream analysis
     ## Removes contig_names from contigs array if no male or other found
-    remove_contigs(
+    @contigs = delete_male_contig(
         {
-            active_parameter_href => $active_parameter_href,
-            contigs_ref           => \@contigs,
-            contig_names_ref      => ["Y"],
+            contigs_ref => \@contigs,
+            found_male  => $active_parameter_href->{found_male},
         }
     );
 
@@ -15121,12 +14650,11 @@ sub sv_vcfparser {
             $vcfparser_analysis_type = ".selected";    #Select file variants
 
             ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-            @contigs = remove_element(
+            @contigs = delete_contig_elements(
                 {
                     elements_ref =>
                       \@{ $file_info_href->{sorted_select_file_contigs} },
-                    remove_contigs_ref => [ "MT", "M" ],
-                    contig_switch      => 1,
+                    remove_contigs_ref => [qw{ MT M }],
                 }
             );
         }
@@ -15187,476 +14715,6 @@ sub sv_vcfparser {
             );
         }
     }
-    close($FILEHANDLE);
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        slurm_submit_job_sample_id_dependency_add_to_family(
-            {
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                family_id        => $$family_id_ref,
-                path             => $job_id_chain,
-                log              => $log,
-                sbatch_file_name => $file_path,
-            }
-        );
-    }
-}
-
-sub sv_varianteffectpredictor {
-
-##sv_varianteffectpredictor
-
-##Function : SV varianteffectpredictor performs annotation of SV variants.
-##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $FILEHANDLE, $stderr_path, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $program_name               => Program name
-##         : $program_info_path          => The program info path
-##         : $FILEHANDLE                 => Sbatch filehandle to write to
-##         : $stderr_path                => The stderr path of the block script
-##         : $family_id_ref              => Family id {REF}
-##         : $temp_directory_ref         => Temporary directory {REF}
-##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => The variant call type
-##         : $xargs_file_counter         => The xargs file counter
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-    my $outaligner_dir_ref;
-    my $call_type;
-    my $xargs_file_counter;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $program_name;
-    my $stderr_path;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref
-        },
-        outaligner_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir_ref
-        },
-        call_type =>
-          { default => "SV", strict_type => 1, store => \$call_type },
-        xargs_file_counter => {
-            default     => 0,
-            allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
-            store       => \$xargs_file_counter
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use Readonly;
-    use MIP::Cluster qw(get_core_number);
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::Get::File qw{get_file_suffix};
-    use MIP::Recipes::Xargs qw{ xargs_command };
-    use MIP::IO::Files qw(migrate_file);
-    use Program::Variantcalling::Vep qw(variant_effect_predictor);
-    use MIP::QC::Record
-      qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_sample_id_dependency_add_to_family);
-
-    ## Constants
-    Readonly my $DOT     => q{.};
-    Readonly my $ASTERIX => q{*};
-
-    my $consensus_analysis_type =
-      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $xargs_file_path_prefix;
-    my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
-
-    ## Filehandles
-    my $FILEHANDLE      = IO::Handle->new();    #Create anonymous filehandle
-    my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    my @contigs = remove_element(
-        {
-            elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
-            remove_contigs_ref => [ "MT", "M" ],
-            contig_switch      => 1,
-        }
-    );
-
-    ### If no males or other remove contig Y from all downstream analysis
-    ## Removes contig_names from contigs array if no male or other found
-    remove_contigs(
-        {
-            active_parameter_href => $active_parameter_href,
-            contigs_ref           => \@contigs,
-            contig_names_ref      => ["Y"],
-        }
-    );
-
-    ## Get core number depending on user supplied input exists or not and max number of cores
-    my $core_number = get_core_number(
-        {
-            module_core_number => $active_parameter_href->{module_core_number}
-              { "p" . $program_name },
-            modifier_core_number => scalar(@contigs),
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-        }
-    );
-
-    my $fork_number = 4;    #Varianteffectpredictor forks
-    $core_number =
-      floor( $core_number / $fork_number );    #Adjust for the number of forks
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $$family_id_ref,
-            program_name          => $program_name,
-            program_directory     => catfile( lc($$outaligner_dir_ref) ),
-            call_type             => $call_type,
-            core_number           => $core_number,
-            process_time =>
-              $active_parameter_href->{module_time}{ "p" . $program_name },
-            temp_directory => $$temp_directory_ref
-        }
-    );
-    $stderr_path = $program_info_path . ".stderr.txt";
-
-    my ( $volume, $directory, $stderr_file ) =
-      File::Spec->splitpath($stderr_path)
-      ;    #Split to enable submission to &sample_info_qc later
-
-    ## Assign directories
-    my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $$family_id_ref, $$outaligner_dir_ref );
-    my $outfamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $$family_id_ref, $$outaligner_dir_ref );
-    $parameter_href->{ "p" . $program_name }{indirectory} =
-      $outfamily_directory;    #Used downstream
-
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$$family_id_ref}{psv_combinevariantcallsets}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$$family_id_ref}{ "p" . $program_name }{file_tag};
-    my $infile_prefix       = $$family_id_ref . $infile_tag . $call_type;
-    my $infile_path_prefix  = catfile( $$temp_directory_ref, $infile_prefix );
-    my $outfile_prefix      = $$family_id_ref . $outfile_tag . $call_type;
-    my $outfile_path_prefix = catfile( $$temp_directory_ref, $outfile_prefix );
-
-    ## Assign suffix
-    my $file_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => "variant_file_suffix",
-            jobid_chain    => $job_id_chain,
-        }
-    );
-
-    ## Copy file(s) to temporary directory
-    say $FILEHANDLE "## Copy file(s) to temporary directory";
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => catfile(
-                $infamily_directory, $infile_prefix . $file_suffix . q{*}
-            ),
-            outfile_path => $$temp_directory_ref
-        }
-    );
-    say $FILEHANDLE q{wait}, "\n";
-
-    ## Fix SV with no length as these will fail in the annotation with VEP
-    my $perl_fix_sv_nolengths =
-      q?perl -nae 'my %info; my $start; my $end; my $alt; my @data; ?
-      ;    #Set up variables
-    $perl_fix_sv_nolengths .= q?@data=split("\t", $_); ?;    #Split line
-    $perl_fix_sv_nolengths .=
-      q?$start = $data[1]; $start++; ?;    #Add $start position
-    $perl_fix_sv_nolengths .= q?$alt=$data[4]; ?;    #Add $alt allele
-    $perl_fix_sv_nolengths .=
-q?foreach my $bit (split /\;/, $data[7]) { my ($key, $value) = split /\=/, $bit; $info{$key} = $value; } ?
-      ;    #Add INFO field to %data using $key->$value
-    $perl_fix_sv_nolengths .=
-      q?if(defined($info{END})) { $end = $info{END}; } ?;    #Add $end position
-    $perl_fix_sv_nolengths .=
-q?if($alt=~ /\<|\[|\]|\>/) { $alt=~ s/\<|\>//g; $alt=~ s/\:.+//g; if($start >= $end && $alt=~ /del/i) {} else {print $_} } ?
-      ; #If SV, strip SV type entry and check if no length, then do not print variant else print
-    $perl_fix_sv_nolengths .= q?else {print $_}' ?;    #All other lines - print
-
-    print $FILEHANDLE $perl_fix_sv_nolengths . " ";
-    print $FILEHANDLE $infile_path_prefix . $file_suffix . " ";
-    say $FILEHANDLE "> "
-      . $infile_path_prefix
-      . "_fixedsvlength"
-      . $file_suffix
-      . " ", "\n";
-
-    ## varianteffectpredictor
-    say $FILEHANDLE "## varianteffectpredictor";
-
-    my $assembly_version = $file_info_href->{human_genome_reference_source}
-      . $file_info_href->{human_genome_reference_version};
-
-    ## Alias genome source and version to be compatible with VEP
-    alias_assembly_version( { assembly_version_ref => \$assembly_version } );
-
-    ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
-        {
-            FILEHANDLE         => $FILEHANDLE,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_path          => $file_path,
-            program_info_path  => $program_info_path,
-            core_number        => $core_number,
-            xargs_file_counter => $xargs_file_counter,
-        }
-    );
-
-    foreach my $contig (@contigs) {
-
-        ## Get parameters
-        my $vep_outfile_prefix         = $outfile_prefix;
-        my $vep_xargs_file_path_prefix = $xargs_file_path_prefix;
-        my @regions;
-
-        ## Contig specific
-        if (   ( $consensus_analysis_type eq "wgs" )
-            || ( $consensus_analysis_type eq "mixed" ) )
-        {    #Update endings with contig info
-
-            $vep_outfile_prefix = $outfile_prefix . "_" . $contig;
-            $vep_xargs_file_path_prefix =
-              $xargs_file_path_prefix . "." . $contig;
-            push( @regions, $contig );
-        }
-
-        ## VEP plugins
-        my @plugins;
-        foreach my $plugin ( @{ $active_parameter_href->{sv_vep_plugins} } ) {
-
-            if ( $plugin eq "LoF" ) {
-
-                push(
-                    @plugins,
-                    $plugin
-                      . ",human_ancestor_fa:"
-                      . catfile(
-                        $active_parameter_href->{vep_directory_cache},
-                        "human_ancestor.fa,filter_position:0.05"
-                      )
-                );
-            }
-            elsif ( $plugin eq "UpDownDistance" )
-            {    #Special case for mitochondrial contig annotation
-
-                if ( $contig =~ /MT|M/ ) {
-
-                    push( @plugins, "UpDownDistance,10,10" );
-                }
-            }
-            else {
-
-                push( @plugins, $plugin );
-            }
-        }
-
-        ## VEPFeatures
-        my @vep_features_ref;
-        foreach
-          my $vep_feature ( @{ $active_parameter_href->{sv_vep_features} } )
-        {
-
-            push( @vep_features_ref, $vep_feature )
-              ;    #Add VEP features to the output.
-
-            if ( ( $contig =~ /MT|M/ ) && ( $vep_feature eq "refseq" ) )
-            {      #Special case for mitochondrial contig annotation
-
-                push( @vep_features_ref, "all_refseq" );
-            }
-        }
-
-        variant_effect_predictor(
-            {
-                regions_ref      => \@regions,
-                plugins_ref      => \@plugins,
-                vep_features_ref => \@vep_features_ref,
-                script_path      => catfile(
-                    $active_parameter_href->{vep_directory_path},
-                    "variant_effect_predictor.pl"
-                ),
-                assembly => $assembly_version,
-                cache_directory =>
-                  $active_parameter_href->{vep_directory_cache},
-                reference_path =>
-                  $active_parameter_href->{human_genome_reference},
-                infile_format  => substr( $file_suffix, 1 ),
-                outfile_format => substr( $file_suffix, 1 ),
-                fork           => $fork_number,
-                buffer_size    => 100,
-                infile_path    => $infile_path_prefix
-                  . "_fixedsvlength"
-                  . $file_suffix,
-                outfile_path => catfile(
-                    $$temp_directory_ref, $vep_outfile_prefix . $file_suffix
-                ),
-                stderrfile_path => $vep_xargs_file_path_prefix . ".stderr.txt",
-                stdoutfile_path => $vep_xargs_file_path_prefix . ".stdout.txt",
-                FILEHANDLE      => $XARGSFILEHANDLE,
-            }
-        );
-        print $XARGSFILEHANDLE "\n";
-
-        if (   ( $consensus_analysis_type eq "wes" )
-            || ( $consensus_analysis_type eq "rapid" ) )
-        {    #Update endings with contig info
-
-            last
-              ; #Only perform once for exome samples to avoid risking contigs lacking variants throwing errors
-        }
-    }
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        my $outfile_sample_info_prefix = $outfile_prefix;
-
-        if (   ( $consensus_analysis_type eq "wgs" )
-            || ( $consensus_analysis_type eq "mixed" ) )
-        {       #Update endings with contig info
-
-            $outfile_sample_info_prefix .= "_" . $contigs[0];
-        }
-
-        ## Collect QC metadata info for later use
-        my $qc_vep_summary_outfile =
-          $outfile_sample_info_prefix . $DOT . q{vcf_summary.html};
-        add_program_metafile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                program_name     => $program_name,
-                metafile_tag     => q{summary},
-                directory        => $outfamily_directory,
-                file             => $qc_vep_summary_outfile,
-            }
-        );
-
-        ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                program_name     => $program_name,
-                outdirectory     => $outfamily_directory,
-                outfile          => $outfile_sample_info_prefix . $file_suffix,
-            }
-        );
-    }
-
-    ## QC Data File(s)
-    migrate_file(
-        {
-            infile_path => $outfile_path_prefix
-              . $ASTERIX
-              . $file_suffix . q{_s*},
-            outfile_path => $outfamily_directory,
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE q{wait}, "\n";
-
-    close($XARGSFILEHANDLE);
-
-    ## Copies file from temporary directory.
-    say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file(
-        {
-            infile_path => $outfile_path_prefix
-              . $ASTERIX
-              . $file_suffix
-              . $ASTERIX,
-            outfile_path => $outfamily_directory,
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE q{wait}, "\n";
-
     close($FILEHANDLE);
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
@@ -17068,6 +16126,7 @@ sub delly_reformat {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
+    use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Recipes::Xargs qw{ xargs_command };
@@ -17137,11 +16196,10 @@ sub delly_reformat {
     );
 
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    my @contigs = remove_element(
+    my @contigs = delete_contig_elements(
         {
             elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
-            remove_contigs_ref => [ "MT", "M" ],
-            contig_switch      => 1,
+            remove_contigs_ref => [qw{ MT M }],
         }
     );
 
@@ -17975,6 +17033,7 @@ sub delly_call {
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Set::File qw{set_file_suffix};
+    use MIP::Delete::List qw{ delete_contig_elements };
     use Program::Variantcalling::Delly qw(call);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_sample);
@@ -18051,11 +17110,10 @@ sub delly_call {
 
     ### Update contigs
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    my @contigs = remove_element(
+    my @contigs = delete_contig_elements(
         {
             elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
-            remove_contigs_ref => [ "MT", "M" ],
-            contig_switch      => 1,
+            remove_contigs_ref => [qw{ MT M }],
         }
     );
 
@@ -23287,10 +22345,11 @@ sub variantannotationblock {
             }
         );
     }
-    if ( $active_parameter_href->{pvarianteffectpredictor} > 0 )
-    {    #Run varianteffectpredictor. Done per family
 
-        $log->info("\t[Varianteffectpredictor]\n");
+    # Run varianteffectpredictor. Family-level
+    if ( $active_parameter_href->{pvarianteffectpredictor} > 0 ) {
+
+        $log->info( $TAB . q{[Varianteffectpredictor]} . $NEWLINE );
     }
     if ( $active_parameter_href->{pvcfparser} > 0 )
     {    #Run pvcfparser. Done per family
@@ -23432,10 +22491,13 @@ sub variantannotationblock {
             }
         );
     }
-    if ( $active_parameter_href->{pvarianteffectpredictor} > 0 )
-    {    #Run varianteffectpredictor. Done per family
 
-        ($xargs_file_counter) = varianteffectpredictor(
+    # Run varianteffectpredictor. Family-level
+    if ( $active_parameter_href->{pvarianteffectpredictor} > 0 ) {
+
+        my $program_name = lc q{varianteffectpredictor};
+
+        ($xargs_file_counter) = analysis_vep_rio(
             {
                 parameter_href          => $parameter_href,
                 active_parameter_href   => $active_parameter_href,
@@ -23444,12 +22506,12 @@ sub variantannotationblock {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 call_type               => $call_type,
-                program_name            => "varianteffectpredictor",
+                program_name            => $program_name,
                 file_path               => $file_path,
                 program_info_path       => $program_info_path,
                 FILEHANDLE              => $FILEHANDLE,
                 xargs_file_counter      => $xargs_file_counter,
-                stderr_path             => $program_info_path . ".stderr.txt",
+                stderr_path => $program_info_path . $DOT . q{stderr.txt},
             }
         );
     }
@@ -30733,7 +29795,7 @@ sub detect_sample_id_gender {
 ##detect_sample_id_gender
 
 ##Function : Detect gender of the current analysis
-##Returns  : "$male_found $female_found $other_found"
+##Returns  : "$found_male $found_female $found_other"
 ##Arguments: $active_parameter_href, $sample_info_href
 ##         : $active_parameter_href => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href      => Info on samples and family hash {REF}
@@ -30763,29 +29825,29 @@ sub detect_sample_id_gender {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my $male_found   = 0;
-    my $female_found = 0;
-    my $other_found  = 0;
+    my $found_male   = 0;
+    my $found_female = 0;
+    my $found_other  = 0;
 
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
         if ( $sample_info_href->{sample}{$sample_id}{sex} =~ /1|^male/ ) { #Male
 
-            $male_found = 1;                                               #Male
+            $found_male = 1;                                               #Male
         }
         elsif ( $sample_info_href->{sample}{$sample_id}{sex} =~ /2|female/ )
         {    #Female
 
-            $female_found = 1;
+            $found_female = 1;
         }
         else {    #Other
 
-            $male_found =
+            $found_male =
               1;    #Include since it might be male to enable analysis of Y.
-            $other_found = 1;
+            $found_other = 1;
         }
     }
-    return $male_found, $female_found, $other_found;
+    return $found_male, $found_female, $found_other;
 }
 
 sub remove_pedigree_elements {
@@ -32285,50 +31347,50 @@ sub set_contigs {
 
     use MIP::Get::Analysis qw(get_overall_analysis_type);
 
-    if ( $active_parameter_href->{human_genome_reference} =~ /hg\d+/ )
-    {    #Refseq - prefix and M
+    if ( $active_parameter_href->{human_genome_reference} =~ /hg\d+/ ) {
+        ## Refseq - prefix and M
 
-        @{ $file_info_href->{contigs} } = (
-            "chr1",  "chr2",  "chr3",  "chr4",  "chr5",  "chr6",
-            "chr7",  "chr8",  "chr9",  "chr10", "chr11", "chr12",
-            "chr13", "chr14", "chr15", "chr16", "chr17", "chr18",
-            "chr19", "chr20", "chr21", "chr22", "chrX",  "chrY",
-            "chrM"
-        );    #Chr for filtering of bam file
+        # Chr for filtering of bam file
+        @{ $file_info_href->{contigs} } = qw{
+          chr1 chr2 chr3 chr4 chr5 chr6
+          chr7 chr8 chr9 chr10 chr11 chr12
+          chr13 chr14 chr15 chr16 chr17 chr18
+          chr19 chr20 chr21 chr22 chrX chrY
+          chrM };
 
-        @{ $file_info_href->{contigs_size_ordered} } = (
-            "chr1",  "chr2",  "chr3",  "chr4",  "chr5",  "chr6",
-            "chr7",  "chrX",  "chr8",  "chr9",  "chr10", "chr11",
-            "chr12", "chr13", "chr14", "chr15", "chr16", "chr17",
-            "chr18", "chr19", "chr20", "chr21", "chr22", "chrY",
-            "chrM"
-        );    #Chr for filtering of bam file
+        # Chr for filtering of bam file
+        @{ $file_info_href->{contigs_size_ordered} } = qw{
+          chr1 chr2 chr3 chr4 chr5 chr6
+          chr7 chrX chr8 chr9 chr10 chr11
+          chr12 chr13 chr14 chr15 chr16 chr17
+          chr18 chr19 chr20 chr21 chr22 chrY
+          chrM };
     }
-    elsif ( $active_parameter_href->{human_genome_reference} =~ /GRCh\d+/ )
-    {         #Ensembl - no prefix and MT
+    elsif ( $active_parameter_href->{human_genome_reference} =~ /GRCh\d+/ ) {
+        ## Ensembl - no prefix and MT
 
-        @{ $file_info_href->{contigs} } = (
-            "1",  "2",  "3",  "4",  "5",  "6",  "7",  "8",  "9",  "10",
-            "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
-            "21", "22", "X",  "Y",  "MT"
-        );    #Chr for filtering of bam file
+        # Chr for filtering of bam file
+        @{ $file_info_href->{contigs} } = qw{
+          1 2 3 4 5 6 7 8 9 10
+          11 12 13 14 15 16 17 18 19 20
+          21 22 X Y MT };
 
-        @{ $file_info_href->{contigs_size_ordered} } = (
-            "1",  "2",  "3",  "4",  "5",  "6",  "7",  "X",  "8",  "9",
-            "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
-            "20", "21", "22", "Y",  "MT"
-        );    #Chr for filtering of bam file
+        # Chr for filtering of bam file
+        @{ $file_info_href->{contigs_size_ordered} } = qw{
+          1 2 3 4 5 6 7 X 8 9
+          10 11 12 13 14 15 16 17 18 19
+          20 21 22 Y MT };
     }
 
     ## Detect if all samples has the same sequencing type and return consensus if reached
     my $consensus_analysis_type = get_overall_analysis_type(
         { analysis_type_hef => \%{ $active_parameter_href->{analysis_type} }, }
     );
-    if ( $consensus_analysis_type eq "wes" ) {
+    if ( $consensus_analysis_type eq q{wes} ) {
 
-        pop( @{ $file_info_href->{contigs} } );    #Remove Mitochondrial contig
-        pop( @{ $file_info_href->{contigs_size_ordered} } )
-          ;                                        #Remove Mitochondrial contig
+        # Remove Mitochondrial contig
+        pop @{ $file_info_href->{contigs} };
+        pop @{ $file_info_href->{contigs_size_ordered} };
     }
 }
 
@@ -35466,75 +34528,6 @@ sub rename_vcf_samples {
     say $FILEHANDLE "\n";
 }
 
-sub remove_element {
-
-##remove_element
-
-##Function : Removes an element from array and return new array while leaving orginal elements_ref untouched.
-##Returns  : "@array"
-##Tags     : helper, remove, ARRAY, contigs
-##Arguments: $elements_ref, $remove_contigs_ref, $contig_switch
-##         : $elements_ref       => Array to remove an element from {REF}
-##         : $remove_contigs_ref => Remove this contig
-##         : $contig_switch      => Expect contigs in elements_ref
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $elements_ref;
-    my $remove_contigs_ref;
-    my $contig_switch;
-
-    my $tmpl = {
-        elements_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$elements_ref
-        },
-        remove_contigs_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$remove_contigs_ref
-        },
-        contig_switch => {
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$contig_switch
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my @array = @$elements_ref;    #Make local copy
-
-    for ( my $index = 0 ; $index < scalar(@array) ; $index++ ) {
-
-        foreach my $remove_contig (@$remove_contigs_ref) {
-
-            if ($contig_switch)
-            {    #Make sure that contig is removed independent of genome source
-
-                if (   ( $elements_ref->[$index] eq $remove_contig )
-                    || ( $elements_ref->[$index] eq "chr" . $remove_contig ) )
-                {
-
-                    splice( @array, $index, 1 );    #Remove $element from array
-                }
-            }
-            elsif ( ( $elements_ref->[$index] eq $remove_contig ) )
-            {    #Arbitrary element from array
-
-                splice( @array, $index, 1 );    #Remove $element from array
-            }
-        }
-    }
-    return @array;
-}
-
 sub collect_read_length {
 
 ##collect_read_length
@@ -36054,43 +35047,6 @@ sub get_exom_target_bed_file {
             "\n"
         );
         exit 1;
-    }
-}
-
-sub alias_assembly_version {
-
-##alias_assembly_version
-
-##Function : Alias genome source and version to be compatible with VEP
-##Returns  : "$$assembly_version_ref"
-##Arguments: $assembly_version_ref
-##         : $assembly_version_ref => The genome source and version to be checked
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $assembly_version_ref;
-
-    my $tmpl = {
-        assembly_version_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$assembly_version_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    if ( $$assembly_version_ref =~ /hg(\d+)/ ) {
-
-        my $version_number = $1;
-
-        if ( $version_number > 20 ) {
-
-            $$assembly_version_ref = "GRCh" . $version_number;
-        }
     }
 }
 
@@ -36741,63 +35697,6 @@ sub check_founder_id {
                 }
             }
         }
-    }
-}
-
-sub remove_contigs {
-
-##remove_contigs
-
-##Function : Removes contig_names from contigs array if no male or other found
-##Returns  : ""
-##Arguments: $active_parameter_href, $contigs_ref
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $contigs_ref           => Contigs array to update {REF}
-##         : $contig_names_ref      => Contig names to remove {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $contigs_ref;
-    my $contig_names_ref;
-
-    my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        contigs_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$contigs_ref
-        },
-        contig_names_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$contig_names_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Removes contigY|chrY from contigs if no males or 'other' found in analysis
-    if ( !$active_parameter_href->{male_found} ) {
-
-        ## Removes contigs from supplied contigs_ref
-        remove_array_element(
-            {
-                contigs_ref        => $contigs_ref,
-                remove_contigs_ref => $contig_names_ref,
-            }
-        );
     }
 }
 
