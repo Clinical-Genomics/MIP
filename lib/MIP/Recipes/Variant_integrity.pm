@@ -160,6 +160,7 @@ sub analysis_variant_integrity {
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Get::File qw{ get_file_suffix };
     use MIP::IO::Files qw{ migrate_file };
+    use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::Program::Variantcalling::Variant_integrity
       qw{ variant_integrity_mendel variant_integrity_father };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info};
