@@ -1690,7 +1690,7 @@ if ( $active_parameter{psambamba_depth} > 0 ) {
 
     my $program_name = lc q{sambamba_depth};
 
-    SAMPLE_IDS:
+    SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
         my $insample_directory = catdir( $active_parameter{outdata_dir},
@@ -1716,13 +1716,26 @@ if ( $active_parameter{psambamba_depth} > 0 ) {
     }
 }
 
-if ( $active_parameter{pbedtools_genomecov} > 0 ) {    #Run bedtools genomecov
+# Run bedtools genomecov
+if ( $active_parameter{pbedtools_genomecov} > 0 ) {
 
-    $log->info("[Bedtools genomecov]\n");
+    $log->info( q{[Bedtools genomecov]} . $NEWLINE );
 
+    use MIP::Recipes::Bedtools_genomecov qw{ analysis_bedtools_genomecov };
+
+    my $program_name = lc q{bedtools_genomecov};
+
+    SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
-        mbedtools_genomecov(
+        ## Assign directories
+        my $insample_directory = catdir( $active_parameter{outdata_dir},
+            $sample_id, $active_parameter{outaligner_dir} );
+        my $outsample_directory = catdir(
+            $active_parameter{outdata_dir},    $sample_id,
+            $active_parameter{outaligner_dir}, q{coveragereport} );
+
+        analysis_bedtools_genomecov(
             {
                 parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
@@ -1730,8 +1743,10 @@ if ( $active_parameter{pbedtools_genomecov} > 0 ) {    #Run bedtools genomecov
                 file_info_href          => \%file_info,
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
-                sample_id_ref           => \$sample_id,
-                program_name            => "bedtools_genomecov",
+                sample_id               => \$sample_id,
+                insample_directory      => $insample_directory,
+                outsample_directory     => $outsample_directory,
+                program_name            => $program_name,
             }
         );
     }
@@ -2330,11 +2345,20 @@ if ( $active_parameter{pplink} > 0 ) {    #Run plink. Done per family
 }
 
 if ( $active_parameter{pvariant_integrity} > 0 )
-{    #Run variant_integrity. Done per family
+{
+    #Run variant_integrity. Done per family
+    $log->info( q{[Variant_integrity]} . $NEWLINE );
 
-    $log->info("[Variant_integrity]\n");
+    my $program_name = lc q{variant_integrity};
 
-    variant_integrity(
+    my $infamily_directory = catdir( $active_parameter{outdata_dir},
+        $active_parameter{family_id}, $active_parameter{outaligner_dir} );
+    my $outfamily_directory = catfile( $active_parameter{outdata_dir},
+        $active_parameter{family_id}, $active_parameter{outaligner_dir}, q{casecheck}, $program_name );
+
+    use MIP::Recipes::Variant_integrity qw{ analysis_variant_integrity };
+
+    analysis_variant_integrity(
         {
             parameter_href          => \%parameter,
             active_parameter_href   => \%active_parameter,
@@ -2342,7 +2366,9 @@ if ( $active_parameter{pvariant_integrity} > 0 )
             file_info_href          => \%file_info,
             infile_lane_prefix_href => \%infile_lane_prefix,
             job_id_href             => \%job_id,
-            program_name            => "variant_integrity",
+            program_name            => $program_name,
+            infamily_directory      => $infamily_directory,
+            outfamily_directory     => $outfamily_directory,
         }
     );
 }
@@ -9124,295 +9150,6 @@ sub mplink {
     }
 }
 
-sub variant_integrity {
-
-##variant_integrity
-
-##Function : Tests sample for correct relatives (only performed for samples with relatives defined in pedigree file) performed on sequence data.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $program_name               => Program name
-##         : $family_id_ref              => Family id {REF}
-##         : $temp_directory_ref         => Temporary directory {REF}
-##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => The variant call type
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-    my $outaligner_dir_ref;
-    my $call_type;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $program_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref
-        },
-        outaligner_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir_ref
-        },
-        call_type =>
-          { default => "BOTH", strict_type => 1, store => \$call_type },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::Get::File qw{get_file_suffix};
-    use MIP::IO::Files qw(migrate_file);
-    use MIP::Program::Variantcalling::Variant_integrity qw(variant_integrity_mendel variant_integrity_father);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_sample_id_dependency_family_dead_end);
-
-    my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
-
-    ## Filehandles
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $$family_id_ref,
-            program_name          => $program_name,
-            program_directory     => catfile(
-                lc($$outaligner_dir_ref),
-                "casecheck", lc($program_name)
-            ),
-            call_type   => $call_type,
-            core_number => $active_parameter_href->{module_core_number}
-              { "p" . $program_name },
-            process_time =>
-              $active_parameter_href->{module_time}{ "p" . $program_name },
-        }
-    );
-
-    my ( $volume, $directory, $program_info_file ) =
-      File::Spec->splitpath($program_info_path)
-      ;    #Split to enable submission to &sample_info_qc later
-    my $stderr_file = $program_info_file
-      . ".stderr.txt";    #To enable submission to &sample_info_qc later
-    my $stdout_file = $program_info_file
-      . ".stdout.txt";    #To enable submission to &sample_info_qc later
-
-    ## Assign Directories
-    my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $$family_id_ref, $$outaligner_dir_ref );
-    my $outfamily_directory = catfile( $active_parameter_href->{outdata_dir},
-        $$family_id_ref, $$outaligner_dir_ref, "casecheck", lc($program_name) );
-    my $outfamily_file_directory =
-      catfile( $active_parameter_href->{outdata_dir}, $$family_id_ref );
-
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}
-      {file_tag};
-    my $infile_prefix = $$family_id_ref . $infile_tag . $call_type;
-    my $file_path_prefix = catfile( $$temp_directory_ref, $infile_prefix );
-
-    ### Assign suffix
-    ## Return the current infile vcf compression suffix for this jobid chain_vcf_data
-    my $infile_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => "variant_file_suffix",
-            jobid_chain =>
-              $parameter_href->{pgatk_combinevariantcallsets}{chain},
-        }
-    );
-
-    my $family_file =
-      catfile( $outfamily_file_directory, $$family_id_ref . ".fam" );
-    ## Create .fam file to be used in variant calling analyses
-    create_fam_file(
-        {
-            parameter_href        => $parameter_href,
-            active_parameter_href => $active_parameter_href,
-            sample_info_href      => $sample_info_href,
-            FILEHANDLE            => $FILEHANDLE,
-            fam_file_path         => $family_file,
-        }
-    );
-
-    ## Copy file(s) to temporary directory
-    say $FILEHANDLE "## Copy file(s) to temporary directory";
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . q{*}
-            ),
-            outfile_path => $$temp_directory_ref
-        }
-    );
-    say $FILEHANDLE q{wait}, "\n";
-
-    ## Variant_integrity
-    if ( scalar( @{ $active_parameter_href->{sample_ids} } ) > 1 )
-    {    #Only perform if more than 1 sample
-
-        if ( $parameter_href->{dynamic_parameter}{trio} ) {
-
-            variant_integrity_mendel(
-                {
-                    infile_path  => $file_path_prefix . $infile_suffix,
-                    outfile_path => catfile(
-                        $outfamily_directory, $$family_id_ref . "_mendel.txt"
-                    ),
-                    family_file => $family_file,
-                    family_type =>
-                      $active_parameter_href->{genmod_models_family_type},
-                    FILEHANDLE => $FILEHANDLE,
-                }
-            );
-            say $FILEHANDLE "\n";
-
-            if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-                ## Collect QC metadata info for later use
-                add_program_outfile_to_sample_info(
-                    {
-                        sample_info_href => $sample_info_href,
-                        program_name     => q{variant_integrity_mendel},
-                        outdirectory     => $outfamily_directory,
-                        outfile          => $$family_id_ref . q{_mendel.txt},
-                    }
-                );
-            }
-        }
-
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-            my $father_info =
-              $sample_info_href->{sample}{$sample_id}{father};    #Alias
-
-            if ( $father_info ne 0 ) {    #Father is included in analysis
-
-                variant_integrity_father(
-                    {
-                        infile_path  => $file_path_prefix . $infile_suffix,
-                        outfile_path => catfile(
-                            $outfamily_directory,
-                            $$family_id_ref . "_father.txt"
-                        ),
-                        family_file => $family_file,
-                        family_type =>
-                          $active_parameter_href->{genmod_models_family_type},
-                        FILEHANDLE => $FILEHANDLE,
-                    }
-                );
-                say $FILEHANDLE "\n";
-
-                if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-                    ## Collect QC metadata info for later use
-                    add_program_outfile_to_sample_info(
-                        {
-                            sample_info_href => $sample_info_href,
-                            program_name     => q{variant_integrity_father},
-                            outdirectory     => $outfamily_directory,
-                            outfile => $$family_id_ref . q{_father.txt},
-                        }
-                    );
-                }
-            }
-        }
-    }
-
-    close($FILEHANDLE);
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        slurm_submit_job_sample_id_dependency_family_dead_end(
-            {
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                family_id        => $$family_id_ref,
-                path             => $job_id_chain,
-                log              => $log,
-                sbatch_file_name => $file_path,
-            }
-        );
-    }
-}
-
 sub vt {
 
 ##vt
@@ -12425,237 +12162,6 @@ sub rcoverageplots {
                 job_id_href             => $job_id_href,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 family_id               => $active_parameter_href->{family_id},
-                sample_id               => $$sample_id_ref,
-                path                    => $job_id_chain,
-                sbatch_file_name        => $file_path,
-                log                     => $log,
-            }
-        );
-    }
-    return;
-}
-
-sub mbedtools_genomecov {
-
-## mbedtools_genomecov
-
-##Function : Calculates coverage on BAM files.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $sample_id_ref              => Sample id_ref
-##         : $program_name               => Program name
-##         : $family_id_ref              => Family id {REF}
-##         : $temp_directory_ref         => Temporary directory {REF}
-##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-    my $outaligner_dir_ref;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $sample_id_ref;
-    my $program_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        sample_id_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$sample_id_ref
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref
-        },
-        outaligner_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::IO::Files qw(migrate_file);
-    use MIP::Get::File qw{get_file_suffix};
-    use MIP::Program::Alignment::Bedtools qw(bedtools_genomecov);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_sample_id_dependency_dead_end);
-
-    my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
-
-    ## Filehandles
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    ## Assign directories
-    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $$sample_id_ref, $$outaligner_dir_ref );
-    my $outsample_directory = catdir(
-        $active_parameter_href->{outdata_dir}, $$sample_id_ref,
-        $$outaligner_dir_ref,                  "coveragereport"
-    );
-
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};    #Alias
-
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$$sample_id_ref}{ "p" . $program_name }{file_tag};
-    my $infile_prefix       = $infile . $infile_tag;
-    my $file_path_prefix    = catfile( $$temp_directory_ref, $infile_prefix );
-    my $outfile_prefix      = $infile . $outfile_tag;
-    my $outfile_path_prefix = catfile( $$temp_directory_ref, $outfile_prefix );
-
-    ## Assign suffix
-    my $infile_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => "alignment_file_suffix",
-            jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain}
-            ,    #Get infile_suffix from baserecalibration jobid chain
-        }
-    );
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $$sample_id_ref,
-            program_name          => $program_name,
-            program_directory =>
-              catfile( lc($$outaligner_dir_ref), "coveragereport" ),
-            core_number => $active_parameter_href->{module_core_number}
-              { "p" . $program_name },
-            process_time =>
-              $active_parameter_href->{module_time}{ "p" . $program_name },
-            temp_directory => $$temp_directory_ref,
-        }
-    );
-
-    ## Copy file(s) to temporary directory
-    say $FILEHANDLE "## Copy file(s) to temporary directory";
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => catfile(
-                $insample_directory,
-                $infile_prefix . substr( $infile_suffix, 0, 2 ) . q{*}
-            ),
-            outfile_path => $$temp_directory_ref,
-        }
-    );
-    say $FILEHANDLE q{wait}, "\n";
-
-    ## Bedtools Genomecov
-    say $FILEHANDLE "## Calculate coverage metrics on alignment";
-    bedtools_genomecov(
-        {
-            infile_path  => $file_path_prefix . $infile_suffix,
-            outfile_path => $outfile_path_prefix,
-            referencefile_path =>
-              $active_parameter_href->{human_genome_reference},
-            max_coverage =>
-              $active_parameter_href->{bedtools_genomecov_max_coverage},
-            FILEHANDLE => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE "\n";
-
-    ## Copies file from temporary directory.
-    say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file(
-        {
-            infile_path  => $outfile_path_prefix,
-            outfile_path => $outsample_directory,
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE q{wait}, "\n";
-
-    close($FILEHANDLE);
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        slurm_submit_job_sample_id_dependency_dead_end(
-            {
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                family_id               => $$family_id_ref,
                 sample_id               => $$sample_id_ref,
                 path                    => $job_id_chain,
                 sbatch_file_name        => $file_path,
