@@ -1689,7 +1689,7 @@ if ( $active_parameter{psambamba_depth} > 0 ) {
 
     my $program_name = lc q{sambamba_depth};
 
-    SAMPLE_IDS:
+    SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
         my $insample_directory = catdir( $active_parameter{outdata_dir},
@@ -2331,6 +2331,13 @@ if ( $active_parameter{pvariant_integrity} > 0 )
     #Run variant_integrity. Done per family
     $log->info( q{[Variant_integrity]} . $NEWLINE );
 
+    my $program_name => lc q{variant_integrity};
+
+    my $infamily_directory = catdir( $active_parameter{outdata_dir},
+        $active_parameter{family_id}, $active_parameter{outaligner_dir} );
+    my $outfamily_directory = catfile( $active_parameter{outdata_dir},
+        $active_parameter{family_id}, $active_parameter{outaligner_dir}, q{casecheck}, $program_name );
+
     use MIP::Recipes::Variant_integrity qw{ analysis_variant_integrity };
 
     analysis_variant_integrity(
@@ -2341,7 +2348,9 @@ if ( $active_parameter{pvariant_integrity} > 0 )
             file_info_href          => \%file_info,
             infile_lane_prefix_href => \%infile_lane_prefix,
             job_id_href             => \%job_id,
-            program_name            => q{variant_integrity},
+            program_name            => $program_name,
+            infamily_directory      => $infamily_directory,
+            outfamily_directory     => $outfamily_directory,
         }
     );
 }

@@ -28,9 +28,12 @@ BEGIN {
 
 }
 
-##Constants
+## Constants
 Readonly my $SPACE   => q{ };
 Readonly my $NEWLINE => qq{\n};
+Readonly my $DOT => q{.};
+Readonly my $UNDERSCORE => q{_};
+Readonly my $ASTERISK => q{*};
 
 sub analysis_variant_integrity {
 
@@ -38,18 +41,20 @@ sub analysis_variant_integrity {
 
 ## Function : Tests sample for correct relatives (only performed for samples with relatives defined in pedigree file) performed on sequence data.
 ## Returns  : ""
-## Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, family_id, $temp_directory, $outaligner_dir, $call_type
-##          : $parameter_href             => Parameter hash {REF}
-##          : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##          : $sample_info_href           => Info on samples and family hash {REF}
-##          : $file_info_href             => The file_info hash {REF}
-##          : $infile_lane_prefix_href    => Infile(s) without the ".ending" {REF}
-##          : $job_id_href                => Job id hash {REF}
-##          : $program_name               => Program name
-##          : $family_id                  => Family id
-##          : $temp_directory             => Temporary directory
-##          : $outaligner_dir             => Outaligner_dir used in the analysis
-##          : $call_type                  => The variant call type
+## Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, family_id, $temp_directory, $outaligner_dir, $call_type, $infamily_directory, $outfamily_directory
+##          : $parameter_href          => Parameter hash {REF}
+##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $file_info_href          => The file_info hash {REF}
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $job_id_href             => Job id hash {REF}
+##          : $program_name            => Program name
+##          : $family_id               => Family id
+##          : $temp_directory          => Temporary directory
+##          : $outaligner_dir          => Outaligner_dir used in the analysis
+##          : $call_type               => The variant call type
+##          : $infamily_directory      => In family directory
+##          : $outfamily_directory     => Out family directory
 
     my ($arg_href) = @_;
 
@@ -67,6 +72,8 @@ sub analysis_variant_integrity {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
+    my $infamily_directory;
+    my $outfamily_directory;
 
     my $tmpl = {
         parameter_href => {
@@ -134,6 +141,18 @@ sub analysis_variant_integrity {
         },
         call_type =>
           { default => q{BOTH}, strict_type => 1, store => \$call_type },
+          infamily_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$infamily_directory
+          },
+        outfamily_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$outfamily_directory
+          },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -173,28 +192,25 @@ sub analysis_variant_integrity {
             directory_id          => $family_id,
             program_name          => $program_name,
             program_directory =>
-              catfile( lc $outaligner_dir, q{casecheck}, lc $program_name ),
+              catfile( $outaligner_dir, q{casecheck}, $program_name ),
             call_type    => $call_type,
             core_number  => $core_number,
             process_time => $time,
         }
     );
 
+    # Split to enable submission to &sample_info_qc later
     my ( $volume, $directory, $program_info_file ) =
       File::Spec->splitpath($program_info_path)
-      ;    #Split to enable submission to &sample_info_qc later
+      ;
 
-    #To enable submission to &sample_info_qc later
-    my $stderr_file = $program_info_file . q{.stderr.txt};
+    # To enable submission to &sample_info_qc later
+    my $stderr_file = $program_info_file . $DOT . q{stderr.txt};
 
-    #To enable submission to &sa
-    my $stdout_file = $program_info_file . q{.stdout.txt};
+    # To enable submission to &sa
+    my $stdout_file = $program_info_file . $DOT . q{stdout.txt};
 
     ## Assign Directories
-    my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $family_id, $outaligner_dir );
-    my $outfamily_directory = catfile( $active_parameter_href->{outdata_dir},
-        $family_id, $outaligner_dir, q{casecheck}, lc $program_name );
     my $outfamily_file_directory =
       catfile( $active_parameter_href->{outdata_dir}, $family_id );
 
@@ -216,10 +232,10 @@ sub analysis_variant_integrity {
     );
 
     my $infile_path =
-      catfile( $infamily_directory, $infile_prefix . $infile_suffix . q{*} );
+      catfile( $infamily_directory, $infile_prefix . $infile_suffix . $ASTERISK );
 
     my $family_file =
-      catfile( $outfamily_file_directory, $family_id . q{.fam} );
+      catfile( $outfamily_file_directory, $family_id . $DOT . q{fam} );
     ## Create .fam file to be used in variant calling analyses
     create_fam_file(
         {
@@ -243,7 +259,7 @@ sub analysis_variant_integrity {
     say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     ## Variant_integrity
-    if ( scalar( @{ $active_parameter_href->{sample_ids} } ) > 1 )
+    if ( scalar @{ $active_parameter_href->{sample_ids} }  > 1 )
     {    #Only perform if more than 1 sample
 
         if ( $parameter_href->{dynamic_parameter}{trio} ) {
@@ -252,7 +268,7 @@ sub analysis_variant_integrity {
                 {
                     infile_path  => $file_path_prefix . $infile_suffix,
                     outfile_path => catfile(
-                        $outfamily_directory, $family_id . q{_mendel.txt}
+                        $outfamily_directory, $family_id . $UNDERSCORE . q{mendel.txt}
                     ),
                     family_file => $family_file,
                     family_type =>
@@ -270,7 +286,7 @@ sub analysis_variant_integrity {
                         sample_info_href => $sample_info_href,
                         program_name     => q{variant_integrity_mendel},
                         outdirectory     => $outfamily_directory,
-                        outfile          => $family_id . q{_mendel.txt},
+                        outfile          => $family_id . $UNDERSCORE . q{mendel.txt},
                     }
                 );
             }
@@ -278,20 +294,21 @@ sub analysis_variant_integrity {
 
     }
 
+    SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
-        #Alias
+        # Alias
         my $father_info =
           $sample_info_href->{sample}{$sample_id}{father};
 
-        #Father is included in analysis
-        if ( $father_info ne q{0} ) {
+        # Father is included in analysis
+        if ( $father_info ) {
 
             variant_integrity_father(
                 {
                     infile_path  => $file_path_prefix . $infile_suffix,
                     outfile_path => catfile(
-                        $outfamily_directory, $family_id . q{_father.txt}
+                        $outfamily_directory, $family_id . $UNDERSCORE . q{father.txt}
                     ),
                     family_file => $family_file,
                     family_type =>
@@ -309,7 +326,7 @@ sub analysis_variant_integrity {
                         sample_info_href => $sample_info_href,
                         program_name     => q{variant_integrity_father},
                         outdirectory     => $outfamily_directory,
-                        outfile          => $family_id . q{_father.txt},
+                        outfile          => $family_id . $UNDERSCORE . q{father.txt},
                     }
                 );
             }
