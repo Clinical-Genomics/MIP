@@ -15,6 +15,7 @@ use File::Spec::Functions qw{ catdir catfile devnull };
 ## CPANM
 use Readonly;
 Readonly my $NEWLINE => qq{\n};
+Readonly my $ASTERISK => q{*};
 
 BEGIN {
 
@@ -36,19 +37,19 @@ sub analysis_bedtools_genomecov {
 ## Function : Calculates coverage on BAM files.
 ## Returns  : ""
 ## Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id, $insample_directory, $outsample_directory, $program_name, family_id, $temp_directory, $outaligner_dir
-##          : $parameter_href             => Parameter hash {REF}
-##          : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##          : $sample_info_href           => Info on samples and family hash {REF}
-##          : $file_info_href             => The file_info hash {REF}
-##          : $infile_lane_prefix_href    => Infile(s) without the ".ending" {REF}
-##          : $job_id_href                => Job id hash {REF}
-##          : $sample_id                  => Sample id
-##          : $insample_directory         => In sample directory
-##          : $outsample_directory        => Out sample directory
-##          : $program_name               => Program name
-##          : $family_id                  => Family id
-##          : $temp_directory             => Temporary directory
-##          : $outaligner_dir             => Outaligner_dir used in the analysis
+##          : $parameter_href          => Parameter hash {REF}
+##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $file_info_href          => The file_info hash {REF}
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $job_id_href             => Job id hash {REF}
+##          : $sample_id               => Sample id
+##          : $insample_directory      => In sample directory
+##          : $outsample_directory     => Out sample directory
+##          : $program_name            => Program name
+##          : $family_id               => Family id
+##          : $temp_directory          => Temporary directory
+##          : $outaligner_dir          => Outaligner_dir used in the analysis
 
     my ($arg_href) = @_;
 
@@ -183,12 +184,13 @@ sub analysis_bedtools_genomecov {
     ## Add merged infile name after merging all BAM files per sample_id
     my $infile = $file_info_href->{$sample_id}{merge_infile};
 
-    ## Assign file_tags
+    ## Files
     my $infile_tag =
       $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag =
       $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
 
+    ## Path
     my $infile_prefix  = $infile . $infile_tag;
     my $outfile_prefix = $infile . $outfile_tag;
 
@@ -222,7 +224,7 @@ sub analysis_bedtools_genomecov {
 
     # q{.bam} -> ".b*" for getting index as well)
     my $infile_path = catfile( $insample_directory,
-        $infile_prefix . substr( $infile_suffix, 0, 2 ) . q{*} );
+        $infile_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK );
 
     ## Copy file(s) to temporary directory
     say {$FILEHANDLE} q{## Copy file(s) to temporary directory};

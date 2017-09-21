@@ -1725,6 +1725,7 @@ if ( $active_parameter{pbedtools_genomecov} > 0 ) {
 
     my $program_name = lc q{bedtools_genomecov};
 
+    SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
         ## Assign directories
@@ -1734,7 +1735,7 @@ if ( $active_parameter{pbedtools_genomecov} > 0 ) {
             $active_parameter{outdata_dir},    $sample_id,
             $active_parameter{outaligner_dir}, q{coveragereport} );
 
-        mbedtools_genomecov(
+        analysis_bedtools_genomecov(
             {
                 parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
