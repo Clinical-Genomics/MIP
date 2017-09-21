@@ -2331,7 +2331,7 @@ if ( $active_parameter{pvariant_integrity} > 0 )
     #Run variant_integrity. Done per family
     $log->info( q{[Variant_integrity]} . $NEWLINE );
 
-    my $program_name => lc q{variant_integrity};
+    my $program_name = lc q{variant_integrity};
 
     my $infamily_directory = catdir( $active_parameter{outdata_dir},
         $active_parameter{family_id}, $active_parameter{outaligner_dir} );
