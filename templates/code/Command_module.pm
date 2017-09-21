@@ -3,27 +3,25 @@ package MIP::PATH::TO::MODULE;
 use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;    #Allow unicode characters in this script
-use open qw{  :encoding(UTF-8) :std};
+use utf8;
+use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
 use Carp;
-use English qw{-no_match_vars};
-use Params::Check qw{check allow last_error};
-
+use English qw{ -no_match_vars };
+use Params::Check qw{ check allow last_error };
+use FindBin qw{ $Bin };
+use File::Basename qw{ dirname };
+use File::Spec::Functions qw{ catdir };
 use Readonly;
-
-use FindBin qw{$Bin};    #Find directory of script
-use File::Basename qw{dirname};
-use File::Spec::Functions qw{catdir};
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Unix::Standard_streams qw{unix_standard_streams};
-use MIP::Unix::Write_to_file qw{unix_write_to_file};
+use MIP::Unix::Standard_streams qw{ unix_standard_streams };
+use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
     require Exporter;
-    use base qw{Exporter};
+    use base qw{ Exporter };
 
     # Set the version for version checking
     our $VERSION = 1.00;
@@ -55,7 +53,7 @@ sub name_of_subroutine {
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $FILEHANDLE;
-    
+
     ## Default(s)
 
     my $tmpl = {
