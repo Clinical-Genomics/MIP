@@ -3,7 +3,7 @@
 use Modern::Perl qw{ 2014 };
 use warnings qw{ FATAL utf8 };
 use autodie;
-use 5.018;    #Require at least perl 5.18
+use 5.018;
 use utf8;
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
@@ -11,7 +11,7 @@ use Carp;
 use English qw{ -no_match_vars };
 use Params::Check qw{check allow last_error};
 
-use FindBin qw{$Bin};    #Find directory of script
+use FindBin qw{$Bin};
 use File::Basename qw{ dirname basename };
 use File::Spec::Functions qw{ catdir };
 use Getopt::Long;
@@ -32,19 +32,26 @@ Readonly my $SPACE   => q{ };
 Readonly my $NEWLINE => qq{\n};
 Readonly my $COMMA   => q{,};
 
-###User Options
+### User Options
 GetOptions(
+
+    # Display help text
     q{h|help} => sub {
         done_testing();
         say {*STDOUT} $USAGE;
         exit;
-    },    #Display help text
+    },
+
+    # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME)
-          . $SPACE . $VERSION . $NEWLINE;
+        say {*STDOUT} $NEWLINE
+          . basename($PROGRAM_NAME)
+          . $SPACE
+          . $VERSION
+          . $NEWLINE;
         exit;
-    },    #Display version number
+    },
     q{vb|verbose} => $VERBOSE,
   )
   or (
@@ -65,7 +72,7 @@ BEGIN {
 
     $perl_module{q{Script::Utils}} = [qw{ help }];
 
-  PERL_MODULES:
+  PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
         use_ok( $module, @{$module_import} )
           or BAIL_OUT q{Cannot load} . $SPACE . $module;
@@ -74,20 +81,23 @@ BEGIN {
 ## Modules
     my @modules = (q{MIP::PATH::TO::MODULE});
 
-  MODULES:
+  MODULE:
     for my $module (@modules) {
         require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 }
 
-use MIP::PATH::TO:MODULE qw{ SUB_ROUTINE };
+use MIP::PATH::TO : MODULE qw{ SUB_ROUTINE };
 use MIP::Test::Commands qw{ test_function };
 
 diag(   q{Test SUB_ROUTINE from MODULE_NAME v}
-      . $PATH::TO::MODULE::VERSION . $COMMA . $SPACE
-      . q{Perl} . $SPACE . $PERL_VERSION
-      . $SPACE . $EXECUTABLE_NAME );
-
+      . $PATH::TO::MODULE::VERSION
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+      . $EXECUTABLE_NAME );
 
 ## Base arguments
 my $function_base_command = q{BASE_COMMAND};
@@ -115,7 +125,7 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     ARRAY => {
-        inputs_ref      => [ qw{ TEST_STRING_1 TEST_STRING_2 } ],
+        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
         expected_output => q{PROGRAM OUTPUT},
     },
     SCALAR => {
@@ -130,7 +140,7 @@ my %required_argument = (
 
 my %specific_argument = (
     ARRAY => {
-        inputs_ref      => [ qw{ TEST_STRING_1 TEST_STRING_2 } ],
+        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
         expected_output => q{PROGRAM OUTPUT},
     },
     SCALAR => {
@@ -149,7 +159,7 @@ my $module_function_cref = \&NAME_OF_SUB_ROUTINE;
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
 
-HASHES_OF_ARGUMENTS:
+ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
