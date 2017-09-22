@@ -16,6 +16,11 @@ use FindBin qw{ $Bin };    #Find directory of script
 use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir };
 
+## MIPs lib/
+use lib catdir( dirname($Bin), q{lib} );
+use MIP::Unix::Standard_streams qw{ unix_standard_streams };
+use MIP::Unix::Write_to_file qw{ unix_write_to_file };
+
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
