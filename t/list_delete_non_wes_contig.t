@@ -10,13 +10,13 @@ use charnames qw{ :full :short };
 use Carp;
 use English qw{ -no_match_vars };
 use Params::Check qw{ check allow last_error };
-
-# Find directory of script
 use FindBin qw{ $Bin };
 use File::Basename qw{ dirname basename };
 use File::Spec::Functions qw{ catdir };
 use Getopt::Long;
 use Test::More;
+
+## CPANM
 use Readonly;
 
 ## MIPs lib/
@@ -33,13 +33,17 @@ Readonly my $SPACE   => q{ };
 Readonly my $NEWLINE => qq{\n};
 Readonly my $COMMA   => q{,};
 
-###User Options
+### User Options
 GetOptions(
+
+    # Display help text
     q{h|help} => sub {
         done_testing();
         say {*STDOUT} $USAGE;
         exit;
-    },    #Display help text
+    },
+
+    # Display version number
     q{v|version} => sub {
         done_testing();
         say {*STDOUT} $NEWLINE
@@ -48,7 +52,7 @@ GetOptions(
           . $VERSION
           . $NEWLINE;
         exit;
-    },    #Display version number
+    },
     q{vb|verbose} => $VERBOSE,
   )
   or (
@@ -69,7 +73,7 @@ BEGIN {
 
     $perl_module{q{Script::Utils}} = [qw{ help }];
 
-  PERL_MODULES:
+  PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
         use_ok( $module, @{$module_import} )
           or BAIL_OUT q{Cannot load} . $SPACE . $module;
@@ -78,15 +82,15 @@ BEGIN {
 ## Modules
     my @modules = (q{MIP::Delete::List});
 
-  MODULES:
+  MODULE:
     for my $module (@modules) {
         require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 }
 
-use MIP::Delete::List qw{ delete_male_contig };
+use MIP::Delete::List qw{ delete_non_wes_contig };
 
-diag(   q{Test delete_male_contig from List.pm v}
+diag(   q{Test delete_non_wes_contig from List.pm v}
       . $MIP::Delete::List::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -94,6 +98,16 @@ diag(   q{Test delete_male_contig from List.pm v}
       . $PERL_VERSION
       . $SPACE
       . $EXECUTABLE_NAME );
+
+my %not_consensus_analysis_type = (
+    sample_id_1 => q{wes},
+    sample_id_2 => q{wgs}
+);
+
+my %consensus_analysis_type = (
+    sample_id_1 => q{wes},
+    sample_id_2 => q{wes}
+);
 
 my @refseq_contigs = qw{
   chr1 chr2 chr3 chr4 chr5 chr6
@@ -109,24 +123,59 @@ my @ensembl_contigs = qw{
 
 ## Tests
 
-my @contigs = delete_male_contig(
+my @contigs = delete_non_wes_contig(
     {
-        contigs_ref      => \@refseq_contigs,
-        contig_names_ref => [qw{ Y }],
-        found_male       => 0,
+        analysis_type_href => \%not_consensus_analysis_type,
+        contigs_ref        => \@refseq_contigs,
+        contig_names_ref   => [qw{ M MT }],
     }
 );
-is( scalar @contigs, scalar @refseq_contigs - 1, q{Removed chrY from array} );
+is(
+    scalar @contigs,
+    scalar @refseq_contigs,
+    q{Not wes: keept M contig in array}
+);
 
-@contigs = delete_male_contig(
+@contigs = delete_non_wes_contig(
     {
-        contigs_ref      => \@refseq_contigs,
-        contig_names_ref => [qw{ Y }],
-        found_male       => 1,
+        analysis_type_href => \%consensus_analysis_type,
+        contigs_ref        => \@refseq_contigs,
+        contig_names_ref   => [qw{ M MT }],
     }
 );
 
-is( scalar @contigs, scalar @refseq_contigs, q{Keept male contig in array} );
+is(
+    scalar @contigs,
+    scalar @refseq_contigs - 1,
+    q{Wes: Removed M contig in array}
+);
+
+@contigs = delete_non_wes_contig(
+    {
+        analysis_type_href => \%not_consensus_analysis_type,
+        contigs_ref        => \@ensembl_contigs,
+        contig_names_ref   => [qw{ M MT }],
+    }
+);
+is(
+    scalar @contigs,
+    scalar @ensembl_contigs,
+    q{Not wes: keept MT contig in array}
+);
+
+@contigs = delete_non_wes_contig(
+    {
+        analysis_type_href => \%consensus_analysis_type,
+        contigs_ref        => \@ensembl_contigs,
+        contig_names_ref   => [qw{ M MT }],
+    }
+);
+
+is(
+    scalar @contigs,
+    scalar @ensembl_contigs - 1,
+    q{Wes: Removed MT contig in array}
+);
 
 done_testing();
 
