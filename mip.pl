@@ -8,13 +8,14 @@
 use 5.018;
 use Modern::Perl qw{ 2014 };
 use autodie qw{ open close :all };
+
+# Required for autodie :all
+use IPC::System::Simple;
 use English qw{ -no_match_vars };
 use Carp;
 
 ## Unicode boilerplate
 use warnings qw{ FATAL utf8 };
-
-# Allow unicode characters in this script
 use utf8;
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
@@ -29,13 +30,8 @@ use File::Basename qw{ dirname basename fileparse };
 use File::Spec::Functions qw{ catdir catfile devnull };
 use File::Path qw{ make_path };
 use File::Copy qw{ copy };
-
-# Find directory of script
 use FindBin qw{ $Bin };
 use IPC::Cmd qw{ can_run run};
-
-# Required for autodie :all
-use IPC::System::Simple;
 use Time::Piece;
 
 ## Third party module(s)
@@ -54,15 +50,17 @@ use MIP::File::Format::Pedigree qw{ create_fam_file };
 use MIP::Check::Cluster qw{ check_max_core_number };
 use MIP::Get::Analysis qw{ get_overall_analysis_type };
 use MIP::Check::Parameter qw{ check_allowed_temp_directory };
-use MIP::Delete::List qw{ delete_male_contig };
+use MIP::Set::Contigs qw{ set_contigs };
+use MIP::Delete::List qw{ delete_non_wes_contig delete_male_contig };
+use MIP::Update::Contigs qw{ update_contigs_for_run };
 
 ##Recipes
-use MIP::Recipes::Split_fastq_file qw{analysis_split_fastq_file};
-use MIP::Recipes::Gzip_fastq qw{analysis_gzip_fastq};
-use MIP::Recipes::Fastqc qw{analysis_fastqc};
-use MIP::Recipes::Bwa_mem qw{analysis_bwa_mem};
-use MIP::Recipes::Chanjo_sex_check qw{analysis_chanjo_sex_check};
-use MIP::Recipes::Vep qw{analysis_vep analysis_vep_rio analysis_vep_sv};
+use MIP::Recipes::Split_fastq_file qw{ analysis_split_fastq_file };
+use MIP::Recipes::Gzip_fastq qw{ analysis_gzip_fastq };
+use MIP::Recipes::Fastqc qw{ analysis_fastqc };
+use MIP::Recipes::Bwa_mem qw{ analysis_bwa_mem };
+use MIP::Recipes::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
+use MIP::Recipes::Vep qw{ analysis_vep analysis_vep_rio analysis_vep_sv };
 
 our $USAGE = build_usage( {} );
 
@@ -90,7 +88,7 @@ Readonly my $DOT     => q{.};
 Readonly my $NEWLINE => qq{\n};
 Readonly my $TAB     => qq{\t};
 
-####Script parameters
+#### Script parameters
 
 # Holds all parameters for MIP
 my %parameter;
@@ -115,9 +113,9 @@ my $definitions_file =
   catfile( $Bin, qw{ definitions define_parameters.yaml } );
 chomp( $date_time_stamp, $date, $script );
 
-####Set program parameters
+#### Set program parameters
 
-###Project specific
+### Project specific
 
 ## Loads a YAML file into an arbitrary hash and returns it.
 %parameter = load_yaml( { yaml_file => $definitions_file, } );
@@ -145,7 +143,7 @@ our $VERSION = 'v5.0.9';
 my ( %infile, %indir_path, %infile_lane_prefix, %lane,
     %infile_both_strands_prefix, %job_id, %sample_info );
 
-####Staging/Sanity Check Area
+#### Staging/Sanity Check Area
 
 my %file_info = (
     bwa_build_reference => "",
@@ -650,10 +648,12 @@ if ( defined( $parameter{config_file}{value} ) ) {    #Input from cmd
     }
 
     ##Remove previous analysis specific info not relevant for current run e.g. log file, sample_ids which are read from pedigree or cmd
-    my @remove_keys = (qw(log_file sample_ids));
+    my @remove_keys = (qw{ log_file sample_ids });
+
+  KEY:
     foreach my $key (@remove_keys) {
 
-        delete( $active_parameter{$key} );
+        delete $active_parameter{$key};
     }
 }
 
@@ -747,7 +747,7 @@ foreach my $order_parameter_element (@order_parameters) {
         ## Detect if all samples has the same sequencing type and return consensus if reached
         $parameter{dynamic_parameter}{consensus_analysis_type} =
           get_overall_analysis_type(
-            { analysis_type_hef => \%{ $active_parameter{analysis_type} }, } );
+            { analysis_type_href => \%{ $active_parameter{analysis_type} }, } );
     }
 }
 
@@ -1048,7 +1048,7 @@ while ( my ( $variant_caller_type, $prioritize_parameter_name ) =
 ## Broadcast set parameters info
 foreach my $parameter_info (@broadcasts) {
 
-    $log->info( $parameter_info, "\n" );
+    $log->info( $parameter_info, $NEWLINE );
 }
 
 ## Update program mode depending on analysis run value as some programs are not applicable for e.g. wes
@@ -1056,7 +1056,7 @@ update_program_mode(
     {
         active_parameter_href => \%active_parameter,
         ,
-        programs_ref => [qw(cnvnator delly_call delly_reformat tiddit)],
+        programs_ref => [qw{ cnvnator delly_call delly_reformat tiddit }],
         consensus_analysis_type_ref =>
           \$parameter{dynamic_parameter}{consensus_analysis_type},
     }
@@ -1082,14 +1082,6 @@ if ( $active_parameter{config_file_analysis} ne 0 )
       $active_parameter{config_file_analysis};
 }
 
-## Set contig prefix and contig names depending on reference used
-set_contigs(
-    {
-        active_parameter_href => \%active_parameter,
-        file_info_href        => \%file_info,
-    }
-);
-
 ## Detect the gender included in current analysis
 (
     $active_parameter{found_male},
@@ -1103,11 +1095,21 @@ set_contigs(
     }
   );
 
-## Removes contig_names from contigs array if no male or 'other' found
-@{ $file_info{select_file_contigs} } = delete_male_contig(
+### Contigs
+## Set contig prefix and contig names depending on reference used
+set_contigs(
     {
-        contigs_ref => \@{ $file_info{select_file_contigs} },
-        found_male  => $active_parameter{found_male},
+        file_info_href         => \%file_info,
+        human_genome_reference => $active_parameter{human_genome_reference},
+    }
+);
+
+## Update contigs depending on settings in run (wes or if only male samples)
+update_contigs_for_run(
+    {
+        file_info_href     => \%file_info,
+        analysis_type_href => \%{ $active_parameter{analysis_type} },
+        found_male         => $active_parameter{found_male},
     }
 );
 
@@ -1690,14 +1692,15 @@ if ( $active_parameter{psambamba_depth} > 0 ) {
 
     my $program_name = lc q{sambamba_depth};
 
-    SAMPLE_ID:
+  SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
         my $insample_directory = catdir( $active_parameter{outdata_dir},
             $sample_id, $active_parameter{outaligner_dir} );
         my $outsample_directory = catdir(
             $active_parameter{outdata_dir},    $sample_id,
-            $active_parameter{outaligner_dir}, q{coveragereport} );
+            $active_parameter{outaligner_dir}, q{coveragereport}
+        );
 
         analysis_sambamba_depth(
             {
@@ -1725,7 +1728,7 @@ if ( $active_parameter{pbedtools_genomecov} > 0 ) {
 
     my $program_name = lc q{bedtools_genomecov};
 
-    SAMPLE_ID:
+  SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
         ## Assign directories
@@ -1733,7 +1736,8 @@ if ( $active_parameter{pbedtools_genomecov} > 0 ) {
             $sample_id, $active_parameter{outaligner_dir} );
         my $outsample_directory = catdir(
             $active_parameter{outdata_dir},    $sample_id,
-            $active_parameter{outaligner_dir}, q{coveragereport} );
+            $active_parameter{outaligner_dir}, q{coveragereport}
+        );
 
         analysis_bedtools_genomecov(
             {
@@ -2036,6 +2040,7 @@ if ( $active_parameter{psv_varianteffectpredictor} > 0 ) {
             file_info_href          => \%file_info,
             infile_lane_prefix_href => \%infile_lane_prefix,
             job_id_href             => \%job_id,
+            contigs_ref             => \@{ $file_info{contigs_sv} },
             program_name            => $program_name,
         }
     );
@@ -2344,17 +2349,24 @@ if ( $active_parameter{pplink} > 0 ) {    #Run plink. Done per family
     );
 }
 
-if ( $active_parameter{pvariant_integrity} > 0 )
-{
+if ( $active_parameter{pvariant_integrity} > 0 ) {
+
     #Run variant_integrity. Done per family
     $log->info( q{[Variant_integrity]} . $NEWLINE );
 
     my $program_name = lc q{variant_integrity};
 
-    my $infamily_directory = catdir( $active_parameter{outdata_dir},
-        $active_parameter{family_id}, $active_parameter{outaligner_dir} );
-    my $outfamily_directory = catfile( $active_parameter{outdata_dir},
-        $active_parameter{family_id}, $active_parameter{outaligner_dir}, q{casecheck}, $program_name );
+    my $infamily_directory = catdir(
+        $active_parameter{outdata_dir},
+        $active_parameter{family_id},
+        $active_parameter{outaligner_dir}
+    );
+    my $outfamily_directory = catfile(
+        $active_parameter{outdata_dir},
+        $active_parameter{family_id},
+        $active_parameter{outaligner_dir},
+        q{casecheck}, $program_name
+    );
 
     use MIP::Recipes::Variant_integrity qw{ analysis_variant_integrity };
 
@@ -31031,90 +31043,6 @@ sub find_max_seq_length_for_sample_id {
         }
     }
     return $max_sequence_length;
-}
-
-sub set_contigs {
-
-##set_contigs
-
-##Function : Set contig prefix and contig names depending on reference used. Exclude mitochondrial contig if analysis_type is "wes".
-##Returns  : ""
-##Arguments: $active_parameter_href, $file_info_href
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $file_info_href        => File info hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $file_info_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Get::Analysis qw(get_overall_analysis_type);
-
-    if ( $active_parameter_href->{human_genome_reference} =~ /hg\d+/ ) {
-        ## Refseq - prefix and M
-
-        # Chr for filtering of bam file
-        @{ $file_info_href->{contigs} } = qw{
-          chr1 chr2 chr3 chr4 chr5 chr6
-          chr7 chr8 chr9 chr10 chr11 chr12
-          chr13 chr14 chr15 chr16 chr17 chr18
-          chr19 chr20 chr21 chr22 chrX chrY
-          chrM };
-
-        # Chr for filtering of bam file
-        @{ $file_info_href->{contigs_size_ordered} } = qw{
-          chr1 chr2 chr3 chr4 chr5 chr6
-          chr7 chrX chr8 chr9 chr10 chr11
-          chr12 chr13 chr14 chr15 chr16 chr17
-          chr18 chr19 chr20 chr21 chr22 chrY
-          chrM };
-    }
-    elsif ( $active_parameter_href->{human_genome_reference} =~ /GRCh\d+/ ) {
-        ## Ensembl - no prefix and MT
-
-        # Chr for filtering of bam file
-        @{ $file_info_href->{contigs} } = qw{
-          1 2 3 4 5 6 7 8 9 10
-          11 12 13 14 15 16 17 18 19 20
-          21 22 X Y MT };
-
-        # Chr for filtering of bam file
-        @{ $file_info_href->{contigs_size_ordered} } = qw{
-          1 2 3 4 5 6 7 X 8 9
-          10 11 12 13 14 15 16 17 18 19
-          20 21 22 Y MT };
-    }
-
-    ## Detect if all samples has the same sequencing type and return consensus if reached
-    my $consensus_analysis_type = get_overall_analysis_type(
-        { analysis_type_hef => \%{ $active_parameter_href->{analysis_type} }, }
-    );
-    if ( $consensus_analysis_type eq q{wes} ) {
-
-        # Remove Mitochondrial contig
-        pop @{ $file_info_href->{contigs} };
-        pop @{ $file_info_href->{contigs_size_ordered} };
-    }
 }
 
 sub collect_gene_panels {

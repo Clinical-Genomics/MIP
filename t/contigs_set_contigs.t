@@ -10,13 +10,13 @@ use charnames qw{ :full :short };
 use Carp;
 use English qw{ -no_match_vars };
 use Params::Check qw{ check allow last_error };
-
-# Find directory of script
 use FindBin qw{ $Bin };
 use File::Basename qw{ dirname basename };
 use File::Spec::Functions qw{ catdir };
 use Getopt::Long;
 use Test::More;
+
+## CPANM
 use Readonly;
 
 ## MIPs lib/
@@ -33,13 +33,17 @@ Readonly my $SPACE   => q{ };
 Readonly my $NEWLINE => qq{\n};
 Readonly my $COMMA   => q{,};
 
-###User Options
+### User Options
 GetOptions(
+
+    # Display help text
     q{h|help} => sub {
         done_testing();
         say {*STDOUT} $USAGE;
         exit;
-    },    #Display help text
+    },
+
+    # Display version number
     q{v|version} => sub {
         done_testing();
         say {*STDOUT} $NEWLINE
@@ -48,7 +52,7 @@ GetOptions(
           . $VERSION
           . $NEWLINE;
         exit;
-    },    #Display version number
+    },
     q{vb|verbose} => $VERBOSE,
   )
   or (
@@ -69,31 +73,36 @@ BEGIN {
 
     $perl_module{q{Script::Utils}} = [qw{ help }];
 
-  PERL_MODULES:
+  PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
         use_ok( $module, @{$module_import} )
           or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 
 ## Modules
-    my @modules = (q{MIP::Delete::List});
+    my @modules = (q{MIP::Set::Contigs});
 
-  MODULES:
+  MODULE:
     for my $module (@modules) {
         require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 }
 
-use MIP::Delete::List qw{ delete_male_contig };
+use MIP::Set::Contigs qw{ set_contigs };
 
-diag(   q{Test delete_male_contig from List.pm v}
-      . $MIP::Delete::List::VERSION
+diag(   q{Test set_contigs from List.pm v}
+      . $MIP::Set::Contigs::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
       . $PERL_VERSION
       . $SPACE
       . $EXECUTABLE_NAME );
+
+## Constants
+Readonly my $INDEX_SIZE_ORDERED_CHR_X = 7;
+
+my %file_info;
 
 my @refseq_contigs = qw{
   chr1 chr2 chr3 chr4 chr5 chr6
@@ -109,24 +118,42 @@ my @ensembl_contigs = qw{
 
 ## Tests
 
-my @contigs = delete_male_contig(
+# GRCh
+set_contigs(
     {
-        contigs_ref      => \@refseq_contigs,
-        contig_names_ref => [qw{ Y }],
-        found_male       => 0,
-    }
-);
-is( scalar @contigs, scalar @refseq_contigs - 1, q{Removed chrY from array} );
-
-@contigs = delete_male_contig(
-    {
-        contigs_ref      => \@refseq_contigs,
-        contig_names_ref => [qw{ Y }],
-        found_male       => 1,
+        file_info_href         => \%file_info,
+        human_genome_reference => q{GRCh37_homo_sapiens_-d5-.fasta},
     }
 );
 
-is( scalar @contigs, scalar @refseq_contigs, q{Keept male contig in array} );
+is( $file_info{contigs}[-1], q{MT}, q{Set GRCh reference contigs} );
+
+is( $file_info{contigs_size_ordered}[$INDEX_SIZE_ORDERED_CHR_X],
+    q{X}, q{Set GRCh reference size ordered contigs} );
+
+is( $file_info{contigs_sv}[-1], q{Y}, q{Set GRCh reference contigs} );
+
+is( $file_info{contigs_sv_size_ordered}[$INDEX_SIZE_ORDERED_CHR_X],
+    q{X}, q{Set GRCh reference size ordered contigs} );
+
+# Hg38
+
+set_contigs(
+    {
+        file_info_href         => \%file_info,
+        human_genome_reference => q{hg38_homo_sapiens_-decoy_hla-.fasta},
+    }
+);
+
+is( $file_info{contigs}[-1], q{chrM}, q{Set hg38 reference contigs} );
+
+is( $file_info{contigs_size_ordered}[$INDEX_SIZE_ORDERED_CHR_X],
+    q{chrX}, q{Set hg38 reference size ordered contigs} );
+
+is( $file_info{contigs_sv}[-1], q{chrY}, q{Set hg38 reference contigs} );
+
+is( $file_info{contigs_sv_size_ordered}[$INDEX_SIZE_ORDERED_CHR_X],
+    q{chrX}, q{Set hg38 reference size ordered contigs} );
 
 done_testing();
 
