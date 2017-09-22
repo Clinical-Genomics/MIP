@@ -4219,7 +4219,7 @@ sub evaluation {
     use MIP::Language::Java qw{java_core};
     use Program::Variantcalling::Gatk
       qw(selectvariants leftalignandtrimvariants);
-    use Program::Variantcalling::Bcftools qw(stats);
+    use MIP::Program::Variantcalling::Bcftools qw(bcftools_stats);
     use Program::Interval::Picardtools qw(intervallisttools);
     use Program::Variantcalling::Picardtools qw(genotypeconcordance);
     use MIP::Processmanagement::Slurm_processes
@@ -4305,7 +4305,7 @@ sub evaluation {
 
     ## BcfTools Stats
     say $FILEHANDLE "## bcftools stats";
-    Program::Variantcalling::Bcftools::stats(
+    bcftools_stats(
         {
             infile_path  => $nist_file_path . ".vcf",
             outfile_path => $nist_file_path . ".vcf.stats",
@@ -4482,7 +4482,7 @@ q?perl -nae 'unless($_=~/##contig=<ID=NC_007605,length=171823>/ || $_=~/##contig
 
     ## BcfTools Stats
     say $FILEHANDLE "## bcftools stats";
-    Program::Variantcalling::Bcftools::stats(
+    bcftools_stats(
         {
             infile_path  => $call_file_path . "_lts_refrm.vcf",
             outfile_path => $call_file_path . "_lts_refrm.vcf.stats",
@@ -8813,7 +8813,7 @@ sub mplink {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Get::File qw{get_file_suffix};
-    use Program::Variantcalling::Bcftools qw(view annotate);
+    use MIP::Program::Variantcalling::Bcftools qw(bcftools_view bcftools_annotate);
     use Program::Variantcalling::Vt qw(vt_uniq);
     use Program::Variantcalling::Plink qw(plink);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
@@ -8909,7 +8909,7 @@ sub mplink {
 
     ## Prepare input
     say $FILEHANDLE "## Remove indels using bcftools ";
-    Program::Variantcalling::Bcftools::view(
+    bcftools_view(
         {
             infile_path  => $file_path_prefix . $infile_suffix,
             outfile_path => $file_path_prefix . "_no_indels" . $infile_suffix,
@@ -8921,7 +8921,7 @@ sub mplink {
     say $FILEHANDLE "\n";
 
     say $FILEHANDLE "## Create uniq IDs and remove duplicate variants";
-    Program::Variantcalling::Bcftools::annotate(
+    bcftools_annotate(
         {
             remove_ids_ref => ["ID"],
             set_id         => q?+'%CHROM:%POS:%REF:%ALT'?,
@@ -9721,7 +9721,7 @@ sub rhocall {
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Recipes::Xargs qw{ xargs_command };
-    use Program::Variantcalling::Bcftools qw(roh);
+    use MIP::Program::Variantcalling::Bcftools qw(bcftools_roh);
     use Program::Variantcalling::Rhocall qw(aggregate annotate);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
@@ -9861,7 +9861,7 @@ sub rhocall {
               ;    #No affected - pick any sample_id
         }
 
-        roh(
+        bcftools_roh(
             {
                 infile_path => $file_path_prefix . "_"
                   . $contig
@@ -10718,7 +10718,7 @@ sub gatk_variantrecalibration {
     use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use MIP::Language::Java qw{java_core};
-    use Program::Variantcalling::Bcftools qw(norm);
+    use MIP::Program::Variantcalling::Bcftools qw(bcftools_norm);
     use Program::Variantcalling::Gatk
       qw(variantrecalibrator applyrecalibration selectvariants calculategenotypeposteriors);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
@@ -11044,7 +11044,7 @@ sub gatk_variantrecalibration {
     {
 
         ## BcfTools norm, Left-align and normalize indels, split multiallelics
-        norm(
+        bcftools_norm(
             {
                 FILEHANDLE => $FILEHANDLE,
                 reference_path =>
@@ -11212,7 +11212,7 @@ sub gatk_variantrecalibration {
     }
 
     ## BcfTools norm, Left-align and normalize indels, split multiallelics
-    norm(
+    bcftools_norm(
         {
             FILEHANDLE     => $FILEHANDLE,
             reference_path => $active_parameter_href->{human_genome_reference},
@@ -14574,7 +14574,7 @@ sub sv_combinevariantcallsets {
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Set::File qw{set_file_suffix};
     use Program::Variantcalling::Svdb qw(merge query);
-    use Program::Variantcalling::Bcftools qw (merge view annotate);
+    use MIP::Program::Variantcalling::Bcftools qw (bcftools_merge bcftools_view bcftools_annotate);
     use Program::Htslib qw(bgzip tabix);
     use Program::Variantcalling::Vt qw(decompose);
     use Program::Variantcalling::Genmod qw(annotate);
@@ -14754,7 +14754,7 @@ sub sv_combinevariantcallsets {
                 say $FILEHANDLE
 "## Merge all structural variant caller's vcf files per sample_id";
 
-                Program::Variantcalling::Bcftools::merge(
+                bcftools_merge(
                     {
                         infile_paths_ref => \@file_paths,
                         outfile_path     => catfile(
@@ -14778,7 +14778,7 @@ sub sv_combinevariantcallsets {
                 say $FILEHANDLE
 "## Reformat all structural variant caller's vcf files per sample_id";
 
-                Program::Variantcalling::Bcftools::view(
+                bcftools_view(
                     {
                         infile_path  => $file_paths[0],    #Can be only one
                         outfile_path => catfile(
@@ -15030,7 +15030,7 @@ sub sv_combinevariantcallsets {
     if ( $active_parameter_href->{sv_bcftools_view_filter} > 0 ) {
 
         say $FILEHANDLE "## Remove FILTER ne PASS";
-        Program::Variantcalling::Bcftools::view(
+        bcftools_view(
             {
                 apply_filters_ref => ["PASS"],
                 infile_path       => $outfile_path_prefix
@@ -15125,7 +15125,7 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
 
         say $FILEHANDLE
           "## Add header for 1000G annotation of structural variants";
-        Program::Variantcalling::Bcftools::annotate(
+        bcftools_annotate(
             {
                 infile_path => $outfile_path_prefix
                   . $alt_file_tag
@@ -15376,7 +15376,7 @@ sub cnvnator {
     use MIP::Program::Alignment::Samtools qw(samtools_faidx);
     use Program::Variantcalling::Cnvnator
       qw(read_extraction histogram statistics partition calling convert_to_vcf);
-    use Program::Variantcalling::Bcftools qw(annotate);
+    use MIP::Program::Variantcalling::Bcftools qw(bcftools_annotate);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_sample);
@@ -15673,7 +15673,7 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
       . $outfile_suffix, "\n";
 
     ##Add contigs to header
-    annotate(
+    bcftools_annotate(
         {
             infile_path => $outfile_path_prefix
               . "_concat_fix"
@@ -15855,7 +15855,7 @@ sub delly_reformat {
     use MIP::Recipes::Xargs qw{ xargs_command };
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use Program::Variantcalling::Delly qw(call merge filter);
-    use Program::Variantcalling::Bcftools qw(merge index);
+    use MIP::Program::Variantcalling::Bcftools qw(bcftools_merge bcftools_index);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
@@ -16294,7 +16294,7 @@ sub delly_reformat {
                           . $suffix{pdelly_call}
                     } @{ $active_parameter_href->{sample_ids} };
 
-                    Program::Variantcalling::Bcftools::merge(
+                    bcftools_merge(
                         {
                             infile_paths_ref => \@file_paths,
                             outfile_path     => $outfile_path_prefix . "_"
@@ -16315,7 +16315,7 @@ sub delly_reformat {
                     );
                     print $XARGSFILEHANDLE q{;} . q{ };
 
-                    Program::Variantcalling::Bcftools::index(
+                    bcftools_index(
                         {
                             infile_path => $outfile_path_prefix . "_"
                               . $contig . "_"
@@ -16341,7 +16341,7 @@ sub delly_reformat {
                       . $suffix{pdelly_call}
                 } @{ $active_parameter_href->{sample_ids} };
 
-                Program::Variantcalling::Bcftools::merge(
+                bcftools_merge(
                     {
                         infile_paths_ref => \@file_paths,
                         outfile_path     => $outfile_path_prefix . "_"
@@ -16359,7 +16359,7 @@ sub delly_reformat {
                 );
                 print $XARGSFILEHANDLE q{;} . q{ };
 
-                Program::Variantcalling::Bcftools::index(
+                bcftools_index(
                     {
                         infile_path => $outfile_path_prefix . "_"
                           . $sv_type
@@ -16404,7 +16404,7 @@ sub delly_reformat {
                       . $suffix{pdelly_call} );
             }
 
-            Program::Variantcalling::Bcftools::concat(
+            bcftools_concat(
                 {
                     infile_paths_ref => \@file_paths,
                     outfile_path     => $outfile_path_prefix . "_"
@@ -16421,7 +16421,7 @@ sub delly_reformat {
             );
             say $FILEHANDLE "\n";
 
-            Program::Variantcalling::Bcftools::index(
+            bcftools_index(
                 {
                     infile_path => $outfile_path_prefix . "_"
                       . $sv_type
@@ -16559,7 +16559,7 @@ sub delly_reformat {
             }
         }
     }
-    Program::Variantcalling::Bcftools::concat(
+    bcftools_concat(
         {
             infile_paths_ref => \@file_paths,
             outfile_path => $outfile_path_prefix . "_concat" . $outfile_suffix,
@@ -17764,7 +17764,7 @@ sub msamtools_mpileup {
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Recipes::Xargs qw{ xargs_command };
     use MIP::Program::Alignment::Samtools qw(samtools_mpileup);
-    use Program::Variantcalling::Bcftools qw(call filter norm);
+    use MIP::Program::Variantcalling::Bcftools qw(bcftools_call bcftools_filter bcftools_norm);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
@@ -17937,7 +17937,7 @@ sub msamtools_mpileup {
               . " ";
             $constrain = "trio";
         }
-        call(
+        bcftools_call(
             {
                 form_fields_ref     => ["GQ"],
                 variants_only       => 1,
@@ -17952,7 +17952,7 @@ sub msamtools_mpileup {
         );
         print $XARGSFILEHANDLE "| ";    #Pipe
 
-        filter(
+        bcftools_filter(
             {
                 stderrfile_path => $xargs_file_path_prefix . "."
                   . $contig
@@ -17982,7 +17982,7 @@ q?\'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %M
         print $XARGSFILEHANDLE "| ";    #Pipe
 
         ## BcfTools norm, Left-align and normalize indels, split multiallelics
-        norm(
+        bcftools_norm(
             {
                 FILEHANDLE => $XARGSFILEHANDLE,
                 reference_path =>
@@ -18187,7 +18187,7 @@ sub freebayes {
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Recipes::Xargs qw{ xargs_command };
     use Program::Variantcalling::Freebayes qw(calling);
-    use Program::Variantcalling::Bcftools qw(filter norm);
+    use MIP::Program::Variantcalling::Bcftools qw(bcftools_filter bcftools_norm);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
@@ -18335,7 +18335,7 @@ sub freebayes {
         );
         print $XARGSFILEHANDLE "| ";    #Pipe
 
-        filter(
+        bcftools_filter(
             {
                 stderrfile_path => $xargs_file_path_prefix . "."
                   . $contig
@@ -18363,7 +18363,7 @@ sub freebayes {
         print $XARGSFILEHANDLE "| ";    #Pipe
 
         ## BcfTools norm, Left-align and normalize indels, split multiallelics
-        norm(
+        bcftools_norm(
             {
                 FILEHANDLE => $XARGSFILEHANDLE,
                 reference_path =>
@@ -34017,7 +34017,7 @@ sub view_vcf {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use Program::Variantcalling::Bcftools qw(view index);
+    use MIP::Program::Variantcalling::Bcftools qw(bcftools_view bcftools_index);
 
     my $outfile_path;
     my %output_type_ending = (
@@ -34034,7 +34034,7 @@ sub view_vcf {
     }
 
     say $FILEHANDLE "## Reformat variant calling file";
-    Program::Variantcalling::Bcftools::view(
+    bcftools_view(
         {
             infile_path  => $infile_path,
             outfile_path => $outfile_path,
@@ -34047,7 +34047,7 @@ sub view_vcf {
     if ($index) {
 
         say $FILEHANDLE "## Index";
-        Program::Variantcalling::Bcftools::index(
+        bcftools_index(
             {
                 infile_path => $outfile_path,
                 output_type => $index_type,
@@ -34208,7 +34208,7 @@ sub rename_vcf_samples {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Gnu::Coreutils qw(gnu_printf);
-    use Program::Variantcalling::Bcftools qw(view reheader);
+    use MIP::Program::Variantcalling::Bcftools qw(bcftools_view bcftools_reheader);
 
     ## Create new sample names file
     say $FILEHANDLE "## Create new sample(s) names file";
@@ -34231,7 +34231,7 @@ sub rename_vcf_samples {
 
     ## Rename samples in VCF
     say $FILEHANDLE "## Rename sample(s) names in VCF file";
-    reheader(
+    bcftools_reheader(
         {
             infile_path => $infile,
             samples_file_path =>
@@ -34241,7 +34241,7 @@ sub rename_vcf_samples {
     );
     print $FILEHANDLE "| ";    #Pipe
 
-    Program::Variantcalling::Bcftools::view(
+    bcftools_view(
         {
             outfile_path => $outfile,
             output_type  => "v",
@@ -34987,7 +34987,7 @@ sub get_matching_values_key {
     }
 }
 
-sub bcftools_norm {
+sub mbcftools_norm {
 
 ##bcftools_norm
 
