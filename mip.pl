@@ -52,6 +52,7 @@ use MIP::Get::Analysis qw{ get_overall_analysis_type };
 use MIP::Check::Parameter qw{ check_allowed_temp_directory };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Delete::List qw{ delete_non_wes_contig delete_male_contig };
+use MIP::Update::Contigs qw{ update_contigs_for_run };
 
 ##Recipes
 use MIP::Recipes::Split_fastq_file qw{ analysis_split_fastq_file };
@@ -1107,7 +1108,7 @@ set_contigs(
 update_contigs_for_run(
     {
         file_info_href     => \%file_info,
-        analysis_type_href => %{ $active_parameter{analysis_type} },
+        analysis_type_href => \%{ $active_parameter{analysis_type} },
         found_male         => $active_parameter{found_male},
     }
 );
