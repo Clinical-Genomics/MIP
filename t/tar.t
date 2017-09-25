@@ -9,14 +9,13 @@ use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
 use Carp;
 use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-use FindBin qw{ $Bin };
+use Params::Check qw{check allow last_error};
+
+use FindBin qw{$Bin};
 use File::Basename qw{ dirname basename };
 use File::Spec::Functions qw{ catdir };
 use Getopt::Long;
 use Test::More;
-
-## CPANM
 use Readonly;
 
 ## MIPs lib/
@@ -26,7 +25,7 @@ use Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = 1.0.0;
 
 ## Constants
 Readonly my $SPACE   => q{ };
@@ -80,7 +79,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Set::Contigs});
+    my @modules = (q{MIP::Program::Compression::Tar});
 
   MODULE:
     for my $module (@modules) {
@@ -88,10 +87,11 @@ BEGIN {
     }
 }
 
-use MIP::Set::Contigs qw{ set_contigs };
+use MIP::Program::Compression::Tar qw{ tar };
+use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test set_contigs from List.pm v}
-      . $MIP::Set::Contigs::VERSION
+diag(   q{Test tar from Tar.pm v}
+      . $MIP::Program::Compression::Tar::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -99,61 +99,74 @@ diag(   q{Test set_contigs from List.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Constants
-Readonly my $INDEX_SIZE_ORDERED_CHR_X => 7;
+## Base arguments
+my $function_base_command = q{tar};
 
-my %file_info;
-
-my @refseq_contigs = qw{
-  chr1 chr2 chr3 chr4 chr5 chr6
-  chr7 chr8 chr9 chr10 chr11 chr12
-  chr13 chr14 chr15 chr16 chr17 chr18
-  chr19 chr20 chr21 chr22 chrX chrY
-  chrM };
-
-my @ensembl_contigs = qw{
-  1 2 3 4 5 6 7 8 9 10
-  11 12 13 14 15 16 17 18 19 20
-  21 22 X Y MT };
-
-## Tests
-
-# GRCh
-set_contigs(
-    {
-        file_info_href         => \%file_info,
-        human_genome_reference => q{GRCh37_homo_sapiens_-d5-.fasta},
-    }
+my %base_argument = (
+    stdoutfile_path => {
+        input           => q{stdoutfile.test},
+        expected_output => q{1> stdoutfile.test},
+    },
+    stderrfile_path => {
+        input           => q{stderrfile.test},
+        expected_output => q{2> stderrfile.test},
+    },
+    stderrfile_path_append => {
+        input           => q{stderrfile.test},
+        expected_output => q{2>> stderrfile.test},
+    },
+    FILEHANDLE => {
+        input           => undef,
+        expected_output => $function_base_command,
+    },
 );
 
-is( $file_info{contigs}[-1], q{MT}, q{Set GRCh reference contigs} );
-
-is( $file_info{contigs_size_ordered}[$INDEX_SIZE_ORDERED_CHR_X],
-    q{X}, q{Set GRCh reference size ordered contigs} );
-
-is( $file_info{contigs_sv}[-1], q{Y}, q{Set GRCh reference contigs} );
-
-is( $file_info{contigs_sv_size_ordered}[$INDEX_SIZE_ORDERED_CHR_X],
-    q{X}, q{Set GRCh reference size ordered contigs} );
-
-# Hg38
-
-set_contigs(
-    {
-        file_info_href         => \%file_info,
-        human_genome_reference => q{hg38_homo_sapiens_-decoy_hla-.fasta},
-    }
+## Can be duplicated with %base_argument and/or %specific_argument
+## to enable testing of each individual argument
+my %required_argument = (
+    FILEHANDLE => {
+        input           => undef,
+        expected_output => $function_base_command,
+    },
 );
 
-is( $file_info{contigs}[-1], q{chrM}, q{Set hg38 reference contigs} );
+my %specific_argument = (
+    extract => {
+        input           => 1,
+        expected_output => q{--extract},
+    },
+    filter_gzip => {
+        input           => 1,
+        expected_output => q{-z},
+    },
+    file => {
+        input           => q{test_file},
+        expected_output => q{--file=test_file},
+    },
+    FILEHANDLE => {
+        input           => undef,
+        expected_output => $function_base_command,
+    },
+);
 
-is( $file_info{contigs_size_ordered}[$INDEX_SIZE_ORDERED_CHR_X],
-    q{chrX}, q{Set hg38 reference size ordered contigs} );
+## Coderef - enables generalized use of generate call
+my $module_function_cref = \&tar;
 
-is( $file_info{contigs_sv}[-1], q{chrY}, q{Set hg38 reference contigs} );
+## Test both base and function specific arguments
+my @arguments = ( \%base_argument, \%specific_argument );
 
-is( $file_info{contigs_sv_size_ordered}[$INDEX_SIZE_ORDERED_CHR_X],
-    q{chrX}, q{Set hg38 reference size ordered contigs} );
+ARGUMENT_HASH_REF:
+foreach my $argument_href (@arguments) {
+    my @commands = test_function(
+        {
+            argument_href          => $argument_href,
+            required_argument_href => \%required_argument,
+            module_function_cref   => $module_function_cref,
+            function_base_command  => $function_base_command,
+            do_test_base_command   => 1,
+        }
+    );
+}
 
 done_testing();
 
@@ -168,7 +181,7 @@ sub build_usage {
 ## Function  : Build the USAGE instructions
 ## Returns   : ""
 ## Arguments : $program_name
-##          : $program_name => Name of the script
+##           : $program_name => Name of the script
 
     my ($arg_href) = @_;
 

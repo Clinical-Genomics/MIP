@@ -3,21 +3,18 @@ package MIP::Program::Variantcalling::Vep;
 use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
-
-# Allow unicode characters in this script
 use utf8;
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
 use Carp;
 use English qw{ -no_match_vars };
 use Params::Check qw{ check allow last_error };
-
-use Readonly;
-
-# Find directory of script
 use FindBin qw{ $Bin };
 use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir };
+
+## CPANM
+use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -29,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ variant_effect_predictor };
@@ -43,8 +40,8 @@ sub variant_effect_predictor {
 
 ##variant_effect_predictor
 
-##Function : Perl wrapper for writing variant_effect_predictor recipe to $FILEHANDLE or return commands array. Based on VEP 87.
-##Returns  : "@commands"
+##Function : Perl wrapper for writing variant_effect_predictor recipe to $FILEHANDLE or return commands array. Based on VEP 90.
+##Returns  : @commands
 ##Arguments: $plugins_ref, $regions_ref, $outfile_path, $infile_path, $stdoutfile_path, $stderrfile_path, $stderrfile_path_append, $FILEHANDLE, $reference_path, $script_path, $assembly, $buffer_size, $infile_format, $outfile_format, $fork, $no_progress, $offline
 ##         : $plugins_ref             => Use named plugin {REF}
 ##         : $regions_ref             => The regions to process {REF}
@@ -141,7 +138,7 @@ sub variant_effect_predictor {
     }
     else {
 
-        push @commands, q{variant_effect_predictor.pl};
+        push @commands, q{vep};
     }
 
     ## Options
