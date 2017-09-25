@@ -45,16 +45,17 @@ sub bcftools_call {
     ## Function : Perl wrapper for writing bcftools call recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
     ## Returns  : "@commands"
     ## Arguments: $form_fields_ref, $outfile_path, $infile_path, $stderrfile_path, $stderrfile_path_append, $FILEHANDLE, $samples_file, $multiallelic_caller, $output_type, $variants_only
-    ##          : $form_fields_ref     => Output format fields {REF}
-    ##          : $outfile_path        => Outfile path to write to
-    ##          : $infile_path         => Infile path to read from
-    ##          : $stderrfile_path     => Stderr file path to write to {OPTIONAL}
-    ##          : $FILEHANDLE          => Filehandle to write to
-    ##          : $samples_file        => PED file or a file with an optional column with sex
-    ##          : $constrain           => One of: alleles, trio
-    ##          : $multiallelic_caller => Alternative model for multiallelic and rare-variant calling
-    ##          : $output_type         => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
-    ##          : $variants_only       => Output variant sites only
+    ##          : $form_fields_ref        => Output format fields {REF}
+    ##          : $outfile_path           => Outfile path to write to
+    ##          : $infile_path            => Infile path to read from
+    ##          : $stderrfile_path        => Stderr file path to write to {OPTIONAL}
+    ##          : $stderrfile_path_append => Append stderr info to file path
+    ##          : $FILEHANDLE             => Filehandle to write to
+    ##          : $samples_file           => PED file or a file with an optional column with sex
+    ##          : $constrain              => One of: alleles, trio
+    ##          : $multiallelic_caller    => Alternative model for multiallelic and rare-variant calling
+    ##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
+    ##          : $variants_only          => Output variant sites only
 
     my ($arg_href) = @_;
 
@@ -776,25 +777,22 @@ sub bcftools_concat {
         push @commands, join $SPACE, @{$infile_paths_ref};
     }
 
-    if ($stderrfile_path) {
+    push @commands,
+      unix_standard_streams(
+        {
+            stdoutfile_path        => $stdoutfile_path,
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+        }
+      );
 
-        push @commands,
-          unix_standard_streams(
-            {
-                stdoutfile_path        => $stdoutfile_path,
-                stderrfile_path        => $stderrfile_path,
-                stderrfile_path_append => $stderrfile_path_append,
-            }
-          );
-
-        unix_write_to_file(
-            {
-                commands_ref => \@commands,
-                separator    => $SPACE,
-                FILEHANDLE   => $FILEHANDLE,
-            }
-        );
-    }
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
     return @commands;
 
 }
@@ -806,16 +804,16 @@ sub bcftools_annotate {
     ## Function : Perl wrapper for writing bcftools annotate recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
     ## Returns  : "@commands"
     ## Arguments: $remove_ids_ref, $infile_path, $outfile_path, $stderrfile_path, $stderrfile_path_append, $FILEHANDLE, $samples_file, $headerfile_path, $output_type, $set_id
-    ##          : $remove_ids_ref  => List of annotations to remove
-    ##          : $infile_path     => Infile path to read from
-    ##          : $outfile_path    => Outfile path to write to
-    ##          : $stderrfile_path => Stderr file path to write to {OPTIONAL}
+    ##          : $remove_ids_ref         => List of annotations to remove
+    ##          : $infile_path            => Infile path to read from
+    ##          : $outfile_path           => Outfile path to write to
+    ##          : $stderrfile_path        => Stderr file path to write to {OPTIONAL}
     ##          : $stderrfile_path_append => Append stderr info to file path
-    ##          : $FILEHANDLE      => Filehandle to write to
-    ##          : $samples_file    => File of samples to annotate
-    ##          : $headerfile_path => File with lines which should be appended to the VCF header
-    ##          : $set_id          => Set ID column
-    ##          : $output_type     => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
+    ##          : $FILEHANDLE             => Filehandle to write to
+    ##          : $samples_file           => File of samples to annotate
+    ##          : $headerfile_path        => File with lines which should be appended to the VCF header
+    ##          : $set_id                 => Set ID column
+    ##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
 
     my ($arg_href) = @_;
 
@@ -843,6 +841,8 @@ sub bcftools_annotate {
         infile_path     => { strict_type => 1, store => \$infile_path },
         outfile_path    => { strict_type => 1, store => \$outfile_path },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+        stderrfile_path_append =>
+          { strict_type => 1, store => \$stderrfile_path_append },
         FILEHANDLE      => { store       => \$FILEHANDLE },
         samples_file    => { strict_type => 1, store => \$samples_file },
         headerfile_path => { strict_type => 1, store => \$headerfile_path },
@@ -899,24 +899,22 @@ sub bcftools_annotate {
         push @commands, q{>} . $SPACE . $outfile_path;
     }
 
-    if ($stderrfile_path) {
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+        }
+      );
 
-        push @commands,
-          unix_standard_streams(
-            {
-                stderrfile_path        => $stderrfile_path,
-                stderrfile_path_append => $stderrfile_path_append,
-            }
-          );
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
 
-        unix_write_to_file(
-            {
-                commands_ref => \@commands,
-                separator    => $SPACE,
-                FILEHANDLE   => $FILEHANDLE,
-            }
-        );
-    }
     return @commands;
 }
 
@@ -926,7 +924,7 @@ sub bcftools_roh {
 
     ## Function : Perl wrapper for writing bcftools roh recipe to $FILEHANDLE or return commands array. Based on bcftools 1.4.1.
     ## Returns  : "@commands"
-    ## Arguments:  $sample_ids_ref, $infile_path, $outfile_path, $stderrfile_path, $stderrfile_path_append, $stdoutfile_path, $FILEHANDLE, $af_file_path, $skip_indels
+    ## Arguments: $sample_ids_ref, $infile_path, $outfile_path, $stderrfile_path, $stderrfile_path_append, $stdoutfile_path, $FILEHANDLE, $af_file_path, $skip_indels
     ##          : $sample_ids_ref         => Sample to analyze
     ##          : $infile_path            => Infile path to read from
     ##          : $outfile_path           => Outfile path to write to
@@ -1003,25 +1001,28 @@ sub bcftools_roh {
         push @commands, $infile_path;
     }
 
-    if ($stderrfile_path) {
+    if ($outfile_path) {
 
-        push @commands,
-          unix_standard_streams(
-            {
-                stdoutfile_path        => $stdoutfile_path,
-                stderrfile_path        => $stderrfile_path,
-                stderrfile_path_append => $stderrfile_path_append,
-            }
-          );
-
-        unix_write_to_file(
-            {
-                commands_ref => \@commands,
-                separator    => $SPACE,
-                FILEHANDLE   => $FILEHANDLE,
-            }
-        );
+        #Specify output filename
+        push @commands, q{>} . $SPACE . $outfile_path;
     }
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stdoutfile_path        => $stdoutfile_path,
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
 
     return @commands;
 
@@ -1033,7 +1034,7 @@ sub bcftools_stats {
 
     ## Function : Perl wrapper for writing bcftools stats recipe to already open $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
     ## Returns  : "@commands"
-    ## Arguments: $infile_path, $outfile_path, $stderrfile_path, $stdoutfile_path, $stderrfile_path_append, $FILEHANDLE, $append_stderr_info
+    ## Arguments: $infile_path, $outfile_path, $stderrfile_path, $stderrfile_path_append, $stdoutfile_path, $FILEHANDLE, $append_stderr_info
     ##          : $infile_path            => Infile path
     ##          : $outfile_path           => Outfile path
     ##          : $stderrfile_path        => Stderrfile path
@@ -1087,25 +1088,27 @@ sub bcftools_stats {
         push @commands, q{>} . $SPACE . $outfile_path;
     }
 
-    if ($stderrfile_path) {
+    if ( $append_stderr_info && $stderrfile_path ) {
 
-        push @commands,
-          unix_standard_streams(
-            {
-                stdoutfile_path        => $stdoutfile_path,
-                stderrfile_path        => $stderrfile_path,
-                stderrfile_path_append => $stderrfile_path_append,
-            }
-          );
-
-        unix_write_to_file(
-            {
-                commands_ref => \@commands,
-                separator    => $SPACE,
-                FILEHANDLE   => $FILEHANDLE,
-            }
-        );
+        push @commands, q{2>>} . $SPACE . $stderrfile_path;
     }
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stdoutfile_path        => $stdoutfile_path,
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
 
     return @commands;
 
@@ -1181,25 +1184,27 @@ sub bcftools_reheader {
         push @commands, q{>} . $SPACE . $outfile_path;
     }
 
-    if ($stderrfile_path) {
+    if ( $append_stderr_info && $stderrfile_path ) {
 
-        push @commands,
-          unix_standard_streams(
-            {
-                stdoutfile_path        => $stdoutfile_path,
-                stderrfile_path        => $stderrfile_path,
-                stderrfile_path_append => $stderrfile_path_append,
-            }
-          );
-
-        unix_write_to_file(
-            {
-                commands_ref => \@commands,
-                separator    => $SPACE,
-                FILEHANDLE   => $FILEHANDLE,
-            }
-        );
+        push @commands, q{2>>} . $SPACE . $stderrfile_path;
     }
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stdoutfile_path        => $stdoutfile_path,
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
 
     return @commands;
 
