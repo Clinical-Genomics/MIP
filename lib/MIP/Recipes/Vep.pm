@@ -316,6 +316,13 @@ sub analysis_vep {
                   );
                 push @plugins, $plugin . $lof_parameter;
             }
+            elsif ( $plugin eq q{MaxEntScan} ) {
+
+                my $lof_parameter = q{,}
+                  . catfile( $active_parameter_href->{vep_directory_cache},
+                    q{fordownload} );
+                push @plugins, $plugin . $lof_parameter;
+            }
             elsif ( $plugin eq q{UpDownDistance} ) {
 
                 # Special case for mitochondrial contig annotation
@@ -347,8 +354,8 @@ sub analysis_vep {
             }
         }
 
-        my $script_path = catfile( $active_parameter_href->{vep_directory_path},
-            q{variant_effect_predictor.pl} );
+        my $script_path =
+          catfile( $active_parameter_href->{vep_directory_path}, q{vep} );
         my $infile_path =
           $file_path_prefix . $UNDERSCORE . $contig . $infile_suffix;
         my $outfile_path =
@@ -728,6 +735,13 @@ sub analysis_vep_rio {
                   );
                 push @plugins, $plugin . $lof_parameter;
             }
+            elsif ( $plugin eq q{MaxEntScan} ) {
+
+                my $lof_parameter = q{,}
+                  . catfile( $active_parameter_href->{vep_directory_cache},
+                    q{fordownload} );
+                push @plugins, $plugin . $lof_parameter;
+            }
             elsif ( $plugin eq q{UpDownDistance} ) {
 
                 # Special case for mitochondrial contig annotation
@@ -759,8 +773,8 @@ sub analysis_vep_rio {
             }
         }
 
-        my $script_path = catfile( $active_parameter_href->{vep_directory_path},
-            q{variant_effect_predictor.pl} );
+        my $script_path =
+          catfile( $active_parameter_href->{vep_directory_path}, q{vep} );
         my $infile_path =
           $file_path_prefix . $UNDERSCORE . $contig . $infile_suffix;
         my $outfile_path =
@@ -1209,8 +1223,8 @@ sub analysis_vep_sv {
             }
         }
 
-        my $script_path = catfile( $active_parameter_href->{vep_directory_path},
-            q{variant_effect_predictor.pl} );
+        my $script_path =
+          catfile( $active_parameter_href->{vep_directory_path}, q{vep} );
         my $infile_path =
           $infile_path_prefix . $UNDERSCORE . q{fixedsvlength} . $file_suffix;
         my $outfile_path =
