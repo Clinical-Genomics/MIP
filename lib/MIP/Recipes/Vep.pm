@@ -23,10 +23,10 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw( analysis_vep analysis_vep_rio analysis_vep_sv);
+    our @EXPORT_OK = qw{ analysis_vep analysis_vep_rio analysis_vep_sv };
 
 }
 
@@ -298,13 +298,13 @@ sub analysis_vep {
         }
     );
 
-  CONTIGS:
+  CONTIG:
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
         ## Get parameters
         # VEP plugins
         my @plugins;
-      PLUGINS:
+      PLUGIN:
         foreach my $plugin ( @{ $active_parameter_href->{vep_plugins} } ) {
 
             if ( $plugin eq q{LoF} ) {
@@ -314,6 +314,13 @@ sub analysis_vep {
                     $active_parameter_href->{vep_directory_cache},
                     q{human_ancestor.fa,filter_position:0.05}
                   );
+                push @plugins, $plugin . $lof_parameter;
+            }
+            elsif ( $plugin eq q{MaxEntScan} ) {
+
+                my $lof_parameter = q{,}
+                  . catfile( $active_parameter_href->{vep_directory_cache},
+                    q{fordownload} );
                 push @plugins, $plugin . $lof_parameter;
             }
             elsif ( $plugin eq q{UpDownDistance} ) {
@@ -333,7 +340,7 @@ sub analysis_vep {
 
         ## VEP features
         my @vep_features_ref;
-      FEATURES:
+      FEATURE:
         foreach my $vep_feature ( @{ $active_parameter_href->{vep_features} } )
         {
 
@@ -347,8 +354,8 @@ sub analysis_vep {
             }
         }
 
-        my $script_path = catfile( $active_parameter_href->{vep_directory_path},
-            q{variant_effect_predictor.pl} );
+        my $script_path =
+          catfile( $active_parameter_href->{vep_directory_path}, q{vep} );
         my $infile_path =
           $file_path_prefix . $UNDERSCORE . $contig . $infile_suffix;
         my $outfile_path =
@@ -710,13 +717,13 @@ sub analysis_vep_rio {
         }
     );
 
-  CONTIGS:
+  CONTIG:
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
         ## Get parameters
         # VEP plugins
         my @plugins;
-      PLUGINS:
+      PLUGIN:
         foreach my $plugin ( @{ $active_parameter_href->{vep_plugins} } ) {
 
             if ( $plugin eq q{LoF} ) {
@@ -726,6 +733,13 @@ sub analysis_vep_rio {
                     $active_parameter_href->{vep_directory_cache},
                     q{human_ancestor.fa,filter_position:0.05}
                   );
+                push @plugins, $plugin . $lof_parameter;
+            }
+            elsif ( $plugin eq q{MaxEntScan} ) {
+
+                my $lof_parameter = q{,}
+                  . catfile( $active_parameter_href->{vep_directory_cache},
+                    q{fordownload} );
                 push @plugins, $plugin . $lof_parameter;
             }
             elsif ( $plugin eq q{UpDownDistance} ) {
@@ -745,7 +759,7 @@ sub analysis_vep_rio {
 
         ## VEP features
         my @vep_features_ref;
-      FEATURES:
+      FEATURE:
         foreach my $vep_feature ( @{ $active_parameter_href->{vep_features} } )
         {
 
@@ -759,8 +773,8 @@ sub analysis_vep_rio {
             }
         }
 
-        my $script_path = catfile( $active_parameter_href->{vep_directory_path},
-            q{variant_effect_predictor.pl} );
+        my $script_path =
+          catfile( $active_parameter_href->{vep_directory_path}, q{vep} );
         my $infile_path =
           $file_path_prefix . $UNDERSCORE . $contig . $infile_suffix;
         my $outfile_path =
@@ -878,13 +892,14 @@ sub analysis_vep_sv {
 
 ##Function : Varianteffectpredictor performs annotation of SV variants.
 ##Returns  :
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $FILEHANDLE, family_id, $temp_directory, $outaligner_dir, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $contigs_ref, $program_name, $program_info_path, $FILEHANDLE, family_id, $temp_directory, $outaligner_dir, $call_type, $xargs_file_counter
 ##         : $parameter_href          => Parameter hash {REF}
 ##         : $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href        => Info on samples and family hash {REF}
 ##         : $file_info_href          => The file_info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href             => Job id hash {REF}
+##         : $contigs_ref             => Contigs to analyse
 ##         : $program_name            => Program name
 ##         : $program_info_path       => The program info path
 ##         : $FILEHANDLE              => Filehandle to write to
@@ -910,6 +925,7 @@ sub analysis_vep_sv {
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
+    my $contigs_ref;
     my $program_name;
 
     my $tmpl = {
@@ -960,6 +976,13 @@ sub analysis_vep_sv {
             defined     => 1,
             strict_type => 1,
             store       => \$program_name
+        },
+        contigs_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => [],
+            strict_type => 1,
+            store       => \$contigs_ref
         },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
@@ -1026,29 +1049,12 @@ sub analysis_vep_sv {
     my $FILEHANDLE      = IO::Handle->new();
     my $XARGSFILEHANDLE = IO::Handle->new();
 
-    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    my @contigs = delete_contig_elements(
-        {
-            elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
-            remove_contigs_ref => [qw{ MT M }],
-        }
-    );
-
-    ### If no males or other remove contig Y from all downstream analysis
-    ## Removes contig_names from contigs array if no male or other found
-    @contigs = delete_male_contig(
-        {
-            contigs_ref => \@contigs,
-            found_male  => $active_parameter_href->{found_male},
-        }
-    );
-
     ## Get core number depending on user supplied input exists or not and max number of cores
     my $core_number = get_core_number(
         {
             module_core_number =>
               $active_parameter_href->{module_core_number}{$mip_program_name},
-            modifier_core_number => scalar(@contigs),
+            modifier_core_number => scalar @{$contigs_ref},
             max_cores_per_node => $active_parameter_href->{max_cores_per_node},
         }
     );
@@ -1149,8 +1155,8 @@ sub analysis_vep_sv {
         }
     );
 
-  CONTIGS:
-    foreach my $contig (@contigs) {
+  CONTIG:
+    foreach my $contig ( @{$contigs_ref} ) {
 
         ## Get parameters
         my $vep_outfile_prefix         = $outfile_prefix;
@@ -1171,7 +1177,8 @@ sub analysis_vep_sv {
 
         ## VEP plugins
         my @plugins;
-      PLUGINS:
+
+      PLUGIN:
         foreach my $plugin ( @{ $active_parameter_href->{sv_vep_plugins} } ) {
 
             if ( $plugin eq q{LoF} ) {
@@ -1200,7 +1207,8 @@ sub analysis_vep_sv {
 
         ## VEPFeatures
         my @vep_features_ref;
-      FEATURES:
+
+      FEATURE:
         foreach
           my $vep_feature ( @{ $active_parameter_href->{sv_vep_features} } )
         {
@@ -1215,8 +1223,8 @@ sub analysis_vep_sv {
             }
         }
 
-        my $script_path = catfile( $active_parameter_href->{vep_directory_path},
-            q{variant_effect_predictor.pl} );
+        my $script_path =
+          catfile( $active_parameter_href->{vep_directory_path}, q{vep} );
         my $infile_path =
           $infile_path_prefix . $UNDERSCORE . q{fixedsvlength} . $file_suffix;
         my $outfile_path =
@@ -1247,13 +1255,12 @@ sub analysis_vep_sv {
                 FILEHANDLE      => $XARGSFILEHANDLE,
             }
         );
-        print {$XARGSFILEHANDLE} $NEWLINE;
+        say {$XARGSFILEHANDLE} $NEWLINE;
 
 # Only perform once for exome samples to avoid risking contigs lacking variants throwing errors
-        if (   ( $consensus_analysis_type eq q{wes} )
-            || ( $consensus_analysis_type eq q{rapid} ) )
-        {
-            last CONTIGS;
+        if ( $consensus_analysis_type eq q{wes} ) {
+
+            last CONTIG;
         }
     }
 
@@ -1298,7 +1305,7 @@ sub analysis_vep_sv {
             || ( $consensus_analysis_type eq q{mixed} ) )
         {
 
-            $outfile_sample_info_prefix .= $UNDERSCORE . $contigs[0];
+            $outfile_sample_info_prefix .= $UNDERSCORE . $contigs_ref->[0];
         }
 
         ## Collect QC metadata info for later use

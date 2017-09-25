@@ -1090,7 +1090,6 @@ sv_vep_plugins:
   default:
    - UpDownDistance
    - LoFtool
-   - LoF
   type: program_argument
 psv_vcfparser:
   associated_program:
@@ -1775,7 +1774,7 @@ vep_plugins:
   default:
    - UpDownDistance
    - LoFtool
-   - LoF
+   - MaxEntScan
   type: program_argument
 ## VCFParser
 pvcfparser:

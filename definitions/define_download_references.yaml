@@ -43,6 +43,16 @@ reference:
     - na24385_v3.3.2_bed
     - na24631_v3.3.2_wgs
     - na24631_v3.3.2_bed
+  gnomad:
+    - r2.0.1
+gnomad:
+  grch37:
+    r2.0.1:
+      file: gnomad.genomes.r2.0.1.sites.noVEP.vcf.gz
+      file_index: gnomad.genomes.r2.0.1.sites.noVEP.vcf.gz.tbi
+      outfile: GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz
+      outfile_index: GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz.tbi
+      url_prefix: ftp://ftp.ensembl.org/pub/data_files/homo_sapiens/GRCh37/variation_genotype/
 human_reference:
   grch37:
     decoy_5:

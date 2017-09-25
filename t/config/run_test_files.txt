@@ -9,6 +9,7 @@ conda_install.t
 conda_source_activate.t
 conda_source_deactivate.t
 conda_update.t
+contigs_set_contigs.t
 create_fam_file.t
 cluster_check_max_core_number.t
 cluster_get_core_number.t
@@ -41,6 +42,7 @@ java_core.t
 parameter_check_allowed_temp_directory.t
 list_delete_contig_elements.t
 list_delete_male_contig.t
+list_delete_non_wes_contig.t
 pigz.t
 processes_print_wait.t
 processes_add_job_id_dependency_tree.t
@@ -84,6 +86,7 @@ slurm_sacct.t
 slurm_sbatch.t
 slurm_build_sbatch_header.t
 slurm_reformat_sacct_output.t
+tar.t
 vep.t
 snpeff_download.t
 variant_integrity_father.t

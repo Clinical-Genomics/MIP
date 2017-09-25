@@ -9,13 +9,14 @@ use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
 use Carp;
 use English qw{ -no_match_vars };
-use Params::Check qw{check allow last_error};
-
-use FindBin qw{$Bin};
+use Params::Check qw{ check allow last_error };
+use FindBin qw{ $Bin };
 use File::Basename qw{ dirname basename };
 use File::Spec::Functions qw{ catdir };
 use Getopt::Long;
 use Test::More;
+
+## CPANM
 use Readonly;
 
 ## MIPs lib/
@@ -25,7 +26,7 @@ use Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.0;
+our $VERSION = '1.0.0';
 
 ## Constants
 Readonly my $SPACE   => q{ };
@@ -79,7 +80,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::PATH::TO::MODULE});
+    my @modules = (q{MIP::Delete::List});
 
   MODULE:
     for my $module (@modules) {
@@ -87,11 +88,10 @@ BEGIN {
     }
 }
 
-use MIP::PATH::TO : MODULE qw{ SUB_ROUTINE };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Delete::List qw{ delete_non_wes_contig };
 
-diag(   q{Test SUB_ROUTINE from MODULE_NAME v}
-      . $PATH::TO::MODULE::VERSION
+diag(   q{Test delete_non_wes_contig from List.pm v}
+      . $MIP::Delete::List::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -99,78 +99,83 @@ diag(   q{Test SUB_ROUTINE from MODULE_NAME v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Base arguments
-my $function_base_command = q{BASE_COMMAND};
-
-my %base_argument = (
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
-    },
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
-    },
-    stderrfile_path_append => {
-        input           => q{stderrfile.test},
-        expected_output => q{2>> stderrfile.test},
-    },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
-    },
+my %not_consensus_analysis_type = (
+    sample_id_1 => q{wes},
+    sample_id_2 => q{wgs}
 );
 
-## Can be duplicated with %base_argument and/or %specific_argument
-## to enable testing of each individual argument
-my %required_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
-    },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
-    },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
-    },
+my %consensus_analysis_type = (
+    sample_id_1 => q{wes},
+    sample_id_2 => q{wes}
 );
 
-my %specific_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
-    },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
-    },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
-    },
+my @refseq_contigs = qw{
+  chr1 chr2 chr3 chr4 chr5 chr6
+  chr7 chr8 chr9 chr10 chr11 chr12
+  chr13 chr14 chr15 chr16 chr17 chr18
+  chr19 chr20 chr21 chr22 chrX chrY
+  chrM };
+
+my @ensembl_contigs = qw{
+  1 2 3 4 5 6 7 8 9 10
+  11 12 13 14 15 16 17 18 19 20
+  21 22 X Y MT };
+
+## Tests
+
+my @contigs = delete_non_wes_contig(
+    {
+        analysis_type_href => \%not_consensus_analysis_type,
+        contigs_ref        => \@refseq_contigs,
+        contig_names_ref   => [qw{ M MT }],
+    }
+);
+is(
+    scalar @contigs,
+    scalar @refseq_contigs,
+    q{Not wes: keept M contig in array}
 );
 
-## Coderef - enables generalized use of generate call
-my $module_function_cref = \&NAME_OF_SUB_ROUTINE;
+@contigs = delete_non_wes_contig(
+    {
+        analysis_type_href => \%consensus_analysis_type,
+        contigs_ref        => \@refseq_contigs,
+        contig_names_ref   => [qw{ M MT }],
+    }
+);
 
-## Test both base and function specific arguments
-my @arguments = ( \%base_argument, \%specific_argument );
+is(
+    scalar @contigs,
+    scalar @refseq_contigs - 1,
+    q{Wes: Removed M contig in array}
+);
 
-ARGUMENT_HASH_REF:
-foreach my $argument_href (@arguments) {
-    my @commands = test_function(
-        {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
-        }
-    );
-}
+@contigs = delete_non_wes_contig(
+    {
+        analysis_type_href => \%not_consensus_analysis_type,
+        contigs_ref        => \@ensembl_contigs,
+        contig_names_ref   => [qw{ M MT }],
+    }
+);
+is(
+    scalar @contigs,
+    scalar @ensembl_contigs,
+    q{Not wes: keept MT contig in array}
+);
+
+@contigs = delete_non_wes_contig(
+    {
+        analysis_type_href => \%consensus_analysis_type,
+        contigs_ref        => \@ensembl_contigs,
+        contig_names_ref   => [qw{ M MT }],
+    }
+);
+
+is(
+    scalar @contigs,
+    scalar @ensembl_contigs - 1,
+    q{Wes: Removed MT contig in array}
+);
 
 done_testing();
 
@@ -185,7 +190,7 @@ sub build_usage {
 ## Function  : Build the USAGE instructions
 ## Returns   : ""
 ## Arguments : $program_name
-##           : $program_name => Name of the script
+##          : $program_name => Name of the script
 
     my ($arg_href) = @_;
 

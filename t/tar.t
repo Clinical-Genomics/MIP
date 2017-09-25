@@ -79,7 +79,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::PATH::TO::MODULE});
+    my @modules = (q{MIP::Program::Compression::Tar});
 
   MODULE:
     for my $module (@modules) {
@@ -87,11 +87,11 @@ BEGIN {
     }
 }
 
-use MIP::PATH::TO : MODULE qw{ SUB_ROUTINE };
+use MIP::Program::Compression::Tar qw{ tar };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test SUB_ROUTINE from MODULE_NAME v}
-      . $PATH::TO::MODULE::VERSION
+diag(   q{Test tar from Tar.pm v}
+      . $MIP::Program::Compression::Tar::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -100,7 +100,7 @@ diag(   q{Test SUB_ROUTINE from MODULE_NAME v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{BASE_COMMAND};
+my $function_base_command = q{tar};
 
 my %base_argument = (
     stdoutfile_path => {
@@ -124,14 +124,6 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
-    },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
-    },
     FILEHANDLE => {
         input           => undef,
         expected_output => $function_base_command,
@@ -139,13 +131,17 @@ my %required_argument = (
 );
 
 my %specific_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
+    extract => {
+        input           => 1,
+        expected_output => q{--extract},
     },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
+    filter_gzip => {
+        input           => 1,
+        expected_output => q{-z},
+    },
+    file => {
+        input           => q{test_file},
+        expected_output => q{--file=test_file},
     },
     FILEHANDLE => {
         input           => undef,
@@ -154,7 +150,7 @@ my %specific_argument = (
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&NAME_OF_SUB_ROUTINE;
+my $module_function_cref = \&tar;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

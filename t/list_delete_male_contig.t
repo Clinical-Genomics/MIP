@@ -95,9 +95,6 @@ diag(   q{Test delete_male_contig from List.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Constants
-Readonly my $NUMBER_OF_CONTIGS_REMOVED => 3;
-
 my @refseq_contigs = qw{
   chr1 chr2 chr3 chr4 chr5 chr6
   chr7 chr8 chr9 chr10 chr11 chr12

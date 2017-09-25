@@ -1,50 +1,55 @@
 #!/usr/bin/env perl
 
-#### Copyright 2017 Henrik Stranneheim
-
-use Modern::Perl qw(2014);
-use warnings qw(FATAL utf8);
+use Modern::Perl qw{ 2014 };
+use warnings qw{ FATAL utf8 };
 use autodie;
-use 5.018;    #Require at least perl 5.18
+use 5.018;
 use utf8;
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
+use open qw{ :encoding(UTF-8) :std };
+use charnames qw{ :full :short };
 use Carp;
-use English qw(-no_match_vars);
-use Params::Check qw(check allow last_error);
-
-use FindBin qw($Bin);    #Find directory of script
-use File::Basename qw(dirname basename);
-use File::Spec::Functions qw(catdir);
+use English qw{ -no_match_vars };
+use Params::Check qw{ check allow last_error };
+use FindBin qw{ $Bin };
+use File::Basename qw{ dirname basename };
+use File::Spec::Functions qw{ catdir };
 use Getopt::Long;
 use Test::More;
+
+## CPANM
 use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
-use Script::Utils qw(help);
+use lib catdir( dirname($Bin), q{lib} );
+use Script::Utils qw{ help };
 
 our $USAGE = build_usage( {} );
 
-##Constants
+## Constants
+Readonly my $COMMA   => q{,};
 Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
+
 my $VERBOSE = 1;
 our $VERSION = q{1.0.0};
 
-###User Options
+### User Options
 GetOptions(
+
+    # Display help text
     'h|help' => sub {
         done_testing();
         say {*STDOUT} $USAGE;
         exit;
-    },    #Display help text
+    },
+
+    # Display version number
     'v|version' => sub {
         done_testing();
         say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
           $NEWLINE;
         exit;
-    },    #Display version number
+    },
     'vb|verbose' => $VERBOSE,
   )
   or (
@@ -60,27 +65,36 @@ GetOptions(
 BEGIN {
 
 ### Check all internal dependency modules and imports
-##Modules with import
+## Modules with import
     my %perl_module;
 
-    $perl_module{'Script::Utils'} = [qw(help)];
+    $perl_module{q{Script::Utils}} = [qw{ help }];
+
+  PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
         use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load } . $module;
+          or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 
-##Modules
-    my @modules = ('MIP::Get::Analysis');
+## Modules
+    my @modules = (q{MIP::Get::Analysis});
+
+  MODULE:
     for my $module (@modules) {
-        require_ok($module) or BAIL_OUT q{Cannot load } . $module;
+        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 }
 
-use MIP::Get::Analysis qw(get_overall_analysis_type);
+use MIP::Get::Analysis qw{ get_overall_analysis_type };
 
-diag(
-"Test get_overall_analysis_type $MIP::Get::Analysis::VERSION, Perl $^V, $EXECUTABLE_NAME"
-);
+diag(   q{Test get_overall_analysis_type from Get.pm v}
+      . $MIP::Get::Analysis::VERSION
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+      . $EXECUTABLE_NAME );
 
 ## Base arguments
 my %analysis_type_consensus = (
@@ -96,10 +110,10 @@ my %analysis_type_mixed = (
 );
 
 my $consensus_analysis_type = get_overall_analysis_type(
-    { analysis_type_hef => \%analysis_type_consensus, } );
+    { analysis_type_href => \%analysis_type_consensus, } );
 
 my $mixed_analysis_type =
-  get_overall_analysis_type( { analysis_type_hef => \%analysis_type_mixed, } );
+  get_overall_analysis_type( { analysis_type_href => \%analysis_type_mixed, } );
 
 is( $consensus_analysis_type, q{wgs},
     q{Correct return of consensus analysis typ} );
