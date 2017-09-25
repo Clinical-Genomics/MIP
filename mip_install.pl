@@ -1935,6 +1935,8 @@ sub varianteffectpredictor {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Program::Compression::Tar qw{ tar };
+
     my $pwd = cwd();
 
     my $miniconda_bin_dir =
@@ -2108,30 +2110,29 @@ q{Skipping writting installation process for varianteffectpredictor};
                 {
                     url =>
 q{http://genes.mit.edu/burgelab/maxent/download/fordownload.tar.gz},
-                    FILEHANDLE   => $FILEHANDLE,
-                    quiet        => $parameter_href->{quiet},
-                    verbose      => $parameter_href->{verbose},
-                    outfile_path => catfile(
-                        $parameter_href->{vep_cache_dir},
-                        q{fordownload.tar.gz}
-                    ),
+                    FILEHANDLE => $FILEHANDLE,
+                    quiet      => $parameter_href->{quiet},
+                    verbose    => $parameter_href->{verbose},
                 }
             );
             say $FILEHANDLE $NEWLINE;
 
             # Unpack
-            print $FILEHANDLE q{tar xvf };
-            say $FILEHANDLE catfile( $parameter_href->{vep_cache_dir},
-                q{fordownload.tar.gz} )
-              . $NEWLINE;
+            tar(
+                {
+                    extract     => 1,
+                    filter_gzip => 1,
+                    file        => catfile(q{fordownload.tar.gz}),
+                    FILEHANDLE  => $FILEHANDLE,
+                }
+            );
+            say $FILEHANDLE $NEWLINE;
 
             gnu_mv(
                 {
-                    infile_path  => q{fordownload},
-                    outfile_path => catfile(
-                        $parameter_href->{vep_cache_dir},
-                        q{fordownload}
-                    ),
+                    infile_path => q{fordownload},
+                    outfile_path =>
+                      catfile( $parameter_href->{vep_cache_dir}, ),
                     force      => 1,
                     FILEHANDLE => $FILEHANDLE,
                 }
