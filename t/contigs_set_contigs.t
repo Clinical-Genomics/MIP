@@ -100,7 +100,7 @@ diag(   q{Test set_contigs from List.pm v}
       . $EXECUTABLE_NAME );
 
 ## Constants
-Readonly my $INDEX_SIZE_ORDERED_CHR_X = 7;
+Readonly my $INDEX_SIZE_ORDERED_CHR_X => 7;
 
 my %file_info;
 
