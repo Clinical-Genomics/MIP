@@ -1974,8 +1974,6 @@ if ( $active_parameter{pmanta} > 0 ) {    #Run Manta
         $program_name,
     );
 
-    $log->info("outfamily_directory is $outfamily_directory");
-
     check_build_human_genome_prerequisites(
         {
             parameter_href          => \%parameter,
