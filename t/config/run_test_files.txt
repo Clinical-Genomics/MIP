@@ -18,6 +18,8 @@ cpanm_install.t
 fastqc.t
 path_check_file_version_exist.t
 findutils_xargs.t
+git_clone.t
+git_checkout.t
 gnu_cat.t
 gnu_cd.t
 gnu_chmod.t
@@ -87,7 +89,8 @@ slurm_sbatch.t
 slurm_build_sbatch_header.t
 slurm_reformat_sacct_output.t
 tar.t
-vep.t
+variant_effect_predictor.t
 snpeff_download.t
 variant_integrity_father.t
 variant_integrity_mendel.t
+wget.t
