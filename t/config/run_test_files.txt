@@ -1,6 +1,17 @@
 unix_standard_streams.t
 unix_write_to_file.t
 analysis_get_overall_analysis_type.t
+bcftools_annotate.t
+bcftools_call.t
+bcftools_concat.t
+bcftools_filter.t
+bcftools_index.t
+bcftools_merge.t
+bcftools_norm.t
+bcftools_reheader.t
+bcftools_roh.t
+bcftools_stats.t
+bcftools.view.t
 bedtools_genomecov.t
 bwa_mem.t
 chanjo_sex.t
