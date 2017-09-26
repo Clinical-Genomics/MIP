@@ -90,7 +90,7 @@ sub bcftools_call {
         FILEHANDLE   => { store       => \$FILEHANDLE },
         samples_file => { strict_type => 1, store => \$samples_file },
         constrain => {
-            allow       => [ undef, q{alleles}, q{trio} ],
+            allow       => [ undef, qw{ alleles trio } ],
             strict_type => 1,
             store       => \$constrain
         },
@@ -414,12 +414,12 @@ sub bcftools_filter {
         exclude     => { strict_type => 1, store => \$exclude },
         soft_filter => { strict_type => 1, store => \$soft_filter },
         snp_gap => {
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /sxm,
             strict_type => 1,
             store       => \$snp_gap
         },
         indel_gap => {
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /sxm,
             strict_type => 1,
             store       => \$indel_gap
         },
@@ -613,7 +613,7 @@ sub bcftools_merge {
 
     ## Function : Perl wrapper for writing bcftools merge recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
     ## Returns  : "@commands"
-    ## Arguments: $infile_paths_ref, $outfile_path, $stderrfile_path, $stdoutfile_path, $stderrfile_path_append, $FILEHANDLE, $output_type
+    ## Arguments: $infile_paths_ref, $outfile_path, $stderrfile_path, $stderrfile_path_append, $stdoutfile_path, $FILEHANDLE, $output_type
     ##          : $infile_paths_ref       => Infile path to read from
     ##          : $outfile_path           => Outfile path to write to
     ##          : $stderrfile_path        => Stderr file path to write to
@@ -1082,6 +1082,7 @@ sub bcftools_stats {
 
         push @commands, $infile_path;
     }
+
     ## Outfile
     if ($outfile_path) {
 

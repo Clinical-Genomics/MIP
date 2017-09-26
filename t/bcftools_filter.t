@@ -9,7 +9,7 @@ use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
 use Carp;
 use English qw{ -no_match_vars };
-use Params::Check qw{check allow last_error};
+use Params::Check qw{ check allow last_error };
 
 use FindBin qw{ $Bin };    #Find directory of script
 use File::Basename qw{ dirname basename };
@@ -28,9 +28,10 @@ my $VERBOSE = 1;
 our $VERSION = 1.0.0;
 
 ## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
-Readonly my $COMMA   => q{,};
+Readonly my $SPACE                   => q{ };
+Readonly my $NEWLINE                 => qq{\n};
+Readonly my $COMMA                   => q{,};
+Readonly my $SNP_GAP_FILTER_DISTANCE => 50;
 
 ###User Options
 GetOptions(
@@ -68,7 +69,7 @@ BEGIN {
 
     $perl_module{q{Script::Utils}} = [qw{ help }];
 
-  PERL_MODULES:
+  PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
         use_ok( $module, @{$module_import} )
           or BAIL_OUT q{Cannot load} . $SPACE . $module;
@@ -77,7 +78,7 @@ BEGIN {
 ## Modules
     my @modules = (q{MIP::Program::Variantcalling::Bcftools});
 
-  MODULES:
+  MODULE:
     for my $module (@modules) {
         require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
@@ -135,12 +136,12 @@ my %specific_argument = (
         expected_output => q{--soft-filter LowQual},
     },
     snp_gap => {
-        input           => 50,
-        expected_output => q{--SnpGap 50},
+        input           => $SNP_GAP_FILTER_DISTANCE,
+        expected_output => q{--SnpGap} . $SPACE . $SNP_GAP_FILTER_DISTANCE,
     },
     indel_gap => {
-        input           => 100,
-        expected_output => q{--IndelGap 100},
+        input           => $SNP_GAP_FILTER_DISTANCE,
+        expected_output => q{--IndelGap} . $SPACE . $SNP_GAP_FILTER_DISTANCE,
     },
 
 );
@@ -151,7 +152,7 @@ my $module_function_cref = \&bcftools_filter;
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
 
-HASHES_OF_ARGUMENTS:
+ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
