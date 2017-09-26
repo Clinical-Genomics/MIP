@@ -1970,7 +1970,7 @@ if ( $active_parameter{pmanta} > 0 ) {    #Run Manta
         $active_parameter{outdata_dir},
         $active_parameter{family_id},
         $active_parameter{outaligner_dir},
-        $active_parameter{outdir_name}
+        $active_parameter{q{p} . $program_name}{outdir_name}
     );
 
     check_build_human_genome_prerequisites(
@@ -1996,7 +1996,7 @@ if ( $active_parameter{pmanta} > 0 ) {    #Run Manta
             infile_lane_prefix_href => \%infile_lane_prefix,
             job_id_href             => \%job_id,
             program_name            => $program_name,
-            outfamily_directory     => $outfamily_directory,
+            outfamily_directory     => $outfamily_directory.,
         }
     );
 }
