@@ -17123,7 +17123,7 @@ sub manta {
     use MIP::IO::Files qw(migrate_file);
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Set::File qw{set_file_suffix};
-    use Program::Variantcalling::Manta qw(config workflow);
+    use MIP::Program::Variantcalling::Manta qw(manta_config manta_workflow);
     use MIP::Program::Compression::Gzip qw(gzip);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
@@ -17255,7 +17255,7 @@ sub manta {
     my @file_paths = map { $file_path_prefix{$_} . $infile_suffix }
       @{ $active_parameter_href->{sample_ids} };
 
-    config(
+    manta_config(
         {
             infile_paths_ref  => \@file_paths,
             outdirectory_path => $$temp_directory_ref,
@@ -17268,7 +17268,7 @@ sub manta {
     say $FILEHANDLE "\n";
 
     say $FILEHANDLE "## Manta workflow";
-    workflow(
+    manta_workflow(
         {
             outdirectory_path => $$temp_directory_ref,
             mode              => "local",
