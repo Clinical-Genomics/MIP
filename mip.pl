@@ -1973,7 +1973,7 @@ if ( $active_parameter{pmanta} > 0 ) {    #Run Manta
         $active_parameter{outdir_name}
     );
 
-    log->info("outfamily_directory is $outfamily_directory");
+    $log->info("outfamily_directory is $outfamily_directory");
 
     check_build_human_genome_prerequisites(
         {
