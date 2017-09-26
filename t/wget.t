@@ -79,7 +79,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::PATH::TO::MODULE});
+    my @modules = (q{MIP::Program::Download::Wget});
 
   MODULE:
     for my $module (@modules) {
@@ -87,11 +87,11 @@ BEGIN {
     }
 }
 
-use MIP::PATH::TO::MODULE qw{ SUB_ROUTINE };
+use MIP::Program::Download::Wget qw{ wget };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
-      . $MIP::PATH::TO::MODULE::VERSION
+diag(   q{Test wget from Wget.pm v}
+      . $MIP::Program::Download::Wget::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -100,7 +100,7 @@ diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{BASE_COMMAND};
+my $function_base_command = q{wget};
 
 my %base_argument = (
     stdoutfile_path => {
@@ -124,24 +124,9 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
-    },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
-    },
-);
-
-my %specific_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
-    },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
+    url => {
+        input           => q{https://www.gnu.org/software/wget},
+        expected_output => q{https://www.gnu.org/software/wget},
     },
     FILEHANDLE => {
         input           => undef,
@@ -149,8 +134,27 @@ my %specific_argument = (
     },
 );
 
+my %specific_argument = (
+    url => {
+        input           => q{https://www.gnu.org/software/wget},
+        expected_output => q{https://www.gnu.org/software/wget},
+    },
+    outfile_path => {
+        input           => catdir(qw{ outdir test }),
+        expected_output => q{-O} . $SPACE . catdir(qw{ outdir test }),
+    },
+    quiet => {
+        input           => 1,
+        expected_output => q{--quiet},
+    },
+    verbose => {
+        input           => 1,
+        expected_output => q{--verbose},
+    },
+);
+
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&SUB_ROUTINE;
+my $module_function_cref = \&wget;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

@@ -3,7 +3,7 @@
 use Modern::Perl qw{ 2014 };
 use warnings qw{ FATAL utf8 };
 use autodie;
-use 5.018;
+use 5.018;    #Require at least perl 5.18
 use utf8;
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
@@ -11,9 +11,9 @@ use Carp;
 use English qw{ -no_match_vars };
 use Params::Check qw{ check allow last_error };
 
-use FindBin qw{ $Bin };
+use FindBin qw{ $Bin };    #Find directory of script
 use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use Getopt::Long;
 use Test::More;
 use Readonly;
@@ -32,17 +32,13 @@ Readonly my $SPACE   => q{ };
 Readonly my $NEWLINE => qq{\n};
 Readonly my $COMMA   => q{,};
 
-### User Options
+###User Options
 GetOptions(
-
-    # Display help text
     q{h|help} => sub {
         done_testing();
         say {*STDOUT} $USAGE;
         exit;
-    },
-
-    # Display version number
+    },    #Display help text
     q{v|version} => sub {
         done_testing();
         say {*STDOUT} $NEWLINE
@@ -51,7 +47,7 @@ GetOptions(
           . $VERSION
           . $NEWLINE;
         exit;
-    },
+    },    #Display version number
     q{vb|verbose} => $VERBOSE,
   )
   or (
@@ -79,7 +75,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::PATH::TO::MODULE});
+    my @modules = (q{MIP::Program::Variantcalling::Manta});
 
   MODULE:
     for my $module (@modules) {
@@ -87,11 +83,11 @@ BEGIN {
     }
 }
 
-use MIP::PATH::TO::MODULE qw{ SUB_ROUTINE };
+use MIP::Program::Variantcalling::Manta qw{ manta_workflow };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
-      . $MIP::PATH::TO::MODULE::VERSION
+diag(   q{Test manta_workflow from Manta v}
+      . $MIP::Program::Variantcalling::Manta::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -100,13 +96,9 @@ diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{BASE_COMMAND};
+my $function_base_command = q{runWorkflow.py};
 
 my %base_argument = (
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
-    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
@@ -124,33 +116,22 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
-    },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
+    outdirectory_path => {
+        input           => q{outdirectory_path},
+        expected_output => q{outdirectory_path},
     },
 );
 
 my %specific_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
+    mode => {
+        input           => q{local},
+        expected_output => q{--mode local},
     },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
-    },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
-    },
+
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&SUB_ROUTINE;
+my $module_function_cref = \&manta_workflow;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
@@ -162,7 +143,8 @@ foreach my $argument_href (@arguments) {
             argument_href          => $argument_href,
             required_argument_href => \%required_argument,
             module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
+            function_base_command  => catfile( $required_argument{outdirectory_path}{expected_output},
+              $function_base_command ),
             do_test_base_command   => 1,
         }
     );
