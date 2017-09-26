@@ -9,9 +9,9 @@ use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
 use Carp;
 use English qw{ -no_match_vars };
-use Params::Check qw{check allow last_error};
+use Params::Check qw{ check allow last_error };
 
-use FindBin qw{$Bin};
+use FindBin qw{ $Bin };
 use File::Basename qw{ dirname basename };
 use File::Spec::Functions qw{ catdir };
 use Getopt::Long;
@@ -87,11 +87,11 @@ BEGIN {
     }
 }
 
-use MIP::PATH::TO : MODULE qw{ SUB_ROUTINE };
+use MIP::PATH::TO::MODULE qw{ SUB_ROUTINE };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test SUB_ROUTINE from MODULE_NAME v}
-      . $PATH::TO::MODULE::VERSION
+diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
+      . $MIP::PATH::TO::MODULE::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -132,10 +132,6 @@ my %required_argument = (
         input           => q{TEST_STRING},
         expected_output => q{PROGRAM_OUTPUT},
     },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
-    },
 );
 
 my %specific_argument = (
@@ -154,7 +150,7 @@ my %specific_argument = (
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&NAME_OF_SUB_ROUTINE;
+my $module_function_cref = \&SUB_ROUTINE;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
