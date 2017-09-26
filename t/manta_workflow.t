@@ -96,7 +96,7 @@ diag(   q{Test manta_workflow from Manta v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command;
+my $function_base_command = q{runWorkflow.py};
 
 my %base_argument = (
     stderrfile_path => {
@@ -130,11 +130,6 @@ my %specific_argument = (
 
 );
 
-## Base arguments
-$function_base_command =
-  catfile( $required_argument{outdirectory_path}{expected_output},
-    q{runWorkflow.py} );
-
 ## Coderef - enables generalized use of generate call
 my $module_function_cref = \&manta_workflow;
 
@@ -148,7 +143,8 @@ foreach my $argument_href (@arguments) {
             argument_href          => $argument_href,
             required_argument_href => \%required_argument,
             module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
+            function_base_command  => catfile( $required_argument{outdirectory_path}{expected_output},
+              $function_base_command ),
             do_test_base_command   => 1,
         }
     );
