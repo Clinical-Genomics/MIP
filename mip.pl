@@ -1982,6 +1982,7 @@ if ( $active_parameter{pmanta} > 0 ) {    #Run Manta
             infile_lane_prefix_href => \%infile_lane_prefix,
             job_id_href             => \%job_id,
             program_name            => $program_name,
+            outfamily_directory     => $outfamily_directory,
         }
     );
 
@@ -1995,7 +1996,8 @@ if ( $active_parameter{pmanta} > 0 ) {    #Run Manta
             file_info_href          => \%file_info,
             infile_lane_prefix_href => \%infile_lane_prefix,
             job_id_href             => \%job_id,
-            program_name            => $program_name,  
+            program_name            => $program_name,
+            outfamily_directory     => $outfamily_directory,
         }
     );
 }
