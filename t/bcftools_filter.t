@@ -28,10 +28,11 @@ my $VERBOSE = 1;
 our $VERSION = 1.0.0;
 
 ## Constants
-Readonly my $SPACE                   => q{ };
-Readonly my $NEWLINE                 => qq{\n};
-Readonly my $COMMA                   => q{,};
-Readonly my $SNP_GAP_FILTER_DISTANCE => 50;
+Readonly my $SPACE                     => q{ };
+Readonly my $NEWLINE                   => qq{\n};
+Readonly my $COMMA                     => q{,};
+Readonly my $SNP_GAP_FILTER_DISTANCE   => 50;
+Readonly my $INDEL_GAP_FILTER_DISTANCE => 100;
 
 ###User Options
 GetOptions(
@@ -140,8 +141,8 @@ my %specific_argument = (
         expected_output => q{--SnpGap} . $SPACE . $SNP_GAP_FILTER_DISTANCE,
     },
     indel_gap => {
-        input           => $SNP_GAP_FILTER_DISTANCE,
-        expected_output => q{--IndelGap} . $SPACE . $SNP_GAP_FILTER_DISTANCE,
+        input           => $INDEL_GAP_FILTER_DISTANCE,
+        expected_output => q{--IndelGap} . $SPACE . $INDEL_GAP_FILTER_DISTANCE,
     },
 
 );
