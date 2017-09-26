@@ -40,7 +40,7 @@ sub manta_config {
 
     ## manta_config
 
-    ## Function : Perl wrapper for writing Manta config recipe to $FILEHANDLE or return commands array. Based on Manta 1.0.0.
+    ## Function : Perl wrapper for writing Manta config recipe to $FILEHANDLE or return commands array. Based on Manta 1.1.0.
     ## Returns  : "@commands"
     ## Arguments: $infile_paths_ref, $referencefile_path, $outdirectory_path, $stderrfile_path, $stderrfile_path_append, $FILEHANDLE, $exome_analysis
     ##          : $infile_paths_ref       => Infile paths {REF}
@@ -139,7 +139,7 @@ sub manta_workflow {
 
     ## manta_workflow
 
-    ## Function : Perl wrapper for writing Manta workflow recipe to $FILEHANDLE or return commands array. Based on Manta 1.0.0.
+    ## Function : Perl wrapper for writing Manta workflow recipe to $FILEHANDLE or return commands array. Based on Manta 1.1.0.
     ## Returns  : "@commands"
     ## Arguments: $outdirectory_path, $stderrfile_path, $stderrfile_path_append, $outdirectory_path, $FILEHANDLE, $mode
     ##          : $outdirectory_path      => Outfile path
