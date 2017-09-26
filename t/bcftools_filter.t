@@ -3,7 +3,7 @@
 use Modern::Perl qw{ 2014 };
 use warnings qw{ FATAL utf8 };
 use autodie;
-use 5.018;
+use 5.018;    #Require at least perl 5.18
 use utf8;
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
@@ -11,7 +11,7 @@ use Carp;
 use English qw{ -no_match_vars };
 use Params::Check qw{ check allow last_error };
 
-use FindBin qw{ $Bin };
+use FindBin qw{ $Bin };    #Find directory of script
 use File::Basename qw{ dirname basename };
 use File::Spec::Functions qw{ catdir };
 use Getopt::Long;
@@ -28,21 +28,19 @@ my $VERBOSE = 1;
 our $VERSION = 1.0.0;
 
 ## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
-Readonly my $COMMA   => q{,};
+Readonly my $SPACE                     => q{ };
+Readonly my $NEWLINE                   => qq{\n};
+Readonly my $COMMA                     => q{,};
+Readonly my $SNP_GAP_FILTER_DISTANCE   => 50;
+Readonly my $INDEL_GAP_FILTER_DISTANCE => 100;
 
-### User Options
+###User Options
 GetOptions(
-
-    # Display help text
     q{h|help} => sub {
         done_testing();
         say {*STDOUT} $USAGE;
         exit;
-    },
-
-    # Display version number
+    },    #Display help text
     q{v|version} => sub {
         done_testing();
         say {*STDOUT} $NEWLINE
@@ -51,7 +49,7 @@ GetOptions(
           . $VERSION
           . $NEWLINE;
         exit;
-    },
+    },    #Display version number
     q{vb|verbose} => $VERBOSE,
   )
   or (
@@ -79,7 +77,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::PATH::TO::MODULE});
+    my @modules = (q{MIP::Program::Variantcalling::Bcftools});
 
   MODULE:
     for my $module (@modules) {
@@ -87,11 +85,11 @@ BEGIN {
     }
 }
 
-use MIP::PATH::TO::MODULE qw{ SUB_ROUTINE };
+use MIP::Program::Variantcalling::Bcftools qw{ bcftools_filter };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
-      . $MIP::PATH::TO::MODULE::VERSION
+diag(   q{Test bcftools_filter from Bcftools v}
+      . $MIP::Program::Variantcalling::Bcftools::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -100,13 +98,9 @@ diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{BASE_COMMAND};
+my $function_base_command = q{bcftools};
 
 my %base_argument = (
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
-    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
@@ -123,34 +117,38 @@ my %base_argument = (
 
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
-my %required_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
-    },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
-    },
-);
+my %required_argument = ();
 
 my %specific_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
+    infile_path => {
+        input           => q{infile.test},
+        expected_output => q{infile.test},
     },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
+    outfile_path => {
+        input           => q{outfile.txt},
+        expected_output => q{> outfile.txt},
     },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
+    exclude => {
+        input           => q{%QUAL<10 || (RPB<0.1 && %QUAL<15)},
+        expected_output => q{--exclude %QUAL<10 || (RPB<0.1 && %QUAL<15)},
     },
+    soft_filter => {
+        input           => q{LowQual},
+        expected_output => q{--soft-filter LowQual},
+    },
+    snp_gap => {
+        input           => $SNP_GAP_FILTER_DISTANCE,
+        expected_output => q{--SnpGap} . $SPACE . $SNP_GAP_FILTER_DISTANCE,
+    },
+    indel_gap => {
+        input           => $INDEL_GAP_FILTER_DISTANCE,
+        expected_output => q{--IndelGap} . $SPACE . $INDEL_GAP_FILTER_DISTANCE,
+    },
+
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&SUB_ROUTINE;
+my $module_function_cref = \&bcftools_filter;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

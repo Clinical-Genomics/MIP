@@ -9,9 +9,9 @@ use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
 use Carp;
 use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
+use Params::Check qw{check allow last_error};
 
-use FindBin qw{ $Bin };
+use FindBin qw{$Bin};
 use File::Basename qw{ dirname basename };
 use File::Spec::Functions qw{ catdir };
 use Getopt::Long;
@@ -79,7 +79,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::PATH::TO::MODULE});
+    my @modules = (q{MIP::Program::Variantcalling::Vep});
 
   MODULE:
     for my $module (@modules) {
@@ -87,11 +87,11 @@ BEGIN {
     }
 }
 
-use MIP::PATH::TO::MODULE qw{ SUB_ROUTINE };
+use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor_install };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
-      . $MIP::PATH::TO::MODULE::VERSION
+diag(   q{Test variant_effect_predictor_install from Vep.pm v}
+      . $MIP::Program::Variantcalling::Vep::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -100,7 +100,7 @@ diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{BASE_COMMAND};
+my $function_base_command = q{perl};
 
 my %base_argument = (
     stdoutfile_path => {
@@ -124,24 +124,32 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
-    },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
+    FILEHANDLE => {
+        input           => undef,
+        expected_output => $function_base_command,
     },
 );
 
 my %specific_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
+    plugins_ref => {
+        inputs_ref      => [qw{ LofTool maxEntScan}],
+        expected_output => q{--PLUGINS LofTool,maxEntScan},
     },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
+    species_ref => {
+        inputs_ref      => [qw{ homo_spaiens }],
+        expected_output => q{--SPECIES homo_spaiens},
+    },
+    auto => {
+        input           => q{alcf},
+        expected_output => q{--AUTO alcf},
+    },
+    cache_directory => {
+        input           => catdir(qw{ ensembl cache }),
+        expected_output => q{--CACHEDIR } . catdir(qw{ ensembl cache }),
+    },
+    assembly => {
+        input           => q{GRCh37},
+        expected_output => q{--ASSEMBLY GRCh37},
     },
     FILEHANDLE => {
         input           => undef,
@@ -150,7 +158,7 @@ my %specific_argument = (
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&SUB_ROUTINE;
+my $module_function_cref = \&variant_effect_predictor_install;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

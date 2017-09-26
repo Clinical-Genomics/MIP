@@ -1,6 +1,17 @@
 unix_standard_streams.t
 unix_write_to_file.t
 analysis_get_overall_analysis_type.t
+bcftools_annotate.t
+bcftools_call.t
+bcftools_concat.t
+bcftools_filter.t
+bcftools_index.t
+bcftools_merge.t
+bcftools_norm.t
+bcftools_reheader.t
+bcftools_roh.t
+bcftools_stats.t
+bcftools.view.t
 bedtools_genomecov.t
 bwa_mem.t
 chanjo_sex.t
@@ -18,6 +29,8 @@ cpanm_install.t
 fastqc.t
 path_check_file_version_exist.t
 findutils_xargs.t
+git_clone.t
+git_checkout.t
 gnu_cat.t
 gnu_cd.t
 gnu_chmod.t
@@ -89,7 +102,8 @@ slurm_sbatch.t
 slurm_build_sbatch_header.t
 slurm_reformat_sacct_output.t
 tar.t
-vep.t
+variant_effect_predictor.t
 snpeff_download.t
 variant_integrity_father.t
 variant_integrity_mendel.t
+wget.t

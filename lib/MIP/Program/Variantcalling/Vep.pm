@@ -26,10 +26,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ variant_effect_predictor };
+    our @EXPORT_OK =
+      qw{ variant_effect_predictor variant_effect_predictor_install };
 }
 
 ## Constants
@@ -211,6 +212,102 @@ sub variant_effect_predictor {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
+    return @commands;
+}
+
+sub variant_effect_predictor_install {
+
+## variant_effect_predictor_install
+
+## Function : Perl wrapper for vep INSTALL script. Based on version 90.
+## Returns  : @commands
+
+## Arguments: $plugins_ref, $species_ref, $auto, $cache_directory, $assembly, $stdoutfile_path, $stderrfile_path, stderrfile_path_append, $FILEHANDLE
+##          : $plugins_ref            => Vep plugins {REF}
+##          : $species_ref            => Comma-separated list of species to install when using --AUTO {REF}
+##          : $auto                   => Run installer without user prompts. Use "a" (API + Faidx/htslib),"l" (Faidx/htslib only), "c" (cache), "f" (FASTA), "p" (plugins) to specify parts to install.
+##          : $cache_directory        => Set destination directory for cache files
+##          : $assembly               => Assembly name to use if more than one during --AUTO
+##          : $stdoutfile_path        => Stdoutfile path
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $FILEHANDLE             => Filehandle to write to
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $plugins_ref;
+    my $species_ref;
+    my $auto;
+    my $cache_directory;
+    my $assembly;
+    my $stdoutfile_path;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $FILEHANDLE;
+
+    my $tmpl = {
+        plugins_ref =>
+          { default => [], strict_type => 1, store => \$plugins_ref },
+        species_ref => {
+            default     => [qw{ homo_sapiens }],
+            strict_type => 1,
+            store       => \$species_ref
+        },
+        auto            => { strict_type => 1, store => \$auto },
+        cache_directory => { strict_type => 1, store => \$cache_directory },
+        assembly        => { strict_type => 1, store => \$assembly },
+        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
+        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+        stderrfile_path_append =>
+          { strict_type => 1, store => \$stderrfile_path_append },
+        FILEHANDLE => { store => \$FILEHANDLE },
+
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    # Stores commands depending on input parameters
+    my @commands = qw{ perl INSTALL.pl };
+
+    if ($auto) {
+
+        push @commands, q{--AUTO} . $SPACE . $auto;
+    }
+    if ( @{$plugins_ref} ) {
+
+        push @commands, q{--PLUGINS} . $SPACE . join $COMMA, @{$plugins_ref};
+    }
+    if ($cache_directory) {
+
+        push @commands, q{--CACHEDIR} . $SPACE . $cache_directory;
+    }
+    if ( @{$species_ref} ) {
+
+        push @commands, q{--SPECIES} . $SPACE . join $COMMA, @{$species_ref};
+    }
+    if ($assembly) {
+
+        push @commands, q{--ASSEMBLY} . $SPACE . $assembly;
+    }
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stdoutfile_path        => $stdoutfile_path,
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+
     return @commands;
 }
 

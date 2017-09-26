@@ -23,7 +23,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( $Bin, 'lib' );        #Add MIPs internal lib
 use MIP::Language::Shell qw(create_bash_file);
-use Program::Download::Wget qw(wget);
+use MIP::Program::Download::Wget qw(wget);
 use MIP::Gnu::Bash qw(gnu_cd);
 use MIP::Gnu::Coreutils qw(gnu_cp gnu_rm gnu_mv gnu_mkdir gnu_ln gnu_chmod );
 use MIP::PacketManager::Conda
@@ -31,8 +31,11 @@ use MIP::PacketManager::Conda
 use MIP::PacketManager::Cpanm qw { cpanm_install };
 use Script::Utils qw(help set_default_array_parameters);
 use MIP::Check::Path qw{ check_dir_path_exist };
+
+## Recipes
 use MIP::Recipes::Install::Conda
   qw{ setup_conda_env install_bioconda_packages finish_bioconda_package_install };
+use MIP::Recipes::Install::Vep qw{ install_varianteffectpredictor };
 
 our $USAGE = build_usage( {} );
 
@@ -110,7 +113,7 @@ $parameter{vt}                     = 'gitRepo';
 $parameter{plink2}                 = '160316';
 $parameter{snpeff}                 = 'v4_2';
 $parameter{varianteffectpredictor} = '90';
-$parameter{vep_auto_flag}          = 'alcf';
+$parameter{vep_auto_flag}          = q{alcfp};
 $parameter{rhocall}                = '0.4';
 $parameter{rhocall_path}           = catdir( $ENV{HOME}, 'rhocall' );
 $parameter{cnvnator}               = '0.3.3';
@@ -501,16 +504,25 @@ if ( @{ $parameter{select_programs} } ) {
     }
     if (
         (
-            grep { $_ eq 'varianteffectpredictor' }
+            grep { $_ eq q{varianteffectpredictor} }
             @{ $parameter{select_programs} }
         )
       )
-    {    #If element is part of array
+    {
 
-        varianteffectpredictor(
+        install_varianteffectpredictor(
             {
-                parameter_href => \%parameter,
-                FILEHANDLE     => $FILEHANDLE,
+                plugins_ref       => \@{ $parameter{vep_plugins} },
+                assemblies_ref    => \@{ $parameter{vep_assemblies} },
+                conda_prefix_path => $parameter{conda_prefix_path},
+                conda_environment => $parameter{conda_environment},
+                noupdate          => $parameter{noupdate},
+                vep_version       => $parameter{varianteffectpredictor},
+                auto              => $parameter{vep_auto_flag},
+                cache_directory   => $parameter{vep_cache_dir},
+                quiet             => $parameter{quiet},
+                verbose           => $parameter{verbose},
+                FILEHANDLE        => $FILEHANDLE,
             }
         );
     }
@@ -554,10 +566,19 @@ else {
         }
     );
 
-    varianteffectpredictor(
+    install_varianteffectpredictor(
         {
-            parameter_href => \%parameter,
-            FILEHANDLE     => $FILEHANDLE,
+            plugins_ref       => \@{ $parameter{vep_plugins} },
+            assemblies_ref    => \@{ $parameter{vep_assemblies} },
+            conda_prefix_path => $parameter{conda_prefix_path},
+            conda_environment => $parameter{conda_environment},
+            noupdate          => $parameter{noupdate},
+            vep_version       => $parameter{varianteffectpredictor},
+            auto              => $parameter{vep_auto_flag},
+            cache_directory   => $parameter{vep_cache_dir},
+            quiet             => $parameter{quiet},
+            verbose           => $parameter{verbose},
+            FILEHANDLE        => $FILEHANDLE,
         }
     );
 
@@ -913,7 +934,7 @@ sub install_perl_cpnam {
 
     ## Download
     print $FILEHANDLE '## Download perl', "\n";
-    Program::Download::Wget::wget(
+    wget(
         {
             url => 'http://www.cpan.org/src/5.0/perl-'
               . $parameter_href->{perl_version}
@@ -1009,7 +1030,7 @@ sub install_perl_cpnam {
 
     ## Install perl modules via cpanm
     print $FILEHANDLE '## Install cpanm', "\n";
-    Program::Download::Wget::wget(
+    wget(
         {
             url          => 'http://cpanmin.us',
             FILEHANDLE   => $FILEHANDLE,
@@ -1183,7 +1204,7 @@ sub picardtools {
 
     ## Download
     print $FILEHANDLE '## Download Picard', "\n";
-    Program::Download::Wget::wget(
+    wget(
         {
             url => 'https://github.com/broadinstitute/picard/releases/download/'
               . $parameter_href->{picardtools}
@@ -1319,7 +1340,7 @@ sub sambamba {
 
     ## Download
     print $FILEHANDLE '## Download sambamba release', "\n";
-    Program::Download::Wget::wget(
+    wget(
         {
             url => 'https://github.com/lomereiter/sambamba/releases/download/v'
               . q?$parameter_href->{sambamba}?
@@ -1451,7 +1472,7 @@ sub bedtools {
 
     ## Download
     print $FILEHANDLE '## Download bedtools', "\n";
-    Program::Download::Wget::wget(
+    wget(
         {
             url => 'https://github.com/arq5x/bedtools'
               . $bedtools_main_version
@@ -1660,7 +1681,7 @@ sub plink2 {
 
     ## Download
     print $FILEHANDLE '## Download Plink', "\n";
-    Program::Download::Wget::wget(
+    wget(
         {
             url => 'https://www.cog-genomics.org/static/bin/plink'
               . $parameter_href->{plink2}
@@ -1757,7 +1778,7 @@ sub snpeff {
 
     ## Download
     print $FILEHANDLE '## Download snpeff', "\n";
-    Program::Download::Wget::wget(
+    wget(
         {
             url => 'http://sourceforge.net/projects/snpeff/files/snpEff_'
               . $parameter_href->{snpeff}
@@ -1906,372 +1927,6 @@ sub snpeff {
     return;
 }
 
-sub varianteffectpredictor {
-
-## varianteffectpredictor
-
-## Function : Install varianteffectpredictor
-## Returns  : ""
-## Arguments: $parameter_href, $FILEHANDLE
-##          : $parameter_href => Holds all parameters
-##          : $FILEHANDLE     => Filehandle to write to
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Program::Compression::Tar qw{ tar };
-
-    my $pwd = cwd();
-
-    my $miniconda_bin_dir =
-      catdir( $parameter_href->{conda_prefix_path}, q{ensembl-vep} );
-
-    if ( -d $miniconda_bin_dir ) {
-
-        say STDERR q{Found varianteffectpredictor in miniconda directory: }
-          . $miniconda_bin_dir;
-
-        if ( $parameter_href->{noupdate} ) {
-
-            say STDERR
-q{Skipping writting installation process for varianteffectpredictor};
-            return;
-        }
-        else {
-
-            ## Removing varianteffectpredictor
-            say $FILEHANDLE q{### Removing varianteffectpredictor};
-            gnu_rm(
-                {
-                    infile_path => $miniconda_bin_dir,
-                    force       => 1,
-                    recursive   => 1,
-                    FILEHANDLE  => $FILEHANDLE,
-                }
-            );
-            say $FILEHANDLE $NEWLINE;
-        }
-    }
-    else {
-
-        say STDERR q{Writting install instructions for varianteffectpredictor};
-    }
-
-    ## Install VEP
-    say $FILEHANDLE q{### Install varianteffectpredictor};
-
-    ## Only activate conda environment if supplied by user
-    if ( $parameter_href->{conda_environment} ) {
-
-        ## Activate conda environment
-        say $FILEHANDLE q{## Activate conda environment};
-        conda_source_activate(
-            {
-                FILEHANDLE => $FILEHANDLE,
-                env_name   => $parameter_href->{conda_environment},
-            }
-        );
-        say $FILEHANDLE $NEWLINE;
-    }
-
-    ## Make sure that the cache directory exists
-    gnu_mkdir(
-        {
-            indirectory_path => $parameter_href->{vep_cache_dir},
-            parents          => 1,
-            FILEHANDLE       => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE $NEWLINE;
-
-    ## Move to miniconda environment
-    gnu_cd(
-        {
-            directory_path => catdir( $parameter_href->{conda_prefix_path} ),
-            FILEHANDLE     => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE $NEWLINE;
-
-    ## Git clone
-    say $FILEHANDLE q{## Download VEP};
-    print $FILEHANDLE q{git clone} . $SPACE;
-    say $FILEHANDLE q{https://github.com/Ensembl/ensembl-vep.git} . $NEWLINE;
-
-    ## Move to vep
-    gnu_cd(
-        {
-            directory_path => catdir(q{ensembl-vep}),
-            FILEHANDLE     => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE $NEWLINE;
-
-    say $FILEHANDLE q{git checkout release/}
-      . $parameter_href->{varianteffectpredictor}
-      . $NEWLINE;
-
-    ## Install VEP
-    say $FILEHANDLE q{ ## Install VEP};
-    print $FILEHANDLE q{perl INSTALL.pl} . $SPACE;
-
-    # a (API), l (FAIDX/htslib), c (cache), f (FASTA)
-    print $FILEHANDLE q{--AUTO} . $SPACE . $parameter_href->{vep_auto_flag};
-
-    if (   ( exists $parameter_href->{vep_plugins} )
-        && ( @{ $parameter_href->{vep_plugins} } ) )
-    {
-
-        ## p (plugins)
-        # Plugins in comma sep string
-        print $FILEHANDLE q{p} . $SPACE;
-        print $FILEHANDLE q{-g}
-          . $SPACE
-          . join( $COMMA, @{ $parameter_href->{vep_plugins} } )
-          . $SPACE;
-    }
-    else {
-
-        # Add whitespace if no plugins
-        print $FILEHANDLE $SPACE;
-    }
-
-    # Cache directory
-    print $FILEHANDLE q{-c}
-      . $SPACE
-      . $parameter_href->{vep_cache_dir}
-      . $SPACE;
-    print $FILEHANDLE q{-s homo_sapiens} . $SPACE;
-
-    ## Only install first assembly version since VEP install cannot handle multiple versions at the same time
-    print $FILEHANDLE q{--ASSEMBLY}
-      . $SPACE
-      . $parameter_href->{vep_assemblies}[0]
-      . $SPACE;
-    say $FILEHANDLE $NEWLINE;
-
-    if (   ( scalar @{ $parameter_href->{vep_assemblies} } > 1 )
-        && ( $parameter_href->{vep_auto_flag} =~ / c|f /xsm ) )
-    {
-
-        for (
-            my $assembly_version = 1 ;
-            $assembly_version < scalar @{ $parameter_href->{vep_assemblies} } ;
-            $assembly_version++
-          )
-        {
-
-            say $FILEHANDLE q{## Install additional VEP cache assembly version};
-            print $FILEHANDLE q{perl INSTALL.pl} . $SPACE;
-
-            # a (API), l (FAIDX/htslib), c (cache), f (FASTA), p (plugins)
-            print $FILEHANDLE q{--AUTO} . $SPACE . q{cf} . $SPACE;
-
-            # Cache directory
-            print $FILEHANDLE q{-c}
-              . $SPACE
-              . $parameter_href->{vep_cache_dir}
-              . $SPACE;
-            print $FILEHANDLE q{-s homo_sapiens} . $SPACE;
-
-            ## Only install first assembly version since VEP install cannot handle multiple versions at the same time
-            print $FILEHANDLE q{--ASSEMBLY}
-              . $SPACE
-              . $parameter_href->{vep_assemblies}[$assembly_version]
-              . $SPACE;
-            say $FILEHANDLE $NEWLINE;
-        }
-    }
-
-    if ( exists $parameter_href->{vep_plugins} ) {
-
-        if ( grep { $_ eq q{MaxEntScan} } @{ $parameter_href->{vep_plugins} } )
-        {
-
-            ## Add MaxEntScan required text file
-            say $FILEHANDLE q{## Add MaxEntScan required text file};
-            Program::Download::Wget::wget(
-                {
-                    url =>
-q{http://genes.mit.edu/burgelab/maxent/download/fordownload.tar.gz},
-                    FILEHANDLE => $FILEHANDLE,
-                    quiet      => $parameter_href->{quiet},
-                    verbose    => $parameter_href->{verbose},
-                }
-            );
-            say $FILEHANDLE $NEWLINE;
-
-            # Unpack
-            tar(
-                {
-                    extract     => 1,
-                    filter_gzip => 1,
-                    file        => catfile(q{fordownload.tar.gz}),
-                    FILEHANDLE  => $FILEHANDLE,
-                }
-            );
-            say $FILEHANDLE $NEWLINE;
-
-            gnu_mv(
-                {
-                    infile_path => q{fordownload},
-                    outfile_path =>
-                      catfile( $parameter_href->{vep_cache_dir}, ),
-                    force      => 1,
-                    FILEHANDLE => $FILEHANDLE,
-                }
-            );
-            say $FILEHANDLE $NEWLINE;
-
-        }
-        if ( grep { $_ eq q{LoFtool} } @{ $parameter_href->{vep_plugins} } ) {
-
-            ## Add LofTool required text file
-            say $FILEHANDLE q{## Add LofTool required text file};
-            Program::Download::Wget::wget(
-                {
-                    url =>
-q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/LoFtool_scores.txt},
-                    FILEHANDLE   => $FILEHANDLE,
-                    quiet        => $parameter_href->{quiet},
-                    verbose      => $parameter_href->{verbose},
-                    outfile_path => q{$HOME/.vep/Plugins/LoFtool_scores.txt},
-                }
-            );
-            say $FILEHANDLE $NEWLINE;
-        }
-
-        if ( grep { $_ eq q{Lof} } @{ $parameter_href->{vep_plugins} } ) {
-
-            ## Add Lof required perl splice script
-            say $FILEHANDLE q{## Add Lof required perl scripts};
-
-            gnu_mkdir(
-                {
-                    indirectory_path => q{$HOME/.vep/Plugins/maxEntScan},
-                    parents          => 1,
-                    FILEHANDLE       => $FILEHANDLE,
-                }
-            );
-            say $FILEHANDLE $NEWLINE;
-            my @lof_scripts =
-              qw{utr_splice.pl gerp_dist.pl de_novo_donor.pl extended_splice.pl splice_site_scan.pl loftee_splice_utils.pl svm.pl maxEntScan/score5.pl maxEntScan/score3.pl };
-
-          SCRIPT:
-            foreach my $script (@lof_scripts) {
-
-                Program::Download::Wget::wget(
-                    {
-                        url =>
-q{https://raw.githubusercontent.com/konradjk/loftee/master/}
-                          . $script,
-                        FILEHANDLE   => $FILEHANDLE,
-                        quiet        => $parameter_href->{quiet},
-                        verbose      => $parameter_href->{verbose},
-                        outfile_path => q{$HOME/.vep/Plugins/} . $script,
-                    }
-                );
-                say $FILEHANDLE $NEWLINE;
-            }
-            say $FILEHANDLE $NEWLINE;
-            ## Add Lof optional human_ancestor_fa
-            say $FILEHANDLE q{##Add Lof optional human_ancestor_fa};
-            Program::Download::Wget::wget(
-                {
-                    url =>
-q{https://s3.amazonaws.com/bcbio_nextgen/human_ancestor.fa.gz},
-                    FILEHANDLE   => $FILEHANDLE,
-                    quiet        => $parameter_href->{quiet},
-                    verbose      => $parameter_href->{verbose},
-                    outfile_path => catfile(
-                        $parameter_href->{vep_cache_dir},
-                        q{human_ancestor.fa.gz}
-                    ),
-                }
-            );
-            say $FILEHANDLE $NEWLINE;
-
-            ## Uncompress
-            print $FILEHANDLE q{bgzip -d}
-              . $SPACE
-              . catfile( $parameter_href->{vep_cache_dir},
-                q{human_ancestor.fa.gz} )
-              . $SPACE;
-            say $FILEHANDLE $NEWLINE;
-
-            ## Add Lof optional human_ancestor_fa index
-            Program::Download::Wget::wget(
-                {
-                    url =>
-q{https://s3.amazonaws.com/bcbio_nextgen/human_ancestor.fa.gz.fai},
-                    FILEHANDLE   => $FILEHANDLE,
-                    quiet        => $parameter_href->{quiet},
-                    verbose      => $parameter_href->{verbose},
-                    outfile_path => catfile(
-                        $parameter_href->{vep_cache_dir},
-                        q{human_ancestor.fa.fai}
-                    ),
-                }
-            );
-            say $FILEHANDLE $NEWLINE;
-        }
-    }
-
-    ## Clean up
-    say $FILEHANDLE q{## Clean up};
-    gnu_rm(
-        {
-            infile_path => catdir(
-                $parameter_href->{conda_prefix_path},
-                q{VariantEffectPredictor-}
-                  . $parameter_href->{varianteffectpredictor}
-                  . $DOT . q{zip}
-            ),
-            force      => 1,
-            FILEHANDLE => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE $NEWLINE;
-
-    ## Go back to subroutine origin
-    say $FILEHANDLE q{## Moving back to original working directory};
-    gnu_cd(
-        {
-            directory_path => $pwd,
-            FILEHANDLE     => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE $NEWLINE;
-
-    ## Deactivate conda environment if conda_environment exists
-    if ( $parameter_href->{conda_environment} ) {
-        say $FILEHANDLE q{## Deactivate conda environment};
-        conda_source_deactivate(
-            {
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say $FILEHANDLE $NEWLINE;
-    }
-    return;
-}
-
 sub cnvnator {
 
 ##cnvnator
@@ -2365,7 +2020,7 @@ sub cnvnator {
 
     ## Download
     print $FILEHANDLE '## Download Root', "\n";
-    Program::Download::Wget::wget(
+    wget(
         {
             url => 'https://root.cern.ch/download/'
               . $parameter_href->{cnvnator_root_binary}
@@ -2434,7 +2089,7 @@ sub cnvnator {
 
     ## Download
     print $FILEHANDLE '## Download CNVNator', "\n";
-    Program::Download::Wget::wget(
+    wget(
         {
             url => 'https://github.com/abyzovlab/CNVnator/releases/download/v'
               . $parameter_href->{cnvnator}
@@ -2615,7 +2270,7 @@ sub tiddit {
 
     ## Download
     print $FILEHANDLE '## Download Tiddit', "\n";
-    Program::Download::Wget::wget(
+    wget(
         {
             url => 'https://github.com/J35P312/TIDDIT/archive/'
               . $parameter_href->{tiddit} . '.zip',
@@ -2817,7 +2472,7 @@ sub svdb {
 
     ## Download
     print $FILEHANDLE '## Download Svdb', "\n";
-    Program::Download::Wget::wget(
+    wget(
         {
             url => 'https://github.com/J35P312/SVDB/archive/SVDB-'
               . $parameter_href->{svdb} . '.zip',
@@ -3104,7 +2759,7 @@ sub rhocall {
 
     ## Downloads files
     print $FILEHANDLE '## Download rhocall', "\n";
-    Program::Download::Wget::wget(
+    wget(
         {
             url => 'https://github.com/dnil/rhocall/archive/'
               . $parameter_href->{rhocall} . '.zip',
