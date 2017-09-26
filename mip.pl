@@ -1970,7 +1970,8 @@ if ( $active_parameter{pmanta} > 0 ) {    #Run Manta
         $active_parameter{outdata_dir},
         $active_parameter{family_id},
         $active_parameter{outaligner_dir},
-        $active_parameter{outdir_name}
+        $active_parameter{outdir_name},
+        $program_name,
     );
 
     $log->info("outfamily_directory is $outfamily_directory");
