@@ -146,7 +146,7 @@ sub xargs_command {
     my @commands;
     if ( ( defined $first_command ) && ( $first_command eq q{java} ) ) {
 
-        ## Writes java core commands to filehandle.
+        ## Return java core commands
         @commands = java_core(
             {
                 memory_allocation    => $memory_allocation,

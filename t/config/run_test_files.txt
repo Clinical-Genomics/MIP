@@ -45,6 +45,7 @@ parameter_check_allowed_temp_directory.t
 list_delete_contig_elements.t
 list_delete_male_contig.t
 list_delete_non_wes_contig.t
+picardtools_base.t
 pigz.t
 processes_print_wait.t
 processes_add_job_id_dependency_tree.t

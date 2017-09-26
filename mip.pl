@@ -1517,7 +1517,7 @@ else {
 
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
-        picardtools_mergesamfiles(
+        mpicardtools_mergesamfiles(
             {
                 parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
@@ -1775,7 +1775,7 @@ if ( $active_parameter{ppicardtools_collectmultiplemetrics} > 0 )
 
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
-        picardtools_collectmultiplemetrics(
+        mpicardtools_collectmultiplemetrics(
             {
                 parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
@@ -1823,7 +1823,7 @@ if ( $active_parameter{ppicardtools_collecthsmetrics} > 0 )
     }
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
-        picardtools_collecthsmetrics(
+        mpicardtools_collecthsmetrics(
             {
                 parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
@@ -12184,9 +12184,9 @@ sub rcoverageplots {
     return;
 }
 
-sub picardtools_collecthsmetrics {
+sub mpicardtools_collecthsmetrics {
 
-##picardtools_collecthsmetrics
+##mpicardtools_collecthsmetrics
 
 ##Function : Calculates coverage on exonic part of BAM files.
 ##Returns  : ""
@@ -12299,7 +12299,7 @@ sub picardtools_collecthsmetrics {
     use MIP::Get::File qw{get_file_suffix};
     use MIP::IO::Files qw(migrate_file);
     use MIP::Language::Java qw{java_core};
-    use Program::Alignment::Picardtools qw(collecthsmetrics);
+    use MIP::Program::Alignment::Picardtools qw(picardtools_collecthsmetrics);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_dead_end);
@@ -12401,7 +12401,7 @@ sub picardtools_collecthsmetrics {
         }
     );
 
-    collecthsmetrics(
+    picardtools_collecthsmetrics(
         {
             bait_interval_file_paths_ref =>
               [ $exome_target_bed_file . $$padded_infile_list_ending_ref ],
@@ -12459,9 +12459,9 @@ sub picardtools_collecthsmetrics {
     }
 }
 
-sub picardtools_collectmultiplemetrics {
+sub mpicardtools_collectmultiplemetrics {
 
-##picardtools_collectmultiplemetrics
+##mpicardtools_collectmultiplemetrics
 
 ##Function : Calculates coverage and alignment metrics on BAM files.
 ##Returns  : ""
@@ -12575,7 +12575,8 @@ sub picardtools_collectmultiplemetrics {
     use MIP::Get::File qw{get_file_suffix};
     use MIP::IO::Files qw(migrate_file);
     use MIP::Language::Java qw{java_core};
-    use Program::Alignment::Picardtools qw(collectmultiplemetrics);
+    use MIP::Program::Alignment::Picardtools
+      qw(picardtools_collectmultiplemetrics);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_dead_end);
@@ -12668,7 +12669,7 @@ sub picardtools_collectmultiplemetrics {
         }
     );
 
-    collectmultiplemetrics(
+    picardtools_collectmultiplemetrics(
         {
             infile_path  => $file_path_prefix . $infile_suffix,
             outfile_path => $outfile_path_prefix,
@@ -18987,7 +18988,7 @@ sub gatk_baserecalibration {
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Recipes::Xargs qw{ xargs_command };
     use Program::Alignment::Gatk qw(baserecalibrator printreads);
-    use Program::Alignment::Picardtools qw(gatherbamfiles);
+    use MIP::Program::Alignment::Picardtools qw(picardtools_gatherbamfiles);
     use MIP::Gnu::Coreutils qw(gnu_rm);
     use MIP::Language::Java qw{java_core};
     use MIP::Processmanagement::Slurm_processes
@@ -19338,12 +19339,14 @@ sub gatk_baserecalibration {
         }
     );
 
-    gatherbamfiles(
+    picardtools_gatherbamfiles(
         {
             infile_paths_ref => \@infile_paths,
             outfile_path     => catfile(
                 $$temp_directory_ref, $outfile_prefix . $outfile_suffix
             ),
+            referencefile_path =>
+              $active_parameter_href->{human_genome_reference},
             create_index => "true",
             FILEHANDLE   => $FILEHANDLE,
         }
@@ -20020,6 +20023,7 @@ sub pmarkduplicates {
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Recipes::Xargs qw{ xargs_command };
     use MIP::Program::Alignment::Sambamba qw(sambamba_flagstat);
+    use MIP::Program::Alignment::Picardtools qw(picardtools_markduplicates);
     use MIP::Gnu::Coreutils qw(gnu_cat);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
@@ -20128,8 +20132,6 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
 
         $markduplicates_program = "picardtools_markduplicates";
 
-        use Program::Alignment::Picardtools qw(markduplicates);
-
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
@@ -20151,7 +20153,7 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
 
         foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
-            markduplicates(
+            picardtools_markduplicates(
                 {
                     infile_paths_ref =>
                       [ $file_path_prefix . "_" . $contig . $infile_suffix ],
@@ -20164,7 +20166,9 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
                     metrics_file => $outfile_path_prefix . "_"
                       . $contig
                       . ".metric",
-                    FILEHANDLE   => $XARGSFILEHANDLE,
+                    FILEHANDLE => $XARGSFILEHANDLE,
+                    referencefile_path =>
+                      $active_parameter_href->{human_genome_reference},
                     create_index => "true",
                 }
             );
@@ -20374,9 +20378,9 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
     }
 }
 
-sub picardtools_mergesamfiles {
+sub mpicardtools_mergesamfiles {
 
-##picardtools_mergesamfiles
+##mpicardtools_mergesamfiles
 
 ##Function : Merges all bam files using Picardtools mergesamfiles within each sampleid and files generated previously (option if provided with '-picardtools_mergesamfiles_previous_bams'). The merged files have to be sorted before attempting to merge.
 ##Returns  : "|$xargs_file_counter"
@@ -20514,7 +20518,7 @@ sub picardtools_mergesamfiles {
     use MIP::IO::Files qw(migrate_files xargs_migrate_contig_files);
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Recipes::Xargs qw{ xargs_command };
-    use Program::Alignment::Picardtools qw(mergesamfiles);
+    use MIP::Program::Alignment::Picardtools qw(picardtools_mergesamfiles);
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use MIP::Program::Alignment::Samtools qw(samtools_index);
     use MIP::Processmanagement::Slurm_processes
@@ -20675,7 +20679,7 @@ sub picardtools_mergesamfiles {
                   . $infile_suffix
             } @{ $infile_lane_prefix_href->{$$sample_id_ref} };
 
-            mergesamfiles(
+            picardtools_mergesamfiles(
                 {
                     infile_paths_ref => \@infile_paths,
                     outfile_path     => catfile(
@@ -20692,7 +20696,9 @@ sub picardtools_mergesamfiles {
                       . ".stderr.txt",
                     threading    => "true",
                     create_index => "true",
-                    FILEHANDLE   => $XARGSFILEHANDLE,
+                    referencefile_path =>
+                      $active_parameter_href->{human_genome_reference},
+                    FILEHANDLE => $XARGSFILEHANDLE,
                 }
             );
             print $XARGSFILEHANDLE "\n";
@@ -20917,7 +20923,7 @@ sub picardtools_mergesamfiles {
                             )
                         );
 
-                        mergesamfiles(
+                        picardtools_mergesamfiles(
                             {
                                 infile_paths_ref => \@infile_paths,
                                 outfile_path     => catfile(
@@ -20933,9 +20939,11 @@ sub picardtools_mergesamfiles {
                                 stderrfile_path => $xargs_file_path_prefix . "."
                                   . $contig
                                   . ".stderr.txt",
-                                threading    => "true",
-                                create_index => "true",
-                                FILEHANDLE   => $XARGSFILEHANDLE,
+                                threading          => "true",
+                                create_index       => "true",
+                                referencefile_path => $active_parameter_href
+                                  ->{human_genome_reference},
+                                FILEHANDLE => $XARGSFILEHANDLE,
                             }
                         );
                         print $XARGSFILEHANDLE "\n";
@@ -21116,7 +21124,7 @@ sub picardtools_mergesamfiles {
                         )
                     );
 
-                    mergesamfiles(
+                    picardtools_mergesamfiles(
                         {
                             infile_paths_ref => \@infile_paths,
                             outfile_path     => catfile(
@@ -21134,7 +21142,9 @@ sub picardtools_mergesamfiles {
                               . ".stderr.txt",
                             threading    => "true",
                             create_index => "true",
-                            FILEHANDLE   => $XARGSFILEHANDLE,
+                            referencefile_path =>
+                              $active_parameter_href->{human_genome_reference},
+                            FILEHANDLE => $XARGSFILEHANDLE,
                         }
                     );
                     print $XARGSFILEHANDLE "\n";
@@ -22538,7 +22548,7 @@ sub bamcalibrationblock {
 
         ##Always run even for single samples to rename them correctly for standardised downstream processing.
         ##Will also split alignment per contig and copy to temporary directory for -rio 1 block to enable selective removal of block submodules.
-        ($xargs_file_counter) = picardtools_mergesamfiles(
+        ($xargs_file_counter) = mpicardtools_mergesamfiles(
             {
                 parameter_href          => $parameter_href,
                 active_parameter_href   => $active_parameter_href,
