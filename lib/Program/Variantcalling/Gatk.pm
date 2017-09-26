@@ -363,7 +363,8 @@ sub catvariants {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     ### Gatk catvariants
-    my @commands = qw(-cp);  #Stores commands depending on input parameters
+    # Stores commands depending on input parameters
+    my @commands = qw(-cp);
 
     push(@commands, $gatk_path);
 

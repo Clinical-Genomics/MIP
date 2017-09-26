@@ -10,13 +10,12 @@ use charnames qw{ :full :short };
 use Carp;
 use English qw{ -no_match_vars };
 use Params::Check qw{ check allow last_error };
-use FindBin qw{$Bin};
+
+use FindBin qw{ $Bin };
 use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use Getopt::Long;
 use Test::More;
-
-## CPANM
 use Readonly;
 
 ## MIPs lib/
@@ -26,14 +25,14 @@ use Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.1;
+our $VERSION = 1.0.0;
 
 ## Constants
 Readonly my $SPACE   => q{ };
 Readonly my $NEWLINE => qq{\n};
 Readonly my $COMMA   => q{,};
 
-###User Options
+### User Options
 GetOptions(
 
     # Display help text
@@ -80,7 +79,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Language::Java});
+    my @modules = (q{MIP::Program::Alignment::Picardtools});
 
   MODULE:
     for my $module (@modules) {
@@ -88,12 +87,11 @@ BEGIN {
     }
 }
 
-use File::Spec::Functions qw{ catdir };
-use MIP::Language::Java qw{ java_core };
+use MIP::Program::Alignment::Picardtools qw{ picardtools_mergesamfiles };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test java_core from Java.pm v}
-      . $MIP::Language::Java::VERSION
+diag(   q{Test picardtools_mergesamfiles from Picardtools.pm v}
+      . $MIP::Program::Alignment::Picardtools::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -102,7 +100,7 @@ diag(   q{Test java_core from Java.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{java};
+my $function_base_command = q{MergeSamFiles};
 
 my %base_argument = (
     FILEHANDLE => {
@@ -111,44 +109,68 @@ my %base_argument = (
     },
 );
 
+## Can be duplicated with %base_argument and/or %specific_argument
+## to enable testing of each individual argument
+my %required_argument = (
+    infile_paths_ref => {
+        inputs_ref      => [qw{ infile_1 infile_2  }],
+        expected_output => q{INPUT=infile_1 INPUT=infile_2},
+    },
+    outfile_path => {
+        input           => catfile(qw{ out_directory outfile }),
+        expected_output => q{OUTPUT=} . catfile(qw{ out_directory outfile }),
+    },
+    referencefile_path => {
+        input => catfile(qw{ references GRCh37_homo_sapiens_-d5-.fasta }),
+        expected_output => q{REFERENCE_SEQUENCE=}
+          . catfile(qw{ references GRCh37_homo_sapiens_-d5-.fasta }),
+    },
+);
+
 my %specific_argument = (
-    java_jar => {
-        input           => q{test.jar},
-        expected_output => q{-jar test.jar},
+    create_index => {
+        input           => q{true},
+        expected_output => q{CREATE_INDEX=true},
     },
-    memory_allocation => {
-        input           => q{Xmx2g},
-        expected_output => q{-Xmx2g},
+    referencefile_path => {
+        input => catfile(qw{ references GRCh37_homo_sapiens_-d5-.fasta }),
+        expected_output => q{REFERENCE_SEQUENCE=}
+          . catfile(qw{ references GRCh37_homo_sapiens_-d5-.fasta }),
     },
-    temp_directory => {
-        input           => catdir(qw{ path to temp dir }),
-        expected_output => q{-Djava.io.tmpdir=}
-          . catdir(qw{ path to temp dir }),
+    infile_paths_ref => {
+        inputs_ref      => [qw{ infile_1 infile_2  }],
+        expected_output => q{INPUT=infile_1 INPUT=infile_2},
     },
-    java_use_large_pages => {
-        input           => 1,
-        expected_output => q{-XX:-UseLargePages},
+    outfile_path => {
+        input           => catfile(qw{ out_directory outfile }),
+        expected_output => q{OUTPUT=} . catfile(qw{ out_directory outfile }),
     },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
+    regionsfile_path => {
+        input           => catfile(qw{ reference_directory regionsfile }),
+        expected_output => q{INTERVALS=}
+          . catfile(qw{ reference_directory regionsfile }),
+    },
+    threading => {
+        input           => q{true},
+        expected_output => q{USE_THREADING=true},
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&java_core;
+my $module_function_cref = \&picardtools_mergesamfiles;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
 
-HASHES_OF_ARGUMENTS:
+ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href         => $argument_href,
-            module_function_cref  => $module_function_cref,
-            function_base_command => $function_base_command,
-            do_test_base_command  => 1,
+            argument_href          => $argument_href,
+            required_argument_href => \%required_argument,
+            module_function_cref   => $module_function_cref,
+            function_base_command  => $function_base_command,
+            do_test_base_command   => 1,
         }
     );
 }
