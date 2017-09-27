@@ -39,7 +39,7 @@ sub analysis_manta {
 
 ## Function : Joint analysis of structural variation
 ## Returns  : ""
-## Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $family_id, $temp_directory, $reference_dir, $referencefile_path, $outaligner_dir, $call_type, $outfamily_directory
+## Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $family_id, $temp_directory, $referencefile_path, $outaligner_dir, $call_type, $outfamily_directory
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $sample_info_href        => Info on samples and family hash {REF}
@@ -49,7 +49,6 @@ sub analysis_manta {
 ##          : $program_name            => Program name
 ##          : $family_id               => Family id
 ##          : $temp_directory          => Temporary directory
-##          : $reference_dir           => Reference directory
 ##          : $referencefile_path      => Path to reference file
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
 ##          : $call_type               => The variant call type
@@ -60,7 +59,6 @@ sub analysis_manta {
     ## Default(s)
     my $family_id;
     my $temp_directory;
-    my $reference_dir;
     my $referencefile_path;
     my $outaligner_dir;
     my $call_type;
@@ -134,13 +132,9 @@ sub analysis_manta {
             strict_type => 1,
             store       => \$temp_directory
         },
-        reference_dir => {
-            default     => $arg_href->{active_parameter_href}{reference_dir},
-            strict_type => 1,
-            store       => \$reference_dir
-        },
         referencefile_path => {
-            default     => $arg_href->{active_parameter_href}{human_genome_reference},
+            default =>
+              $arg_href->{active_parameter_href}{human_genome_reference},
             strict_type => 1,
             store       => \$referencefile_path
         },
@@ -260,7 +254,7 @@ sub analysis_manta {
         my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
             $sample_id, $outaligner_dir );
 
-        ## #Alias. Add merged infile name after merging all BAM files per sample_id
+        ## Add merged infile name after merging all BAM files per sample_id
         my $infile = $file_info_href->{$sample_id}{merge_infile};
 
         ## Assign file_tags
