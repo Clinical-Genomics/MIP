@@ -11,7 +11,7 @@ bcftools_norm.t
 bcftools_reheader.t
 bcftools_roh.t
 bcftools_stats.t
-bcftools.view.t
+bcftools_view.t
 bedtools_genomecov.t
 bwa_mem.t
 chanjo_sex.t
