@@ -31,6 +31,7 @@ BEGIN {
 ## Constants
 Readonly my $UNDERSCORE => q{_};
 Readonly my $NEWLINE    => qq{\n};
+Readonly my $ASTERISK   => q{*};
 
 sub analysis_manta {
 
@@ -38,7 +39,7 @@ sub analysis_manta {
 
 ## Function : Joint analysis of structural variation
 ## Returns  : ""
-## Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $family_id, $temp_directory, $outaligner_dir, $call_type, $outfamily_directory
+## Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $family_id, $temp_directory, $reference_dir, $referencefile_path, $outaligner_dir, $call_type, $outfamily_directory
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $sample_info_href        => Info on samples and family hash {REF}
@@ -48,6 +49,8 @@ sub analysis_manta {
 ##          : $program_name            => Program name
 ##          : $family_id               => Family id
 ##          : $temp_directory          => Temporary directory
+##          : $reference_dir           => Reference directory
+##          : $referencefile_path      => Path to reference file
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
 ##          : $call_type               => The variant call type
 ##          : $outfamily_directory     => Out family directory
@@ -58,6 +61,7 @@ sub analysis_manta {
     my $family_id;
     my $temp_directory;
     my $reference_dir;
+    my $referencefile_path;
     my $outaligner_dir;
     my $call_type;
 
@@ -134,6 +138,11 @@ sub analysis_manta {
             default     => $arg_href->{active_parameter_href}{reference_dir},
             strict_type => 1,
             store       => \$reference_dir
+        },
+        referencefile_path => {
+            default     => $active_parameter_href->{human_genome_reference},
+            strict_type => 1,
+            store       => \$referencefile_path
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
@@ -217,8 +226,7 @@ sub analysis_manta {
         {
             parameter_href => $parameter_href,
             suffix_key     => q{alignment_file_suffix},
-            jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain}
-            ,    #Get infile_suffix from baserecalibration jobid chain
+            jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain},
         }
     );
 
@@ -252,8 +260,8 @@ sub analysis_manta {
         my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
             $sample_id, $outaligner_dir );
 
-        ## Add merged infile name after merging all BAM files per sample_id
-        my $infile = $file_info_href->{$sample_id}{merge_infile};    #Alias
+        ## #Alias. Add merged infile name after merging all BAM files per sample_id
+        my $infile = $file_info_href->{$sample_id}{merge_infile};
 
         ## Assign file_tags
         my $infile_tag =
@@ -261,7 +269,7 @@ sub analysis_manta {
         my $infile_prefix = $infile . $infile_tag;
 
         my $infile_path = catfile( $insample_directory,
-            $infile_prefix . substr( $infile_suffix, 0, 2 ) . q{*} );
+            $infile_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK );
 
         $file_path_prefix{$sample_id} =
           catfile( $temp_directory, $infile_prefix );
@@ -294,12 +302,11 @@ sub analysis_manta {
 
     manta_config(
         {
-            infile_paths_ref  => \@file_paths,
-            outdirectory_path => $temp_directory,
-            referencefile_path =>
-              $active_parameter_href->{human_genome_reference},
-            exome_analysis => $exome_analysis,
-            FILEHANDLE     => $FILEHANDLE,
+            infile_paths_ref   => \@file_paths,
+            outdirectory_path  => $temp_directory,
+            referencefile_path => $referencefile_path,
+            exome_analysis     => $exome_analysis,
+            FILEHANDLE         => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -314,15 +321,15 @@ sub analysis_manta {
     );
     say {$FILEHANDLE} $NEWLINE;
 
+    my $infile_path =
+      catfile( $temp_directory, q{results}, q{variants}, q{diploidSV.vcf.gz} );
+
     ## Perl wrapper for writing gzip recipe to $FILEHANDLE
     gzip(
         {
-            decompress  => 1,
-            stdout      => 1,
-            infile_path => catfile(
-                $temp_directory, q{results},
-                q{variants},     q{diploidSV.vcf.gz}
-            ),
+            decompress   => 1,
+            stdout       => 1,
+            infile_path  => $infile_path,
             outfile_path => $outfile_path_prefix . $outfile_suffix,
             FILEHANDLE   => $FILEHANDLE,
         }
@@ -333,7 +340,7 @@ sub analysis_manta {
     say {$FILEHANDLE} q{## Copy file from temporary directory};
     migrate_file(
         {
-            infile_path  => $outfile_path_prefix . $outfile_suffix . q{*},
+            infile_path  => $outfile_path_prefix . $outfile_suffix . $ASTERISK,
             outfile_path => $outfamily_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
