@@ -570,14 +570,6 @@ ppicardtools_mergesamfiles:
   remove_redundant_file: yes
   remove_redundant_file_setting: merged
   type: program
-picardtools_mergesamfiles_previous_bams:
-  associated_program:
-   - ppicardtools_mergesamfiles
-  element_separator: ,
-  exists_check: file
-  data_type: ARRAY
-  mandatory: no
-  type: path
 pmarkduplicates:
   associated_program:
    - mip
