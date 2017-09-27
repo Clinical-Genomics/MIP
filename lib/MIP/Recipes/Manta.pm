@@ -140,7 +140,7 @@ sub analysis_manta {
             store       => \$reference_dir
         },
         referencefile_path => {
-            default     => $active_parameter_href->{human_genome_reference},
+            default     => $arg_href->{active_parameter_href}{human_genome_reference},
             strict_type => 1,
             store       => \$referencefile_path
         },
