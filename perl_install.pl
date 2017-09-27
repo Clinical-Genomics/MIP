@@ -16,6 +16,13 @@ use IO::Handle;
 use File::Basename qw{ basename fileparse };
 use File::Spec::Functions qw{ catfile catdir rel2abs };
 use ExtUtils::Installed;
+use FindBin qw{ $Bin };
+
+## Local modules
+use lib catdir( $Bin, q{lib} );
+use Script::Utils_v5_10 qw{ help set_default_array_parameters };
+use MIP::Program::Download::Wget_v5_10 qw{ wget };
+use MIP::PacketManager::Cpanm_v5_10 qw{ cpanm_install_module };
 
 our $USAGE = build_usage( {} );
 
@@ -65,6 +72,8 @@ GetOptions(
     q{pmf|perl_modules_force}       => \$parameter{perl_modules_force},
     q{pma|perl_modules_append:s}    => \@{ $parameter{perl_modules_append} },
     q{ppd|print_parameters_default} => sub {
+
+        # Display parameter defaults
         print_parameters(
             {
                 parameter_href       => \%parameter,
@@ -72,18 +81,28 @@ GetOptions(
             }
         );
         exit;
-    },    # Display parameter defaults
+    },
     q{q|quiet} => \$parameter{quiet},
     q{h|help}  => sub {
+
+        # Display help text
         say STDOUT $USAGE;
         exit;
-    },    #Display help text
+    },
     q{ver|version} => sub {
+
+        # Display version number
         say STDOUT qq{\n} . basename($PROGRAM_NAME) . q{ } . $VERSION, qq{\n};
         exit;
-    },    #Display version number
+    },
     q{v|verbose} => \$parameter{verbose},
-);
+  )
+  or croak help(
+    {
+        USAGE     => $USAGE,
+        exit_code => 1,
+    }
+  );
 
 ## Declaring hash references
 my $parameter_href;
@@ -115,9 +134,14 @@ open $FILEHANDLE, q{>}, $file_name_path
   or
   croak( q{Cannot write to '} . $file_name_path . q{' :} . $OS_ERROR . qq{\n} );
 
-## Write perl install instructions
+say STDERR q{## Writing perl install instructions to: } . $file_name_path;
 
-## Install Perl if upgrade needed
+# Add shebang
+say {$FILEHANDLE} q{#!/usr/bin/env/bash};
+say {$FILEHANDLE} qq{\n};
+
+## Write perl install instructions
+# Install Perl if upgrade needed
 if ( $parameter{perl_skip_install} ) {
     say STDERR q{## Skipping perl installation};
     say {$FILEHANDLE} q{## Skipping installation of perl};
@@ -128,8 +152,8 @@ elsif ( $PERL_VERSION ge q{v} . $parameter{perl_version}
     say STDERR q{## Perl version requirements already met, }
       . q{current perl version: }
       . $PERL_VERSION;
-    say STDERR
-      q{## Re-run the script with '-pfi' flag to force perl installation};
+    say STDERR q{## Re-run the script with }
+      . q{'--perl-force-install' flag to force perl installation};
 
     say {$FILEHANDLE} q{## Perl version requirement met};
 }
@@ -148,8 +172,8 @@ say {$FILEHANDLE} qq{\n};
 
 ## Write cpanm install instructions
 # Check if cpanm alread in path
-my ($inst)    = ExtUtils::Installed->new();
-my (@modules) = $inst->modules();
+my ($installed) = ExtUtils::Installed->new();
+my (@modules)   = $installed->modules();
 
 if (    grep { m/ cpanm /xms } @modules
     and $PERL_VERSION ge q{v} . $parameter{perl_version}
@@ -172,8 +196,9 @@ else {
 say {$FILEHANDLE} qq{\n};
 
 ## Install MIP requred modules via cpanm
-say {$FILEHANDLE} q{## Install modules reuired by MIP via cpanm};
-install_modules(
+say STDERR q{## Writing recipe for installation of Cpanm modules};
+say {$FILEHANDLE} q{## Install modules required by MIP via Cpanm};
+install_cpanm_modules(
     {
         parameter_href => \%parameter,
         FILEHANDLE     => $FILEHANDLE
@@ -187,33 +212,6 @@ close $FILEHANDLE
 ###SubRoutines###
 #################
 
-sub set_default_array_parameters {
-
-##set_default_array_parameters
-
-## Function  : Set default for array parameters unless parameter already exists in parameter hash
-## Returns   : ""
-## Arguments : $parameter_href, $array_parameter_href
-##           : $parameter_href       => Parameters hash {REF}
-##           : $array_parameter_href => Hold the array parameter defaults as {REF}
-
-    my ($arg_href) = @_;
-
-    $parameter_href       = $arg_href->{parameter_href};
-    $array_parameter_href = $arg_href->{array_parameter_href};
-    $FILEHANDLE           = $arg_href->{FILEHANDLE};
-
-  PARAMETER_NAME:
-    foreach my $parameter_name ( keys %{$array_parameter_href} ) {
-        if ( not @{ $parameter_href->{$parameter_name} } ) {
-            $parameter_href->{$parameter_name} =
-              $array_parameter_href->{$parameter_name};
-        }
-    }
-
-    return;
-}
-
 sub install_perl {
 
 ## install_perl
@@ -226,51 +224,55 @@ sub install_perl {
 
     my ($arg_href) = @_;
 
+    # Flatten arguments
     $parameter_href = $arg_href->{parameter_href};
     $FILEHANDLE     = $arg_href->{FILEHANDLE};
+
+    my $perl_install_dir = $arg_href->{parameter_href}{perl_install_dir};
+    my $perl_version     = $arg_href->{parameter_href}{perl_version};
+    my $perl_skip_test   = $arg_href->{parameter_href}{perl_skip_test};
 
     my $pwd = cwd();
 
     ## Check installation path
-    if ( not -d $parameter_href->{perl_install_dir} ) {
+    if ( not -d $perl_install_dir ) {
 
         # Create installation dir
         say {$FILEHANDLE} q{# Create perl installation dir};
-        say {$FILEHANDLE} q{mkdir -p } . $parameter_href->{perl_install_dir}
-          . qq{\n};
+        say {$FILEHANDLE} q{mkdir -p } . $perl_install_dir . qq{\n};
     }
 
     ## Writing wget command
     say {$FILEHANDLE} q{# Download perl from cpan};
 
     ## Download source
-    my $url =
-        q{http://www.cpan.org/src/5.0/perl-}
-      . $parameter_href->{perl_version}
-      . q{.tar.gz};
+    my $url = q{http://www.cpan.org/src/5.0/perl-} . $perl_version . q{.tar.gz};
 
     ## Path to downloaded file
-    my $outfile_path = catfile( $parameter_href->{perl_install_dir},
-        q{perl-} . $parameter_href->{perl_version} . q{.tar.gz} );
+    my $outfile_path =
+      catfile( $perl_install_dir, q{perl-} . $perl_version . q{.tar.gz} );
 
-    wget(
+    my @commands = wget(
         {
-            parameter_href => $parameter_href,
-            url            => $url,
-            outfile_path   => $outfile_path,
-            FILEHANDLE     => $FILEHANDLE
+            url          => $url,
+            outfile_path => $outfile_path,
+            quiet        => $parameter_href->{quiet},
+            verbose      => $parameter_href->{verbose}
         }
     );
 
+    ## Write commands to $FILEHANDLE
+    print {$FILEHANDLE} join( q{ }, @commands ) . q{ };
+
     print {$FILEHANDLE} qq{\n};
 
-    say {$FILEHANDLE} qq{cd } . $parameter_href->{perl_install_dir} . qq{\n};
+    say {$FILEHANDLE} qq{cd } . $perl_install_dir . qq{\n};
 
     ## Writing unpack command
     say {$FILEHANDLE} q{# Unpack and remove tar file};
 
-    my $tar_file = catfile( $parameter_href->{perl_install_dir},
-        q{perl-} . $parameter_href->{perl_version} . q{.tar.gz} );
+    my $tar_file =
+      catfile( $perl_install_dir, q{perl-} . $perl_version . q{.tar.gz} );
 
     say {$FILEHANDLE} q{tar -xzf }
       . $tar_file
@@ -280,18 +282,17 @@ sub install_perl {
     ## Building perl
     say {$FILEHANDLE} q{# Build perl};
 
-    my $perl_install_path = catdir(
-        $parameter_href->{perl_install_dir},
-        q{perl-} . $parameter_href->{perl_version}
-    );
+    my $perl_install_path =
+      catdir( $perl_install_dir, q{perl-} . $perl_version );
 
     say {$FILEHANDLE} q{cd } . $perl_install_path;
     say {$FILEHANDLE} q{./Configure -des -Dprefix=} . $perl_install_path;
     say {$FILEHANDLE} q{make};
 
-    if ( not $parameter_href->{perl_skip_test} ) {
+    if ( not $perl_skip_test ) {
         say {$FILEHANDLE} q{make test};
     }
+
     say {$FILEHANDLE} q{make install};
     say {$FILEHANDLE} q{cd } . $pwd . qq{\n};
 
@@ -301,15 +302,21 @@ sub install_perl {
       . q{/:$PATH' >> ~/.bashrc};
 
     # Use newly installed perl
-    say {$FILEHANDLE} q{export PATH=} . $perl_install_path . q{/:$PATH};
+    say {$FILEHANDLE} q{export PATH=}
+      . $perl_install_path
+      . q{/:$PATH} . qq{\n};
+
+    ## Editing bash_profile
+    say {$FILEHANDLE} q{# Edit bash_profile};
 
     # Add at start-up
     say {$FILEHANDLE} q{echo 'eval `perl -I }
       . catdir( $perl_install_path, qw{ lib perl5 } )
       . q{ -Mlocal::lib=}
       . $perl_install_path
-      . q{/`' >> ~/.bash_profile } . qq{\n};
+      . q{/`' >> ~/.bash_profile };
 
+    # Handle Unicode
     say {$FILEHANDLE} q{echo 'export PERL_UNICODE=SAD' >> ~/.bash_profile }
       . qq{\n};
 
@@ -338,14 +345,17 @@ sub install_cpanm {
     my $outfile_path = q{-};
 
     # Download wget and print to STDOUT
-    wget(
+    my @commands = wget(
         {
-            parameter_href => $parameter_href,
-            url            => $url,
-            outfile_path   => $outfile_path,
-            FILEHANDLE     => $FILEHANDLE
+            url          => $url,
+            outfile_path => $outfile_path,
+            quiet        => $parameter_href->{quiet},
+            verbose      => $parameter_href->{verbose}
         }
     );
+
+    ## Write commands to $FILEHANDLE
+    print {$FILEHANDLE} join( q{ }, @commands ) . q{ };
 
     my $perl_install_path = catdir(
         $parameter_href->{perl_install_dir},
@@ -390,9 +400,9 @@ sub install_cpanm {
     return;
 }
 
-sub install_modules {
+sub install_cpanm_modules {
 
-## insatall_modules
+## insatall_cpanm_modules
 
 ## Function  : Perl wrapper for writing cpanm recipe to $FILEHANDLE.
 ## Returns   : ""
@@ -405,90 +415,31 @@ sub install_modules {
     $parameter_href = $arg_href->{parameter_href};
     $FILEHANDLE     = $arg_href->{FILEHANDLE};
 
-    ## Base command
-    my @commands = q{cpanm};
-
-    ## Add optional force flag
-    if ( $parameter_href->{force} ) {
-        push @commands, q{--force};
-    }
-
-    ## Add optional quiet flag
-    if ( $parameter_href->{quiet} ) {
-        push @commands, q{--quiet};
-    }
-
-    ## Add optional verbose flag
-    if ( $parameter_href->{verbose} ) {
-        push @commands, q{--verbose};
-    }
+    my @perl_modules = @{ $arg_href->{parameter_href}{perl_modules} };
+    my @perl_modules_append =
+      @{ $arg_href->{parameter_href}{perl_modules_append} };
 
     ## Modules to install
-    my @perl_modules;
-    if ( @{ $parameter_href->{perl_modules_append} } ) {
-        @perl_modules = @{ $parameter_href->{perl_modules_append} };
-        @perl_modules = split( /,/, join( q{,}, @perl_modules ) );
+    if (@perl_modules_append) {
+        @perl_modules_append = split( /,/, join( q{,}, @perl_modules_append ) );
 
-        @perl_modules = ( @{ $parameter_href->{perl_modules} }, @perl_modules );
+        @perl_modules = ( @perl_modules, @perl_modules_append );
 
         # Remove any duplicate modules
         my %perl_modules = map { $_ => 1 } @perl_modules;
         @perl_modules = keys %perl_modules;
     }
-    else {
-        @perl_modules = @{ $parameter_href->{perl_modules} };
-    }
 
-    push @commands, join q{ }, @perl_modules;
+    my @commands = cpanm_install_module(
+        {
+            modules_ref => \@perl_modules,
+            force       => $parameter_href->{force},
+            quiet       => $parameter_href->{quiet},
+            verbose     => $parameter_href->{verbose}
+        }
+    );
 
     say {$FILEHANDLE} join q{ }, @commands;
-
-    return;
-}
-
-sub wget {
-
-## wget
-
-## Function  : Perl wrapper for writing wget recipe to $FILEHANDLE or return commands array. Based on GNU Wget 1.12, a non-interactive network retriever.
-## Returns   : "@commands"
-## Arguments : $parameter_href, $FILEHANDLE
-##           : $parameter_href => Hash that holds all parameters {REF}
-##           : $FILEHANDLE     => Filehandle to write to
-
-    my ($arg_href) = @_;
-
-    ## Flatten arguments
-    my $url;
-    my $outfile_path;
-
-    ## Load arguments
-    $parameter_href = $arg_href->{parameter_href};
-    $url            = $arg_href->{url};
-    $outfile_path   = $arg_href->{outfile_path};
-    $FILEHANDLE     = $arg_href->{FILEHANDLE};
-
-    # Stores commands depending on input parameters
-    my @commands = qw(wget);
-
-    if ( $parameter_href->{quiet} ) {
-        push @commands, q{--quiet};
-    }
-
-    if ( $parameter_href->{verbose} ) {
-        push @commands, q{--verbose};
-    }
-    else {
-        push @commands, q{--no-verbose};
-    }
-
-    # Add url adress
-    push @commands, $url;
-
-    # Add outfile path
-    push @commands, q{-O } . $outfile_path;
-
-    print {$FILEHANDLE} join( q{ }, @commands ) . q{ };
 
     return;
 }
