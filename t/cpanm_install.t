@@ -75,7 +75,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::PacketManager::Cpanm});
+    my @modules = (q{MIP::Package_manager::Cpanm});
 
   MODULES:
     for my $module (@modules) {
@@ -83,11 +83,11 @@ BEGIN {
     }
 }
 
-use MIP::PacketManager::Cpanm qw{ cpanm_install };
+use MIP::Package_manager::Cpanm qw{ cpanm_install };
 use MIP::Test::Commands qw{ test_function };
 
 diag(   q{Test cpanm_install from Cpanm.pm v}
-      . $MIP::PacketManager::Cpanm::VERSION
+      . $MIP::Package_manager::Cpanm::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
