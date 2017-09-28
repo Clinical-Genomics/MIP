@@ -17019,8 +17019,7 @@ sub delly_call {
     }
 }
 
-<<<<<<< HEAD
-=======
+
 sub tiddit {
 
 ##tiddit
@@ -17343,7 +17342,6 @@ sub tiddit {
     }
 }
 
->>>>>>> 871bd26a3dd7e23d42b9e6f1f8181c99dbcfe121
 sub msamtools_mpileup {
 
 ## msamtools_mpileup
