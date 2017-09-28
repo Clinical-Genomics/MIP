@@ -17125,7 +17125,7 @@ sub tiddit {
     use MIP::IO::Files qw(migrate_file);
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Set::File qw{set_file_suffix};
-    use Program::Variantcalling::Tiddit qw(sv);
+    use MIP::Program::Variantcalling::Tiddit qw{ tiddit_sv };
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
@@ -17263,7 +17263,7 @@ sub tiddit {
         );
 
         ## Tiddit
-        sv(
+        tiddit_sv(
             {
                 FILEHANDLE  => $FILEHANDLE,
                 infile_path => $file_path_prefix{$sample_id}{in}
