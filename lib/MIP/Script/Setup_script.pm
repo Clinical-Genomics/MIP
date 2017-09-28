@@ -226,11 +226,11 @@ sub setup_script {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Language::Shell
-      qw{ build_shebang create_housekeeping_function create_error_trap_function enable_trap};
-    use MIP::Workloadmanager::Slurm qw{ slurm_build_sbatch_header};
-    use MIP::Gnu::Bash qw{ gnu_set};
-    use MIP::Gnu::Coreutils qw{ gnu_echo gnu_mkdir gnu_sleep};
-    use MIP::Check::Path qw{ check_file_version_exist};
+      qw{ build_shebang create_housekeeping_function create_error_trap_function enable_trap };
+    use MIP::Workloadmanager::Slurm qw{ slurm_build_sbatch_header };
+    use MIP::Gnu::Bash qw{ gnu_set };
+    use MIP::Gnu::Coreutils qw{ gnu_echo gnu_mkdir gnu_sleep };
+    use MIP::Check::Path qw{ check_file_version_exist };
     use MIP::Language::Shell qw{ quote_bash_variable };
 
     ##Constants
