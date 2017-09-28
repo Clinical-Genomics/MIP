@@ -15862,7 +15862,7 @@ sub delly_reformat {
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use Program::Variantcalling::Delly qw(call merge filter);
     use MIP::Program::Variantcalling::Bcftools
-      qw(bcftools_merge bcftools_index);
+      qw{ bcftools_merge bcftools_index bcftools_concat };
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
