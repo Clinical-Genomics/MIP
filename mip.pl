@@ -1987,7 +1987,6 @@ if ( $active_parameter{ptiddit} > 0 ) {    #Run Tiddit
     $log->info( q{[Tiddit]} . $NEWLINE );
     my $program_name = lc q{tiddit};
 
-    #fix this path, by watching what is actually passed by the actual mip
     my $outfamily_directory = catfile(
         $active_parameter{outdata_dir},
         $active_parameter{family_id},
