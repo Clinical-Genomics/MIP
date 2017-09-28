@@ -102,7 +102,7 @@ sub install_varianteffectpredictor {
 
     use MIP::Gnu::Bash qw(gnu_cd);
     use MIP::Gnu::Coreutils qw{ gnu_rm gnu_mv gnu_mkdir };
-    use MIP::PacketManager::Conda
+    use MIP::Package_manager::Conda
       qw{ conda_source_activate conda_source_deactivate };
     use MIP::Program::Download::Wget qw{ wget };
     use MIP::Program::Compression::Tar qw{ tar };

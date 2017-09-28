@@ -28,7 +28,6 @@ use MIP::Gnu::Bash qw(gnu_cd);
 use MIP::Gnu::Coreutils qw(gnu_cp gnu_rm gnu_mv gnu_mkdir gnu_ln gnu_chmod );
 use MIP::PacketManager::Conda
   qw{ conda_source_activate conda_source_deactivate };
-use MIP::PacketManager::Cpanm qw { cpanm_install };
 use Script::Utils qw(help set_default_array_parameters);
 use MIP::Check::Path qw{ check_dir_path_exist };
 
@@ -133,37 +132,8 @@ $array_parameter{vep_plugins}{default} =
 $array_parameter{snpeff_genome_versions}{default} =
   [qw(GRCh37.75 GRCh38.86)];
 $array_parameter{reference_genome_versions}{default} = [qw(GRCh37 hg38)];
-$array_parameter{perl_modules}{default}              = [
-    qw{ Modern::Perl },              # MIP
-    qw{ IPC::System::Simple },       # MIP
-    qw{ Path::Iterator::Rule },      # MIP
-    qw{ YAML },                      # MIP
-    qw{ Log::Log4perl },             # MIP
-    qw{ List::Util },                # MIP
-    qw{ List::MoreUtils },           # MIP
-    qw{ Readonly },                  # MIP
-    qw{ Scalar::Util::Numeric },     # MIP
-    qw{ Set::IntervalTree },         # MIP/vcfParser.pl
-    qw{ Net::SSLeay },               # VEP
-    qw{ LWP::Simple },               # VEP
-    qw{ LWP::Protocol::https },      # VEP
-    qw{ PerlIO::gzip },              # VEP
-    qw{ IO::Uncompress::Gunzip },    # VEP
-    qw{ HTML::Lint },                # VEP
-    qw{ Archive::Zip },              # VEP
-    qw{ Archive::Extract },          # VEP
-    qw{ DBI },                       # VEP
-    qw{ JSON },                      # VEP
-    qw{ DBD::mysql },                # VEP
-    qw{ CGI },                       # VEP
-    qw{ Sereal::Encoder },           # VEP
-    qw{ Sereal::Decoder },           # VEP
-    qw{ Bio::Root::Version },        # VEP
-    qw{ Module::Build },             # VEP
-    qw{ File::Copy::Recursive },     # VEP
-];
 
-my $VERSION = '1.2.10';
+my $VERSION = q{1.2.11};
 
 ###User Options
 GetOptions(
@@ -175,11 +145,6 @@ GetOptions(
     'bcv|bioconda=s'                => \%{ $parameter{bioconda} },
     'pip|pip=s'                     => \%{ $parameter{pip} },
     'pyv|python_version=s'          => \$parameter{python_version},
-    'pev|perl_version=s'            => \$parameter{perl_version},
-    'pei|perl_install'              => \$parameter{perl_install},
-    'pevs|perl_skip_test'           => \$parameter{perl_skip_test},
-    'pm|perl_modules:s'             => \@{ $parameter{perl_modules} },
-    'pmf|perl_modules_force'        => \$parameter{perl_modules_force},
     'pic|picardtools:s'             => \$parameter{picardtools},
     'sbb|sambamba:s'                => \$parameter{sambamba},
     'bet|bedtools:s'                => \$parameter{bedtools},
@@ -278,9 +243,9 @@ set_default_array_parameters(
 my $FILEHANDLE = IO::Handle->new();
 
 # Installation instruction file
-my $file_name_path = catfile( cwd(), 'mip.sh' );
+my $file_name_path = catfile( cwd(), q{mip.sh} );
 
-open $FILEHANDLE, '>', $file_name_path
+open $FILEHANDLE, q{>}, $file_name_path
   or
   croak( q{Cannot write to '} . $file_name_path . q{' :} . $OS_ERROR . "\n" );
 
@@ -331,29 +296,6 @@ finish_bioconda_package_install(
         snpeff_genome_versions_ref => $parameter{snpeff_genome_versions},
     }
 );
-
-if ( @{ $parameter{select_programs} } ) {
-
-    if ( ( grep { $_ eq 'perl' } @{ $parameter{select_programs} } ) )
-    {    #If element is part of array
-
-        perl(
-            {
-                parameter_href => \%parameter,
-                FILEHANDLE     => $FILEHANDLE,
-            }
-        );
-    }
-}
-else {
-
-    perl(
-        {
-            parameter_href => \%parameter,
-            FILEHANDLE     => $FILEHANDLE,
-        }
-    );
-}
 
 pip_install(
     {
@@ -662,11 +604,6 @@ sub build_usage {
     -pyv/--python_version Set the env python version (Default: "2.7")
 
     ## SHELL
-    -pei/--perl_install Install perl (Supply flag to enable)
-    -pev/--perl_version Set the perl version (defaults: "5.18.2")
-    -pevs/--perl_skip_test Skip "tests" in perl installation
-    -pm/--perl_modules Set the perl modules to be installed via cpanm (Default: ["Modern::Perl", "List::Util", "IPC::System::Simple", "Path::Iterator::Rule", "YAML", "Log::Log4perl", "Set::IntervalTree", "Net::SSLeay",P, "LWP::Simple", "LWP::Protocol::https", "Archive::Zip", "Archive::Extract", "DBI","JSON", "DBD::mysql", "CGI", "Sereal::Encoder", "Sereal::Decoder", "Bio::Root::Version", "Module::Build"])
-    -pmf/--perl_modules_force Force installation of perl modules
     -pic/--picardtools Set the picardtools version (Default: "2.5.9"),
     -sbb/--sambamba Set the sambamba version (Default: "0.6.6")
     -bet/--bedtools Set the bedtools version (Default: "2.26.0")
@@ -772,293 +709,6 @@ sub print_parameters {
               . join( " ", @{ $parameter_href->{$key} } ), "\n";
         }
     }
-    return;
-}
-
-sub perl {
-
-##perl
-
-##Function : Installs perl
-##Returns  : ""
-##Arguments: $parameter_href, $FILEHANDLE
-##         : $parameter_href => Holds all parameters
-##         : $FILEHANDLE     => Filehandle to write to
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
-
-    my $pwd = cwd();
-
-    if ( $ENV{PATH} =~ /perl-$parameter_href->{perl_version}/ ) {
-
-        if ( $parameter_href->{noupdate} ) {
-
-            print STDERR 'Found perl-'
-              . $parameter_href->{perl_version}
-              . ' in your path', "\n";
-            print STDERR 'Skipping writting installation for perl-'
-              . $parameter_href->{perl_version}, "\n";
-        }
-        else {
-
-            if ( $parameter_href->{perl_install} ) {
-
-                ## Removing specific Perl version
-                print $FILEHANDLE '### Removing specific perl version', "\n";
-                gnu_rm(
-                    {
-                        infile_path => '$HOME/perl-'
-                          . $parameter_href->{perl_version},
-                        force      => 1,
-                        recursive  => 1,
-                        FILEHANDLE => $FILEHANDLE,
-                    }
-                );
-                print $FILEHANDLE "\n\n";
-
-                install_perl_cpnam(
-                    {
-                        parameter_href => $parameter_href,
-                        FILEHANDLE     => $FILEHANDLE,
-                    }
-                );
-            }
-
-            say {$FILEHANDLE} q{## Installing perl modules via cpanm};
-            cpanm_install(
-                {
-                    modules_ref => $parameter{perl_modules},
-                    FILEHANDLE  => $FILEHANDLE,
-                }
-            );
-            say {$FILEHANDLE} $NEWLINE;
-        }
-    }
-    else {
-
-        if ( $parameter_href->{perl_install} ) {
-
-            install_perl_cpnam(
-                {
-                    parameter_href => $parameter_href,
-                    FILEHANDLE     => $FILEHANDLE,
-                    path           => 1,
-                }
-            );
-        }
-
-        say {$FILEHANDLE} q{## Installing perl modules via cpanm};
-        cpanm_install(
-            {
-                modules_ref => $parameter{perl_modules},
-                FILEHANDLE  => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
-    return;
-}
-
-sub install_perl_cpnam {
-
-##install_perl_cpnam
-
-##Function : Install perl CPANM
-##Returns  : ""
-##Arguments: $parameter_href, $FILEHANDLE
-##         : $parameter_href => Holds all parameters
-##         : $FILEHANDLE     => Filehandle to write to
-##         : $path           => Export path if provided {Optional}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $path;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
-        path       => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$path
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
-
-    my $pwd = cwd();
-
-    print STDERR 'Writting install instructions for perl and Cpanm', "\n";
-
-    ## Install specific perl version
-    print $FILEHANDLE '### Install specific perl version', "\n";
-
-    ## Move to Home
-    print $FILEHANDLE '## Move to $HOME', "\n";
-    gnu_cd(
-        {
-            directory_path => q?$HOME?,
-            FILEHANDLE     => $FILEHANDLE,
-        }
-    );
-    print $FILEHANDLE "\n\n";
-
-    ## Download
-    print $FILEHANDLE '## Download perl', "\n";
-    wget(
-        {
-            url => 'http://www.cpan.org/src/5.0/perl-'
-              . $parameter_href->{perl_version}
-              . '.tar.gz',
-            FILEHANDLE   => $FILEHANDLE,
-            quiet        => $parameter_href->{quiet},
-            verbose      => $parameter_href->{verbose},
-            outfile_path => 'perl-'
-              . $parameter_href->{perl_version}
-              . '.tar.gz',
-        }
-    );
-    print $FILEHANDLE "\n\n";
-
-    ## Extract
-    print $FILEHANDLE '## Extract', "\n";
-    print $FILEHANDLE "tar xzf perl-"
-      . $parameter_href->{perl_version}
-      . ".tar.gz";
-    print $FILEHANDLE "\n\n";
-
-    ## Move to perl directory
-    print $FILEHANDLE '## Move to perl directory', "\n";
-    gnu_cd(
-        {
-            directory_path => 'perl-' . $parameter_href->{perl_version},
-            FILEHANDLE     => $FILEHANDLE,
-        }
-    );
-    print $FILEHANDLE "\n\n";
-
-    ## Configure
-    print $FILEHANDLE '## Configure', "\n";
-    print $FILEHANDLE './Configure -des -Dprefix=$HOME/perl-'
-      . $parameter_href->{perl_version}, "\n";
-    print $FILEHANDLE 'make', "\n";
-
-    if ( !$parameter_href->{perl_skip_test} ) {
-
-        print $FILEHANDLE 'make test', "\n";
-    }
-    print $FILEHANDLE 'make install', "\n\n";
-
-    if ($path) {
-
-        ## Export path
-        print $FILEHANDLE '## Export path', "\n";
-        print $FILEHANDLE q{echo 'export PATH=$HOME/perl-}
-          . $parameter_href->{perl_version}
-          . q{/:$PATH' >> ~/.bashrc};
-        print $FILEHANDLE "\n\n";
-        print $FILEHANDLE 'export PATH=$HOME/perl-'
-          . $parameter_href->{perl_version}
-          . '/:$PATH';    #Use newly installed perl
-        print $FILEHANDLE "\n\n";
-    }
-
-    ## Remove tar file
-    print $FILEHANDLE '## Remove tar file', "\n";
-    gnu_cd( { FILEHANDLE => $FILEHANDLE, } );
-
-    print $FILEHANDLE '&& ';
-
-    gnu_rm(
-        {
-            infile_path => 'perl-'
-              . $parameter_href->{perl_version}
-              . '.tar.gz',
-            FILEHANDLE => $FILEHANDLE,
-        }
-    );
-    print $FILEHANDLE "\n\n";
-
-    ## Move to back
-    print $FILEHANDLE '## Move to original working directory', "\n";
-    gnu_cd(
-        {
-            directory_path => $pwd,
-            FILEHANDLE     => $FILEHANDLE,
-        }
-    );
-    print $FILEHANDLE "\n\n";
-
-    print $FILEHANDLE q{echo 'eval `perl -I ~/perl-}
-      . $parameter_href->{perl_version}
-      . q{/lib/perl5/ -Mlocal::lib=~/perl-}
-      . $parameter_href->{perl_version}
-      . q{/`' >> ~/.bash_profile };    #Add at start-up
-    print $FILEHANDLE "\n\n";
-    print $FILEHANDLE
-      q{echo 'export PERL_UNICODE=SAD' >> ~/.bash_profile };    #Add at start-up
-    print $FILEHANDLE "\n\n";
-
-    ## Install perl modules via cpanm
-    print $FILEHANDLE '## Install cpanm', "\n";
-    wget(
-        {
-            url          => 'http://cpanmin.us',
-            FILEHANDLE   => $FILEHANDLE,
-            quiet        => $parameter_href->{quiet},
-            verbose      => $parameter_href->{verbose},
-            outfile_path => '-',
-        }
-    );
-    print $FILEHANDLE q{ | perl - -l $HOME/perl-}
-      . $parameter_href->{perl_version}
-      . q{/bin App::cpanminus --local-lib=~/perl-}
-      . $parameter_href->{perl_version}
-      . q{/ local::lib };
-    print $FILEHANDLE "\n\n";
-
-    ## Use newly installed perl
-    print $FILEHANDLE q{eval `perl -I ~/perl-}
-      . $parameter_href->{perl_version}
-      . q{/lib/perl5/ -Mlocal::lib=~/perl-}
-      . $parameter_href->{perl_version} . q{/` };
-    print $FILEHANDLE "\n\n";
-
-    ## Use newly installed perl
-    print $FILEHANDLE q{PERL5LIB=~/perl-}
-      . $parameter_href->{perl_version}
-      . q{/lib/perl5};
-    print $FILEHANDLE "\n\n";
-
     return;
 }
 

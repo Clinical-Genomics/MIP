@@ -1,4 +1,4 @@
-package MIP::PacketManager::Cpanm;
+package MIP::Package_manager::Cpanm;
 
 use strict;
 use warnings;

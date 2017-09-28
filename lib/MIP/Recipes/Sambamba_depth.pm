@@ -29,28 +29,30 @@ BEGIN {
 }
 
 ##Constants
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => qq{ };
+Readonly my $ASTERIX      => q{*};
+Readonly my $NEWLINE      => qq{\n};
+Readonly my $SINGLE_QUOTE => q{'};
+Readonly my $SPACE        => q{ };
 
 sub analysis_sambamba_depth {
 
 ## Function : Generate coverage bed outfile for each individual.
 ## Returns  : ""
 ## Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id, $insample_directory, $outsample_directory, $program_name, family_id, $temp_directory, $outaligner_dir
-##          : $parameter_href             => Parameter hash {REF}
-##          : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##          : $sample_info_href           => Info on samples and family hash {REF}
-##          : $file_info_href             => The file_info hash {REF}
-##          : $infile_lane_prefix_href    => Infile(s) without the ".ending" {REF}
-##          : $job_id_href                => Job id hash {REF}
-##          : $sample_id                  => Sample id
-##          : $insample_directory         => In sample directory
-##          : $outsample_directory        => Out sample directory
-##          : $outaligner_dir             => Outaligner_dir used in the analysis
-##          : $program_name               => Program name
-##          : $family_id                  => Family id
-##          : $temp_directory             => Temporary directory
-##          : $outaligner_dir             => Outaligner_dir used in the analysis
+##          : $parameter_href          => Parameter hash {REF}
+##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $file_info_href          => The file_info hash {REF}
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $job_id_href             => Job id hash {REF}
+##          : $sample_id               => Sample id
+##          : $insample_directory      => In sample directory
+##          : $outsample_directory     => Out sample directory
+##          : $outaligner_dir          => Outaligner_dir used in the analysis
+##          : $program_name            => Program name
+##          : $family_id               => Family id
+##          : $temp_directory          => Temporary directory
+##          : $outaligner_dir          => Outaligner_dir used in the analysis
 
     my ($arg_href) = @_;
 
@@ -193,9 +195,12 @@ sub analysis_sambamba_depth {
     my $outfile_tag =
       $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
 
-    my $infile_prefix       = $infile . $infile_tag;
-    my $outfile_prefix      = $infile . $outfile_tag;
-    my $file_path_prefix    = catfile( $temp_directory, $infile_prefix );
+    ## Files
+    my $infile_prefix  = $infile . $infile_tag;
+    my $outfile_prefix = $infile . $outfile_tag;
+
+    ## Paths
+    my $file_path_prefix = catfile( $temp_directory, $infile_prefix );
     my $outfile_path_prefix = $file_path_prefix . $outfile_tag;
 
     ## Get infile_suffix from baserecalibration jobid chain
@@ -216,7 +221,7 @@ sub analysis_sambamba_depth {
 
     # q{.bam} -> ".b*" for getting index as well)
     my $infile_path = catfile( $insample_directory,
-        $infile_prefix . substr( $infile_suffix, 0, 2 ) . q{*} );
+        $infile_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERIX );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_path) = setup_script(
@@ -226,11 +231,10 @@ sub analysis_sambamba_depth {
             FILEHANDLE            => $FILEHANDLE,
             directory_id          => $sample_id,
             program_name          => $program_name,
-            program_directory =>
-              catfile( lc($outaligner_dir), q{coveragereport} ),
-            core_number    => $core_number,
-            process_time   => $time,
-            temp_directory => $temp_directory,
+            program_directory => catfile( $outaligner_dir, q{coveragereport} ),
+            core_number       => $core_number,
+            process_time      => $time,
+            temp_directory    => $temp_directory,
         }
     );
 
@@ -250,7 +254,8 @@ sub analysis_sambamba_depth {
 
     ## Get parameters
     my $sambamba_filter =
-        q{'mapping_quality >= }
+        $SINGLE_QUOTE
+      . q{mapping_quality >= }
       . $active_parameter_href->{sambamba_depth_mapping_quality}
       . $SPACE;
 
@@ -265,7 +270,7 @@ sub analysis_sambamba_depth {
 
         $sambamba_filter .= q{and not failed_quality_control};
     }
-    $sambamba_filter .= q{'};
+    $sambamba_filter .= $SINGLE_QUOTE;
 
     sambamba_depth(
         {
