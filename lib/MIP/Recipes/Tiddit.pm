@@ -199,6 +199,8 @@ sub analysis_tiddit {
     );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+    say {$FILEHANDLE} q{\n\n\n\n testing!!! \n\ntemp_dir is:\t"temp_directory"\n\n\n};
+
     my ( $file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
