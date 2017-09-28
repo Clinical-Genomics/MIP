@@ -100,7 +100,7 @@ sub add_to_job_id_dependency_string {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Job_id string to submit to workload manager
     my $job_ids_string = $EMPTY_STR;
@@ -208,7 +208,7 @@ sub add_sample_ids_job_ids_to_job_id_dependency_string {
           { required => 1, defined => 1, strict_type => 1, store => \$path },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my $job_ids_string;
 
@@ -295,13 +295,13 @@ sub add_parallel_job_ids_to_job_id_dependency_string {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my $job_ids_string;
 
     if ( defined $job_id_href->{$family_id_chain_key} ) {
 
-        foreach my $chain_key ( keys $job_id_href->{$family_id_chain_key} ) {
+        foreach my $chain_key ( keys %{$job_id_href->{$family_id_chain_key}} ) {
 
             ## Check if chain_key actually is a parallel
             if ( $chain_key =~ /parallel/ ) {
@@ -368,7 +368,7 @@ sub add_parallel_chains_job_ids_to_job_id_dependency_string {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my $job_ids_string;
 
@@ -447,7 +447,7 @@ sub add_job_id_dependency_tree {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Push job_id to arbitrary chain key
 
@@ -456,7 +456,7 @@ sub add_job_id_dependency_tree {
       \@{ $job_id_href->{$chain_key}{$chain_key} };
 
     # Add to sample_id job dependency tree
-    push $chain_key_job_ids_ref, $job_id_returned;
+    push @{$chain_key_job_ids_ref}, $job_id_returned;
 
     return;
 }
@@ -517,14 +517,14 @@ sub add_parallel_job_id_to_sample_id_dependency_tree {
           { required => 1, defined => 1, strict_type => 1, store => \$path },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my $chain_key_type = q{parallel};
     my $parallel_jobs_chain_key;
 
     ## Push parallel job_ids
   INFILES:
-    while ( my ($infile_index) = each $infile_lane_prefix_href->{$sample_id} ) {
+    while ( my ($infile_index) = each @{$infile_lane_prefix_href->{$sample_id}} ) {
 
         # Set key
         $parallel_jobs_chain_key =
@@ -550,7 +550,7 @@ sub add_parallel_job_id_to_sample_id_dependency_tree {
               \@{ $job_id_href->{$family_id_chain_key}{$parallel_jobs_chain_key}
               };
 
-            push $sample_id_job_ids_ref, @{$job_ids_ref};
+            push @{$sample_id_job_ids_ref}, @{$job_ids_ref};
         }
     }
     return;
@@ -609,7 +609,7 @@ sub add_parallel_job_id_to_family_id_dependency_tree {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my $chain_key_type = q{parallel};
 
@@ -637,7 +637,7 @@ sub add_parallel_job_id_to_family_id_dependency_tree {
           \@{ $job_id_href->{$family_id_chain_key}
               {$family_id_parallel_chain_key} };
 
-        push $family_id_job_ids_ref, @{$job_ids_ref};
+        push @{$family_id_job_ids_ref}, @{$job_ids_ref};
     }
     return;
 }
@@ -703,7 +703,7 @@ sub add_parallel_job_id_to_parallel_dependency_tree {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Push job to parallel job id
 
@@ -723,7 +723,7 @@ sub add_parallel_job_id_to_parallel_dependency_tree {
       \@{ $job_id_href->{$family_id_chain_key}{$id_parallel_chain_key} };
 
     # Add to sample_id job dependency tree
-    push $id_job_ids_ref, $job_id_returned;
+    push @{$id_job_ids_ref}, $job_id_returned;
 
     return;
 }
@@ -777,7 +777,7 @@ sub add_sample_id_parallel_job_id_to_family_id_dependency_tree {
           { required => 1, defined => 1, strict_type => 1, store => \$path },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my $chain_key_type = q{parallel};
     my $parallel_jobs_chain_key;
@@ -787,7 +787,7 @@ sub add_sample_id_parallel_job_id_to_family_id_dependency_tree {
         ## Push parallel job_ids
       INFILES:
         while ( my ($infile_index) =
-            each $infile_lane_prefix_href->{$sample_id} )
+            each %{$infile_lane_prefix_href->{$sample_id}} )
         {
 
             # Set parallel sample key
@@ -880,7 +880,7 @@ sub add_sample_ids_parallel_job_id_to_family_id_dependency_tree {
           { required => 1, defined => 1, strict_type => 1, store => \$path },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
   SAMPLE_IDS:
     foreach my $sample_id ( @{$sample_ids_ref} ) {
@@ -938,7 +938,7 @@ sub add_pan_job_id_to_sample_id_dependency_tree {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my $pan_chain_key;
 
@@ -1012,7 +1012,7 @@ sub add_sample_job_id_to_sample_id_dependency_tree {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Push sample job
 
@@ -1066,7 +1066,7 @@ sub add_sample_job_id_to_family_id_dependency_tree {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Push sample_id jobs
 
@@ -1145,7 +1145,7 @@ sub create_job_id_string_for_sample_id {
           { required => 1, defined => 1, strict_type => 1, store => \$path },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my $job_ids_string;
     my $path_main = q{MAIN};
@@ -1270,7 +1270,7 @@ sub create_job_id_string_for_family_id {
           { required => 1, defined => 1, strict_type => 1, store => \$path },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my $job_ids_string;
     my $path_main = q{MAIN};
@@ -1380,7 +1380,7 @@ sub create_job_id_string_for_family_id_and_path {
           { required => 1, defined => 1, strict_type => 1, store => \$path },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my $job_ids_string;
 
@@ -1462,7 +1462,7 @@ sub clear_sample_id_parallel_job_id_dependency_tree {
           { required => 1, defined => 1, strict_type => 1, store => \$path },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Clear all latest parallel jobs within chainkey
   INFILES:
@@ -1530,7 +1530,7 @@ sub clear_pan_job_id_dependency_tree {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my $pan_chain_key;
 
@@ -1583,7 +1583,7 @@ sub clear_sample_id_job_id_dependency_tree {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Clear latest sample_id chainkey
     @{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} } = ();
@@ -1623,7 +1623,7 @@ sub clear_family_id_job_id_dependency_tree {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Clear latest family_id chainkey
     @{ $job_id_href->{$family_id_chain_key}{$family_id_chain_key} } = ();
@@ -1663,7 +1663,7 @@ sub clear_all_job_ids_within_chain_key_dependency_tree {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Clear all jobs within chainkey
   CHAIN_KEYS:
@@ -1713,7 +1713,7 @@ sub limit_job_id_string {
             store       => \$chain_key
         },
     };
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Set maximum job_ids to track limit
     Readonly my $MAX_JOB_IDS_TO_TRACK => 100;
@@ -1774,7 +1774,7 @@ sub print_wait {
         FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Gnu::Bash qw{gnu_wait};
 
