@@ -27,7 +27,7 @@ use MIP::PATH::TO:MODULE qw{SUB_ROUTINE};
 ```
 To:
 ```Perl
-use MIP::PacketManager::Conda qw{conda_install};
+use MIP::Package_manager::Conda qw{conda_install};
 ```  
 #### Basic shell command
 Change:

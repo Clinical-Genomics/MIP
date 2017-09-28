@@ -1,4 +1,4 @@
-package MIP::PacketManager::Conda;
+package MIP::Package_manager::Conda;
 
 use strict;
 use warnings;

@@ -22,7 +22,7 @@ use FindBin qw{ $Bin };
 use lib catdir( $Bin, q{lib} );
 use Script::Utils_v5_10 qw{ help set_default_array_parameters };
 use MIP::Program::Download::Wget_v5_10 qw{ wget };
-use MIP::PacketManager::Cpanm_v5_10 qw{ cpanm_install_module };
+use MIP::Package_manager::Cpanm_v5_10 qw{ cpanm_install_module };
 
 our $USAGE = build_usage( {} );
 
@@ -266,7 +266,7 @@ sub install_perl {
 
     print {$FILEHANDLE} qq{\n};
 
-    say {$FILEHANDLE} qq{cd } . $perl_install_dir . qq{\n};
+    say {$FILEHANDLE} q{cd } . $perl_install_dir . qq{\n};
 
     ## Writing unpack command
     say {$FILEHANDLE} q{# Unpack and remove tar file};
@@ -402,7 +402,7 @@ sub install_cpanm {
 
 sub install_cpanm_modules {
 
-## insatall_cpanm_modules
+## install_cpanm_modules
 
 ## Function  : Perl wrapper for writing cpanm recipe to $FILEHANDLE.
 ## Returns   : ""

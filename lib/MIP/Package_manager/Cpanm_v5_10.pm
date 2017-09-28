@@ -1,4 +1,4 @@
-package MIP::PacketManager::Cpanm_v5_10;
+package MIP::Package_manager::Cpanm_v5_10;
 
 use strict;
 use warnings;
@@ -24,7 +24,7 @@ BEGIN {
 
 sub cpanm_install_module {
 
-## cpanm_install
+## cpanm_install_module
 
 ## Function  : Perl wrapper for writing cpanm recipe to array (@commands).
 ## Returns   : @commands

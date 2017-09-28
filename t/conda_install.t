@@ -71,7 +71,7 @@ BEGIN {
     }
 
 ##Modules
-    my @modules = (q{MIP::PacketManager::Conda});
+    my @modules = (q{MIP::Package_manager::Conda});
 
   MODULES:
     for my $module (@modules) {
@@ -79,11 +79,11 @@ BEGIN {
     }
 }
 
-use MIP::PacketManager::Conda qw{conda_install};
+use MIP::Package_manager::Conda qw{conda_install};
 use MIP::Test::Commands qw{test_function};
 
 diag(   q{Test conda_install from Conda.pm v}
-      . $MIP::PacketManager::Conda::VERSION
+      . $MIP::Package_manager::Conda::VERSION
       . q{, Perl }
       . $PERL_VERSION
       . $SPACE

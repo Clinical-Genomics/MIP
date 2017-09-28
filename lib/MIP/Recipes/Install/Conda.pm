@@ -87,7 +87,7 @@ sub setup_conda_env {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Unix qw{ check_binary_in_path };
-    use MIP::PacketManager::Conda
+    use MIP::Package_manager::Conda
       qw{ conda_create conda_update conda_check_env_status conda_install };
 
     ## Scan the PATH for conda
@@ -220,7 +220,7 @@ sub install_bioconda_packages {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments};
 
-    use MIP::PacketManager::Conda qw{ conda_install };
+    use MIP::Package_manager::Conda qw{ conda_install };
     use MIP::Gnu::Coreutils qw{ gnu_ln };
 
     ## Create an array for bioconda packages that are to be installed from provided hash
@@ -338,7 +338,7 @@ sub finish_bioconda_package_install {
 
     use File::Spec::Functions qw{ catdir catfile };
     use MIP::Gnu::Coreutils qw{ gnu_cp gnu_chmod };
-    use MIP::PacketManager::Conda
+    use MIP::Package_manager::Conda
       qw{ conda_source_activate conda_source_deactivate };
     use MIP::Program::Variantcalling::SnpEff qw{ snpeff_download };
 
