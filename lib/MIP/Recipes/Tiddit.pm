@@ -135,7 +135,7 @@ sub analysis_tiddit {
         reference_dir => {
             default     => $arg_href->{active_parameter_href}{reference_dir},
             strict_type => 1,
-            store       => $reference_dir
+            store       => \$reference_dir
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
