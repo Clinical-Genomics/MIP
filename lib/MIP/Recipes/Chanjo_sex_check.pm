@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_chanjo_sex_check };
@@ -153,7 +153,7 @@ sub analysis_chanjo_sex_check {
 
     use List::MoreUtils qw { any };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Get::File qw{ get_file_suffix };
+    use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::Program::Alignment::Chanjo qw{ chanjo_sex };
     use MIP::QC::Record
       qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info };
@@ -177,8 +177,13 @@ sub analysis_chanjo_sex_check {
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$sample_id}{merge_infile};
+    ## Add merged infile name prefix after merging all BAM files per sample_id
+    my $merged_infile_prefix = get_merged_infile_prefix(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $sample_id,
+        }
+    );
 
     ## Assign file_tags
     my $infile_tag =
@@ -186,8 +191,8 @@ sub analysis_chanjo_sex_check {
     my $outfile_tag =
       $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
 
-    my $infile_prefix  = $infile . $infile_tag;
-    my $outfile_prefix = $infile . $outfile_tag;
+    my $infile_prefix  = $merged_infile_prefix . $infile_tag;
+    my $outfile_prefix = $merged_infile_prefix . $outfile_tag;
 
     ## Get infile_suffix from baserecalibration jobid chain
     my $infile_suffix = get_file_suffix(
@@ -262,7 +267,7 @@ sub analysis_chanjo_sex_check {
                 sample_info_href => $sample_info_href,
                 sample_id        => $sample_id,
                 program_name     => q{chanjo_sexcheck},
-                infile           => $infile,
+                infile           => $merged_infile_prefix,
                 outdirectory     => $outsample_directory,
                 outfile          => $outfile_name,
             }
@@ -272,7 +277,7 @@ sub analysis_chanjo_sex_check {
                 sample_info_href => $sample_info_href,
                 sample_id        => $sample_id,
                 program_name     => q{chanjo_sexcheck},
-                infile           => $infile,
+                infile           => $merged_infile_prefix,
                 metafile_tag     => q{log},
                 directory        => $outsample_directory,
                 file => $infile_prefix . $UNDERSCORE . q{chanjo_sexcheck.log},

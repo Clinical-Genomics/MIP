@@ -14,7 +14,7 @@ use File::Spec::Functions qw{ catdir catfile devnull };
 
 ## CPANM
 use Readonly;
-Readonly my $NEWLINE => qq{\n};
+Readonly my $NEWLINE  => qq{\n};
 Readonly my $ASTERISK => q{*};
 
 BEGIN {
@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bedtools_genomecov };
@@ -159,7 +159,7 @@ sub analysis_bedtools_genomecov {
 
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::IO::Files qw{ migrate_file };
-    use MIP::Get::File qw{ get_file_suffix };
+    use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::Program::Alignment::Bedtools qw{ bedtools_genomecov };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_dead_end };
@@ -181,8 +181,13 @@ sub analysis_bedtools_genomecov {
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$sample_id}{merge_infile};
+    ## Add merged infile name prefix after merging all BAM files per sample_id
+    my $merged_infile_prefix = get_merged_infile_prefix(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $sample_id,
+        }
+    );
 
     ## Files
     my $infile_tag =
@@ -191,8 +196,8 @@ sub analysis_bedtools_genomecov {
       $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
 
     ## Path
-    my $infile_prefix  = $infile . $infile_tag;
-    my $outfile_prefix = $infile . $outfile_tag;
+    my $infile_prefix  = $merged_infile_prefix . $infile_tag;
+    my $outfile_prefix = $merged_infile_prefix . $outfile_tag;
 
     my $file_path_prefix    = catfile( $temp_directory, $infile_prefix );
     my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );

@@ -46,14 +46,16 @@ sub analysis_picardtools_mergesamfiles {
 
 ##Function : Merges all bam files using Picardtools mergesamfiles within each sampleid and files generated previously (option if provided with '-picardtools_mergesamfiles_previous_bams'). The merged files have to be sorted before attempting to merge.
 ##Returns  : |$xargs_file_counter
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $lane_href, $job_id_href, $sample_id, $program_name, $program_info_path, $file_path, $family_id, $outaligner_dir, $referencefile_path, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $lane_href, $job_id_href, $insample_directory, $outsample_directory, $sample_id, $program_name, $program_info_path, $file_path, $family_id, $outaligner_dir, $referencefile_path, $xargs_file_counter
 ##         : $parameter_href          => Parameter hash {REF}
 ##         : $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href        => Info on samples and family hash {REF}
-##         : $file_info_href          => The file_info hash {REF}
+##         : $file_info_href          => File_info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $lane_href               => The lane info hash {REF}
 ##         : $job_id_href             => Job id hash {REF}
+##         : $insample_directory      => In sample directory
+##         : $outsample_directory     => Out sample directory
 ##         : $sample_id               => Sample id
 ##         : $program_name            => Program name
 ##         : $program_info_path       => The program info path
@@ -79,8 +81,10 @@ sub analysis_picardtools_mergesamfiles {
     my $sample_info_href;
     my $file_info_href;
     my $infile_lane_prefix_href;
-    my $job_id_href;
     my $lane_href;
+    my $job_id_href;
+    my $insample_directory;
+    my $outsample_directory;
     my $sample_id;
     my $program_name;
     my $program_info_path;
@@ -122,13 +126,6 @@ sub analysis_picardtools_mergesamfiles {
             strict_type => 1,
             store       => \$infile_lane_prefix_href
         },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
         lane_href => {
             required    => 1,
             defined     => 1,
@@ -136,11 +133,30 @@ sub analysis_picardtools_mergesamfiles {
             strict_type => 1,
             store       => \$lane_href
         },
+        job_id_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$job_id_href
+        },
         sample_id => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$sample_id
+        },
+        insample_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$insample_directory
+        },
+        outsample_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$outsample_directory
         },
         program_name => {
             required    => 1,
@@ -190,6 +206,7 @@ sub analysis_picardtools_mergesamfiles {
     use MIP::Program::Alignment::Picardtools qw{ picardtools_mergesamfiles };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Program::Alignment::Samtools qw{ samtools_index };
+    use MIP::Set::File qw{ set_merged_infile_prefix };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
@@ -233,12 +250,6 @@ sub analysis_picardtools_mergesamfiles {
         }
     );
 
-    ## Assign directories
-    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $sample_id, $outaligner_dir );
-    my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $sample_id, $outaligner_dir );
-
     # Used downstream
     $parameter_href->{$mip_program_name}{$sample_id}{indirectory} =
       $outsample_directory;
@@ -261,7 +272,13 @@ sub analysis_picardtools_mergesamfiles {
     ## Set helper value for finding merged_infiles downstream
     my $merged_infile_prefix =
       $sample_id . $UNDERSCORE . q{lanes} . $UNDERSCORE . $lanes_id;
-    $file_info_href->{$sample_id}{merge_infile} = $merged_infile_prefix;
+    set_merged_infile_prefix(
+        {
+            file_info_href       => $file_info_href,
+            sample_id            => $sample_id,
+            merged_infile_prefix => $merged_infile_prefix,
+        }
+    );
 
     ## Copies files from source to destination
     migrate_files(
@@ -516,7 +533,7 @@ sub analysis_picardtools_mergesamfiles_rio {
 
 ##Function : Merges all bam files using Picardtools mergesamfiles within each sampleid and files generated previously (option if provided with '-picardtools_mergesamfiles_previous_bams'). The merged files have to be sorted before attempting to merge.
 ##Returns  : |$xargs_file_counter
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $lane_href, $job_id_href, $sample_id, $program_name, $program_info_path, $file_path,, $FILEHANDLE, $family_id, $outaligner_dir, $referencefile_path, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $lane_href, $job_id_href, $insample_directory, $sample_id, $program_name, $program_info_path, $file_path,, $FILEHANDLE, $family_id, $outaligner_dir, $referencefile_path, $xargs_file_counter
 ##         : $parameter_href          => Parameter hash {REF}
 ##         : $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href        => Info on samples and family hash {REF}
@@ -524,6 +541,7 @@ sub analysis_picardtools_mergesamfiles_rio {
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $lane_href               => The lane info hash {REF}
 ##         : $job_id_href             => Job id hash {REF}
+##         : $insample_directory      => In sample directory
 ##         : $sample_id               => Sample id
 ##         : $program_name            => Program name
 ##         : $program_info_path       => The program info path
@@ -550,8 +568,9 @@ sub analysis_picardtools_mergesamfiles_rio {
     my $sample_info_href;
     my $file_info_href;
     my $infile_lane_prefix_href;
-    my $job_id_href;
     my $lane_href;
+    my $job_id_href;
+    my $insample_directory;
     my $sample_id;
     my $program_name;
     my $program_info_path;
@@ -594,6 +613,13 @@ sub analysis_picardtools_mergesamfiles_rio {
             strict_type => 1,
             store       => \$infile_lane_prefix_href
         },
+        lane_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$lane_href
+        },
         job_id_href => {
             required    => 1,
             defined     => 1,
@@ -601,12 +627,11 @@ sub analysis_picardtools_mergesamfiles_rio {
             strict_type => 1,
             store       => \$job_id_href
         },
-        lane_href => {
+        insample_directory => {
             required    => 1,
             defined     => 1,
-            default     => {},
             strict_type => 1,
-            store       => \$lane_href
+            store       => \$insample_directory
         },
         sample_id => {
             required    => 1,
@@ -662,6 +687,7 @@ sub analysis_picardtools_mergesamfiles_rio {
     use MIP::Program::Alignment::Picardtools qw{ picardtools_mergesamfiles };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Program::Alignment::Samtools qw{ samtools_index };
+    use MIP::Set::File qw{ set_merged_infile_prefix };
     use MIP::Delete::File qw{ delete_files };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
@@ -690,16 +716,6 @@ sub analysis_picardtools_mergesamfiles_rio {
     # Create anonymous filehandle
     my $XARGSFILEHANDLE = IO::Handle->new();
 
-    ## Assign directories
-    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $sample_id, $outaligner_dir );
-    my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $sample_id, $outaligner_dir );
-
-    # Used downstream
-    $parameter_href->{$mip_program_name}{$sample_id}{indirectory} =
-      $outsample_directory;
-
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$sample_id}
       { $parameter_href->{active_aligner} }{file_tag};
@@ -716,9 +732,15 @@ sub analysis_picardtools_mergesamfiles_rio {
     );
 
     ## Set helper value for finding merged_infiles downstream
-    my $merged_infile =
+    my $merged_infile_prefix =
       $sample_id . $UNDERSCORE . q{lanes} . $UNDERSCORE . $lanes_id;
-    $file_info_href->{$sample_id}{merge_infile} = $merged_infile;
+    set_merged_infile_prefix(
+        {
+            file_info_href       => $file_info_href,
+            sample_id            => $sample_id,
+            merged_infile_prefix => $merged_infile_prefix,
+        }
+    );
 
     ## Copies files from source to destination
     migrate_files(

@@ -86,10 +86,10 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $DOT     => q{.};
+Readonly my $DOT       => q{.};
 Readonly my $EMPTY_STR => q{};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $TAB     => qq{\t};
+Readonly my $NEWLINE   => qq{\n};
+Readonly my $TAB       => qq{\t};
 
 #### Script parameters
 
@@ -152,10 +152,11 @@ my %file_info = (
     bwa_build_reference => $EMPTY_STR,
     exome_target_bed =>
       [qw{ .infile_list .pad100.infile_list .pad100.interval_list }],
-		 # BWA human genome reference file endings
-    bwa_build_reference_file_endings => [qw{ .amb .ann .bwt .pac .sa }]
-    ,
-		     # Human genome meta files
+
+    # BWA human genome reference file endings
+    bwa_build_reference_file_endings => [qw{ .amb .ann .bwt .pac .sa }],
+
+    # Human genome meta files
     human_genome_reference_file_endings => [qw{ .dict .fai }],
 );
 
@@ -1345,6 +1346,11 @@ else {
 
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
+        my $insample_directory = catdir( $active_parameter{outdata_dir},
+            $sample_id, $active_parameter{outaligner_dir} );
+        my $outsample_directory = catdir( $active_parameter{outdata_dir},
+            $sample_id, $active_parameter{outaligner_dir} );
+
         analysis_picardtools_mergesamfiles(
             {
                 parameter_href          => \%parameter,
@@ -1354,6 +1360,8 @@ else {
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 lane_href               => \%lane,
                 job_id_href             => \%job_id,
+                insample_directory      => $insample_directory,
+                outsample_directory     => $outsample_directory,
                 sample_id               => $sample_id,
                 program_name            => $program_name,
             }
@@ -1795,10 +1803,8 @@ if ( $active_parameter{pmanta} > 0 ) {    #Run Manta
     my $program_name = lc q{manta};
 
     my $outfamily_directory = catfile(
-        $active_parameter{outdata_dir},
-        $active_parameter{family_id},
-        $active_parameter{outaligner_dir},
-        $program_name,
+        $active_parameter{outdata_dir},    $active_parameter{family_id},
+        $active_parameter{outaligner_dir}, $program_name,
     );
 
     check_build_human_genome_prerequisites(
@@ -1835,10 +1841,8 @@ if ( $active_parameter{ptiddit} > 0 ) {    #Run Tiddit
     my $program_name = lc q{tiddit};
 
     my $outfamily_directory = catfile(
-        $active_parameter{outdata_dir},
-        $active_parameter{family_id},
-        $active_parameter{outaligner_dir},
-        $program_name,
+        $active_parameter{outdata_dir},    $active_parameter{family_id},
+        $active_parameter{outaligner_dir}, $program_name,
     );
 
     use MIP::Recipes::Tiddit qw{ analysis_tiddit };
@@ -3418,7 +3422,7 @@ sub removeredundantfiles {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $lane_href                  => The lane info hash {REF}
@@ -3891,7 +3895,7 @@ sub evaluation {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $sample_id_ref              => Sample id {REF}
@@ -4414,7 +4418,7 @@ sub endvariantannotationblock {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $program_name               => Program name
@@ -4892,7 +4896,7 @@ sub rankvariant {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $program_name               => Program name
@@ -5480,7 +5484,7 @@ sub gatk_variantevalexome {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $sample_id_ref              => Sample id {REF}
@@ -5588,8 +5592,8 @@ sub gatk_variantevalexome {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use MIP::Language::Java qw{java_core};
-    use MIP::Set::File qw{set_file_suffix};
-    use MIP::Get::File qw{get_file_suffix};
+    use MIP::Set::File qw{set_file_suffix };
+    use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
     use MIP::Gnu::Coreutils qw(gnu_cat gnu_sort);
     use Program::Variantcalling::Bedtools qw(intersectbed);
     use Program::Variantcalling::Gatk qw(varianteval);
@@ -5627,8 +5631,13 @@ sub gatk_variantevalexome {
     my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
         $$family_id_ref, $$outaligner_dir_ref );
 
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};    #Alias
+    ## Add merged infile name prefix after merging all BAM files per sample_id
+    my $merged_infile_prefix = get_merged_infile_prefix(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $$sample_id_ref,
+        }
+    );
 
     ## Assign file_tags
     my $infile_tag =
@@ -5639,7 +5648,7 @@ sub gatk_variantevalexome {
       {file_tag};
     my $infile_prefix       = $$family_id_ref . $infile_tag . $call_type;
     my $file_path_prefix    = catfile( $$temp_directory_ref, $infile_prefix );
-    my $outfile_prefix      = $infile . $outfile_tag;
+    my $outfile_prefix      = $merged_infile_prefix . $outfile_tag;
     my $outfile_path_prefix = catfile( $$temp_directory_ref, $outfile_prefix );
 
     ### Assign suffix
@@ -5966,7 +5975,7 @@ sub gatk_variantevalexome {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
                 program_name     => 'variantevalexome',
-                infile           => $infile,
+                infile           => $merged_infile_prefix,
                 outdirectory     => $outsample_directory,
                 outfile          => $qc_exome_outfile,
             }
@@ -6000,7 +6009,7 @@ sub gatk_variantevalall {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $sample_id_ref              => Sample id {REF}
@@ -6105,7 +6114,7 @@ sub gatk_variantevalall {
     use MIP::IO::Files qw(migrate_file);
     use MIP::Language::Java qw{java_core};
     use MIP::Set::File qw{set_file_suffix};
-    use MIP::Get::File qw{get_file_suffix};
+    use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
     use Program::Variantcalling::Gatk qw(varianteval);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
@@ -6143,8 +6152,13 @@ sub gatk_variantevalall {
     my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
         $$family_id_ref, $$outaligner_dir_ref );
 
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};    #Alias
+    ## Add merged infile name prefix after merging all BAM files per sample_id
+    my $merged_infile_prefix = get_merged_infile_prefix(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $$sample_id_ref,
+        }
+    );
 
     ## Assign file_tags
     my $infile_tag =
@@ -6155,7 +6169,7 @@ sub gatk_variantevalall {
       {file_tag};
     my $infile_prefix       = $$family_id_ref . $infile_tag . $call_type;
     my $file_path_prefix    = catfile( $$temp_directory_ref, $infile_prefix );
-    my $outfile_prefix      = $infile . $outfile_tag;
+    my $outfile_prefix      = $merged_infile_prefix . $outfile_tag;
     my $outfile_path_prefix = catfile( $$temp_directory_ref, $outfile_prefix );
 
     ### Assign suffix
@@ -6247,7 +6261,10 @@ sub gatk_variantevalall {
             infile_paths_ref => [
                 catfile(
                     $$temp_directory_ref,
-                    $infile . $infile_tag . $call_type . $infile_suffix
+                    $merged_infile_prefix
+                      . $infile_tag
+                      . $call_type
+                      . $infile_suffix
                 )
             ],
             outfile_path => $outfile_path_prefix . $call_type . $outfile_suffix,
@@ -6281,7 +6298,7 @@ sub gatk_variantevalall {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
                 program_name     => 'variantevalall',
-                infile           => $infile,
+                infile           => $merged_infile_prefix,
                 outdirectory     => $outsample_directory,
                 outfile => $outfile_prefix . $call_type . $outfile_suffix,
             }
@@ -6315,7 +6332,7 @@ sub snpeff {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $program_name               => Program name
@@ -6912,7 +6929,7 @@ sub mvcfparser {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $program_name               => Program name
@@ -7373,7 +7390,7 @@ sub gatk_readbackedphasing {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $lane_href                  => The lane info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
@@ -7465,7 +7482,7 @@ sub gatk_readbackedphasing {
           $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
 
         ## Add merged infile name after merging all BAM files per sample_id
-        my $infile = $file_info_href->{$sample_id}{merge_infile};    #Alias
+        my $infile = $file_info_href->{$sample_id}{merged_infile};    #Alias
 
         ## Copy file(s) to temporary directory
         say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -7520,13 +7537,13 @@ sub gatk_readbackedphasing {
           $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
 
         ## Add merged infile name after merging all BAM files per sample_id
-        my $infile = $file_info_href->{$sample_id}{merge_infile};    #Alias
+        my $infile = $file_info_href->{$sample_id}{merged_infile};    #Alias
 
         print $FILEHANDLE "-I "
           . catfile(
             $active_parameter_href->{temp_directory},
             $infile . $infile_tag . ".bam "
-          );                                                         #InFile
+          );                                                          #InFile
     }
     print $FILEHANDLE "-L: "
       . catfile(
@@ -7587,7 +7604,7 @@ sub gatk_phasebytransmission {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $family_id                  => The family_id
@@ -7756,7 +7773,7 @@ sub mpeddy {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $program_name               => Program name
@@ -8024,7 +8041,7 @@ sub mplink {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $program_name               => Program name
@@ -8470,7 +8487,7 @@ sub vt {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $program_name               => Program name
@@ -8910,7 +8927,7 @@ sub rhocall {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $program_name               => Program name
@@ -9255,7 +9272,7 @@ sub prepareforvariantannotationblock {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $program_name               => Program name
@@ -9598,7 +9615,7 @@ sub gatk_combinevariantcallsets {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $program_name               => Program name
@@ -9925,7 +9942,7 @@ sub gatk_variantrecalibration {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $program_name               => Program name
@@ -10640,7 +10657,7 @@ sub gatk_concatenate_genotypegvcfs {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $program_name               => Program name
@@ -10973,7 +10990,7 @@ sub gatk_genotypegvcfs {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $family_id_ref              => Family id {REF}
@@ -11070,7 +11087,7 @@ sub gatk_genotypegvcfs {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
-    use MIP::Get::File qw{get_file_suffix};
+    use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Language::Java qw{java_core};
     use Program::Variantcalling::Gatk qw(genotypegvcfs);
@@ -11173,8 +11190,13 @@ sub gatk_genotypegvcfs {
         my @file_paths;
         foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
-            ## Add merged infile name after merging all BAM files per sample_id
-            my $infile = $file_info_href->{$sample_id}{merge_infile};    #Alias
+            ## Add merged infile name prefix after merging all BAM files per sample_id
+            my $merged_infile_prefix = get_merged_infile_prefix(
+                {
+                    file_info_href => $file_info_href,
+                    sample_id      => $sample_id,
+                }
+            );
 
             ## Assign directories
             my $insample_directory =
@@ -11184,7 +11206,8 @@ sub gatk_genotypegvcfs {
             ## Assign file_tags
             my $infile_tag =
               $file_info_href->{$sample_id}{pgatk_haplotypecaller}{file_tag};
-            my $infile_prefix = $infile . $infile_tag . "_" . $contig;
+            my $infile_prefix =
+              $merged_infile_prefix . $infile_tag . "_" . $contig;
 
             ## Collect for downstream use
             push(
@@ -11309,7 +11332,7 @@ sub rcoverageplots {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $lane_href                  => The lane info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
@@ -11413,6 +11436,7 @@ sub rcoverageplots {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Script::Setup_script qw(setup_script);
+    use MIP::Get::File qw{ get_merged_infile_prefix };
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_dead_end);
 
@@ -11431,8 +11455,13 @@ sub rcoverageplots {
         $$outaligner_dir_ref,                  "coveragereport"
     );
 
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};    #Alias
+    ## Add merged infile name prefix after merging all BAM files per sample_id
+    my $merged_infile_prefix = get_merged_infile_prefix(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $$sample_id_ref,
+        }
+    );
 
     ## Assign file_tags
     my $infile_tag =
@@ -11455,12 +11484,13 @@ sub rcoverageplots {
     );
 
     print $FILEHANDLE "covplots_genome ";
-    print $FILEHANDLE catfile( $insample_directory, $infile . $infile_tag )
-      . " ";                            #InFile
-    print $FILEHANDLE $infile . " ";    #Sample name
+    print $FILEHANDLE catfile( $insample_directory,
+        $merged_infile_prefix . $infile_tag )
+      . " ";    #InFile
+    print $FILEHANDLE $merged_infile_prefix . " ";    #Sample name
     print $FILEHANDLE $active_parameter_href->{bedtools_genomecov_max_coverage}
-      . " ";                            #X-axis max scale
-    say $FILEHANDLE $outsample_directory, " &", "\n";    #OutFile
+      . " ";                                          #X-axis max scale
+    say $FILEHANDLE $outsample_directory, " &", "\n"; #OutFile
     say $FILEHANDLE q{wait}, "\n";
 
     close($FILEHANDLE);
@@ -11492,7 +11522,7 @@ sub mpicardtools_collecthsmetrics {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $sample_id_ref              => Sample id
@@ -11594,7 +11624,7 @@ sub mpicardtools_collecthsmetrics {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Script::Setup_script qw(setup_script);
-    use MIP::Get::File qw{get_file_suffix};
+    use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
     use MIP::IO::Files qw(migrate_file);
     use MIP::Language::Java qw{java_core};
     use MIP::Program::Alignment::Picardtools qw(picardtools_collecthsmetrics);
@@ -11615,17 +11645,22 @@ sub mpicardtools_collecthsmetrics {
         $$outaligner_dir_ref,                  "coveragereport"
     );
 
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};    #Alias
+    ## Add merged infile name prefix after merging all BAM files per sample_id
+    my $merged_infile_prefix = get_merged_infile_prefix(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $$sample_id_ref,
+        }
+    );
 
     ## Assign file_tags
     my $infile_tag =
       $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag =
       $file_info_href->{$$sample_id_ref}{ "p" . $program_name }{file_tag};
-    my $infile_prefix       = $infile . $infile_tag;
+    my $infile_prefix       = $merged_infile_prefix . $infile_tag;
     my $file_path_prefix    = catfile( $$temp_directory_ref, $infile_prefix );
-    my $outfile_prefix      = $infile . $outfile_tag;
+    my $outfile_prefix      = $merged_infile_prefix . $outfile_tag;
     my $outfile_path_prefix = catfile( $$temp_directory_ref, $outfile_prefix );
 
     ## Assign suffix
@@ -11733,7 +11768,7 @@ sub mpicardtools_collecthsmetrics {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
                 program_name     => 'collecthsmetrics',
-                infile           => $infile,
+                infile           => $merged_infile_prefix,
                 outdirectory     => $outsample_directory,
                 outfile          => $outfile_prefix,
             }
@@ -11767,7 +11802,7 @@ sub mpicardtools_collectmultiplemetrics {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $sample_id_ref              => Sample id
@@ -11870,7 +11905,7 @@ sub mpicardtools_collectmultiplemetrics {
 
     use Readonly;
     use MIP::Script::Setup_script qw(setup_script);
-    use MIP::Get::File qw{get_file_suffix};
+    use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
     use MIP::IO::Files qw(migrate_file);
     use MIP::Language::Java qw{java_core};
     use MIP::Program::Alignment::Picardtools
@@ -11895,17 +11930,22 @@ sub mpicardtools_collectmultiplemetrics {
         $$outaligner_dir_ref,                  "coveragereport"
     );
 
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};    #Alias
+    ## Add merged infile name prefix after merging all BAM files per sample_id
+    my $merged_infile_prefix = get_merged_infile_prefix(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $$sample_id_ref,
+        }
+    );
 
     ## Assign file_tags
     my $infile_tag =
       $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag =
       $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
-    my $infile_prefix       = $infile . $infile_tag;
+    my $infile_prefix       = $merged_infile_prefix . $infile_tag;
     my $file_path_prefix    = catfile( $$temp_directory_ref, $infile_prefix );
-    my $outfile_prefix      = $infile . $outfile_tag;
+    my $outfile_prefix      = $merged_infile_prefix . $outfile_tag;
     my $outfile_path_prefix = catfile( $$temp_directory_ref, $outfile_prefix );
 
     ## Assign suffix
@@ -12005,7 +12045,7 @@ sub mpicardtools_collectmultiplemetrics {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
                 program_name     => 'collectmultiplemetrics',
-                infile           => $infile,
+                infile           => $merged_infile_prefix,
                 outdirectory     => $outsample_directory,
                 outfile          => $outfile_prefix
                   . $DOT
@@ -12017,7 +12057,7 @@ sub mpicardtools_collectmultiplemetrics {
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
                 program_name     => 'collectmultiplemetricsinsertsize',
-                infile           => $infile,
+                infile           => $merged_infile_prefix,
                 outdirectory     => $outsample_directory,
                 outfile => $outfile_prefix . $DOT . q{insert_size_metrics},
             }
@@ -12051,7 +12091,7 @@ sub sv_reformat {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $family_id_ref              => The family_id_ref {REF}
@@ -12589,7 +12629,7 @@ sub sv_rankvariant {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $family_id_ref              => The family_id_ref {REF}
@@ -13251,7 +13291,7 @@ sub sv_vcfparser {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $program_name               => Program name
@@ -13777,7 +13817,7 @@ sub sv_combinevariantcallsets {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $program_name               => Program name
@@ -13882,7 +13922,7 @@ sub sv_combinevariantcallsets {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
-    use MIP::Get::File qw{get_file_suffix};
+    use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
     use MIP::Set::File qw{set_file_suffix};
     use Program::Variantcalling::Svdb qw(merge query);
     use MIP::Program::Variantcalling::Bcftools
@@ -13954,8 +13994,13 @@ sub sv_combinevariantcallsets {
     ## Collect infiles for all sample_ids for programs that do not do joint calling to enable migration to temporary directory
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
-        ## Add merged infile name after merging all BAM files per sample_id
-        my $infile = $file_info_href->{$sample_id}{merge_infile};    #Alias
+        ## Add merged infile name prefix after merging all BAM files per sample_id
+        my $merged_infile_prefix = get_merged_infile_prefix(
+            {
+                file_info_href => $file_info_href,
+                sample_id      => $sample_id,
+            }
+        );
 
         foreach my $structural_variant_caller (
             @{
@@ -13983,7 +14028,7 @@ sub sv_combinevariantcallsets {
                 my $infile_tag =
                   $file_info_href->{$sample_id}{$structural_variant_caller}
                   {file_tag};
-                my $infile_prefix = $infile . $infile_tag;
+                my $infile_prefix = $merged_infile_prefix . $infile_tag;
                 $file_path_prefix{$sample_id}{$structural_variant_caller} =
                   catfile( $$temp_directory_ref, $infile_prefix );
 
@@ -14562,7 +14607,7 @@ sub cnvnator {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $sample_id_ref              => Sample id
@@ -14732,7 +14777,7 @@ sub cnvnator {
       $outsample_directory;    #Used downstream
 
     ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};    #Alias
+    my $infile = $file_info_href->{$$sample_id_ref}{merged_infile};    #Alias
 
     ## Assign file_tags
     my $infile_tag =
@@ -15047,7 +15092,7 @@ sub delly_reformat {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $program_name               => Program name
@@ -15162,7 +15207,7 @@ sub delly_reformat {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Delete::List qw{ delete_contig_elements };
-    use MIP::Get::File qw{get_file_suffix};
+    use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Recipes::Xargs qw{ xargs_command };
     use MIP::Gnu::Coreutils qw(gnu_mv);
@@ -15266,21 +15311,26 @@ sub delly_reformat {
 
         foreach my $infile_tag_key (@program_tag_keys) {
 
-            ## Add merged infile name after merging all BAM files per sample_id
-            my $infile = $file_info_href->{$sample_id}{merge_infile};    #Alias
+            ## Add merged infile name prefix after merging all BAM files per sample_id
+            my $merged_infile_prefix = get_merged_infile_prefix(
+                {
+                    file_info_href => $file_info_href,
+                    sample_id      => $sample_id,
+                }
+            );
 
             ## Assign file_tags
             my $infile_tag =
               $file_info_href->{$sample_id}{$infile_tag_key}{file_tag};
-            my $infile_prefix = $infile . $infile_tag;
+            my $infile_prefix = $merged_infile_prefix . $infile_tag;
 
             $infile_path_prefix{$sample_id}{$infile_tag_key} =
               catfile( $$temp_directory_ref, $infile_prefix );
             $file_path_prefix{$sample_id} =
-              catfile( $$temp_directory_ref, $infile . $outfile_tag )
-              ;    #Used downstream
+              catfile( $$temp_directory_ref,
+                $merged_infile_prefix . $outfile_tag );    #Used downstream
 
-            if ( $infile_tag_key eq "pdelly_call" ) {    #BCFs
+            if ( $infile_tag_key eq "pdelly_call" ) {      #BCFs
 
                 ## Assign suffix
                 $suffix{$infile_tag_key} = get_file_suffix(
@@ -15314,10 +15364,10 @@ sub delly_reformat {
                                 program_info_path  => $program_info_path,
                                 core_number        => $core_number,
                                 xargs_file_counter => $xargs_file_counter,
-                                infile             => $infile . $infile_tag,
-                                indirectory        => $insample_directory_bcf,
-                                file_ending        => $file_ending,
-                                temp_directory     => $$temp_directory_ref,
+                                infile => $merged_infile_prefix . $infile_tag,
+                                indirectory    => $insample_directory_bcf,
+                                file_ending    => $file_ending,
+                                temp_directory => $$temp_directory_ref,
                             }
                         );
                     }
@@ -15330,7 +15380,9 @@ sub delly_reformat {
                                 FILEHANDLE  => $FILEHANDLE,
                                 infile_path => catfile(
                                     $insample_directory_bcf,
-                                    $infile . $infile_tag . $file_ending
+                                    $merged_infile_prefix
+                                      . $infile_tag
+                                      . $file_ending
                                 ),
                                 outfile_path =>
                                   $active_parameter_href->{temp_directory}
@@ -15361,7 +15413,7 @@ sub delly_reformat {
                         FILEHANDLE  => $FILEHANDLE,
                         infile_path => catfile(
                             $insample_directory_bam,
-                            $infile . $infile_tag . $file_ending
+                            $merged_infile_prefix . $infile_tag . $file_ending
                         ),
                         outfile_path => $active_parameter_href->{temp_directory}
                     }
@@ -15379,10 +15431,10 @@ sub delly_reformat {
                         core_number       => ( $core_number - 1 )
                         ,    #Compensate for cp of entire BAM TRA, see above
                         xargs_file_counter => $xargs_file_counter,
-                        infile             => $infile . $infile_tag,
-                        indirectory        => $insample_directory_bam,
-                        file_ending        => $file_ending,
-                        temp_directory     => $$temp_directory_ref,
+                        infile         => $merged_infile_prefix . $infile_tag,
+                        indirectory    => $insample_directory_bam,
+                        file_ending    => $file_ending,
+                        temp_directory => $$temp_directory_ref,
                     }
                 );
             }
@@ -15949,7 +16001,7 @@ sub delly_call {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $sample_id_ref              => Sample id
@@ -16067,7 +16119,7 @@ sub delly_call {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
-    use MIP::Get::File qw{get_file_suffix};
+    use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Delete::List qw{ delete_contig_elements };
     use Program::Variantcalling::Delly qw(call);
@@ -16112,17 +16164,22 @@ sub delly_call {
     $parameter_href->{ "p" . $program_name }{$$sample_id_ref}{indirectory} =
       $outsample_directory;    #Used downstream
 
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};    #Alias
+    ## Add merged infile name prefix after merging all BAM files per sample_id
+    my $merged_infile_prefix = get_merged_infile_prefix(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $$sample_id_ref,
+        }
+    );
 
     ## Assign file_tags
     my $infile_tag =
       $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag =
       $file_info_href->{$$sample_id_ref}{ "p" . $program_name }{file_tag};
-    my $infile_prefix       = $infile . $infile_tag;
+    my $infile_prefix       = $merged_infile_prefix . $infile_tag;
     my $file_path_prefix    = catfile( $$temp_directory_ref, $infile_prefix );
-    my $outfile_prefix      = $infile . $outfile_tag;
+    my $outfile_prefix      = $merged_infile_prefix . $outfile_tag;
     my $outfile_path_prefix = catfile( $$temp_directory_ref, $outfile_prefix );
 
     ## Assign suffix
@@ -16313,329 +16370,6 @@ sub delly_call {
     }
 }
 
-
-sub tiddit {
-
-##tiddit
-
-##Function : Call structural variants using tiddit
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $family_id_ref              => Family id {REF}
-##         : $temp_directory_ref         => Temporary directory {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
-##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => The variant call type
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-    my $reference_dir_ref;
-    my $outaligner_dir_ref;
-    my $call_type;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $program_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref
-        },
-        reference_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{reference_dir},
-            strict_type => 1,
-            store       => \$reference_dir_ref
-        },
-        outaligner_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir_ref
-        },
-        call_type =>
-          { default => "_SV", strict_type => 1, store => \$call_type },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Processmanagement::Processes qw(print_wait);
-    use MIP::Cluster qw(get_core_number);
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::IO::Files qw(migrate_file);
-    use MIP::Get::File qw{get_file_suffix};
-    use MIP::Set::File qw{set_file_suffix};
-    use MIP::Program::Variantcalling::Tiddit qw{ tiddit_sv };
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_sample_id_dependency_add_to_family);
-
-    my $program_outdirectory_name =
-      $parameter_href->{ "p" . $program_name }{outdir_name};
-    my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
-
-    ## Filehandles
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    ## Get core number depending on user supplied input exists or not and max number of cores
-    my $core_number = get_core_number(
-        {
-            module_core_number => $active_parameter_href->{module_core_number}
-              { "p" . $program_name },
-            modifier_core_number =>
-              scalar( @{ $active_parameter_href->{sample_ids} } ),
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-        }
-    );
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $$family_id_ref,
-            program_name          => $program_name,
-            program_directory     => catfile(
-                lc($$outaligner_dir_ref),
-                lc($program_outdirectory_name)
-            ),
-            core_number => $core_number,
-            process_time =>
-              $active_parameter_href->{module_time}{ "p" . $program_name },
-            temp_directory => $$temp_directory_ref
-        }
-    );
-
-    ## Assign directories
-    my $outfamily_directory = catfile( $active_parameter_href->{outdata_dir},
-        $$family_id_ref, $$outaligner_dir_ref, $program_outdirectory_name );
-    $parameter_href->{ "p" . $program_name }{indirectory} =
-      $outfamily_directory;    #Used downstream
-
-    ## Assign file_tags
-    my %file_path_prefix;
-    my $outfile_tag =
-      $file_info_href->{$$family_id_ref}{ "p" . $program_name }{file_tag};
-    my $outfile_prefix = $$family_id_ref . $outfile_tag . $call_type;
-    my $outfile_path_prefix = catfile( $$temp_directory_ref, $outfile_prefix );
-
-    ## Assign suffix
-    my $infile_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
-            jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain}
-            ,    #Get infile_suffix from baserecalibration jobid chain
-        }
-    );
-
-    ## Set file suffix for next module within jobid chain
-    my $outfile_suffix = set_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => "variant_file_suffix",
-            job_id_chain   => $job_id_chain,
-            file_suffix =>
-              $parameter_href->{ "p" . $program_name }{outfile_suffix},
-        }
-    );
-
-    my $process_batches_count = 1;
-    while ( my ( $sample_id_index, $sample_id ) =
-        each( @{ $active_parameter_href->{sample_ids} } ) )
-    {    #Collect infiles for all sample_ids
-
-        ## Assign directories
-        my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
-            $sample_id, $$outaligner_dir_ref );
-
-        ## Add merged infile name after merging all BAM files per sample_id
-        my $infile = $file_info_href->{$sample_id}{merge_infile};    #Alias
-
-        ## Assign file_tags
-        my $infile_tag =
-          $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
-        my $infile_prefix         = $infile . $infile_tag;
-        my $sample_outfile_prefix = $infile . $outfile_tag;
-
-        $file_path_prefix{$sample_id}{in} =
-          catfile( $$temp_directory_ref, $infile_prefix );
-        $file_path_prefix{$sample_id}{out} =
-          catfile( $$temp_directory_ref, $sample_outfile_prefix );
-
-        $process_batches_count = print_wait(
-            {
-                process_counter       => $sample_id_index,
-                max_process_number    => $core_number,
-                process_batches_count => $process_batches_count,
-                FILEHANDLE            => $FILEHANDLE,
-            }
-        );
-
-        ## Copy file(s) to temporary directory
-        say $FILEHANDLE "## Copy file(s) to temporary directory";
-        migrate_file(
-            {
-                FILEHANDLE  => $FILEHANDLE,
-                infile_path => catfile(
-                    $insample_directory,
-                    $infile_prefix . substr( $infile_suffix, 0, 2 ) . q{*}
-                ),    #q{.bam} -> ".b*" for getting index as well
-                outfile_path => $$temp_directory_ref,
-            }
-        );
-    }
-    say $FILEHANDLE q{wait}, "\n";
-
-    $process_batches_count = 1;    # Restart counter
-    while ( my ( $sample_id_index, $sample_id ) =
-        each( @{ $active_parameter_href->{sample_ids} } ) )
-    {                              #Collect infiles for all sample_ids
-
-        $process_batches_count = print_wait(
-            {
-                process_counter       => $sample_id_index,
-                max_process_number    => $core_number,
-                process_batches_count => $process_batches_count,
-                FILEHANDLE            => $FILEHANDLE,
-            }
-        );
-
-        ## Tiddit
-        tiddit_sv(
-            {
-                FILEHANDLE  => $FILEHANDLE,
-                infile_path => $file_path_prefix{$sample_id}{in}
-                  . $infile_suffix,
-                outfile_path_prefix => $file_path_prefix{$sample_id}{out},
-                minimum_number_supporting_pairs => $active_parameter_href
-                  ->{tiddit_minimum_number_supporting_pairs},
-            }
-        );
-        say $FILEHANDLE "& \n";
-    }
-    say $FILEHANDLE q{wait}, "\n";
-
-    ## Get parameters
-    ## Tiddit sample outfiles
-    my @infile_paths = map { $file_path_prefix{$_}{out} . $outfile_suffix }
-      ( keys %file_path_prefix );
-    Program::Variantcalling::Svdb::merge(
-        {
-            infile_paths_ref => \@infile_paths,
-            outfile_path     => $outfile_path_prefix . $outfile_suffix,
-            FILEHANDLE       => $FILEHANDLE,
-            notag            => 1,
-        }
-    );
-    say $FILEHANDLE "\n";
-
-    ## Copies file from temporary directory.
-    say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file(
-        {
-            infile_path  => $outfile_path_prefix . $outfile_suffix . q{*},
-            outfile_path => $outfamily_directory,
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE q{wait}, "\n";
-
-    close($FILEHANDLE);
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                program_name     => 'tiddit',
-                outdirectory     => $outfamily_directory,
-                outfile          => $outfile_prefix . $outfile_suffix,
-            }
-        );
-
-        slurm_submit_job_sample_id_dependency_add_to_family(
-            {
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                family_id        => $$family_id_ref,
-                path             => $job_id_chain,
-                log              => $log,
-                sbatch_file_name => $file_path,
-            }
-        );
-    }
-}
-
 sub msamtools_mpileup {
 
 ## msamtools_mpileup
@@ -16646,7 +16380,7 @@ sub msamtools_mpileup {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $sample_id_ref              => Sample id {REF}
@@ -16754,7 +16488,7 @@ sub msamtools_mpileup {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
-    use MIP::Get::File qw{get_file_suffix};
+    use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Recipes::Xargs qw{ xargs_command };
     use MIP::Program::Alignment::Samtools qw(samtools_mpileup);
@@ -16851,13 +16585,18 @@ sub msamtools_mpileup {
         my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
             $sample_id, $$outaligner_dir_ref );
 
-        ## Add merged infile name after merging all BAM files per sample_id
-        my $infile = $file_info_href->{$sample_id}{merge_infile};    #Alias
+        ## Add merged infile name prefix after merging all BAM files per sample_id
+        my $merged_infile_prefix = get_merged_infile_prefix(
+            {
+                file_info_href => $file_info_href,
+                sample_id      => $sample_id,
+            }
+        );
 
         ## Assign file_tags
         my $infile_tag =
           $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
-        my $infile_prefix = $infile . $infile_tag;
+        my $infile_prefix = $merged_infile_prefix . $infile_tag;
 
         $file_path_prefix{$sample_id} =
           catfile( $$temp_directory_ref, $infile_prefix );
@@ -17075,7 +16814,7 @@ sub freebayes {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $sample_id_ref              => Sample id {REF}
@@ -17178,7 +16917,7 @@ sub freebayes {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
-    use MIP::Get::File qw{get_file_suffix};
+    use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Recipes::Xargs qw{ xargs_command };
     use Program::Variantcalling::Freebayes qw(calling);
@@ -17262,13 +17001,18 @@ sub freebayes {
         my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
             $sample_id, $$outaligner_dir_ref );
 
-        ## Add merged infile name after merging all BAM files per sample_id
-        my $infile = $file_info_href->{$sample_id}{merge_infile};    #Alias
+        ## Add merged infile name prefix after merging all BAM files per sample_id
+        my $merged_infile_prefix = get_merged_infile_prefix(
+            {
+                file_info_href => $file_info_href,
+                sample_id      => $sample_id,
+            }
+        );
 
         ## Assign file_tags
         my $infile_tag =
           $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
-        my $infile_prefix = $infile . $infile_tag;
+        my $infile_prefix = $merged_infile_prefix . $infile_tag;
 
         $file_path_prefix{$sample_id} =
           catfile( $$temp_directory_ref, $infile_prefix );
@@ -17447,7 +17191,7 @@ sub gatk_haplotypecaller {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $sample_id_ref              => Sample id {REF}
@@ -17558,7 +17302,7 @@ sub gatk_haplotypecaller {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Set::File qw{set_file_suffix};
-    use MIP::Get::File qw{get_file_suffix};
+    use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use MIP::Recipes::Xargs qw{ xargs_command };
     use Program::Alignment::Gatk qw(haplotypecaller);
@@ -17615,17 +17359,22 @@ sub gatk_haplotypecaller {
     $parameter_href->{ "p" . $program_name }{$$sample_id_ref}{indirectory} =
       $outsample_directory;    #Used downstream
 
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};    #Alias
+    ## Add merged infile name prefix after merging all BAM files per sample_id
+    my $merged_infile_prefix = get_merged_infile_prefix(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $$sample_id_ref,
+        }
+    );
 
     ## Assign file_tags
     my $infile_tag =
       $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag =
       $file_info_href->{$$sample_id_ref}{ "p" . $program_name }{file_tag};
-    my $infile_prefix       = $infile . $infile_tag;
+    my $infile_prefix       = $merged_infile_prefix . $infile_tag;
     my $file_path_prefix    = catfile( $$temp_directory_ref, $infile_prefix );
-    my $outfile_prefix      = $infile . $outfile_tag;
+    my $outfile_prefix      = $merged_infile_prefix . $outfile_tag;
     my $outfile_path_prefix = catfile( $$temp_directory_ref, $outfile_prefix );
 
     ## Assign suffix
@@ -17848,7 +17597,7 @@ sub gatk_baserecalibration {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $sample_id_ref              => Sample id {REF}
@@ -17968,7 +17717,7 @@ sub gatk_baserecalibration {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
-    use MIP::Get::File qw{get_file_suffix};
+    use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::Recipes::Xargs qw{ xargs_command };
     use Program::Alignment::Gatk qw(baserecalibrator printreads);
     use MIP::Program::Alignment::Picardtools qw(picardtools_gatherbamfiles);
@@ -18018,17 +17767,22 @@ sub gatk_baserecalibration {
     $parameter_href->{ "p" . $program_name }{$$sample_id_ref}{indirectory} =
       $outsample_directory;    #Used downstream
 
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};    #Alias
+    ## Add merged infile name prefix after merging all BAM files per sample_id
+    my $merged_infile_prefix = get_merged_infile_prefix(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $$sample_id_ref,
+        }
+    );
 
     ## Assign file_tags
     my $infile_tag =
       $file_info_href->{$$sample_id_ref}{pgatk_realigner}{file_tag};
     my $outfile_tag =
       $file_info_href->{$$sample_id_ref}{ "p" . $program_name }{file_tag};
-    my $infile_prefix       = $infile . $infile_tag;
+    my $infile_prefix       = $merged_infile_prefix . $infile_tag;
     my $file_path_prefix    = catfile( $$temp_directory_ref, $infile_prefix );
-    my $outfile_prefix      = $infile . $outfile_tag;
+    my $outfile_prefix      = $merged_infile_prefix . $outfile_tag;
     my $outfile_path_prefix = catfile( $$temp_directory_ref, $outfile_prefix );
 
     ## Assign suffix
@@ -18397,7 +18151,7 @@ sub gatk_realigner {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $sample_id_ref              => Sample id {REF}
@@ -18511,7 +18265,7 @@ sub gatk_realigner {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Script::Setup_script qw(setup_script);
-    use MIP::Get::File qw{get_file_suffix};
+    use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
     use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use MIP::Recipes::Xargs qw{ xargs_command };
     use Program::Alignment::Gatk qw(realignertargetcreator indelrealigner);
@@ -18559,17 +18313,22 @@ sub gatk_realigner {
     $parameter_href->{ "p" . $program_name }{$$sample_id_ref}{indirectory} =
       $outsample_directory;    #Used downstream
 
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};    #Alias
+    ## Add merged infile name prefix after merging all BAM files per sample_id
+    my $merged_infile_prefix = get_merged_infile_prefix(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $$sample_id_ref,
+        }
+    );
 
     ## Assign file_tags
     my $infile_tag =
       $file_info_href->{$$sample_id_ref}{pmarkduplicates}{file_tag};
     my $outfile_tag =
       $file_info_href->{$$sample_id_ref}{ "p" . $program_name }{file_tag};
-    my $infile_prefix       = $infile . $infile_tag;
+    my $infile_prefix       = $merged_infile_prefix . $infile_tag;
     my $file_path_prefix    = catfile( $$temp_directory_ref, $infile_prefix );
-    my $outfile_prefix      = $infile . $outfile_tag;
+    my $outfile_prefix      = $merged_infile_prefix . $outfile_tag;
     my $outfile_path_prefix = catfile( $$temp_directory_ref, $outfile_prefix );
 
     ## Assign suffix
@@ -18875,7 +18634,7 @@ sub pmarkduplicates {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $lane_href                  => The lane info hash {REF}
 ##         : $job_id_href                => Job id hash {REF}
@@ -19003,7 +18762,7 @@ sub pmarkduplicates {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
-    use MIP::Get::File qw{get_file_suffix};
+    use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::Recipes::Xargs qw{ xargs_command };
     use MIP::Program::Alignment::Sambamba qw(sambamba_flagstat);
     use MIP::Program::Alignment::Picardtools qw(picardtools_markduplicates);
@@ -19038,17 +18797,22 @@ sub pmarkduplicates {
     $parameter_href->{ "p" . $program_name }{$$sample_id_ref}{indirectory} =
       $outsample_directory;                     #Used downstream
 
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};    #Alias
+    ## Add merged infile name prefix after merging all BAM files per sample_id
+    my $merged_infile_prefix = get_merged_infile_prefix(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $$sample_id_ref,
+        }
+    );
 
     ## Assign file_tags
     my $infile_tag =
       $file_info_href->{$$sample_id_ref}{ppicardtools_mergesamfiles}{file_tag};
     my $outfile_tag =
       $file_info_href->{$$sample_id_ref}{ "p" . $program_name }{file_tag};
-    my $infile_prefix       = $infile . $infile_tag;
+    my $infile_prefix       = $merged_infile_prefix . $infile_tag;
     my $file_path_prefix    = catfile( $$temp_directory_ref, $infile_prefix );
-    my $outfile_prefix      = $infile . $outfile_tag;
+    my $outfile_prefix      = $merged_infile_prefix . $outfile_tag;
     my $outfile_path_prefix = catfile( $$temp_directory_ref, $outfile_prefix );
 
     ## Assign suffix
@@ -19272,7 +19036,7 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
                 sample_info_href => $sample_info_href,
                 sample_id        => $$sample_id_ref,
                 program_name     => 'markduplicates',
-                infile           => $infile,
+                infile           => $merged_infile_prefix,
                 outdirectory     => $outsample_directory,
                 outfile          => $outfile_prefix . q{_metric},
             }
@@ -19280,7 +19044,7 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
 
 # Markduplicates can be processed by either picardtools markduplicates or sambamba markdup
         $sample_info_href->{sample}{$$sample_id_ref}{program}{markduplicates}
-          {$infile}{processed_by} = $markduplicates_program;
+          {$merged_infile_prefix}{processed_by} = $markduplicates_program;
 
         if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
@@ -19360,8 +19124,6 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
           ; #Track the number of created xargs scripts per module for Block algorithm
     }
 }
-
-
 
 sub variantannotationblock {
 
@@ -19877,6 +19639,9 @@ sub bamcalibrationblock {
         my $xargs_file_counter = 0;
         my $xargs_file_path_prefix;
 
+        my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
+            $sample_id, $$outaligner_dir_ref );
+
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
         my ( $file_path, $program_info_path ) = setup_script(
             {
@@ -19903,6 +19668,7 @@ sub bamcalibrationblock {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 lane_href               => $lane_href,
                 job_id_href             => $job_id_href,
+                insample_directory      => $insample_directory,
                 sample_id               => $sample_id,
                 program_name            => lc q{picardtools_mergesamfiles},
                 file_path               => $file_path,
@@ -20494,7 +20260,7 @@ sub build_bwa_prerequisites {
 ##         : $parameter_href                       => Parameter hash {REF}
 ##         : $active_parameter_href                => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href                     => Info on samples and family hash {REF}
-##         : $file_info_href                       => The file_info hash {REF}
+##         : $file_info_href                       => File info hash {REF}
 ##         : $infile_lane_prefix_href           => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                          => Job id hash {REF}
 ##         : $bwa_build_reference_file_endings_ref => The bwa reference associated file endings {REF}
@@ -20708,7 +20474,7 @@ sub check_build_human_genome_prerequisites {
 ##         : $parameter_href                  => Parameter hash {REF}
 ##         : $active_parameter_href           => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href                => Info on samples and family hash {REF}
-##         : $file_info_href                  => The file_info hash {REF}
+##         : $file_info_href                  => File info hash {REF}
 ##         : $infile_lane_prefix_href      => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                     => Job id hash {REF}
 ##         : $program_name                    => Program name
@@ -20936,7 +20702,7 @@ sub build_human_genome_prerequisites {
 ##         : $parameter_href                  => Parameter hash {REF}
 ##         : $active_parameter_href           => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href                => Info on samples and family hash {REF}
-##         : $file_info_href                  => The file_info hash {REF}
+##         : $file_info_href                  => File info hash {REF}
 ##         : $infile_lane_prefix_href      => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                     => Job id hash {REF}
 ##         : $program                         => The program under evaluation
@@ -21688,7 +21454,7 @@ sub infiles_reformat {
 ##Arguments: $active_parameter_href, $sample_info_href, $file_info_href, $infile_href, $indir_path_href, $infile_lane_prefix_href, $infile_both_strands_prefix_href, $lane_href, $job_id_href, $program_name, $outaligner_dir_ref
 ##         : $active_parameter_href              => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href                   => Info on samples and family hash {REF}
-##         : $file_info_href                     => The file_info hash {REF}
+##         : $file_info_href                     => File info hash {REF}
 ##         : $infile_href                        => Infiles hash {REF}
 ##         : $indir_path_href                    => Indirectories path(s) hash {REF}
 ##         : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
@@ -22089,7 +21855,7 @@ sub add_infile_info {
 ##Arguments: $active_parameter_href, $sample_info_href, $file_info_href, $infile_href, $infile_lane_prefix_href, $infile_both_strands_prefix_href, $indir_path_href, $lane_href, $lane, $date, $flowcell, $sample_id, $index, $direction, $lane_tracker_ref, $file_index, $compressed_switch
 ##         : $active_parameter_href              => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href                   => Info on samples and family hash {REF}
-##         : $file_info_href                     => The file_info hash {REF}
+##         : $file_info_href                     => File info hash {REF}
 ##         : $infile_href                        => Infiles hash {REF}
 ##         : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
 ##         : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
@@ -22455,7 +22221,7 @@ sub add_to_active_parameter {
 ##         : $parameter_href        => Holds all parameters
 ##         : $active_parameter_href => Holds all set parameter for analysis
 ##         : $sample_info_href      => Info on samples and family hash {REF}
-##         : $file_info_href        => The file_info hash {REF}
+##         : $file_info_href        => File info hash {REF}
 ##         : $broadcasts_ref        => Holds the parameters info for broadcasting later {REF}
 ##         : $parameter_name        => Parameter name
 ##         : $associated_programs   => The parameters program(s) {array, REF}
@@ -22910,7 +22676,7 @@ sub check_parameter_files {
 ##         : $parameter_href                    => Holds all parameters
 ##         : $active_parameter_href             => Holds all set parameter for analysis
 ##         : $sample_info_href                  => Info on samples and family hash {REF}
-##         : $file_info_href                    => The file_info hash {REF}
+##         : $file_info_href                    => File info hash {REF}
 ##         : $broadcasts_ref                    => Holds the parameters info for broadcasting later {REF}
 ##         : $associated_programs_ref           => The parameters program(s) {REF}
 ##         : $family_id_ref                     => The family_id_ref {REF}
@@ -23250,42 +23016,38 @@ sub check_parameter_files {
                 if ( $parameter_href->{$parameter_name}{data_type} eq "ARRAY" )
                 {
 
+                    foreach my $path (
+                        @{ $active_parameter_href->{$parameter_name} } )
+                    {
 
-                        foreach my $path (
-                            @{ $active_parameter_href->{$parameter_name} } )
-                        {
+                        check_existance(
+                            {
+                                parameter_href        => $parameter_href,
+                                active_parameter_href => $active_parameter_href,
+                                item_name_ref         => \$path,
+                                parameter_name_ref    => \$parameter_name,
+                                item_type_to_check => $parameter_exists_check,
+                            }
+                        );
+
+                        if ( $path =~ /\.gz$/ ) { #Check for tabix index as well
+
+                            my $path_index = $path . ".tbi";
 
                             check_existance(
                                 {
                                     parameter_href => $parameter_href,
                                     active_parameter_href =>
                                       $active_parameter_href,
-                                    item_name_ref      => \$path,
-                                    parameter_name_ref => \$parameter_name,
+                                    item_name_ref      => \$path_index,
+                                    parameter_name_ref => \$path_index,
                                     item_type_to_check =>
                                       $parameter_exists_check,
                                 }
                             );
-
-                            if ( $path =~ /\.gz$/ )
-                            {    #Check for tabix index as well
-
-                                my $path_index = $path . ".tbi";
-
-                                check_existance(
-                                    {
-                                        parameter_href => $parameter_href,
-                                        active_parameter_href =>
-                                          $active_parameter_href,
-                                        item_name_ref      => \$path_index,
-                                        parameter_name_ref => \$path_index,
-                                        item_type_to_check =>
-                                          $parameter_exists_check,
-                                    }
-                                );
-                            }
                         }
                     }
+                }
                 if ( $parameter_href->{$parameter_name}{data_type} eq "HASH" ) {
 
                     for my $path (
@@ -24475,7 +24237,7 @@ sub parse_human_genome_reference {
 ##Function : Detect version and source of the human_genome_reference: Source (hg19 or GRCh).
 ##Returns  : ""
 ##Arguments: $file_info_href, $human_genome_reference_ref
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $human_genome_reference_ref => The human genome {REF}
 
     my ($arg_href) = @_;
@@ -25158,7 +24920,7 @@ sub size_sort_select_file_contigs {
 ##Function : Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
 ##Returns  : "@sorted_contigs"
 ##Arguments: $file_info_href, $consensus_analysis_type_ref, $hash_key_to_sort, $hash_key_sort_reference
-##         : $file_info_href              => The file_info hash {REF}
+##         : $file_info_href              => File info hash {REF}
 ##         : $consensus_analysis_type_ref => Consensus analysis_type {REF}
 ##         : $hash_key_to_sort            => The keys to sort
 ##         : $hash_key_sort_reference     => The hash keys sort reference
@@ -25978,7 +25740,7 @@ sub check_human_genome_file_endings {
 ##Arguments: $parameter_href, $active_parameter_href, $file_info_href, $parameter_name_ref, $human_genome_reference_name_prefix_ref, $reference_dir_ref,
 ##         : $parameter_href                            => Parameter hash {REF}
 ##         : $active_parameter_href                     => Holds all set parameter for analysis {REF}
-##         : $file_info_href                            => The file_info hash {REF}
+##         : $file_info_href                            => File info hash {REF}
 ##         : $parameter_name_ref                        => The parameter under evaluation {REF}
 ##         : $human_genome_reference_name_prefix_ref => The associated human genome file without file ending {REF}
 ##         : $reference_dir_ref                         => MIP reference directory {REF}
@@ -26492,7 +26254,7 @@ sub break_string {
 ##Function : Breaks the string supplied on format key1:value1_value2,keyN:valueN_valueN,..n . Add key to %file_info_href and values as array. This enables association of values to key supplied in config or cmd.
 ##Returns  : ""
 ##Arguments: $file_info_href, $parameter_value_ref, $parameter_name, $associated_program
-##         : $file_info_href      => The file_info hash {REF}
+##         : $file_info_href      => File info hash {REF}
 ##         : $parameter_value_ref => MIP parameter value {REF}
 ##         : $parameter_name      => MIP parameter name {REF}
 ##         : $associated_program  => The parameters program {REF}
@@ -27314,7 +27076,7 @@ sub add_to_sample_info {
 ##Arguments: $active_parameter_href, $sample_info_href, $file_info_href, $family_id_ref
 ##         : $active_parameter_href => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href      => Info on samples and family hash {REF}
-##         : $file_info_href        => The file_info hash {REF}
+##         : $file_info_href        => File info hash {REF}
 ##         : $family_id_ref         => The family_id_ref {REF}
 
     my ($arg_href) = @_;
@@ -28816,7 +28578,7 @@ sub remove_redundant_files {
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
+##         : $file_info_href             => File info hash {REF}
 ##         : $lane_href                  => The lane info hash {REF}
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $reduce_io_ref              => Reduce IO - modulates processBlocks {REF}
@@ -29007,7 +28769,7 @@ sub remove_redundant_files {
 
                         ## Add merged infile name after merging all BAM files per sample_id
                         my $infile =
-                          $file_info_href->{$sample_id}{merge_infile};    #Alias
+                          $file_info_href->{$sample_id}{merged_infile};   #Alias
 
                         if (   ( !$$reduce_io_ref )
                             || ( $program eq $last_module_bamcalibrationblock )
@@ -30027,8 +29789,7 @@ sub print_program {
         {    #Only process programs
 
             unless ( $order_parameter_element =~
-/pmadeline|pbamcalibrationblock|pvariantannotationblock/
-              )
+                /pmadeline|pbamcalibrationblock|pvariantannotationblock/ )
             {
 
                 print STDOUT "--"
@@ -30443,7 +30204,7 @@ sub generate_contig_specific_target_bed_file {
 ##Returns  : ""
 ##Arguments: $active_parameter_href, $file_info_href, $FILEHANDLE, $exome_target_bed_file, $temp_directory_ref, $reference_dir_ref, $file_ending
 ##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $file_info_href        => The file_info hash {REF}
+##         : $file_info_href        => File info hash {REF}
 ##         : $FILEHANDLE            => Filehandle to write to
 ##         : $exome_target_bed_file => Target file to split
 ##         : $temp_directory_ref    => Temporary directory {REF}

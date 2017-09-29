@@ -27,8 +27,8 @@ cluster_get_core_number.t
 cluster_update_core_number_to_seq_mode.t
 cpanm_install.t
 fastqc.t
-path_check_file_version_exist.t
 findutils_xargs.t
+get_merged_infile_prefix.t
 git_clone.t
 git_checkout.t
 gnu_cat.t
@@ -58,6 +58,7 @@ list_delete_non_wes_contig.t
 manta_config.t
 manta_workflow.t
 parameter_check_allowed_temp_directory.t
+path_check_file_version_exist.t
 picardtools_base.t
 picardtools_collecthsmetrics.t
 picardtools_collectmultiplemetrics.t
@@ -99,6 +100,7 @@ samtools_index.t
 samtools_mpileup.t
 samtools_stats.t
 samtools_view.t
+set_file_suffix.t
 set_file_suffix.t
 shell_build_shebang.t
 shell_create_housekeeping_function.t

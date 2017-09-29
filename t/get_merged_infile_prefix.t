@@ -79,7 +79,7 @@ BEGIN {
     }
 
     ## Modules
-    my @modules = (q{MIP::Set::File});
+    my @modules = (q{MIP::Get::File});
 
   MODULE:
     for my $module (@modules) {
@@ -87,10 +87,11 @@ BEGIN {
     }
 }
 
-use MIP::Set::File qw{ set_file_suffix };
+use MIP::Get::File qw{ get_merged_infile_prefix };
+use MIP::Set::File qw{ set_merged_infile_prefix };
 
-diag(   q{Test set_file_suffix from File.pm v}
-      . $MIP::Set::File::VERSION
+diag(   q{Test get_merged_infile_prefix from File.pm v}
+      . $MIP::Get::File::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -99,29 +100,30 @@ diag(   q{Test set_file_suffix from File.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $suffix_key   = q{alignment_file_suffix};
-my $job_id_chain = q{MAIN};
-my $file_suffix  = q{.bam};
+my $sample_id = q{sample_1};
+my $lanes_id  = q{123};
+my $merged_infile_prefix =
+  $sample_id . $UNDERSCORE . q{lanes} . $UNDERSCORE . $lanes_id;
 
-my %parameter;
+my %file_info;
 
-### Set to arbitrary job id chain key
-
-my $job_id_returned = q{job_id_7};
-
-my $returned_file_suffix = set_file_suffix(
+set_merged_infile_prefix(
     {
-        parameter_href => \%parameter,
-        suffix_key     => $suffix_key,
-        job_id_chain   => $job_id_chain,
-        file_suffix    => $file_suffix,
+        file_info_href       => \%file_info,
+        sample_id            => $sample_id,
+        merged_infile_prefix => $merged_infile_prefix
     }
 );
 
-my $set_file_suffix = $parameter{$suffix_key}{$job_id_chain};
-is( $returned_file_suffix, $file_suffix, q{Returned file_suffix} );
+my $get_merged_infile_prefix = get_merged_infile_prefix(
+    {
+        file_info_href => \%file_info,
+        sample_id      => $sample_id,
+    }
+);
 
-is( $set_file_suffix, $file_suffix, q{Set file_suffix} );
+is( $get_merged_infile_prefix, $merged_infile_prefix,
+    q{Get merged infile prefix for sample id} );
 
 done_testing();
 
