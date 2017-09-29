@@ -33,6 +33,7 @@ Readonly my $UNDERSCORE => q{_};
 Readonly my $SPACE      => q{ };
 Readonly my $ASTERISK   => q{*};
 Readonly my $NEWLINE    => qq{\n};
+Readonly my $AMPERSAND  => q{&};
 
 sub analysis_tiddit {
 
@@ -41,17 +42,17 @@ sub analysis_tiddit {
 ## Function : Call structural variants using tiddit
 ## Returns  : ""
 ## Arguments: $parameter_href, $active_parameter_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id, family_id, $temp_directory, $reference_dir, $outaligner_dir, $call_type, $outfamily_directory
-##          : $parameter_href             => Parameter hash {REF}
-##          : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##          : $sample_info_href           => Info on samples and family hash {REF}
-##          : $file_info_href             => The file_info hash {REF}
+##          : $parameter_href          => Parameter hash {REF}
+##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $file_info_href          => The file info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $job_id_href                => Job id hash {REF}
-##          : $family_id                  => Family id
-##          : $temp_directory             => Temporary directory
-##          : $reference_dir              => MIP reference directory
-##          : $outaligner_dir             => Outaligner_dir used in the analysis
-##          : $call_type                  => The variant call type
+##          : $job_id_href             => Job id hash {REF}
+##          : $family_id               => Family id
+##          : $temp_directory          => Temporary directory
+##          : $reference_dir           => MIP reference directory
+##          : $outaligner_dir          => Outaligner directory used in the analysis
+##          : $call_type               => The variant call type
 ##          : $outfamily_directory     => Out family directory
 
     my ($arg_href) = @_;
@@ -220,7 +221,7 @@ sub analysis_tiddit {
     ## Assign file_tags
     my %file_path_prefix;
     my $outfile_tag =
-      $file_info_href->{$family_id}{ q{p} . $program_name }{file_tag};
+      $file_info_href->{$family_id}{$mip_program_name}{file_tag};
     my $outfile_prefix = $family_id . $outfile_tag . $call_type;
     my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
 
@@ -321,7 +322,7 @@ sub analysis_tiddit {
                   ->{tiddit_minimum_number_supporting_pairs},
             }
         );
-        say {$FILEHANDLE} q{&} . $SPACE . $NEWLINE;
+        say {$FILEHANDLE} $AMPERSAND . $SPACE . $NEWLINE;
     }
     say {$FILEHANDLE} q{wait}, $NEWLINE;
 
@@ -359,8 +360,7 @@ sub analysis_tiddit {
             {
                 sample_info_href => $sample_info_href,
                 program_name     => q{tiddit},
-                outdirectory     => $outfamily_directory,
-                outfile          => $outfile_prefix . $outfile_suffix,
+                path             => catfile($outfamily_directory, $outfile_prefix . $outfile_suffix),
             }
         );
 
