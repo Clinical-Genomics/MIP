@@ -87,6 +87,7 @@ BEGIN {
 
 ## Constants
 Readonly my $DOT     => q{.};
+Readonly my $EMPTY_STR => q{};
 Readonly my $NEWLINE => qq{\n};
 Readonly my $TAB     => qq{\t};
 
@@ -148,12 +149,14 @@ my ( %infile, %indir_path, %infile_lane_prefix, %lane,
 #### Staging/Sanity Check Area
 
 my %file_info = (
-    bwa_build_reference => "",
+    bwa_build_reference => $EMPTY_STR,
     exome_target_bed =>
-      [qw(.infile_list .pad100.infile_list .pad100.interval_list)],
-    bwa_build_reference_file_endings => [qw(.amb .ann .bwt .pac .sa)]
-    ,    #BWA human genome reference file endings
-    human_genome_reference_file_endings => [qw(.dict .fai)],    #Meta files
+      [qw{ .infile_list .pad100.infile_list .pad100.interval_list }],
+		 # BWA human genome reference file endings
+    bwa_build_reference_file_endings => [qw{ .amb .ann .bwt .pac .sa }]
+    ,
+		     # Human genome meta files
+    human_genome_reference_file_endings => [qw{ .dict .fai }],
 );
 
 ## Set supported annovar table name filtering options
@@ -187,7 +190,7 @@ my @annovar_supported_table_names = (
 my %annovar_table;    #Holds annovar tables and features
 
 ## Enables cmd "mip" to print usage help
-if ( !@ARGV ) {
+if ( not @ARGV ) {
 
     help(
         {
@@ -275,9 +278,6 @@ GetOptions(
     'memsts|bwa_mem_bamstats=n' => \$parameter{bwa_mem_bamstats}{value},
     'memssm|bwa_sambamba_sort_memory_limit:s' =>
       \$parameter{bwa_sambamba_sort_memory_limit}{value},
-    'paln|pbwa_aln=n' => \$parameter{pbwa_aln}{value},
-    'alnq|bwa_aln_quality_trimming=n' =>
-      \$parameter{bwa_aln_quality_trimming}{value},
     'psap|pbwa_sampe=n'      => \$parameter{pbwa_sampe}{value},
     'ptp|picardtools_path:s' => \$parameter{picardtools_path}{value},
     'pptm|ppicardtools_mergesamfiles=n' =>
@@ -1389,44 +1389,6 @@ if ( $active_parameter{ppicardtools_mergerapidreads} > 0 )
                 outaligner_dir_ref      => \$active_parameter{outaligner_dir},
                 program_name            => "picardtools_mergerapidreads",
             }
-        );
-    }
-}
-
-if ( $active_parameter{pbwa_aln} > 0 ) {    #Run BWA Aln
-
-    $log->info("[BWA Aln]\n");
-
-    if ( $active_parameter{dry_run_all} != 1 ) {
-
-        if (   ( $parameter{human_genome_reference}{build_file} eq 1 )
-            || ( $parameter{bwa_build_reference}{build_file} eq 1 ) )
-        {
-
-            build_bwa_prerequisites(
-                {
-                    parameter_href          => \%parameter,
-                    active_parameter_href   => \%active_parameter,
-                    sample_info_href        => \%sample_info,
-                    file_info_href          => \%file_info,
-                    infile_lane_prefix_href => \%infile_lane_prefix,
-                    job_id_href             => \%job_id,
-                    bwa_build_reference_file_endings_ref =>
-                      \@{ $file_info{bwa_build_reference_file_endings} },
-                    program_name => "bwa_aln",
-                }
-            );
-        }
-    }
-    foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-        bwa_aln(
-            \%parameter,                  \%active_parameter,
-            \%sample_info,                \%infile,
-            \%indir_path,                 \%infile_lane_prefix,
-            \%infile_both_strands_prefix, \%job_id,
-            $sample_id,                   $active_parameter{outaligner_dir},
-            "bwa_aln"
         );
     }
 }
@@ -2957,8 +2919,6 @@ sub build_usage {
       -memcrm/--bwa_mem_cram Use CRAM-format for additional output file (defaults to "1" (=yes))
       -memsts/--bwa_mem_bamstats Collect statistics from BAM files (defaults to "1" (=yes))
       -memssm/--bwa_sambamba_sort_memory_limit Set the memory limit for Sambamba sort after bwa alignment (defaults to "32G")
-    -paln/--pbwa_aln Index reads using BWA Aln (defaults to "0" (=no))
-      -alnq/--bwa_aln_quality_trimming BWA Aln quality threshold for read trimming (defaults to "20")
     -psap/--pbwa_sampe Align reads using BWA Sampe (defaults to "0" (=no))
 
     ##Picardtools
@@ -20269,173 +20229,6 @@ sub bwa_sampe {
     }
 }
 
-sub bwa_aln {
-
-##bwa_aln
-
-##Function : Generates BWA aln index on fastq files.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_href, $indir_path_href, $infile_lane_prefix_href, $infile_both_strands_prefix_href, $job_id_href, $sample_id, $outaligner_dir, $program_name
-##         : $parameter_href                     => Parameter hash {REF}
-##         : $active_parameter_href              => Active parameters for this analysis hash {REF}
-##         : $sample_info_href                   => Info on samples and family hash {REF}
-##         : $infile_href                        => Infiles hash {REF}
-##         : $indir_path_href                    => Indirectories path(s) hash {REF}
-##         : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
-##         : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
-##         : $job_id_href                        => Job id hash {REF}
-##         : $sample_id                          => Sample id
-##         : $outaligner_dir                     => The outaligner_dir used in the analysis
-##         : $program_name                       => Program name
-
-    my $parameter_href                  = $_[0];
-    my $active_parameter_href           = $_[1];
-    my $sample_info_href                = $_[2];
-    my $infile_href                     = $_[3];
-    my $indir_path_href                 = $_[4];
-    my $infile_lane_prefix_href         = $_[5];
-    my $infile_both_strands_prefix_href = $_[6];
-    my $job_id_href                     = $_[7];
-    my $sample_id                       = $_[8];
-    my $outaligner_dir                  = $_[9];
-    my $program_name                    = $_[10];
-
-    use MIP::Cluster qw(update_core_number_to_seq_mode);
-    use MIP::Processmanagement::Processes qw(print_wait);
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::IO::Files qw(migrate_files);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_sample_id_dependency_step_in_parallel);
-
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-    my $time =
-      ceil( 2.5 * scalar( @{ $infile_lane_prefix_href->{$sample_id} } ) )
-      ; #One full lane on Hiseq takes approx. 2,5 h for bwa_aln to process, round up to nearest full hour.
-    my $core_number = 0;
-
-    foreach my $infile ( @{ $infile_lane_prefix_href->{$sample_id} } )
-    {    #For all files
-
-        ## Update the number of cores to be used in the analysis according to sequencing mode requirements
-        $core_number = update_core_number_to_seq_mode(
-            {
-                core_number => $core_number,
-                sequence_run_type =>
-                  $sample_info_href->{sample}{$sample_id}{file}{$infile}
-                  {sequence_run_type},
-            }
-        );
-    }
-
-    ## Limit number of cores requested to the maximum number of cores available per node
-    $core_number = check_max_core_number(
-        {
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-            core_number_requested => $core_number,
-        }
-    );
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $sample_id,
-            program_name          => $program_name,
-            program_directory     => lc $outaligner_dir,
-            core_number           => $core_number,
-            process_time          => $time,
-            temp_directory        => $active_parameter_href->{temp_directory},
-        }
-    );
-
-    ## Assign directories
-    my $insample_directory  = $indir_path_href->{$sample_id};
-    my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $sample_id, lc $outaligner_dir );
-    $parameter_href->{ "p" . $program_name }{$sample_id}{indirectory} =
-      $outsample_directory;    #Used downstream
-
-    ## Copies files from source to destination
-    migrate_files(
-        {
-            infiles_ref  => \@{ $infile_href->{$sample_id} },
-            outfile_path => $active_parameter_href->{temp_directory},
-            FILEHANDLE   => $FILEHANDLE,
-            indirectory  => $insample_directory,
-            core_number  => $core_number,
-        }
-    );
-
-    ## BWA Aln
-    say $FILEHANDLE "## Creating .sai index";
-    my $process_batches_count = 1;
-    while ( my ( $infile_counter_index, $infile ) =
-        each( @{ $infile_href->{$sample_id} } ) )
-    {
-
-        $process_batches_count = print_wait(
-            {
-                process_counter       => $infile_counter_index,
-                max_process_number    => $core_number,
-                process_batches_count => $process_batches_count,
-                FILEHANDLE            => $FILEHANDLE,
-            }
-        );
-
-        print $FILEHANDLE "bwa aln ";
-        print $FILEHANDLE "-k 1 ";    #maximum differences in the seed
-        print $FILEHANDLE "-t 4 ";    #number of threads
-        print $FILEHANDLE
-          "-n 3 ";   #max diff (int) or missing prob under 0.02 err rate (float)
-        print $FILEHANDLE "-q "
-          . $active_parameter_href->{bwa_aln_quality_trimming}
-          . " ";     #Quality trimming
-        print $FILEHANDLE $active_parameter_href->{human_genome_reference}
-          . " ";     #Reference
-        print $FILEHANDLE catfile( $active_parameter_href->{temp_directory},
-            $infile )
-          . " ";     #InFile
-        say $FILEHANDLE "> "
-          . catfile(
-            $active_parameter_href->{temp_directory},
-            $infile_both_strands_prefix_href->{$sample_id}
-              [$infile_counter_index] . ".sai"
-          ) . " &\n";    #OutFile
-    }
-    say $FILEHANDLE q{wait}, "\n";
-
-    ## Copies files from source to destination
-    migrate_files(
-        {
-            infiles_ref => \@{ $infile_both_strands_prefix_href->{$sample_id} },
-            outfile_path => $outsample_directory,
-            FILEHANDLE   => $FILEHANDLE,
-            indirectory  => $active_parameter_href->{temp_directory},
-            core_number  => $core_number,
-            file_ending  => q{.sai},
-        }
-    );
-
-    close($FILEHANDLE);
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        slurm_submit_job_sample_id_dependency_add_to_sample(
-            {
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                family_id               => $active_parameter_href->{family_id},
-                sample_id               => $sample_id,
-                path => $parameter_href->{ "p" . $program_name }{chain},
-                log  => $log,
-                sbatch_file_name => $file_path
-            }
-        );
-    }
-}
-
 sub picardtools_mergerapidreads {
 
 ##picardtools_mergerapidreads
@@ -32643,7 +32436,7 @@ sub print_program {
         {    #Only process programs
 
             unless ( $order_parameter_element =~
-/pmadeline|pbwa_sampe|pbwa_aln|ppicardtools_mergerapidreads|pbamcalibrationblock|pvariantannotationblock|pannovar/
+/pmadeline|pbwa_sampe|ppicardtools_mergerapidreads|pbamcalibrationblock|pvariantannotationblock|pannovar/
               )
             {
 
