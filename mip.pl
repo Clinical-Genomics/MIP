@@ -15391,8 +15391,8 @@ sub cnvnator {
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Recipes::Xargs qw{ xargs_command };
     use MIP::Program::Alignment::Samtools qw(samtools_faidx);
-    use Program::Variantcalling::Cnvnator
-      qw(read_extraction histogram statistics partition calling convert_to_vcf);
+    use MIP::Program::Variantcalling::Cnvnator
+      qw{ cnvnator_read_extraction cnvnator_histogram cnvnator_statistics cnvnator_partition cnvnator_calling cnvnator_convert_to_vcf };
     use MIP::Program::Variantcalling::Bcftools qw(bcftools_annotate);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
@@ -15568,7 +15568,7 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
         $root_file =
           $file_path_prefix . "_" . $contig . ".root";    #Output ROOT file
 
-        read_extraction(
+        cnvnator_read_extraction(
             {
                 infile_paths_ref =>
                   [ $file_path_prefix . "_" . $contig . q{.bam} ],
@@ -15586,7 +15586,7 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
         );
         print $XARGSFILEHANDLE "; ";
 
-        histogram(
+        cnvnator_histogram(
             {
                 infile_path  => $root_file,
                 regions_ref  => [$contig],
@@ -15603,7 +15603,7 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
         );
         print $XARGSFILEHANDLE "; ";
 
-        statistics(
+        cnvnator_statistics(
             {
                 infile_path     => $root_file,
                 regions_ref     => [$contig],
@@ -15619,7 +15619,7 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
         );
         print $XARGSFILEHANDLE "; ";
 
-        partition(
+        cnvnator_partition(
             {
                 infile_path     => $root_file,
                 regions_ref     => [$contig],
@@ -15635,7 +15635,7 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
         );
         print $XARGSFILEHANDLE "; ";
 
-        Program::Variantcalling::Cnvnator::calling(
+        cnvnator_calling(
             {
                 infile_path  => $root_file,
                 outfile_path => $outfile_path_prefix . "_"
@@ -15651,7 +15651,7 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
         );
         print $XARGSFILEHANDLE "; ";
 
-        convert_to_vcf(
+        cnvnator_convert_to_vcf(
             {
                 infile_path => $outfile_path_prefix . "_"
                   . $contig
