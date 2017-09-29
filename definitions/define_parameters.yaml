@@ -200,7 +200,6 @@ human_genome_reference:
    - pgatk_readbackedphasing
    - pgatk_variantevalall
    - pgatk_variantevalexome
-   - pannovar
    - ppicardtools_collecthsmetrics
    - ppicardtools_collectmultiplemetrics
   build_file: yes_auto_build
@@ -1641,7 +1640,6 @@ gatk_bundle_download_version:
    - pgatk_readbackedphasing
    - pgatk_variantevalall
    - pgatk_variantevalexome
-   - pannovar
    - ppicardtools_collecthsmetrics
    - ppicardtools_collectmultiplemetrics
   data_type: SCALAR
@@ -1777,61 +1775,6 @@ vcfparser_outfile_count:
   data_type: SCALAR
   default: 1
   type: program_argument
-## Annovar
-pannovar:
-  associated_program:
-   - mip
-  chain: MAIN
-  data_type: SCALAR
-  default: 0
-  file_tag: annovar_
-  file_endings:
-   - .vcf
-  remove_redundant_file: yes
-  remove_redundant_file_setting: variant_annotation
-  type: program
-annovar_path:
-  associated_program:
-   - pannovar
-  data_type: SCALAR
-  exists_check: directory
-  type: path
-  update_path: absolute_path
-annovar_genome_build_version:
-  associated_program:
-   - pannovar
-  data_type: SCALAR
-  default: hg19
-  type: program_argument
-annovar_table_names:
-  associated_program:
-   - pannovar
-  element_separator: ,
-  exists_check: file
-  data_type: ARRAY
-  default:
-   - refGene
-   - mce46way
-   - gerp++elem
-   - segdup
-   - tfbs
-   - mirna
-   - snp137NonFlagged
-   - 1000g2012apr_all
-   - esp6500si_all
-   - ljb2_sift
-   - ljb2_pp2hdiv
-   - ljb2_pp2hvar
-   - ljb2_mt
-   - ljb2_gerp++
-   - ljb2_phylop
-  type: path
-annovar_maf_threshold:
-  associated_program:
-   - pannovar
-  data_type: SCALAR
-  default: 0
-  type: program_argument
 ## SnpEFF
 psnpeff:
   associated_program:
@@ -1927,7 +1870,6 @@ java_use_large_pages:
    - pgatk_variantevalexome
    - pvarianteffectpredictor
    - psnpeff
-   - pannovar
   data_type: SCALAR
   default: 0
   type: program_argument
