@@ -1946,9 +1946,19 @@ if ( $active_parameter{pmanta} > 0 ) {    #Run Manta
 
 if ( $active_parameter{ptiddit} > 0 ) {    #Run Tiddit
 
-    $log->info("[Tiddit]\n");
+    $log->info( q{[Tiddit]} . $NEWLINE );
+    my $program_name = lc q{tiddit};
 
-    tiddit(
+    my $outfamily_directory = catfile(
+        $active_parameter{outdata_dir},
+        $active_parameter{family_id},
+        $active_parameter{outaligner_dir},
+        $program_name,
+    );
+
+    use MIP::Recipes::Tiddit qw{ analysis_tiddit };
+
+    analysis_tiddit(
         {
             parameter_href          => \%parameter,
             active_parameter_href   => \%active_parameter,
@@ -1956,7 +1966,8 @@ if ( $active_parameter{ptiddit} > 0 ) {    #Run Tiddit
             file_info_href          => \%file_info,
             infile_lane_prefix_href => \%infile_lane_prefix,
             job_id_href             => \%job_id,
-            program_name            => "tiddit",
+            program_name            => $program_name,
+            outfamily_directory     => $outfamily_directory,
         }
     );
 }
@@ -16966,6 +16977,7 @@ sub delly_call {
         );
     }
 }
+
 
 sub tiddit {
 
