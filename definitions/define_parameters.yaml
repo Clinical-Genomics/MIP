@@ -499,15 +499,6 @@ outaligner_dir:
   data_type: SCALAR
   default: not_set_yet
   type: mip
-## PicardTools
-ppicardtools_mergerapidreads:
-  associated_program:
-   - mip
-  chain: MAIN
-  data_type: SCALAR
-  default: 0
-  file_tag: nofile_tag
-  type: program
 ## BAMCalibrationBlock
 pbamcalibrationblock:
   associated_program:
