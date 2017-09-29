@@ -278,7 +278,6 @@ GetOptions(
     'memsts|bwa_mem_bamstats=n' => \$parameter{bwa_mem_bamstats}{value},
     'memssm|bwa_sambamba_sort_memory_limit:s' =>
       \$parameter{bwa_sambamba_sort_memory_limit}{value},
-    'psap|pbwa_sampe=n'      => \$parameter{pbwa_sampe}{value},
     'ptp|picardtools_path:s' => \$parameter{picardtools_path}{value},
     'pptm|ppicardtools_mergesamfiles=n' =>
       \$parameter{ppicardtools_mergesamfiles}{value},
@@ -1389,43 +1388,6 @@ if ( $active_parameter{ppicardtools_mergerapidreads} > 0 )
                 outaligner_dir_ref      => \$active_parameter{outaligner_dir},
                 program_name            => "picardtools_mergerapidreads",
             }
-        );
-    }
-}
-
-if ( $active_parameter{pbwa_sampe} > 0 ) {    #Run BWA Sampe
-
-    $log->info("[BWA Sampe]\n");
-
-    if ( $active_parameter{dry_run_all} != 1 ) {
-
-        if (   ( $parameter{human_genome_reference}{build_file} eq 1 )
-            || ( $parameter{bwa_build_reference}{build_file} eq 1 ) )
-        {
-
-            build_bwa_prerequisites(
-                {
-                    parameter_href          => \%parameter,
-                    active_parameter_href   => \%active_parameter,
-                    sample_info_href        => \%sample_info,
-                    file_info_href          => \%file_info,
-                    infile_lane_prefix_href => \%infile_lane_prefix,
-                    job_id_href             => \%job_id,
-                    bwa_build_reference_file_endings_ref =>
-                      \@{ $file_info{bwa_build_reference_file_endings} },
-                    program_name => "bwa_sampe",
-                }
-            );
-        }
-    }
-    foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-        bwa_sampe(
-            \%parameter,                  \%active_parameter,
-            \%sample_info,                \%infile,
-            \%indir_path,                 \%infile_lane_prefix,
-            \%infile_both_strands_prefix, \%job_id,
-            $sample_id,                   $active_parameter{outaligner_dir},
-            "bwa_sampe"
         );
     }
 }
@@ -2930,7 +2892,6 @@ sub build_usage {
       -memcrm/--bwa_mem_cram Use CRAM-format for additional output file (defaults to "1" (=yes))
       -memsts/--bwa_mem_bamstats Collect statistics from BAM files (defaults to "1" (=yes))
       -memssm/--bwa_sambamba_sort_memory_limit Set the memory limit for Sambamba sort after bwa alignment (defaults to "32G")
-    -psap/--pbwa_sampe Align reads using BWA Sampe (defaults to "0" (=no))
 
     ##Picardtools
     -ptp/--picardtools_path Path to Picardtools. Mandatory for use of Picardtools (defaults to "")
@@ -20026,221 +19987,6 @@ q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$fea
     }
 }
 
-sub bwa_sampe {
-
-##bwa_sampe
-
-##Function : Perform alignment of BWA Aln index reads using BWA sampe.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_href, $indir_path_href, $infile_lane_prefix_href, $infile_both_strands_prefix_href, $job_id_href, $sample_id, $outaligner_dir, $program_name
-##         : $parameter_href                     => Parameter hash {REF}
-##         : $active_parameter_href              => Active parameters for this analysis hash {REF}
-##         : $sample_info_href                   => Info on samples and family hash {REF}
-##         : $infile_href                        => Infiles hash {REF}
-##         : $indir_path_href                    => Indirectories path(s) hash {REF}
-##         : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
-##         : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
-##         : $job_id_href                        => Job id hash {REF}
-##         : $sample_id                          => Sample id
-##         : $outaligner_dir                     => The outaligner_dir used in the analysis
-##         : $program_name                       => Program name
-
-    my $parameter_href                  = $_[0];
-    my $active_parameter_href           = $_[1];
-    my $sample_info_href                = $_[2];
-    my $infile_href                     = $_[3];
-    my $indir_path_href                 = $_[4];
-    my $infile_lane_prefix_href         = $_[5];
-    my $infile_both_strands_prefix_href = $_[6];
-    my $job_id_href                     = $_[7];
-    my $sample_id                       = $_[8];
-    my $outaligner_dir                  = $_[9];
-    my $program_name                    = $_[10];
-
-    my $consensus_analysis_type =
-      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-    my $time       = 0;
-    my $infile_size;
-    my $paired_end_tracker = 0;
-
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::IO::Files qw(migrate_files);
-    use MIP::Program::Alignment::Samtools qw(samtools_view);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_sample_id_dependency_step_in_parallel);
-
-    while ( my ( $infile_prefix_index, $infile_prefix ) =
-        each( @{ $infile_lane_prefix_href->{$sample_id} } ) )
-    { #For all files from BWA aln but process in the same command i.e. both reads per align call
-
-        if ( $consensus_analysis_type eq "wgs" ) {
-
-            $time = 40;
-        }
-        else {
-
-            $time = 20;
-        }
-
-        my $core_number = 2;
-        my $sequence_run_mode =
-          $sample_info_href->{sample}{$sample_id}{file}{$infile_prefix}
-          {sequence_run_type}
-          ;    #Collect paired-end or single-end sequence run mode
-
-        ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        my ($file_path) = setup_script(
-            {
-                active_parameter_href => $active_parameter_href,
-                job_id_href           => $job_id_href,
-                FILEHANDLE            => $FILEHANDLE,
-                directory_id          => $sample_id,
-                program_name          => $program_name,
-                program_directory     => lc $outaligner_dir,
-                core_number           => $core_number,
-                process_time          => $time,
-                temp_directory => $active_parameter_href->{temp_directory},
-            }
-        );
-
-        ## Assign directories
-        my $fastq_insample_directory = $indir_path_href->{$sample_id};
-        my $insample_directory =
-          catdir( $active_parameter_href->{outdata_dir}, $sample_id, "bwa" );
-        my $outsample_directory =
-          catdir( $active_parameter_href->{outdata_dir}, $sample_id, "bwa" );
-        $parameter_href->{ "p" . $program_name }{$sample_id}{indirectory} =
-          $outsample_directory;    #Used downstream
-
-        my $infile =
-          $infile{$sample_id}[$paired_end_tracker];    #For required .fastq file
-
-        ## Copies files from source to destination
-        migrate_files(
-            {
-                infiles_ref  => \@{ $infile_href->{$sample_id} },
-                outfile_path => $active_parameter_href->{temp_directory},
-                FILEHANDLE   => $FILEHANDLE,
-                indirectory  => $fastq_insample_directory,
-                core_number  => $core_number,
-            }
-        );                                             #Fastq files
-        migrate_files(
-            {
-                infiles_ref =>
-                  \@{ $infile_both_strands_prefix_href->{$sample_id} },
-                outfile_path => $active_parameter_href->{temp_directory},
-                FILEHANDLE   => $FILEHANDLE,
-                indirectory  => $insample_directory,
-                core_number  => $core_number,
-                file_ending  => q{.sai*},
-            }
-        );
-
-        ## BWA Sampe
-        say $FILEHANDLE "## Aligning reads";
-        print $FILEHANDLE "bwa sampe ";
-        print $FILEHANDLE q?-r "@RG\t?;
-        print $FILEHANDLE q?ID:? . $infile_prefix . q?\t?;
-        print $FILEHANDLE q?SM:? . $sample_id . q?\t?;
-        print $FILEHANDLE q?PL:?
-          . $active_parameter_href->{platform}
-          . q?" ?;    #Read group header line
-        print $FILEHANDLE $active_parameter_href->{human_genome_reference}
-          . " ";      #Reference
-        print $FILEHANDLE catfile( $active_parameter_href->{temp_directory},
-            $infile_both_strands_prefix_href->{$sample_id}[$paired_end_tracker]
-              . ".sai" )
-          . " ";      #Read 1
-
-        if ( $sequence_run_mode eq 'paired-end' ) {
-
-            $paired_end_tracker = $paired_end_tracker +
-              1;      #Increment to collect correct read 2 from %infile
-            print $FILEHANDLE catfile( $active_parameter_href->{temp_directory},
-                $infile_both_strands_prefix_href->{$sample_id}
-                  [$paired_end_tracker] . ".sai" )
-              . " ";    #Read 2
-        }
-
-        print $FILEHANDLE catfile( $active_parameter_href->{temp_directory},
-            $infile )
-          . " ";        #Fastq read 1
-
-        if ( $sequence_run_mode eq 'paired-end' ) {
-
-            print $FILEHANDLE catfile(
-                $active_parameter_href->{temp_directory},
-                $infile_href->{$sample_id}[$paired_end_tracker]
-            ) . " ";    #Fastq read 2
-        }
-
-        say $FILEHANDLE "> "
-          . catfile(
-            $active_parameter_href->{temp_directory},
-            $infile_prefix . ".sam"
-          ),
-          "\n";         #Outfile (SAM)
-
-        ## Convert SAM to BAM using samtools view
-        say $FILEHANDLE "## Convert SAM to BAM";
-        samtools_view(
-            {
-                infile_path => catfile(
-                    $active_parameter_href->{temp_directory},
-                    $infile_prefix . ".sam"
-                ),
-                outfile_path => catfile(
-                    $active_parameter_href->{temp_directory},
-                    $infile_prefix . q{.bam}
-                ),
-                FILEHANDLE               => $FILEHANDLE,
-                auto_detect_input_format => 1,
-                with_header              => 1,
-                uncompressed_bam_output  => 1,
-            }
-        );
-        say $FILEHANDLE "\n";
-
-        ## Copies file from temporary directory.
-        say $FILEHANDLE "## Copy file from temporary directory";
-        migrate_file(
-            {
-                infile_path => catfile(
-                    $active_parameter_href->{temp_directory},
-                    $infile_prefix . q{.bam}
-                ),
-                outfile_path => $outsample_directory,
-                FILEHANDLE   => $FILEHANDLE,
-            }
-        );
-        say $FILEHANDLE q{wait}, "\n";
-
-        close($FILEHANDLE);
-
-        if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-            $sample_info_href->{sample}{$sample_id}{most_complete_bam}{path} =
-              catfile( $outsample_directory, $infile_prefix . q{.bam} );
-
-            slurm_submit_job_sample_id_dependency_step_in_parallel(
-                {
-                    job_id_href             => $job_id_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    family_id => $active_parameter_href->{family_id},
-                    sample_id => $sample_id,
-                    path => $parameter_href->{ "p" . $program_name }{chain},
-                    log  => $log,
-                    sbatch_file_name      => $file_path,
-                    sbatch_script_tracker => $infile_prefix_index
-                }
-            );
-        }
-        $paired_end_tracker++;
-    }
-}
-
 sub picardtools_mergerapidreads {
 
 ##picardtools_mergerapidreads
@@ -32448,7 +32194,7 @@ sub print_program {
         {    #Only process programs
 
             unless ( $order_parameter_element =~
-/pmadeline|pbwa_sampe|ppicardtools_mergerapidreads|pbamcalibrationblock|pvariantannotationblock|pannovar/
+/pmadeline|ppicardtools_mergerapidreads|pbamcalibrationblock|pvariantannotationblock|pannovar/
               )
             {
 

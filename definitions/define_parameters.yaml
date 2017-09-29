@@ -190,7 +190,6 @@ human_genome_reference:
   associated_program:
    - mip
    - pbwa_mem
-   - pbwa_sampe
    - pgatk_realigner
    - pgatk_baserecalibration
    - pgatk_haplotypecaller
@@ -484,26 +483,9 @@ bwa_sambamba_sort_memory_limit:
   data_type: SCALAR
   default: 32G
   type: program_argument
-pbwa_sampe:
-  associated_program:
-   - mip
-  chain: MAIN
-  data_type: SCALAR
-  default: 0
-  file_tag: nofile_tag
-  outdir_name: bwa
-  program_name_path:
-   - bwa
-  program_type: aligners
-  file_endings:
-   - .bam
-  remove_redundant_file: yes
-  remove_redundant_file_setting: single
-  type: program
 bwa_build_reference:
   associated_program:
    - pbwa_mem
-   - pbwa_sampe
   build_file: yes_auto_build
   data_type: SCALAR
   default: not_set_yet
@@ -1657,7 +1639,6 @@ gatk_disable_auto_index_and_file_lock:
 gatk_bundle_download_version:
   associated_program:
    - pbwa_mem
-   - pbwa_sampe
    - pgatk_realigner
    - pgatk_baserecalibration
    - pcnvnator
