@@ -26,15 +26,17 @@ use MIP::Language::Shell qw(create_bash_file);
 use MIP::Program::Download::Wget qw(wget);
 use MIP::Gnu::Bash qw(gnu_cd);
 use MIP::Gnu::Coreutils qw(gnu_cp gnu_rm gnu_mv gnu_mkdir gnu_ln gnu_chmod );
-use MIP::PacketManager::Conda
+use MIP::Package_manager::Conda
   qw{ conda_source_activate conda_source_deactivate };
 use Script::Utils qw(help set_default_array_parameters);
 use MIP::Check::Path qw{ check_dir_path_exist };
+use MIP::Package_manager::Pip qw{ pip_install };
 
 ## Recipes
 use MIP::Recipes::Install::Conda
   qw{ setup_conda_env install_bioconda_packages finish_bioconda_package_install };
 use MIP::Recipes::Install::Vep qw{ install_varianteffectpredictor };
+use MIP::Recipes::Install::Pip qw{ install_pip_packages };
 
 our $USAGE = build_usage( {} );
 
@@ -62,26 +64,26 @@ $parameter{conda_packages}{python} = q{2.7};
 $parameter{conda_packages}{pip}    = undef;
 
 ## Bioconda channel
-$parameter{bioconda}{bwa}       = '0.7.15';
-$parameter{bioconda}{bwakit}    = '0.7.12';
-$parameter{bioconda}{fastqc}    = '0.11.5';
-$parameter{bioconda}{cramtools} = '3.0.b47';
-$parameter{bioconda}{samtools}  = '1.4.1';
-$parameter{bioconda}{bcftools}  = '1.4.1';
-$parameter{bioconda}{snpeff}    = '4.3.1';
-$parameter{bioconda}{snpsift}   = '4.3.1';
-$parameter{bioconda}{picard}    = '2.9.2';
-$parameter{bioconda}{htslib}    = '1.4.1';
-$parameter{bioconda}{bedtools}  = '2.26.0';
-$parameter{bioconda}{vt}        = '2015.11.10';
-$parameter{bioconda}{sambamba}  = '0.6.6';
-$parameter{bioconda}{freebayes} = '1.1.0';
-$parameter{bioconda}{delly}     = '0.7.7';
-$parameter{bioconda}{manta}     = '1.1.0';
-$parameter{bioconda}{multiqc}   = '0.9.1a0';
-$parameter{bioconda}{peddy}     = '0.2.9';
-$parameter{bioconda}{plink2}    = '1.90b3.35';
-$parameter{bioconda}{vcfanno}   = '0.1.0';
+$parameter{bioconda}{bwa}       = q{0.7.15};
+$parameter{bioconda}{bwakit}    = q{0.7.12};
+$parameter{bioconda}{fastqc}    = q{0.11.5};
+$parameter{bioconda}{cramtools} = q{3.0.b47};
+$parameter{bioconda}{samtools}  = q{1.4.1};
+$parameter{bioconda}{bcftools}  = q{1.4.1};
+$parameter{bioconda}{snpeff}    = q{4.3.1};
+$parameter{bioconda}{snpsift}   = q{4.3.1};
+$parameter{bioconda}{picard}    = q{2.9.2};
+$parameter{bioconda}{htslib}    = q{1.4.1};
+$parameter{bioconda}{bedtools}  = q{2.26.0};
+$parameter{bioconda}{vt}        = q{2015.11.10};
+$parameter{bioconda}{sambamba}  = q{0.6.6};
+$parameter{bioconda}{freebayes} = q{1.1.0};
+$parameter{bioconda}{delly}     = q{0.7.7};
+$parameter{bioconda}{manta}     = q{1.1.0};
+$parameter{bioconda}{multiqc}   = q{0.9.1a0};
+$parameter{bioconda}{peddy}     = q{0.2.9};
+$parameter{bioconda}{plink2}    = q{1.90b3.35};
+$parameter{bioconda}{vcfanno}   = q{0.1.0};
 
 # Required for CNVnator
 $parameter{bioconda}{gcc}   = '4.8.5';
@@ -254,7 +256,7 @@ create_bash_file(
     {
         file_name   => $file_name_path,
         FILEHANDLE  => $FILEHANDLE,
-        remove_dir  => catfile( cwd(), '.MIP' ),
+        remove_dir  => catfile( cwd(), q{.MIP} ),
         set_errexit => $parameter{bash_set_errexit},
         set_nounset => $parameter{bash_set_nounset},
     }
@@ -297,10 +299,12 @@ finish_bioconda_package_install(
     }
 );
 
-pip_install(
+install_pip_packages(
     {
-        parameter_href => \%parameter,
-        FILEHANDLE     => $FILEHANDLE,
+        pip_packages_href => $parameter{pip},
+        quiet             => $parameter{quiet},
+        conda_env         => $parameter{conda_environment},
+        FILEHANDLE        => $FILEHANDLE,
     }
 );
 
@@ -709,95 +713,6 @@ sub print_parameters {
               . join( " ", @{ $parameter_href->{$key} } ), "\n";
         }
     }
-    return;
-}
-
-sub pip_install {
-
-##pip_install
-
-##Function : Writes install instructions for pip packages
-##Returns  : ""
-##Arguments: $parameter_href, $FILEHANDLE
-##         : $parameter_href => Holds all parameters
-##         : $FILEHANDLE     => Filehandle to write to
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
-
-    print STDERR 'Writting install instructions for pip packages', "\n";
-
-    ## Install PIP packages in conda environment
-    if ( exists( $parameter_href->{conda_environment} )
-        && ( $parameter_href->{conda_environment} ) )
-    {
-
-        print $FILEHANDLE '### Install PIP packages in conda environment: '
-          . $parameter_href->{conda_environment}, "\n";
-    }
-    else {
-
-        print $FILEHANDLE '### Install PIP packages in conda main environment',
-          "\n";
-    }
-
-    ## Only activate conda environment if supplied by user
-    if ( $parameter_href->{conda_environment} ) {
-        ## Activate conda environment
-        say $FILEHANDLE q{## Activate conda environment};
-        conda_source_activate(
-            {
-                FILEHANDLE => $FILEHANDLE,
-                env_name   => $parameter_href->{conda_environment},
-            }
-        );
-        say $FILEHANDLE $NEWLINE;
-    }
-
-    ## Install PIP packages
-    print $FILEHANDLE '## Install PIP packages', "\n";
-    print $FILEHANDLE 'pip install ';
-
-    if ( $parameter_href->{quiet} ) {
-
-        print $FILEHANDLE '--quiet ';    #Do not display progress bar
-    }
-
-    ## Install all PIP packages
-    foreach my $program ( keys %{ $parameter_href->{pip} } ) {
-
-        print $FILEHANDLE $program . '=='
-          . $parameter_href->{pip}{$program} . q{ };
-    }
-    print $FILEHANDLE "\n\n";
-
-    ## Deactivate conda environment if conda_environment exists
-    if ( $parameter_href->{conda_environment} ) {
-        say $FILEHANDLE q{## Deactivate conda environment};
-        conda_source_deactivate(
-            {
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say $FILEHANDLE $NEWLINE;
-    }
-
     return;
 }
 
@@ -2162,9 +2077,15 @@ sub svdb {
     print $FILEHANDLE "\n\n";
 
     ## Install
-    print $FILEHANDLE '## Install', "\n";
-    print $FILEHANDLE 'pip install . ';
-    print $FILEHANDLE "\n\n";
+    say {$FILEHANDLE} q{## Install};
+    pip_install(
+        {
+            packages_ref => [qw{ . }],
+            quiet        => $parameter_href->{quiet},
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
     ## Go back to subroutine origin
     print $FILEHANDLE '## Moving back to original working directory', "\n";
@@ -2437,11 +2358,31 @@ sub rhocall {
     print $FILEHANDLE "\n\n";
 
     ## Configure
-    print $FILEHANDLE '## Configure',                    "\n";
-    print $FILEHANDLE 'pip install numpy Cython',        "\n";
-    print $FILEHANDLE 'pip install -r requirements.txt', "\n";
-    print $FILEHANDLE 'pip install -e .';
-    print $FILEHANDLE "\n\n";
+    say {$FILEHANDLE} q{## Configure};
+    pip_install(
+        {
+            packages_ref => [qw{ numpy Cython }],
+            quiet        => $parameter_href->{quiet},
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+    print {$FILEHANDLE} $NEWLINE;
+    pip_install(
+        {
+            requirement => q{requirements.txt},
+            quiet       => $parameter_href->{quiet},
+            FILEHANDLE  => $FILEHANDLE,
+        }
+    );
+    print {$FILEHANDLE} $NEWLINE;
+    pip_install(
+        {
+            editable   => $DOT,
+            quiet      => $parameter_href->{quiet},
+            FILEHANDLE => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
     ## Go back to subroutine origin
     print $FILEHANDLE '## Moving back to original working directory', "\n";
