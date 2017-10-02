@@ -2,20 +2,13 @@ package MIP::QC::Record;
 
 use strict;
 use warnings;
-use warnings qw{FATAL utf8};
-use utf8;    # Allow unicode characters in this script
+use warnings qw{ FATAL utf8 };
+use utf8;
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
 use Carp;
 use autodie;
-use Params::Check qw{check allow last_error};
-
-use FindBin qw{$Bin};    # Find directory of script
-use File::Basename qw{dirname};
-use File::Spec::Functions qw{catdir};
-
-## MIPs lib/
-use lib catdir( dirname($Bin), q{lib} );
+use Params::Check qw{ check allow last_error };
 
 BEGIN {
 
@@ -23,29 +16,29 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{add_program_outfile_to_sample_info add_program_metafile_to_sample_info add_processing_metafile_to_sample_info};
+      qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info add_processing_metafile_to_sample_info };
 
 }
 
 sub add_program_outfile_to_sample_info {
 
-##add_program_outfile_to_sample_info
+## add_program_outfile_to_sample_info
 
-##Function : Adds path and/or outdirectory and/or outfile and/or version from programs to sample_info to track all outfiles and extract downstream
-##Returns  : ""
-##Arguments: $sample_info_href, $program_name, $path, $outdirectory, $outfile, $sample_id, $infile,
-##         : $sample_info_href => Records on samples and family hash {REF}
-##         : $program_name     => Program name
-##         : $path             => Path of file
-##         : $outdirectory     => Outdirectory of the file
-##         : $outfile          => Outfile name
-##         : $version          => Version of file
-##         : $sample_id        => Sample_id for data at sample level {Optional}
-##         : $infile           => Infile for data at sample level {Optional}
+## Function : Adds path and/or outdirectory and/or outfile and/or version from programs to sample_info to track all outfiles and extract downstream
+## Returns  :
+## Arguments: $sample_info_href, $program_name, $path, $outdirectory, $outfile, $sample_id, $infile,
+##          : $sample_info_href => Records on samples and family hash {REF}
+##          : $program_name     => Program name
+##          : $path             => Path of file
+##          : $outdirectory     => Outdirectory of the file
+##          : $outfile          => Outfile name
+##          : $version          => Version of file
+##          : $sample_id        => Sample_id for data at sample level {Optional}
+##          : $infile           => Infile for data at sample level {Optional}
 
     my ($arg_href) = @_;
 
@@ -132,20 +125,21 @@ sub add_program_outfile_to_sample_info {
 
 sub add_program_metafile_to_sample_info {
 
-##add_program_metafile_to_sample_info
+## add_program_metafile_to_sample_info
 
-##Function : Adds path and/or directory and/or file and/or version from programs to sample_info to track all metafiles and extract downstream
-##Returns  : ""
-##Arguments: $sample_info_href, $program_name, $metafile_tag, $path, $directory, $file, $version, $sample_id, $infile,
-##         : $sample_info_href => Records on samples and family hash {REF}
-##         : $program_name     => Program name
-##         : $metafile_tag     => Id tag of meta file
-##         : $path             => Path of file
-##         : $directory        => Directory of the file
-##         : $file             => File name
-##         : $version          => Version of file
-##         : $sample_id        => Sample_id for data at sample level {Optional}
-##         : $infile           => Infile for data at sample level {Optional}
+## Function : Adds path and/or directory and/or file and/or version from programs to sample_info to track all metafiles and extract downstream
+## Returns  :
+## Arguments: $sample_info_href, $program_name, $metafile_tag, $path, $directory, $file, $version, $processed_by, $sample_id, $infile,
+##          : $sample_info_href => Records on samples and family hash {REF}
+##          : $program_name     => Program name
+##          : $metafile_tag     => Id tag of meta file
+##          : $path             => Path of file
+##          : $directory        => Directory of the file
+##          : $file             => File name
+##          : $version          => Version of file
+##          : $processed_by     => Processed by
+##          : $sample_id        => Sample_id for data at sample level {Optional}
+##          : $infile           => Infile for data at sample level {Optional}
 
     my ($arg_href) = @_;
 
@@ -157,6 +151,7 @@ sub add_program_metafile_to_sample_info {
     my $directory;
     my $file;
     my $version;
+    my $processed_by;
     my $sample_id;
     my $infile;
 
@@ -196,6 +191,10 @@ sub add_program_metafile_to_sample_info {
             strict_type => 1,
             store       => \$version
         },
+        processed_by => {
+            strict_type => 1,
+            store       => \$processed_by
+        },
         sample_id => { strict_type => 1, store => \$sample_id },
         infile    => { strict_type => 1, store => \$infile },
     };
@@ -204,10 +203,11 @@ sub add_program_metafile_to_sample_info {
 
     ## Set the key and value pair to add to sample_info hash
     my %parameter = (
-        path      => $path,
-        directory => $directory,
-        file      => $file,
-        version   => $version,
+        path         => $path,
+        directory    => $directory,
+        file         => $file,
+        version      => $version,
+        processed_by => $processed_by,
     );
 
     if ( defined $sample_id && defined $infile ) {
@@ -239,15 +239,15 @@ sub add_program_metafile_to_sample_info {
 
 sub add_processing_metafile_to_sample_info {
 
-##add_processing_metafile_to_sample_info
+## add_processing_metafile_to_sample_info
 
-##Function : Adds metafile path from sample_id|family_id processing to sample_info to track all metafiles and extract downstream
-##Returns  : ""
-##Arguments: $sample_info_href, $metafile_tag, $path, $sample_id
-##         : $sample_info_href => Records on samples and family hash {REF}
-##         : $metafile_tag     => Id tag of meta file
-##         : $path             => Path of file
-##         : $sample_id        => Sample_id for data at sample level {Optional}
+## Function : Adds metafile path from sample_id|family_id processing to sample_info to track all metafiles and extract downstream
+## Returns  :
+## Arguments: $sample_info_href, $metafile_tag, $path, $sample_id
+##          : $sample_info_href => Records on samples and family hash {REF}
+##          : $metafile_tag     => Id tag of meta file
+##          : $path             => Path of file
+##          : $sample_id        => Sample_id for data at sample level {Optional}
 
     my ($arg_href) = @_;
 

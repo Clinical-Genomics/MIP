@@ -61,7 +61,8 @@ use MIP::Recipes::Fastqc qw{ analysis_fastqc };
 use MIP::Recipes::Bwa_mem qw{ analysis_bwa_mem };
 use MIP::Recipes::Picardtools_mergesamfiles
   qw{ analysis_picardtools_mergesamfiles analysis_picardtools_mergesamfiles_rio };
-use MIP::Recipes::Markduplicates qw{ analysis_markduplicates };
+use MIP::Recipes::Markduplicates
+  qw{ analysis_markduplicates analysis_markduplicates_rio };
 use MIP::Recipes::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
 use MIP::Recipes::Vep qw{ analysis_vep analysis_vep_rio analysis_vep_sv };
 
@@ -174,38 +175,38 @@ if ( not @ARGV ) {
 
 ###User Options
 GetOptions(
-   q{ifd|infile_dirs:s}   => \%{ $parameter{infile_dirs}{value} },
-   q{rd|reference_dir:s}  => \$parameter{reference_dir}{value},
-   q{p|project_id:s}      => \$parameter{project_id}{value},
-   q{s|sample_ids:s}      => \@{ $parameter{sample_ids}{value} },
-   q{odd|outdata_dir:s}   => \$parameter{outdata_dir}{value},
-   q{osd|outscript_dir:s} => \$parameter{outscript_dir}{value},
-   q{f|family_id:s}       => \$parameter{family_id}{value},
-   q{sck|supported_capture_kit:s} =>
+    q{ifd|infile_dirs:s}   => \%{ $parameter{infile_dirs}{value} },
+    q{rd|reference_dir:s}  => \$parameter{reference_dir}{value},
+    q{p|project_id:s}      => \$parameter{project_id}{value},
+    q{s|sample_ids:s}      => \@{ $parameter{sample_ids}{value} },
+    q{odd|outdata_dir:s}   => \$parameter{outdata_dir}{value},
+    q{osd|outscript_dir:s} => \$parameter{outscript_dir}{value},
+    q{f|family_id:s}       => \$parameter{family_id}{value},
+    q{sck|supported_capture_kit:s} =>
       \%{ $parameter{supported_capture_kit}{value} },
-   q{dnr|decompose_normalize_references:s} =>
+    q{dnr|decompose_normalize_references:s} =>
       \@{ $parameter{decompose_normalize_references}{value} },
-   q{ped|pedigree_file:s} => \$parameter{pedigree_file}{value},
-   q{hgr|human_genome_reference:s} =>
+    q{ped|pedigree_file:s} => \$parameter{pedigree_file}{value},
+    q{hgr|human_genome_reference:s} =>
       \$parameter{human_genome_reference}{value},
-   q{al|outaligner_dir:s}         => \$parameter{outaligner_dir}{value},
-   q{at|analysis_type:s}          => \%{ $parameter{analysis_type}{value} },
-   q{pl|platform:s}               => \$parameter{platform}{value},
-   q{ec|expected_coverage:s}      => \%{ $parameter{expected_coverage}{value} },
-   q{c|config_file:s}             => \$parameter{config_file}{value},
-   q{ccp|cluster_constant_path:s} => \$parameter{cluster_constant_path}{value},
-   q{acp|analysis_constant_path:s} =>
+    q{al|outaligner_dir:s}    => \$parameter{outaligner_dir}{value},
+    q{at|analysis_type:s}     => \%{ $parameter{analysis_type}{value} },
+    q{pl|platform:s}          => \$parameter{platform}{value},
+    q{ec|expected_coverage:s} => \%{ $parameter{expected_coverage}{value} },
+    q{c|config_file:s}        => \$parameter{config_file}{value},
+    q{ccp|cluster_constant_path:s} => \$parameter{cluster_constant_path}{value},
+    q{acp|analysis_constant_path:s} =>
       \$parameter{analysis_constant_path}{value},
-   q{cfa|config_file_analysis:s} => \$parameter{config_file_analysis}{value},
-   q{sif|sample_info_file:s}     => \$parameter{sample_info_file}{value},
-   q{dra|dry_run_all=i}          => \$parameter{dry_run_all}{value},
-   q{jul|java_use_large_pages=n} => \$parameter{java_use_large_pages}{value},
-   q{ges|genomic_set:s}          => \$parameter{genomic_set}{value},
-   q{rio|reduce_io=n}            => \$parameter{reduce_io}{value},
-   q{riu|replace_iupac=n}        => \$parameter{replace_iupac}{value},
-   q{ppm|print_program_mode=n}   => \$parameter{print_program_mode}{value},
-   q{pp|print_program}           => sub {
-        GetOptions(q{ppm|print_program_mode=n} =>
+    q{cfa|config_file_analysis:s} => \$parameter{config_file_analysis}{value},
+    q{sif|sample_info_file:s}     => \$parameter{sample_info_file}{value},
+    q{dra|dry_run_all=i}          => \$parameter{dry_run_all}{value},
+    q{jul|java_use_large_pages=n} => \$parameter{java_use_large_pages}{value},
+    q{ges|genomic_set:s}          => \$parameter{genomic_set}{value},
+    q{rio|reduce_io=n}            => \$parameter{reduce_io}{value},
+    q{riu|replace_iupac=n}        => \$parameter{replace_iupac}{value},
+    q{ppm|print_program_mode=n}   => \$parameter{print_program_mode}{value},
+    q{pp|print_program}           => sub {
+        GetOptions( q{ppm|print_program_mode=n} =>
               \$parameter{print_program_mode}{value} )
           ;    #Force ppm to be read before function call
         print_program(
@@ -216,328 +217,330 @@ GetOptions(
         );
         exit;
     },
-   q{l|log_file:s} => \$parameter{log_file}{value},
-   q{h|help}       => sub { say STDOUT $USAGE; exit; },    #Display help text
-   q{v|version}    => sub {
+    q{l|log_file:s} => \$parameter{log_file}{value},
+    q{h|help}       => sub { say STDOUT $USAGE; exit; },    #Display help text
+    q{v|version}    => sub {
         say STDOUT "\n" . basename($PROGRAM_NAME) . q{ } . $VERSION, "\n";
         exit;
     },
     ####Bash
-   q{bse|bash_set_errexit:s}   => \$parameter{bash_set_errexit}{value},
-   q{bsu|bash_set_nounset:s}   => \$parameter{bash_set_nounset}{value},
-   q{bsp|bash_set_pipefail:s}  => \$parameter{bash_set_pipefail}{value},
-   q{em|email:s}               => \$parameter{email}{value},
-   q{emt|email_types:s}        => \@{ $parameter{email_types}{value} },
-   q{mcn|module_core_number:s} => \%{ $parameter{module_core_number}{value} },
-   q{mot|module_time:s}        => \%{ $parameter{module_time}{value} },
-   q{mcn|max_cores_per_node=n} => \$parameter{max_cores_per_node}{value},
-   q{nrm|node_ram_memory=n}    => \$parameter{node_ram_memory}{value},
-   q{tmd|temp_directory:s}     => \$parameter{temp_directory}{value},
-   q{qos|slurm_quality_of_service=s} =>
+    q{bse|bash_set_errexit:s}   => \$parameter{bash_set_errexit}{value},
+    q{bsu|bash_set_nounset:s}   => \$parameter{bash_set_nounset}{value},
+    q{bsp|bash_set_pipefail:s}  => \$parameter{bash_set_pipefail}{value},
+    q{em|email:s}               => \$parameter{email}{value},
+    q{emt|email_types:s}        => \@{ $parameter{email_types}{value} },
+    q{mcn|module_core_number:s} => \%{ $parameter{module_core_number}{value} },
+    q{mot|module_time:s}        => \%{ $parameter{module_time}{value} },
+    q{mcn|max_cores_per_node=n} => \$parameter{max_cores_per_node}{value},
+    q{nrm|node_ram_memory=n}    => \$parameter{node_ram_memory}{value},
+    q{tmd|temp_directory:s}     => \$parameter{temp_directory}{value},
+    q{qos|slurm_quality_of_service=s} =>
       \$parameter{slurm_quality_of_service}{value},
-   q{sen|source_environment_commands=s{,}} =>
+    q{sen|source_environment_commands=s{,}} =>
       \@{ $parameter{source_environment_commands}{value} },
-   q{psfq|psplit_fastq_file=n} => \$parameter{psplit_fastq_file}{value},
-   q{sfqrdb|split_fastq_file_read_batch=n} =>
+    q{psfq|psplit_fastq_file=n} => \$parameter{psplit_fastq_file}{value},
+    q{sfqrdb|split_fastq_file_read_batch=n} =>
       \$parameter{split_fastq_file_read_batch}{value},
-   q{pgz|pgzip_fastq=n}         => \$parameter{pgzip_fastq}{value},
-   q{pfqc|pfastqc=n}            => \$parameter{pfastqc}{value},
-   q{pmad|pmadeline=n}          => \$parameter{pmadeline}{value},
-   q{pmem|pbwa_mem=n}           => \$parameter{pbwa_mem}{value},
-   q{memhla|bwa_mem_hla=n}      => \$parameter{bwa_mem_hla}{value},
-   q{memrdb|bwa_mem_rapid_db:s} => \$parameter{bwa_mem_rapid_db}{value},
-   q{memcrm|bwa_mem_cram=n}     => \$parameter{bwa_mem_cram}{value},
-   q{memsts|bwa_mem_bamstats=n} => \$parameter{bwa_mem_bamstats}{value},
-   q{memssm|bwa_sambamba_sort_memory_limit:s} =>
+    q{pgz|pgzip_fastq=n}         => \$parameter{pgzip_fastq}{value},
+    q{pfqc|pfastqc=n}            => \$parameter{pfastqc}{value},
+    q{pmad|pmadeline=n}          => \$parameter{pmadeline}{value},
+    q{pmem|pbwa_mem=n}           => \$parameter{pbwa_mem}{value},
+    q{memhla|bwa_mem_hla=n}      => \$parameter{bwa_mem_hla}{value},
+    q{memrdb|bwa_mem_rapid_db:s} => \$parameter{bwa_mem_rapid_db}{value},
+    q{memcrm|bwa_mem_cram=n}     => \$parameter{bwa_mem_cram}{value},
+    q{memsts|bwa_mem_bamstats=n} => \$parameter{bwa_mem_bamstats}{value},
+    q{memssm|bwa_sambamba_sort_memory_limit:s} =>
       \$parameter{bwa_sambamba_sort_memory_limit}{value},
-   q{ptp|picardtools_path:s} => \$parameter{picardtools_path}{value},
-   q{pptm|ppicardtools_mergesamfiles=n} =>
+    q{ptp|picardtools_path:s} => \$parameter{picardtools_path}{value},
+    q{pptm|ppicardtools_mergesamfiles=n} =>
       \$parameter{ppicardtools_mergesamfiles}{value},
-   q{pmd|pmarkduplicates=n} => \$parameter{pmarkduplicates}{value},
-   q{mdpmd|markduplicates_picardtools_markduplicates=n} =>
+    q{pmd|pmarkduplicates=n} => \$parameter{pmarkduplicates}{value},
+    q{mdpmd|markduplicates_picardtools_markduplicates=n} =>
       \$parameter{markduplicates_picardtools_markduplicates}{value},
-   q{mdsmd|markduplicates_sambamba_markdup=n} =>
+    q{mdsmd|markduplicates_sambamba_markdup=n} =>
       \$parameter{markduplicates_sambamba_markdup}{value},
-   q{mdshts|markduplicates_sambamba_markdup_hash_table_size=n} =>
+    q{mdshts|markduplicates_sambamba_markdup_hash_table_size=n} =>
       \$parameter{markduplicates_sambamba_markdup_hash_table_size}{value},
-   q{mdsols|markduplicates_sambamba_markdup_overflow_list_size=n} =>
+    q{mdsols|markduplicates_sambamba_markdup_overflow_list_size=n} =>
       \$parameter{markduplicates_sambamba_markdup_overflow_list_size}{value},
-   q{mdsibs|markduplicates_sambamba_markdup_io_buffer_size=n} =>
+    q{mdsibs|markduplicates_sambamba_markdup_io_buffer_size=n} =>
       \$parameter{markduplicates_sambamba_markdup_io_buffer_size}{value},
-   q{pchs|pchanjo_sexcheck=n} => \$parameter{pchanjo_sexcheck}{value},
-   q{chslle|chanjo_sexcheck_log_level:s} =>
+    q{pchs|pchanjo_sexcheck=n} => \$parameter{pchanjo_sexcheck}{value},
+    q{chslle|chanjo_sexcheck_log_level:s} =>
       \$parameter{chanjo_sexcheck_log_level}{value},
-   q{psdt|psambamba_depth=n}       => \$parameter{psambamba_depth}{value},
-   q{sdtmod|sambamba_depth_mode:s} => \$parameter{sambamba_depth_mode}{value},
-   q{sdtcut|sambamba_depth_cutoffs:s} =>
+    q{psdt|psambamba_depth=n}       => \$parameter{psambamba_depth}{value},
+    q{sdtmod|sambamba_depth_mode:s} => \$parameter{sambamba_depth_mode}{value},
+    q{sdtcut|sambamba_depth_cutoffs:s} =>
       \@{ $parameter{sambamba_depth_cutoffs}{value} }
     ,    # Cutoff used for completeness
-   q{sdtbed|sambamba_depth_bed:s} => \$parameter{sambamba_depth_bed}{value},
-   q{sdtbaq|sambamba_depth_base_quality=n} =>
+    q{sdtbed|sambamba_depth_bed:s} => \$parameter{sambamba_depth_bed}{value},
+    q{sdtbaq|sambamba_depth_base_quality=n} =>
       \$parameter{sambamba_depth_base_quality}{value},
-   q{sdtmaq|sambamba_depth_mapping_quality=n} =>
+    q{sdtmaq|sambamba_depth_mapping_quality=n} =>
       \$parameter{sambamba_depth_mapping_quality}{value},
-   q{sdtndu|sambamba_depth_noduplicates=n} =>
+    q{sdtndu|sambamba_depth_noduplicates=n} =>
       \$parameter{sambamba_depth_noduplicates}{value},
-   q{sdtfqc|sambamba_depth_quality_control=n} =>
+    q{sdtfqc|sambamba_depth_quality_control=n} =>
       \$parameter{sambamba_depth_quality_control}{value},
-   q{pbgc|pbedtools_genomecov=n} => \$parameter{pbedtools_genomecov}{value},
-   q{bgcmc|bedtools_genomecov_max_coverage=n} =>
+    q{pbgc|pbedtools_genomecov=n} => \$parameter{pbedtools_genomecov}{value},
+    q{bgcmc|bedtools_genomecov_max_coverage=n} =>
       \$parameter{bedtools_genomecov_max_coverage}{value},
-   q{pptcmm|ppicardtools_collectmultiplemetrics=n} =>
+    q{pptcmm|ppicardtools_collectmultiplemetrics=n} =>
       \$parameter{ppicardtools_collectmultiplemetrics}{value},
-   q{pptchs|ppicardtools_collecthsmetrics=n} =>
+    q{pptchs|ppicardtools_collecthsmetrics=n} =>
       \$parameter{ppicardtools_collecthsmetrics}{value},
-   q{extb|exome_target_bed=s}     => \%{ $parameter{exome_target_bed}{value} },
-   q{prcp|prcovplots=n}           => \$parameter{prcovplots}{value},
-   q{pcnv|pcnvnator=n}            => \$parameter{pcnvnator}{value},
-   q{cnvhbs|cnv_bin_size=n}       => \$parameter{cnv_bin_size}{value},
-   q{cnvrld|cnv_root_ld_lib=s}    => \$parameter{cnv_root_ld_lib}{value},
-   q{pdelc|pdelly_call=n}         => \$parameter{pdelly_call}{value},
-   q{pdel|pdelly_reformat=n}      => \$parameter{pdelly_reformat}{value},
-   q{deltyp|delly_types:s}        => \@{ $parameter{delly_types}{value} },
-   q{delexc|delly_exclude_file:s} => \$parameter{delly_exclude_file}{value},
-   q{pmna|pmanta=n}               => \$parameter{pmanta}{value},
-   q{ptid|ptiddit=n}              => \$parameter{ptiddit}{value},
-   q{tidmsp|tiddit_minimum_number_supporting_pairs=n} =>
+    q{extb|exome_target_bed=s}     => \%{ $parameter{exome_target_bed}{value} },
+    q{prcp|prcovplots=n}           => \$parameter{prcovplots}{value},
+    q{pcnv|pcnvnator=n}            => \$parameter{pcnvnator}{value},
+    q{cnvhbs|cnv_bin_size=n}       => \$parameter{cnv_bin_size}{value},
+    q{cnvrld|cnv_root_ld_lib=s}    => \$parameter{cnv_root_ld_lib}{value},
+    q{pdelc|pdelly_call=n}         => \$parameter{pdelly_call}{value},
+    q{pdel|pdelly_reformat=n}      => \$parameter{pdelly_reformat}{value},
+    q{deltyp|delly_types:s}        => \@{ $parameter{delly_types}{value} },
+    q{delexc|delly_exclude_file:s} => \$parameter{delly_exclude_file}{value},
+    q{pmna|pmanta=n}               => \$parameter{pmanta}{value},
+    q{ptid|ptiddit=n}              => \$parameter{ptiddit}{value},
+    q{tidmsp|tiddit_minimum_number_supporting_pairs=n} =>
       \$parameter{tiddit_minimum_number_supporting_pairs}{value},
-   q{psvc|psv_combinevariantcallsets=n} =>
+    q{psvc|psv_combinevariantcallsets=n} =>
       \$parameter{psv_combinevariantcallsets}{value},
-   q{svcvtd|sv_vt_decompose=n} => \$parameter{sv_vt_decompose}{value},
-   q{svsvdbmp|sv_svdb_merge_prioritize:s} =>
+    q{svcvtd|sv_vt_decompose=n} => \$parameter{sv_vt_decompose}{value},
+    q{svsvdbmp|sv_svdb_merge_prioritize:s} =>
       \$parameter{sv_svdb_merge_prioritize}{value},
-   q{svcbtv|sv_bcftools_view_filter=n} =>
+    q{svcbtv|sv_bcftools_view_filter=n} =>
       \$parameter{sv_bcftools_view_filter}{value},
-   q{svcdbq|sv_svdb_query=n} => \$parameter{sv_svdb_query}{value},
-   q{svcdbqd|sv_svdb_query_db_files:s} =>
+    q{svcdbq|sv_svdb_query=n} => \$parameter{sv_svdb_query}{value},
+    q{svcdbqd|sv_svdb_query_db_files:s} =>
       \%{ $parameter{sv_svdb_query_db_files}{value} },
-   q{svcvan|sv_vcfanno=n}        => \$parameter{sv_vcfanno}{value},
-   q{svcval|sv_vcfanno_lua:s}    => \$parameter{sv_vcfanno_lua}{value},
-   q{svcvac|sv_vcfanno_config:s} => \$parameter{sv_vcfanno_config}{value},
-   q{svcvacf|sv_vcfanno_config_file:s} =>
+    q{svcvan|sv_vcfanno=n}        => \$parameter{sv_vcfanno}{value},
+    q{svcval|sv_vcfanno_lua:s}    => \$parameter{sv_vcfanno_lua}{value},
+    q{svcvac|sv_vcfanno_config:s} => \$parameter{sv_vcfanno_config}{value},
+    q{svcvacf|sv_vcfanno_config_file:s} =>
       \$parameter{sv_vcfanno_config_file}{value},
-   q{svcvah|sv_vcfannotation_header_lines_file:s} =>
+    q{svcvah|sv_vcfannotation_header_lines_file:s} =>
       \$parameter{sv_vcfannotation_header_lines_file}{value},
-   q{svcgmf|sv_genmod_filter=n} => \$parameter{sv_genmod_filter}{value},
-   q{svcgfr|sv_genmod_filter_1000g:s} =>
+    q{svcgmf|sv_genmod_filter=n} => \$parameter{sv_genmod_filter}{value},
+    q{svcgfr|sv_genmod_filter_1000g:s} =>
       \$parameter{sv_genmod_filter_1000g}{value},
-   q{svcgft|sv_genmod_filter_threshold:s} =>
+    q{svcgft|sv_genmod_filter_threshold:s} =>
       \$parameter{sv_genmod_filter_threshold}{value},
-   q{svcbcf|sv_combinevariantcallsets_bcf_file=n} =>
+    q{svcbcf|sv_combinevariantcallsets_bcf_file=n} =>
       \$parameter{sv_combinevariantcallsets_bcf_file}{value},
-   q{psvv|psv_varianteffectpredictor=n} =>
+    q{psvv|psv_varianteffectpredictor=n} =>
       \$parameter{psv_varianteffectpredictor}{value},
-   q{svvepf|sv_vep_features:s} => \@{ $parameter{sv_vep_features}{value} },
-   q{svvepl|sv_vep_plugins:s}  => \@{ $parameter{sv_vep_plugins}{value} },
-   q{psvvcp|psv_vcfparser=n}   => \$parameter{psv_vcfparser}{value},
-   q{svvcpvt|sv_vcfparser_vep_transcripts=n} =>
+    q{svvepf|sv_vep_features:s} => \@{ $parameter{sv_vep_features}{value} },
+    q{svvepl|sv_vep_plugins:s}  => \@{ $parameter{sv_vep_plugins}{value} },
+    q{psvvcp|psv_vcfparser=n}   => \$parameter{psv_vcfparser}{value},
+    q{svvcpvt|sv_vcfparser_vep_transcripts=n} =>
       \$parameter{sv_vcfparser_vep_transcripts}{value},
-   q{svvcppg|sv_vcfparser_per_gene=n} =>
+    q{svvcppg|sv_vcfparser_per_gene=n} =>
       \$parameter{sv_vcfparser_per_gene}{value},
-   q{svvcprff|sv_vcfparser_range_feature_file:s} =>
+    q{svvcprff|sv_vcfparser_range_feature_file:s} =>
       \$parameter{sv_vcfparser_range_feature_file}{value},
-   q{svvcprfa|sv_vcfparser_range_feature_annotation_columns:s} =>
+    q{svvcprfa|sv_vcfparser_range_feature_annotation_columns:s} =>
       \@{ $parameter{sv_vcfparser_range_feature_annotation_columns}{value} },
-   q{svvcpsf|sv_vcfparser_select_file:s} =>
+    q{svvcpsf|sv_vcfparser_select_file:s} =>
       \$parameter{sv_vcfparser_select_file}{value},
-   q{svvcpsfm|sv_vcfparser_select_file_matching_column=n} =>
+    q{svvcpsfm|sv_vcfparser_select_file_matching_column=n} =>
       \$parameter{sv_vcfparser_select_file_matching_column}{value},
-   q{svvcpsfa|sv_vcfparser_select_feature_annotation_columns:s} =>
+    q{svvcpsfa|sv_vcfparser_select_feature_annotation_columns:s} =>
       \@{ $parameter{sv_vcfparser_select_feature_annotation_columns}{value} },
-   q{psvr|psv_rankvariant=n} => \$parameter{psv_rankvariant}{value},
-   q{svravanr|sv_genmod_annotate_regions:n} =>
+    q{psvr|psv_rankvariant=n} => \$parameter{psv_rankvariant}{value},
+    q{svravanr|sv_genmod_annotate_regions:n} =>
       \$parameter{sv_genmod_annotate_regions}{value},
-   q{svravgft|sv_genmod_models_family_type:s} =>
+    q{svravgft|sv_genmod_models_family_type:s} =>
       \$parameter{sv_genmod_models_family_type}{value},
-   q{svravrpf|sv_genmod_models_reduced_penetrance_file:s} =>
+    q{svravrpf|sv_genmod_models_reduced_penetrance_file:s} =>
       \$parameter{sv_genmod_models_reduced_penetrance_file}{value},
-   q{svravwg|sv_genmod_models_whole_gene=n} =>
+    q{svravwg|sv_genmod_models_whole_gene=n} =>
       \$parameter{sv_genmod_models_whole_gene}{value},
-   q{svravrm|sv_rank_model_file:s} => \$parameter{sv_rank_model_file}{value},
-   q{psvre|psv_reformat=n}         => \$parameter{psv_reformat}{value},
-   q{svrevbf|sv_rankvariant_binary_file=n} =>
+    q{svravrm|sv_rank_model_file:s} => \$parameter{sv_rank_model_file}{value},
+    q{psvre|psv_reformat=n}         => \$parameter{psv_reformat}{value},
+    q{svrevbf|sv_rankvariant_binary_file=n} =>
       \$parameter{sv_rankvariant_binary_file}{value},
-   q{svrergf|sv_reformat_remove_genes_file:s} =>
+    q{svrergf|sv_reformat_remove_genes_file:s} =>
       \$parameter{sv_reformat_remove_genes_file}{value},
-   q{psmp|psamtools_mpileup=n} => \$parameter{psamtools_mpileup}{value},
-   q{pfrb|pfreebayes=n}        => \$parameter{pfreebayes}{value},
-   q{gtp|gatk_path:s}          => \$parameter{gatk_path}{value},
-   q{gll|gatk_logging_level:s} => \$parameter{gatk_logging_level}{value},
-   q{gbdv|gatk_bundle_download_version:s} =>
+    q{psmp|psamtools_mpileup=n} => \$parameter{psamtools_mpileup}{value},
+    q{pfrb|pfreebayes=n}        => \$parameter{pfreebayes}{value},
+    q{gtp|gatk_path:s}          => \$parameter{gatk_path}{value},
+    q{gll|gatk_logging_level:s} => \$parameter{gatk_logging_level}{value},
+    q{gbdv|gatk_bundle_download_version:s} =>
       \$parameter{gatk_bundle_download_version}{value},
-   q{gdco|gatk_downsample_to_coverage=n} =>
+    q{gdco|gatk_downsample_to_coverage=n} =>
       \$parameter{gatk_downsample_to_coverage}{value},
-   q{gdai|gatk_disable_auto_index_and_file_lock=n} =>
+    q{gdai|gatk_disable_auto_index_and_file_lock=n} =>
       \$parameter{gatk_disable_auto_index_and_file_lock}{value},
-   q{pgra|pgatk_realigner=n} => \$parameter{pgatk_realigner}{value},
-   q{graks|gatk_realigner_indel_known_sites:s} =>
+    q{pgra|pgatk_realigner=n} => \$parameter{pgatk_realigner}{value},
+    q{graks|gatk_realigner_indel_known_sites:s} =>
       \@{ $parameter{gatk_realigner_indel_known_sites}{value} },
-   q{pgbr|pgatk_baserecalibration=n} =>
+    q{pgbr|pgatk_baserecalibration=n} =>
       \$parameter{pgatk_baserecalibration}{value},
-   q{gbrcov|gatk_baserecalibration_covariates:s} =>
+    q{gbrcov|gatk_baserecalibration_covariates:s} =>
       \@{ $parameter{gatk_baserecalibration_covariates}{value} },
-   q{gbrkst|gatk_baserecalibration_known_sites:s} =>
+    q{gbrkst|gatk_baserecalibration_known_sites:s} =>
       \@{ $parameter{gatk_baserecalibration_known_sites}{value} },
-   q{gbrrf|gatk_baserecalibration_read_filters=s} =>
+    q{gbrrf|gatk_baserecalibration_read_filters=s} =>
       \@{ $parameter{gatk_baserecalibration_read_filters}{value} },
-   q{gbrdiq|gatk_baserecalibration_disable_indel_qual=n} =>
+    q{gbrdiq|gatk_baserecalibration_disable_indel_qual=n} =>
       \$parameter{gatk_baserecalibration_disable_indel_qual}{value},
-   q{gbrsqq|gatk_baserecalibration_static_quantized_quals:s} =>
+    q{gbrsqq|gatk_baserecalibration_static_quantized_quals:s} =>
       \@{ $parameter{gatk_baserecalibration_static_quantized_quals}{value} },
-   q{pghc|pgatk_haplotypecaller=n} => \$parameter{pgatk_haplotypecaller}{value},
-   q{ghcann|gatk_haplotypecaller_annotation:s} =>
+    q{pghc|pgatk_haplotypecaller=n} =>
+      \$parameter{pgatk_haplotypecaller}{value},
+    q{ghcann|gatk_haplotypecaller_annotation:s} =>
       \@{ $parameter{gatk_haplotypecaller_annotation}{value} },
-   q{ghckse|gatk_haplotypecaller_snp_known_set:s} =>
+    q{ghckse|gatk_haplotypecaller_snp_known_set:s} =>
       \$parameter{gatk_haplotypecaller_snp_known_set}{value},
-   q{ghcscb|gatk_haplotypecaller_no_soft_clipped_bases=n} =>
+    q{ghcscb|gatk_haplotypecaller_no_soft_clipped_bases=n} =>
       \$parameter{gatk_haplotypecaller_no_soft_clipped_bases}{value},
-   q{ghcpim|gatk_haplotypecaller_pcr_indel_model:s} =>
+    q{ghcpim|gatk_haplotypecaller_pcr_indel_model:s} =>
       \$parameter{gatk_haplotypecaller_pcr_indel_model}{value},
-   q{pggt|pgatk_genotypegvcfs=n} => \$parameter{pgatk_genotypegvcfs}{value},
-   q{ggtgrl|gatk_genotypegvcfs_ref_gvcf:s} =>
+    q{pggt|pgatk_genotypegvcfs=n} => \$parameter{pgatk_genotypegvcfs}{value},
+    q{ggtgrl|gatk_genotypegvcfs_ref_gvcf:s} =>
       \$parameter{gatk_genotypegvcfs_ref_gvcf}{value},
-   q{ggtals|gatk_genotypegvcfs_all_sites=n} =>
+    q{ggtals|gatk_genotypegvcfs_all_sites=n} =>
       \$parameter{gatk_genotypegvcfs_all_sites}{value},
-   q{ggbcf|gatk_concatenate_genotypegvcfs_bcf_file=n} =>
+    q{ggbcf|gatk_concatenate_genotypegvcfs_bcf_file=n} =>
       \$parameter{gatk_concatenate_genotypegvcfs_bcf_file}{value},
-   q{pgvr|pgatk_variantrecalibration=n} =>
+    q{pgvr|pgatk_variantrecalibration=n} =>
       \$parameter{pgatk_variantrecalibration}{value},
-   q{gvrann|gatk_variantrecalibration_annotations:s} =>
+    q{gvrann|gatk_variantrecalibration_annotations:s} =>
       \@{ $parameter{gatk_variantrecalibration_annotations}{value} },
-   q{gvrres|gatk_variantrecalibration_resource_snv=s} =>
+    q{gvrres|gatk_variantrecalibration_resource_snv=s} =>
       \%{ $parameter{gatk_variantrecalibration_resource_snv}{value} },
-   q{gvrrei|gatk_variantrecalibration_resource_indel=s} =>
+    q{gvrrei|gatk_variantrecalibration_resource_indel=s} =>
       \%{ $parameter{gatk_variantrecalibration_resource_indel}{value} },
-   q{gvrstf|gatk_variantrecalibration_snv_tsfilter_level:s} =>
+    q{gvrstf|gatk_variantrecalibration_snv_tsfilter_level:s} =>
       \$parameter{gatk_variantrecalibration_snv_tsfilter_level}{value},
-   q{gvritf|gatk_variantrecalibration_indel_tsfilter_level:s} =>
+    q{gvritf|gatk_variantrecalibration_indel_tsfilter_level:s} =>
       \$parameter{gatk_variantrecalibration_indel_tsfilter_level}{value},
-   q{gvrdpa|gatk_variantrecalibration_dp_annotation=n} =>
+    q{gvrdpa|gatk_variantrecalibration_dp_annotation=n} =>
       \$parameter{gatk_variantrecalibration_dp_annotation}{value},
-   q{gvrsmg|gatk_variantrecalibration_snv_max_gaussians=n} =>
+    q{gvrsmg|gatk_variantrecalibration_snv_max_gaussians=n} =>
       \$parameter{gatk_variantrecalibration_snv_max_gaussians}{value},
-   q{gvrimg|gatk_variantrecalibration_indel_max_gaussians=n} =>
+    q{gvrimg|gatk_variantrecalibration_indel_max_gaussians=n} =>
       \$parameter{gatk_variantrecalibration_indel_max_gaussians}{value},
-   q{gvrevf|gatk_variantrecalibration_exclude_nonvariants_file=n} =>
+    q{gvrevf|gatk_variantrecalibration_exclude_nonvariants_file=n} =>
       \$parameter{gatk_variantrecalibration_exclude_nonvariants_file}{value},
-   q{gvrbcf|gatk_variantrecalibration_bcf_file=n} =>
+    q{gvrbcf|gatk_variantrecalibration_bcf_file=n} =>
       \$parameter{gatk_variantrecalibration_bcf_file}{value},
-   q{gcgpss|gatk_calculategenotypeposteriors_support_set:s} =>
+    q{gcgpss|gatk_calculategenotypeposteriors_support_set:s} =>
       \$parameter{gatk_calculategenotypeposteriors_support_set}{value},
-   q{pgcv|pgatk_combinevariantcallsets=n} =>
+    q{pgcv|pgatk_combinevariantcallsets=n} =>
       \$parameter{pgatk_combinevariantcallsets}{value},
-   q{gcvgmo|gatk_combinevariants_genotype_merge_option:s} =>
+    q{gcvgmo|gatk_combinevariants_genotype_merge_option:s} =>
       \$parameter{gatk_combinevariants_genotype_merge_option}{value},
-   q{gcvpc|gatk_combinevariants_prioritize_caller:s} =>
+    q{gcvpc|gatk_combinevariants_prioritize_caller:s} =>
       \$parameter{gatk_combinevariants_prioritize_caller}{value},
-   q{gcvbcf|gatk_combinevariantcallsets_bcf_file=n} =>
+    q{gcvbcf|gatk_combinevariantcallsets_bcf_file=n} =>
       \$parameter{gatk_combinevariantcallsets_bcf_file}{value},
-   q{pgpt|pgatk_phasebytransmission=n} =>
+    q{pgpt|pgatk_phasebytransmission=n} =>
       \$parameter{pgatk_phasebytransmission}{value},
-   q{pgrp|pgatk_readbackedphasing=n} =>
+    q{pgrp|pgatk_readbackedphasing=n} =>
       \$parameter{pgatk_readbackedphasing}{value},
-   q{grpqth|gatk_readbackedphasing_phase_quality_threshold=n} =>
+    q{grpqth|gatk_readbackedphasing_phase_quality_threshold=n} =>
       \$parameter{gatk_readbackedphasing_phase_quality_threshold}{value},
-   q{pgvea|pgatk_variantevalall=n} => \$parameter{pgatk_variantevalall}{value},
-   q{pgvee|pgatk_variantevalexome=n} =>
+    q{pgvea|pgatk_variantevalall=n} => \$parameter{pgatk_variantevalall}{value},
+    q{pgvee|pgatk_variantevalexome=n} =>
       \$parameter{pgatk_variantevalexome}{value},
-   q{gveedbs|gatk_varianteval_dbsnp:s} =>
+    q{gveedbs|gatk_varianteval_dbsnp:s} =>
       \$parameter{gatk_varianteval_dbsnp}{value},
-   q{gveedbg|gatk_varianteval_gold:s} =>
+    q{gveedbg|gatk_varianteval_gold:s} =>
       \$parameter{gatk_varianteval_gold}{value},
-   q{ppvab|pprepareforvariantannotationblock=n} =>
+    q{ppvab|pprepareforvariantannotationblock=n} =>
       \$parameter{pprepareforvariantannotationblock}{value},
-   q{prhc|prhocall=n} => \$parameter{prhocall}{value},
-   q{rhcf|rhocall_frequency_file:s} =>
+    q{prhc|prhocall=n} => \$parameter{prhocall}{value},
+    q{rhcf|rhocall_frequency_file:s} =>
       \$parameter{rhocall_frequency_file}{value},
-   q{pvt|pvt=n}             => \$parameter{pvt}{value},
-   q{vtddec|vt_decompose=n} => \$parameter{vt_decompose}{value},
-   q{vtdnor|vt_normalize=n} => \$parameter{vt_normalize}{value},
-   q{vtunq|vt_uniq=n}       => \$parameter{vt_uniq}{value},
-   q{vtmaa|vt_missing_alt_allele=n} =>
+    q{pvt|pvt=n}             => \$parameter{pvt}{value},
+    q{vtddec|vt_decompose=n} => \$parameter{vt_decompose}{value},
+    q{vtdnor|vt_normalize=n} => \$parameter{vt_normalize}{value},
+    q{vtunq|vt_uniq=n}       => \$parameter{vt_uniq}{value},
+    q{vtmaa|vt_missing_alt_allele=n} =>
       \$parameter{vt_missing_alt_allele}{value},
-   q{vtgmf|vt_genmod_filter=n} => \$parameter{vt_genmod_filter}{value},
-   q{vtgfr|vt_genmod_filter_1000g:s} =>
+    q{vtgmf|vt_genmod_filter=n} => \$parameter{vt_genmod_filter}{value},
+    q{vtgfr|vt_genmod_filter_1000g:s} =>
       \$parameter{vt_genmod_filter_1000g}{value},
-   q{vtmaf|vt_genmod_filter_max_af=n} =>
+    q{vtmaf|vt_genmod_filter_max_af=n} =>
       \$parameter{vt_genmod_filter_max_af}{value},
-   q{vtgft|vt_genmod_filter_threshold:s} =>
+    q{vtgft|vt_genmod_filter_threshold:s} =>
       \$parameter{vt_genmod_filter_threshold}{value},
-   q{pvep|pvarianteffectpredictor=n} =>
+    q{pvep|pvarianteffectpredictor=n} =>
       \$parameter{pvarianteffectpredictor}{value},
-   q{vepp|vep_directory_path:s}  => \$parameter{vep_directory_path}{value},
-   q{vepc|vep_directory_cache:s} => \$parameter{vep_directory_cache}{value},
-   q{vepr|vep_reference:n}       => \$parameter{vep_reference}{value},
-   q{vepf|vep_features:s}        => \@{ $parameter{vep_features}{value} },
-   q{veppl|vep_plugins:s}        => \@{ $parameter{vep_plugins}{value} },
-   q{pvcp|pvcfparser=n}          => \$parameter{pvcfparser}{value},
-   q{vcpvt|vcfparser_vep_transcripts=n} =>
+    q{vepp|vep_directory_path:s}  => \$parameter{vep_directory_path}{value},
+    q{vepc|vep_directory_cache:s} => \$parameter{vep_directory_cache}{value},
+    q{vepr|vep_reference:n}       => \$parameter{vep_reference}{value},
+    q{vepf|vep_features:s}        => \@{ $parameter{vep_features}{value} },
+    q{veppl|vep_plugins:s}        => \@{ $parameter{vep_plugins}{value} },
+    q{pvcp|pvcfparser=n}          => \$parameter{pvcfparser}{value},
+    q{vcpvt|vcfparser_vep_transcripts=n} =>
       \$parameter{vcfparser_vep_transcripts}{value},
-   q{vcprff|vcfparser_range_feature_file:s} =>
+    q{vcprff|vcfparser_range_feature_file:s} =>
       \$parameter{vcfparser_range_feature_file}{value},
-   q{vcprfa|vcfparser_range_feature_annotation_columns:s} =>
+    q{vcprfa|vcfparser_range_feature_annotation_columns:s} =>
       \@{ $parameter{vcfparser_range_feature_annotation_columns}{value} },
-   q{vcpsf|vcfparser_select_file:s} =>
+    q{vcpsf|vcfparser_select_file:s} =>
       \$parameter{vcfparser_select_file}{value},
-   q{vcpsfm|vcfparser_select_file_matching_column=n} =>
+    q{vcpsfm|vcfparser_select_file_matching_column=n} =>
       \$parameter{vcfparser_select_file_matching_column}{value},
-   q{vcpsfa|vcfparser_select_feature_annotation_columns:s} =>
+    q{vcpsfa|vcfparser_select_feature_annotation_columns:s} =>
       \@{ $parameter{vcfparser_select_feature_annotation_columns}{value} },
-   q{psne|psnpeff=n}      => \$parameter{psnpeff}{value},
-   q{snep|snpeff_path:s}  => \$parameter{snpeff_path}{value},
-   q{sneann|snpeff_ann=n} => \$parameter{snpeff_ann}{value},
-   q{snegbv|snpeff_genome_build_version:s} =>
+    q{psne|psnpeff=n}      => \$parameter{psnpeff}{value},
+    q{snep|snpeff_path:s}  => \$parameter{snpeff_path}{value},
+    q{sneann|snpeff_ann=n} => \$parameter{snpeff_ann}{value},
+    q{snegbv|snpeff_genome_build_version:s} =>
       \$parameter{snpeff_genome_build_version}{value},
-   q{snesaf|snpsift_annotation_files=s} =>
+    q{snesaf|snpsift_annotation_files=s} =>
       \%{ $parameter{snpsift_annotation_files}{value} },
-   q{snesaoi|snpsift_annotation_outinfo_key=s} =>
+    q{snesaoi|snpsift_annotation_outinfo_key=s} =>
       \%{ $parameter{snpsift_annotation_outinfo_key}{value} },
-   q{snesdbnsfp|snpsift_dbnsfp_file:s} =>
+    q{snesdbnsfp|snpsift_dbnsfp_file:s} =>
       \$parameter{snpsift_dbnsfp_file}{value},
-   q{snesdbnsfpa|snpsift_dbnsfp_annotations:s} =>
+    q{snesdbnsfpa|snpsift_dbnsfp_annotations:s} =>
       \@{ $parameter{snpsift_dbnsfp_annotations}{value} },
-   q{prav|prankvariant=n} => \$parameter{prankvariant}{value},
-   q{ravgft|genmod_models_family_type:s} =>
+    q{prav|prankvariant=n} => \$parameter{prankvariant}{value},
+    q{ravgft|genmod_models_family_type:s} =>
       \$parameter{genmod_models_family_type}{value},
-   q{ravanr|genmod_annotate_regions:n} =>
+    q{ravanr|genmod_annotate_regions:n} =>
       \$parameter{genmod_annotate_regions}{value},
-   q{ravcad|genmod_annotate_cadd_files:s} =>
+    q{ravcad|genmod_annotate_cadd_files:s} =>
       \@{ $parameter{genmod_annotate_cadd_files}{value} },
-   q{ravspi|genmod_annotate_spidex_file:s} =>
+    q{ravspi|genmod_annotate_spidex_file:s} =>
       \$parameter{genmod_annotate_spidex_file}{value},
-   q{ravwg|genmod_models_whole_gene=n} =>
+    q{ravwg|genmod_models_whole_gene=n} =>
       \$parameter{genmod_models_whole_gene}{value}
     ,    #Allow compound pairs in intronic regions
-   q{ravrpf|genmod_models_reduced_penetrance_file:s} =>
+    q{ravrpf|genmod_models_reduced_penetrance_file:s} =>
       \$parameter{genmod_models_reduced_penetrance_file}{value},
-   q{ravrm|rank_model_file:s} => \$parameter{rank_model_file}{value},
-   q{pevab|pendvariantannotationblock=n} =>
+    q{ravrm|rank_model_file:s} => \$parameter{rank_model_file}{value},
+    q{pevab|pendvariantannotationblock=n} =>
       \$parameter{pendvariantannotationblock}{value},
-   q{evabrgf|endvariantannotationblock_remove_genes_file:s} =>
+    q{evabrgf|endvariantannotationblock_remove_genes_file:s} =>
       \$parameter{endvariantannotationblock_remove_genes_file}{value},
-   q{ravbf|rankvariant_binary_file=n} =>
+    q{ravbf|rankvariant_binary_file=n} =>
       \$parameter{rankvariant_binary_file}{value},
-   q{pped|ppeddy=n}             => \$parameter{ppeddy}{value},
-   q{pplink|pplink=n}           => \$parameter{pplink}{value},
-   q{pvai|pvariant_integrity=n} => \$parameter{pvariant_integrity}{value},
-   q{pevl|pevaluation=n}        => \$parameter{pevaluation}{value},
-   q{evlnid|nist_id:s}          => \$parameter{nist_id}{value},
-   q{evlnhc|nist_high_confidence_call_set:s} =>
+    q{pped|ppeddy=n}             => \$parameter{ppeddy}{value},
+    q{pplink|pplink=n}           => \$parameter{pplink}{value},
+    q{pvai|pvariant_integrity=n} => \$parameter{pvariant_integrity}{value},
+    q{pevl|pevaluation=n}        => \$parameter{pevaluation}{value},
+    q{evlnid|nist_id:s}          => \$parameter{nist_id}{value},
+    q{evlnhc|nist_high_confidence_call_set:s} =>
       \$parameter{nist_high_confidence_call_set}{value},
-   q{evlnil|nist_high_confidence_call_set_bed:s} =>
+    q{evlnil|nist_high_confidence_call_set_bed:s} =>
       \$parameter{nist_high_confidence_call_set_bed}{value},
-   q{pqcc|pqccollect=n} => \$parameter{pqccollect}{value},
-   q{qccsi|qccollect_sampleinfo_file:s} =>
+    q{pqcc|pqccollect=n} => \$parameter{pqccollect}{value},
+    q{qccsi|qccollect_sampleinfo_file:s} =>
       \$parameter{qccollect_sampleinfo_file}{value},
-   q{qccref|qccollect_regexp_file:s} =>
+    q{qccref|qccollect_regexp_file:s} =>
       \$parameter{qccollect_regexp_file}{value},
-   q{qccske|qccollect_skip_evaluation} =>
+    q{qccske|qccollect_skip_evaluation} =>
       \$parameter{qccollect_skip_evaluation}{value},
-   q{pmqc|pmultiqc=n}              => \$parameter{pmultiqc}{value},
-   q{prem|premoveredundantfiles=n} => \$parameter{premoveredundantfiles}{value},
-   q{pars|panalysisrunstatus=n}    => \$parameter{panalysisrunstatus}{value},
-   q{psac|psacct=n}                => \$parameter{psacct}{value},
-   q{sacfrf|sacct_format_fields:s} =>
+    q{pmqc|pmultiqc=n} => \$parameter{pmultiqc}{value},
+    q{prem|premoveredundantfiles=n} =>
+      \$parameter{premoveredundantfiles}{value},
+    q{pars|panalysisrunstatus=n} => \$parameter{panalysisrunstatus}{value},
+    q{psac|psacct=n}             => \$parameter{psacct}{value},
+    q{sacfrf|sacct_format_fields:s} =>
       \@{ $parameter{sacct_format_fields}{value} },
   )
   or help(
@@ -1372,10 +1375,16 @@ else {
     # Markduplicates
     if ( $active_parameter{pmarkduplicates} > 0 ) {
 
-        $log->info(q{[Markduplicates]} . $NEWLINE);
+        $log->info( q{[Markduplicates]} . $NEWLINE );
 
-	SAMPLE_ID:
+      SAMPLE_ID:
         foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
+
+            ## Assign directories
+            my $insample_directory = catdir( $active_parameter{outdata_dir},
+                $sample_id, $active_parameter{outaligner_dir} );
+            my $outsample_directory = catdir( $active_parameter{outdata_dir},
+                $sample_id, $active_parameter{outaligner_dir} );
 
             analysis_markduplicates(
                 {
@@ -1385,8 +1394,10 @@ else {
                     file_info_href          => \%file_info,
                     infile_lane_prefix_href => \%infile_lane_prefix,
                     job_id_href             => \%job_id,
-                    sample_id          => $sample_id,
-                    program_name            => "markduplicates",
+                    insample_directory      => $insample_directory,
+                    outsample_directory     => $outsample_directory,
+                    sample_id               => $sample_id,
+                    program_name            => q{markduplicates},
                 }
             );
         }
@@ -17722,6 +17733,7 @@ sub gatk_baserecalibration {
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::Recipes::Xargs qw{ xargs_command };
     use Program::Alignment::Gatk qw(baserecalibrator printreads);
+    use MIP::Delete::File qw{ delete_contig_files };
     use MIP::Program::Alignment::Picardtools qw(picardtools_gatherbamfiles);
     use MIP::Gnu::Coreutils qw(gnu_rm);
     use MIP::Language::Java qw{java_core};
@@ -18041,7 +18053,7 @@ sub gatk_baserecalibration {
     if ($$reduce_io_ref) {    #Run as block sbatch script
 
         ## Remove file at temporary Directory
-        remove_contig_files(
+        delete_contig_files(
             {
                 file_elements_ref =>
                   \@{ $file_info_href->{contigs_size_ordered} },
@@ -18271,6 +18283,7 @@ sub gatk_realigner {
     use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use MIP::Recipes::Xargs qw{ xargs_command };
     use Program::Alignment::Gatk qw(realignertargetcreator indelrealigner);
+    use MIP::Delete::File qw{ delete_contig_files };
     use MIP::Processmanagement::Slurm_processes
       qw{slurm_submit_job_sample_id_dependency_add_to_sample};
 
@@ -18583,7 +18596,7 @@ sub gatk_realigner {
     else {
 
         ## Remove file at temporary Directory
-        remove_contig_files(
+        delete_contig_files(
             {
                 file_elements_ref =>
                   \@{ $file_info_href->{contigs_size_ordered} },
@@ -19099,7 +19112,7 @@ sub bamcalibrationblock {
     # Markduplicates
     if ( $active_parameter{pmarkduplicates} > 0 ) {
 
-        $log->info($TAB . q{[Markduplicates]} . $NEWLINE);
+        $log->info( $TAB . q{[Markduplicates]} . $NEWLINE );
     }
     if ( $active_parameter{pgatk_realigner} > 0 )
     {    #Run GATK realignertargetcreator/indelrealigner
@@ -19179,10 +19192,10 @@ sub bamcalibrationblock {
             }
         );
 
-	# Markduplicates
+        # Markduplicates
         if ( $active_parameter{pmarkduplicates} > 0 ) {
 
-            ($xargs_file_counter) = analysis_markduplicates(
+            ($xargs_file_counter) = analysis_markduplicates_rio(
                 {
                     parameter_href          => $parameter_href,
                     active_parameter_href   => $active_parameter_href,
@@ -19190,8 +19203,8 @@ sub bamcalibrationblock {
                     file_info_href          => $file_info_href,
                     infile_lane_prefix_href => $infile_lane_prefix_href,
                     job_id_href             => $job_id_href,
-                    sample_id           => $sample_id,
-                    program_name            => "markduplicates",
+                    sample_id               => $sample_id,
+                    program_name            => q{markduplicates},
                     file_path               => $file_path,
                     program_info_path       => $program_info_path,
                     FILEHANDLE              => $FILEHANDLE,
@@ -21065,13 +21078,13 @@ sub infiles_reformat {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-     # Used to decide later if any inputfiles needs to be compressed before starting analysis
+# Used to decide later if any inputfiles needs to be compressed before starting analysis
     my $uncompressed_file_counter = 0;
 
-    SAMPLE_ID:
+  SAMPLE_ID:
     for my $sample_id ( keys %{$infile_href} ) {
 
-      # Needed to be able to track when lanes are finished
+        # Needed to be able to track when lanes are finished
         my $lane_tracker = 0;
 
         while ( my ( $file_index, $file_name ) =
@@ -25546,167 +25559,6 @@ sub collect_outfile {
             @$outfiles_ref       = ();    #Restart
         }
     }
-}
-
-sub remove_contig_files {
-
-##remove_contig_files
-
-##Function : Removes files dictated by supplied array index and element.
-##Returns  : ""
-##Arguments: $file_elements_ref, $FILEHANDLE, $core_number, $file_name, $file_ending, $indirectory
-##         : $file_elements_ref => Array to use for file iteration {REF}
-##         : $FILEHANDLE        => Sbatch filehandle to write to
-##         : $core_number       => The number of cores to use
-##         : $file_name         => File name without ending attached
-##         : $file_ending       => File ending
-##         : $indirectory       => Temporary directory
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_elements_ref;
-    my $FILEHANDLE;
-    my $core_number;
-    my $file_name;
-    my $file_ending;
-    my $indirectory;
-
-    my $tmpl = {
-        file_elements_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$file_elements_ref
-        },
-        FILEHANDLE  => { required => 1, defined => 1, store => \$FILEHANDLE },
-        core_number => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$core_number
-        },
-        file_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$file_name
-        },
-        file_ending => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$file_ending
-        },
-        indirectory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$indirectory
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Processmanagement::Processes qw(print_wait);
-    use MIP::Gnu::Coreutils qw(gnu_rm);
-
-    my $process_batches_count = 1;
-
-    ## Remove infile at indirectory
-    say $FILEHANDLE "## Remove file at indirectory";
-
-    while ( my ( $index, $element ) = each(@$file_elements_ref) ) {
-
-        $process_batches_count = print_wait(
-            {
-                process_counter       => $index,
-                max_process_number    => $core_number,
-                process_batches_count => $process_batches_count,
-                FILEHANDLE            => $FILEHANDLE,
-            }
-        );
-
-        gnu_rm(
-            {
-                infile_path => catfile(
-                    $indirectory, $file_name . "_" . $element . $file_ending
-                ),
-                force      => 1,
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say $FILEHANDLE "& ";
-    }
-    say $FILEHANDLE q{wait}, "\n";
-}
-
-sub core2 {
-
-##core
-
-##Function : Writes java core commands to filehandle.
-##Returns  : ""
-##Arguments: $FILEHANDLE, $memory_allocation, $java_use_large_pages, $temp_directory, $java_jar
-##         : $FILEHANDLE               => Filehandle to write to
-##         : $memory_allocation        => Memory allocation for java
-##         : $java_use_large_pages     => Use java large pages {REF}
-##         : $temp_directory => Redirect tmp files to java temp {Optional}
-##         : $java_jar                 => The JAR
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $FILEHANDLE;
-    my $memory_allocation;
-    my $java_use_large_pages;
-    my $temp_directory;
-    my $java_jar;
-
-    my $tmpl = {
-        FILEHANDLE        => { store => \$FILEHANDLE },
-        memory_allocation => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$memory_allocation
-        },
-        java_use_large_pages => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$java_use_large_pages
-        },
-        temp_directory => { strict_type => 1, store => \$temp_directory },
-        java_jar       => { strict_type => 1, store => \$java_jar },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $cmd_line = "java ";
-    $cmd_line .= "-" . $memory_allocation . " ";
-
-    if ($$java_use_large_pages) {
-
-        $cmd_line .= "-XX:-UseLargePages "
-          ; #UseLargePages for requiring large memory pages (cross-platform flag)
-    }
-    if ( defined($temp_directory) ) {
-
-        $cmd_line .=
-          "-Djava.io.tmpdir=" . $temp_directory . " ";    #Temporary Directory
-    }
-    if ( defined($java_jar) ) {
-
-        $cmd_line .= "-jar " . $java_jar . " ";
-    }
-    if ($FILEHANDLE) {
-
-        print $FILEHANDLE $cmd_line;
-    }
-    return $cmd_line;
 }
 
 sub check_email_address {

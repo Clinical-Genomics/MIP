@@ -1,26 +1,28 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{2014};
-use warnings qw{FATAL utf8};
+use Modern::Perl qw{ 2014 };
+use warnings qw{ FATAL utf8 };
 use autodie;
-use 5.018;    #Require at least perl 5.18
+use 5.018;
 use utf8;
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
 use Carp;
-use English qw{-no_match_vars};
-use Params::Check qw{check allow last_error};
+use English qw{ -no_match_vars };
+use Params::Check qw{ check allow last_error };
 
-use FindBin qw{$Bin};    #Find directory of script
-use File::Basename qw{dirname basename};
-use File::Spec::Functions qw{catdir};
+use FindBin qw{ $Bin };
+use File::Basename qw{ dirname basename };
+use File::Spec::Functions qw{ catdir };
 use Getopt::Long;
 use Test::More;
+
+## CPANM
 use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
-use Script::Utils qw{help};
+use lib catdir( dirname($Bin), q{lib} );
+use Script::Utils qw{ help };
 
 our $USAGE = build_usage( {} );
 
@@ -28,24 +30,29 @@ my $VERBOSE = 1;
 our $VERSION = '1.0.0';
 
 ## Constants
-Readonly my $SPACE        => q{ };
-Readonly my $TAB          => q{\t};
+Readonly my $COMMA        => q{,};
 Readonly my $DOUBLE_QUOTE => q{"};
 Readonly my $NEWLINE      => qq{\n};
+Readonly my $SPACE        => q{ };
+Readonly my $TAB          => q{\t};
 
 ###User Options
 GetOptions(
+
+    # Display help text
     q{h|help} => sub {
         done_testing();
         say {*STDOUT} $USAGE;
         exit;
-    },    #Display help text
+    },
+
+    # Display version number
     q{v|version} => sub {
         done_testing();
         say {*STDOUT} $NEWLINE, basename($PROGRAM_NAME),
           $SPACE, $VERSION, $NEWLINE;
         exit;
-    },    #Display version number
+    },
     q{vb|verbose} => $VERBOSE,
   )
   or (
@@ -64,9 +71,9 @@ BEGIN {
 ##Modules with import
     my %perl_module;
 
-    $perl_module{'Script::Utils'} = [qw{help}];
+    $perl_module{q{Script::Utils}} = [qw{ help }];
 
-  PERL_MODULES:
+  PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
         use_ok( $module, @{$module_import} )
           or BAIL_OUT q{Cannot load } . $module;
@@ -75,25 +82,26 @@ BEGIN {
 ## Modules
     my @modules = (q{MIP::Program::Alignment::Bwa});
 
-  MODULES:
+  MODULE:
     for my $module (@modules) {
         require_ok($module) or BAIL_OUT q{Cannot load } . $module;
     }
 }
 
-use MIP::Program::Alignment::Bwa qw{bwa_mem};
-use MIP::Test::Commands qw{test_function};
+use MIP::Program::Alignment::Bwa qw{ bwa_mem };
+use MIP::Test::Commands qw{ test_function };
 
-diag(
-    q{Test bwa_mem }
+diag(   q{Test bwa_mem from Bwa.pm v}
       . $MIP::Program::Alignment::Bwa::VERSION
-      . q{, Perl}
-      . $PERL_VERSION,
-    $EXECUTABLE_NAME
-);
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+      . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{bwa};
+my $function_base_command = q{bwa mem};
 
 ## Read group header line
 my @read_group_headers = (
