@@ -152,7 +152,7 @@ my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) = run(
     verbose => $verbose
 );
 
-ok( $success, 'Executed install.pl' );
+ok( $success, 'Executed mip_install.pl' );
 
 is( -e catfile( getcwd(), 'mip.sh' ), 1, 'Locating created mip.sh in MIP dir' );
 

@@ -25,7 +25,7 @@ install:
 script:
 ## Run MIP install script
   - cd t; prove mip_install.t; cd -
-  - perl mip_install.pl --bash_set_errexit -env test_environment  --quiet -pei --perl_skip_test --perl_modules_force -vep 87 --vep_auto_flag al --vep_plugin 0 --cnvnator_root_binary root_v5.34.34.Linux-ubuntu12-x86_64-gcc4.6.tar.gz
+  - perl mip_install.pl --bash_set_errexit -env test_environment  --quiet -vep 87 --vep_auto_flag al --vep_plugin 0 --cnvnator_root_binary root_v5.34.34.Linux-ubuntu12-x86_64-gcc4.6.tar.gz
   - bash mip.sh
   - source ~/.bash_profile
   - source ~/.bashrc
