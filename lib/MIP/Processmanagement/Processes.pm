@@ -787,7 +787,7 @@ sub add_sample_id_parallel_job_id_to_family_id_dependency_tree {
         ## Push parallel job_ids
       INFILES:
         while ( my ($infile_index) =
-            each %{$infile_lane_prefix_href->{$sample_id}} )
+            each @{$infile_lane_prefix_href->{$sample_id}} )
         {
 
             # Set parallel sample key

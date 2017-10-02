@@ -1,49 +1,60 @@
 #!/usr/bin/env perl
 
-#### Copyright 2017 Henrik Stranneheim
-
-use Modern::Perl qw(2014);
-use warnings qw(FATAL utf8);
+use Modern::Perl qw{ 2014 };
+use warnings qw{ FATAL utf8 };
 use autodie;
-use 5.018;    # Require at least perl 5.18
+use 5.018;
 use utf8;
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
+use open qw{ :encoding(UTF-8) :std };
+use charnames qw{ :full :short };
 use Carp;
-use English qw(-no_match_vars);
-use Params::Check qw(check allow last_error);
+use English qw{ -no_match_vars };
+use Params::Check qw{ check allow last_error };
 
-use FindBin qw($Bin);    # Find directory of script
-use File::Basename qw(dirname basename);
-use File::Spec::Functions qw(catfile catdir devnull);
+use FindBin qw{ $Bin };
+use File::Basename qw{ dirname basename };
+use File::Spec::Functions qw{ catfile catdir devnull };
 use Getopt::Long;
 use Test::More;
 
+## CPANM
 use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
-use Script::Utils qw(help);
+use lib catdir( dirname($Bin), q{lib} );
+use Script::Utils qw{ help };
 
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 0;
 our $VERSION = '1.0.0';
 
-###User Options
+## Constants
+Readonly my $SPACE   => q{ };
+Readonly my $NEWLINE => qq{\n};
+Readonly my $COMMA   => q{,};
+
+### User Options
 GetOptions(
-    'h|help' => sub {
+
+    # Display help text
+    q{h|help} => sub {
         done_testing();
-        print {*STDOUT} $USAGE, "\n";
+        say {*STDOUT} $USAGE;
         exit;
-    },    #Display help text
-    'v|version' => sub {
+    },
+
+    # Display version number
+    q{v|version} => sub {
         done_testing();
-        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION,
-          "\n\n";
+        say {*STDOUT} $NEWLINE
+          . basename($PROGRAM_NAME)
+          . $SPACE
+          . $VERSION
+          . $NEWLINE;
         exit;
-    },    #Display version number
-    'vb|verbose' => $VERBOSE,
+    },
+    q{vb|verbose} => $VERBOSE,
   )
   or (
     done_testing(),
@@ -58,29 +69,36 @@ GetOptions(
 BEGIN {
 
 ### Check all internal dependency modules and imports
-    ## Modules with import
-    my %perl_module = ( 'Script::Utils' => [qw{help}], );
+## Modules with import
+    my %perl_module;
 
+    $perl_module{q{Script::Utils}} = [qw{ help }];
+
+  PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
-
         use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load } . $module;
+          or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 
-    ## Modules
-    my @modules = (qw{MIP::QC::Record});
+## Modules
+    my @modules = (q{MIP::QC::Record});
 
+  MODULE:
     for my $module (@modules) {
-
-        require_ok($module) or BAIL_OUT q{Cannot load } . $module;
+        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 }
 
-use MIP::QC::Record qw(add_program_metafile_to_sample_info);
+use MIP::QC::Record qw{ add_program_metafile_to_sample_info };
 
-diag(
-"Test add_program_metafile_to_sample_info $MIP::QC::Record::VERSION, Perl $^V, $EXECUTABLE_NAME"
-);
+diag(   q{Test add_program_metafile_to_sample_info from Record.pm v}
+      . $MIP::QC::Record::VERSION
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+      . $EXECUTABLE_NAME );
 
 # Init hash
 my %sample_info;
@@ -92,6 +110,7 @@ my $directory         = q{test_directory};
 my $file              = q{test.yaml};
 my $path              = catfile( $directory, $file );
 my $version           = q{1.0.1};
+my $processed_by      = q{picard_markduplicates};
 
 ## Family level
 add_program_metafile_to_sample_info(
@@ -103,6 +122,7 @@ add_program_metafile_to_sample_info(
         file             => $file,
         path             => $path,
         version          => $version,
+        processed_by     => $processed_by,
     }
 );
 
@@ -122,6 +142,9 @@ is( $sample_info{program}{$test_program_name}{$metafile}{path},
 is( $sample_info{program}{$test_program_name}{$metafile}{version},
     $version, q{Assigned correct value to family level version} );
 
+is( $sample_info{program}{$test_program_name}{$metafile}{processed_by},
+    $processed_by, q{Assigned correct value to family level processed_by} );
+
 ## Sample level
 my $sample_id = q{test_sample_id};
 my $infile    = q{test_infile};
@@ -137,6 +160,7 @@ add_program_metafile_to_sample_info(
         file             => $file,
         path             => $path,
         version          => $version,
+        processed_by     => $processed_by,
     }
 );
 
@@ -170,6 +194,12 @@ is(
     $sample_info{sample}{$sample_id}{program}{$test_program_name}
       {$infile}{$metafile}{version},
     $version, q{Assigned correct value to sample level version}
+);
+
+is(
+    $sample_info{sample}{$sample_id}{program}{$test_program_name}
+      {$infile}{$metafile}{processed_by},
+    $processed_by, q{Assigned correct value to sample level processed_by}
 );
 
 done_testing();

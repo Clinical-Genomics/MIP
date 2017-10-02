@@ -121,7 +121,7 @@ my %specific_argument = (
         expected_output => q{-o outfile_path_prefix},
     },
     minimum_number_supporting_pairs => {
-        input           => $n_supporting_pairs,
+        input           => $N_SUPPORTING_PAIRS,
         expected_output => q{-p} . $SPACE . $N_SUPPORTING_PAIRS,
     },
 );

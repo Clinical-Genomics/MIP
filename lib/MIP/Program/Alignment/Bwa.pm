@@ -2,34 +2,30 @@ package MIP::Program::Alignment::Bwa;
 
 use strict;
 use warnings;
-use warnings qw( FATAL utf8 );
-use utf8;    #Allow unicode characters in this script
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
+use warnings qw{ FATAL utf8 };
+use utf8;
+use open qw{ :encoding(UTF-8) :std };
+use charnames qw{ :full :short };
 use Carp;
-use English qw{-no_match_vars};
-use Params::Check qw[check allow last_error];
+use English qw{ -no_match_vars };
+use Params::Check qw{ check allow last_error };
 
+## CPANM
 use Readonly;
 
-use FindBin qw{$Bin};    #Find directory of script
-use File::Basename qw{dirname};
-use File::Spec::Functions qw{catdir};
-
 ## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
-use MIP::Unix::Standard_streams qw{unix_standard_streams};
-use MIP::Unix::Write_to_file qw{unix_write_to_file};
+use MIP::Unix::Standard_streams qw{ unix_standard_streams };
+use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
     require Exporter;
-    use base qw(Exporter);
+    use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(bwa_mem run_bwamem);
+    our @EXPORT_OK = qw{ bwa_mem run_bwamem };
 
 }
 
@@ -38,22 +34,22 @@ Readonly my $SPACE => q{ };
 
 sub bwa_mem {
 
-##bwa_mem
+## bwa_mem
 
-##Function : Perl wrapper for writing bwa mem recipe to $FILEHANDLE. Based on bwa 0.7.15-r1140.
-##Returns  : "@commands"
-##Arguments: $infile_path, $idxbase, $second_infile_path, $stdoutfile_path, $stderrfile_path, $stderrfile_path, $stderrfile_path_append, $FILEHANDLE, $thread_number, $read_group_header, $mark_split_as_secondary, $interleaved_fastq_file
-##         : $infile_path             => Infile path (read 1 or interleaved i.e. read 1 and 2)
-##         : $idxbase                 => Idxbase (human genome references and bwa mem idx files)
-##         : $second_infile_path      => Second infile path (read 2)
-##         : $stdoutfile_path         => Stdoutfile path
-##         : $stderrfile_path         => Stderrfile path
-##         : $stderrfile_path_append  => Stderrfile path append
-##         : $FILEHANDLE              => Sbatch filehandle to write to
-##         : $thread_number           => Number of threads
-##         : $read_group_header       => Read group header line, such as '@RG\tID:foo\tSM:bar'
-##         : $mark_split_as_secondary => Mark shorter split hits as secondary
-##         : $interleaved_fastq_file  => Smart pairing
+## Function : Perl wrapper for writing bwa mem recipe to $FILEHANDLE. Based on bwa 0.7.15-r1140.
+## Returns  : "@commands"
+## Arguments: $infile_path, $idxbase, $second_infile_path, $stdoutfile_path, $stderrfile_path, $stderrfile_path, $stderrfile_path_append, $FILEHANDLE, $thread_number, $read_group_header, $mark_split_as_secondary, $interleaved_fastq_file
+##          : $infile_path             => Infile path (read 1 or interleaved i.e. read 1 and 2)
+##          : $idxbase                 => Idxbase (human genome references and bwa mem idx files)
+##          : $second_infile_path      => Second infile path (read 2)
+##          : $stdoutfile_path         => Stdoutfile path
+##          : $stderrfile_path         => Stderrfile path
+##          : $stderrfile_path_append  => Stderrfile path append
+##          : $FILEHANDLE              => Sbatch filehandle to write to
+##          : $thread_number           => Number of threads
+##          : $read_group_header       => Read group header line, such as '@RG\tID:foo\tSM:bar'
+##          : $mark_split_as_secondary => Mark shorter split hits as secondary
+##          : $interleaved_fastq_file  => Smart pairing
 
     my ($arg_href) = @_;
 
@@ -108,11 +104,11 @@ sub bwa_mem {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Bwa
     # Stores commands depending on input parameters
-    my @commands = qw(bwa mem);
+    my @commands = q{bwa mem};
 
     ##Options
     if ($thread_number) {
@@ -170,21 +166,21 @@ sub bwa_mem {
 
 sub run_bwamem {
 
-##run_bwamem
+## run_bwamem
 
-##Function : Perl wrapper for writing run_bwamem recipe to $FILEHANDLE. Based on bwakit 0.7.12.
-##Returns  : "@commands"
-##Arguments: $infile_path, $idxbase, $outfiles_prefix_path, $second_infile_path, $stderrfile_path, $stderrfile_path_append, $FILEHANDLE, $thread_number, $read_group_header, $hla_typing
-##         : $infile_path            => Infile path (read 1 or interleaved i.e. read 1 and 2)
-##         : $idxbase                => Idxbase (human genome references and bwa mem idx files)
-##         : $outfiles_prefix_path   => Prefix for output files
-##         : $second_infile_path     => Second infile path (read 2)
-##         : $stderrfile_path        => Stderrfile path
-##         : $stderrfile_path_append => Stderrfile path append
-##         : $FILEHANDLE             => Sbatch filehandle to write to
-##         : $thread_number          => Number of threads
-##         : $read_group_header      => Read group header line, such as '@RG\tID:foo\tSM:bar'
-##         : $hla_typing             => Apply HLA typing
+## Function : Perl wrapper for writing run_bwamem recipe to $FILEHANDLE. Based on bwakit 0.7.12.
+## Returns  : "@commands"
+## Arguments: $infile_path, $idxbase, $outfiles_prefix_path, $second_infile_path, $stderrfile_path, $stderrfile_path_append, $FILEHANDLE, $thread_number, $read_group_header, $hla_typing
+##          : $infile_path            => Infile path (read 1 or interleaved i.e. read 1 and 2)
+##          : $idxbase                => Idxbase (human genome references and bwa mem idx files)
+##          : $outfiles_prefix_path   => Prefix for output files
+##          : $second_infile_path     => Second infile path (read 2)
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Stderrfile path append
+##          : $FILEHANDLE             => Sbatch filehandle to write to
+##          : $thread_number          => Number of threads
+##          : $read_group_header      => Read group header line, such as '@RG\tID:foo\tSM:bar'
+##          : $hla_typing             => Apply HLA typing
 
     my ($arg_href) = @_;
 
@@ -237,11 +233,11 @@ sub run_bwamem {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Run_bwamem
     # Stores commands depending on input parameters
-    my @commands = qw(run-bwamem);
+    my @commands = q{run-bwamem};
 
     ## Options
     if ($thread_number) {
