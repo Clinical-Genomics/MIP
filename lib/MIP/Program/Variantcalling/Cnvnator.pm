@@ -90,7 +90,7 @@ sub cnvnator_read_extraction {
     ## Options
     if ( @{$regions_ref} ) {    #Limit output to regions
 
-        push @commands, q{-chrom}, join $SPACE, @{$regions_ref};
+        push @commands, q{-chrom} . $SPACE . join $SPACE, @{$regions_ref};
     }
 
     if ($unique) {
@@ -180,7 +180,7 @@ sub cnvnator_histogram {
     ## Options: mimit output to regions
     if ( @{$regions_ref} ) {
 
-        push @commands, q{-chrom}, join $SPACE, @{$regions_ref};
+        push @commands, q{-chrom}. $SPACE . join $SPACE, @{$regions_ref};
     }
 
     if ($referencedirectory_path) {
@@ -267,7 +267,7 @@ sub cnvnator_statistics {
     ## Options: limit output to regions
     if ( @{$regions_ref} ) {
 
-        push @commands, q{-chrom}, join $SPACE, @{$regions_ref};
+        push @commands, q{-chrom} . $SPACE . join $SPACE, @{$regions_ref};
     }
 
     if ($cnv_bin_size) {
@@ -349,7 +349,7 @@ sub cnvnator_partition {
     ## Options: limit output to regions
     if ( @{$regions_ref} ) {
 
-        push @commands, q{-chrom}, join $SPACE, @{$regions_ref};
+        push @commands, q{-chrom} . $SPACE . join $SPACE, @{$regions_ref};
     }
 
     if ($cnv_bin_size) {
@@ -431,7 +431,7 @@ sub cnvnator_calling {
     ## Options: limit output to regions
     if ( @{$regions_ref} ) {
 
-        push @commands, q{-chrom}, join $SPACE, @{$regions_ref};
+        push @commands, q{-chrom} . $SPACE . join $SPACE, @{$regions_ref};
     }
 
     if ($cnv_bin_size) {
