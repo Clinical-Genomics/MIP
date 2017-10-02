@@ -9,13 +9,9 @@ use charnames qw{ :full :short };
 use Carp;
 use English qw{ -no_match_vars };
 use Params::Check qw{ check allow last_error };
-use FindBin qw{ $Bin };
-use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir };
 use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), q{lib} );
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -57,18 +53,32 @@ sub name_of_subroutine {
     ## Default(s)
 
     my $tmpl = {
-        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        FILEHANDLE => { store => \$FILEHANDLE },
+        stdoutfile_path => { 
+            strict_type => 1, 
+            store       => \$stdoutfile_path 
+        },
+        stderrfile_path => { 
+            strict_type => 1, 
+            store       => \$stderrfile_path 
+        },
+        stderrfile_path_append => { 
+            strict_type => 1, 
+            store       => \$stderrfile_path_append 
+        },
+        FILEHANDLE => { 
+            store  => \$FILEHANDLE 
+        },
 
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Stores commands depending on input parameters
-    my @commands = qw{ BASE_COMMAND };
+    my @commands = q{BASE COMMAND};
+       
+    ############################################
+    ## ADD COMMAND SPECIFIC FLAGS AND OPTIONS ##
+    ############################################
 
     push @commands,
       unix_standard_streams(
