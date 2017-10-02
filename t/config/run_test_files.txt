@@ -15,6 +15,12 @@ bcftools_view.t
 bedtools_genomecov.t
 bwa_mem.t
 chanjo_sex.t
+cnvnator_calling.t
+cnvnator_convert_to_vcf.t
+cnvnator_histogram.t
+cnvnator_partition.t
+cnvnator_read_extraction.t
+cnvnator_statistics.t
 conda_create.t
 conda_install.t
 conda_source_activate.t
