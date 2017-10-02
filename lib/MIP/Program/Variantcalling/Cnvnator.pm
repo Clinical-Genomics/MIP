@@ -90,7 +90,7 @@ sub cnvnator_read_extraction {
     ## Options
     if ( @{$regions_ref} ) {    #Limit output to regions
 
-        push @commands, q{-chrom}, join $SPACE, @{$regions_ref};
+        push @commands, q{-chrom} . $SPACE . join $SPACE, @{$regions_ref};
     }
 
     if ($unique) {
@@ -180,7 +180,7 @@ sub cnvnator_histogram {
     ## Options: mimit output to regions
     if ( @{$regions_ref} ) {
 
-        push @commands, q{-chrom}, join $SPACE, @{$regions_ref};
+        push @commands, q{-chrom}. $SPACE . join $SPACE, @{$regions_ref};
     }
 
     if ($referencedirectory_path) {
@@ -267,7 +267,7 @@ sub cnvnator_statistics {
     ## Options: limit output to regions
     if ( @{$regions_ref} ) {
 
-        push @commands, q{-chrom}, join $SPACE, @{$regions_ref};
+        push @commands, q{-chrom} . $SPACE . join $SPACE, @{$regions_ref};
     }
 
     if ($cnv_bin_size) {
@@ -310,7 +310,7 @@ sub cnvnator_partition {
 ##          : $stderrfile_path => Stderrfile path
 ##          : $stdoutfile_path => Stdoutfile path
 ##          : $FILEHANDLE      => Filehandle to write to
-##           : $cnv_bin_size    => Copy number variant bin size
+##          : $cnv_bin_size    => Copy number variant bin size
 
     my ($arg_href) = @_;
 
@@ -349,7 +349,7 @@ sub cnvnator_partition {
     ## Options: limit output to regions
     if ( @{$regions_ref} ) {
 
-        push @commands, q{-chrom}, join $SPACE, @{$regions_ref};
+        push @commands, q{-chrom} . $SPACE . join $SPACE, @{$regions_ref};
     }
 
     if ($cnv_bin_size) {
@@ -387,12 +387,12 @@ sub cnvnator_calling {
 ## Function : Perl wrapper for writing cnvnator recipe to $FILEHANDLE or return commands array. Based on cnvnator 0.3.3.
 ## Returns  : "@commands"
 ## Arguments: $regions_ref, $infile_path, $stderrfile_path, $stdoutfile_path, $FILEHANDLE, $cnv_bin_size
-##          : $regions_ref             => The regions to process {REF}
-##          : $infile_path             => Infile paths
-##          : $stderrfile_path         => Stderrfile path
-##          : $stdoutfile_path         => Stdoutfile path
-##          : $FILEHANDLE              => Filehandle to write to
-##          : $cnv_bin_size            => Copy number variant bin size
+##          : $regions_ref     => The regions to process {REF}
+##          : $infile_path     => Infile paths
+##          : $stderrfile_path => Stderrfile path
+##          : $stdoutfile_path => Stdoutfile path
+##          : $FILEHANDLE      => Filehandle to write to
+##          : $cnv_bin_size    => Copy number variant bin size
 
     my ($arg_href) = @_;
 
@@ -431,7 +431,7 @@ sub cnvnator_calling {
     ## Options: limit output to regions
     if ( @{$regions_ref} ) {
 
-        push @commands, q{-chrom}, join $SPACE, @{$regions_ref};
+        push @commands, q{-chrom} . $SPACE . join $SPACE, @{$regions_ref};
     }
 
     if ($cnv_bin_size) {

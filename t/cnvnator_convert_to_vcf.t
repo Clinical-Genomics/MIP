@@ -124,10 +124,6 @@ my %required_argument = (
 );
 
 my %specific_argument = (
-    outfile_path => {
-        input           => q{outfile_path},
-        expected_output => q{> outfile_path},
-    },
 );
 
 ## Coderef - enables generalized use of generate call

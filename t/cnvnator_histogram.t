@@ -129,8 +129,8 @@ my %required_argument = (
 
 my %specific_argument = (
     regions_ref => {
-        inputs_ref => [qw{ -chrom 12:11396601-11436500 14:12000000-13000000}],
-        expected_output => q{-chrom 12:11396601-11436500 14:12000000-13000000},
+        inputs_ref => [qw{ 1 2 3 }],
+        expected_output => q{-chrom 1 2 3},
     },
     cnv_bin_size => {
         input           => $BIN_SIZE,
