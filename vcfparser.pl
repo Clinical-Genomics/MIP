@@ -7,6 +7,7 @@ use v5.18;  #Require at least perl 5.18
 use utf8;  #Allow unicode characters in this script
 use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
+use English qw{ -no_match_vars };
 
 use Cwd;
 use FindBin qw($Bin);  #Find directory of script
@@ -22,13 +23,15 @@ use Set::IntervalTree; #CPAN
 
 ##MIPs lib/
 use lib catdir($Bin, "lib");
+use MIP::Check::Modules qw{ check_perl_modules };
 use MIP_log::Log4perl qw(initiate_logger);
-use Check::Check_modules qw(check_modules);
 use Script::Utils qw(help);
 
 our $USAGE;
 
 BEGIN {
+
+  require MIP::Check::Modules;
 
     my @modules = ("Modern::Perl",
 		   "autodie",
@@ -38,9 +41,9 @@ BEGIN {
 	);
 
     ## Evaluate that all modules required are installed
-    Check::Check_modules::check_modules({modules_ref => \@modules,
-					 program_name => $0,
-					});
+  check_perl_modules({modules_ref => \@modules,
+		      program_name => $PROGRAM_NAME,
+		     });
 
     $USAGE =
 	basename($0).qq{ infile.vcf [OPTIONS] > outfile.vcf

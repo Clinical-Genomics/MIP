@@ -43,7 +43,8 @@ $array_parameter{perl_modules} = [
     q{Log::Log4perl},             # MIP
     q{List::Util},                # MIP
     q{List::MoreUtils},           # MIP
-    q{Readonly},                  # VEP
+    q{Readonly},                  # MIP
+    q{Try::Tiny},                 # MIP
     q{IO::Uncompress::Gunzip},    # VEP
     q{HTML::Lint},                # VEP
     q{Archive::Zip},              # VEP

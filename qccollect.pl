@@ -1,12 +1,13 @@
 #!/usr/bin/env perl
 
-use Modern::Perl '2014';    #CPAN
+use Modern::Perl '2014';
 use warnings qw( FATAL utf8 );
-use autodie qw(open close :all);    #CPAN
-use v5.18;  #Require at least perl 5.18
-use utf8;  #Allow unicode characters in this script
+use autodie qw(open close :all);
+use v5.18;
+use utf8;
 use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
+use English qw{ -no_match_vars };
 
 ##Collects MPS QC from MIP. Loads information on files to examine and values to extract from in YAML format and outputs exracted metrics in YAML format.
 #Copyright 2013 Henrik Stranneheim
@@ -25,14 +26,16 @@ use POSIX;
 
 ##MIPs lib/
 use lib catdir($Bin, "lib");
+use MIP::Check::Modules qw{ check_perl_modules };
 use File::Format::Yaml qw(load_yaml write_yaml);
 use MIP_log::Log4perl qw(initiate_logger);
-use Check::Check_modules qw(check_modules);
 use Script::Utils qw(help);
 
 our $USAGE;
 
 BEGIN {
+
+  require MIP::Check::Modules;
 
     my @modules = ("Modern::Perl",
 		   "autodie",
@@ -43,9 +46,9 @@ BEGIN {
 	);
 
     ## Evaluate that all modules required are installed
-    Check::Check_modules::check_modules({modules_ref => \@modules,
-					 program_name => "qccollect",
-					});
+    check_perl_modules({modules_ref => \@modules,
+			program_name => $PROGRAM_NAME,
+		       });
 
     $USAGE =
         basename($0).qq{ -si [sample_info.yaml] -r [regexp.yaml] -o [outfile]
