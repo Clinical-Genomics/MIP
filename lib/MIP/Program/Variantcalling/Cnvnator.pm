@@ -43,9 +43,10 @@ sub cnvnator_read_extraction {
 
 ## Function : Perl wrapper for writing cnvnator recipe to $FILEHANDLE or return commands array. Based on cnvnator 0.3.3.
 ## Returns  : "@commands"
-## Arguments: $regions_ref, $infile_paths_ref, $stderrfile_path, $stdoutfile_path, $FILEHANDLE, $unique
+## Arguments: $regions_ref, $infile_paths_ref, outfile_path, $stderrfile_path, $stdoutfile_path, $FILEHANDLE, $unique
 ##          : $regions_ref      => The regions to process {REF}
 ##          : $infile_paths_ref => Infile paths {REF}
+##          : outfile_path      => outfile_path
 ##          : $stderrfile_path  => Stderrfile path
 ##          : $stdoutfile_path  => Stdoutfile path
 ##          : $FILEHANDLE       => Filehandle to write to
@@ -56,6 +57,7 @@ sub cnvnator_read_extraction {
     ## Flatten argument(s)
     my $regions_ref;
     my $infile_paths_ref;
+    my $outfile_path;
     my $stderrfile_path;
     my $stdoutfile_path;
     my $FILEHANDLE;
@@ -71,6 +73,7 @@ sub cnvnator_read_extraction {
             strict_type => 1,
             store       => \$infile_paths_ref
         },
+        outfile_path    => { strict_type => 1, store => \$outfile_path },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
         stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
         FILEHANDLE => { store => \$FILEHANDLE },
@@ -96,6 +99,12 @@ sub cnvnator_read_extraction {
     if ($unique) {
 
         push @commands, q{-unique};
+    }
+
+    if ($outfile_path) {
+
+        # Specify output filename
+        push @commands, q{-root} . $SPACE . $outfile_path;
     }
 
     ## Infile
@@ -180,7 +189,7 @@ sub cnvnator_histogram {
     ## Options: mimit output to regions
     if ( @{$regions_ref} ) {
 
-        push @commands, q{-chrom}. $SPACE . join $SPACE, @{$regions_ref};
+        push @commands, q{-chrom} . $SPACE . join $SPACE, @{$regions_ref};
     }
 
     if ($referencedirectory_path) {
@@ -468,8 +477,9 @@ sub cnvnator_convert_to_vcf {
 
 ## Function : Perl wrapper for writing cnvnator recipe to $FILEHANDLE or return commands array. Based on cnvnator 0.3.3.
 ## Returns  : "@commands"
-## Arguments: $infile_path, $referencedirectory_path, $stderrfile_path, $FILEHANDLE
+## Arguments: $infile_path, $stdoutfile_path, $referencedirectory_path, $stderrfile_path, $FILEHANDLE
 ##          : $infile_path             => Infile paths
+##          : $stdoutfile_path         => Stdoutfile path
 ##          : $referencedirectory_path => Reference sequence file
 ##          : $stderrfile_path         => Stderrfile path
 ##          : $FILEHANDLE              => Filehandle to write to
@@ -478,6 +488,7 @@ sub cnvnator_convert_to_vcf {
 
     ## Flatten argument(s)
     my $infile_path;
+    my $stdoutfile_path;
     my $referencedirectory_path;
     my $stderrfile_path;
     my $FILEHANDLE;
@@ -489,6 +500,7 @@ sub cnvnator_convert_to_vcf {
             strict_type => 1,
             store       => \$infile_path
         },
+        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
         referencedirectory_path => {
             required    => 1,
             defined     => 1,
@@ -517,6 +529,7 @@ sub cnvnator_convert_to_vcf {
       unix_standard_streams(
         {
             stderrfile_path => $stderrfile_path,
+            stdoutfile_path => $stdoutfile_path,
         }
       );
 
