@@ -14978,7 +14978,7 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
         cnvnator_calling(
             {
                 infile_path  => $root_file,
-                outfile_path => $outfile_path_prefix . "_"
+                stdoutfile_path => $outfile_path_prefix . "_"
                   . $contig
                   . ".cnvnator",
                 regions_ref     => [$contig],
@@ -14996,7 +14996,7 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
                 infile_path => $outfile_path_prefix . "_"
                   . $contig
                   . ".cnvnator",
-                outfile_path => $outfile_path_prefix . "_"
+                stdoutfile_path => $outfile_path_prefix . "_"
                   . $contig
                   . $outfile_suffix,
                 stderrfile_path => $xargs_file_path_prefix . "."
