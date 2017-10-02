@@ -28,8 +28,6 @@ BEGIN {
 
 }
 
-## Setup Conda env and install default packages
-
 sub install_pip_packages {
 
 ## pip_install_pacakages
@@ -37,14 +35,13 @@ sub install_pip_packages {
 ## Function  : Recipe for install pip package(s).
 ## Returns   :
 ## Arguments : $pip_packages_href, $quiet, $conda_env, $FILEHANDLE
-##           : $conda_packages_href => Hash with pip packages and their version numbers {REF}
-##           : $quiet               => Optionally turn on quiet output
-##           : $conda_env           => Name of conda environment
-##           : $FILEHANDLE          => Filehandle to write to
+##           : $pip_packages_href => Hash with pip packages and their version numbers {REF}
+##           : $quiet             => Optionally turn on quiet output
+##           : $conda_env         => Name of conda environment
+##           : $FILEHANDLE        => Filehandle to write to
 
     my ($arg_href) = @_;
 
-    ## Defaults
 
     ## Flatten argument(s)
     my $pip_packages_href;
@@ -61,6 +58,7 @@ sub install_pip_packages {
             store       => \$pip_packages_href,
         },
         quiet => {
+            allow       => [0, 1];
             strict_type => 1,
             store       => \$quiet,
         },
@@ -174,7 +172,7 @@ sub _create_package_array {
 
     my @packages;
 
-  PACKAGES:
+  PACKAGE:
     while ( my ( $package, $package_version ) = each %{$package_href} ) {
         if ( defined $package_version ) {
 

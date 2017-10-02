@@ -58,8 +58,6 @@ sub pip_install {
     my $stderrfile_path_append;
     my $FILEHANDLE;
 
-    ## Default(s)
-
     my $tmpl = {
         packages_ref => {
             defined     => 1,

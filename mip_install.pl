@@ -2076,11 +2076,11 @@ sub svdb {
     );
     print $FILEHANDLE "\n\n";
 
-    ## Install
+    ## Pip install the downloaded SVDB package
     say {$FILEHANDLE} q{## Install};
     pip_install(
         {
-            packages_ref => [qw{ . }],
+            packages_ref => [$DOT],
             quiet        => $parameter_href->{quiet},
             FILEHANDLE   => $FILEHANDLE,
         }
