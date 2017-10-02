@@ -196,7 +196,6 @@ human_genome_reference:
    - pgatk_genotypegvcfs
    - psamtools_mpileup
    - pgatk_variantrecalibration
-   - pgatk_phasebytransmission
    - pgatk_readbackedphasing
    - pgatk_variantevalall
    - pgatk_variantevalexome
@@ -1550,14 +1549,6 @@ vt_genmod_filter_threshold:
   data_type: SCALAR
   default: 0.10
   type: program_argument
-pgatk_phasebytransmission:
-  associated_program:
-   - mip
-  chain: Phasing
-  data_type: SCALAR
-  default: 0
-  file_tag: phtr_
-  type: program
 pgatk_readbackedphasing:
   associated_program:
    - mip
@@ -1636,7 +1627,6 @@ gatk_bundle_download_version:
    - pgatk_genotypegvcfs
    - psamtools_mpileup
    - pgatk_variantrecalibration
-   - pgatk_phasebytransmission
    - pgatk_readbackedphasing
    - pgatk_variantevalall
    - pgatk_variantevalexome
@@ -1864,7 +1854,6 @@ java_use_large_pages:
    - pgatk_genotypegvcfs
    - pgatk_variantrecalibration
    - pgatk_combinevariantcallsets
-   - pgatk_phasebytransmission
    - pgatk_readbackedphasing
    - pgatk_variantevalall
    - pgatk_variantevalexome
@@ -1883,7 +1872,6 @@ gatk_path:
    - psamtools_mpileup
    - pgatk_variantrecalibration
    - pgatk_combinevariantcallsets
-   - pgatk_phasebytransmission
    - pgatk_readbackedphasing
    - pgatk_variantevalall
    - pgatk_variantevalexome
@@ -1902,7 +1890,6 @@ gatk_logging_level:
    - psamtools_mpileup
    - pgatk_variantrecalibration
    - pgatk_combinevariantcallsets
-   - pgatk_phasebytransmission
    - pgatk_readbackedphasing
    - pcnvnator
    - pgatk_variantevalall

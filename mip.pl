@@ -434,8 +434,6 @@ GetOptions(
       \$parameter{gatk_combinevariants_prioritize_caller}{value},
     q{gcvbcf|gatk_combinevariantcallsets_bcf_file=n} =>
       \$parameter{gatk_combinevariantcallsets_bcf_file}{value},
-    q{pgpt|pgatk_phasebytransmission=n} =>
-      \$parameter{pgatk_phasebytransmission}{value},
     q{pgrp|pgatk_readbackedphasing=n} =>
       \$parameter{pgatk_readbackedphasing}{value},
     q{grpqth|gatk_readbackedphasing_phase_quality_threshold=n} =>
@@ -2278,31 +2276,6 @@ if ( $active_parameter{pevaluation} > 0 ) {    #Run evaluation. Done per family
     }
 }
 
-if ( $active_parameter{pgatk_phasebytransmission} > 0 )
-{    #Run GATK phasebytransmission. Done per family
-
-    $log->info("[GATK phasebytransmission]\n");
-
-    check_build_human_genome_prerequisites(
-        {
-            parameter_href          => \%parameter,
-            active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
-            file_info_href          => \%file_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            program_name            => "gatk_phasebytransmission",
-        }
-    );
-    gatk_phasebytransmission(
-        \%parameter,                  \%active_parameter,
-        \%sample_info,                \%file_info,
-        \%infile_lane_prefix,         \%job_id,
-        $active_parameter{family_id}, $active_parameter{outaligner_dir},
-        "BOTH",                       "gatk_phasebytransmission"
-    );
-}
-
 if ( $active_parameter{pgatk_readbackedphasing} > 0 )
 {    #Run GATK ReadBackedPhasing. Done per family. NOTE: Needs phased calls
 
@@ -2894,7 +2867,6 @@ sub build_usage {
       -gcvbcf/--gatk_combinevariantcallsets_bcf_file Produce a bcf from the GATK CombineVariantCallSet vcf (defaults to "1" (=yes))
       -gcvgmo/--gatk_combinevariants_genotype_merge_option Type of merge to perform (defaults to "PRIORITIZE")
       -gcvpc/--gatk_combinevariants_prioritize_caller The prioritization order of variant callers.(defaults to ""; comma sep; Options: gatk|samtools|freebayes)
-    -pgpt/--pgatk_phasebytransmission Computes the most likely genotype and phases calls were unamibigous using GATK PhaseByTransmission (defaults to "0" (=no))
     -pgrp/--pgatk_readbackedphasing Performs physical phasing of SNP calls, based on sequencing reads using GATK ReadBackedPhasing (defaults to "0" (=no))
       -grpqth/--gatk_readbackedphasing_phase_quality_threshold The minimum phasing quality score required to output phasing (defaults to "20")
     -pgvea/--pgatk_variantevalall Variant evaluation using GATK varianteval for all variants  (defaults to "1" (=yes))
@@ -7458,17 +7430,10 @@ sub gatk_readbackedphasing {
     ## Assign file_tags
     my $infile_tag;
 
-    ## Choose infile ending depending on GATK PhasebyTransmission swith
-    if ( $active_parameter_href->{pgatk_phasebytransmission} > 0 ) {
+    ## Choose infile ending depending on GATK PhasebyTransmission swit
+    $infile_tag = $file_info_href->{ $active_parameter_href->{family_id} }
+      {pgatk_combinevariantcallsets}{file_tag};
 
-        $infile_tag = $file_info_href->{ $active_parameter_href->{family_id} }
-          {pgatk_phasebytransmission}{file_tag};
-    }
-    else {
-
-        $infile_tag = $file_info_href->{ $active_parameter_href->{family_id} }
-          {pgatk_combinevariantcallsets}{file_tag};
-    }
     my $outfile_tag = $file_info_href->{ $active_parameter_href->{family_id} }
       { "p" . $program_name }{file_tag};
 
@@ -7538,11 +7503,6 @@ sub gatk_readbackedphasing {
       . $active_parameter_href->{gatk_readbackedphasing_phase_quality_threshold}
       . " ";
 
-    if ( $active_parameter_href->{pgatk_phasebytransmission} > 0 ) {
-
-        print $FILEHANDLE
-          "-respectPhaseInInput ";    #Already phased data - respect calls
-    }
 
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
@@ -7607,174 +7567,6 @@ sub gatk_readbackedphasing {
     }
 }
 
-sub gatk_phasebytransmission {
-
-##gatk_phasebytransmission
-
-##Function : GATK PhaseByTransmission computes the most likely genotype combination and phases trios and parent/child pairs given their genotype likelihoods and a mutation prior and phases all sites were parent/child transmission can be inferred unambiguously.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $family_id, $outaligner_dir, $call_type, $program_name
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => File info hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $family_id                  => The family_id
-##         : $outaligner_dir             => The outaligner_dir used in the analysis
-##         : $call_type                  => The variant call type
-##         : $program_name               => Program name
-
-    my $parameter_href          = $_[0];
-    my $active_parameter_href   = $_[1];
-    my $sample_info_href        = $_[2];
-    my $file_info_href          = $_[3];
-    my $infile_lane_prefix_href = $_[4];
-    my $job_id_href             = $_[5];
-    my $family_id               = $_[6];
-    my $outaligner_dir          = $_[7];
-    my $call_type               = $_[8];
-    my $program_name            = $_[9];
-
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::IO::Files qw(migrate_file);
-    use MIP::Language::Java qw{java_core};
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_sample_id_dependency_add_to_family);
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $family_id,
-            program_name          => $program_name,
-            program_directory     => catfile( lc $outaligner_dir ),
-            call_type             => $call_type,
-            process_time          => 15,
-            temp_directory        => $active_parameter_href->{temp_directory}
-        }
-    );
-
-    ## Assign directories
-    my $outfamily_file_directory =
-      catfile( $active_parameter_href->{outdata_dir}, $family_id );
-    my $infamily_directory = catfile( $active_parameter_href->{outdata_dir},
-        $family_id, $outaligner_dir );
-    my $outfamily_directory = catfile( $active_parameter_href->{outdata_dir},
-        $family_id, $outaligner_dir );
-
-    ## Assign file_tags
-    my $infile_tag = $file_info_href->{ $active_parameter_href->{family_id} }
-      {pgatk_combinevariantcallsets}{file_tag};
-    my $outfile_tag = $file_info_href->{ $active_parameter_href->{family_id} }
-      { "p" . $program_name }{file_tag};
-
-    ## Create .fam file to be used in variant calling analyses
-    create_fam_file(
-        {
-            parameter_href        => $parameter_href,
-            active_parameter_href => $active_parameter_href,
-            sample_info_href      => $sample_info_href,
-            fam_file_path =>
-              catfile( $outfamily_file_directory, $family_id . ".fam" ),
-        }
-    );
-
-    ## Copy file(s) to temporary directory
-    say $FILEHANDLE "## Copy file(s) to temporary directory";
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => catfile(
-                $infamily_directory,
-                $family_id . $infile_tag . $call_type . q{.vcf*}
-            ),
-            outfile_path => $active_parameter_href->{temp_directory}
-        }
-    );
-    say $FILEHANDLE q{wait}, "\n";
-
-    ## GATK PhaseByTransmission
-    say $FILEHANDLE "## GATK PhaseByTransmission";
-
-    ## Writes java core commands to filehandle.
-    java_core(
-        {
-            FILEHANDLE        => $FILEHANDLE,
-            memory_allocation => "Xmx4g",
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory => $active_parameter_href->{temp_directory},
-            java_jar       => catfile(
-                $active_parameter_href->{gatk_path},
-                "GenomeAnalysisTK.jar"
-            ),
-        }
-    );
-
-    print $FILEHANDLE "-T PhaseByTransmission ";    #Type of analysis to run
-    print $FILEHANDLE "-l INFO ";    #Set the minimum level of logging
-    print $FILEHANDLE "-R "
-      . $active_parameter_href->{human_genome_reference}
-      . " ";                         #Reference file
-    print $FILEHANDLE "-V: "
-      . catfile(
-        $active_parameter_href->{temp_directory},
-        $family_id . $infile_tag . $call_type . ".vcf"
-      ) . " ";                       #InFile (family vcf)
-
-    ## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-    my %commands = gatk_pedigree_flag(
-        {
-            active_parameter_href => $active_parameter_href,
-            fam_file_path =>
-              catfile( $outfamily_file_directory, $family_id . ".fam" ),
-            program_name => $program_name,
-        }
-    );
-
-    say $FILEHANDLE "-o "
-      . catfile(
-        $active_parameter_href->{temp_directory},
-        $family_id . $outfile_tag . $call_type . ".vcf"
-      ),
-      "\n";    #OutFile
-
-    ## Copies file from temporary directory.
-    say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file(
-        {
-            infile_path => catfile(
-                $active_parameter_href->{temp_directory},
-                $family_id . $outfile_tag . $call_type . q{.vcf*}
-            ),
-            outfile_path => $outfamily_directory,
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE q{wait}, "\n";
-
-    close($FILEHANDLE);
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        slurm_submit_job_sample_id_dependency_add_to_family(
-            {
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                sample_ids_ref => \@{ $active_parameter_href->{sample_ids} },
-                family_id      => $active_parameter_href->{family_id},
-                path => $parameter_href->{ "p" . $program_name }{chain},
-                log  => $log,
-                sbatch_file_name => $file_path,
-            }
-        );
-    }
-}
 
 sub mpeddy {
 
@@ -23091,140 +22883,11 @@ q?perl -ne 'my $child_counter=0; while (<>) { my @line = split(/\t/, $_); unless
     $child_counter =
       `$pq_child_counter $fam_file_path`;     #Count the number of children
 
-    if ( $program_name ne "gatk_phasebytransmission" ) {
-
         if ( $parent_counter > 0 ) {          #Parents present
 
             $command{pedigree_validation_type} = $pedigree_validation_type;
             $command{pedigree} = $fam_file_path;    #Pedigree files for samples
         }
-    }
-    else {
-
-        %command = check_pedigree_members(
-            {
-                active_parameter_href        => $active_parameter_href,
-                fam_file_path_ref            => \$$fam_file_path,
-                pedigree_validation_type_ref => \$pedigree_validation_type,
-                parent_counter_ref           => \$parent_counter,
-                child_counter_ref            => \$child_counter
-            }
-        );   #Special case - GATK PhaseByTransmission needs parent/child or trio
-    }
-    return %command;
-}
-
-sub check_pedigree_members {
-
-##check_pedigree_members
-
-##Function : Detect if the pedigree file contains a valid parent/child or trio
-##Returns  : "%command"
-##Arguments: $active_parameter_href, $fam_file_path_ref, $pedigree_validation_type_ref, $parent_counter_ref, $child_counter_ref
-##         : $active_parameter_href        => Active parameters for this analysis hash {REF}
-##         : $fam_file_path_ref            => The family file path {REF}
-##         : $pedigree_validation_type_ref => The pedigree validation strictness level {REF}
-##         : $parent_counter_ref           => The number of parent(s) {REF}
-##         : $child_counter_ref            => The number of children(s) {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $fam_file_path_ref;
-    my $pedigree_validation_type_ref;
-    my $parent_counter_ref;
-    my $child_counter_ref;
-
-    my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        fam_file_path_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$fam_file_path_ref
-        },
-        pedigree_validation_type_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$pedigree_validation_type_ref
-        },
-        parent_counter_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$parent_counter_ref
-        },
-        child_counter_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$child_counter_ref
-        },
-
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    my %command;
-
-    if ( scalar( @{ $active_parameter_href->{sample_ids} } ) < 4 )
-    {    #i.e.1-3 individuals in pedigree
-
-        if ( ( $$child_counter_ref == 1 ) && ( $$parent_counter_ref > 0 ) )
-        {    #Parent/child or trio
-
-            $command{pedigree_validation_type} = $$pedigree_validation_type_ref;
-            $command{pedigree} =
-              $$fam_file_path_ref;    #Pedigree files for samples
-        }
-        else {
-
-            $active_parameter_href->{pgatk_phasebytransmission} =
-              0;    #Override input since pedigree is not valid for analysis
-            $log->info(
-"Switched GATK PhaseByTransmission to 'no run' mode since MIP did not detect a valid pedigree for this type of analysis."
-            );
-
-            if ( $active_parameter_href->{pgatk_readbackedphasing} > 0 )
-            {       #Broadcast
-
-                $log->info(
-"MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n"
-                );
-            }
-        }
-    }
-    else {
-
-        $active_parameter_href->{pgatk_phasebytransmission} =
-          0;        #Override input since pedigree is not valid for analysis
-        $log->info(
-"Switched GATK PhaseByTransmission to 'no run' mode since MIP did not detect a valid pedigree for this type of analysis."
-        );
-
-        if ( $active_parameter_href->{pgatk_readbackedphasing} > 0 )
-        {           #Broadcast
-
-            $log->info(
-"MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n"
-            );
-        }
-    }
     return %command;
 }
 
