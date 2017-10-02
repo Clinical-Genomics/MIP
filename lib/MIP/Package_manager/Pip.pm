@@ -66,6 +66,7 @@ sub pip_install {
             store       => \$packages_ref
         },
         quiet => {
+            allow       => [undef, 0, 1],
             store       => \$quiet
         },
         requirement => {
