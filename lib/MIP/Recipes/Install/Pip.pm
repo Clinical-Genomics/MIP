@@ -58,7 +58,6 @@ sub install_pip_packages {
             store       => \$pip_packages_href,
         },
         quiet => {
-            allow       => [0, 1];
             strict_type => 1,
             store       => \$quiet,
         },
