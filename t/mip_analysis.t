@@ -29,7 +29,7 @@ use lib catdir( dirname($Bin), q{lib} );
 use File::Format::Yaml qw{ load_yaml };
 use MIP_log::Log4perl qw{ initiate_logger };
 use MIP::Check::Modules qw{ check_perl_modules };
-use Script::Utils qw{ help };
+use MIP::Script::Utils qw{ help };
 
 our $USAGE = build_usage( {} );
 
@@ -116,7 +116,7 @@ GetOptions(
         exit;
     },
   )
-  or Script::Utils::help(
+  or help(
     {
         USAGE     => $USAGE,
         exit_code => 1,

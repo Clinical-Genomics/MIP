@@ -25,7 +25,7 @@ use Cwd;
 
 ##MIPs lib/
 use lib catdir( dirname($Bin), 'lib' );
-use Script::Utils qw(help);
+use MIP::Script::Utils qw(help);
 
 our $USAGE = build_usage( {} );
 
@@ -44,7 +44,7 @@ GetOptions(
     },    #Display version number
     'vb|verbose' => $verbose,
   )
-  or Script::Utils::help(
+  or help(
     {
         USAGE     => $USAGE,
         exit_code => 1,

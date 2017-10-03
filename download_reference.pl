@@ -27,17 +27,17 @@ use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Language::Shell qw{ create_bash_file };
 use File::Format::Yaml qw{ load_yaml };
 use MIP_log::Log4perl qw{ initiate_logger };
-use Script::Utils qw{help set_default_array_parameters };
+use MIP::Script::Utils qw{ help set_default_array_parameters };
 
 our $USAGE;
 
 BEGIN {
 
-  require MIP::Check::Modules;
+    require MIP::Check::Modules;
 
     my @modules = qw{ Modern::Perl autodie YAML
       File::Format::Yaml Log::Log4perl
-      MIP_log::Log4perl Script::Utils
+      MIP_log::Log4perl MIP::Script::Utils
     };
 
     ## Evaluate that all modules required are installed
@@ -94,7 +94,7 @@ GetOptions(
     },    #Display version number
     'v|verbose' => \$parameter{verbose},
   )
-  or Script::Utils::help(
+  or help(
     {
         USAGE     => $USAGE,
         exit_code => 1,
@@ -116,7 +116,7 @@ check_user_reference(
 );
 
 ## Set default for array parameters
-Script::Utils::set_default_array_parameters(
+set_default_array_parameters(
     {
         parameter_href       => \%parameter,
         array_parameter_href => \%array_parameter,

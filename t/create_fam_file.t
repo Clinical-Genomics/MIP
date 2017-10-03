@@ -21,7 +21,7 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), 'lib' );
-use Script::Utils qw{ help };
+use MIP::Script::Utils qw{ help };
 use MIP_log::Log4perl qw{ initiate_logger };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -47,7 +47,7 @@ GetOptions(
   )
   or (
     done_testing(),
-    Script::Utils::help(
+    help(
         {
             USAGE     => $USAGE,
             exit_code => 1,
@@ -61,7 +61,7 @@ BEGIN {
 ##Modules with import
     my %perl_module;
 
-    $perl_module{'Script::Utils'} = [qw{help}];
+    $perl_module{'MIP::Script::Utils'} = [qw{help}];
     while ( my ( $module, $module_import ) = each %perl_module ) {
         use_ok( $module, @{$module_import} )
           or BAIL_OUT q{Cannot load } . $module;

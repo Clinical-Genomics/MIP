@@ -45,7 +45,7 @@ use lib catdir( $Bin, q{lib} );
 use MIP::Check::Modules qw{ check_perl_modules };
 use File::Format::Yaml qw{ load_yaml write_yaml };
 use MIP_log::Log4perl qw{ initiate_logger };
-use Script::Utils qw{ help };
+use MIP::Script::Utils qw{ help };
 use MIP::File::Format::Pedigree qw{ create_fam_file };
 use MIP::Check::Cluster qw{ check_max_core_number };
 use MIP::Get::Analysis qw{ get_overall_analysis_type };
@@ -77,7 +77,7 @@ BEGIN {
           List::Util         File::Format::Yaml
           Log::Log4perl
           File::Format::Yaml File::Parse::Parse
-          MIP_log::Log4perl  Script::Utils }
+          MIP_log::Log4perl  MIP::Script::Utils }
     );
 
     ## Evaluate that all modules required are installed

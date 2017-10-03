@@ -29,7 +29,7 @@ use lib catdir($Bin, "lib");
 use MIP::Check::Modules qw{ check_perl_modules };
 use File::Format::Yaml qw(load_yaml write_yaml);
 use MIP_log::Log4perl qw(initiate_logger);
-use Script::Utils qw(help);
+use MIP::Script::Utils qw(help);
 
 our $USAGE;
 
@@ -84,7 +84,7 @@ GetOptions('si|sample_info_file:s' => \$sample_info_file,
 	   'l|log_file:s' => \$log_file,
 	   'h|help' => sub { say STDOUT $USAGE; exit;},  #Display help text
 	   'v|version' => sub { say STDOUT "\n".basename($0)." ".$qccollect_version, "\n"; exit;},  #Display version number
-    ) or Script::Utils::help({USAGE => $USAGE,
+    ) or help({USAGE => $USAGE,
 			       exit_code => 1,
 			      });
 
