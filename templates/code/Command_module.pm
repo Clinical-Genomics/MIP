@@ -34,7 +34,7 @@ sub name_of_subroutine {
 ## name_of_subroutine
 
 ## Function : Perl wrapper for generic commands module.
-## Returns  : "@commands"
+## Returns  : @commands
 
 ## Arguments: $stdoutfile_path, $stderrfile_path, $stderrfile_path_append, $FILEHANDLE
 ##          : $stdoutfile_path        => Stdoutfile path
@@ -53,20 +53,20 @@ sub name_of_subroutine {
     ## Default(s)
 
     my $tmpl = {
-        stdoutfile_path => { 
-            strict_type => 1, 
-            store       => \$stdoutfile_path 
+        stdoutfile_path => {
+            strict_type => 1,
+            store       => \$stdoutfile_path,
         },
-        stderrfile_path => { 
-            strict_type => 1, 
-            store       => \$stderrfile_path 
+        stderrfile_path => {
+            strict_type => 1,
+            store       => \$stderrfile_path,
         },
-        stderrfile_path_append => { 
-            strict_type => 1, 
-            store       => \$stderrfile_path_append 
+        stderrfile_path_append => {
+            strict_type => 1,
+            store       => \$stderrfile_path_append,
         },
-        FILEHANDLE => { 
-            store  => \$FILEHANDLE 
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
         },
 
     };
@@ -75,7 +75,7 @@ sub name_of_subroutine {
 
     # Stores commands depending on input parameters
     my @commands = q{BASE COMMAND};
-       
+
     ############################################
     ## ADD COMMAND SPECIFIC FLAGS AND OPTIONS ##
     ############################################

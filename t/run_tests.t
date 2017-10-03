@@ -1,37 +1,40 @@
 #!/usr/bin/env perl
 
-###Copyright 2016 Henrik Stranneheim
-
-use Modern::Perl '2014';
-use warnings qw( FATAL utf8 );
+use Modern::Perl qw{ 2014 };
+use warnings qw{ FATAL utf8 };
 use autodie;
-use 5.018;    #Require at least perl 5.18
+use 5.018;
 use utf8;
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
+use open qw{ :encoding(UTF-8) :std };
+use charnames qw{ :full :short };
 use Carp;
-use English qw(-no_match_vars);
+use English qw{ -no_match_vars };
 
-use FindBin qw( $Bin );    #Find directory of script
-use File::Basename qw( dirname basename );
-use File::Spec::Functions qw( catdir catfile devnull );
+use FindBin qw{ $Bin };
+use File::Basename qw{ dirname basename };
+use File::Spec::Functions qw{ catdir catfile devnull };
 use Getopt::Long;
-use IPC::Cmd qw(can_run run);
+use IPC::Cmd qw{ can_run run };
+
+## CPANM
+use Readonly;
 
 ##MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
-use Check::Check_modules qw( check_modules );
-use Script::Utils qw( help );
+use lib catdir( dirname($Bin), q{lib} );
+use MIP::Check::Modules qw{ check_perl_modules };
+use Script::Utils qw{ help };
 
 our $USAGE = build_usage( {} );
 
 BEGIN {
 
+    require MIP::Check::Modules;
+
     ## Special case to initiate testing
-    my @modules = ('Test::More');
+    my @modules = (q{Test::More});
 
     # Evaluate that all modules required are installed
-    Check::Check_modules::check_modules(
+    check_perl_modules(
         {
             modules_ref  => \@modules,
             program_name => $PROGRAM_NAME,
@@ -39,67 +42,78 @@ BEGIN {
     );
 
     ##Initate tests
-    print {*STDOUT} "Initiate tests:\n";
-    print {*STDOUT} "\nTesting perl modules and selected functions\n\n";
+    say {*STDOUT} q{Initiate tests:};
+    say {*STDOUT} qq{\n} . q{Testing perl modules and selected functions},
+      qq{\n};
 
-    ##More proper testing
+    ## More proper testing
     use Test::More;
 
     ##Modules with import
     my %perl_module;
 
-    $perl_module{autodie}                 = [qw(open close :all)];
-    $perl_module{charnames}               = [qw(:full :short)];
-    $perl_module{Cwd}                     = [qw(abs_path)];
-    $perl_module{'File::Basename'}        = [qw(dirname basename)];
-    $perl_module{'File::Path'}            = [qw(make_path remove_tree)];
-    $perl_module{'File::Spec::Functions'} = [qw(catfile catdir devnull)];
-    $perl_module{FindBin}                 = [qw($Bin)];
-    $perl_module{'List::Util'}            = [qw(any all uniq)];
-    $perl_module{'IPC::Cmd'}              = [qw(can_run run)];
-    $perl_module{'Modern::Perl'}          = [qw(2014)];
-    $perl_module{open}                    = [qw(:encoding(UTF-8) :std)];
-    $perl_module{'Params::Check'}         = [qw(check allow last_error)];
-    $perl_module{warnings}                = [qw(FATAL utf8)];
+    $perl_module{autodie}                  = [qw{ open close :all }];
+    $perl_module{charnames}                = [qw{ :full :short }];
+    $perl_module{Cwd}                      = [qw{ abs_path }];
+    $perl_module{q{File::Basename}}        = [qw{ dirname basename }];
+    $perl_module{q{File::Path}}            = [qw{ make_path remove_tree }];
+    $perl_module{q{File::Spec::Functions}} = [qw{ catfile catdir devnull }];
+    $perl_module{FindBin}                  = [qw{ $Bin }];
+    $perl_module{q{List::Util}}            = [qw{ any all uniq }];
+    $perl_module{q{IPC::Cmd}}              = [qw{ can_run run }];
+    $perl_module{q{Modern::Perl}}          = [qw{ 2014 }];
+    $perl_module{open}                     = [qw{ :encoding(UTF-8) :std }];
+    $perl_module{q{Params::Check}}         = [qw{ check allow last_error }];
+    $perl_module{warnings}                 = [qw{ FATAL utf8 }];
 
+  PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
 
-        use_ok( $module, @{$module_import} ) or BAIL_OUT "Can't load $module";
+        use_ok( $module, @{$module_import} )
+          or BAIL_OUT q{Cannot load } . $module;
     }
 
     ##Modules
-    @modules = (
-        'Cwd',           'Getopt::Long',
-        'IO::Handle',    'IPC::System::Simple',
-        'Log::Log4perl', 'Path::Iterator::Rule',
-        'POSIX',         'strict',
-        'TAP::Harness',  'Time::Piece',
-        'utf8',          'YAML',
-        'warnings',
-    );
+    @modules = qw{ Cwd Getopt::Long IO::Handle
+      IPC::System::Simple Log::Log4perl
+      Path::Iterator::Rule POSIX strict
+      TAP::Harness Time::Piece utf8
+      YAML warnings };
 
+  MODULE:
     for my $module (@modules) {
 
-        require_ok($module) or BAIL_OUT "Can't load $module";
+        require_ok($module) or BAIL_OUT q{Cannot load } . $module;
     }
 }
 
+## Constants
+Readonly my $COMMA   => q{,};
+Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => q{ };
+
 my $config_file = catfile( dirname($Bin), qw(templates mip_config.yaml) );
 my $VERBOSE = 1;
-our $VERSION = '0.0.1';
+our $VERSION = '0.0.2';
 
 ###User Options
 GetOptions(
-    'c|config_file:s' => \$config_file,
-    'h|help' => sub { done_testing(); print {*STDOUT} $USAGE, "\n"; exit; }
-    ,    #Display help text
-    'v|version' => sub {
+    q{c|config_file:s} => \$config_file,
+
+    # Display help text
+    q{h|help} => sub { done_testing(); say {*STDOUT} $USAGE; exit; },
+
+    # Display version number
+    q{v|version} => sub {
         done_testing();
-        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION,
-          "\n\n";
+        say {*STDOUT} $NEWLINE
+          . basename($PROGRAM_NAME)
+          . $SPACE
+          . $VERSION
+          . $NEWLINE;
         exit;
-    },    #Display version number
-    'vb|verbose' => $VERBOSE,
+    },
+    q{vb|verbose} => $VERBOSE,
   )
   or (
     done_testing(),
@@ -119,7 +133,16 @@ test_modules();
 
 mip_scripts();
 
-ok( can_run('prove'), 'Checking can run perl prove' );
+ok( can_run(q{prove}), q{Checking can run perl prove} );
+
+diag(   q{Test run_tests.t version }
+      . $VERSION
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+      . $EXECUTABLE_NAME );
 
 ##Run tests files using run_test_files.txt manifest
 my $cmds_ref =
@@ -132,7 +155,8 @@ $cmds_ref = [ qw(prove mip.t :: -c ), $config_file ];
 ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
   run( command => $cmds_ref, verbose => $VERBOSE );
 
-done_testing();    # Reached the end safely
+## Reached the end safely
+done_testing();
 
 ######################
 ####SubRoutines#######
@@ -160,7 +184,7 @@ sub build_usage {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     return <<"END_USAGE";
  $program_name [options]
@@ -176,107 +200,113 @@ sub test_modules {
 ##test_modules
 
 ##Function : Test perl modules and functions
-##Returns  : ""
+##Returns  :
 ##Arguments:
 ##         :
 
     use Cwd;
-    ok( getcwd(), 'Cwd: Locate current working directory' );
+    ok( getcwd(), q{Cwd: Locate current working directory} );
 
-    use FindBin qw($Bin);
-    ok( defined($Bin), 'FindBin: Locate directory of script' );
+    use FindBin qw{ $Bin };
+    ok( defined $Bin, q{FindBin: Locate directory of script} );
 
-    use File::Basename qw(dirname);
+    use File::Basename qw{ dirname };
     ok( dirname($Bin),
-        'File::Basename qw(dirname): Strip the last part of directory' );
+        q{File::Basename qw{ dirname }: Strip the last part of directory} );
 
-    use File::Spec::Functions qw(catfile catdir devnull);
-    ok( catdir( dirname($Bin), 't' ),
-        'File::Spec::Functions qw(catdir): Concatenate directories' );
-    ok( catfile( $Bin, 'run_tests.t' ),
-        'File::Spec::Functions qw(catfile): Concatenate files' );
+    use File::Spec::Functions qw{ catfile catdir devnull };
+    ok( catdir( dirname($Bin), q{t} ),
+        q{File::Spec::Functions qw{ catdir }: Concatenate directories} );
+    ok( catfile( $Bin, q{run_tests.t} ),
+        q{File::Spec::Functions qw{ catfile }: Concatenate files} );
     ok(
-        catfile( dirname( devnull() ), 'stdout' ),
-        'File::Spec::Functions qw(devnull): Use devnull'
+        catfile( dirname( devnull() ), q{stdout} ),
+        q{File::Spec::Functions qw{ devnull }: Use devnull}
     );
 
-    use File::Basename qw(basename);
-    my $file_path = catfile( $Bin, 'run_tests.t' );
+    use File::Basename qw{ basename };
+    my $file_path = catfile( $Bin, q{run_tests.t} );
     ok( basename($file_path),
-        'File::Basename qw(basename): Strip directories' );
+        q{File::Basename qw{ basename }: Strip directories} );
 
-    use Cwd qw(abs_path);
+    use Cwd qw{ abs_path };
     ok(
-        abs_path( catfile( $Bin, 'run_tests.pl' ) ),
-        'Cwd_abs_path: Add absolute path'
+        abs_path( catfile( $Bin, q{run_tests.pl} ) ),
+        q{Cwd_abs_path: Add absolute path}
     );
 
-    use File::Path qw(make_path remove_tree);
-    ok( make_path('TEST'), 'File::Path_make_path: Create path' );
+    use File::Path qw{ make_path remove_tree };
+    ok( make_path(q{TEST}), q{File::Path_make_path: Create path} );
+
     ##Clean-up
-    ok( remove_tree('TEST'), 'File::Path_remove_tree: Remove path' );
+    ok( remove_tree(q{TEST}), q{File::Path_remove_tree: Remove path} );
 
     ##MIPs lib/
-    use lib catdir( dirname($Bin), 'lib' );
-    use File::Format::Yaml qw(load_yaml);
+    use lib catdir( dirname($Bin), q{lib} );
+    use File::Format::Yaml qw{ load_yaml };
     use YAML;
     my $yaml_file =
-      catdir( dirname($Bin), qw(templates 643594-miptest_pedigree.yaml) );
-    ok( -f $yaml_file, "YAML: File= $yaml_file in MIP/templates directory" );
+      catdir( dirname($Bin), qw{ templates 643594-miptest_pedigree.yaml } );
+    ok( -f $yaml_file,
+        q{YAML: File=} . $yaml_file . q{ in MIP/templates directory} );
 
     my $yaml = File::Format::Yaml::load_yaml( { yaml_file => $yaml_file, } );
-    ok( defined $yaml, 'YAML: Load File' );    #Check that we got something
-    ok( Dump($yaml),   'YAML: Dump file' );
 
-    use Params::Check qw[check allow last_error];
+    # Check that we got something
+    ok( defined $yaml, q{YAML: Load File} );
+    ok( Dump($yaml),   q{YAML: Dump file} );
+
+    use Params::Check qw{ check allow last_error };
     use Log::Log4perl;
     ## Creates log
-    my $log_file = catdir( dirname($Bin), qw(templates mip_log.yaml) );
+    my $log_file = catdir( dirname($Bin), qw{ templates mip_log.yaml } );
     ok( -f $log_file,
-        'Log::Log4perl: File=' . $log_file . ' in MIP directory' );
+        q{Log::Log4perl: File=} . $log_file . q{ in MIP directory} );
 
-    use MIP_log::Log4perl qw(initiate_logger);
+    use MIP_log::Log4perl qw{ initiate_logger };
     ## Creates log object
     my $log = MIP_log::Log4perl::initiate_logger(
         {
-            categories_ref => [qw(TRACE ScreenApp)],
+            categories_ref => [qw{ TRACE ScreenApp }],
             file_path_ref  => \$log_file,
-            log_name       => 'Run_tests',
+            log_name       => q{Run_tests},
         }
     );
 
-    ok( $log->info(1),  'Log::Log4perl: info' );
-    ok( $log->warn(1),  'Log::Log4perl: warn' );
-    ok( $log->error(1), 'Log::Log4perl: error' );
-    ok( $log->fatal(1), 'Log::Log4perl: fatal' );
+    ok( $log->info(1),  q{Log::Log4perl: info} );
+    ok( $log->warn(1),  q{Log::Log4perl: warn} );
+    ok( $log->error(1), q{Log::Log4perl: error} );
+    ok( $log->fatal(1), q{Log::Log4perl: fatal} );
 
     use Getopt::Long;
-    push @ARGV, (qw(-verbose 2));
+    push @ARGV, qw{ -verbose 2 };
 
     my $verbose = 1;
     ok(
-        GetOptions( 'verbose:n' => \$verbose ),
-        'Getopt::Long: Get options call'
+        GetOptions( q{verbose:n} => \$verbose ),
+        q{Getopt::Long: Get options call}
     );
-    ok( $verbose == 2, 'Getopt::Long: Get options modified' );
+    ok( $verbose == 2, q{Getopt::Long: Get options modified} );
 
     ## Check time
     use Time::Piece;
     my $date_time = localtime;
-    ok( $date_time, 'localtime = ' . $date_time );
+    ok( $date_time, q{localtime = } . $date_time );
     my $date_time_stamp = $date_time->datetime;
-    ok( $date_time_stamp, 'datetime = ' . $date_time );
+    ok( $date_time_stamp, q{datetime = } . $date_time );
     my $date = $date_time->ymd;
-    ok( $date, 'ymd = ' . $date );
+    ok( $date, q{ymd = } . $date );
 
     ## Locate name of script
-    ok( $PROGRAM_NAME, 'Detect program name = ' . $PROGRAM_NAME );
+    ok( $PROGRAM_NAME, q{Detect program name = } . $PROGRAM_NAME );
 
     ## Execution of programs
-    use IPC::Cmd qw[can_run run];
-    ok( can_run('perl'), 'Can run IPC::Cmd' );
-    ok( my $bool = IPC::Cmd->can_capture_buffer,
-        'IPC::Cmd can capture buffer' );
+    use IPC::Cmd qw{ can_run run };
+    ok( can_run(q{perl}), q{Can run IPC::Cmd} );
+    ok(
+        my $bool = IPC::Cmd->can_capture_buffer,
+        q{IPC::Cmd can capture buffer}
+    );
 
     return;
 }
@@ -290,47 +320,45 @@ sub mip_scripts {
 ##Arguments:
 ##         :
 
-    my @mip_scripts = (
-        'calculate_af.pl', 'download_reference.pl',
-        'mip_install.pl',  'max_af.pl',
-        'mip.pl',          'qccollect.pl',
-        'vcfparser.pl',
-    );
+    my @mip_scripts = qw{ calculate_af.pl download_reference.pl
+      mip_install.pl max_af.pl mip.pl qccollect.pl
+      vcfparser.pl perl_install.pl };
 
+  SCRIPT:
     foreach my $script (@mip_scripts) {
 
         is( -e catfile( dirname($Bin), $script ),
-            1, 'Found MIP file: ' . $script );
+            1, q{Found MIP file: } . $script );
     }
 
     my %mip_sub_scripts;
     $mip_sub_scripts{definitions} =
-      [qw(define_download_references.yaml define_parameters.yaml)];
-    $mip_sub_scripts{t} = [
-        'mip_install.t',
-        'mip.t',
-        'run_tests.t',
-        'mip_analysis.t',
-
-    ];
+      [qw{ define_download_references.yaml define_parameters.yaml }];
+    $mip_sub_scripts{t} =
+      [qw{ mip_install.t mip.t run_tests.t mip_analysis.t }];
     $mip_sub_scripts{templates} = [
-        'mip_config.yaml',              'mip_travis_config.yaml',
-        '643594-miptest_pedigree.yaml', 'mip_log.yaml',
+        qw{ mip_config.yaml mip_travis_config.yaml
+          643594-miptest_pedigree.yaml
+          mip_log.yaml }
     ];
 
     my @mip_directories =
-      ( qw(definitions templates lib), catdir(qw(t data)), );
+      ( qw{ definitions templates lib }, catdir(qw{ t data }), );
+
+  DIRECTORY:
     foreach my $directory (@mip_directories) {
 
         is( -e catfile( dirname($Bin), $directory ),
-            1, 'Found MIP sub dir: ' . $directory );
+            1, q{Found MIP sub dir: } . $directory );
     }
+  DIRECTORY:
     foreach my $directory ( keys %mip_sub_scripts ) {
 
+      SCRIPT:
         foreach my $script ( @{ $mip_sub_scripts{$directory} } ) {
 
             is( -e catfile( dirname($Bin), $directory, $script ),
-                1, 'Found MIP sub file: ' . $script );
+                1, q{Found MIP sub file: } . $script );
         }
     }
     return;
