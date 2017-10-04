@@ -28,7 +28,7 @@ use POSIX;
 use lib catdir($Bin, "lib");
 use MIP::Check::Modules qw{ check_perl_modules };
 use File::Format::Yaml qw(load_yaml write_yaml);
-use MIP_log::Log4perl qw(initiate_logger);
+use MIP::Log::MIP_log4perl qw(initiate_logger);
 use MIP::Script::Utils qw(help);
 
 our $USAGE;
@@ -42,7 +42,7 @@ BEGIN {
 		   "YAML",
 		   "File::Format::Yaml",
 		   "Log::Log4perl",
-		   "MIP_log::Log4perl",
+		   "MIP::Log::MIP_log4perl",
 	);
 
     ## Evaluate that all modules required are installed
@@ -89,8 +89,8 @@ GetOptions('si|sample_info_file:s' => \$sample_info_file,
 			      });
 
 ## Creates log object
-my $log = MIP_log::Log4perl::initiate_logger({file_path_ref => \$log_file,
-					      log_name => "Qccollect",
+my $log = initiate_logger({file_path => $log_file,
+					      log_name => q{Qccollect},
 					     });
 
 if ($print_regexp) {
