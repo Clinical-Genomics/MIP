@@ -197,8 +197,6 @@ else {
 say {$FILEHANDLE} qq{\n};
 
 ## Install MIP requred modules via cpanm
-say STDERR q{## Writing recipe for installation of Cpanm modules};
-say {$FILEHANDLE} q{## Install modules required by MIP via Cpanm};
 install_cpanm_modules(
     {
         parameter_href => \%parameter,
@@ -421,26 +419,38 @@ sub install_cpanm_modules {
       @{ $arg_href->{parameter_href}{perl_modules_append} };
 
     ## Modules to install
+    my %perl_modules;
     if (@perl_modules_append) {
         @perl_modules_append = split( /,/, join( q{,}, @perl_modules_append ) );
 
         @perl_modules = ( @perl_modules, @perl_modules_append );
 
         # Remove any duplicate modules
-        my %perl_modules = map { $_ => 1 } @perl_modules;
+        %perl_modules = map { $_ => 1 } @perl_modules;
         @perl_modules = keys %perl_modules;
     }
 
-    my @commands = cpanm_install_module(
-        {
-            modules_ref => \@perl_modules,
-            force       => $parameter_href->{force},
-            quiet       => $parameter_href->{quiet},
-            verbose     => $parameter_href->{verbose}
-        }
-    );
+    ## Check aginst what's already installed
+    my %modules = map { $_ => 1 } @modules;
+    my @modules_to_install = grep { not $modules{$_} } @perl_modules;
 
-    say {$FILEHANDLE} join q{ }, @commands;
+    if (@modules_to_install) {
+        say STDERR q{## Writing recipe for installation of Cpanm modules};
+        say {$FILEHANDLE} q{## Install modules required by MIP via Cpanm};
+        my @commands = cpanm_install_module(
+            {
+                modules_ref => \@modules_to_install,
+                force       => $parameter_href->{force},
+                quiet       => $parameter_href->{quiet},
+                verbose     => $parameter_href->{verbose}
+            }
+        );
+        say {$FILEHANDLE} join q{ }, @commands;
+    }
+    else {
+        say STDERR q{## Required Cpanm modules already installed};
+        say {$FILEHANDLE} q{## Required Cpanm modules already installed};
+    }
 
     return;
 }
