@@ -42,10 +42,10 @@ use Readonly;
 ##MIPs lib/
 # Add MIPs internal lib
 use lib catdir( $Bin, q{lib} );
-use Check::Check_modules qw{ check_modules };
-use File::Format::Yaml qw{ load_yaml write_yaml };
-use MIP_log::Log4perl qw{ initiate_logger };
-use Script::Utils qw{ help };
+use MIP::Check::Modules qw{ check_perl_modules };
+use MIP::File::Format::Yaml qw{ load_yaml write_yaml };
+use MIP::Log::MIP_log4perl qw{ initiate_logger };
+use MIP::Script::Utils qw{ help };
 use MIP::File::Format::Pedigree qw{ create_fam_file };
 use MIP::Check::Cluster qw{ check_max_core_number };
 use MIP::Get::Analysis qw{ get_overall_analysis_type };
@@ -70,16 +70,17 @@ our $USAGE = build_usage( {} );
 
 BEGIN {
 
+    require MIP::Check::Modules;
+
     my @modules = (
         qw{ YAML Path::Iterator::Rule
-          List::Util         File::Format::Yaml
-          Log::Log4perl      Check::Check_modules
-          File::Format::Yaml File::Parse::Parse
-          MIP_log::Log4perl  Script::Utils }
+          List::Util Log::Log4perl
+          MIP::File::Format::Yaml MIP::Set::File
+          MIP::Log::MIP_log4perl  MIP::Script::Utils }
     );
 
     ## Evaluate that all modules required are installed
-    Check::Check_modules::check_modules(
+    check_perl_modules(
         {
             modules_ref  => \@modules,
             program_name => $PROGRAM_NAME,
@@ -648,13 +649,13 @@ foreach my $order_parameter_element (@order_parameters) {
         $parameter{qccollect_sampleinfo_file}{default} =
           $parameter{sample_info_file}{default};
     }
-    if ( $order_parameter_element eq 'log_file' ) {
+    if ( $order_parameter_element eq q{log_file} ) {
 
         ## Creates log object
         my $log = initiate_logger(
             {
-                file_path_ref => \$active_parameter{log_file},
-                log_name      => 'MIP',
+                file_path => $active_parameter{log_file},
+                log_name  => q{MIP},
             }
         );
     }
@@ -681,8 +682,8 @@ foreach my $order_parameter_element (@order_parameters) {
             ## Writes a YAML hash to file
             write_yaml(
                 {
-                    yaml_href          => \%sample_info,
-                    yaml_file_path_ref => \$yaml_file,
+                    yaml_href      => \%sample_info,
+                    yaml_file_path => $yaml_file,
                 }
             );
             $log->info( 'Wrote: ' . $yaml_file, "\n" );
@@ -996,8 +997,8 @@ if ( $active_parameter{config_file_analysis} ne 0 )
     ## Writes a YAML hash to file
     write_yaml(
         {
-            yaml_href          => \%active_parameter,
-            yaml_file_path_ref => \$active_parameter{config_file_analysis},
+            yaml_href      => \%active_parameter,
+            yaml_file_path => $active_parameter{config_file_analysis},
         }
     );
     $log->info( 'Wrote: ' . $active_parameter{config_file_analysis}, "\n" );
@@ -2616,8 +2617,8 @@ if ( $active_parameter{sample_info_file} ne 0 ) { #Write SampleInfo to yaml file
     ## Writes a YAML hash to file
     write_yaml(
         {
-            yaml_href          => \%sample_info,
-            yaml_file_path_ref => \$active_parameter{sample_info_file},
+            yaml_href      => \%sample_info,
+            yaml_file_path => $active_parameter{sample_info_file},
         }
     );
     $log->info( "Wrote: " . $active_parameter{sample_info_file}, "\n" );
@@ -14547,7 +14548,7 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
 
         cnvnator_calling(
             {
-                infile_path  => $root_file,
+                infile_path     => $root_file,
                 stdoutfile_path => $outfile_path_prefix . "_"
                   . $contig
                   . ".cnvnator",
@@ -22648,11 +22649,11 @@ q?perl -ne 'my $child_counter=0; while (<>) { my @line = split(/\t/, $_); unless
     $child_counter =
       `$pq_child_counter $fam_file_path`;     #Count the number of children
 
-        if ( $parent_counter > 0 ) {          #Parents present
+    if ( $parent_counter > 0 ) {              #Parents present
 
-            $command{pedigree_validation_type} = $pedigree_validation_type;
-            $command{pedigree} = $fam_file_path;    #Pedigree files for samples
-        }
+        $command{pedigree_validation_type} = $pedigree_validation_type;
+        $command{pedigree} = $fam_file_path;    #Pedigree files for samples
+    }
     return %command;
 }
 
@@ -25698,7 +25699,7 @@ sub update_to_absolute_path {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use File::Parse::Parse qw(find_absolute_path);
+    use MIP::Set::File qw(set_absolute_path);
 
     ## Adds dynamic aggregate information from definitions to parameter hash
     add_to_parameter(
@@ -25737,7 +25738,7 @@ sub update_to_absolute_path {
                         ## Find aboslute path for supplied path or croaks and exists if path does not exists
                         push(
                             @absolute_path_elements,
-                            find_absolute_path(
+                            set_absolute_path(
                                 {
                                     path           => $element,
                                     parameter_name => $parameter_name,
@@ -25763,7 +25764,7 @@ sub update_to_absolute_path {
                 {
 
                     ## Find aboslute path for supplied path or croaks and exists if path does not exists
-                    my $updated_key = find_absolute_path(
+                    my $updated_key = set_absolute_path(
                         {
                             path           => $key,
                             parameter_name => $parameter_name,
@@ -25783,7 +25784,7 @@ sub update_to_absolute_path {
                 && ( $parameter_value ne "nocmd_input" ) )
             {                                               #Scalar
 
-                $parameter_value = find_absolute_path(
+                $parameter_value = set_absolute_path(
                     {
                         path           => $parameter_value,
                         parameter_name => $parameter_name,

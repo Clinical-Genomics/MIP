@@ -25,20 +25,20 @@ sub name_of_subroutine {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$hash_href
+            store       => \$hash_href,
         },
         arrays_ref => {
             required    => 1,
             defined     => 1,
             default     => [],
             strict_type => 1,
-            store       => \$arrays_ref
+            store       => \$arrays_ref,
         },
         scalar => {
             default     => 1,
             allow       => qr/ ^\d+$ /sxm,
             strict_type => 1,
-            store       => \$scalar
+            store       => \$scalar,
         },
     };
 

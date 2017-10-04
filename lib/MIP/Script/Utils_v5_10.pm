@@ -1,11 +1,11 @@
-package Script::Utils_v5_10;
+package MIP::Script::Utils_v5_10;
 
 use strict;
 use warnings;
-use warnings qw( FATAL utf8 );
-use utf8;    #Allow unicode characters in this script
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
+use warnings qw{ FATAL utf8 };
+use utf8;
+use open qw{ :encoding(UTF-8) :std };
+use charnames qw{ :full :short };
 
 BEGIN {
     use base qw{ Exporter };
@@ -15,7 +15,7 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(help set_default_array_parameters);
+    our @EXPORT_OK = qw{ help set_default_array_parameters };
 
 }
 

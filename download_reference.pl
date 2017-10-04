@@ -1,49 +1,50 @@
 #!/usr/bin/env perl
 
-use Modern::Perl '2014';
-use warnings qw( FATAL utf8 );
-use autodie qw(open close :all);
-use v5.18;    #Require at least perl 5.18
+use Modern::Perl qw{ 2014 };
+use warnings qw{ FATAL utf8 };
+use autodie qw{ open close :all };
+use v5.18;
 use utf8;
-use open qw( :encoding(UTF-8) :std );
+use open qw{ :encoding(UTF-8) :std };
 use charnames qw( :full :short );
-use English qw(-no_match_vars);
-use Params::Check qw[check allow last_error];
-$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
+use English qw{ -no_match_vars };
+use Params::Check qw{ check allow last_error };
 
 use Cwd;
-use Cwd qw(abs_path);
-use File::Basename qw(dirname basename);
-use File::Spec::Functions qw(catfile catdir devnull);
-use FindBin qw($Bin);                 #Find directory of script
+use Cwd qw{ abs_path };
+use File::Basename qw{ dirname basename };
+use File::Spec::Functions qw{ catfile catdir devnull };
+use FindBin qw{ $Bin };
 use Getopt::Long;
 use IO::Handle;
 
 ## Third party module(s)
-use List::Util qw(any);
+use List::Util qw{ any };
 
 ##MIPs lib/
-use lib catdir( $Bin, 'lib' );
-use Check::Check_modules qw(check_modules);
-use MIP::Language::Shell qw(create_bash_file);
-use File::Format::Yaml qw(load_yaml);
-use MIP_log::Log4perl qw(initiate_logger);
-use Script::Utils qw(help set_default_array_parameters);
+use lib catdir( $Bin, q{lib} );
+use MIP::Check::Modules qw{ check_perl_modules };
+use MIP::Language::Shell qw{ create_bash_file };
+use MIP::File::Format::Yaml qw{ load_yaml };
+use MIP::Log::MIP_log4perl qw{ initiate_logger };
+use MIP::Script::Utils qw{ help set_default_array_parameters };
 
 our $USAGE;
 
 BEGIN {
 
-    my @modules = qw(Modern::Perl autodie YAML
-      File::Format::Yaml Log::Log4perl
-      MIP_log::Log4perl Script::Utils
-    );
+    require MIP::Check::Modules;
+
+    my @modules = qw{ Modern::Perl autodie YAML
+      MIP::File::Format::Yaml Log::Log4perl
+      MIP::Log::MIP_log4perl MIP::Script::Utils
+    };
 
     ## Evaluate that all modules required are installed
-    Check::Check_modules::check_modules(
+    check_perl_modules(
         {
             modules_ref  => \@modules,
-            program_name => 'download_reference',
+            program_name => $PROGRAM_NAME,
         }
     );
 
@@ -93,7 +94,7 @@ GetOptions(
     },    #Display version number
     'v|verbose' => \$parameter{verbose},
   )
-  or Script::Utils::help(
+  or help(
     {
         USAGE     => $USAGE,
         exit_code => 1,
@@ -101,12 +102,13 @@ GetOptions(
   );
 
 ## Creates log object
-my $log = MIP_log::Log4perl::initiate_logger(
+my $log = initiate_logger(
     {
-        file_path_ref => \$parameter{log_file},
-        log_name      => 'Download_reference',
+        file_path => $parameter{log_file},
+        log_name  => q{Download_reference},
     }
 );
+
 check_user_reference(
     {
         cmd_reference_ref => \%{ $parameter{cmd_reference} },
@@ -115,7 +117,7 @@ check_user_reference(
 );
 
 ## Set default for array parameters
-Script::Utils::set_default_array_parameters(
+set_default_array_parameters(
     {
         parameter_href       => \%parameter,
         array_parameter_href => \%array_parameter,
@@ -463,8 +465,8 @@ sub download {
         file_id =>
           { required => 1, defined => 1, strict_type => 1, store => \$file_id },
         program => {
-            default     => 'wget',
-            allow       => ['wget'],
+            default     => q{wget},
+            allow       => [qw{ wget }],
             strict_type => 1,
             store       => \$program
         },
@@ -483,12 +485,12 @@ sub download {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
+    use MIP::Program::Download::Wget qw{ wget };
+
     ## Download
     print $FILEHANDLE q{## Download } . $file_id, "\n";
 
-    if ( $program eq 'wget' ) {
-
-        use Program::Download::Wget qw(wget);
+    if ( $program eq q{wget} ) {
 
         wget(
             {
@@ -718,7 +720,7 @@ sub update_to_absolute_path {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use File::Parse::Parse qw(find_absolute_path);
+    use MIP::Set::File qw(set_absolute_path);
 
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger('Download_reference');
@@ -735,7 +737,7 @@ sub update_to_absolute_path {
                 {
 
                     ## Replace original input with abolute path for supplied path or croaks and exists if path does not exists
-                    $parameter_value = find_absolute_path(
+                    $parameter_value = set_absolute_path(
                         {
                             path           => $parameter_value,
                             parameter_name => $parameter_name,
@@ -751,7 +753,7 @@ sub update_to_absolute_path {
                 {    #Cannot use each since we are updating key
 
                     ## Find aboslute path for supplied path or croaks and exists if path does not exists
-                    my $updated_key = find_absolute_path(
+                    my $updated_key = set_absolute_path(
                         {
                             path           => $key,
                             parameter_name => $parameter_name,
@@ -765,7 +767,7 @@ sub update_to_absolute_path {
             else {    #Scalar - not a reference
 
                 ## Find aboslute path for supplied path or croaks and exists if path does not exists
-                $parameter_href->{$parameter_name} = find_absolute_path(
+                $parameter_href->{$parameter_name} = set_absolute_path(
                     {
                         path           => $parameter_href->{$parameter_name},
                         parameter_name => $parameter_name,

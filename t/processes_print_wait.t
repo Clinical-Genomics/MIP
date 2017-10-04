@@ -23,7 +23,7 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), 'lib' );
-use Script::Utils qw(help);
+use MIP::Script::Utils qw(help);
 
 our $USAGE = build_usage( {} );
 
@@ -47,7 +47,7 @@ GetOptions(
   )
   or (
     done_testing(),
-    Script::Utils::help(
+    help(
         {
             USAGE     => $USAGE,
             exit_code => 1,
@@ -59,7 +59,7 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
     ## Modules with import
-    my %perl_module = ( 'Script::Utils' => [qw{help}], );
+    my %perl_module = ( 'MIP::Script::Utils' => [qw{help}], );
 
     while ( my ( $module, $module_import ) = each %perl_module ) {
 

@@ -1,12 +1,13 @@
 #!/usr/bin/env perl
 
-use Modern::Perl '2014';    #CPAN
+use Modern::Perl '2014';
 use warnings qw( FATAL utf8 );
-use autodie qw(open close :all);    #CPAN
-use v5.18;  #Require at least perl 5.18
-use utf8;  #Allow unicode characters in this script
+use autodie qw(open close :all);
+use v5.18;
+use utf8;
 use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
+use English qw{ -no_match_vars };
 
 ##Collects MPS QC from MIP. Loads information on files to examine and values to extract from in YAML format and outputs exracted metrics in YAML format.
 #Copyright 2013 Henrik Stranneheim
@@ -25,27 +26,29 @@ use POSIX;
 
 ##MIPs lib/
 use lib catdir($Bin, "lib");
-use File::Format::Yaml qw(load_yaml write_yaml);
-use MIP_log::Log4perl qw(initiate_logger);
-use Check::Check_modules qw(check_modules);
-use Script::Utils qw(help);
+use MIP::Check::Modules qw{ check_perl_modules };
+use MIP::File::Format::Yaml qw(load_yaml write_yaml);
+use MIP::Log::MIP_log4perl qw(initiate_logger);
+use MIP::Script::Utils qw(help);
 
 our $USAGE;
 
 BEGIN {
 
+  require MIP::Check::Modules;
+
     my @modules = ("Modern::Perl",
 		   "autodie",
 		   "YAML",
-		   "File::Format::Yaml",
+		   "MIP::File::Format::Yaml",
 		   "Log::Log4perl",
-		   "MIP_log::Log4perl",
+		   "MIP::Log::MIP_log4perl",
 	);
 
     ## Evaluate that all modules required are installed
-    Check::Check_modules::check_modules({modules_ref => \@modules,
-					 program_name => "qccollect",
-					});
+    check_perl_modules({modules_ref => \@modules,
+			program_name => $PROGRAM_NAME,
+		       });
 
     $USAGE =
         basename($0).qq{ -si [sample_info.yaml] -r [regexp.yaml] -o [outfile]
@@ -81,13 +84,13 @@ GetOptions('si|sample_info_file:s' => \$sample_info_file,
 	   'l|log_file:s' => \$log_file,
 	   'h|help' => sub { say STDOUT $USAGE; exit;},  #Display help text
 	   'v|version' => sub { say STDOUT "\n".basename($0)." ".$qccollect_version, "\n"; exit;},  #Display version number
-    ) or Script::Utils::help({USAGE => $USAGE,
+    ) or help({USAGE => $USAGE,
 			       exit_code => 1,
 			      });
 
 ## Creates log object
-my $log = MIP_log::Log4perl::initiate_logger({file_path_ref => \$log_file,
-					      log_name => "Qccollect",
+my $log = initiate_logger({file_path => $log_file,
+					      log_name => q{Qccollect},
 					     });
 
 if ($print_regexp) {
@@ -115,12 +118,12 @@ if (! $regexp_file) {
 ####MAIN
 
 ## Loads a YAML file into an arbitrary hash and returns it
-my %sample_info = File::Format::Yaml::load_yaml({yaml_file => $sample_info_file,
+my %sample_info = load_yaml({yaml_file => $sample_info_file,
 						});
 $log->info("Loaded: ".$sample_info_file, "\n");
 
 ## Loads a YAML file into an arbitrary hash and returns it
-my %regexp = File::Format::Yaml::load_yaml({yaml_file => $regexp_file,
+my %regexp = load_yaml({yaml_file => $regexp_file,
 					   });
 $log->info("Loaded: ".$regexp_file, "\n");
 
@@ -162,7 +165,7 @@ if(! $skip_evaluation) {
 }
 
 ## Writes a YAML hash to file
-File::Format::Yaml::write_yaml({yaml_href => \%qc_data,
+write_yaml({yaml_href => \%qc_data,
 				yaml_file_path_ref => \$outfile,
 			       });
 $log->info("Wrote: ".$outfile, "\n");
@@ -1191,7 +1194,7 @@ sub regexp_to_yaml {
     $regexp{svdb}{version}  = q?perl -nae 'if($_=~/^##SVDB_version=(\S+)/) { print $1; last; } else { if($_=~/#CHROM/) { last;} }' ?;
 
     ## Writes a YAML hash to file
-    File::Format::Yaml::write_yaml({yaml_href => \%regexp,
+    write_yaml({yaml_href => \%regexp,
 				    yaml_file_path_ref => \$print_regexp_outfile,
 				   });
     

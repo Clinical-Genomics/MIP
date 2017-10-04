@@ -7,6 +7,7 @@ use v5.18;  #Require at least perl 5.18
 use utf8;  #Allow unicode characters in this script
 use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
+use English qw{ -no_match_vars };
 
 use Cwd;
 use FindBin qw($Bin);  #Find directory of script
@@ -22,13 +23,15 @@ use Set::IntervalTree; #CPAN
 
 ##MIPs lib/
 use lib catdir($Bin, "lib");
-use MIP_log::Log4perl qw(initiate_logger);
-use Check::Check_modules qw(check_modules);
-use Script::Utils qw(help);
+use MIP::Check::Modules qw{ check_perl_modules };
+use MIP::Log::MIP_log4perl qw(initiate_logger);
+use MIP::Script::Utils qw{ help };
 
 our $USAGE;
 
 BEGIN {
+
+  require MIP::Check::Modules;
 
     my @modules = ("Modern::Perl",
 		   "autodie",
@@ -38,9 +41,9 @@ BEGIN {
 	);
 
     ## Evaluate that all modules required are installed
-    Check::Check_modules::check_modules({modules_ref => \@modules,
-					 program_name => $0,
-					});
+  check_perl_modules({modules_ref => \@modules,
+		      program_name => $PROGRAM_NAME,
+		     });
 
     $USAGE =
 	basename($0).qq{ infile.vcf [OPTIONS] > outfile.vcf
@@ -99,13 +102,13 @@ GetOptions('pvep|parse_vep' => \$parse_vep,
 	   'l|log_file:s' => \$log_file,
 	   'h|help' => sub { say STDOUT $USAGE; exit;},  #Display help text
 	   'v|version' => sub { say STDOUT "\n".basename($0)." ".$vcfparser_version, "\n"; exit;},  #Display version number
-    )  or Script::Utils::help({USAGE => $USAGE,
+    )  or help({USAGE => $USAGE,
 			       exit_code => 1,
 			      });
 
 ## Creates log object
-my $log = MIP_log::Log4perl::initiate_logger({file_path_ref => \$log_file,
-					      log_name => "Vcfparser",
+my $log = initiate_logger({file_path => $log_file,
+					      log_name => q{Vcfparser},
 					     });
 
 

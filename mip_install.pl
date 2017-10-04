@@ -28,7 +28,7 @@ use MIP::Gnu::Bash qw(gnu_cd);
 use MIP::Gnu::Coreutils qw(gnu_cp gnu_rm gnu_mv gnu_mkdir gnu_ln gnu_chmod );
 use MIP::Package_manager::Conda
   qw{ conda_source_activate conda_source_deactivate };
-use Script::Utils qw(help set_default_array_parameters);
+use MIP::Script::Utils qw(help set_default_array_parameters);
 use MIP::Check::Path qw{ check_dir_path_exist };
 use MIP::Package_manager::Pip qw{ pip_install };
 
@@ -190,7 +190,7 @@ GetOptions(
     },    #Display version number
     'v|verbose' => \$parameter{verbose},
   )
-  or croak Script::Utils::help(
+  or croak help(
     {
         USAGE     => $USAGE,
         exit_code => 1,
@@ -675,7 +675,7 @@ sub print_parameters {
 
     check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
 
-    use Script::Utils qw{ set_default_array_parameters };
+    use MIP::Script::Utils qw{ set_default_array_parameters };
 
     ## Set default for array parameters
     set_default_array_parameters(
