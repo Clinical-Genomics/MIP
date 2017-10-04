@@ -9,6 +9,10 @@ use charnames qw{ :full :short };
 use Carp;
 use autodie;
 use Params::Check qw{ check allow last_error };
+use Cwd qw(abs_path);
+
+## CPANM
+use Readonly;
 
 BEGIN {
 
@@ -19,8 +23,12 @@ BEGIN {
     our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ set_file_suffix set_merged_infile_prefix };
+    our @EXPORT_OK =
+      qw{ set_file_suffix set_merged_infile_prefix set_absolute_path };
 }
+
+## Constants
+Readonly my $NEWLINE => qq{\n};
 
 sub set_file_suffix {
 
@@ -122,6 +130,67 @@ sub set_merged_infile_prefix {
     $file_info_href->{$sample_id}{merged_infile} = $merged_infile_prefix;
 
     return;
+}
+
+sub set_absolute_path {
+
+## set_absolute_path
+
+## Function : Find aboslute path for supplied path or croaks and exists if path does not exists
+## Returns  : "$path - absolute path"
+## Arguments: $path, $parameter_name
+##          : $path           => Supplied path to be updated/evaluated
+##          : $parameter_name => Parameter to be evaluated
+##          : $log            => Log object to write to if supplied
+
+    my ($arg_href) = @_;
+
+    ##Flatten argument(s)
+    my $path;
+    my $parameter_name;
+    my $log;
+
+    my $tmpl = {
+        path           => { required => 1, defined => 1, store => \$path },
+        parameter_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$parameter_name
+        },
+        log => { store => \$log },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## For broadcasting later
+    my $original_path = $path;
+
+    ## Reformat to aboslute path
+    $path = abs_path($path);
+
+    ## Something went wrong
+    if ( not defined $path ) {
+
+        if ( defined $log && $log ) {
+
+            $log->fatal( q{Could not find absolute path for }
+                  . $parameter_name . q{: }
+                  . $original_path
+                  . q{. Please check the supplied path!}
+                  . $NEWLINE );
+            exit 1;
+        }
+        else {
+
+            croak(  q{Could not find absolute path for }
+                  . $parameter_name . q{: }
+                  . $original_path
+                  . q{. Please check the supplied path!}
+                  . $NEWLINE );
+        }
+    }
+    return $path;
 }
 
 1;

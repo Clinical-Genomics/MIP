@@ -720,7 +720,7 @@ sub update_to_absolute_path {
 
     check( $tmpl, $arg_href, 1 ) or die qw[Could not parse arguments!];
 
-    use File::Parse::Parse qw(find_absolute_path);
+    use MIP::Set::File qw(set_absolute_path);
 
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger('Download_reference');
@@ -737,7 +737,7 @@ sub update_to_absolute_path {
                 {
 
                     ## Replace original input with abolute path for supplied path or croaks and exists if path does not exists
-                    $parameter_value = find_absolute_path(
+                    $parameter_value = set_absolute_path(
                         {
                             path           => $parameter_value,
                             parameter_name => $parameter_name,
@@ -753,7 +753,7 @@ sub update_to_absolute_path {
                 {    #Cannot use each since we are updating key
 
                     ## Find aboslute path for supplied path or croaks and exists if path does not exists
-                    my $updated_key = find_absolute_path(
+                    my $updated_key = set_absolute_path(
                         {
                             path           => $key,
                             parameter_name => $parameter_name,
@@ -767,7 +767,7 @@ sub update_to_absolute_path {
             else {    #Scalar - not a reference
 
                 ## Find aboslute path for supplied path or croaks and exists if path does not exists
-                $parameter_href->{$parameter_name} = find_absolute_path(
+                $parameter_href->{$parameter_name} = set_absolute_path(
                     {
                         path           => $parameter_href->{$parameter_name},
                         parameter_name => $parameter_name,
