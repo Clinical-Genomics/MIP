@@ -26,7 +26,7 @@ use Readonly;
 
 ##MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use File::Format::Yaml qw{ load_yaml };
+use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Script::Utils qw{ help };
@@ -43,7 +43,7 @@ BEGIN {
         q{IPC::System::Simple},       # MIP
         q{Path::Iterator::Rule},      # MIP
         q{YAML},                      # MIP
-        q{File::Format::Yaml},        # MIP
+        q{MIP::File::Format::Yaml},   # MIP
         q{Log::Log4perl},             # MIP
         q{MIP::Log::MIP_log4perl},    # MIP
         q{List::Util},                # MIP

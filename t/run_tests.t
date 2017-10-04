@@ -243,14 +243,14 @@ sub test_modules {
 
     ##MIPs lib/
     use lib catdir( dirname($Bin), q{lib} );
-    use File::Format::Yaml qw{ load_yaml };
+    use MIP::File::Format::Yaml qw{ load_yaml };
     use YAML;
     my $yaml_file =
       catdir( dirname($Bin), qw{ templates 643594-miptest_pedigree.yaml } );
     ok( -f $yaml_file,
         q{YAML: File=} . $yaml_file . q{ in MIP/templates directory} );
 
-    my $yaml = File::Format::Yaml::load_yaml( { yaml_file => $yaml_file, } );
+    my $yaml = load_yaml( { yaml_file => $yaml_file, } );
 
     # Check that we got something
     ok( defined $yaml, q{YAML: Load File} );

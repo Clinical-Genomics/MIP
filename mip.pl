@@ -43,7 +43,7 @@ use Readonly;
 # Add MIPs internal lib
 use lib catdir( $Bin, q{lib} );
 use MIP::Check::Modules qw{ check_perl_modules };
-use File::Format::Yaml qw{ load_yaml write_yaml };
+use MIP::File::Format::Yaml qw{ load_yaml write_yaml };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
 use MIP::File::Format::Pedigree qw{ create_fam_file };
@@ -74,9 +74,8 @@ BEGIN {
 
     my @modules = (
         qw{ YAML Path::Iterator::Rule
-          List::Util         File::Format::Yaml
-          Log::Log4perl
-          File::Format::Yaml File::Parse::Parse
+          List::Util Log::Log4perl
+          MIP::File::Format::Yaml File::Parse::Parse
           MIP::Log::MIP_log4perl  MIP::Script::Utils }
     );
 

@@ -25,7 +25,7 @@ use List::Util qw{ any };
 use lib catdir( $Bin, q{lib} );
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Language::Shell qw{ create_bash_file };
-use File::Format::Yaml qw{ load_yaml };
+use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help set_default_array_parameters };
 
@@ -36,7 +36,7 @@ BEGIN {
     require MIP::Check::Modules;
 
     my @modules = qw{ Modern::Perl autodie YAML
-      File::Format::Yaml Log::Log4perl
+      MIP::File::Format::Yaml Log::Log4perl
       MIP::Log::MIP_log4perl MIP::Script::Utils
     };
 

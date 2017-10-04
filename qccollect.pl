@@ -27,7 +27,7 @@ use POSIX;
 ##MIPs lib/
 use lib catdir($Bin, "lib");
 use MIP::Check::Modules qw{ check_perl_modules };
-use File::Format::Yaml qw(load_yaml write_yaml);
+use MIP::File::Format::Yaml qw(load_yaml write_yaml);
 use MIP::Log::MIP_log4perl qw(initiate_logger);
 use MIP::Script::Utils qw(help);
 
@@ -40,7 +40,7 @@ BEGIN {
     my @modules = ("Modern::Perl",
 		   "autodie",
 		   "YAML",
-		   "File::Format::Yaml",
+		   "MIP::File::Format::Yaml",
 		   "Log::Log4perl",
 		   "MIP::Log::MIP_log4perl",
 	);
@@ -118,12 +118,12 @@ if (! $regexp_file) {
 ####MAIN
 
 ## Loads a YAML file into an arbitrary hash and returns it
-my %sample_info = File::Format::Yaml::load_yaml({yaml_file => $sample_info_file,
+my %sample_info = load_yaml({yaml_file => $sample_info_file,
 						});
 $log->info("Loaded: ".$sample_info_file, "\n");
 
 ## Loads a YAML file into an arbitrary hash and returns it
-my %regexp = File::Format::Yaml::load_yaml({yaml_file => $regexp_file,
+my %regexp = load_yaml({yaml_file => $regexp_file,
 					   });
 $log->info("Loaded: ".$regexp_file, "\n");
 
@@ -165,7 +165,7 @@ if(! $skip_evaluation) {
 }
 
 ## Writes a YAML hash to file
-File::Format::Yaml::write_yaml({yaml_href => \%qc_data,
+write_yaml({yaml_href => \%qc_data,
 				yaml_file_path_ref => \$outfile,
 			       });
 $log->info("Wrote: ".$outfile, "\n");
@@ -1194,7 +1194,7 @@ sub regexp_to_yaml {
     $regexp{svdb}{version}  = q?perl -nae 'if($_=~/^##SVDB_version=(\S+)/) { print $1; last; } else { if($_=~/#CHROM/) { last;} }' ?;
 
     ## Writes a YAML hash to file
-    File::Format::Yaml::write_yaml({yaml_href => \%regexp,
+    write_yaml({yaml_href => \%regexp,
 				    yaml_file_path_ref => \$print_regexp_outfile,
 				   });
     
