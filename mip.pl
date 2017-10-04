@@ -44,7 +44,7 @@ use Readonly;
 use lib catdir( $Bin, q{lib} );
 use MIP::Check::Modules qw{ check_perl_modules };
 use File::Format::Yaml qw{ load_yaml write_yaml };
-use MIP_log::Log4perl qw{ initiate_logger };
+use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
 use MIP::File::Format::Pedigree qw{ create_fam_file };
 use MIP::Check::Cluster qw{ check_max_core_number };
@@ -77,7 +77,7 @@ BEGIN {
           List::Util         File::Format::Yaml
           Log::Log4perl
           File::Format::Yaml File::Parse::Parse
-          MIP_log::Log4perl  MIP::Script::Utils }
+          MIP::Log::MIP_log4perl  MIP::Script::Utils }
     );
 
     ## Evaluate that all modules required are installed
@@ -650,13 +650,13 @@ foreach my $order_parameter_element (@order_parameters) {
         $parameter{qccollect_sampleinfo_file}{default} =
           $parameter{sample_info_file}{default};
     }
-    if ( $order_parameter_element eq 'log_file' ) {
+    if ( $order_parameter_element eq q{log_file} ) {
 
         ## Creates log object
         my $log = initiate_logger(
             {
-                file_path_ref => \$active_parameter{log_file},
-                log_name      => 'MIP',
+                file_path => $active_parameter{log_file},
+                log_name      => q{MIP},
             }
         );
     }
