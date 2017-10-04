@@ -43,6 +43,7 @@ use Readonly;
 # Add MIPs internal lib
 use lib catdir( $Bin, q{lib} );
 use MIP::Check::Modules qw{ check_perl_modules };
+use MIP::Check::Reference qw{ check_references_for_vt };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
@@ -55,16 +56,17 @@ use MIP::Delete::List qw{ delete_non_wes_contig delete_male_contig };
 use MIP::Update::Contigs qw{ update_contigs_for_run };
 
 ##Recipes
-use MIP::Recipes::Split_fastq_file qw{ analysis_split_fastq_file };
-use MIP::Recipes::Gzip_fastq qw{ analysis_gzip_fastq };
-use MIP::Recipes::Fastqc qw{ analysis_fastqc };
 use MIP::Recipes::Bwa_mem qw{ analysis_bwa_mem };
-use MIP::Recipes::Picardtools_mergesamfiles
-  qw{ analysis_picardtools_mergesamfiles analysis_picardtools_mergesamfiles_rio };
+use MIP::Recipes::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
+use MIP::Recipes::Fastqc qw{ analysis_fastqc };
+use MIP::Recipes::Gzip_fastq qw{ analysis_gzip_fastq };
 use MIP::Recipes::Markduplicates
   qw{ analysis_markduplicates analysis_markduplicates_rio };
-use MIP::Recipes::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
+use MIP::Recipes::Picardtools_mergesamfiles
+  qw{ analysis_picardtools_mergesamfiles analysis_picardtools_mergesamfiles_rio };
+use MIP::Recipes::Split_fastq_file qw{ analysis_split_fastq_file };
 use MIP::Recipes::Vep qw{ analysis_vep analysis_vep_rio analysis_vep_sv };
+use MIP::Recipes::Vt_core qw{ analysis_vt_core analysis_vt_core_rio};
 
 our $USAGE = build_usage( {} );
 
@@ -1134,19 +1136,43 @@ if ( $active_parameter{dry_run_all} == 0 ) {
 }
 
 ## Check if vt has processed references, if not try to reprocesses them before launcing modules
-check_vt_for_references(
-    {
-        parameter_href          => \%parameter,
-        active_parameter_href   => \%active_parameter,
-        sample_info_href        => \%sample_info,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        job_id_href             => \%job_id,
-        vt_references_ref =>
-          \@{ $active_parameter{decompose_normalize_references} },
-        vt_decompose => $active_parameter{vt_decompose},
-        vt_normalize => $active_parameter{vt_normalize},
+if (   $active_parameter{vt_decompose}
+    || $active_parameter{vt_normalize} )
+{
+
+    my @to_process_references = check_references_for_vt(
+        {
+            parameter_href          => \%parameter,
+            active_parameter_href   => \%active_parameter,
+            sample_info_href        => \%sample_info,
+            infile_lane_prefix_href => \%infile_lane_prefix,
+            job_id_href             => \%job_id,
+            vt_references_ref =>
+              \@{ $active_parameter{decompose_normalize_references} },
+        }
+    );
+
+  REFERENCE:
+    foreach my $reference_file_path (@to_process_references) {
+
+        $log->info( q{[VT - Normalize and decompose]},       $NEWLINE );
+        $log->info( $TAB . q{File: } . $reference_file_path, $NEWLINE );
+
+        ## Split multi allelic records into single records and normalize
+        analysis_vt_core(
+            {
+                parameter_href          => \%parameter,
+                active_parameter_href   => \%active_parameter,
+                infile_lane_prefix_href => \%infile_lane_prefix,
+                job_id_href             => \%job_id,
+                infile_path             => $reference_file_path,
+                program_directory       => q{vt},
+                decompose               => 1,
+                normalize               => 1,
+            }
+        );
     }
-);
+}
 
 ## Split of fastq files in batches
 if ( $active_parameter{psplit_fastq_file} > 0 ) {
@@ -8317,14 +8343,11 @@ sub vt {
     {
 
         ## vt - Split multi allelic records into single records and normalize
-        vt_core(
+        analysis_vt_core_rio(
             {
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                FILEHANDLE              => $XARGSFILEHANDLE,
-                infile_path             => $file_path_prefix . "_"
+                active_parameter_href => $active_parameter_href,
+                FILEHANDLE            => $XARGSFILEHANDLE,
+                infile_path           => $file_path_prefix . "_"
                   . $contig
                   . $infile_suffix,
                 outfile_path => $outfile_path_prefix . "_"
@@ -8335,9 +8358,9 @@ sub vt {
                 uniq      => $active_parameter_href->{vt_uniq},
                 gnu_sed   => 1,
                 instream  => 0,
-                cmd_break => ";",
+                cmd_break => q{;},
                 xargs_file_path_prefix => $xargs_file_path_prefix,
-                contig_ref             => \$contig,
+                contig                 => $contig,
             }
         );
 
@@ -9844,7 +9867,9 @@ sub gatk_variantrecalibration {
                 $max_gaussian_level = 4;    #Use hard filtering
             }
         }
-        @resources = uniq(@resources);  #Create distinct set i.e. no duplicates.
+
+        # Create distinct set i.e. no duplicates.
+        @resources = uniq(@resources);
 
         variantrecalibrator(
             {
@@ -26539,819 +26564,6 @@ sub check_vep_directories {
 
 }
 
-sub vt_core {
-
-##vt_core
-
-##Function : Split multi allelic records into single records and normalize
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_prefix_href, $job_id_href, $infile_path, $outfile_path, $family_id, $FILEHANDLE, $core_number, $decompose, $normalize, $uniq, $max_af, $calculate_af, $gnu_sed, $program, $program_directory, $bgzip, $tabix, $instream, $cmd_break, $xargs_file_path_prefix, $contig_ref
-##         : $parameter_href             => Hash with paremters from yaml file {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $infile_path                => Infile path
-##         : $outfile_path               => Outfile path
-##         : $family_id                  => The family ID
-##         : $FILEHANDLE                 => Filehandle to write to
-##         : $core_number                => The number of cores to allocate
-##         : $decompose                  => Vt program decomnpose for splitting multiallelic variants
-##         : $normalize                  => Vt program normalize for normalizing to reference used in analysis
-##         : $uniq                       => Vt program uniq for removing variant duplication that appear later in file
-##         : $max_af                     => MIP script for adding MAX_AF to frequency reference used in analysis
-##         : $calculate_af               => MIP script for adding AF_ to frequency reference used in analysis
-##         : $gnu_sed                    => Sed program for changing vcf #FORMAT field in variant vcfs
-##         : $program                    => Program name
-##         : $program_directory          => Program directory to write to in sbatch script
-##         : $bgzip                      => Compress output from vt using bgzip
-##         : $tabix                      => Index compressed output using tabix
-##         : $instream                   => Data to vt is supplied as a unix pipe
-##         : $cmd_break                  => Command line separator ['"\n\n"'|";"]
-##         : $xargs_file_path_prefix            => The xargs sbatch script file name {OPTIONAL}
-##         : $contig_ref                 => The contig to extract {OPTIONAL, REF}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $human_genome_reference_ref;
-    my $outfile_path;
-    my $core_number;
-    my $decompose;
-    my $normalize;
-    my $uniq;
-    my $max_af;
-    my $calculate_af;
-    my $gnu_sed;
-    my $program;
-    my $program_directory;
-    my $bgzip;
-    my $tabix;
-    my $instream;
-    my $cmd_break;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $infile_path;
-    my $FILEHANDLE;
-    my $contig_ref;
-    my $xargs_file_path_prefix;
-
-    my $tmpl = {
-        parameter_href =>
-          { default => {}, strict_type => 1, store => \$parameter_href },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        job_id_href =>
-          { default => {}, strict_type => 1, store => \$job_id_href },
-        infile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$infile_path
-        },
-        FILEHANDLE => { store => \$FILEHANDLE },
-        xargs_file_path_prefix =>
-          { strict_type => 1, store => \$xargs_file_path_prefix },
-        contig_ref =>
-          { default => \$$, strict_type => 1, store => \$contig_ref },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref
-        },
-        human_genome_reference_ref => {
-            default =>
-              \$arg_href->{active_parameter_href}{human_genome_reference},
-            strict_type => 1,
-            store       => \$human_genome_reference_ref
-        },
-        outfile_path => {
-            default => $arg_href->{infile_path}
-            ,    #Use same path as infile path unless parameter is supplied
-            strict_type => 1,
-            store       => \$outfile_path
-        },
-        core_number => {
-            default     => 1,
-            allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
-            store       => \$core_number
-        },
-        decompose => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$decompose
-        },
-        normalize => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$normalize
-        },
-        uniq => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$uniq
-        },
-        max_af => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$max_af
-        },
-        calculate_af => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$calculate_af
-        },
-        gnu_sed => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$gnu_sed
-        },
-        program => { default => "vt", strict_type => 1, store => \$program },
-        program_directory =>
-          { default => "vt", strict_type => 1, store => \$program_directory },
-        bgzip => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$bgzip
-        },
-        tabix => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$tabix
-        },
-        instream => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$instream
-        },
-        cmd_break =>
-          { default => "\n\n", strict_type => 1, store => \$cmd_break },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::Gnu::Software::Gnu_less qw(gnu_less);
-    use MIP::Gnu::Software::Gnu_sed qw(gnu_sed);
-    use Program::Variantcalling::Mip qw(calculate_af max_af);
-    use MIP::Gnu::Coreutils qw(gnu_mv);
-    use Program::Htslib qw(bgzip tabix);
-    use Program::Variantcalling::Vt qw(decompose normalize vt_uniq);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_no_dependency_add_to_samples);
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    my $file_path;
-    my $program_info_path;
-    my $random_integer =
-      int( rand(10000) );    #Generate a random integer between 0-10,000.
-
-    unless ( defined($FILEHANDLE) ) {    #Run as individual sbatch script
-
-        $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-        ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_path, $program_info_path ) = setup_script(
-            {
-                active_parameter_href => $active_parameter_href,
-                job_id_href           => $job_id_href,
-                FILEHANDLE            => $FILEHANDLE,
-                directory_id          => $$family_id_ref,
-                program_name          => $program,
-                program_directory     => lc($program_directory),
-                core_number           => $core_number,
-                process_time          => 20,
-            }
-        );
-    }
-
-    ## Split multi allelic records into single records and normalize
-    if (   ( $active_parameter_href->{vt_decompose} > 0 )
-        || ( $active_parameter_href->{vt_normalize} > 0 )
-        || ( defined( $active_parameter_href->{vt_genmod_filter_1000g} ) )
-        || ( $active_parameter_href->{psnpeff} > 0 ) )
-    {
-
-        ## Get parameters
-        my $stderrfile_path;
-        my $append_stderr_info;
-        if ( ( defined($xargs_file_path_prefix) ) && ( defined($$contig_ref) ) )
-        {    #Write stderr for xargs process
-
-            $stderrfile_path =
-                $xargs_file_path_prefix . "."
-              . $$contig_ref
-              . ".stderr.txt"
-              ;    #Redirect xargs output to program specific stderr file
-            $append_stderr_info = 1;
-        }
-        if ( !$instream ) {    #Use gnu_less to initate processing
-
-            gnu_less(
-                {
-                    infile_path => $infile_path,
-                    FILEHANDLE  => $FILEHANDLE,
-                }
-            );
-        }
-        if ($gnu_sed)
-        {    #Replace #FORMAT field prior to smart decomposition (variant vcfs)
-
-            print $FILEHANDLE "| ";    #Pipe
-
-            gnu_sed(
-                {
-                    script     => q?'s/ID=AD,Number=./ID=AD,Number=R/'?,
-                    FILEHANDLE => $FILEHANDLE,
-                }
-            );
-        }
-        if ( ( $active_parameter_href->{vt_decompose} > 0 ) && ($decompose) ) {
-
-            print $FILEHANDLE "| ";    #Pipe
-
-            decompose(
-                {
-                    infile_path         => "-",
-                    stderrfile_path     => $stderrfile_path,
-                    FILEHANDLE          => $FILEHANDLE,
-                    smart_decomposition => 1,
-                }
-            );
-        }
-        if ( ( $active_parameter_href->{vt_normalize} > 0 ) && ($normalize) ) {
-
-            print $FILEHANDLE "| ";    #Pipe
-
-            normalize(
-                {
-                    infile_path        => "-",
-                    stderrfile_path    => $stderrfile_path,
-                    append_stderr_info => 1,
-                    referencefile_path => $$human_genome_reference_ref,
-                    no_fail_inconsistent_reference => 1,
-                    FILEHANDLE                     => $FILEHANDLE,
-                }
-            );
-        }
-        if ( ( $active_parameter_href->{vt_uniq} > 0 ) && ($uniq) ) {
-
-            print $FILEHANDLE "| ";    #Pipe
-
-            vt_uniq(
-                {
-                    infile_path        => "-",
-                    stderrfile_path    => $stderrfile_path,
-                    append_stderr_info => $append_stderr_info,
-                    FILEHANDLE         => $FILEHANDLE,
-                }
-            );
-        }
-        if ( ( $active_parameter_href->{psnpeff} > 0 ) && ($calculate_af) )
-        { #$calculate_af should not be set to 1 if reference was not part of snpeff parameter
-
-            print $FILEHANDLE "| ";    #Pipe
-
-            calculate_af(
-                {
-                    infile_path        => "-",
-                    stderrfile_path    => $stderrfile_path,
-                    append_stderr_info => $append_stderr_info,
-                    FILEHANDLE         => $FILEHANDLE,
-                }
-            );
-        }
-        if (   ( exists( $active_parameter_href->{vt_genmod_filter_1000g} ) )
-            && ($max_af) )
-        {
-
-            print $FILEHANDLE "| ";    #Pipe
-
-            max_af(
-                {
-                    infile_path        => "-",
-                    stderrfile_path    => $stderrfile_path,
-                    append_stderr_info => $append_stderr_info,
-                    FILEHANDLE         => $FILEHANDLE,
-                }
-            );
-        }
-        if ( ( -e $infile_path . ".tbi" ) || ($bgzip) )
-        {    #tabix has been/will be used on file, compress again
-
-            print $FILEHANDLE "| ";    #Pipe
-
-            bgzip(
-                {
-                    FILEHANDLE      => $FILEHANDLE,
-                    write_to_stdout => 1,
-                }
-            );
-        }
-        print $FILEHANDLE "> "
-          . $outfile_path
-          . "_splitted_"
-          . $random_integer
-          . " ";    #Temporary outfile
-        print $FILEHANDLE $cmd_break;
-
-        if ( ( -e $infile_path . ".tbi" ) || ($tabix) ) {    #tabix index
-
-            tabix(
-                {
-                    FILEHANDLE  => $FILEHANDLE,
-                    infile_path => $outfile_path
-                      . "_splitted_"
-                      . $random_integer,
-                    force  => 1,
-                    preset => "vcf",
-                }
-            );
-            print $FILEHANDLE $cmd_break;
-
-            ## Move index in place
-            gnu_mv(
-                {
-                    infile_path => $outfile_path
-                      . "_splitted_"
-                      . $random_integer . ".tbi",
-                    outfile_path => $outfile_path . ".tbi",
-                    FILEHANDLE   => $FILEHANDLE,
-                }
-            );
-            print $FILEHANDLE $cmd_break;
-        }
-
-        ## Move processed reference to original place
-        gnu_mv(
-            {
-                infile_path  => $outfile_path . "_splitted_" . $random_integer,
-                outfile_path => $outfile_path,
-                FILEHANDLE   => $FILEHANDLE,
-            }
-        );
-        print $FILEHANDLE $cmd_break;
-    }
-
-    unless ( $arg_href->{FILEHANDLE} )
-    {    #Unless FILEHANDLE was supplied close it and submit
-
-        close($FILEHANDLE);
-
-        if (   ( $active_parameter_href->{ "p" . $program } == 1 )
-            && ( !$active_parameter_href->{dry_run_all} ) )
-        {
-
-            my $slurm_path = $parameter_href->{ "p" . $program }{chain};
-
-            slurm_submit_job_no_dependency_add_to_samples(
-                {
-                    job_id_href => $job_id_href,
-                    sample_ids_ref =>
-                      \@{ $active_parameter_href->{sample_ids} },
-                    family_id        => $$family_id_ref,
-                    path             => $slurm_path,
-                    sbatch_file_name => $file_path,
-                    log              => $log,
-                }
-            );
-        }
-    }
-}
-
-sub check_vt_for_references {
-
-##check_vt_for_references
-
-##Function : Check if vt has processed references
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_prefix_href, $job_id_href, $vt_references_ref
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $vt_references_ref          => The references to check with vt {REF}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $vt_decompose;
-    my $vt_normalize;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $vt_references_ref;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        vt_references_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$vt_references_ref
-        },
-        vt_decompose => {
-            default     => 0,
-            allow       => [ undef, 0, 1 ],
-            strict_type => 1,
-            store       => \$vt_decompose
-        },
-        vt_normalize => {
-            default     => 0,
-            allow       => [ undef, 0, 1 ],
-            strict_type => 1,
-            store       => \$vt_normalize
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    my %seen;    #Avoid checking the same reference multiple times
-
-    if ( ($vt_decompose) || ($vt_normalize) ) {
-
-        foreach my $parameter_name (@$vt_references_ref) {
-
-            if ( $parameter_href->{$parameter_name}{data_type} eq "SCALAR" ) {
-
-                my $annotation_file =
-                  catfile( $active_parameter{$parameter_name} );
-
-                if ($annotation_file) {
-
-                    unless ( exists( $seen{$annotation_file} ) ) {
-
-                        ## Check if vt has processed references using regexp
-                        check_vt(
-                            {
-                                parameter_href        => $parameter_href,
-                                active_parameter_href => $active_parameter_href,
-                                sample_info_href      => $sample_info_href,
-                                infile_lane_prefix_href =>
-                                  $infile_lane_prefix_href,
-                                job_id_href         => $job_id_href,
-                                reference_file_path => $annotation_file,
-                                parameter_name      => $parameter_name,
-                            }
-                        );
-                    }
-                    $seen{$annotation_file} = undef;
-                }
-            }
-            elsif ( $parameter_href->{$parameter_name}{data_type} eq "ARRAY" )
-            {    #ARRAY reference
-
-                foreach my $annotation_file (
-                    @{ $active_parameter_href->{$parameter_name} } )
-                {
-
-                    unless ( exists( $seen{$annotation_file} ) ) {
-
-                        ## Check if vt has processed references using regexp
-                        check_vt(
-                            {
-                                parameter_href        => $parameter_href,
-                                active_parameter_href => $active_parameter_href,
-                                sample_info_href      => $sample_info_href,
-                                infile_lane_prefix_href =>
-                                  $infile_lane_prefix_href,
-                                job_id_href         => $job_id_href,
-                                reference_file_path => $annotation_file,
-                                parameter_name      => $parameter_name,
-                            }
-                        );
-                    }
-                    $seen{$annotation_file} = undef;
-                }
-            }
-            elsif ( $parameter_href->{$parameter_name}{data_type} eq "HASH" )
-            {    #Hash reference
-
-                for my $annotation_file (
-                    keys $active_parameter_href->{$parameter_name} )
-                {
-
-                    unless ( exists( $seen{$annotation_file} ) ) {
-
-                        ## Check if vt has processed references using regexp
-                        check_vt(
-                            {
-                                parameter_href        => $parameter_href,
-                                active_parameter_href => $active_parameter_href,
-                                sample_info_href      => $sample_info_href,
-                                infile_lane_prefix_href =>
-                                  $infile_lane_prefix_href,
-                                job_id_href         => $job_id_href,
-                                reference_file_path => $annotation_file,
-                                parameter_name      => $parameter_name,
-                            }
-                        );
-                    }
-                    $seen{$annotation_file} = undef;
-                }
-            }
-        }
-    }
-}
-
-sub check_vt {
-
-##check_vt
-
-##Function : Check if vt has processed references using regexp
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_prefix_href, $job_id_href, $reference_file_path, $parameter_name
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $reference_file_path        => The reference file path
-##         : $parameter_name             => The MIP parameter_name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $reference_file_path;
-    my $parameter_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        job_id_href =>
-          { default => {}, strict_type => 1, store => \$job_id_href },
-        reference_file_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$reference_file_path
-        },
-        parameter_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$parameter_name
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    my %vt_regexp;
-
-    $vt_regexp{decompose}{vt_decompose}{vcf_key}       = "OLD_MULTIALLELIC";
-    $vt_regexp{normalize}{vt_normalize}{vcf_key}       = "OLD_VARIANT";
-    $vt_regexp{max_af}{vt_genmod_filter}{vcf_key}      = "MAX_AF";
-    $vt_regexp{calulate_af}{vt_genmod_filter}{vcf_key} = "calculateAF";
-
-    $vt_regexp{decompose}{vt_decompose}{switch}       = 0;
-    $vt_regexp{normalize}{vt_normalize}{switch}       = 0;
-    $vt_regexp{max_af}{vt_genmod_filter}{switch}      = 0;
-    $vt_regexp{calulate_af}{vt_genmod_filter}{switch} = 0;
-
-    my @max_af_references =
-      ( q?ALL.wgs.phase\d+.\S+.vcf?, q?ExAC.r\d+.\d+.sites.vep.vcf? );
-    my @calulate_af_references = (q?ExAC.r\d+.\d+.sites.vep.vcf?);
-
-    if ( -e $reference_file_path )
-    { #Downloaded and vt later (for downloadable references otherwise file existens error is thrown downstream)
-
-        foreach my $vt_program ( keys %vt_regexp ) {
-
-            foreach my $associated_program (
-                @{ $parameter_href->{$parameter_name}{associated_program} } )
-            {
-
-                if ( $active_parameter_href->{$associated_program} > 0 )
-                {    #Active or dry run for associated program
-
-                    foreach
-                      my $vt_parameter_name ( keys $vt_regexp{$vt_program} )
-                    {    #MIP flags
-
-                        my $regexp =
-                            q?perl -nae 'if($_=~/ID\=?
-                          . $vt_regexp{$vt_program}{$vt_parameter_name}{vcf_key}
-                          . q?/) {print $_} if($_=~/#CHROM/) {last}'?;
-                        my $ret = `less $reference_file_path | $regexp`
-                          ;    #Detect if vt program has processed reference
-
-                        unless ($ret) {    #No tracks of vt processing found
-
-                            if (   ( $vt_program eq "decompose" )
-                                || ( $vt_program eq "normalize" ) )
-                            {
-
-                                $vt_regexp{$vt_program}{$vt_parameter_name}
-                                  {switch} = 1;
-                                $log->warn( "Cannot detect that "
-                                      . $vt_program
-                                      . " has processed reference: "
-                                      . $reference_file_path
-                                      . "\n" );
-                            }
-                            if (
-                                ( $vt_program eq "maxAF" )
-                                && (
-                                    any { $reference_file_path =~ /$_/ }
-                                    @max_af_references
-                                )
-                              )
-                            {
-
-                                $vt_regexp{$vt_program}{$vt_parameter_name}
-                                  {switch} = 1;
-                                $log->warn( "Cannot detect that "
-                                      . $vt_program
-                                      . " has processed reference: "
-                                      . $reference_file_path
-                                      . "\n" );
-                            }
-                            if (
-                                ( $vt_program eq "calulate_af" )
-                                && (
-                                    any { $reference_file_path =~ /$_/ }
-                                    @calulate_af_references
-                                )
-                              )
-                            {
-
-                                $vt_regexp{$vt_program}{$vt_parameter_name}
-                                  {switch} = 1;
-                                $log->warn( "Cannot detect that "
-                                      . $vt_program
-                                      . " has processed reference: "
-                                      . $reference_file_path
-                                      . "\n" );
-                            }
-                        }
-                        else {    #Found vt processing track
-
-                            $log->info( "Reference check: "
-                                  . $reference_file_path . " vt:"
-                                  . $vt_program
-                                  . " - PASS\n" );
-                        }
-                    }
-                    last;    #No need to test the same reference over and over
-                }
-            }
-        }
-        foreach my $vt_program ( keys %vt_regexp ) {
-
-            foreach my $vt_parameter_name ( keys $vt_regexp{$vt_program} )
-            {                #MIP flags
-
-                if ( $vt_regexp{$vt_program}{$vt_parameter_name}{switch} ) {
-
-                    ## Split multi allelic records into single records and normalize
-                    vt_core(
-                        {
-                            parameter_href          => $parameter_href,
-                            active_parameter_href   => $active_parameter_href,
-                            sample_info_href        => $sample_info_href,
-                            infile_lane_prefix_href => $infile_lane_prefix_href,
-                            job_id_href             => $job_id_href,
-                            infile_path             => $reference_file_path,
-                            program_directory       => "vt",
-                            decompose =>
-                              $vt_regexp{decompose}{vt_decompose}{switch},
-                            normalize =>
-                              $vt_regexp{normalize}{vt_normalize}{switch},
-                            max_af =>
-                              $vt_regexp{max_af}{vt_genmod_filter}{switch},
-                            calculate_af =>
-                              $vt_regexp{calulate_af}{vt_genmod_filter}{switch},
-                        }
-                    );
-
-                    if (   ( $vt_program eq "decompose" )
-                        || ( $vt_program eq "normalize" ) )
-                    {
-
-                        ## Update switch to avoid modifying same reference twice
-                        $vt_regexp{decompose}{vt_decompose}{switch} = 0;
-                        $vt_regexp{normalize}{vt_normalize}{switch} = 0;
-                    }
-                }
-            }
-        }
-    }
-}
-
 sub remove_redundant_files {
 
 ##remove_redundant_files
@@ -28203,8 +27415,8 @@ sub view_vcf {
         outfile_path_prefix =>
           { strict_type => 1, store => \$outfile_path_prefix },
         output_type => {
-            default     => "v",
-            allow       => [ "b", "u", "z", "v" ],
+            default     => q{v},
+            allow       => [qw{ b u z v }],
             strict_type => 1,
             store       => \$output_type
         },
@@ -28215,8 +27427,8 @@ sub view_vcf {
             store       => \$index
         },
         index_type => {
-            default     => "csi",
-            allow       => [ undef, "csi", "tbi" ],
+            default     => q{csi},
+            allow       => [ undef, qw{ csi tbi } ],
             strict_type => 1,
             store       => \$index_type
         },
@@ -28224,23 +27436,24 @@ sub view_vcf {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Program::Variantcalling::Bcftools qw(bcftools_view bcftools_index);
+    use MIP::Program::Variantcalling::Bcftools
+      qw{ bcftools_view bcftools_index };
 
     my $outfile_path;
     my %output_type_ending = (
-        b => ".bcf",
-        u => ".bcf",
-        z => ".vcf.gz",
-        v => ".vcf",
+        b => q{.bcf},
+        u => q{.bcf},
+        z => q{.vcf.gz},
+        v => q{.vcf},
     );
 
-    if ( defined($outfile_path_prefix) ) {
+    if ( defined $outfile_path_prefix ) {
 
         $outfile_path =
           $outfile_path_prefix . $output_type_ending{$output_type};
     }
 
-    say $FILEHANDLE "## Reformat variant calling file";
+    say $FILEHANDLE q{## Reformat variant calling file};
     bcftools_view(
         {
             infile_path  => $infile_path,
@@ -28253,7 +27466,7 @@ sub view_vcf {
 
     if ($index) {
 
-        say $FILEHANDLE "## Index";
+        say $FILEHANDLE q{## Index};
         bcftools_index(
             {
                 infile_path => $outfile_path,
@@ -28263,6 +27476,7 @@ sub view_vcf {
         );
         say $FILEHANDLE "\n";
     }
+    return;
 }
 
 sub check_aligner {
