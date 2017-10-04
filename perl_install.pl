@@ -20,7 +20,7 @@ use FindBin qw{ $Bin };
 
 ## Local modules
 use lib catdir( $Bin, q{lib} );
-use Script::Utils_v5_10 qw{ help set_default_array_parameters };
+use MIP::Script::Utils_v5_10 qw{ help set_default_array_parameters };
 use MIP::Program::Download::Wget_v5_10 qw{ wget };
 use MIP::Package_manager::Cpanm_v5_10 qw{ cpanm_install_module };
 
