@@ -263,12 +263,12 @@ sub test_modules {
     ok( -f $log_file,
         q{Log::Log4perl: File=} . $log_file . q{ in MIP directory} );
 
-    use MIP_log::Log4perl qw{ initiate_logger };
+    use MIP::Log::MIP_log4perl qw{ initiate_logger };
     ## Creates log object
-    my $log = MIP_log::Log4perl::initiate_logger(
+    my $log = initiate_logger(
         {
             categories_ref => [qw{ TRACE ScreenApp }],
-            file_path_ref  => \$log_file,
+            file_path  => $log_file,
             log_name       => q{Run_tests},
         }
     );

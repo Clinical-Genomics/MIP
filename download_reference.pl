@@ -26,7 +26,7 @@ use lib catdir( $Bin, q{lib} );
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Language::Shell qw{ create_bash_file };
 use File::Format::Yaml qw{ load_yaml };
-use MIP_log::Log4perl qw{ initiate_logger };
+use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help set_default_array_parameters };
 
 our $USAGE;
@@ -37,7 +37,7 @@ BEGIN {
 
     my @modules = qw{ Modern::Perl autodie YAML
       File::Format::Yaml Log::Log4perl
-      MIP_log::Log4perl MIP::Script::Utils
+      MIP::Log::MIP_log4perl MIP::Script::Utils
     };
 
     ## Evaluate that all modules required are installed
@@ -102,12 +102,13 @@ GetOptions(
   );
 
 ## Creates log object
-my $log = MIP_log::Log4perl::initiate_logger(
+my $log = initiate_logger(
     {
-        file_path_ref => \$parameter{log_file},
-        log_name      => 'Download_reference',
+        file_path => $parameter{log_file},
+        log_name  => q{Download_reference},
     }
 );
+
 check_user_reference(
     {
         cmd_reference_ref => \%{ $parameter{cmd_reference} },

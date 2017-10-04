@@ -22,7 +22,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), 'lib' );
 use MIP::Script::Utils qw{ help };
-use MIP_log::Log4perl qw{ initiate_logger };
+use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 our $USAGE = build_usage( {} );
@@ -134,7 +134,7 @@ $active_parameter_test_hash{log_file} = $test_log_path;
 
 my $test_log = initiate_logger(
     {
-        file_path_ref => \$active_parameter_test_hash{log_file},
+        file_path => $active_parameter_test_hash{log_file},
         log_name      => q{MIP},
     }
 );

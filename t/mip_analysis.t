@@ -27,7 +27,7 @@ use Readonly;
 ##MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use File::Format::Yaml qw{ load_yaml };
-use MIP_log::Log4perl qw{ initiate_logger };
+use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Script::Utils qw{ help };
 
@@ -45,7 +45,7 @@ BEGIN {
         q{YAML},                      # MIP
         q{File::Format::Yaml},        # MIP
         q{Log::Log4perl},             # MIP
-        q{MIP_log::Log4perl},         # MIP
+        q{MIP::Log::MIP_log4perl},    # MIP
         q{List::Util},                # MIP
         q{Readonly},                  # MIP
         q{Try::Tiny},                 # MIP
@@ -306,7 +306,7 @@ sub test_modules {
     my $log = initiate_logger(
         {
             categories_ref => [qw{ TRACE ScreenApp }],
-            file_path_ref  => \$log_file,
+            file_path  => $log_file,
             log_name       => q{Test},
         }
     );
