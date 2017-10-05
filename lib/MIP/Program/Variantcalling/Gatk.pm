@@ -215,6 +215,14 @@ sub gatk_genotypegvcfs {
         }
       );
 
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+
     return @commands;
 
 }
@@ -402,6 +410,14 @@ sub gatk_selectvariants {
         push @commands, q{--out} . $SPACE . $outfile_path;
     }
 
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+
     push @commands,
       unix_standard_streams(
         {
@@ -573,6 +589,14 @@ sub gatk_catvariants {
             stderrfile_path => $stderrfile_path,
         }
       );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
 
     return @commands;
 
@@ -872,6 +896,14 @@ sub gatk_variantrecalibrator {
         }
       );
 
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+
     return @commands;
 
 }
@@ -1140,6 +1172,14 @@ sub gatk_applyrecalibration {
         }
       );
 
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+
     return @commands;
 
 }
@@ -1307,6 +1347,14 @@ sub gatk_calculategenotypeposteriors {
             stderrfile_path => $stderrfile_path,
         }
       );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
 
     return @commands;
 
@@ -1503,6 +1551,14 @@ sub gatk_combinevariants {
         }
       );
 
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+
     return @commands;
 
 }
@@ -1680,6 +1736,14 @@ sub gatk_varianteval {
         }
       );
 
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+
     return @commands;
 
 }
@@ -1851,6 +1915,14 @@ sub gatk_leftalignandtrimvariants {
             stderrfile_path => $stderrfile_path,
         }
       );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
 
     return @commands;
 
