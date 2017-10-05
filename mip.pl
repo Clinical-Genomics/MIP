@@ -1142,11 +1142,8 @@ if (   $active_parameter{vt_decompose}
 
     my @to_process_references = check_references_for_vt(
         {
-            parameter_href          => \%parameter,
-            active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
+            parameter_href        => \%parameter,
+            active_parameter_href => \%active_parameter,
             vt_references_ref =>
               \@{ $active_parameter{decompose_normalize_references} },
         }

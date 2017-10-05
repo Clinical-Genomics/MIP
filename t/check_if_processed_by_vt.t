@@ -13,19 +13,23 @@ use Params::Check qw{ check allow last_error };
 
 use FindBin qw{ $Bin };
 use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use Getopt::Long;
 use Test::More;
+use File::Temp;
+
+## CPANM
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Script::Utils qw{ help };
+use MIP::Log::MIP_log4perl qw{ initiate_logger };
 
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.0;
+our $VERSION = '1.0.0';
 
 ## Constants
 Readonly my $SPACE   => q{ };
@@ -79,7 +83,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::PATH::TO::MODULE});
+    my @modules = (q{MIP::Check::Reference});
 
   MODULE:
     for my $module (@modules) {
@@ -87,11 +91,10 @@ BEGIN {
     }
 }
 
-use MIP::PATH::TO::MODULE qw{ SUB_ROUTINE };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Check::Reference qw{ check_if_processed_by_vt };
 
-diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
-      . $MIP::PATH::TO::MODULE::VERSION
+diag(   q{Test check_if_processed_by_vt from Reference.pm v}
+      . $MIP::Check::Reference::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -99,74 +102,40 @@ diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Base arguments
-my $function_base_command = q{BASE_COMMAND};
-
-my %base_argument = (
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
-    },
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
-    },
-    stderrfile_path_append => {
-        input           => q{stderrfile.test},
-        expected_output => q{2>> stderrfile.test},
-    },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
-    },
+## Create temp logger
+my $test_dir = File::Temp->newdir();
+my $test_log_path = catfile( $test_dir, q{test.log} );
+my $log = initiate_logger(
+    {
+        file_path => $test_log_path,
+        log_name      => q{MIP},
+    }
 );
 
-## Can be duplicated with %base_argument and/or %specific_argument
-## to enable testing of each individual argument
-my %required_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
-    },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
-    },
-);
+my $reference_file_path_vt = catfile( $Bin, qw{ data references GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz });
 
-my %specific_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
-    },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
-    },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
-    },
-);
+my $reference_file_path_no_vt = catfile( $Bin, qw{ data references GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz });
 
-## Coderef - enables generalized use of generate call
-my $module_function_cref = \&SUB_ROUTINE;
+## Check if vt has processed references using regexp
+my @checked_references = check_if_processed_by_vt(
+					       {
+						reference_file_path => $reference_file_path_no_vt,
+						log => $log,
+					       }
+					      );
 
-## Test both base and function specific arguments
-my @arguments = ( \%base_argument, \%specific_argument );
+is(1, scalar @checked_references, q{Detected VT processing is needed});
 
-ARGUMENT_HASH_REF:
-foreach my $argument_href (@arguments) {
-    my @commands = test_function(
-        {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
-        }
-    );
-}
+## Check if vt has processed references using regexp
+@checked_references = check_if_processed_by_vt(
+					       {
+						reference_file_path => $reference_file_path_vt,
+						log => $log,
+					       }
+					      );
+
+is(0, scalar @checked_references, q{Detected VT processing});
+
 
 done_testing();
 
@@ -181,7 +150,7 @@ sub build_usage {
 ## Function  : Build the USAGE instructions
 ## Returns   : ""
 ## Arguments : $program_name
-##           : $program_name => Name of the script
+##          : $program_name => Name of the script
 
     my ($arg_href) = @_;
 

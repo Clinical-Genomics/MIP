@@ -25,7 +25,7 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ check_references_for_vt check_if_processed_vt };
+    our @EXPORT_OK = qw{ check_references_for_vt check_if_processed_by_vt };
 }
 
 ## Constants
@@ -38,22 +38,16 @@ sub check_references_for_vt {
 
 ##Function : Check if vt has processed references
 ##Returns  : @to_process_references
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_prefix_href, $job_id_href, $vt_references_ref
-##         : $parameter_href          => Parameter hash {REF}
-##         : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##         : $sample_info_href        => Info on samples and family hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href             => Job id hash {REF}
-##         : $vt_references_ref       => The references to check with vt {REF}
+##Arguments: $parameter_href, $active_parameter_href, $vt_references_ref
+##         : $parameter_href        => Parameter hash {REF}
+##         : $active_parameter_href => Active parameters for this analysis hash {REF}
+##         : $vt_references_ref     => The references to check with vt {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
     my $vt_references_ref;
 
     my $tmpl = {
@@ -70,27 +64,6 @@ sub check_references_for_vt {
             default     => {},
             strict_type => 1,
             store       => \$active_parameter_href
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
         },
         vt_references_ref => {
             required    => 1,
@@ -117,152 +90,115 @@ sub check_references_for_vt {
   PARAMETER_NAME:
     foreach my $parameter_name ( @{$vt_references_ref} ) {
 
-        if ( $parameter_href->{$parameter_name}{data_type} eq q{SCALAR} ) {
+      ASSOCIATED_PROGRAM:
+        foreach my $associated_program (
+            @{ $parameter_href->{$parameter_name}{associated_program} } )
+        {
 
-            my $annotation_file = $active_parameter_href->{$parameter_name};
+            ## Alias
+            my $active_associated_program =
+              $active_parameter_href->{$associated_program};
 
-            if ($annotation_file) {
+            next ASSOCIATED_PROGRAM if ( not $active_associated_program );
+
+            ## If SCALAR data type
+            if ( $parameter_href->{$parameter_name}{data_type} eq q{SCALAR} ) {
+
+                my $annotation_file = $active_parameter_href->{$parameter_name};
 
                 if ( not exists $seen{$annotation_file} ) {
 
                     ## Check if vt has processed references using regexp
-                    @checked_references = check_if_processed_vt(
+                    @checked_references = check_if_processed_by_vt(
                         {
-                            parameter_href          => $parameter_href,
-                            active_parameter_href   => $active_parameter_href,
-                            infile_lane_prefix_href => $infile_lane_prefix_href,
-                            job_id_href             => $job_id_href,
-                            reference_file_path     => $annotation_file,
-                            parameter_name          => $parameter_name,
+                            reference_file_path => $annotation_file,
+                            log                 => $log,
                         }
                     );
                     push @to_process_references, @checked_references;
                 }
                 $seen{$annotation_file} = undef;
             }
-        }
-        elsif ( $parameter_href->{$parameter_name}{data_type} eq q{ARRAY} ) {
-            ## ARRAY reference
-
-          ANNOTION_FILE:
-            foreach my $annotation_file (
-                @{ $active_parameter_href->{$parameter_name} } )
+            elsif ( $parameter_href->{$parameter_name}{data_type} eq q{ARRAY} )
             {
+                ## ARRAY reference
 
-                if ( not exists $seen{$annotation_file} ) {
+              ANNOTION_FILE:
+                foreach my $annotation_file (
+                    @{ $active_parameter_href->{$parameter_name} } )
+                {
 
-                    ## Check if vt has processed references using regexp
-                    @checked_references = check_if_processed_vt(
-                        {
-                            parameter_href          => $parameter_href,
-                            active_parameter_href   => $active_parameter_href,
-                            infile_lane_prefix_href => $infile_lane_prefix_href,
-                            job_id_href             => $job_id_href,
-                            reference_file_path     => $annotation_file,
-                            parameter_name          => $parameter_name,
-                        }
-                    );
+                    if ( not exists $seen{$annotation_file} ) {
+
+                        ## Check if vt has processed references using regexp
+                        @checked_references = check_if_processed_by_vt(
+                            {
+                                reference_file_path => $annotation_file,
+                                log                 => $log,
+                            }
+                        );
+                    }
+                    push @to_process_references, @checked_references;
+                    $seen{$annotation_file} = undef;
                 }
-                push @to_process_references, @checked_references;
-                $seen{$annotation_file} = undef;
             }
-        }
-        elsif ( $parameter_href->{$parameter_name}{data_type} eq q{HASH} ) {
-            ## Hash reference
+            elsif ( $parameter_href->{$parameter_name}{data_type} eq q{HASH} ) {
+                ## Hash reference
 
-          ANNOTATION_FILE:
-            for my $annotation_file (
-                keys $active_parameter_href->{$parameter_name} )
-            {
+              ANNOTATION_FILE:
+                for my $annotation_file (
+                    keys $active_parameter_href->{$parameter_name} )
+                {
 
-                if ( not exists $seen{$annotation_file} ) {
+                    if ( not exists $seen{$annotation_file} ) {
 
-                    ## Check if vt has processed references using regexp
-                    @checked_references = check_if_processed_vt(
-                        {
-                            parameter_href          => $parameter_href,
-                            active_parameter_href   => $active_parameter_href,
-                            infile_lane_prefix_href => $infile_lane_prefix_href,
-                            job_id_href             => $job_id_href,
-                            reference_file_path     => $annotation_file,
-                            parameter_name          => $parameter_name,
-                        }
-                    );
+                        ## Check if vt has processed references using regexp
+                        @checked_references = check_if_processed_by_vt(
+                            {
+                                reference_file_path => $annotation_file,
+                                log                 => $log,
+                            }
+                        );
+                    }
+                    push @to_process_references, @checked_references;
+                    $seen{$annotation_file} = undef;
                 }
-                push @to_process_references, @checked_references;
-                $seen{$annotation_file} = undef;
             }
         }
     }
     return uniq(@to_process_references);
 }
 
-sub check_if_processed_vt {
+sub check_if_processed_by_vt {
 
-##check_if_processed_vt
+##check_if_processed_by_vt
 
 ##Function : Check if vt has processed references using regexp
 ##Returns  : @process_references
-##Arguments: $parameter_href, $active_parameter_href, $infile_lane_prefix_href, $job_id_href, $reference_file_path, $parameter_name
-##         : $parameter_href          => Parameter hash {REF}
-##         : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href             => Job id hash {REF}
-##         : $reference_file_path     => The reference file path
-##         : $parameter_name          => The MIP parameter_name
-
+##Arguments: $reference_file_path, $log
+##         : $reference_file_path => The reference file path
+##         : $log                 => Log object
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
     my $reference_file_path;
-    my $parameter_name;
+    my $log;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        job_id_href =>
-          { default => {}, strict_type => 1, store => \$job_id_href },
         reference_file_path => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$reference_file_path
         },
-        parameter_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$parameter_name
+        log => {
+            required => 1,
+            defined  => 1,
+            store    => \$log
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my %vt_regexp;
 
@@ -278,55 +214,41 @@ sub check_if_processed_vt {
         return;
     }
 
-  ASSOCIATED_PROGRAM:
-    foreach my $associated_program (
-        @{ $parameter_href->{$parameter_name}{associated_program} } )
-    {
+  VT_PARAMETER_NAME:
+    foreach my $vt_parameter_name ( keys %vt_regexp ) {
+        ## MIP flags
 
-        ## Alias
-        my $active_program = $active_parameter_href->{$associated_program};
+        my $regexp =
+            q?perl -nae 'if($_=~/ID\=?
+          . $vt_regexp{$vt_parameter_name}{vcf_key}
+          . q?/) {print $_} if($_=~/#CHROM/) {last}'?;
 
-        next ASSOCIATED_PROGRAM if ( not $active_program );
+        ## Detect if vt program has processed reference
+        my $ret = `less $reference_file_path | $regexp`;
 
-      VT_PARAMETER_NAME:
-        foreach my $vt_parameter_name ( keys %vt_regexp ) {
-            ## MIP flags
+        ## No trace of vt processing found
+        if ( not $ret ) {
 
-            my $regexp =
-                q?perl -nae 'if($_=~/ID\=?
-              . $vt_regexp{$vt_parameter_name}{vcf_key}
-              . q?/) {print $_} if($_=~/#CHROM/) {last}'?;
-
-            ## Detect if vt program has processed reference
-            my $ret = `less $reference_file_path | $regexp`;
-
-            ## No trace of vt processing found
-            if ( not $ret ) {
-
-                ## Add reference for downstream processing
-                push @to_process_references, $reference_file_path;
-                $log->warn( q{Cannot detect that }
-                      . $vt_parameter_name
-                      . q{ has processed reference: }
-                      . $reference_file_path
-                      . $NEWLINE );
-            }
-            else {
-                ## Found vt processing trace
-
-                $log->info( q{Reference check: }
-                      . $reference_file_path
-                      . q{ vt: }
-                      . $vt_parameter_name
-                      . q{ - PASS}
-                      . $NEWLINE );
-            }
+            ## Add reference for downstream processing
+            push @to_process_references, $reference_file_path;
+            $log->warn( q{Cannot detect that }
+                  . $vt_parameter_name
+                  . q{ has processed reference: }
+                  . $reference_file_path
+                  . $NEWLINE );
         }
+        else {
+            ## Found vt processing trace
 
-        ## No need to test the same reference over and over
-        last ASSOCIATED_PROGRAM;
+            $log->info( q{Reference check: }
+                  . $reference_file_path
+                  . q{ vt: }
+                  . $vt_parameter_name
+                  . q{ - PASS}
+                  . $NEWLINE );
+        }
     }
-    return @to_process_references;
+    return uniq(@to_process_references);
 }
 
 1;
