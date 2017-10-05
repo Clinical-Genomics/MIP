@@ -57,14 +57,21 @@ use MIP::Update::Contigs qw{ update_contigs_for_run };
 
 ##Recipes
 use MIP::Recipes::Bwa_mem qw{ analysis_bwa_mem };
+use MIP::Recipes::Bedtools_genomecov qw{ analysis_bedtools_genomecov };
 use MIP::Recipes::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
 use MIP::Recipes::Fastqc qw{ analysis_fastqc };
 use MIP::Recipes::Gzip_fastq qw{ analysis_gzip_fastq };
+use MIP::Recipes::Manta qw{ analysis_manta };
 use MIP::Recipes::Markduplicates
   qw{ analysis_markduplicates analysis_markduplicates_rio };
+use MIP::Recipes::Picardtools_collecthsmetrics
+  qw{ analysis_picardtools_collecthsmetrics };
 use MIP::Recipes::Picardtools_mergesamfiles
   qw{ analysis_picardtools_mergesamfiles analysis_picardtools_mergesamfiles_rio };
+use MIP::Recipes::Sambamba_depth qw{ analysis_sambamba_depth };
 use MIP::Recipes::Split_fastq_file qw{ analysis_split_fastq_file };
+use MIP::Recipes::Tiddit qw{ analysis_tiddit };
+use MIP::Recipes::Variant_integrity qw{ analysis_variant_integrity };
 use MIP::Recipes::Vep qw{ analysis_vep analysis_vep_rio analysis_vep_sv };
 use MIP::Recipes::Vt_core qw{ analysis_vt_core analysis_vt_core_rio};
 
@@ -1555,8 +1562,6 @@ if ( $active_parameter{psambamba_depth} > 0 ) {
 
     $log->info( q{[Sambamba depth]} . $NEWLINE );
 
-    use MIP::Recipes::Sambamba_depth qw{ analysis_sambamba_depth };
-
     my $program_name = lc q{sambamba_depth};
 
   SAMPLE_ID:
@@ -1590,8 +1595,6 @@ if ( $active_parameter{psambamba_depth} > 0 ) {
 if ( $active_parameter{pbedtools_genomecov} > 0 ) {
 
     $log->info( q{[Bedtools genomecov]} . $NEWLINE );
-
-    use MIP::Recipes::Bedtools_genomecov qw{ analysis_bedtools_genomecov };
 
     my $program_name = lc q{bedtools_genomecov};
 
@@ -1690,7 +1693,16 @@ if ( $active_parameter{ppicardtools_collecthsmetrics} > 0 )
     }
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
-        mpicardtools_collecthsmetrics(
+        ## Assign directories
+        my $insample_directory = catdir( $active_parameter{outdata_dir},
+            $sample_id, $active_parameter{outaligner_dir} );
+        my $outsample_directory = catdir(
+            $active_parameter{outdata_dir},    $sample_id,
+            $active_parameter{outaligner_dir}, q{coveragereport}
+        );
+        my $program_name = lc q{picardtools_collecthsmetrics};
+
+        analysis_picardtools_collecthsmetrics(
             {
                 parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
@@ -1698,8 +1710,10 @@ if ( $active_parameter{ppicardtools_collecthsmetrics} > 0 )
                 file_info_href          => \%file_info,
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
-                sample_id_ref           => \$sample_id,
-                program_name            => "picardtools_collecthsmetrics",
+                sample_id               => $sample_id,
+                insample_directory      => $insample_directory,
+                outsample_directory     => $outsample_directory,
+                program_name            => $program_name,
             }
         );
     }
@@ -1850,8 +1864,6 @@ if ( $active_parameter{pmanta} > 0 ) {    #Run Manta
         }
     );
 
-    use MIP::Recipes::Manta qw{ analysis_manta };
-
     analysis_manta(
         {
             parameter_href          => \%parameter,
@@ -1875,8 +1887,6 @@ if ( $active_parameter{ptiddit} > 0 ) {    #Run Tiddit
         $active_parameter{outdata_dir},    $active_parameter{family_id},
         $active_parameter{outaligner_dir}, $program_name,
     );
-
-    use MIP::Recipes::Tiddit qw{ analysis_tiddit };
 
     analysis_tiddit(
         {
@@ -2252,8 +2262,6 @@ if ( $active_parameter{pvariant_integrity} > 0 ) {
         $active_parameter{outaligner_dir},
         q{casecheck}, $program_name
     );
-
-    use MIP::Recipes::Variant_integrity qw{ analysis_variant_integrity };
 
     analysis_variant_integrity(
         {
@@ -11217,13 +11225,17 @@ sub mpicardtools_collecthsmetrics {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Script::Setup_script qw(setup_script);
-    use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
+    use MIP::Get::File
+      qw{get_file_suffix get_merged_infile_prefix get_exom_target_bed_file };
     use MIP::IO::Files qw(migrate_file);
     use MIP::Language::Java qw{java_core};
     use MIP::Program::Alignment::Picardtools qw(picardtools_collecthsmetrics);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_dead_end);
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -11305,11 +11317,12 @@ sub mpicardtools_collecthsmetrics {
     ## Collecthsmetrics
     say $FILEHANDLE "## Calculate capture metrics on alignment";
 
-    ## Get exome_target_bed file for specfic sample_id and add file_ending from file_infoHash if supplied
+    ## Get exome_target_bed file for specfic sample_id and add file_ending from file_info hash if supplied
     my $exome_target_bed_file = get_exom_target_bed_file(
         {
-            active_parameter_href => $active_parameter_href,
-            sample_id_ref         => $sample_id_ref,
+            exome_target_bed_href => $active_parameter_href->{exome_target_bed},
+            sample_id             => $$sample_id_ref,
+            log                   => $log,
         }
     );
 
@@ -16895,7 +16908,8 @@ sub gatk_haplotypecaller {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Set::File qw{set_file_suffix};
-    use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
+    use MIP::Get::File
+      qw{ get_file_suffix get_merged_infile_prefix get_exom_target_bed_file };
     use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use MIP::Recipes::Xargs qw{ xargs_command };
     use Program::Alignment::Gatk qw(haplotypecaller);
@@ -17002,12 +17016,13 @@ sub gatk_haplotypecaller {
         }
     );
 
-    ## Get exome_target_bed file for specfic sample_id and add file_ending from file_infoHash if supplied
+    ## Get exome_target_bed file for specfic sample_id and add file_ending from file_info hash if supplied
     my $exome_target_bed_file = get_exom_target_bed_file(
         {
-            active_parameter_href => $active_parameter_href,
-            sample_id_ref         => $sample_id_ref,
-            file_ending_ref       => \$file_info_href->{exome_target_bed}[2],
+            exome_target_bed_href => $active_parameter_href->{exome_target_bed},
+            sample_id             => $$sample_id_ref,
+            log                   => $log,
+            file_ending           => $file_info_href->{exome_target_bed}[2],
         }
     );
     if (   ( $$analysis_type_ref eq "wes" )
@@ -17310,7 +17325,8 @@ sub gatk_baserecalibration {
 
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
-    use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
+    use MIP::Get::File
+      qw{ get_file_suffix get_merged_infile_prefix get_exom_target_bed_file};
     use MIP::Recipes::Xargs qw{ xargs_command };
     use Program::Alignment::Gatk qw(baserecalibrator printreads);
     use MIP::Delete::File qw{ delete_contig_files };
@@ -17319,6 +17335,9 @@ sub gatk_baserecalibration {
     use MIP::Language::Java qw{java_core};
     use MIP::Processmanagement::Slurm_processes
       qw{slurm_submit_job_sample_id_dependency_add_to_sample};
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -17391,12 +17410,13 @@ sub gatk_baserecalibration {
     ## Alias exome_target_bed endings
     my $infile_list_ending_ref = \$file_info_href->{exome_target_bed}[0];
 
-    ## Get exome_target_bed file for specfic sample_id and add file_ending from file_infoHash if supplied
+    ## Get exome_target_bed file for specfic sample_id and add file_ending from file_info hash if supplied
     my $exome_target_bed_file = get_exom_target_bed_file(
         {
-            active_parameter_href => $active_parameter_href,
-            sample_id_ref         => $sample_id_ref,
-            file_ending_ref       => \$file_info_href->{exome_target_bed}[0],
+            exome_target_bed_href => $active_parameter_href->{exome_target_bed},
+            sample_id             => $$sample_id_ref,
+            log                   => $log,
+            file_ending           => $file_info_href->{exome_target_bed}[0],
         }
     );
     if (   ( $$analysis_type_ref eq "wes" )
@@ -17859,13 +17879,17 @@ sub gatk_realigner {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Script::Setup_script qw(setup_script);
-    use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
+    use MIP::Get::File
+      qw{get_file_suffix get_merged_infile_prefix get_exom_target_bed_file };
     use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use MIP::Recipes::Xargs qw{ xargs_command };
     use Program::Alignment::Gatk qw(realignertargetcreator indelrealigner);
     use MIP::Delete::File qw{ delete_contig_files };
     use MIP::Processmanagement::Slurm_processes
       qw{slurm_submit_job_sample_id_dependency_add_to_sample};
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my $core_number =
       $active_parameter_href->{module_core_number}{ "p" . $program_name };
@@ -17935,12 +17959,13 @@ sub gatk_realigner {
         }
     );
 
-    ## Get exome_target_bed file for specfic sample_id and add file_ending from file_infoHash if supplied
+    ## Get exome_target_bed file for specfic sample_id and add file_ending from file_info hash if supplied
     my $exome_target_bed_file = get_exom_target_bed_file(
         {
-            active_parameter_href => $active_parameter_href,
-            sample_id_ref         => $sample_id_ref,
-            file_ending_ref       => \$file_info_href->{exome_target_bed}[2],
+            exome_target_bed_href => $active_parameter_href->{exome_target_bed},
+            sample_id             => $$sample_id_ref,
+            log                   => $log,
+            file_ending           => $file_info_href->{exome_target_bed}[2],
         }
     );
 
@@ -28111,83 +28136,6 @@ sub check_sample_id_in_parameter {
                 }
             }
         }
-    }
-}
-
-sub get_exom_target_bed_file {
-
-##get_exom_target_bed_file
-
-##Function : Get exome_target_bed file for specfic sample_id and add file_ending from file_infoHash if supplied
-##Returns  : "exome_target_bedFile(file_ending)"
-##Tags     : get, capturekit, sampleids
-##Arguments: $active_parameter_href, $sample_id_ref, $file_ending_ref
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $sample_id_ref         => Sample id {REF}
-##         : $file_ending_ref       => File ending to add to file {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $sample_id_ref;
-    my $file_ending_ref;
-
-    my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        sample_id_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$sample_id_ref
-        },
-        file_ending_ref => { store => \$file_ending_ref },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    my %seen;
-
-    foreach my $exome_target_bed_file (
-        keys $active_parameter_href->{exome_target_bed} )
-    {
-
-        my @capture_kit_samples = split( ",",
-            $active_parameter_href->{exome_target_bed}{$exome_target_bed_file}
-        );
-
-        map { $seen{$_}++ }
-          (@capture_kit_samples); #Count number of times sample_id has been seen
-
-        if ( any { $_ eq $$sample_id_ref } @capture_kit_samples )
-        {    #If capture_kit sample_id is associated with exome_target_bedFile
-
-            if ( defined($$file_ending_ref) ) {
-
-                $exome_target_bed_file .= $$file_ending_ref;
-            }
-            return $exome_target_bed_file;
-        }
-    }
-    if ( !defined( $seen{$$sample_id_ref} ) ) {
-
-        $log->fatal(
-            "Could not detect "
-              . $sample_id_ref
-              . " in '-exome_target_bed' associated files in sub routine get_exom_target_bed_file",
-            "\n"
-        );
-        exit 1;
     }
 }
 

@@ -36,6 +36,7 @@ cpanm_install.t
 fastqc.t
 findutils_xargs.t
 get_merged_infile_prefix.t
+get_exom_target_bed_file.t
 git_clone.t
 git_checkout.t
 gnu_cat.t

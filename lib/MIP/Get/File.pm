@@ -12,6 +12,7 @@ use Params::Check qw{ check allow last_error };
 
 ## CPANM
 use Readonly;
+use List::MoreUtils qw { any };
 
 BEGIN {
     require Exporter;
@@ -21,11 +22,14 @@ BEGIN {
     our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ get_file_suffix get_merged_infile_prefix};
+    our @EXPORT_OK =
+      qw{ get_file_suffix get_merged_infile_prefix get_exom_target_bed_file };
 }
 
 ## Constants
-Readonly my $SPACE => q{ };
+Readonly my $COMMA   => q{,};
+Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => q{ };
 
 sub get_file_suffix {
 
@@ -142,6 +146,92 @@ sub get_merged_infile_prefix {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     return $file_info_href->{$sample_id}{merged_infile};
+}
+
+sub get_exom_target_bed_file {
+
+## get_exom_target_bed_file
+
+## Function : Get exome_target_bed file for specfic sample_id and add file_ending from file_info hash if supplied
+## Returns  : $exome_target_bed_file
+## Arguments: $exome_target_bed_href, $sample_id, $log, $file_ending
+##          : $exome_target_bed_href => Exome target bed files lnked to sample ids
+##          : $sample_id             => Sample id
+##          : $log                   => Log object
+##          : $file_ending           => File ending to add to file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $exome_target_bed_href;
+    my $sample_id;
+    my $log;
+    my $file_ending;
+
+    my $tmpl = {
+        exome_target_bed_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$exome_target_bed_href,
+        },
+        sample_id => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$sample_id
+        },
+        log => {
+            required => 1,
+            defined  => 1,
+            store    => \$log
+        },
+        file_ending => { store => \$file_ending },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## To track sample_ids with capture kits
+    my %seen;
+
+    ## Make local hash copy to keep in scope
+    my %exome_target_bed = %{$exome_target_bed_href};
+
+  BED_FILE:
+    while ( my ( $exome_target_bed_file, $sample_id_string ) =
+        each %exome_target_bed )
+    {
+
+        my @capture_kit_samples = split $COMMA, $sample_id_string;
+
+        ## Count number of times sample_id has been seen
+        foreach my $samples (@capture_kit_samples) {
+
+            $seen{$samples}++;
+        }
+
+        ## If capture_kit sample_id is associated with exome_target_bed file
+        if ( any { $_ eq $sample_id } @capture_kit_samples ) {
+
+            if ( defined $file_ending ) {
+
+                $exome_target_bed_file .= $file_ending;
+            }
+            return $exome_target_bed_file;
+        }
+    }
+    if ( not defined $seen{$sample_id} ) {
+
+        $log->fatal(
+            q{Could not detect }
+              . $sample_id
+              . q{ in '-exome_target_bed' associated files in sub routine get_exom_target_bed_file},
+            $NEWLINE
+        );
+        exit 1;
+    }
+    return;
 }
 
 1;

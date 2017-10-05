@@ -10,7 +10,6 @@ use charnames qw{ :full :short };
 use Carp;
 use English qw{ -no_match_vars };
 use Params::Check qw{ check allow last_error };
-
 use FindBin qw{ $Bin };
 use File::Basename qw{ dirname basename };
 use File::Spec::Functions qw{ catdir catfile };
@@ -28,35 +27,33 @@ use MIP::Log::MIP_log4perl qw{ initiate_logger };
 
 our $USAGE = build_usage( {} );
 
+##Constants
+Readonly my $COMMA      => q{,};
+Readonly my $NEWLINE    => qq{\n};
+Readonly my $SPACE      => q{ };
+Readonly my $UNDERSCORE => q{_};
+
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = q{1.0.0};
 
-## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
-Readonly my $COMMA   => q{,};
-
-### User Options
+###User Options
 GetOptions(
 
     # Display help text
-    q{h|help} => sub {
+    'h|help' => sub {
         done_testing();
         say {*STDOUT} $USAGE;
         exit;
     },
 
     # Display version number
-    q{v|version} => sub {
+    'v|version' => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
+          $NEWLINE;
         exit;
     },
-    q{vb|verbose} => $VERBOSE,
+    'vb|verbose' => $VERBOSE,
   )
   or (
     done_testing(),
@@ -71,7 +68,8 @@ GetOptions(
 BEGIN {
 
 ### Check all internal dependency modules and imports
-## Modules with import
+
+    ## Modules with import
     my %perl_module;
 
     $perl_module{q{MIP::Script::Utils}}     = [qw{ help }];
@@ -80,22 +78,22 @@ BEGIN {
   PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
         use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load} . $SPACE . $module;
+          or BAIL_OUT q{Cannot load } . $module;
     }
 
-## Modules
-    my @modules = (q{MIP::Check::Reference});
+    ## Modules
+    my @modules = (q{MIP::Get::File});
 
   MODULE:
     for my $module (@modules) {
-        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
+        require_ok($module) or BAIL_OUT q{Cannot load } . $module;
     }
 }
 
-use MIP::Check::Reference qw{ check_if_processed_by_vt };
+use MIP::Get::File qw{ get_exom_target_bed_file };
 
-diag(   q{Test check_if_processed_by_vt from Reference.pm v}
-      . $MIP::Check::Reference::VERSION
+diag(   q{Test get_exom_target_bed_file from File.pm v}
+      . $MIP::Get::File::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -113,31 +111,49 @@ my $log           = initiate_logger(
     }
 );
 
-my $reference_file_path_vt =
-  catfile( $Bin, qw{ data references GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz } );
+## Base arguments
+my $sample_1         = q{sample_1};
+my $sample_2         = q{sample_2};
+my $sample_3         = q{sample_3};
+my %exome_target_bed = (
+    q{exome_target_file.bed}   => $sample_1 . $COMMA . $sample_2,
+    q{exome_target_file_2.bed} => $sample_3,
+);
 
-my $reference_file_path_no_vt = catfile( $Bin,
-    qw{ data references GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz } );
-
-## Check if vt has processed references using regexp
-my @checked_references = check_if_processed_by_vt(
+my $exome_target_bed_file = get_exom_target_bed_file(
     {
-        reference_file_path => $reference_file_path_no_vt,
-        log                 => $log,
+        exome_target_bed_href => \%exome_target_bed,
+        sample_id             => $sample_1,
+        log                   => $log,
     }
 );
 
-is( 1, scalar @checked_references, q{Detected VT processing is needed} );
+is( q{exome_target_file.bed}, $exome_target_bed_file,
+    q{Get exom target bed file for sample_1} );
 
-## Check if vt has processed references using regexp
-@checked_references = check_if_processed_by_vt(
+$exome_target_bed_file = get_exom_target_bed_file(
     {
-        reference_file_path => $reference_file_path_vt,
-        log                 => $log,
+        exome_target_bed_href => \%exome_target_bed,
+        sample_id             => $sample_1,
+        log                   => $log,
+        file_ending           => q{.interval_list},
     }
 );
 
-is( 0, scalar @checked_references, q{Detected VT processing} );
+is( q{exome_target_file.bed.interval_list},
+    $exome_target_bed_file,
+    q{Get exom target bed.interval_list file for sample_1} );
+
+$exome_target_bed_file = get_exom_target_bed_file(
+    {
+        exome_target_bed_href => \%exome_target_bed,
+        sample_id             => $sample_3,
+        log                   => $log,
+    }
+);
+
+is( q{exome_target_file_2.bed}, $exome_target_bed_file,
+    q{Get exom target bed file for sample_3} );
 
 done_testing();
 
@@ -147,12 +163,12 @@ done_testing();
 
 sub build_usage {
 
-## build_usage
+##build_usage
 
-## Function  : Build the USAGE instructions
-## Returns   : ""
-## Arguments : $program_name
-##          : $program_name => Name of the script
+##Function : Build the USAGE instructions
+##Returns  : ""
+##Arguments: $program_name
+##         : $program_name => Name of the script
 
     my ($arg_href) = @_;
 
@@ -167,7 +183,7 @@ sub build_usage {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
 
     return <<"END_USAGE";
  $program_name [options]
