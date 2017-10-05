@@ -150,6 +150,14 @@ sub gatk_base {
           @{$intervals_ref};
     }
 
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+    
     return @commands;
 }
 
