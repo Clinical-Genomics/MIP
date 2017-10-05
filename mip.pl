@@ -5650,7 +5650,7 @@ sub gatk_variantevalexome {
     ## GATK SelectVariants
     say $FILEHANDLE "## GATK SelectVariants";
 
-    selectvariants(
+    gatk_selectvariants(
         {
             memory_allocation => "Xmx2g",
             java_use_large_pages =>
