@@ -120,12 +120,15 @@ sub gatk_base {
 
     push @commands, q{--logging_level} . $SPACE . $logging_level;
 
+    push @commands, q{--reference_sequence} . $SPACE . $referencefile_path;
+
     if ($pedigree) {
 
         push @commands, q{--pedigree} . $SPACE . $pedigree;
     }
 
-    if ($pedigree_validation_type) {
+    # GATK CatVariants does not have an analysis_type parameter and doesn't use pedigree_validation_type
+    if ($pedigree_validation_type && $analysis_type) {
 
         push @commands,
           q{--pedigreeValidationType} . $SPACE . $pedigree_validation_type;
