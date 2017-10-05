@@ -186,11 +186,19 @@ sub gatk_genotypegvcfs {
         }
     );
 
+    # Tool-specific options
+
+    if ($include_nonvariant_sites) {
+
+        push @commands, q{--includeNonVariantSites};
+    }
+
     if ($dbsnp_file_path) {
 
         push @commands, q{--dbsnp} . $SPACE . $dbsnp_file_path;
     }
 
+    # Infile
     if ( @{$infile_paths_ref} ) {
 
         push @commands,
@@ -198,14 +206,10 @@ sub gatk_genotypegvcfs {
           @{$infile_paths_ref};
     }
 
+    ## Output
     if ($outfile_path) {
 
         push @commands, q{--out} . $SPACE . $outfile_path;
-    }
-
-    if ($include_nonvariant_sites) {
-
-        push @commands, q{--includeNonVariantSites};
     }
 
     push @commands,
@@ -381,13 +385,7 @@ sub gatk_selectvariants {
         }
     );
 
-    if ( @{$intervals_ref} ) {
-
-        push @commands,
-          q{--intervals} . $SPACE . join $SPACE . q{--intervals} . $SPACE,
-          @{$intervals_ref};
-    }
-
+    ## Tool-specific options
     if ($exclude_nonvariants) {
 
         push @commands, q{--excludeNonVariants};
@@ -400,11 +398,13 @@ sub gatk_selectvariants {
           @{$sample_names_ref};
     }
 
+    ## Infile
     if ($infile_path) {
 
         push @commands, q{--variant} . $SPACE . $infile_path;
     }
 
+    ## Output
     if ($outfile_path) {
 
         push @commands, q{--out} . $SPACE . $outfile_path;
@@ -565,11 +565,13 @@ sub gatk_catvariants {
         }
     );
 
+    ## Tool-specific options
     if ($assume_sorted) {
 
         push @commands, q{--assumeSorted};
     }
 
+    ## Infile
     if ( @{$infile_paths_ref} ) {
 
         push @commands,
@@ -578,6 +580,7 @@ sub gatk_catvariants {
 
     }
 
+    ## Output
     if ($outfile_path) {
 
         push @commands, q{--outputFile} . $SPACE . $outfile_path;
@@ -826,11 +829,6 @@ sub gatk_variantrecalibrator {
           q{--BQSR} . $SPACE . $base_quality_score_recalibration_file;
     }
 
-    if ($recal_file_path) {
-
-        push @commands, q{--recal_file} . $SPACE . $recal_file_path;
-    }
-
     if ($disable_indel_qual) {
 
         push @commands, q{--disable_indel_quals};
@@ -847,19 +845,19 @@ sub gatk_variantrecalibrator {
           . $SPACE, @{$static_quantized_quals_ref};
     }
 
-    if ($tranches_file_path) {
-
-        push @commands, q{--tranches_file} . $SPACE . $tranches_file_path;
-    }
-
-    if ($mode) {
-
-        push @commands, q{--mode} . $SPACE . $mode;
-    }
-
     if ($rscript_file_path) {
 
         push @commands, q{--rscript_file} . $SPACE . $rscript_file_path;
+    }
+
+    if ($recal_file_path) {
+
+        push @commands, q{--recal_file} . $SPACE . $recal_file_path;
+    }
+
+    if ($tranches_file_path) {
+
+        push @commands, q{--tranches_file} . $SPACE . $tranches_file_path;
     }
 
     if ($max_gaussian_level) {
@@ -883,6 +881,12 @@ sub gatk_variantrecalibrator {
           q{--resource:} . join $SPACE . q{--resource:}, @{$resources_ref};
     }
 
+    if ($mode) {
+
+        push @commands, q{--mode} . $SPACE . $mode;
+    }
+
+    ## Infile
     if ( @{$infile_paths_ref} ) {
 
         push @commands, q{--input} . $SPACE . join q{--input_file} . $SPACE,
@@ -1119,11 +1123,6 @@ sub gatk_applyrecalibration {
           q{--BQSR} . $SPACE . $base_quality_score_recalibration_file;
     }
 
-    if ($recal_file_path) {
-
-        push @commands, q{--recal_file} . $SPACE . $recal_file_path;
-    }
-
     if ($disable_indel_qual) {
 
         push @commands, q{--disable_indel_quals};
@@ -1140,6 +1139,16 @@ sub gatk_applyrecalibration {
           . $SPACE, @{$static_quantized_quals_ref};
     }
 
+    if ($ts_filter_level) {
+
+        push @commands, q{--ts_filter_level} . $SPACE . $ts_filter_level;
+    }
+
+    if ($recal_file_path) {
+
+        push @commands, q{--recal_file} . $SPACE . $recal_file_path;
+    }
+
     if ($tranches_file_path) {
 
         push @commands, q{--tranches_file} . $SPACE . $tranches_file_path;
@@ -1150,16 +1159,13 @@ sub gatk_applyrecalibration {
         push @commands, q{--mode} . $SPACE . $mode;
     }
 
-    if ($ts_filter_level) {
-
-        push @commands, q{--ts_filter_level} . $SPACE . $ts_filter_level;
-    }
-
+    ## Infile
     if ($infile_path) {
 
         push @commands, q{--input} . $SPACE . $infile_path;
     }
 
+    ## Output
     if ($outfile_path) {
 
         push @commands, q{--out} . $SPACE . $outfile_path;
@@ -1325,17 +1331,20 @@ sub gatk_calculategenotypeposteriors {
         }
     );
 
+    ## Tool-specific options
     if ($supporting_callset_file_path) {
 
         push @commands,
           q{--supporting} . $SPACE . $supporting_callset_file_path;
     }
 
+    ## Infile
     if ($infile_path) {
 
         push @commands, q{--variant} . $SPACE . $infile_path;
     }
 
+    ## Output
     if ($outfile_path) {
 
         push @commands, q{--out} . $SPACE . $outfile_path;
@@ -1515,6 +1524,7 @@ sub gatk_combinevariants {
         }
     );
 
+    ## Tool-specific options
     if ($exclude_nonvariants) {
 
         push @commands, q{--excludeNonVariants};
@@ -1531,6 +1541,7 @@ sub gatk_combinevariants {
         push @commands, q{--rod_priority_list} . $SPACE . $prioritize_caller;
     }
 
+    ## Infile
     if ( @{$infile_paths_ref} ) {
 
         push @commands,
@@ -1539,6 +1550,7 @@ sub gatk_combinevariants {
 
     }
 
+    ## Output
     if ($outfile_path) {
 
         push @commands, q{--out} . $SPACE . $outfile_path;
@@ -1708,6 +1720,7 @@ sub gatk_varianteval {
         }
     );
 
+    ## Tool specific options
     if ($dbsnp_file_path) {
 
         push @commands, q{--dbsnp} . $SPACE . $dbsnp_file_path;
@@ -1719,12 +1732,14 @@ sub gatk_varianteval {
           q{--goldStandard} . $SPACE . $indel_gold_standard_file_path;
     }
 
+    ## Infile
     if ( @{$infile_paths_ref} ) {
 
         push @commands, q{--eval} . $SPACE . join q{--eval} . $SPACE,
           @{$infile_paths_ref};
     }
 
+    ## Output
     if ($outfile_path) {
         push @commands, q{--out} . $SPACE . $outfile_path;
     }
@@ -1893,17 +1908,20 @@ sub gatk_leftalignandtrimvariants {
         }
     );
 
+    ## Tool-specific options
     if ($split_multiallelics) {
 
         push @commands, q{--splitMultiallelics};
     }
 
+    ## Infile
     if ($infile_path) {
 
         push @commands, q{--variant} . $SPACE . $infile_path;
 
     }
 
+    ## Output
     if ($outfile_path) {
 
         push @commands, q{--out} . $SPACE . $outfile_path;
