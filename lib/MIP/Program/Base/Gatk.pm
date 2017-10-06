@@ -151,7 +151,18 @@ sub gatk_base {
           @{$intervals_ref};
     }
 
-    push @commands, q{--reference_sequence} . $SPACE . $referencefile_path;
+    if ($referencefile_path) {
+
+      if($analysis_type) {
+
+        push @commands, q{--reference_sequence} . $SPACE . $referencefile_path;
+      }
+      else {
+
+        push @commands, q{--reference} . $SPACE . $referencefile_path;
+      }
+    }
+
 
     return @commands;
 }
