@@ -1,56 +1,58 @@
 #!/usr/bin/env perl
 
-#### Copyright 2017 Henrik Stranneheim
-
-use Modern::Perl qw(2014);
-use warnings qw(FATAL utf8);
+use Modern::Perl qw{ 2014 };
+use warnings qw{ FATAL utf8 };
 use autodie;
-use 5.018;    #Require at least perl 5.18
+use 5.018;
 use utf8;
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
+use open qw{ :encoding(UTF-8) :std };
+use charnames qw{ :full :short };
 use Carp;
-use English qw(-no_match_vars);
-use Params::Check qw(check allow last_error);
+use English qw{ -no_match_vars };
+use Params::Check qw{ check allow last_error };
 
 use Cwd;
-use FindBin qw($Bin);    #Find directory of script
-use File::Basename qw(dirname basename);
-use File::Spec::Functions qw(catfile catdir devnull);
+use FindBin qw{ $Bin };
+use File::Basename qw{ dirname basename };
+use File::Spec::Functions qw{ catfile catdir devnull };
 use Getopt::Long;
 use Test::More;
-use IPC::Cmd qw(can_run run);
+use IPC::Cmd qw{ can_run run };
 
-## Third party module(s)
-use List::Util qw(any);
+## CPANM
+use List::Util qw{ any };
 use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
-use MIP::Script::Utils qw(help);
-use MIP::Gnu::Coreutils qw(gnu_mkdir gnu_rm);
+use lib catdir( dirname($Bin), q{lib} );
+use MIP::Script::Utils qw{ help };
+use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_rm };
 
 our $USAGE = build_usage( {} );
 
 ## Constants
+Readonly my $COMMA => q{,};
 Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
+
 my $VERBOSE = 0;
 our $VERSION = '1.0.1';
 
 ###User Options
 GetOptions(
+	   # Display help text
     'h|help' => sub {
         done_testing();
         say {*STDOUT} $USAGE;
         exit;
-    },    #Display help text
+    },
+	   # Display version number
     'v|version' => sub {
         done_testing();
         say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
           $NEWLINE;
         exit;
-    },    #Display version number
+    },
     'vb|verbose' => $VERBOSE,
   )
   or (
@@ -69,31 +71,41 @@ BEGIN {
     ## Modules with import
     my %perl_module;
 
-    $perl_module{'MIP::Script::Utils'}       = [qw(help)];
-    $perl_module{'MIP::Gnu::Coreutils'} = [qw(gnu_mkdir gnu_rm)];
+    $perl_module{q{MIP::Script::Utils}}       = [qw{ help }];
+    $perl_module{q{MIP::Gnu::Coreutils}} = [qw{ gnu_mkdir gnu_rm }];
 
+    PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
 
         use_ok( $module, @{$module_import} )
-          or BAIL_OUT 'Cannot load ' . $module;
+          or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 
     ## Modules
-    my @modules = ('MIP::Language::Shell');
+    my @modules = (q{MIP::Language::Shell});
 
+  MODULE:
     for my $module (@modules) {
 
-        require_ok($module) or BAIL_OUT 'Cannot load ' . $module;
+        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 }
 
 use MIP::Language::Shell
-  qw(build_shebang enable_trap create_error_trap_function);
-use MIP::Gnu::Bash qw(gnu_set);
+  qw{ build_shebang enable_trap create_error_trap_function };
+use MIP::Gnu::Bash qw{ gnu_set };
 
 diag(
 "Test create_error_trap_function $MIP::Language::Shell::VERSION, Perl $^V, $EXECUTABLE_NAME"
 );
+diag(   q{Test create_error_trap_function from Shell.pm v}
+      . $MIP::Language::Shell::VERSION
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+. $EXECUTABLE_NAME );
 
 # Create anonymous filehandle
 my $FILEHANDLE = IO::Handle->new();
@@ -105,7 +117,7 @@ my $bash_file_path = catfile( cwd(), q{test_create_error_trap_function.sh} );
 my $temp_dir = catdir( cwd(), qw(test_dir .test_create_error_trap_function) );
 
 # Open filehandle
-open $FILEHANDLE, '>', $bash_file_path
+open $FILEHANDLE, q{>}, $bash_file_path
   or croak(
     q{Cannot write to '} . $bash_file_path . q{' :} . $OS_ERROR . $NEWLINE );
 

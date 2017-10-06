@@ -70,7 +70,7 @@ BEGIN {
 ## Modules with import
     my %perl_module;
 
-    $perl_module{q{Script::Utils}} = [qw{ help }];
+    $perl_module{q{MIP::Script::Utils}} = [qw{ help }];
 
   PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
