@@ -68,6 +68,7 @@ sub gatk_base {
     my $disable_indel_qual;
     my $static_quantized_quals_ref;
 
+
     my $FILEHANDLE;
 
     ## Default(s)
@@ -111,6 +112,7 @@ sub gatk_base {
             store       => \$disable_indel_qual
         },
         static_quantized_quals_ref => {
+            default     => [],
             strict_type => 1,
             store       => \$static_quantized_quals_ref
         },
@@ -174,21 +176,20 @@ sub gatk_base {
 
     if ($referencefile_path) {
 
-        if ($analysis_type) {
+      if($analysis_type) {
 
-            push @commands,
-              q{--reference_sequence} . $SPACE . $referencefile_path;
-        }
-        else {
+        push @commands, q{--reference_sequence} . $SPACE . $referencefile_path;
+      }
+      else {
 
-            push @commands, q{--reference} . $SPACE . $referencefile_path;
-        }
+        push @commands, q{--reference} . $SPACE . $referencefile_path;
+      }
     }
 
     if ($base_quality_score_recalibration_file) {
 
-        push @commands,
-          q{--BQSR} . $SPACE . $base_quality_score_recalibration_file;
+      push @commands,
+        q{--BQSR} . $SPACE . $base_quality_score_recalibration_file;
     }
 
     if ($disable_indel_qual) {
