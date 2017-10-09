@@ -123,7 +123,7 @@ sub gatk_genotypegvcfs {
         pedigree        => { strict_type => 1, store => \$pedigree },
         dbsnp_file_path => { strict_type => 1, store => \$dbsnp_file_path },
         downsample_to_coverage => {
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /sxm,
             strict_type => 1,
             store       => \$downsample_to_coverage
         },
@@ -323,7 +323,7 @@ sub gatk_selectvariants {
         FILEHANDLE => { store       => \$FILEHANDLE },
         pedigree   => { strict_type => 1, store => \$pedigree },
         downsample_to_coverage => {
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /sxm,
             strict_type => 1,
             store       => \$downsample_to_coverage
         },
@@ -511,7 +511,7 @@ sub gatk_catvariants {
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
         FILEHANDLE             => { store => \$FILEHANDLE },
         downsample_to_coverage => {
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /sxm,
             strict_type => 1,
             store       => \$downsample_to_coverage
         },
@@ -736,17 +736,17 @@ sub gatk_variantrecalibrator {
         tranches_file_path =>
           { strict_type => 1, store => \$tranches_file_path },
         num_cpu_threads_per_data_thread => {
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /sxm,
             strict_type => 1,
             store       => \$num_cpu_threads_per_data_thread
         },
         downsample_to_coverage => {
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /sxm,
             strict_type => 1,
             store       => \$downsample_to_coverage
         },
         max_gaussian_level => {
-            allow       => [ undef, qr/^\d+$/ ],
+            allow       => [ undef, qr/ ^\d+$ /sxm ],
             strict_type => 1,
             store       => \$max_gaussian_level
         },
@@ -804,7 +804,11 @@ sub gatk_variantrecalibrator {
             downsample_to_coverage   => $downsample_to_coverage,
             gatk_disable_auto_index_and_file_lock =>
               $gatk_disable_auto_index_and_file_lock,
-            FILEHANDLE => $FILEHANDLE,
+            base_quality_score_recalibration_file =>
+              $base_quality_score_recalibration_file,
+            disable_indel_qual         => $disable_indel_qual,
+            static_quantized_quals_ref => $static_quantized_quals_ref,
+            FILEHANDLE                 => $FILEHANDLE,
         }
     );
 
@@ -821,17 +825,6 @@ sub gatk_variantrecalibrator {
         push @commands,
           q{--read_filter} . $SPACE . join $SPACE . q{--read_filter} . $SPACE,
           @{$read_filters_ref};
-    }
-
-    if ($base_quality_score_recalibration_file) {
-
-        push @commands,
-          q{--BQSR} . $SPACE . $base_quality_score_recalibration_file;
-    }
-
-    if ($disable_indel_qual) {
-
-        push @commands, q{--disable_indel_quals};
     }
 
     if ( @{$static_quantized_quals_ref} ) {
@@ -942,7 +935,7 @@ sub gatk_applyrecalibration {
 ##          : $disable_indel_qual                    => Disable printing of base insertion and deletion tags (with -BQSR)
 ##          : $logging_level                         => Set the minimum level of logging
 ##          : $pedigree_validation_type              => Validation strictness for pedigree
-##          : $ts_filter_level                       => Rscript file path
+##          : $ts_filter_level                       => Ts filter level
 
     my ($arg_href) = @_;
 
@@ -1029,12 +1022,12 @@ sub gatk_applyrecalibration {
           { strict_type => 1, store => \$tranches_file_path },
         recal_file_path => { strict_type => 1, store => \$recal_file_path },
         num_cpu_threads_per_data_thread => {
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /sxm,
             strict_type => 1,
             store       => \$num_cpu_threads_per_data_thread
         },
         downsample_to_coverage => {
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /sxm,
             strict_type => 1,
             store       => \$downsample_to_coverage
         },
@@ -1098,7 +1091,11 @@ sub gatk_applyrecalibration {
             downsample_to_coverage   => $downsample_to_coverage,
             gatk_disable_auto_index_and_file_lock =>
               $gatk_disable_auto_index_and_file_lock,
-            FILEHANDLE => $FILEHANDLE,
+            base_quality_score_recalibration_file =>
+              $base_quality_score_recalibration_file,
+            disable_indel_qual         => $disable_indel_qual,
+            static_quantized_quals_ref => $static_quantized_quals_ref,
+            FILEHANDLE                 => $FILEHANDLE,
         }
     );
 
@@ -1115,28 +1112,6 @@ sub gatk_applyrecalibration {
         push @commands,
           q{--read_filter} . $SPACE . join $SPACE . q{--read_filter} . $SPACE,
           @{$read_filters_ref};
-    }
-
-    if ($base_quality_score_recalibration_file) {
-
-        push @commands,
-          q{--BQSR} . $SPACE . $base_quality_score_recalibration_file;
-    }
-
-    if ($disable_indel_qual) {
-
-        push @commands, q{--disable_indel_quals};
-    }
-
-    if ( @{$static_quantized_quals_ref} ) {
-
-        push
-          @commands,
-          q{--static_quantized_quals}
-          . $SPACE
-          . join $SPACE
-          . q{--static_quantized_quals}
-          . $SPACE, @{$static_quantized_quals_ref};
     }
 
     if ($ts_filter_level) {
@@ -1275,7 +1250,7 @@ sub gatk_calculategenotypeposteriors {
         supporting_callset_file_path =>
           { strict_type => 1, store => \$supporting_callset_file_path },
         downsample_to_coverage => {
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /sxm,
             strict_type => 1,
             store       => \$downsample_to_coverage
         },
@@ -1455,7 +1430,7 @@ sub gatk_combinevariants {
         pedigree          => { strict_type => 1, store => \$pedigree },
         prioritize_caller => { strict_type => 1, store => \$prioritize_caller },
         downsample_to_coverage => {
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /sxm,
             strict_type => 1,
             store       => \$downsample_to_coverage
         },
@@ -1664,7 +1639,7 @@ sub gatk_varianteval {
         indel_gold_standard_file_path =>
           { strict_type => 1, store => \$indel_gold_standard_file_path },
         downsample_to_coverage => {
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /sxm,
             strict_type => 1,
             store       => \$downsample_to_coverage
         },
@@ -1846,7 +1821,7 @@ sub gatk_leftalignandtrimvariants {
         FILEHANDLE => { store       => \$FILEHANDLE },
         pedigree   => { strict_type => 1, store => \$pedigree },
         downsample_to_coverage => {
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /sxm,
             strict_type => 1,
             store       => \$downsample_to_coverage
         },

@@ -36,9 +36,9 @@ sub gatk_base {
 
 ## pgatk_base
 
-## Function : Perl wrapper for Gatk base. Based on Gatk v?????
+## Function : Perl wrapper for Gatk base. Based on Gatk 3.7
 ## Returns  : @commands
-## Arguments: $commands_ref, $analysis_type, $intervals_ref, $referencefile_path, $pedigree, $pedigree_validation_type, $downsample_to_coverage, $gatk_disable_auto_index_and_file_lock, $logging_level, $FILEHANDLE
+## Arguments: $commands_ref, $analysis_type, $intervals_ref, $referencefile_path, $pedigree, $pedigree_validation_type, $downsample_to_coverage, $gatk_disable_auto_index_and_file_lock, $base_quality_score_recalibration_file, $disable_indel_qual, $static_quantized_quals_ref, $logging_level, $FILEHANDLE
 ##          : $commands_ref                          => List of commands added earlier
 ##          : $analysis_type                         => Analysis type
 ##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
@@ -47,6 +47,9 @@ sub gatk_base {
 ##          : $pedigree_validation_type              => Validation strictness for pedigree
 ##          : $downsample_to_coverage                => Target coverage threshold for downsampling to coverage
 ##          : $gatk_disable_auto_index_and_file_lock => Disable both auto-generation of index files and index file locking
+##          : $base_quality_score_recalibration_file => Base quality score recalibration file
+##          : $disable_indel_qual                    => Disable indel quality
+##          : $static_quantized_quals_ref            => Use static quantized quality scores [ref]
 ##          : $logging_level                         => Logging level
 ##          : $FILEHANDLE                            => Filehandle to write to
 
@@ -60,6 +63,11 @@ sub gatk_base {
     my $pedigree;
     my $pedigree_validation_type;
     my $downsample_to_coverage;
+
+    my $base_quality_score_recalibration_file;
+    my $disable_indel_qual;
+    my $static_quantized_quals_ref;
+
     my $FILEHANDLE;
 
     ## Default(s)
@@ -92,6 +100,19 @@ sub gatk_base {
         downsample_to_coverage => {
             strict_type => 1,
             store       => \$downsample_to_coverage
+        },
+        base_quality_score_recalibration_file => {
+            strict_type => 1,
+            store       => \$base_quality_score_recalibration_file
+        },
+        disable_indel_qual => {
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$disable_indel_qual
+        },
+        static_quantized_quals_ref => {
+            strict_type => 1,
+            store       => \$static_quantized_quals_ref
         },
         logging_level => {
             default     => q{INFO},
@@ -153,17 +174,38 @@ sub gatk_base {
 
     if ($referencefile_path) {
 
-      if($analysis_type) {
+        if ($analysis_type) {
 
-        push @commands, q{--reference_sequence} . $SPACE . $referencefile_path;
-      }
-      else {
+            push @commands,
+              q{--reference_sequence} . $SPACE . $referencefile_path;
+        }
+        else {
 
-        push @commands, q{--reference} . $SPACE . $referencefile_path;
-      }
+            push @commands, q{--reference} . $SPACE . $referencefile_path;
+        }
     }
 
+    if ($base_quality_score_recalibration_file) {
 
+        push @commands,
+          q{--BQSR} . $SPACE . $base_quality_score_recalibration_file;
+    }
+
+    if ($disable_indel_qual) {
+
+        push @commands, q{--disable_indel_quals};
+    }
+
+    if ( @{$static_quantized_quals_ref} ) {
+
+        push
+          @commands,
+          q{--static_quantized_quals}
+          . $SPACE
+          . join $SPACE
+          . q{--static_quantized_quals}
+          . $SPACE, @{$static_quantized_quals_ref};
+    }
     return @commands;
 }
 
