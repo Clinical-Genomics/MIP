@@ -1,47 +1,60 @@
 #!/usr/bin/env perl
 
-#### Copyright 2017 Henrik Stranneheim
+#!/usr/bin/env perl
 
-use Modern::Perl qw(2014);
-use warnings qw(FATAL utf8);
+use Modern::Perl qw{ 2014 };
+use warnings qw{ FATAL utf8 };
 use autodie;
-use 5.018;    #Require at least perl 5.18
+use 5.018;
 use utf8;
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
+use open qw{ :encoding(UTF-8) :std };
+use charnames qw{ :full :short };
 use Carp;
-use English qw(-no_match_vars);
-use Params::Check qw(check allow last_error);
+use English qw{ -no_match_vars };
+use Params::Check qw{ check allow last_error };
 
-use FindBin qw($Bin);    #Find directory of script
-use File::Basename qw(dirname basename);
-use File::Spec::Functions qw(catdir);
+use FindBin qw{ $Bin };
+use File::Basename qw{ dirname basename };
+use File::Spec::Functions qw{ catdir };
 use Getopt::Long;
 use Test::More;
+use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
-use MIP::Script::Utils qw(help);
+use lib catdir( dirname($Bin), q{lib} );
+use MIP::Script::Utils qw{ help };
 
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = 1.0.0;
 
-###User Options
+## Constants
+Readonly my $SPACE   => q{ };
+Readonly my $NEWLINE => qq{\n};
+Readonly my $COMMA   => q{,};
+
+### User Options
 GetOptions(
-    'h|help' => sub {
+
+    # Display help text
+    q{h|help} => sub {
         done_testing();
-        print {*STDOUT} $USAGE, "\n";
+        say {*STDOUT} $USAGE;
         exit;
-    },    #Display help text
-    'v|version' => sub {
+    },
+
+    # Display version number
+    q{v|version} => sub {
         done_testing();
-        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION,
-          "\n\n";
+        say {*STDOUT} $NEWLINE
+          . basename($PROGRAM_NAME)
+          . $SPACE
+          . $VERSION
+          . $NEWLINE;
         exit;
-    },    #Display version number
-    'vb|verbose' => $VERBOSE,
+    },
+    q{vb|verbose} => $VERBOSE,
   )
   or (
     done_testing(),
@@ -56,43 +69,53 @@ GetOptions(
 BEGIN {
 
 ### Check all internal dependency modules and imports
-##Modules with import
+## Modules with import
     my %perl_module;
 
-    $perl_module{'MIP::Script::Utils'} = [qw(help)];
+    $perl_module{q{MIP::Script::Utils}} = [qw{ help }];
+
+  PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
         use_ok( $module, @{$module_import} )
-          or BAIL_OUT 'Cannot load ' . $module;
+          or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 
 ##Modules
-    my @modules = ('MIP::Gnu::Coreutils');
+    my @modules = (q{MIP::Gnu::Coreutils});
+
+  MODULE:
     for my $module (@modules) {
-        require_ok($module) or BAIL_OUT 'Cannot load ' . $module;
+        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 }
 
-use MIP::Gnu::Coreutils qw(gnu_sleep);
-use MIP::Test::Commands qw(test_function);
+use MIP::Gnu::Coreutils qw{ gnu_sleep };
+use MIP::Test::Commands qw{ test_function };
 
-diag(
-    "Test gnu_sleep $MIP::Gnu::Coreutils::VERSION, Perl $^V, $EXECUTABLE_NAME");
+diag(   q{Test gnu_sleep from Coreutils.pm v}
+      . $MIP::Gnu::Coreutils::VERSION
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+      . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = 'sleep';
+my $function_base_command = q{sleep};
 
 my %base_argument = (
     stdoutfile_path => {
-        input           => 'stdoutfile.test',
-        expected_output => '1> stdoutfile.test',
+        input           => q{stdoutfile.test},
+        expected_output => q{1> stdoutfile.test},
     },
     stderrfile_path => {
-        input           => 'stderrfile.test',
-        expected_output => '2> stderrfile.test',
+        input           => q{stderrfile.test},
+        expected_output => q{2> stderrfile.test},
     },
     stderrfile_path_append => {
-        input           => 'stderrfile.test',
-        expected_output => '2>> stderrfile.test',
+        input           => q{stderrfile.test},
+        expected_output => q{2>> stderrfile.test},
     },
     FILEHANDLE => {
         input           => undef,

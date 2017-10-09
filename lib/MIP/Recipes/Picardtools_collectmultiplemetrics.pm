@@ -1,4 +1,4 @@
-package MIP::Recipes::RECIPE_NAME;
+package MIP::Recipes::Picardtools_collectmultiplemetrics;
 
 use strict;
 use warnings;
@@ -24,27 +24,28 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_recipe };
+    our @EXPORT_OK = qw{ analysis_picardtools_collectmultiplemetrics };
 
 }
 
 ##Constants
+Readonly my $ASTERIX    => q{*};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $UNDERSCORE => q{_};
 
-sub analysis_recipe {
+sub analysis_picardtools_collectmultiplemetrics {
 
-## analysis_recipe
+## analysis_picardtools_collectmultiplemetrics
 
-## Function : DESCRIPTION OF RECIPE
+## Function : Calculates coverage and alignment metrics on BAM files.
 ## Returns  :
-## Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href,
-##            $infile_lane_prefix_href, $job_id_href, $sample_id, family_id, $insample_directory,
-##            $outsample_directory, $outaligner_dir, $program_name
+## Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href
+##            $job_id_href, $sample_id, $insample_directory, $outsample_directory, $program_name, family_id, $temp_directory,
+##            $outaligner_dir
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $sample_info_href        => Info on samples and family hash {REF}
-##          : $file_info_href          => File_info hash {REF}
+##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $sample_id               => Sample id
@@ -52,12 +53,14 @@ sub analysis_recipe {
 ##          : $outsample_directory     => Out sample directory
 ##          : $program_name            => Program name
 ##          : $family_id               => Family id
+##          : $temp_directory          => Temporary directory
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
 
     my ($arg_href) = @_;
 
     ## Default(s)
     my $family_id;
+    my $temp_directory;
     my $outaligner_dir;
 
     ## Flatten argument(s)
@@ -78,48 +81,48 @@ sub analysis_recipe {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href,
+            store       => \$parameter_href
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href,
+            store       => \$active_parameter_href
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href,
+            store       => \$sample_info_href
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href,
+            store       => \$file_info_href
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href,
+            store       => \$infile_lane_prefix_href
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href,
+            store       => \$job_id_href
         },
         sample_id => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$sample_id,
+            store       => \$sample_id
         },
         insample_directory => {
             required    => 1,
@@ -137,30 +140,39 @@ sub analysis_recipe {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name,
+            store       => \$program_name
         },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id,
+            store       => \$family_id
+        },
+        temp_directory => {
+            default     => $arg_href->{active_parameter_href}{temp_directory},
+            strict_type => 1,
+            store       => \$temp_directory
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir,
+            store       => \$outaligner_dir
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ### SET IMPORT IN ALPHABETIC ORDER
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
-    use MIP::PATH::TO::PROGRAMS qw{ COMMANDS_SUB };
+    use MIP::IO::Files qw{ migrate_file };
+    use MIP::Language::Java qw{ java_core };
     use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
-    use MIP::QC::Record
-      qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info };
+      qw{ slurm_submit_job_sample_id_dependency_dead_end };
+    use MIP::Program::Alignment::Picardtools
+      qw{ picardtools_collectmultiplemetrics };
+    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
+
+    ## Constants
+    Readonly my $DOT => q{.};
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -189,97 +201,138 @@ sub analysis_recipe {
 
     ## Assign file_tags
     my $infile_tag =
-      $file_info_href->{$sample_id}{UPPSTREAM_DEPENDENCY_PROGRAM}{file_tag};
+      $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag =
-      $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
+      $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
 
+    ## Files
     my $infile_prefix  = $merged_infile_prefix . $infile_tag;
     my $outfile_prefix = $merged_infile_prefix . $outfile_tag;
 
-    ## Get infile_suffix from baserecalibration jobid chain
+    ## Paths
+    my $file_path_prefix    = catfile( $temp_directory, $infile_prefix );
+    my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
+
+    ## Assign suffix
     my $infile_suffix = get_file_suffix(
         {
             parameter_href => $parameter_href,
             suffix_key     => q{alignment_file_suffix},
-            jobid_chain =>
-              $parameter_href->{UPPSTREAM_DEPENDENCY_PROGRAM}{chain},
+            jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain},
         }
     );
-    my $outfile_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => q{outfile_suffix},
-            program_name   => $mip_program_name,
-        }
-    );
-
-    ## Files
-    my $infile_name  = $infile_prefix . $infile_suffix;
-    my $outfile_name = $outfile_prefix . $outfile_suffix;
-
-    ## Paths
-    my $infile_path  = catfile( $insample_directory,  $infile_name );
-    my $outfile_path = catfile( $outsample_directory, $outfile_name );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = setup_script(
+    my ($file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
             FILEHANDLE            => $FILEHANDLE,
             directory_id          => $sample_id,
             program_name          => $program_name,
-            program_directory => catfile( $outaligner_dir, q{PROGRAM_NAME} ),
+            program_directory => catfile( $outaligner_dir, q{coveragereport} ),
             core_number       => $core_number,
             process_time      => $time,
+            temp_directory    => $temp_directory,
         }
     );
 
-###############################
-###RECIPE TOOL COMMANDS HERE###
-###############################
+    ## Copy file(s) to temporary directory
+    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
+    migrate_file(
+        {
+            FILEHANDLE  => $FILEHANDLE,
+            infile_path => catfile(
+                $insample_directory,
+                $infile_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERIX
+            ),
+            outfile_path => $temp_directory,
+        }
+    );
+    say {$FILEHANDLE} q{wait}, $NEWLINE;
 
-    ## Close FILEHANDLES
-    close $FILEHANDLE;
+    ## CollectMultipleMetrics
+    say {$FILEHANDLE} q{## Collecting multiple metrics on alignment};
+
+    picardtools_collectmultiplemetrics(
+        {
+            memory_allocation => q{Xmx4g},
+            java_use_large_pages =>
+              $active_parameter_href->{java_use_large_pages},
+            temp_directory => $temp_directory,
+            java_jar       => catfile(
+                $active_parameter_href->{picardtools_path},
+                q{picard.jar}
+            ),
+            infile_path  => $file_path_prefix . $infile_suffix,
+            outfile_path => $outfile_path_prefix,
+            referencefile_path =>
+              $active_parameter_href->{human_genome_reference},
+            FILEHANDLE => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
+    ## Copies file from temporary directory.
+    say {$FILEHANDLE} q{## Copy file from temporary directory};
+    my @outfiles = (
+        $outfile_prefix . $DOT . q{alignment_summary_metrics},
+        $outfile_prefix . $DOT . q{quality} . $ASTERIX,
+        $outfile_prefix . $DOT . q{insert} . $ASTERIX,
+    );
+
+  OUTFILE:
+    foreach my $outfile (@outfiles) {
+
+        migrate_file(
+            {
+                infile_path  => catfile( $temp_directory, $outfile ),
+                outfile_path => $outsample_directory,
+                FILEHANDLE   => $FILEHANDLE,
+            }
+        );
+    }
+    say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     if ( $mip_program_mode == 1 ) {
 
-        my $program_outfile_path = catfile( $outsample_directory,
-            $outfile_prefix . $UNDERSCORE . q{ENDING} );
         ## Collect QC metadata info for later use
+        my $metrics_outfile_path = catfile( $outsample_directory,
+            $outfile_prefix . $DOT . q{alignment_summary_metrics} );
         add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $sample_id,
-                program_name     => q{PROGRAM_NAME},
+                program_name     => q{collectmultiplemetrics},
                 infile           => $merged_infile_prefix,
-                path             => $program_outfile_path,
+                path             => $metrics_outfile_path,
             }
         );
-
-        my $most_complete_format_key =
-          q{most_complete} . $UNDERSCORE . substr $outfile_suffix, 1;
-        my $qc_metafile_path =
-          catfile( $outsample_directory, $infile_prefix . $outfile_suffix );
-        add_processing_metafile_to_sample_info(
+        my $insertsize_outfile_path = catfile( $outsample_directory,
+            $outfile_prefix . $DOT . q{insert_size_metrics} );
+        add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 sample_id        => $sample_id,
-                metafile_tag     => $most_complete_format_key,
-                path             => $qc_metafile_path,
+                program_name     => q{collectmultiplemetricsinsertsize},
+                infile           => $merged_infile_prefix,
+                path             => $insertsize_outfile_path,
             }
         );
+    }
+    close $FILEHANDLE;
 
-        ## MODIY THE CHOICE OF SUB ACCORDING TO HOW YOU WANT SLURM TO PROCESSES IT AND DOWNSTREAM DEPENDENCIES
-        slurm_submit_job_sample_id_dependency_add_to_sample(
+    if ( $mip_program_mode == 1 ) {
+
+        slurm_submit_job_sample_id_dependency_dead_end(
             {
                 job_id_href             => $job_id_href,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 family_id               => $family_id,
                 sample_id               => $sample_id,
                 path                    => $job_id_chain,
+                sbatch_file_name        => $file_path,
                 log                     => $log,
-                sbatch_file_name        => $file_path
             }
         );
     }

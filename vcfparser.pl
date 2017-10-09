@@ -1,30 +1,31 @@
 #!/usr/bin/env perl
 
-use Modern::Perl '2014';  #CPAN
-use warnings qw( FATAL utf8 );
-use autodie qw(open close :all);    #CPAN
-use v5.18;  #Require at least perl 5.18
-use utf8;  #Allow unicode characters in this script
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
+use Modern::Perl qw{ 2014 };
+use warnings qw{ FATAL utf8 };
+use autodie qw{ open close :all };
+use v5.18;
+use utf8;
+use open qw{ :encoding(UTF-8) :std };
+use charnames qw{ :full :short };
+use Carp;
 use English qw{ -no_match_vars };
 
 use Cwd;
-use FindBin qw($Bin);  #Find directory of script
-use File::Basename qw(basename);
-use File::Spec::Functions qw(catdir catfile devnull);
+use FindBin qw{ $Bin };
+use File::Basename qw{ basename };
+use File::Spec::Functions qw{ catdir catfile devnull };
 use Getopt::Long;
-use Params::Check qw[check allow last_error];
+use Params::Check qw{ check allow last_error };
 $Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
 use IO::File;
 
 ## Third party module(s)
-use Set::IntervalTree; #CPAN
+use Set::IntervalTree;
 
 ##MIPs lib/
-use lib catdir($Bin, "lib");
+use lib catdir($Bin, q{lib});
 use MIP::Check::Modules qw{ check_perl_modules };
-use MIP::Log::MIP_log4perl qw(initiate_logger);
+use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
 
 our $USAGE;
@@ -33,12 +34,7 @@ BEGIN {
 
   require MIP::Check::Modules;
 
-    my @modules = ("Modern::Perl",
-		   "autodie",
-		   "Set::IntervalTree",
-		   "Log::Log4perl",
-		   "MIP_log::Log4perl",
-	);
+    my @modules = qw{ Modern::Perl autodie Set::IntervalTree Log::Log4perl MIP::Log::MIP_log4perl };
 
     ## Evaluate that all modules required are installed
   check_perl_modules({modules_ref => \@modules,
@@ -66,7 +62,7 @@ BEGIN {
 my ($infile, $select_feature_file, $select_feature_matching_column, $range_feature_file, $select_outfile);
 
 ##Scalar parameters with defaults
-my ($write_software_tag, $padding, $log_file) = (1, 5000, 0, catfile(cwd(), "vcfparser.log"));
+my ($write_software_tag, $padding, $log_file) = (1, 5000, 0, catfile( cwd(), q{vcfparser.log}) );
 
 ##Boolean
 my ($parse_vep, $per_gene);
@@ -74,7 +70,7 @@ my ($parse_vep, $per_gene);
 my (@range_feature_annotation_columns, @select_feature_annotation_columns);
 my (%consequence_severity, %range_data, %select_data, %snpeff_cmd, %tree, %meta_data);
 
-my $vcfparser_version = "1.2.10";
+my $vcfparser_version = q{1.2.11};
 
 ## Enables cmd "vcfparser.pl" to print usage help
 if(!@ARGV) {
@@ -273,6 +269,8 @@ sub define_consequence_severity {
     $consequence_severity{synonymous_variant}{genetic_region_annotation} = "exonic";
     $consequence_severity{stop_retained_variant}{rank} = 10;
     $consequence_severity{stop_retained_variant}{genetic_region_annotation} = "exonic";
+    $consequence_severity{start_retained_variant}{rank} = 10;
+    $consequence_severity{start_retained_variant}{genetic_region_annotation} = "exonic";
     $consequence_severity{coding_sequence_variant}{rank} = 11;
     $consequence_severity{coding_sequence_variant}{genetic_region_annotation} = "exonic";
     $consequence_severity{mature_miRNA_variant}{rank} = 12;
@@ -906,13 +904,15 @@ sub parse_vep_csq {
 		foreach my $consequence_term (@consequences) {
 		    
 		    check_terms({data_href => $consequence_severity_href,
-				 term_ref => \$consequence_term,
-				 data_category_name => "SO",
+				 term => $consequence_term,
+				 data_category_name => q{SO},
 				});
 		    
 		    my $most_severe_consequence = $$hgnc_id_ref.":".$$allele_ref."|".$consequence_term;
 
-		    if(defined($consequence_href->{$$hgnc_id_ref}{$$allele_ref}{score})) { #Compare to previous record
+		    ## Compare to previous record
+		    if(exists $consequence_href->{$$hgnc_id_ref}{$$allele_ref}{score}
+		      && $consequence_href->{$$hgnc_id_ref}{$$allele_ref}{score} ) {
 	
 			if ($consequence_severity_href->{$consequence_term}{rank} < $consequence_href->{$$hgnc_id_ref}{$$allele_ref}{score}) { #Collect most severe consequence
 			    
@@ -1966,34 +1966,32 @@ sub add_feature_file_meta_data_to_vcf {
 
 sub check_terms {
 
-##check_terms
+## check_terms
 
-##Function : Check that the found terms in the vcf corresond to known terms - otherwise croak and exit.
-##Returns  : ""
-##Arguments: $data_href, $term_ref, $data_category_name
-##         : $data_href          => The term hash {REF}
-##         : $term_ref           => The found term {REF}
-##         : $data_category_name => The origin of the term i.e SO
+## Function : Check that the found terms in the vcf corresond to known terms - otherwise croak and exit.
+## Returns  : ""
+## Arguments: $data_href, $term, $data_category_name
+##          : $data_href          => The term hash {REF}
+##          : $term               => The found term
+##          : $data_category_name => The origin of the term i.e SO
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $data_href;
-    my $term_ref;
+    my $term;
     my $data_category_name;
 
     my $tmpl = {
 	data_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$data_href},
-	term_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$term_ref},
+	term => { required => 1, defined => 1, strict_type => 1, store => \$term},
 	data_category_name => { required => 1, defined => 1, strict_type => 1, store => \$data_category_name},
     };
 
-    if ( (defined($$term_ref)) && ($$term_ref ne "") ) {
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-	unless (exists($data_href->{ $$term_ref })) {
+    if (not exists $data_href->{ $term } ) {
 
-	    warn("Could not find ".$data_category_name." term from vcf in corresponding hash. Update hash to contain term: '".$$term_ref."'\n");
-	    exit 1;
-	}
+      croak(q{Could not find } . $data_category_name . q{ term from vcf in corresponding hash. Update hash to contain term: '} . $term . q{'\n});
     }
-}
+  }
