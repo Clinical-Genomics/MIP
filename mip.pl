@@ -66,8 +66,11 @@ use MIP::Recipes::Markduplicates
   qw{ analysis_markduplicates analysis_markduplicates_rio };
 use MIP::Recipes::Picardtools_collecthsmetrics
   qw{ analysis_picardtools_collecthsmetrics };
+use MIP::Recipes::Picardtools_collectmultiplemetrics
+  qw{ analysis_picardtools_collectmultiplemetrics };
 use MIP::Recipes::Picardtools_mergesamfiles
   qw{ analysis_picardtools_mergesamfiles analysis_picardtools_mergesamfiles_rio };
+use MIP::Recipes::Rcoverageplots qw{ analysis_rcoverageplots };
 use MIP::Recipes::Sambamba_depth qw{ analysis_sambamba_depth };
 use MIP::Recipes::Split_fastq_file qw{ analysis_split_fastq_file };
 use MIP::Recipes::Tiddit qw{ analysis_tiddit };
@@ -253,7 +256,6 @@ GetOptions(
       \$parameter{split_fastq_file_read_batch}{value},
     q{pgz|pgzip_fastq=n}         => \$parameter{pgzip_fastq}{value},
     q{pfqc|pfastqc=n}            => \$parameter{pfastqc}{value},
-    q{pmad|pmadeline=n}          => \$parameter{pmadeline}{value},
     q{pmem|pbwa_mem=n}           => \$parameter{pbwa_mem}{value},
     q{memhla|bwa_mem_hla=n}      => \$parameter{bwa_mem_hla}{value},
     q{memrdb|bwa_mem_rapid_db:s} => \$parameter{bwa_mem_rapid_db}{value},
@@ -1278,22 +1280,6 @@ if ( $active_parameter{pfastqc} > 0 ) {
     }
 }
 
-if ( $active_parameter{pmadeline} > 0 ) {    #Run madeline
-
-    $log->info( q{[Madeline]}, $NEWLINE );
-
-    madeline(
-        {
-            parameter_href          => \%parameter,
-            active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            program_name            => "madeline",
-        }
-    );
-}
-
 # Run BWA Mem
 if ( $active_parameter{pbwa_mem} > 0 ) {
 
@@ -1322,6 +1308,8 @@ if ( $active_parameter{pbwa_mem} > 0 ) {
             );
         }
     }
+
+  SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
         my $outsample_directory = catdir( $active_parameter{outdata_dir},
@@ -1617,7 +1605,7 @@ if ( $active_parameter{pbedtools_genomecov} > 0 ) {
                 file_info_href          => \%file_info,
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
-                sample_id               => \$sample_id,
+                sample_id               => $sample_id,
                 insample_directory      => $insample_directory,
                 outsample_directory     => $outsample_directory,
                 program_name            => $program_name,
@@ -1626,10 +1614,12 @@ if ( $active_parameter{pbedtools_genomecov} > 0 ) {
     }
 }
 
-if ( $active_parameter{ppicardtools_collectmultiplemetrics} > 0 )
-{    #Run picardtools_collectmultiplemetrics
+## Run picardtools_collectmultiplemetrics
+if ( $active_parameter{ppicardtools_collectmultiplemetrics} > 0 ) {
 
-    $log->info("[Picardtools collectmultiplemetrics]\n");
+    $log->info( q{[Picardtools collectmultiplemetrics]} . $NEWLINE );
+
+    my $program_name = lc q{picardtools_collectmultiplemetrics};
 
     check_build_human_genome_prerequisites(
         {
@@ -1639,13 +1629,22 @@ if ( $active_parameter{ppicardtools_collectmultiplemetrics} > 0 )
             file_info_href          => \%file_info,
             infile_lane_prefix_href => \%infile_lane_prefix,
             job_id_href             => \%job_id,
-            program_name            => "picardtools_collectmultiplemetrics",
+            program_name            => $program_name,
         }
     );
 
+  SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
-        mpicardtools_collectmultiplemetrics(
+        ## Assign directories
+        my $insample_directory = catdir( $active_parameter{outdata_dir},
+            $sample_id, $active_parameter{outaligner_dir} );
+        my $outsample_directory = catdir(
+            $active_parameter{outdata_dir},    $sample_id,
+            $active_parameter{outaligner_dir}, q{coveragereport}
+        );
+
+        analysis_picardtools_collectmultiplemetrics(
             {
                 parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
@@ -1653,17 +1652,21 @@ if ( $active_parameter{ppicardtools_collectmultiplemetrics} > 0 )
                 file_info_href          => \%file_info,
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
-                sample_id_ref           => \$sample_id,
-                program_name            => "picardtools_collectmultiplemetrics",
+                sample_id               => $sample_id,
+                insample_directory      => $insample_directory,
+                outsample_directory     => $outsample_directory,
+                program_name            => $program_name,
             }
         );
     }
 }
 
-if ( $active_parameter{ppicardtools_collecthsmetrics} > 0 )
-{    #Run Picardtools_collecthsmetrics
+## Run Picardtools_collecthsmetrics
+if ( $active_parameter{ppicardtools_collecthsmetrics} > 0 ) {
 
-    $log->info("[Picardtools collecthsmetrics]\n");
+    $log->info( q{[Picardtools collecthsmetrics]} . $NEWLINE );
+
+    my $program_name = lc q{picardtools_collecthsmetrics};
 
     check_build_human_genome_prerequisites(
         {
@@ -1673,7 +1676,7 @@ if ( $active_parameter{ppicardtools_collecthsmetrics} > 0 )
             file_info_href          => \%file_info,
             infile_lane_prefix_href => \%infile_lane_prefix,
             job_id_href             => \%job_id,
-            program_name            => "picardtools_collecthsmetrics",
+            program_name            => $program_name,
         }
     );
 
@@ -1687,10 +1690,12 @@ if ( $active_parameter{ppicardtools_collecthsmetrics} > 0 )
                 file_info_href          => \%file_info,
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
-                program_name            => "picardtools_collecthsmetrics",
+                program_name            => $program_name,
             }
         );
     }
+
+  SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
         ## Assign directories
@@ -1700,7 +1705,6 @@ if ( $active_parameter{ppicardtools_collecthsmetrics} > 0 )
             $active_parameter{outdata_dir},    $sample_id,
             $active_parameter{outaligner_dir}, q{coveragereport}
         );
-        my $program_name = lc q{picardtools_collecthsmetrics};
 
         analysis_picardtools_collecthsmetrics(
             {
@@ -1719,17 +1723,26 @@ if ( $active_parameter{ppicardtools_collecthsmetrics} > 0 )
     }
 }
 
-if ( $active_parameter{prcovplots} > 0 ) {    #Run Rcovplot scripts
+## Run Rcovplot scripts
+if ( $active_parameter{prcovplots} > 0 ) {
 
-    if ( defined( $active_parameter{pbedtools_genomecov} )
-        && ( $active_parameter{pbedtools_genomecov} > 0 ) )
-    {
+    if ( $active_parameter{pbedtools_genomecov} > 0 ) {
 
-        $log->info("[Rcovplots]\n");
+        $log->info( q{[Rcovplots]} . $NEWLINE );
 
+        my $program_name = lc q{rcovplots};
+
+      SAMPLE_ID:
         foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
-            rcoverageplots(
+            ## Assign directories
+            my $insample_directory = catdir( $active_parameter{outdata_dir},
+                $sample_id, $active_parameter{outaligner_dir} );
+            my $outsample_directory = catdir(
+                $active_parameter{outdata_dir},    $sample_id,
+                $active_parameter{outaligner_dir}, q{coveragereport}
+            );
+            analysis_rcoverageplots(
                 {
                     parameter_href          => \%parameter,
                     active_parameter_href   => \%active_parameter,
@@ -1738,8 +1751,10 @@ if ( $active_parameter{prcovplots} > 0 ) {    #Run Rcovplot scripts
                     lane_href               => \%lane,
                     infile_lane_prefix_href => \%infile_lane_prefix,
                     job_id_href             => \%job_id,
-                    sample_id_ref           => \$sample_id,
-                    program_name            => "rcovplots",
+                    sample_id               => $sample_id,
+                    insample_directory      => $insample_directory,
+                    outsample_directory     => $outsample_directory,
+                    program_name            => $program_name,
                 }
             );
         }
@@ -2118,7 +2133,7 @@ if ( $active_parameter{pgatk_genotypegvcfs} > 0 )
         }
     );
 
-    gatk_genotypegvcfs(
+    mgatk_genotypegvcfs(
         {
             parameter_href          => \%parameter,
             active_parameter_href   => \%active_parameter,
@@ -2737,7 +2752,6 @@ sub build_usage {
       -sfqrdb/--split_fastq_file_read_batch The number of sequence reads to place in each batch (defaults to "25,000,000")
     -pgz/--pgzip_fastq Gzip fastq files (defaults to "1" (=yes))
     -pfqc/--pfastqc Sequence quality analysis using FastQC (defaults to "1" (=yes))
-    -pmad/--pmadeline Pedigree drawing engine (defaults to "0" (=no))
 
     ##BWA
     -pmem/--pbwa_mem Align reads using Bwa Mem (defaults to "0" (=no))
@@ -3996,8 +4010,8 @@ sub evaluation {
     use MIP::IO::Files qw(migrate_file);
     use MIP::Gnu::Coreutils qw(gnu_cat);
     use MIP::Language::Java qw{java_core};
-    use Program::Variantcalling::Gatk
-      qw(selectvariants leftalignandtrimvariants);
+    use MIP::Program::Variantcalling::Gatk
+      qw(gatk_selectvariants gatk_leftalignandtrimvariants);
     use MIP::Program::Variantcalling::Bcftools qw(bcftools_stats);
     use Program::Interval::Picardtools qw(intervallisttools);
     use Program::Variantcalling::Picardtools qw(genotypeconcordance);
@@ -4097,10 +4111,8 @@ sub evaluation {
     say $FILEHANDLE
       "## Generate '.idx' for downstream Picard by failling this process";
 
-    ## Writes java core commands to filehandle.
-    java_core(
+    gatk_selectvariants(
         {
-            FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
@@ -4109,11 +4121,6 @@ sub evaluation {
                 $active_parameter_href->{gatk_path},
                 "GenomeAnalysisTK.jar"
             ),
-        }
-    );
-
-    selectvariants(
-        {
             sample_names_ref => [ $$sample_id_ref . "XXX " ],
             logging_level    => $active_parameter_href->{gatk_logging_level},
             referencefile_path =>
@@ -4191,10 +4198,8 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
     ## GATK SelectVariants
     say $FILEHANDLE "## GATK SelectVariants";
 
-    ## Writes java core commands to filehandle.
-    java_core(
+    gatk_selectvariants(
         {
-            FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
@@ -4203,11 +4208,6 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
                 $active_parameter_href->{gatk_path},
                 "GenomeAnalysisTK.jar"
             ),
-        }
-    );
-
-    selectvariants(
-        {
             sample_names_ref => [$$sample_id_ref],
             logging_level    => $active_parameter_href->{gatk_logging_level},
             referencefile_path =>
@@ -4223,10 +4223,8 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
     ## Left align, trim and split allels
     say $FILEHANDLE "## GATK LeftAlignAndTrimVariants";
 
-    ## Writes java core commands to filehandle.
-    java_core(
+    gatk_leftalignandtrimvariants(
         {
-            FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
@@ -4235,11 +4233,6 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
                 $active_parameter_href->{gatk_path},
                 "GenomeAnalysisTK.jar"
             ),
-        }
-    );
-
-    leftalignandtrimvariants(
-        {
             infile_path   => $call_file_path . ".vcf",
             logging_level => $active_parameter_href->{gatk_logging_level},
             referencefile_path =>
@@ -4274,10 +4267,8 @@ q?perl -nae 'unless($_=~/##contig=<ID=NC_007605,length=171823>/ || $_=~/##contig
     say $FILEHANDLE
       "## Generate '.idx' for downstream Picard by failling this process";
 
-    ## Writes java core commands to filehandle.
-    java_core(
+    gatk_selectvariants(
         {
-            FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
@@ -4286,11 +4277,6 @@ q?perl -nae 'unless($_=~/##contig=<ID=NC_007605,length=171823>/ || $_=~/##contig
                 $active_parameter_href->{gatk_path},
                 "GenomeAnalysisTK.jar"
             ),
-        }
-    );
-
-    selectvariants(
-        {
             sample_names_ref => [ $$sample_id_ref . "XXX " ],
             logging_level    => $active_parameter_href->{gatk_logging_level},
             referencefile_path =>
@@ -5581,7 +5567,7 @@ sub gatk_variantevalexome {
     use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
     use MIP::Gnu::Coreutils qw(gnu_cat gnu_sort);
     use Program::Variantcalling::Bedtools qw(intersectbed);
-    use Program::Variantcalling::Gatk qw(varianteval);
+    use MIP::Program::Variantcalling::Gatk qw(gatk_varianteval);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_family_dead_end);
@@ -5678,10 +5664,8 @@ sub gatk_variantevalexome {
     ## GATK SelectVariants
     say $FILEHANDLE "## GATK SelectVariants";
 
-    ## Writes java core commands to filehandle.
-    java_core(
+    gatk_selectvariants(
         {
-            FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
@@ -5690,11 +5674,6 @@ sub gatk_variantevalexome {
                 $active_parameter_href->{gatk_path},
                 "GenomeAnalysisTK.jar"
             ),
-        }
-    );
-
-    selectvariants(
-        {
             sample_names_ref => [$$sample_id_ref],
             logging_level    => $active_parameter_href->{gatk_logging_level},
             referencefile_path =>
@@ -5902,10 +5881,8 @@ sub gatk_variantevalexome {
     ## VariantEval
     say $FILEHANDLE "## GATK varianteval";
 
-    ## Writes java core commands to filehandle.
-    java_core(
+    gatk_varianteval(
         {
-            FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
@@ -5914,11 +5891,6 @@ sub gatk_variantevalexome {
                 $active_parameter_href->{gatk_path},
                 "GenomeAnalysisTK.jar"
             ),
-        }
-    );
-
-    varianteval(
-        {
             infile_paths_ref =>
               [ $outfile_path_prefix . $call_type . "_exome" . $infile_suffix ],
             outfile_path => $outfile_path_prefix
@@ -6100,7 +6072,7 @@ sub gatk_variantevalall {
     use MIP::Language::Java qw{java_core};
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
-    use Program::Variantcalling::Gatk qw(varianteval);
+    use MIP::Program::Variantcalling::Gatk qw(gatk_varianteval);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_family_dead_end);
@@ -6195,10 +6167,8 @@ sub gatk_variantevalall {
     ## GATK SelectVariants
     say $FILEHANDLE "## GATK SelectVariants";
 
-    ## Writes java core commands to filehandle.
-    java_core(
+    gatk_selectvariants(
         {
-            FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
@@ -6207,11 +6177,6 @@ sub gatk_variantevalall {
                 $active_parameter_href->{gatk_path},
                 "GenomeAnalysisTK.jar"
             ),
-        }
-    );
-
-    selectvariants(
-        {
             sample_names_ref => [$$sample_id_ref],
             logging_level    => $active_parameter_href->{gatk_logging_level},
             referencefile_path =>
@@ -6226,10 +6191,8 @@ sub gatk_variantevalall {
     ## GATK varianteval
     say $FILEHANDLE "## GATK varianteval";
 
-    ## Writes java core commands to filehandle.
-    java_core(
+    gatk_varianteval(
         {
-            FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
@@ -6238,11 +6201,6 @@ sub gatk_variantevalall {
                 $active_parameter_href->{gatk_path},
                 "GenomeAnalysisTK.jar"
             ),
-        }
-    );
-
-    varianteval(
-        {
             infile_paths_ref => [
                 catfile(
                     $$temp_directory_ref,
@@ -9315,7 +9273,7 @@ sub gatk_combinevariantcallsets {
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Language::Java qw{java_core};
-    use Program::Variantcalling::Gatk qw(combinevariants);
+    use MIP::Program::Variantcalling::Gatk qw(gatk_combinevariants);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
 
@@ -9437,10 +9395,8 @@ sub gatk_combinevariantcallsets {
     ## GATK CombineVariants
     say $FILEHANDLE "## GATK CombineVariants";
 
-    ## Writes java core commands to filehandle.
-    java_core(
+    gatk_combinevariants(
         {
-            FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
@@ -9449,11 +9405,6 @@ sub gatk_combinevariantcallsets {
                 $active_parameter_href->{gatk_path},
                 "GenomeAnalysisTK.jar"
             ),
-        }
-    );
-
-    Program::Variantcalling::Gatk::combinevariants(
-        {
             infile_paths_ref => \@file_tags_and_paths,
             outfile_path     => $outfile_path_prefix . $outfile_suffix,
             logging_level    => $active_parameter_href->{gatk_logging_level},
@@ -9645,8 +9596,8 @@ sub gatk_variantrecalibration {
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use MIP::Language::Java qw{java_core};
     use MIP::Program::Variantcalling::Bcftools qw(bcftools_norm);
-    use Program::Variantcalling::Gatk
-      qw(variantrecalibrator applyrecalibration selectvariants calculategenotypeposteriors);
+    use MIP::Program::Variantcalling::Gatk
+      qw(gatk_variantrecalibrator gatk_applyrecalibration gatk_selectvariants gatk_calculategenotypeposteriors);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
@@ -9776,21 +9727,6 @@ sub gatk_variantrecalibration {
 
         say $FILEHANDLE "## GATK VariantRecalibrator";
 
-        ## Writes java core commands to filehandle.
-        java_core(
-            {
-                FILEHANDLE        => $FILEHANDLE,
-                memory_allocation => "Xmx10g",
-                java_use_large_pages =>
-                  $active_parameter_href->{java_use_large_pages},
-                temp_directory => $$temp_directory_ref,
-                java_jar       => catfile(
-                    $active_parameter_href->{gatk_path},
-                    "GenomeAnalysisTK.jar"
-                ),
-            }
-        );
-
         ##Get parameters
         my @infiles;
         my $max_gaussian_level;
@@ -9876,8 +9812,16 @@ sub gatk_variantrecalibration {
         # Create distinct set i.e. no duplicates.
         @resources = uniq(@resources);
 
-        variantrecalibrator(
+        gatk_variantrecalibrator(
             {
+                memory_allocation => "Xmx10g",
+                java_use_large_pages =>
+                  $active_parameter_href->{java_use_large_pages},
+                temp_directory => $$temp_directory_ref,
+                java_jar       => catfile(
+                    $active_parameter_href->{gatk_path},
+                    "GenomeAnalysisTK.jar"
+                ),
                 infile_paths_ref => \@infiles,
                 annotations_ref  => \@annotations,
                 resources_ref    => \@resources,
@@ -9898,21 +9842,6 @@ sub gatk_variantrecalibration {
 
         ## GATK ApplyRecalibration
         say $FILEHANDLE "## GATK ApplyRecalibration";
-
-        ## Writes java core commands to filehandle.
-        java_core(
-            {
-                FILEHANDLE        => $FILEHANDLE,
-                memory_allocation => "Xmx10g",
-                java_use_large_pages =>
-                  $active_parameter_href->{java_use_large_pages},
-                temp_directory => $$temp_directory_ref,
-                java_jar       => catfile(
-                    $active_parameter_href->{gatk_path},
-                    "GenomeAnalysisTK.jar"
-                ),
-            }
-        );
 
         ## Get parameters
         my $infile_path;
@@ -9948,8 +9877,16 @@ sub gatk_variantrecalibration {
             }
         }
 
-        applyrecalibration(
+        gatk_applyrecalibration(
             {
+                memory_allocation => "Xmx10g",
+                java_use_large_pages =>
+                  $active_parameter_href->{java_use_large_pages},
+                temp_directory => $$temp_directory_ref,
+                java_jar       => catfile(
+                    $active_parameter_href->{gatk_path},
+                    "GenomeAnalysisTK.jar"
+                ),
                 infile_path   => $infile_path,
                 outfile_path  => $outfile_path,
                 logging_level => $active_parameter_href->{gatk_logging_level},
@@ -10001,10 +9938,8 @@ sub gatk_variantrecalibration {
 
         say $FILEHANDLE "## GATK SelectVariants";
 
-        ## Writes java core commands to filehandle.
-        java_core(
+        gatk_selectvariants(
             {
-                FILEHANDLE        => $FILEHANDLE,
                 memory_allocation => "Xmx2g",
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
@@ -10013,11 +9948,6 @@ sub gatk_variantrecalibration {
                     $active_parameter_href->{gatk_path},
                     "GenomeAnalysisTK.jar"
                 ),
-            }
-        );
-
-        selectvariants(
-            {
                 sample_names_ref => \@{ $active_parameter_href->{sample_ids} },
                 logging_level => $active_parameter_href->{gatk_logging_level},
                 referencefile_path =>
@@ -10039,10 +9969,8 @@ sub gatk_variantrecalibration {
 
             say $FILEHANDLE "\n\n#GATK SelectVariants", "\n";
 
-            ## Writes java core commands to filehandle.
-            java_core(
+            gatk_selectvariants(
                 {
-                    FILEHANDLE        => $FILEHANDLE,
                     memory_allocation => "Xmx2g",
                     java_use_large_pages =>
                       $active_parameter_href->{java_use_large_pages},
@@ -10051,11 +9979,6 @@ sub gatk_variantrecalibration {
                         $active_parameter_href->{gatk_path},
                         "GenomeAnalysisTK.jar"
                     ),
-                }
-            );
-
-            selectvariants(
-                {
                     sample_names_ref =>
                       \@{ $active_parameter_href->{sample_ids} },
                     logging_level =>
@@ -10093,10 +10016,8 @@ sub gatk_variantrecalibration {
 
         say $FILEHANDLE "## GATK CalculateGenotypePosteriors";
 
-        ## Writes java core commands to filehandle.
-        java_core(
+        gatk_calculategenotypeposteriors(
             {
-                FILEHANDLE        => $FILEHANDLE,
                 memory_allocation => "Xmx6g",
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
@@ -10105,11 +10026,6 @@ sub gatk_variantrecalibration {
                     $active_parameter_href->{gatk_path},
                     "GenomeAnalysisTK.jar"
                 ),
-            }
-        );
-
-        calculategenotypeposteriors(
-            {
                 logging_level => $active_parameter_href->{gatk_logging_level},
                 referencefile_path =>
                   $active_parameter_href->{human_genome_reference},
@@ -10356,7 +10272,7 @@ sub gatk_concatenate_genotypegvcfs {
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Language::Java qw{java_core};
-    use Program::Variantcalling::Gatk qw(selectvariants);
+    use MIP::Program::Variantcalling::Gatk qw(gatk_selectvariants);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
 
@@ -10473,10 +10389,8 @@ sub gatk_concatenate_genotypegvcfs {
 
             say $FILEHANDLE "##GATK SelectVariants", "\n";
 
-            ## Writes java core commands to filehandle.
-            java_core(
+            gatk_selectvariants(
                 {
-                    FILEHANDLE        => $FILEHANDLE,
                     memory_allocation => "Xmx2g",
                     java_use_large_pages =>
                       $active_parameter_href->{java_use_large_pages},
@@ -10485,11 +10399,6 @@ sub gatk_concatenate_genotypegvcfs {
                         $active_parameter_href->{gatk_path},
                         "GenomeAnalysisTK.jar"
                     ),
-                }
-            );
-
-            selectvariants(
-                {
                     sample_names_ref =>
                       \@{ $active_parameter_href->{sample_ids} },
                     logging_level =>
@@ -10581,7 +10490,7 @@ sub gatk_concatenate_genotypegvcfs {
     }
 }
 
-sub gatk_genotypegvcfs {
+sub mgatk_genotypegvcfs {
 
 ##gatk_genotypegvcfs
 
@@ -10691,7 +10600,7 @@ sub gatk_genotypegvcfs {
     use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Language::Java qw{java_core};
-    use Program::Variantcalling::Gatk qw(genotypegvcfs);
+    use MIP::Program::Variantcalling::Gatk qw(gatk_genotypegvcfs);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_step_in_parallel_to_family);
 
@@ -10856,10 +10765,8 @@ sub gatk_genotypegvcfs {
                 $active_parameter_href->{gatk_genotypegvcfs_ref_gvcf} );
         }
 
-        ## Writes java core commands to filehandle.
-        java_core(
+        gatk_genotypegvcfs(
             {
-                FILEHANDLE        => $FILEHANDLE,
                 memory_allocation => "Xmx24g",
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
@@ -10868,18 +10775,13 @@ sub gatk_genotypegvcfs {
                     $active_parameter_href->{gatk_path},
                     "GenomeAnalysisTK.jar"
                 ),
-            }
-        );
-
-        genotypegvcfs(
-            {
                 intervals_ref    => [$contig],
                 infile_paths_ref => \@file_paths,
                 outfile_path     => $outfile_path_prefix . $outfile_suffix,
                 logging_level => $active_parameter_href->{gatk_logging_level},
                 referencefile_path =>
                   $active_parameter_href->{human_genome_reference},
-                dbsnp =>
+                dbsnp_file_path =>
                   $active_parameter_href->{gatk_haplotypecaller_snp_known_set},
                 pedigree_validation_type => $commands{pedigree_validation_type},
                 pedigree                 => $commands{pedigree},
@@ -10920,770 +10822,6 @@ sub gatk_genotypegvcfs {
             );
         }
         $sbatch_script_tracker++;    #Tracks nr of sbatch scripts
-    }
-}
-
-sub rcoverageplots {
-
-##rcoverageplots
-
-##Function : Generates sbatch scripts for R scripts: 1. covplots_genome.R 2. covplots_exome.R; on files generated from bedtools genomecov.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $lane_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, $temp_directory_ref, $outaligner_dir_ref,
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => File info hash {REF}
-##         : $lane_href                  => The lane info hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $sample_id_ref              => Sample id {REF}
-##         : $program_name               => Program name
-##         : $temp_directory_ref         => Temporary directory {REF}
-##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $temp_directory_ref;
-    my $outaligner_dir_ref;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $lane_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $sample_id_ref;
-    my $program_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
-        lane_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$lane_href
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        sample_id_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$sample_id_ref
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref
-        },
-        outaligner_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::Get::File qw{ get_merged_infile_prefix };
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_sample_id_dependency_dead_end);
-
-    my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
-
-    ## Filehandles
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    ## Assign directories
-    my $insample_directory = catdir(
-        $active_parameter_href->{outdata_dir}, $$sample_id_ref,
-        $$outaligner_dir_ref,                  "coveragereport"
-    );
-    my $outsample_directory = catdir(
-        $active_parameter_href->{outdata_dir}, $$sample_id_ref,
-        $$outaligner_dir_ref,                  "coveragereport"
-    );
-
-    ## Add merged infile name prefix after merging all BAM files per sample_id
-    my $merged_infile_prefix = get_merged_infile_prefix(
-        {
-            file_info_href => $file_info_href,
-            sample_id      => $$sample_id_ref,
-        }
-    );
-
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$$sample_id_ref}{pbedtools_genomecov}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $$sample_id_ref,
-            program_name          => $program_name,
-            program_directory =>
-              catfile( lc($$outaligner_dir_ref), "coveragereport" ),
-            temp_directory => $$temp_directory_ref,
-        }
-    );
-
-    print $FILEHANDLE "covplots_genome ";
-    print $FILEHANDLE catfile( $insample_directory,
-        $merged_infile_prefix . $infile_tag )
-      . " ";    #InFile
-    print $FILEHANDLE $merged_infile_prefix . " ";    #Sample name
-    print $FILEHANDLE $active_parameter_href->{bedtools_genomecov_max_coverage}
-      . " ";                                          #X-axis max scale
-    say $FILEHANDLE $outsample_directory, " &", "\n"; #OutFile
-    say $FILEHANDLE q{wait}, "\n";
-
-    close($FILEHANDLE);
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        slurm_submit_job_sample_id_dependency_dead_end(
-            {
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                family_id               => $active_parameter_href->{family_id},
-                sample_id               => $$sample_id_ref,
-                path                    => $job_id_chain,
-                sbatch_file_name        => $file_path,
-                log                     => $log,
-            }
-        );
-    }
-    return;
-}
-
-sub mpicardtools_collecthsmetrics {
-
-##mpicardtools_collecthsmetrics
-
-##Function : Calculates coverage on exonic part of BAM files.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => File info hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $sample_id_ref              => Sample id
-##         : $program_name               => Program name
-##         : $family_id_ref              => Family id {REF}
-##         : $temp_directory_ref         => Temporary directory {REF}
-##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-    my $outaligner_dir_ref;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $sample_id_ref;
-    my $program_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        sample_id_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$sample_id_ref
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref
-        },
-        outaligner_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::Get::File
-      qw{get_file_suffix get_merged_infile_prefix get_exom_target_bed_file };
-    use MIP::IO::Files qw(migrate_file);
-    use MIP::Language::Java qw{java_core};
-    use MIP::Program::Alignment::Picardtools qw(picardtools_collecthsmetrics);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_sample_id_dependency_dead_end);
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
-
-    ## Filehandles
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    ## Assign directories
-    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $$sample_id_ref, $$outaligner_dir_ref );
-    my $outsample_directory = catdir(
-        $active_parameter_href->{outdata_dir}, $$sample_id_ref,
-        $$outaligner_dir_ref,                  "coveragereport"
-    );
-
-    ## Add merged infile name prefix after merging all BAM files per sample_id
-    my $merged_infile_prefix = get_merged_infile_prefix(
-        {
-            file_info_href => $file_info_href,
-            sample_id      => $$sample_id_ref,
-        }
-    );
-
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$$sample_id_ref}{ "p" . $program_name }{file_tag};
-    my $infile_prefix       = $merged_infile_prefix . $infile_tag;
-    my $file_path_prefix    = catfile( $$temp_directory_ref, $infile_prefix );
-    my $outfile_prefix      = $merged_infile_prefix . $outfile_tag;
-    my $outfile_path_prefix = catfile( $$temp_directory_ref, $outfile_prefix );
-
-    ## Assign suffix
-    my $infile_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
-            jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain}
-            ,    #Get infile_suffix from baserecalibration jobid chain
-        }
-    );
-
-    ## Alias exome_target_bed endings
-    my $infile_list_ending_ref        = \$file_info_href->{exome_target_bed}[0];
-    my $padded_infile_list_ending_ref = \$file_info_href->{exome_target_bed}[1];
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $$sample_id_ref,
-            program_name          => $program_name,
-            program_directory =>
-              catfile( lc($$outaligner_dir_ref), "coveragereport" ),
-            core_number => $active_parameter_href->{module_core_number}
-              { "p" . $program_name },
-            process_time =>
-              $active_parameter_href->{module_time}{ "p" . $program_name },
-            temp_directory => $$temp_directory_ref,
-        }
-    );
-
-    ## Copy file(s) to temporary directory
-    say $FILEHANDLE "## Copy file(s) to temporary directory";
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => catfile(
-                $insample_directory,
-                $infile_prefix . substr( $infile_suffix, 0, 2 ) . q{*}
-            ),
-            outfile_path => $$temp_directory_ref,
-        }
-    );
-    say $FILEHANDLE q{wait}, "\n";
-
-    ## Collecthsmetrics
-    say $FILEHANDLE "## Calculate capture metrics on alignment";
-
-    ## Get exome_target_bed file for specfic sample_id and add file_ending from file_info hash if supplied
-    my $exome_target_bed_file = get_exom_target_bed_file(
-        {
-            exome_target_bed_href => $active_parameter_href->{exome_target_bed},
-            sample_id             => $$sample_id_ref,
-            log                   => $log,
-        }
-    );
-
-    ## Writes java core commands to filehandle.
-    java_core(
-        {
-            FILEHANDLE        => $FILEHANDLE,
-            memory_allocation => "Xmx4g",
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory => $$temp_directory_ref,
-            java_jar       => catfile(
-                $active_parameter_href->{picardtools_path}, "picard.jar"
-            ),
-        }
-    );
-
-    picardtools_collecthsmetrics(
-        {
-            bait_interval_file_paths_ref =>
-              [ $exome_target_bed_file . $$padded_infile_list_ending_ref ],
-            target_interval_file_paths_ref =>
-              [ $exome_target_bed_file . $$infile_list_ending_ref ],
-            infile_path  => $file_path_prefix . $infile_suffix,
-            outfile_path => $outfile_path_prefix,
-            referencefile_path =>
-              $active_parameter_href->{human_genome_reference},
-            FILEHANDLE => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE "\n";
-
-    ## Copies file from temporary directory.
-    say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file(
-        {
-            infile_path  => $outfile_path_prefix,
-            outfile_path => $outsample_directory,
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE q{wait}, "\n";
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                sample_id        => $$sample_id_ref,
-                program_name     => 'collecthsmetrics',
-                infile           => $merged_infile_prefix,
-                outdirectory     => $outsample_directory,
-                outfile          => $outfile_prefix,
-            }
-        );
-    }
-    close($FILEHANDLE);
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        slurm_submit_job_sample_id_dependency_dead_end(
-            {
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                family_id               => $$family_id_ref,
-                sample_id               => $$sample_id_ref,
-                path                    => $job_id_chain,
-                sbatch_file_name        => $file_path,
-                log                     => $log,
-            }
-        );
-    }
-}
-
-sub mpicardtools_collectmultiplemetrics {
-
-##mpicardtools_collectmultiplemetrics
-
-##Function : Calculates coverage and alignment metrics on BAM files.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => File info hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $sample_id_ref              => Sample id
-##         : $program_name               => Program name
-##         : $family_id_ref              => Family id {REF}
-##         : $temp_directory_ref         => Temporary directory {REF}
-##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-    my $outaligner_dir_ref;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $sample_id_ref;
-    my $program_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        sample_id_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$sample_id_ref
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref
-        },
-        outaligner_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use Readonly;
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
-    use MIP::IO::Files qw(migrate_file);
-    use MIP::Language::Java qw{java_core};
-    use MIP::Program::Alignment::Picardtools
-      qw(picardtools_collectmultiplemetrics);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_sample_id_dependency_dead_end);
-
-    ## Constants
-    Readonly my $DOT => q{.};
-
-    my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
-
-    ## Filehandles
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    ## Assign directories
-    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $$sample_id_ref, $$outaligner_dir_ref );
-    my $outsample_directory = catdir(
-        $active_parameter_href->{outdata_dir}, $$sample_id_ref,
-        $$outaligner_dir_ref,                  "coveragereport"
-    );
-
-    ## Add merged infile name prefix after merging all BAM files per sample_id
-    my $merged_infile_prefix = get_merged_infile_prefix(
-        {
-            file_info_href => $file_info_href,
-            sample_id      => $$sample_id_ref,
-        }
-    );
-
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
-    my $infile_prefix       = $merged_infile_prefix . $infile_tag;
-    my $file_path_prefix    = catfile( $$temp_directory_ref, $infile_prefix );
-    my $outfile_prefix      = $merged_infile_prefix . $outfile_tag;
-    my $outfile_path_prefix = catfile( $$temp_directory_ref, $outfile_prefix );
-
-    ## Assign suffix
-    my $infile_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
-            jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain}
-            ,    #Get infile_suffix from baserecalibration jobid chain
-        }
-    );
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $$sample_id_ref,
-            program_name          => $program_name,
-            program_directory =>
-              catfile( lc($$outaligner_dir_ref), "coveragereport" ),
-            core_number => $active_parameter_href->{module_core_number}
-              { "p" . $program_name },
-            process_time =>
-              $active_parameter_href->{module_time}{ "p" . $program_name },
-            temp_directory => $$temp_directory_ref,
-        }
-    );
-
-    ## Copy file(s) to temporary directory
-    say $FILEHANDLE "## Copy file(s) to temporary directory";
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => catfile(
-                $insample_directory,
-                $infile_prefix . substr( $infile_suffix, 0, 2 ) . q{*}
-            ),
-            outfile_path => $$temp_directory_ref,
-        }
-    );
-    say $FILEHANDLE q{wait}, "\n";
-
-    ## CollectMultipleMetrics
-    say $FILEHANDLE "## Collecting multiple metrics on alignment";
-
-    ## Writes java core commands to filehandle.
-    java_core(
-        {
-            FILEHANDLE        => $FILEHANDLE,
-            memory_allocation => "Xmx4g",
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory => $$temp_directory_ref,
-            java_jar       => catfile(
-                $active_parameter_href->{picardtools_path}, "picard.jar"
-            ),
-        }
-    );
-
-    picardtools_collectmultiplemetrics(
-        {
-            infile_path  => $file_path_prefix . $infile_suffix,
-            outfile_path => $outfile_path_prefix,
-            referencefile_path =>
-              $active_parameter_href->{human_genome_reference},
-            FILEHANDLE => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE "\n";
-
-    ## Copies file from temporary directory.
-    say $FILEHANDLE "## Copy file from temporary directory";
-    my @outfiles = (
-        $outfile_prefix . ".alignment_summary_metrics",
-        $outfile_prefix . ".quality*",
-        $outfile_prefix . ".insert*",
-    );
-    foreach my $outfile (@outfiles) {
-
-        migrate_file(
-            {
-                infile_path  => catfile( $$temp_directory_ref, $outfile ),
-                outfile_path => $outsample_directory,
-                FILEHANDLE   => $FILEHANDLE,
-            }
-        );
-    }
-    say $FILEHANDLE q{wait}, "\n";
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                sample_id        => $$sample_id_ref,
-                program_name     => 'collectmultiplemetrics',
-                infile           => $merged_infile_prefix,
-                outdirectory     => $outsample_directory,
-                outfile          => $outfile_prefix
-                  . $DOT
-                  . q{alignment_summary_metrics},
-            }
-        );
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                sample_id        => $$sample_id_ref,
-                program_name     => 'collectmultiplemetricsinsertsize',
-                infile           => $merged_infile_prefix,
-                outdirectory     => $outsample_directory,
-                outfile => $outfile_prefix . $DOT . q{insert_size_metrics},
-            }
-        );
-    }
-    close($FILEHANDLE);
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        slurm_submit_job_sample_id_dependency_dead_end(
-            {
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                family_id               => $$family_id_ref,
-                sample_id               => $$sample_id_ref,
-                path                    => $job_id_chain,
-                sbatch_file_name        => $file_path,
-                log                     => $log,
-            }
-        );
     }
 }
 
@@ -18860,163 +17998,6 @@ sub bamcalibrationblock {
     }
 }
 
-sub madeline {
-
-##madeline
-
-##Function : Draw pedigree trees.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_prefix_href, $job_id_href, $family_id_ref, $program_name
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $family_id_ref              => The family_id_ref {REF}
-##         : $program_name               => Program name
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $program_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
-
-    ## Filehandles
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $$family_id_ref,
-            program_name          => $program_name,
-            program_directory     => lc($program_name),
-            core_number => $active_parameter_href->{module_core_number}
-              { "p" . $program_name },
-            process_time =>
-              $active_parameter_href->{module_time}{ "p" . $program_name },
-        }
-    );
-
-    ## Assign directories
-    my $outfamily_directory = catfile( $active_parameter_href->{outdata_dir},
-        $$family_id_ref, lc($program_name) );
-
-    say $FILEHANDLE "## Reformat pedigree to madeline format";
-
-    print $FILEHANDLE "ped_parser ";
-    print $FILEHANDLE "-t mip ";          #MIP pedigree format
-    print $FILEHANDLE "--to_madeline ";   #Print the ped file in madeline format
-    print $FILEHANDLE $active_parameter_href->{pedigree_file} . " ";    #Infile
-    say $FILEHANDLE "-o "
-      . catfile( $outfamily_directory, "madeline_pedigree.txt" ) . " ";
-
-    say $FILEHANDLE "## " . $program_name;
-
-    print $FILEHANDLE "madeline2 ";
-    print $FILEHANDLE "--color ";
-    print $FILEHANDLE "--outputprefix "
-      . catfile( $outfamily_directory, $$family_id_ref . "_madeline" ) . " ";
-    say $FILEHANDLE catfile( $outfamily_directory, "madeline_pedigree.txt" )
-      . " ";
-
-    ## Collect QC metadata info for active program for later use
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        my $qc_madelaine_path =
-          catfile( $outfamily_directory, $$family_id_ref . "_madeline.xml" );
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                program_name     => $program_name,
-                path             => $qc_madelaine_path,
-            }
-        );
-    }
-
-    close($FILEHANDLE);
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        slurm_submit_job_no_dependency_dead_end(
-            {
-                job_id_href      => $job_id_href,
-                sbatch_file_name => $file_path,
-                log              => $log,
-            }
-        );
-    }
-}
-
 sub build_ptchs_metric_prerequisites {
 
 ##build_ptchs_metric_prerequisites
@@ -24396,7 +23377,7 @@ sub concatenate_variants {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Language::Java qw{java_core};
-    use Program::Variantcalling::Gatk qw(catvariants);
+    use MIP::Program::Variantcalling::Gatk qw(gatk_catvariants);
 
     unless ( defined($infile_postfix) ) {
 
@@ -24409,23 +23390,16 @@ sub concatenate_variants {
 
     say $FILEHANDLE "## GATK CatVariants";
 
-    ## Writes java core commands to filehandle.
-    java_core(
-        {
-            FILEHANDLE        => $FILEHANDLE,
-            memory_allocation => "Xmx4g",
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory => $active_parameter_href->{temp_directory}
-        }
-    );
-
     ## Assemble infile paths
     my @infile_paths =
       map { $infile_prefix . $_ . $infile_postfix } @$elements_ref;
 
-    catvariants(
+    gatk_catvariants(
         {
+            memory_allocation => "Xmx4g",
+            java_use_large_pages =>
+              $active_parameter_href->{java_use_large_pages},
+            temp_directory => $active_parameter_href->{temp_directory},
             gatk_path => catfile( $active_parameter_href->{gatk_path},
                 "GenomeAnalysisTK.jar" )
               . " org.broadinstitute.gatk.tools.CatVariants",
@@ -27809,7 +26783,7 @@ sub print_program {
         {    #Only process programs
 
             unless ( $order_parameter_element =~
-                /pmadeline|pbamcalibrationblock|pvariantannotationblock/ )
+                /pbamcalibrationblock|pvariantannotationblock/ )
             {
 
                 print STDOUT "--"

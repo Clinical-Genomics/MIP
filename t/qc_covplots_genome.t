@@ -1,7 +1,5 @@
 #!/usr/bin/env perl
 
-#!/usr/bin/env perl
-
 use Modern::Perl qw{ 2014 };
 use warnings qw{ FATAL utf8 };
 use autodie;
@@ -15,7 +13,7 @@ use Params::Check qw{ check allow last_error };
 
 use FindBin qw{ $Bin };
 use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use Getopt::Long;
 use Test::More;
 use Readonly;
@@ -80,8 +78,8 @@ BEGIN {
           or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 
-##Modules
-    my @modules = (q{MIP::Gnu::Coreutils});
+## Modules
+    my @modules = (q{MIP::Program::Qc::Rcoverageplots});
 
   MODULE:
     for my $module (@modules) {
@@ -89,11 +87,11 @@ BEGIN {
     }
 }
 
-use MIP::Gnu::Coreutils qw{ gnu_sleep };
+use MIP::Program::Qc::Rcoverageplots qw{ covplots_genome };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test gnu_sleep from Coreutils.pm v}
-      . $MIP::Gnu::Coreutils::VERSION
+diag(   q{Test covplots_genome from Rcoverageplots.pm v}
+      . $MIP::Program::Qc::Rcoverageplots::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -101,8 +99,11 @@ diag(   q{Test gnu_sleep from Coreutils.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+## Constants
+Readonly my $MAX_COVERAGE_DEPTH => 30;
+
 ## Base arguments
-my $function_base_command = q{sleep};
+my $function_base_command = q{covplots_genome};
 
 my %base_argument = (
     stdoutfile_path => {
@@ -123,28 +124,57 @@ my %base_argument = (
     },
 );
 
-## Can be duplicated with %base and/or %specific to enable testing of each individual argument
+## Can be duplicated with %base_argument and/or %specific_argument
+## to enable testing of each individual argument
+my %required_argument = (
+    infile_path => {
+        input           => catfile(qw{test infile}),
+        expected_output => catfile(qw{test infile}),
+    },
+    outdirectory_path => {
+        input           => catdir(qw{ test }),
+        expected_output => catdir(qw{ test }),
+    },
+    sample_id => {
+        input           => q{sample_1},
+        expected_output => q{sample_1},
+    },
+);
 
-## Specific arguments
 my %specific_argument = (
-    seconds_to_sleep => {
-        input           => 1,
-        expected_output => 1,
+    infile_path => {
+        input           => catfile(qw{test infile}),
+        expected_output => catfile(qw{test infile}),
+    },
+    outdirectory_path => {
+        input           => catdir(qw{ test }),
+        expected_output => catdir(qw{ test }),
+    },
+    sample_id => {
+        input           => q{sample_1},
+        expected_output => q{sample_1},
+    },
+    max_coverage_depth => {
+        input           => $MAX_COVERAGE_DEPTH,
+        expected_output => $MAX_COVERAGE_DEPTH,
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&gnu_sleep;
+my $module_function_cref = \&covplots_genome;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
 
+ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
-            argument_href         => $argument_href,
-            module_function_cref  => $module_function_cref,
-            function_base_command => $function_base_command,
+            argument_href          => $argument_href,
+            required_argument_href => \%required_argument,
+            module_function_cref   => $module_function_cref,
+            function_base_command  => $function_base_command,
+            do_test_base_command   => 1,
         }
     );
 }
@@ -157,12 +187,12 @@ done_testing();
 
 sub build_usage {
 
-##build_usage
+## build_usage
 
-##Function : Build the USAGE instructions
-##Returns  : ""
-##Arguments: $program_name
-##         : $program_name => Name of the script
+## Function  : Build the USAGE instructions
+## Returns   : ""
+## Arguments : $program_name
+##           : $program_name => Name of the script
 
     my ($arg_href) = @_;
 
@@ -177,7 +207,7 @@ sub build_usage {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     return <<"END_USAGE";
  $program_name [options]
