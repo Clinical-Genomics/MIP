@@ -42,10 +42,11 @@ use MIP::Recipes::Install::Pip qw{ install_pip_packages };
 our $USAGE = build_usage( {} );
 
 ## Constants
-Readonly my $DOT     => q{.};
-Readonly my $COMMA   => q{,};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
+Readonly my $DOT        => q{.};
+Readonly my $COMMA      => q{,};
+Readonly my $NEWLINE    => qq{\n};
+Readonly my $SPACE      => q{ };
+Readonly my $UNDERSCORE => q{_};
 
 ### Set parameter default
 
@@ -209,8 +210,9 @@ my $date_time_stamp = $date_time->datetime;
 
 ## Create default log name
 if ( not $parameter{log_file} ) {
-    $parameter{log_file} =
-      catfile( q{mip_install_} . $date_time_stamp . $DOT . q{log} );
+    $parameter{log_file} = catfile( 
+        q{mip_install} $UNDERSCORE . $date_time_stamp . $DOT . q{log}
+    );
 }
 
 ## Initiate logger
