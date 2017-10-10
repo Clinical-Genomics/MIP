@@ -8,12 +8,7 @@ use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
 use Carp;
 use Params::Check qw{ check allow last_error };
-
 use IPC::Cmd qw{ can_run };
-
-## MIPs lib/
-
-## Constants
 
 BEGIN {
 
@@ -21,7 +16,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{check_binary_in_path};
@@ -29,12 +24,9 @@ BEGIN {
 
 sub check_binary_in_path {
 
-## binary_in_path
-
 ## Function  : Scans through PATH for supplied binary
 ## Returns   :
-## Arguments : $binary, $log
-##           : $binary => $binary to search for
+## Arguments : $binary => $binary to search for
 ##           : $log    => Log
 
     my ($arg_href) = @_;
@@ -61,7 +53,7 @@ sub check_binary_in_path {
     if ( can_run($binary) ) {
 
         ## Broadcast if found
-        if ($log) {
+        if ( defined $log ) {
 
             $log->info( q{Program check: } . $binary . q{ in PATH} );
         }
