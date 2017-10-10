@@ -211,7 +211,7 @@ my $date_time_stamp = $date_time->datetime;
 ## Create default log name
 if ( not $parameter{log_file} ) {
     $parameter{log_file} = catfile( 
-        q{mip_install} $UNDERSCORE . $date_time_stamp . $DOT . q{log}
+        q{mip_install} . $UNDERSCORE . $date_time_stamp . $DOT . q{log}
     );
 }
 
