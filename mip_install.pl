@@ -51,9 +51,6 @@ Readonly my $SPACE   => q{ };
 
 my %parameter;
 
-## Log
-#$parameter{log_file} = q{mip_install.log};
-
 ## Bash
 $parameter{bash_set_errexit} = 0;
 $parameter{bash_set_nounset} = 0;
