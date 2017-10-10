@@ -143,8 +143,6 @@ EOF
 
 sub retrieve_log {
 
-## retrieve_log
-
 ## Function  : Retrieves logger object and sets log level
 ## Returns   : $log
 ## Arguments : $log_name => Name of log

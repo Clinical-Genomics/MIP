@@ -7,28 +7,28 @@ use utf8;
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
 use Carp;
-use English qw{-no_match_vars};
-use Params::Check qw[check allow last_error];
-$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
+use English qw{ -no_match_vars };
+use Params::Check qw{ check allow last_error };
 
 use Getopt::Long;
 use Cwd;
-use Cwd qw{abs_path};
-use FindBin qw{$Bin};                 #Find directory of script
+use Cwd qw{ abs_path };
+use FindBin qw{ $Bin };    #Find directory of script
 use IO::Handle;
-use File::Basename qw{dirname basename fileparse};
-use File::Spec::Functions qw{catfile catdir devnull};
+use File::Basename qw{ dirname basename fileparse };
+use File::Spec::Functions qw{ catfile catdir devnull };
 use Readonly;
+use Time::Piece;
 
 ## MIPs lib/
-use lib catdir( $Bin, q{lib} );       #Add MIPs internal lib
-use MIP::Language::Shell qw{create_bash_file};
-use MIP::Program::Download::Wget qw{wget};
-use MIP::Gnu::Bash qw{gnu_cd};
-use MIP::Gnu::Coreutils qw{gnu_cp gnu_rm gnu_mv gnu_mkdir gnu_ln gnu_chmod };
+use lib catdir( $Bin, q{lib} );    #Add MIPs internal lib
+use MIP::Language::Shell qw{ create_bash_file };
+use MIP::Program::Download::Wget qw{ wget };
+use MIP::Gnu::Bash qw{ gnu_cd };
+use MIP::Gnu::Coreutils qw{ gnu_cp gnu_rm gnu_mv gnu_mkdir gnu_ln gnu_chmod };
 use MIP::Package_manager::Conda
   qw{ conda_source_activate conda_source_deactivate };
-use MIP::Script::Utils qw{help set_default_array_parameters};
+use MIP::Script::Utils qw{ help set_default_array_parameters };
 use MIP::Check::Path qw{ check_dir_path_exist };
 use MIP::Package_manager::Pip qw{ pip_install };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
@@ -52,7 +52,7 @@ Readonly my $SPACE   => q{ };
 my %parameter;
 
 ## Log
-$parameter{log_file} = q{mip_install.log};
+#$parameter{log_file} = q{mip_install.log};
 
 ## Bash
 $parameter{bash_set_errexit} = 0;
@@ -206,7 +206,17 @@ GetOptions(
     }
   );
 
-## Create log object for mip_install
+## Get local time
+my $date_time       = localtime;
+my $date_time_stamp = $date_time->datetime;
+
+## Create default log name
+if ( not $parameter{log_file} ) {
+    $parameter{log_file} =
+      catfile( q{mip_install_} . $date_time_stamp . $DOT . q{log} );
+}
+
+## Initiate logger
 my $log = initiate_logger(
     {
         file_path => $parameter{log_file},
@@ -266,15 +276,19 @@ my $FILEHANDLE = IO::Handle->new();
 my $file_name_path = catfile( cwd(), q{mip.sh} );
 
 open $FILEHANDLE, q{>}, $file_name_path
-  or $log->logcroak(
-    q{Cannot write to '} . $file_name_path . q{' :} . $OS_ERROR . "\n" );
+  or $log->logcroak( q{Cannot write to}
+      . $SPACE . q{'}
+      . $file_name_path . q{'}
+      . $SPACE . q{:}
+      . $OS_ERROR
+      . $NEWLINE );
 
 ## Create bash file for writing install instructions
 create_bash_file(
     {
         file_name   => $file_name_path,
         FILEHANDLE  => $FILEHANDLE,
-        remove_dir  => catfile( cwd(), q{.MIP} ),
+        remove_dir  => catfile( cwd(), $DOT . q{MIP} ),
         set_errexit => $parameter{bash_set_errexit},
         set_nounset => $parameter{bash_set_nounset},
         log         => $log
