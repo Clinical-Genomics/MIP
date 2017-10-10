@@ -256,7 +256,6 @@ GetOptions(
       \$parameter{split_fastq_file_read_batch}{value},
     q{pgz|pgzip_fastq=n}         => \$parameter{pgzip_fastq}{value},
     q{pfqc|pfastqc=n}            => \$parameter{pfastqc}{value},
-    q{pmad|pmadeline=n}          => \$parameter{pmadeline}{value},
     q{pmem|pbwa_mem=n}           => \$parameter{pbwa_mem}{value},
     q{memhla|bwa_mem_hla=n}      => \$parameter{bwa_mem_hla}{value},
     q{memrdb|bwa_mem_rapid_db:s} => \$parameter{bwa_mem_rapid_db}{value},
@@ -1279,22 +1278,6 @@ if ( $active_parameter{pfastqc} > 0 ) {
             }
         );
     }
-}
-
-if ( $active_parameter{pmadeline} > 0 ) {    #Run madeline
-
-    $log->info( q{[Madeline]}, $NEWLINE );
-
-    madeline(
-        {
-            parameter_href          => \%parameter,
-            active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            program_name            => "madeline",
-        }
-    );
 }
 
 # Run BWA Mem
@@ -2769,7 +2752,6 @@ sub build_usage {
       -sfqrdb/--split_fastq_file_read_batch The number of sequence reads to place in each batch (defaults to "25,000,000")
     -pgz/--pgzip_fastq Gzip fastq files (defaults to "1" (=yes))
     -pfqc/--pfastqc Sequence quality analysis using FastQC (defaults to "1" (=yes))
-    -pmad/--pmadeline Pedigree drawing engine (defaults to "0" (=no))
 
     ##BWA
     -pmem/--pbwa_mem Align reads using Bwa Mem (defaults to "0" (=no))
@@ -18016,163 +17998,6 @@ sub bamcalibrationblock {
     }
 }
 
-sub madeline {
-
-##madeline
-
-##Function : Draw pedigree trees.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_prefix_href, $job_id_href, $family_id_ref, $program_name
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $family_id_ref              => The family_id_ref {REF}
-##         : $program_name               => Program name
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $program_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
-
-    ## Filehandles
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $$family_id_ref,
-            program_name          => $program_name,
-            program_directory     => lc($program_name),
-            core_number => $active_parameter_href->{module_core_number}
-              { "p" . $program_name },
-            process_time =>
-              $active_parameter_href->{module_time}{ "p" . $program_name },
-        }
-    );
-
-    ## Assign directories
-    my $outfamily_directory = catfile( $active_parameter_href->{outdata_dir},
-        $$family_id_ref, lc($program_name) );
-
-    say $FILEHANDLE "## Reformat pedigree to madeline format";
-
-    print $FILEHANDLE "ped_parser ";
-    print $FILEHANDLE "-t mip ";          #MIP pedigree format
-    print $FILEHANDLE "--to_madeline ";   #Print the ped file in madeline format
-    print $FILEHANDLE $active_parameter_href->{pedigree_file} . " ";    #Infile
-    say $FILEHANDLE "-o "
-      . catfile( $outfamily_directory, "madeline_pedigree.txt" ) . " ";
-
-    say $FILEHANDLE "## " . $program_name;
-
-    print $FILEHANDLE "madeline2 ";
-    print $FILEHANDLE "--color ";
-    print $FILEHANDLE "--outputprefix "
-      . catfile( $outfamily_directory, $$family_id_ref . "_madeline" ) . " ";
-    say $FILEHANDLE catfile( $outfamily_directory, "madeline_pedigree.txt" )
-      . " ";
-
-    ## Collect QC metadata info for active program for later use
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        my $qc_madelaine_path =
-          catfile( $outfamily_directory, $$family_id_ref . "_madeline.xml" );
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                program_name     => $program_name,
-                path             => $qc_madelaine_path,
-            }
-        );
-    }
-
-    close($FILEHANDLE);
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        slurm_submit_job_no_dependency_dead_end(
-            {
-                job_id_href      => $job_id_href,
-                sbatch_file_name => $file_path,
-                log              => $log,
-            }
-        );
-    }
-}
-
 sub build_ptchs_metric_prerequisites {
 
 ##build_ptchs_metric_prerequisites
@@ -26958,7 +26783,7 @@ sub print_program {
         {    #Only process programs
 
             unless ( $order_parameter_element =~
-                /pmadeline|pbamcalibrationblock|pvariantannotationblock/ )
+                /pbamcalibrationblock|pvariantannotationblock/ )
             {
 
                 print STDOUT "--"

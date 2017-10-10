@@ -233,7 +233,6 @@ module_time:
     psplit_fastq_file: 10
     pgzip_fastq: 2
     pfastqc: 10
-    pmadeline: 1
     pbwa_mem: 30
     ppicardtools_mergesamfiles: 20
     pmarkduplicates: 20
@@ -288,7 +287,6 @@ module_core_number:
     psplit_fastq_file: 4
     pgzip_fastq: 0
     pfastqc: 0
-    pmadeline: 1
     pbwa_mem: 16
     ppicardtools_mergesamfiles: 16
     pmarkduplicates: 16
@@ -416,17 +414,6 @@ pfastqc:
   infile_suffix: ".fastq"
   program_name_path:
    - fastqc
-  type: program
-## Madeline
-pmadeline:
-  associated_program:
-   - mip
-  chain: PedigreeDraw
-  data_type: SCALAR
-  default: 0
-  file_tag: nofile_tag
-  program_name_path:
-   - madeline2
   type: program
 ## BWA
 pbwa_mem:
