@@ -70,6 +70,7 @@ use MIP::Recipes::Picardtools_collectmultiplemetrics
   qw{ analysis_picardtools_collectmultiplemetrics };
 use MIP::Recipes::Picardtools_mergesamfiles
   qw{ analysis_picardtools_mergesamfiles analysis_picardtools_mergesamfiles_rio };
+use MIP::Recipes::Rcoverageplots qw{ analysis_rcoverageplots };
 use MIP::Recipes::Sambamba_depth qw{ analysis_sambamba_depth };
 use MIP::Recipes::Split_fastq_file qw{ analysis_split_fastq_file };
 use MIP::Recipes::Tiddit qw{ analysis_tiddit };
@@ -1324,6 +1325,8 @@ if ( $active_parameter{pbwa_mem} > 0 ) {
             );
         }
     }
+
+  SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
         my $outsample_directory = catdir( $active_parameter{outdata_dir},
@@ -1619,7 +1622,7 @@ if ( $active_parameter{pbedtools_genomecov} > 0 ) {
                 file_info_href          => \%file_info,
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
-                sample_id               => \$sample_id,
+                sample_id               => $sample_id,
                 insample_directory      => $insample_directory,
                 outsample_directory     => $outsample_directory,
                 program_name            => $program_name,
@@ -1708,6 +1711,8 @@ if ( $active_parameter{ppicardtools_collecthsmetrics} > 0 ) {
             }
         );
     }
+
+  SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
         ## Assign directories
@@ -1735,17 +1740,26 @@ if ( $active_parameter{ppicardtools_collecthsmetrics} > 0 ) {
     }
 }
 
-if ( $active_parameter{prcovplots} > 0 ) {    #Run Rcovplot scripts
+## Run Rcovplot scripts
+if ( $active_parameter{prcovplots} > 0 ) {
 
-    if ( defined( $active_parameter{pbedtools_genomecov} )
-        && ( $active_parameter{pbedtools_genomecov} > 0 ) )
-    {
+    if ( $active_parameter{pbedtools_genomecov} > 0 ) {
 
-        $log->info("[Rcovplots]\n");
+        $log->info( q{[Rcovplots]} . $NEWLINE );
 
+        my $program_name = lc q{rcovplots};
+
+      SAMPLE_ID:
         foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
-            rcoverageplots(
+            ## Assign directories
+            my $insample_directory = catdir( $active_parameter{outdata_dir},
+                $sample_id, $active_parameter{outaligner_dir} );
+            my $outsample_directory = catdir(
+                $active_parameter{outdata_dir},    $sample_id,
+                $active_parameter{outaligner_dir}, q{coveragereport}
+            );
+            analysis_rcoverageplots(
                 {
                     parameter_href          => \%parameter,
                     active_parameter_href   => \%active_parameter,
@@ -1754,8 +1768,10 @@ if ( $active_parameter{prcovplots} > 0 ) {    #Run Rcovplot scripts
                     lane_href               => \%lane,
                     infile_lane_prefix_href => \%infile_lane_prefix,
                     job_id_href             => \%job_id,
-                    sample_id_ref           => \$sample_id,
-                    program_name            => "rcovplots",
+                    sample_id               => $sample_id,
+                    insample_directory      => $insample_directory,
+                    outsample_directory     => $outsample_directory,
+                    program_name            => $program_name,
                 }
             );
         }
@@ -10937,196 +10953,6 @@ sub gatk_genotypegvcfs {
         }
         $sbatch_script_tracker++;    #Tracks nr of sbatch scripts
     }
-}
-
-sub rcoverageplots {
-
-##rcoverageplots
-
-##Function : Generates sbatch scripts for R scripts: 1. covplots_genome.R 2. covplots_exome.R; on files generated from bedtools genomecov.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $lane_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, $temp_directory_ref, $outaligner_dir_ref,
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => File info hash {REF}
-##         : $lane_href                  => The lane info hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $sample_id_ref              => Sample id {REF}
-##         : $program_name               => Program name
-##         : $temp_directory_ref         => Temporary directory {REF}
-##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $temp_directory_ref;
-    my $outaligner_dir_ref;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $lane_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $sample_id_ref;
-    my $program_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
-        lane_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$lane_href
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        sample_id_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$sample_id_ref
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref
-        },
-        outaligner_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::Get::File qw{ get_merged_infile_prefix };
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_sample_id_dependency_dead_end);
-
-    my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
-
-    ## Filehandles
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    ## Assign directories
-    my $insample_directory = catdir(
-        $active_parameter_href->{outdata_dir}, $$sample_id_ref,
-        $$outaligner_dir_ref,                  "coveragereport"
-    );
-    my $outsample_directory = catdir(
-        $active_parameter_href->{outdata_dir}, $$sample_id_ref,
-        $$outaligner_dir_ref,                  "coveragereport"
-    );
-
-    ## Add merged infile name prefix after merging all BAM files per sample_id
-    my $merged_infile_prefix = get_merged_infile_prefix(
-        {
-            file_info_href => $file_info_href,
-            sample_id      => $$sample_id_ref,
-        }
-    );
-
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$$sample_id_ref}{pbedtools_genomecov}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $$sample_id_ref,
-            program_name          => $program_name,
-            program_directory =>
-              catfile( lc($$outaligner_dir_ref), "coveragereport" ),
-            temp_directory => $$temp_directory_ref,
-        }
-    );
-
-    print $FILEHANDLE "covplots_genome ";
-    print $FILEHANDLE catfile( $insample_directory,
-        $merged_infile_prefix . $infile_tag )
-      . " ";    #InFile
-    print $FILEHANDLE $merged_infile_prefix . " ";    #Sample name
-    print $FILEHANDLE $active_parameter_href->{bedtools_genomecov_max_coverage}
-      . " ";                                          #X-axis max scale
-    say $FILEHANDLE $outsample_directory, " &", "\n"; #OutFile
-    say $FILEHANDLE q{wait}, "\n";
-
-    close($FILEHANDLE);
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        slurm_submit_job_sample_id_dependency_dead_end(
-            {
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                family_id               => $active_parameter_href->{family_id},
-                sample_id               => $$sample_id_ref,
-                path                    => $job_id_chain,
-                sbatch_file_name        => $file_path,
-                log                     => $log,
-            }
-        );
-    }
-    return;
 }
 
 sub sv_reformat {
