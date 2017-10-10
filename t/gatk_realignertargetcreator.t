@@ -13,7 +13,7 @@ use Params::Check qw{ check allow last_error };
 
 use FindBin qw{ $Bin };
 use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use Getopt::Long;
 use Test::More;
 use Readonly;
@@ -79,7 +79,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::PATH::TO::MODULE});
+    my @modules = (q{MIP::Program::Alignment::Gatk});
 
   MODULE:
     for my $module (@modules) {
@@ -87,11 +87,11 @@ BEGIN {
     }
 }
 
-use MIP::PATH::TO::MODULE qw{ SUB_ROUTINE };
+use MIP::Program::Alignment::Gatk qw{ gatk_realignertargetcreator };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
-      . $MIP::PATH::TO::MODULE::VERSION
+diag(   q{Test gatk_realignertargetcreator from Alignment::Gatk.pm v}
+      . $MIP::Program::Alignment::Gatk::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -100,20 +100,12 @@ diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{BASE_COMMAND};
+my $function_base_command = q{--analysis_type RealignerTargetCreator};
 
 my %base_argument = (
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
-    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
-    },
-    stderrfile_path_append => {
-        input           => q{stderrfile.test},
-        expected_output => q{2>> stderrfile.test},
     },
     FILEHANDLE => {
         input           => undef,
@@ -124,29 +116,61 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
+    known_alleles_ref => {
+        inputs_ref => [
+            qw{ GRCh37_1000g_indels_-phase1-.vcf GRCh37_mills_and_1000g_indels_-gold_standard-.vcf }
+        ],
+        expected_output =>
+q{--known GRCh37_1000g_indels_-phase1-.vcf --known GRCh37_mills_and_1000g_indels_-gold_standard-.vcf },
     },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
+    intervals_ref => {
+        inputs_ref      => [qw{ chr1 chr2}],
+        expected_output => q{--intervals chr1 --intervals chr2},
+    },
+    referencefile_path => {
+        input           => catfile(qw{reference_dir human_genome_build.fasta }),
+        expected_output => q{--reference_sequence}
+          . catfile(qw{reference_dir human_genome_build.fasta }),
+    },
+    infile_path => {
+        input           => catfile(qw{ dir infile.bam }),
+        expected_output => q{--input_file } . catfile(qw{ dir infile.bam }),
+    },
+    outfile_path => {
+        input           => catfile(qw{ dir outfile.bam }),
+        expected_output => q{--input_file } . catfile(qw{ dir infile.bam }),
     },
 );
 
 my %specific_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
+    known_alleles_ref => {
+        inputs_ref => [
+            qw{ GRCh37_1000g_indels_-phase1-.vcf GRCh37_mills_and_1000g_indels_-gold_standard-.vcf }
+        ],
+        expected_output =>
+q{--known GRCh37_1000g_indels_-phase1-.vcf --known GRCh37_mills_and_1000g_indels_-gold_standard-.vcf},
     },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
+    intervals_ref => {
+        inputs_ref      => [qw{ chr1 chr2}],
+        expected_output => q{--intervals chr1 --intervals chr2},
+    },
+    referencefile_path => {
+        input           => catfile(qw{reference_dir human_genome_build.fasta }),
+        expected_output => q{--reference_sequence }
+          . catfile(qw{ reference_dir human_genome_build.fasta }),
+    },
+    infile_path => {
+        input           => catfile(qw{ dir infile.bam }),
+        expected_output => q{--input_file } . catfile(qw{ dir infile.bam }),
+    },
+    outfile_path => {
+        input           => catfile(qw{ dir outfile.bam }),
+        expected_output => q{--out } . catfile(qw{ dir outfile.bam }),
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&SUB_ROUTINE;
+my $module_function_cref = \&gatk_realignertargetcreator;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

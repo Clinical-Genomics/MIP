@@ -13,7 +13,7 @@ use Params::Check qw{ check allow last_error };
 
 use FindBin qw{ $Bin };
 use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use Getopt::Long;
 use Test::More;
 use Readonly;
@@ -79,7 +79,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::PATH::TO::MODULE});
+    my @modules = (q{MIP::Program::Base::Gatk});
 
   MODULE:
     for my $module (@modules) {
@@ -87,11 +87,11 @@ BEGIN {
     }
 }
 
-use MIP::PATH::TO::MODULE qw{ SUB_ROUTINE };
+use MIP::Program::Base::Gatk qw{ gatk_base };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
-      . $MIP::PATH::TO::MODULE::VERSION
+diag(   q{Test gatk_base from Base::Gatk.pm v}
+      . $MIP::Program::Base::Gatk::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -99,22 +99,15 @@ diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+## Constants
+Readonly my $DOWNSAMPLE_TO_COVERAGE               => 1000;
+Readonly my $STATIC_QUANTIZED_QUALS_MINIMUM_LEVEL => 10;
+Readonly my $STATIC_QUANTIZED_QUALS_MAX_LEVEL     => 20;
+
 ## Base arguments
-my $function_base_command = q{BASE_COMMAND};
+my $function_base_command = q{--analysis_type HaplotypeCaller};
 
 my %base_argument = (
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
-    },
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
-    },
-    stderrfile_path_append => {
-        input           => q{stderrfile.test},
-        expected_output => q{2>> stderrfile.test},
-    },
     FILEHANDLE => {
         input           => undef,
         expected_output => $function_base_command,
@@ -124,29 +117,84 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
+    analysis_type => {
+        input           => q{HaplotypeCaller},
+        expected_output => q{--analysis_type HaplotypeCaller},
     },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
+    referencefile_path => {
+        input           => catfile(qw{reference_dir human_genome_build.fasta }),
+        expected_output => q{--reference_sequence}
+          . catfile(qw{reference_dir human_genome_build.fasta }),
     },
 );
 
 my %specific_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
+    intervals_ref => {
+        inputs_ref      => [qw{ chr1 chr2}],
+        expected_output => q{--intervals chr1 --intervals chr2},
     },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
+    read_filters_ref => {
+        inputs_ref => [qw{ MalformedRead BadCigar}],
+        expected_output =>
+          q{--read_filter MalformedRead --read_filter BadCigar},
+    },
+    analysis_type => {
+        input           => q{HaplotypeCaller},
+        expected_output => q{--analysis_type HaplotypeCaller},
+    },
+    logging_level => {
+        input           => q{INFO},
+        expected_output => q{--logging_level INFO},
+    },
+    pedigree_validation_type => {
+        input           => q{SILENT},
+        expected_output => q{--pedigreeValidationType SILENT},
+    },
+    pedigree => {
+        input           => catfile(qw{ dir ped.fam }),
+        expected_output => q{--pedigree } . catfile(qw{ dir ped.fam }),
+    },
+    num_cpu_threads_per_data_thread => {
+        input           => 2,
+        expected_output => q{--num_cpu_threads_per_data_thread 2},
+    },
+    downsample_to_coverage => {
+        input           => $DOWNSAMPLE_TO_COVERAGE,
+        expected_output => q{--downsample_to_coverage }
+          . $DOWNSAMPLE_TO_COVERAGE,
+    },
+    gatk_disable_auto_index_and_file_lock => {
+        input => 1,
+        expected_output =>
+          q{--disable_auto_index_creation_and_locking_when_reading_rods},
+    },
+    referencefile_path => {
+        input           => catfile(qw{reference_dir human_genome_build.fasta }),
+        expected_output => q{--reference_sequence }
+          . catfile(qw{reference_dir human_genome_build.fasta }),
+    },
+    base_quality_score_recalibration_file => {
+        input           => catfile(qw{ dir infile.bsqr }),
+        expected_output => q{--BQSR } . catfile(qw{ dir infile.bsqr }),
+    },
+    disable_indel_qual => {
+        input           => 1,
+        expected_output => q{--disable_indel_quals},
+    },
+    static_quantized_quals_ref => {
+        inputs_ref => [
+            $STATIC_QUANTIZED_QUALS_MINIMUM_LEVEL,
+            $STATIC_QUANTIZED_QUALS_MAX_LEVEL
+        ],
+        expected_output => q{--static_quantized_quals }
+          . $STATIC_QUANTIZED_QUALS_MINIMUM_LEVEL
+          . q{ --static_quantized_quals }
+          . $STATIC_QUANTIZED_QUALS_MAX_LEVEL,
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&SUB_ROUTINE;
+my $module_function_cref = \&gatk_base;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

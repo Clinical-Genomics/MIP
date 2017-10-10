@@ -1,12 +1,8 @@
 sub name_of_subroutine {
 
-## name_of_subroutine
-
 ## Function :
 ## Returns  :
-
-## Arguments: $hash_href, $arrays_ref, $scalar
-##          : $hash_href  => Hash ref description {REF}
+## Arguments: $hash_href  => Hash ref description {REF}
 ##          : $arrays_ref => Array ref description {REF}
 ##          : $scalar     => Scalar description
 

@@ -13,7 +13,7 @@ use Params::Check qw{ check allow last_error };
 
 use FindBin qw{ $Bin };
 use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use Getopt::Long;
 use Test::More;
 use Readonly;
@@ -79,7 +79,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::PATH::TO::MODULE});
+    my @modules = (q{MIP::Program::Alignment::Gatk});
 
   MODULE:
     for my $module (@modules) {
@@ -87,11 +87,11 @@ BEGIN {
     }
 }
 
-use MIP::PATH::TO::MODULE qw{ SUB_ROUTINE };
+use MIP::Program::Alignment::Gatk qw{ gatk_haplotypecaller };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
-      . $MIP::PATH::TO::MODULE::VERSION
+diag(   q{Test gatk_haplotypecaller from Alignment::Gatk.pm v}
+      . $MIP::Program::Alignment::Gatk::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -99,21 +99,17 @@ diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+## Constants
+Readonly my $STANDARD_MIN_CONFIDENCE_THRESHOLD_FOR_CALLING => 10;
+Readonly my $VARIANT_INDEX_PARAMETER                       => 128_000;
+
 ## Base arguments
-my $function_base_command = q{BASE_COMMAND};
+my $function_base_command = q{--analysis_type HaplotypeCaller};
 
 my %base_argument = (
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
-    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
-    },
-    stderrfile_path_append => {
-        input           => q{stderrfile.test},
-        expected_output => q{2>> stderrfile.test},
     },
     FILEHANDLE => {
         input           => undef,
@@ -124,29 +120,88 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
+    intervals_ref => {
+        inputs_ref      => [qw{ chr1 chr2}],
+        expected_output => q{--intervals chr1 --intervals chr2},
     },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
+    referencefile_path => {
+        input           => catfile(qw{reference_dir human_genome_build.fasta }),
+        expected_output => q{--reference_sequence}
+          . catfile(qw{reference_dir human_genome_build.fasta }),
+    },
+    annotations_ref => {
+        inputs_ref => [qw{ BaseQualityRankSumTest ChromosomeCounts }],
+        expected_output =>
+          q{--annotation BaseQualityRankSumTest --annotation ChromosomeCounts},
+    },
+    infile_path => {
+        input           => catfile(qw{ dir infile.bam }),
+        expected_output => q{--input_file } . catfile(qw{ dir infile.bam }),
+    },
+    outfile_path => {
+        input           => catfile(qw{ dir outfile.bam }),
+        expected_output => q{--input_file } . catfile(qw{ dir infile.bam }),
     },
 );
 
 my %specific_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
+    intervals_ref => {
+        inputs_ref      => [qw{ chr1 chr2}],
+        expected_output => q{--intervals chr1 --intervals chr2},
     },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
+    referencefile_path => {
+        input           => catfile(qw{reference_dir human_genome_build.fasta }),
+        expected_output => q{--reference_sequence }
+          . catfile(qw{ reference_dir human_genome_build.fasta }),
+    },
+    annotations_ref => {
+        inputs_ref => [qw{ BaseQualityRankSumTest ChromosomeCounts }],
+        expected_output =>
+          q{--annotation BaseQualityRankSumTest --annotation ChromosomeCounts},
+    },
+    infile_path => {
+        input           => catfile(qw{ dir infile.bam }),
+        expected_output => q{--input_file } . catfile(qw{ dir infile.bam }),
+    },
+    outfile_path => {
+        input           => catfile(qw{ dir outfile.bam }),
+        expected_output => q{--out } . catfile(qw{ dir outfile.bam }),
+    },
+    dbsnp => {
+        input           => catfile(qw{ dir GRCh37_dbsnp_-138-.vcf }),
+        expected_output => q{--dbsnp }
+          . catfile(qw{ dir GRCh37_dbsnp_-138-.vcf }),
+    },
+    standard_min_confidence_threshold_for_calling => {
+        input           => $STANDARD_MIN_CONFIDENCE_THRESHOLD_FOR_CALLING,
+        expected_output => q{--standard_min_confidence_threshold_for_calling }
+          . $STANDARD_MIN_CONFIDENCE_THRESHOLD_FOR_CALLING,
+    },
+    dont_use_soft_clipped_bases => {
+        input           => 1,
+        expected_output => q{--dontUseSoftClippedBases},
+    },
+    pcr_indel_model => {
+        input           => q{NONE},
+        expected_output => q{--pcr_indel_model NONE},
+    },
+    variant_index_parameter => {
+        input           => $VARIANT_INDEX_PARAMETER,
+        expected_output => q{--variant_index_parameter }
+          . $VARIANT_INDEX_PARAMETER,
+    },
+    emit_ref_confidence => {
+        input           => q{GVCF},
+        expected_output => q{--emitRefConfidence GVCF},
+    },
+    variant_index_type => {
+        input           => q{LINEAR},
+        expected_output => q{--variant_index_type LINEAR},
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&SUB_ROUTINE;
+my $module_function_cref = \&gatk_haplotypecaller;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

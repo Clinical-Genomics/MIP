@@ -34,14 +34,13 @@ Readonly my $SPACE => q{ };
 
 sub gatk_base {
 
-## pgatk_base
-
-## Function : Perl wrapper for Gatk base. Based on Gatk 3.7
+## Function : Perl wrapper for Gatk base parameters. Based on Gatk 3.7
 ## Returns  : @commands
-## Arguments: $commands_ref, $analysis_type, $intervals_ref, $referencefile_path, $pedigree, $pedigree_validation_type, $downsample_to_coverage, $gatk_disable_auto_index_and_file_lock, $base_quality_score_recalibration_file, $disable_indel_qual, $static_quantized_quals_ref, $logging_level, $FILEHANDLE
-##          : $commands_ref                          => List of commands added earlier
-##          : $analysis_type                         => Analysis type
+## Arguments: $commands_ref                          => List of commands added earlier
 ##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
+##          : $read_filters_ref                      => Filters to apply to reads before analysis {REF}
+##          : $static_quantized_quals_ref            => Use static quantized quality scores [ref]
+##          : $analysis_type                         => Analysis type
 ##          : $referencefile_path                    => Reference sequence file
 ##          : $pedigree                              => Pedigree files
 ##          : $pedigree_validation_type              => Validation strictness for pedigree
@@ -49,7 +48,7 @@ sub gatk_base {
 ##          : $gatk_disable_auto_index_and_file_lock => Disable both auto-generation of index files and index file locking
 ##          : $base_quality_score_recalibration_file => Base quality score recalibration file
 ##          : $disable_indel_qual                    => Disable indel quality
-##          : $static_quantized_quals_ref            => Use static quantized quality scores [ref]
+##          : $num_cpu_threads_per_data_thread       => Number of CPU threads to allocate per data thread
 ##          : $logging_level                         => Logging level
 ##          : $FILEHANDLE                            => Filehandle to write to
 
@@ -59,19 +58,18 @@ sub gatk_base {
     my $commands_ref;
     my $analysis_type;
     my $intervals_ref;
+    my $read_filters_ref;
+    my $static_quantized_quals_ref;
     my $referencefile_path;
     my $pedigree;
     my $pedigree_validation_type;
     my $downsample_to_coverage;
-
     my $base_quality_score_recalibration_file;
     my $disable_indel_qual;
-    my $static_quantized_quals_ref;
-
-
     my $FILEHANDLE;
 
     ## Default(s)
+    my $num_cpu_threads_per_data_thread;
     my $logging_level;
     my $gatk_disable_auto_index_and_file_lock;
 
@@ -79,12 +77,20 @@ sub gatk_base {
         commands_ref =>
           { default => [], strict_type => 1, store => \$commands_ref },
         analysis_type => {
+            required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$analysis_type
         },
         intervals_ref =>
           { default => [], strict_type => 1, store => \$intervals_ref },
+        read_filters_ref =>
+          { default => [], strict_type => 1, store => \$read_filters_ref },
+        static_quantized_quals_ref => {
+            default     => [],
+            strict_type => 1,
+            store       => \$static_quantized_quals_ref
+        },
         referencefile_path => {
             required    => 1,
             defined     => 1,
@@ -111,10 +117,11 @@ sub gatk_base {
             strict_type => 1,
             store       => \$disable_indel_qual
         },
-        static_quantized_quals_ref => {
-            default     => [],
+        num_cpu_threads_per_data_thread => {
+            default     => 0,
+            allow       => [ undef, qr/ ^\d+$ /sxm ],
             strict_type => 1,
-            store       => \$static_quantized_quals_ref
+            store       => \$num_cpu_threads_per_data_thread
         },
         logging_level => {
             default     => q{INFO},
@@ -136,15 +143,11 @@ sub gatk_base {
     # Stores commands depending on input parameters
     my @commands = @{$commands_ref};
 
-    if ($analysis_type) {
-
-        push @commands, q{--analysis_type} . $SPACE . $analysis_type;
-    }
+    push @commands, q{--analysis_type} . $SPACE . $analysis_type;
 
     push @commands, q{--logging_level} . $SPACE . $logging_level;
 
-# GATK CatVariants does not have an analysis_type parameter and doesn't use pedigree_validation_type
-    if ( $pedigree_validation_type && $analysis_type ) {
+    if ($pedigree_validation_type) {
 
         push @commands,
           q{--pedigreeValidationType} . $SPACE . $pedigree_validation_type;
@@ -153,6 +156,14 @@ sub gatk_base {
     if ($pedigree) {
 
         push @commands, q{--pedigree} . $SPACE . $pedigree;
+    }
+
+    if ($num_cpu_threads_per_data_thread) {
+
+        push @commands,
+            q{--num_cpu_threads_per_data_thread}
+          . $SPACE
+          . $num_cpu_threads_per_data_thread;
     }
 
     if ($downsample_to_coverage) {
@@ -174,22 +185,22 @@ sub gatk_base {
           @{$intervals_ref};
     }
 
+    if ( @{$read_filters_ref} ) {
+
+        push @commands,
+          q{--read_filter} . $SPACE . join $SPACE . q{--read_filter} . $SPACE,
+          @{$read_filters_ref};
+    }
+
     if ($referencefile_path) {
 
-      if($analysis_type) {
-
         push @commands, q{--reference_sequence} . $SPACE . $referencefile_path;
-      }
-      else {
-
-        push @commands, q{--reference} . $SPACE . $referencefile_path;
-      }
     }
 
     if ($base_quality_score_recalibration_file) {
 
-      push @commands,
-        q{--BQSR} . $SPACE . $base_quality_score_recalibration_file;
+        push @commands,
+          q{--BQSR} . $SPACE . $base_quality_score_recalibration_file;
     }
 
     if ($disable_indel_qual) {
@@ -207,6 +218,13 @@ sub gatk_base {
           . q{--static_quantized_quals}
           . $SPACE, @{$static_quantized_quals_ref};
     }
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
     return @commands;
 }
 

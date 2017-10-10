@@ -1,41 +1,39 @@
 package MIP::Test::Writefile;
 
-#### Copyright 2017 Henrik Stranneheim
-
 use strict;
 use warnings;
-use warnings qw(FATAL utf8);
-use utf8;    #Allow unicode characters in this script
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
+use warnings qw{ FATAL utf8 };
+use utf8;
+use open qw{ :encoding(UTF-8) :std };
+use charnames qw{ :full :short };
 use Carp;
-use English qw(-no_match_vars);
-use autodie;
+use English qw{ -no_match_vars };
+use Params::Check qw{ check allow last_error };
 use Test::More;
 
-BEGIN {
+## CPANM
+use Readonly;
+use autodie;
 
-    use base qw(Exporter);
+BEGIN {
     require Exporter;
+    use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(test_write_to_file);
+    our @EXPORT_OK = qw{ test_write_to_file };
 }
 
-use Params::Check qw[check allow last_error];
-$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
+## Constants
+Readonly my $SPACE => q{ };
 
 sub test_write_to_file {
 
-## test_write_to_file
-
 ##Function : Test of writing to file using anonymous FILEHANDLE
-##Returns  : ""
-##Arguments: $module_function_cref, $args_ref, $base_command, $separator
-##         : $module_function_cref => Module method to test
+##Returns  :
+##Arguments: $module_function_cref => Module method to test
 ##         : $args_ref             => Arguments to function call
 ##         : $base_command         => First word in command line usually name of executable
 ##         : $separator            => Separator to use when writing
@@ -71,29 +69,37 @@ sub test_write_to_file {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
     # Add new FILEHANDLE to args
-    push @{$args_ref}, 'FILEHANDLE', $FILEHANDLE;
+    push @{$args_ref}, q{FILEHANDLE}, $FILEHANDLE;
 
     # For storing info to write
     my $file_content;
 
     ## Store file content in memory by using referenced variable
-    open $FILEHANDLE, '>', \$file_content
-      or croak 'Cannot write to ' . $file_content . ': ' . $OS_ERROR;
+    open $FILEHANDLE, q{>}, \$file_content
+      or croak q{Cannot write to}
+      . $SPACE
+      . $file_content . q{:}
+      . $SPACE
+      . $OS_ERROR;
 
     $module_function_cref->( { @{$args_ref} } );
 
     close $FILEHANDLE;
 
     ## Perform test
-    ok( $file_content =~ /^$base_command/,
-        q{Write commands with '} . $separator . q{' to file} );
+    my $return_base_command;
+    if ( $file_content =~ /^($base_command)/ ) {
 
+        $return_base_command = $1;
+    }
+    is( $return_base_command, $base_command,
+        q{Write commands with '} . $separator . q{' to file} );
     return;
 }
 

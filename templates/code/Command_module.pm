@@ -9,6 +9,8 @@ use charnames qw{ :full :short };
 use Carp;
 use English qw{ -no_match_vars };
 use Params::Check qw{ check allow last_error };
+
+## CPANM
 use Readonly;
 
 ## MIPs lib/
@@ -31,13 +33,10 @@ Readonly my $SPACE => q{ };
 
 sub name_of_subroutine {
 
-## name_of_subroutine
-
 ## Function : Perl wrapper for generic commands module.
 ## Returns  : @commands
 
-## Arguments: $stdoutfile_path, $stderrfile_path, $stderrfile_path_append, $FILEHANDLE
-##          : $stdoutfile_path        => Stdoutfile path
+## Arguments: $stdoutfile_path        => Stdoutfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $FILEHANDLE             => Filehandle to write to

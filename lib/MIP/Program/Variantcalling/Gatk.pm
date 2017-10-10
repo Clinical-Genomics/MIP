@@ -551,19 +551,31 @@ sub gatk_catvariants {
 
     push @commands, q{-cp} . $SPACE . $gatk_path;
 
-    ### Gatk base args
-    @commands = gatk_base(
-        {
-            commands_ref           => \@commands,
-            logging_level          => $logging_level,
-            intervals_ref          => $intervals_ref,
-            referencefile_path     => $referencefile_path,
-            downsample_to_coverage => $downsample_to_coverage,
-            gatk_disable_auto_index_and_file_lock =>
-              $gatk_disable_auto_index_and_file_lock,
-            FILEHANDLE => $FILEHANDLE,
-        }
-    );
+    push @commands, q{--logging_level} . $SPACE . $logging_level;
+
+    if ( @{$intervals_ref} ) {
+
+        push @commands,
+          q{--intervals} . $SPACE . join $SPACE . q{--intervals} . $SPACE,
+          @{$intervals_ref};
+    }
+
+    if ($referencefile_path) {
+
+        push @commands, q{--reference} . $SPACE . $referencefile_path;
+    }
+
+    if ($downsample_to_coverage) {
+
+        push @commands,
+          q{--downsample_to_coverage} . $SPACE . $downsample_to_coverage;
+    }
+
+    if ($gatk_disable_auto_index_and_file_lock) {
+
+        push @commands,
+          q{--disable_auto_index_creation_and_locking_when_reading_rods};
+    }
 
     ## Tool-specific options
     if ($assume_sorted) {
@@ -1057,7 +1069,7 @@ sub gatk_applyrecalibration {
         },
         ts_filter_level => {
             default     => 99.0,
-            allow       => qr/^\d+$|^\d+.\d+$/,
+            allow       => qr/ ^\d+$ | ^\d+.\d+$ /sxm,
             strict_type => 1,
             store       => \$ts_filter_level
         },

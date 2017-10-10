@@ -60,7 +60,6 @@ use MIP::Recipes::Bwa_mem qw{ analysis_bwa_mem };
 use MIP::Recipes::Bedtools_genomecov qw{ analysis_bedtools_genomecov };
 use MIP::Recipes::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
 use MIP::Recipes::Fastqc qw{ analysis_fastqc };
-use MIP::Recipes::Gzip_fastq qw{ analysis_gzip_fastq };
 use MIP::Recipes::Manta qw{ analysis_manta };
 use MIP::Recipes::Markduplicates
   qw{ analysis_markduplicates analysis_markduplicates_rio };
@@ -2101,7 +2100,7 @@ if ( $active_parameter{pgatk_haplotypecaller} > 0 ) {  #Run GATK haplotypecaller
             );
         }
 
-        gatk_haplotypecaller(
+        mgatk_haplotypecaller(
             {
                 parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
@@ -15925,9 +15924,9 @@ sub freebayes {
     }
 }
 
-sub gatk_haplotypecaller {
+sub mgatk_haplotypecaller {
 
-##gatk_haplotypecaller
+##mgatk_haplotypecaller
 
 ##Function : gatk_haplotypecaller.
 ##Returns  : ""
@@ -16050,7 +16049,7 @@ sub gatk_haplotypecaller {
       qw{ get_file_suffix get_merged_infile_prefix get_exom_target_bed_file };
     use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use MIP::Recipes::Xargs qw{ xargs_command };
-    use Program::Alignment::Gatk qw(haplotypecaller);
+    use MIP::Program::Alignment::Gatk qw(gatk_haplotypecaller);
     use MIP::Processmanagement::Slurm_processes
       qw{slurm_submit_job_sample_id_dependency_add_to_sample};
 
@@ -16265,7 +16264,7 @@ sub gatk_haplotypecaller {
             }
         );
 
-        haplotypecaller(
+        gatk_haplotypecaller(
             {
                 intervals_ref => \@intervals,
                 annotations_ref =>
@@ -16277,7 +16276,7 @@ sub gatk_haplotypecaller {
                 dont_use_soft_clipped_bases => $active_parameter_href
                   ->{gatk_haplotypecaller_no_soft_clipped_bases},
                 pcr_indel_model         => $pcr_indel_model,
-                variant_index_parameter => "128000",
+                variant_index_parameter => q{128000},
                 infile_path             => $file_path_prefix . "_"
                   . $contig
                   . $infile_suffix,
@@ -16466,7 +16465,7 @@ sub gatk_baserecalibration {
     use MIP::Get::File
       qw{ get_file_suffix get_merged_infile_prefix get_exom_target_bed_file};
     use MIP::Recipes::Xargs qw{ xargs_command };
-    use Program::Alignment::Gatk qw(baserecalibrator printreads);
+    use MIP::Program::Alignment::Gatk qw(gatk_baserecalibrator gatk_printreads);
     use MIP::Delete::File qw{ delete_contig_files };
     use MIP::Program::Alignment::Picardtools qw(picardtools_gatherbamfiles);
     use MIP::Gnu::Coreutils qw(gnu_rm);
@@ -16654,7 +16653,7 @@ sub gatk_baserecalibration {
             @intervals = ($contig);    #Per contig
         }
 
-        baserecalibrator(
+        gatk_baserecalibrator(
             {
                 known_alleles_ref => \@{
                     $active_parameter_href->{gatk_baserecalibration_known_sites}
@@ -16730,7 +16729,7 @@ sub gatk_baserecalibration {
             @intervals = ($contig);    #Per contig
         }
 
-        printreads(
+        gatk_printreads(
             {
                 intervals_ref    => \@intervals,
                 read_filters_ref => \@{
@@ -17021,7 +17020,8 @@ sub gatk_realigner {
       qw{get_file_suffix get_merged_infile_prefix get_exom_target_bed_file };
     use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use MIP::Recipes::Xargs qw{ xargs_command };
-    use Program::Alignment::Gatk qw(realignertargetcreator indelrealigner);
+    use MIP::Program::Alignment::Gatk
+      qw(gatk_realignertargetcreator gatk_indelrealigner);
     use MIP::Delete::File qw{ delete_contig_files };
     use MIP::Processmanagement::Slurm_processes
       qw{slurm_submit_job_sample_id_dependency_add_to_sample};
@@ -17202,7 +17202,7 @@ sub gatk_realigner {
             @intervals = ($contig);    #Per contig
         }
 
-        realignertargetcreator(
+        gatk_realignertargetcreator(
             {
                 known_alleles_ref => \@{
                     $active_parameter_href->{gatk_realigner_indel_known_sites}
@@ -23400,7 +23400,7 @@ sub concatenate_variants {
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
             temp_directory => $active_parameter_href->{temp_directory},
-            gatk_path => catfile( $active_parameter_href->{gatk_path},
+            gatk_path      => catfile( $active_parameter_href->{gatk_path},
                 "GenomeAnalysisTK.jar" )
               . " org.broadinstitute.gatk.tools.CatVariants",
             infile_paths_ref   => \@infile_paths,

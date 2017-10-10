@@ -34,14 +34,9 @@ Readonly my $UNDERSCORE => q{_};
 
 sub analysis_recipe {
 
-## analysis_recipe
-
 ## Function : DESCRIPTION OF RECIPE
 ## Returns  :
-## Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href,
-##            $infile_lane_prefix_href, $job_id_href, $sample_id, family_id, $insample_directory,
-##            $outsample_directory, $outaligner_dir, $program_name
-##          : $parameter_href          => Parameter hash {REF}
+## Arguments: $parameter_href          => Parameter hash {REF}
 ##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $file_info_href          => File_info hash {REF}
