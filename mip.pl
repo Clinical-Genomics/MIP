@@ -2150,7 +2150,7 @@ if ( $active_parameter{pgatk_genotypegvcfs} > 0 )
         }
     );
 
-    gatk_genotypegvcfs(
+    mgatk_genotypegvcfs(
         {
             parameter_href          => \%parameter,
             active_parameter_href   => \%active_parameter,
@@ -4028,8 +4028,8 @@ sub evaluation {
     use MIP::IO::Files qw(migrate_file);
     use MIP::Gnu::Coreutils qw(gnu_cat);
     use MIP::Language::Java qw{java_core};
-    use Program::Variantcalling::Gatk
-      qw(selectvariants leftalignandtrimvariants);
+    use MIP::Program::Variantcalling::Gatk
+      qw(gatk_selectvariants gatk_leftalignandtrimvariants);
     use MIP::Program::Variantcalling::Bcftools qw(bcftools_stats);
     use Program::Interval::Picardtools qw(intervallisttools);
     use Program::Variantcalling::Picardtools qw(genotypeconcordance);
@@ -4129,10 +4129,8 @@ sub evaluation {
     say $FILEHANDLE
       "## Generate '.idx' for downstream Picard by failling this process";
 
-    ## Writes java core commands to filehandle.
-    java_core(
+    gatk_selectvariants(
         {
-            FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
@@ -4141,11 +4139,6 @@ sub evaluation {
                 $active_parameter_href->{gatk_path},
                 "GenomeAnalysisTK.jar"
             ),
-        }
-    );
-
-    selectvariants(
-        {
             sample_names_ref => [ $$sample_id_ref . "XXX " ],
             logging_level    => $active_parameter_href->{gatk_logging_level},
             referencefile_path =>
@@ -4223,10 +4216,8 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
     ## GATK SelectVariants
     say $FILEHANDLE "## GATK SelectVariants";
 
-    ## Writes java core commands to filehandle.
-    java_core(
+    gatk_selectvariants(
         {
-            FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
@@ -4235,11 +4226,6 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
                 $active_parameter_href->{gatk_path},
                 "GenomeAnalysisTK.jar"
             ),
-        }
-    );
-
-    selectvariants(
-        {
             sample_names_ref => [$$sample_id_ref],
             logging_level    => $active_parameter_href->{gatk_logging_level},
             referencefile_path =>
@@ -4255,10 +4241,8 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
     ## Left align, trim and split allels
     say $FILEHANDLE "## GATK LeftAlignAndTrimVariants";
 
-    ## Writes java core commands to filehandle.
-    java_core(
+    gatk_leftalignandtrimvariants(
         {
-            FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
@@ -4267,11 +4251,6 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
                 $active_parameter_href->{gatk_path},
                 "GenomeAnalysisTK.jar"
             ),
-        }
-    );
-
-    leftalignandtrimvariants(
-        {
             infile_path   => $call_file_path . ".vcf",
             logging_level => $active_parameter_href->{gatk_logging_level},
             referencefile_path =>
@@ -4306,10 +4285,8 @@ q?perl -nae 'unless($_=~/##contig=<ID=NC_007605,length=171823>/ || $_=~/##contig
     say $FILEHANDLE
       "## Generate '.idx' for downstream Picard by failling this process";
 
-    ## Writes java core commands to filehandle.
-    java_core(
+    gatk_selectvariants(
         {
-            FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
@@ -4318,11 +4295,6 @@ q?perl -nae 'unless($_=~/##contig=<ID=NC_007605,length=171823>/ || $_=~/##contig
                 $active_parameter_href->{gatk_path},
                 "GenomeAnalysisTK.jar"
             ),
-        }
-    );
-
-    selectvariants(
-        {
             sample_names_ref => [ $$sample_id_ref . "XXX " ],
             logging_level    => $active_parameter_href->{gatk_logging_level},
             referencefile_path =>
@@ -5613,7 +5585,7 @@ sub gatk_variantevalexome {
     use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
     use MIP::Gnu::Coreutils qw(gnu_cat gnu_sort);
     use Program::Variantcalling::Bedtools qw(intersectbed);
-    use Program::Variantcalling::Gatk qw(varianteval);
+    use MIP::Program::Variantcalling::Gatk qw(gatk_varianteval);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_family_dead_end);
@@ -5710,10 +5682,8 @@ sub gatk_variantevalexome {
     ## GATK SelectVariants
     say $FILEHANDLE "## GATK SelectVariants";
 
-    ## Writes java core commands to filehandle.
-    java_core(
+    gatk_selectvariants(
         {
-            FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
@@ -5722,11 +5692,6 @@ sub gatk_variantevalexome {
                 $active_parameter_href->{gatk_path},
                 "GenomeAnalysisTK.jar"
             ),
-        }
-    );
-
-    selectvariants(
-        {
             sample_names_ref => [$$sample_id_ref],
             logging_level    => $active_parameter_href->{gatk_logging_level},
             referencefile_path =>
@@ -5934,10 +5899,8 @@ sub gatk_variantevalexome {
     ## VariantEval
     say $FILEHANDLE "## GATK varianteval";
 
-    ## Writes java core commands to filehandle.
-    java_core(
+    gatk_varianteval(
         {
-            FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
@@ -5946,11 +5909,6 @@ sub gatk_variantevalexome {
                 $active_parameter_href->{gatk_path},
                 "GenomeAnalysisTK.jar"
             ),
-        }
-    );
-
-    varianteval(
-        {
             infile_paths_ref =>
               [ $outfile_path_prefix . $call_type . "_exome" . $infile_suffix ],
             outfile_path => $outfile_path_prefix
@@ -6132,7 +6090,7 @@ sub gatk_variantevalall {
     use MIP::Language::Java qw{java_core};
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
-    use Program::Variantcalling::Gatk qw(varianteval);
+    use MIP::Program::Variantcalling::Gatk qw(gatk_varianteval);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_family_dead_end);
@@ -6227,10 +6185,8 @@ sub gatk_variantevalall {
     ## GATK SelectVariants
     say $FILEHANDLE "## GATK SelectVariants";
 
-    ## Writes java core commands to filehandle.
-    java_core(
+    gatk_selectvariants(
         {
-            FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
@@ -6239,11 +6195,6 @@ sub gatk_variantevalall {
                 $active_parameter_href->{gatk_path},
                 "GenomeAnalysisTK.jar"
             ),
-        }
-    );
-
-    selectvariants(
-        {
             sample_names_ref => [$$sample_id_ref],
             logging_level    => $active_parameter_href->{gatk_logging_level},
             referencefile_path =>
@@ -6258,10 +6209,8 @@ sub gatk_variantevalall {
     ## GATK varianteval
     say $FILEHANDLE "## GATK varianteval";
 
-    ## Writes java core commands to filehandle.
-    java_core(
+    gatk_varianteval(
         {
-            FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
@@ -6270,11 +6219,6 @@ sub gatk_variantevalall {
                 $active_parameter_href->{gatk_path},
                 "GenomeAnalysisTK.jar"
             ),
-        }
-    );
-
-    varianteval(
-        {
             infile_paths_ref => [
                 catfile(
                     $$temp_directory_ref,
@@ -9347,7 +9291,7 @@ sub gatk_combinevariantcallsets {
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Language::Java qw{java_core};
-    use Program::Variantcalling::Gatk qw(combinevariants);
+    use MIP::Program::Variantcalling::Gatk qw(gatk_combinevariants);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
 
@@ -9469,10 +9413,8 @@ sub gatk_combinevariantcallsets {
     ## GATK CombineVariants
     say $FILEHANDLE "## GATK CombineVariants";
 
-    ## Writes java core commands to filehandle.
-    java_core(
+    gatk_combinevariants(
         {
-            FILEHANDLE        => $FILEHANDLE,
             memory_allocation => "Xmx2g",
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
@@ -9481,11 +9423,6 @@ sub gatk_combinevariantcallsets {
                 $active_parameter_href->{gatk_path},
                 "GenomeAnalysisTK.jar"
             ),
-        }
-    );
-
-    Program::Variantcalling::Gatk::combinevariants(
-        {
             infile_paths_ref => \@file_tags_and_paths,
             outfile_path     => $outfile_path_prefix . $outfile_suffix,
             logging_level    => $active_parameter_href->{gatk_logging_level},
@@ -9677,8 +9614,8 @@ sub gatk_variantrecalibration {
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use MIP::Language::Java qw{java_core};
     use MIP::Program::Variantcalling::Bcftools qw(bcftools_norm);
-    use Program::Variantcalling::Gatk
-      qw(variantrecalibrator applyrecalibration selectvariants calculategenotypeposteriors);
+    use MIP::Program::Variantcalling::Gatk
+      qw(gatk_variantrecalibrator gatk_applyrecalibration gatk_selectvariants gatk_calculategenotypeposteriors);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
@@ -9808,21 +9745,6 @@ sub gatk_variantrecalibration {
 
         say $FILEHANDLE "## GATK VariantRecalibrator";
 
-        ## Writes java core commands to filehandle.
-        java_core(
-            {
-                FILEHANDLE        => $FILEHANDLE,
-                memory_allocation => "Xmx10g",
-                java_use_large_pages =>
-                  $active_parameter_href->{java_use_large_pages},
-                temp_directory => $$temp_directory_ref,
-                java_jar       => catfile(
-                    $active_parameter_href->{gatk_path},
-                    "GenomeAnalysisTK.jar"
-                ),
-            }
-        );
-
         ##Get parameters
         my @infiles;
         my $max_gaussian_level;
@@ -9908,8 +9830,16 @@ sub gatk_variantrecalibration {
         # Create distinct set i.e. no duplicates.
         @resources = uniq(@resources);
 
-        variantrecalibrator(
+        gatk_variantrecalibrator(
             {
+                memory_allocation => "Xmx10g",
+                java_use_large_pages =>
+                  $active_parameter_href->{java_use_large_pages},
+                temp_directory => $$temp_directory_ref,
+                java_jar       => catfile(
+                    $active_parameter_href->{gatk_path},
+                    "GenomeAnalysisTK.jar"
+                ),
                 infile_paths_ref => \@infiles,
                 annotations_ref  => \@annotations,
                 resources_ref    => \@resources,
@@ -9930,21 +9860,6 @@ sub gatk_variantrecalibration {
 
         ## GATK ApplyRecalibration
         say $FILEHANDLE "## GATK ApplyRecalibration";
-
-        ## Writes java core commands to filehandle.
-        java_core(
-            {
-                FILEHANDLE        => $FILEHANDLE,
-                memory_allocation => "Xmx10g",
-                java_use_large_pages =>
-                  $active_parameter_href->{java_use_large_pages},
-                temp_directory => $$temp_directory_ref,
-                java_jar       => catfile(
-                    $active_parameter_href->{gatk_path},
-                    "GenomeAnalysisTK.jar"
-                ),
-            }
-        );
 
         ## Get parameters
         my $infile_path;
@@ -9980,8 +9895,16 @@ sub gatk_variantrecalibration {
             }
         }
 
-        applyrecalibration(
+        gatk_applyrecalibration(
             {
+                memory_allocation => "Xmx10g",
+                java_use_large_pages =>
+                  $active_parameter_href->{java_use_large_pages},
+                temp_directory => $$temp_directory_ref,
+                java_jar       => catfile(
+                    $active_parameter_href->{gatk_path},
+                    "GenomeAnalysisTK.jar"
+                ),
                 infile_path   => $infile_path,
                 outfile_path  => $outfile_path,
                 logging_level => $active_parameter_href->{gatk_logging_level},
@@ -10033,10 +9956,8 @@ sub gatk_variantrecalibration {
 
         say $FILEHANDLE "## GATK SelectVariants";
 
-        ## Writes java core commands to filehandle.
-        java_core(
+        gatk_selectvariants(
             {
-                FILEHANDLE        => $FILEHANDLE,
                 memory_allocation => "Xmx2g",
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
@@ -10045,11 +9966,6 @@ sub gatk_variantrecalibration {
                     $active_parameter_href->{gatk_path},
                     "GenomeAnalysisTK.jar"
                 ),
-            }
-        );
-
-        selectvariants(
-            {
                 sample_names_ref => \@{ $active_parameter_href->{sample_ids} },
                 logging_level => $active_parameter_href->{gatk_logging_level},
                 referencefile_path =>
@@ -10071,10 +9987,8 @@ sub gatk_variantrecalibration {
 
             say $FILEHANDLE "\n\n#GATK SelectVariants", "\n";
 
-            ## Writes java core commands to filehandle.
-            java_core(
+            gatk_selectvariants(
                 {
-                    FILEHANDLE        => $FILEHANDLE,
                     memory_allocation => "Xmx2g",
                     java_use_large_pages =>
                       $active_parameter_href->{java_use_large_pages},
@@ -10083,11 +9997,6 @@ sub gatk_variantrecalibration {
                         $active_parameter_href->{gatk_path},
                         "GenomeAnalysisTK.jar"
                     ),
-                }
-            );
-
-            selectvariants(
-                {
                     sample_names_ref =>
                       \@{ $active_parameter_href->{sample_ids} },
                     logging_level =>
@@ -10125,10 +10034,8 @@ sub gatk_variantrecalibration {
 
         say $FILEHANDLE "## GATK CalculateGenotypePosteriors";
 
-        ## Writes java core commands to filehandle.
-        java_core(
+        gatk_calculategenotypeposteriors(
             {
-                FILEHANDLE        => $FILEHANDLE,
                 memory_allocation => "Xmx6g",
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
@@ -10137,11 +10044,6 @@ sub gatk_variantrecalibration {
                     $active_parameter_href->{gatk_path},
                     "GenomeAnalysisTK.jar"
                 ),
-            }
-        );
-
-        calculategenotypeposteriors(
-            {
                 logging_level => $active_parameter_href->{gatk_logging_level},
                 referencefile_path =>
                   $active_parameter_href->{human_genome_reference},
@@ -10388,7 +10290,7 @@ sub gatk_concatenate_genotypegvcfs {
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Language::Java qw{java_core};
-    use Program::Variantcalling::Gatk qw(selectvariants);
+    use MIP::Program::Variantcalling::Gatk qw(gatk_selectvariants);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
 
@@ -10505,10 +10407,8 @@ sub gatk_concatenate_genotypegvcfs {
 
             say $FILEHANDLE "##GATK SelectVariants", "\n";
 
-            ## Writes java core commands to filehandle.
-            java_core(
+            gatk_selectvariants(
                 {
-                    FILEHANDLE        => $FILEHANDLE,
                     memory_allocation => "Xmx2g",
                     java_use_large_pages =>
                       $active_parameter_href->{java_use_large_pages},
@@ -10517,11 +10417,6 @@ sub gatk_concatenate_genotypegvcfs {
                         $active_parameter_href->{gatk_path},
                         "GenomeAnalysisTK.jar"
                     ),
-                }
-            );
-
-            selectvariants(
-                {
                     sample_names_ref =>
                       \@{ $active_parameter_href->{sample_ids} },
                     logging_level =>
@@ -10613,7 +10508,7 @@ sub gatk_concatenate_genotypegvcfs {
     }
 }
 
-sub gatk_genotypegvcfs {
+sub mgatk_genotypegvcfs {
 
 ##gatk_genotypegvcfs
 
@@ -10723,7 +10618,7 @@ sub gatk_genotypegvcfs {
     use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Language::Java qw{java_core};
-    use Program::Variantcalling::Gatk qw(genotypegvcfs);
+    use MIP::Program::Variantcalling::Gatk qw(gatk_genotypegvcfs);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_step_in_parallel_to_family);
 
@@ -10888,10 +10783,8 @@ sub gatk_genotypegvcfs {
                 $active_parameter_href->{gatk_genotypegvcfs_ref_gvcf} );
         }
 
-        ## Writes java core commands to filehandle.
-        java_core(
+        gatk_genotypegvcfs(
             {
-                FILEHANDLE        => $FILEHANDLE,
                 memory_allocation => "Xmx24g",
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
@@ -10900,18 +10793,13 @@ sub gatk_genotypegvcfs {
                     $active_parameter_href->{gatk_path},
                     "GenomeAnalysisTK.jar"
                 ),
-            }
-        );
-
-        genotypegvcfs(
-            {
                 intervals_ref    => [$contig],
                 infile_paths_ref => \@file_paths,
                 outfile_path     => $outfile_path_prefix . $outfile_suffix,
                 logging_level => $active_parameter_href->{gatk_logging_level},
                 referencefile_path =>
                   $active_parameter_href->{human_genome_reference},
-                dbsnp =>
+                dbsnp_file_path =>
                   $active_parameter_href->{gatk_haplotypecaller_snp_known_set},
                 pedigree_validation_type => $commands{pedigree_validation_type},
                 pedigree                 => $commands{pedigree},
@@ -23664,7 +23552,7 @@ sub concatenate_variants {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Language::Java qw{java_core};
-    use Program::Variantcalling::Gatk qw(catvariants);
+    use MIP::Program::Variantcalling::Gatk qw(gatk_catvariants);
 
     unless ( defined($infile_postfix) ) {
 
@@ -23677,23 +23565,16 @@ sub concatenate_variants {
 
     say $FILEHANDLE "## GATK CatVariants";
 
-    ## Writes java core commands to filehandle.
-    java_core(
-        {
-            FILEHANDLE        => $FILEHANDLE,
-            memory_allocation => "Xmx4g",
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory => $active_parameter_href->{temp_directory}
-        }
-    );
-
     ## Assemble infile paths
     my @infile_paths =
       map { $infile_prefix . $_ . $infile_postfix } @$elements_ref;
 
-    catvariants(
+    gatk_catvariants(
         {
+            memory_allocation => "Xmx4g",
+            java_use_large_pages =>
+              $active_parameter_href->{java_use_large_pages},
+            temp_directory => $active_parameter_href->{temp_directory},
             gatk_path => catfile( $active_parameter_href->{gatk_path},
                 "GenomeAnalysisTK.jar" )
               . " org.broadinstitute.gatk.tools.CatVariants",
