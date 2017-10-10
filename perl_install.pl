@@ -23,6 +23,7 @@ use lib catdir( $Bin, q{lib} );
 use MIP::Script::Utils_v5_10 qw{ help set_default_array_parameters };
 use MIP::Program::Download::Wget_v5_10 qw{ wget };
 use MIP::Package_manager::Cpanm_v5_10 qw{ cpanm_install_module };
+use MIP::Check::Modules_v5_10 qw{ check_perl_modules };
 
 our $USAGE = build_usage( {} );
 
@@ -431,8 +432,8 @@ sub install_cpanm_modules {
     }
 
     ## Check aginst what's already installed
-    my %modules = map { $_ => 1 } @modules;
-    my @modules_to_install = grep { not $modules{$_} } @perl_modules;
+    my @modules_to_install =
+      check_perl_modules( { modules_ref => \@perl_modules } );
 
     if (@modules_to_install) {
         say STDERR q{## Writing recipe for installation of Cpanm modules};
