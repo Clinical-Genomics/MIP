@@ -86,6 +86,7 @@ $parameter{bioconda}{multiqc}   = q{0.9.1a0};
 $parameter{bioconda}{peddy}     = q{0.2.9};
 $parameter{bioconda}{plink2}    = q{1.90b3.35};
 $parameter{bioconda}{vcfanno}   = q{0.1.0};
+$parameter{bioconda}{q{rtg-tools}} = q{3.8.4};
 
 # Required for CNVnator
 $parameter{bioconda}{gcc}   = q{4.8.5};

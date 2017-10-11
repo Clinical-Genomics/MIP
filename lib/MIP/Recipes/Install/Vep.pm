@@ -133,7 +133,7 @@ sub install_varianteffectpredictor {
 
         if ($noupdate) {
 
-            $log->inf(
+            $log->info(
 q{Skipping writting installation process for varianteffectpredictor}
             );
             return;
