@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.0.1;
+    our $VERSION = 1.0.2;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -35,20 +35,17 @@ BEGIN {
 
 sub setup_conda_env {
 
-## setup_conda_env
-
 ## Function  : Creates necessary conda environment and install package(s) from the default channel.
 ## Returns   :
-## Arguments : $conda_packages_href, $conda_env, $conda_env_path, $FILEHANDLE, $conda_update
-##           : $conda_packages_href => Hash with conda packages and their version numbers {REF}
+## Arguments : $conda_packages_href => Hash with conda packages and their version numbers {REF}
 ##           : $conda_env           => Name of conda environment
 ##           : $conda_env_path      => Path to conda environment (default: conda root)
 ##           : $FILEHANDLE          => Filehandle to write to
 ##           : $conda_update        => Update Conda if defined
+##           : $quiet               => Log only warnings and above
+##           : $verbose             => Log debug messages
 
     my ($arg_href) = @_;
-
-    ## Defaults
 
     ## Flatten argument(s)
     my $conda_packages_href;
@@ -56,6 +53,8 @@ sub setup_conda_env {
     my $conda_env_path;
     my $FILEHANDLE;
     my $conda_update;
+    my $quiet;
+    my $verbose;
 
     my $tmpl = {
         conda_packages_href => {
@@ -81,7 +80,15 @@ sub setup_conda_env {
         },
         conda_update => {
             store => \$conda_update,
-        }
+        },
+        quiet => {
+            allow => [ undef, 0, 1 ],
+            store => \$quiet,
+        },
+        verbose => {
+            allow => [ undef, 0, 1 ],
+            store => \$verbose,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -89,16 +96,33 @@ sub setup_conda_env {
     use MIP::Check::Unix qw{ check_binary_in_path };
     use MIP::Package_manager::Conda
       qw{ conda_create conda_update conda_check_env_status conda_install };
+    use MIP::Log::MIP_log4perl qw{ retrieve_log };
+
+    ## Get logger
+    my $log = retrieve_log(
+        {
+            log_name => q{mip_install::setup_conda_env},
+            verbose  => $verbose,
+            quiet    => $quiet,
+        }
+    );
 
     ## Scan the PATH for conda
     check_binary_in_path(
         {
             binary => q{conda},
+            log    => $log
         }
     );
 
     ## Check for active conda environment (exit if true)
-    conda_check_env_status();
+    my $env_status = conda_check_env_status();
+    if ($env_status) {
+        $log->fatal( q{Found activate conda env: } . $env_status );
+        $log->fatal(
+            q{Run 'source deactivate' prior to running installation script});
+        exit 1;
+    }
 
     ## Optionally update conda
     if ($conda_update) {
@@ -137,8 +161,12 @@ sub setup_conda_env {
             say {$FILEHANDLE} $NEWLINE;
         }
         else {
-            say STDERR q{Conda environment: } . $conda_env . q{ already exists};
-            say STDERR q{Will try to install packages into existing envronment};
+            $log->warn( q{Conda environment: }
+                  . $conda_env
+                  . $SPACE
+                  . q{already exists} );
+            $log->warn(
+                q{Will try to install packages into existing envronment});
             say {$FILEHANDLE}
               q{## Installing conda packages into existing environment};
             conda_install(
@@ -167,12 +195,9 @@ sub setup_conda_env {
 
 sub install_bioconda_packages {
 
-## install_bioconda_packages
-
 ## Function  : Install conda packages from the bioconda channel into a conda environment.
 ## Returns   :
-## Arguments : $bioconda_packages_href, $bioconda_patches_href, $conda_env, $conda_env_path, $FILEHANDLE
-##           : $bioconda_packages_href => Hash holding bioconda packages and their version numbers {REF}
+## Arguments : $bioconda_packages_href => Hash holding bioconda packages and their version numbers {REF}
 ##           : $bioconda_patches_href  => Hash holding the patches for the bioconda packages {REF}
 ##           : $conda_env              => Name of conda environment
 ##           : $conda_env_path         => Path to conda environment (default: conda root)
@@ -273,17 +298,14 @@ sub install_bioconda_packages {
 
 sub finish_bioconda_package_install {
 
-## finish_bioconda_package_install
-
-## Function   : Custom solutions to finish the install of BWA, SnpEff and Manta
-## Returns    :
-## Argumemnts : $bioconda_packages_href, $bioconda_patches_href, $conda_env_path, $FILEHANDLE, $conda_env
-##            : $bioconda_packages_href     => Hash with bioconda packages {REF}
-##            : $bioconda_patches_href      => Hash with package patches {REF}
-##            : $snpeff_genome_versions_ref => Hash with the genome versins of the snpeff databases {REF}
-##            : $conda_env_path             => Path to conda environment
-##            : $FILEHANDLE                 => Filehandle to write to
-##            : $conda_env                  => Name of conda env
+## Function  : Custom solutions to finish the install of BWA, SnpEff and Manta
+## Returns   :
+## Arguments : $bioconda_packages_href     => Hash with bioconda packages {REF}
+##           : $bioconda_patches_href      => Hash with package patches {REF}
+##           : $snpeff_genome_versions_ref => Hash with the genome versins of the snpeff databases {REF}
+##           : $conda_env_path             => Path to conda environment
+##           : $FILEHANDLE                 => Filehandle to write to
+##           : $conda_env                  => Name of conda env
 
     my ($arg_href) = @_;
 
@@ -442,14 +464,11 @@ sub finish_bioconda_package_install {
 
 sub _create_package_array {
 
-## create_package_list
-
 ##Function  : Takes a reference to hash of packages and creates an array with
 ##          : package and version joined with a supplied separator if value is defined.
 ##          : Also checks that the version number makes sense
 ##Returns   : "@packages"
-##Arguments : $package_href, $package_version_separator
-##          : $package_href              => Hash with packages {Hash}
+##Arguments : $package_href              => Hash with packages {Hash}
 ##          : $package_version_separator => Scalar separating the package and the version
 
     my ($arg_href) = @_;
@@ -502,16 +521,13 @@ sub _create_package_array {
 
 sub _create_target_link_paths {
 
-## _create_target_link_paths
-
-## Function   : Creates paths to bioconda target binaries and links.
-##            : Custom solutions for bwakit picard snpeff snpsift manta.
-##            : Returns a hash ref consisting of the paths.
-## Returns    : %target_link_paths
-## Argumemnts : $bioconda_packages_href, $bioconda_patches_href, $conda_env_path
-##            : $bioconda_packages_href => Hash with bioconda packages {REF}
-##            : $bioconda_patches_href  => Hash with bioconda package patches {REF}
-##            : $conda_env_path         => Path to conda environment
+## Function  : Creates paths to bioconda target binaries and links.
+##           : Custom solutions for bwakit picard snpeff snpsift manta.
+##           : Returns a hash ref consisting of the paths.
+## Returns   : %target_link_paths
+## Arguments : $bioconda_packages_href => Hash with bioconda packages {REF}
+##           : $bioconda_patches_href  => Hash with bioconda package patches {REF}
+##           : $conda_env_path         => Path to conda environment
 
     my ($arg_href) = @_;
 
@@ -615,12 +631,9 @@ sub _create_target_link_paths {
 
 sub _check_mt_codon_table {
 
-##_check_mt_codon_table
-
 ##Function : Check and if required add the vertebrate mitochondrial codon table to snpeff config
 ##Returns  : ""
-##Arguments: $FILEHANDLE, $share_dir, $config_file, $genome_version
-##         : $FILEHANDLE     => FILEHANDLE to write to
+##Arguments: $FILEHANDLE     => FILEHANDLE to write to
 ##         : $share_dir      => The conda env shared directory
 ##         : $config_file    => The config config_file
 ##         : $genome_version => snpeff genome version
@@ -664,6 +677,9 @@ sub _check_mt_codon_table {
     use File::Spec::Functions qw{ catfile };
     use IPC::Cmd qw{ can_run run };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger(q{mip_install});
 
     my $detect_regexp =
 
@@ -729,12 +745,12 @@ sub _check_mt_codon_table {
 
     }
     else {
-        say STDERR q{Found MT.codonTable in}
-          . $SPACE
-          . catfile( $share_dir, q{snpEff.config} )
-          . $DOT
-          . $SPACE
-          . q{Skipping addition to snpEff config};
+        $log->info( q{Found MT.codonTable in}
+              . $SPACE
+              . catfile( $share_dir, q{snpEff.config} )
+              . $DOT
+              . $SPACE
+              . q{Skipping addition to snpEff config} );
     }
     return;
 }

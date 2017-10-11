@@ -2,35 +2,36 @@
 
 use strict;
 use warnings;
-use warnings qw( FATAL utf8 );
+use warnings qw{ FATAL utf8 };
 use utf8;
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
+use open qw{ :encoding(UTF-8) :std };
+use charnames qw{ :full :short };
 use Carp;
-use English qw(-no_match_vars);
-use Params::Check qw[check allow last_error];
-$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
+use English qw{ -no_match_vars };
+use Params::Check qw{ check allow last_error };
 
 use Getopt::Long;
 use Cwd;
-use Cwd qw(abs_path);
-use FindBin qw($Bin);                 #Find directory of script
+use Cwd qw{ abs_path };
+use FindBin qw{ $Bin };    #Find directory of script
 use IO::Handle;
-use File::Basename qw(dirname basename fileparse);
-use File::Spec::Functions qw(catfile catdir devnull);
+use File::Basename qw{ dirname basename fileparse };
+use File::Spec::Functions qw{ catfile catdir devnull };
 use Readonly;
+use Time::Piece;
 
 ## MIPs lib/
-use lib catdir( $Bin, 'lib' );        #Add MIPs internal lib
-use MIP::Language::Shell qw(create_bash_file);
-use MIP::Program::Download::Wget qw(wget);
-use MIP::Gnu::Bash qw(gnu_cd);
-use MIP::Gnu::Coreutils qw(gnu_cp gnu_rm gnu_mv gnu_mkdir gnu_ln gnu_chmod );
+use lib catdir( $Bin, q{lib} );    #Add MIPs internal lib
+use MIP::Language::Shell qw{ create_bash_file };
+use MIP::Program::Download::Wget qw{ wget };
+use MIP::Gnu::Bash qw{ gnu_cd };
+use MIP::Gnu::Coreutils qw{ gnu_cp gnu_rm gnu_mv gnu_mkdir gnu_ln gnu_chmod };
 use MIP::Package_manager::Conda
   qw{ conda_source_activate conda_source_deactivate };
-use MIP::Script::Utils qw(help set_default_array_parameters);
+use MIP::Script::Utils qw{ help set_default_array_parameters };
 use MIP::Check::Path qw{ check_dir_path_exist };
 use MIP::Package_manager::Pip qw{ pip_install };
+use MIP::Log::MIP_log4perl qw{ initiate_logger };
 
 ## Recipes
 use MIP::Recipes::Install::Conda
@@ -41,16 +42,17 @@ use MIP::Recipes::Install::Pip qw{ install_pip_packages };
 our $USAGE = build_usage( {} );
 
 ## Constants
-Readonly my $DOT     => q{.};
-Readonly my $COMMA   => q{,};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
+Readonly my $DOT        => q{.};
+Readonly my $COMMA      => q{,};
+Readonly my $NEWLINE    => qq{\n};
+Readonly my $SPACE      => q{ };
+Readonly my $UNDERSCORE => q{_};
 
 ### Set parameter default
 
 my %parameter;
 
-##Bash
+## Bash
 $parameter{bash_set_errexit} = 0;
 $parameter{bash_set_nounset} = 0;
 
@@ -86,8 +88,8 @@ $parameter{bioconda}{plink2}    = q{1.90b3.35};
 $parameter{bioconda}{vcfanno}   = q{0.1.0};
 
 # Required for CNVnator
-$parameter{bioconda}{gcc}   = '4.8.5';
-$parameter{bioconda}{cmake} = '3.3.1';
+$parameter{bioconda}{gcc}   = q{4.8.5};
+$parameter{bioconda}{cmake} = q{3.3.1};
 
 ## Bioconda pathes
 # For correct softlinking in share and bin in conda env
@@ -96,9 +98,6 @@ $parameter{bioconda_patches}{bioconda_snpeff_patch}  = q{q-0};
 $parameter{bioconda_patches}{bioconda_snpsift_patch} = q{p-0};
 $parameter{bioconda_patches}{bioconda_picard_patch}  = q{-1};
 $parameter{bioconda_patches}{bioconda_manta_patch}   = q{-0};
-
-## Perl Modules
-$parameter{perl_version} = '5.18.2';
 
 ## PIP
 $parameter{pip}{genmod}            = q{3.7.2};
@@ -135,37 +134,40 @@ $array_parameter{snpeff_genome_versions}{default} =
   [qw(GRCh37.75 GRCh38.86)];
 $array_parameter{reference_genome_versions}{default} = [qw(GRCh37 hg38)];
 
-my $VERSION = q{1.2.11};
+my $VERSION = q{1.2.12};
 
 ###User Options
 GetOptions(
-    'see|bash_set_errexit'          => \$parameter{bash_set_errexit},
-    'snu|bash_set_nounset'          => \$parameter{bash_set_nounset},
-    'env|conda_environment:s'       => \$parameter{conda_environment},
-    'cdp|conda_dir_path:s'          => \@{ $parameter{conda_dir_path} },
-    'cdu|conda_update'              => \$parameter{conda_update},
-    'bcv|bioconda=s'                => \%{ $parameter{bioconda} },
-    'pip|pip=s'                     => \%{ $parameter{pip} },
-    'pyv|python_version=s'          => \$parameter{python_version},
-    'pic|picardtools:s'             => \$parameter{picardtools},
-    'sbb|sambamba:s'                => \$parameter{sambamba},
-    'bet|bedtools:s'                => \$parameter{bedtools},
-    'vt|vt:s'                       => \$parameter{vt},
-    'plk|plink2:s'                  => \$parameter{plink2},
-    'snpg|snpeff_genome_versions:s' => \@{ $parameter{snpeff_genome_versions} },
-    'vep|varianteffectpredictor:s'  => \$parameter{varianteffectpredictor},
-    'vepai|vep_auto_flag:s'         => \$parameter{vep_auto_flag},
-    'vepc|vep_cache_dir:s'          => \$parameter{vep_cache_dir},
-    'vepa|vep_assemblies:s'         => \@{ $parameter{vep_assemblies} },
-    'vepp|vep_plugins:s'            => \@{ $parameter{vep_plugins} },
-    'rhc|rhocall:s'                 => \$parameter{rhocall},
-    'rhcp|rhocall_path:s'           => \$parameter{rhocall_path},
-    'cnv|cnvnator:s'                => \$parameter{cnvnator},
-    'cnvnr|cnvnator_root_binary:s'  => \$parameter{cnvnator_root_binary},
-    'tid|tiddit:s'                  => \$parameter{tiddit},
-    'svdb|svdb:s'                   => \$parameter{svdb},
-    'psh|prefer_shell'              => \$parameter{prefer_shell},
-    'ppd|print_parameters_default'  => sub {
+    q{see|bash_set_errexit}    => \$parameter{bash_set_errexit},
+    q{snu|bash_set_nounset}    => \$parameter{bash_set_nounset},
+    q{env|conda_environment:s} => \$parameter{conda_environment},
+    q{cdp|conda_dir_path:s}    => \@{ $parameter{conda_dir_path} },
+    q{cdu|conda_update}        => \$parameter{conda_update},
+    q{bcv|bioconda=s}          => \%{ $parameter{bioconda} },
+    q{pip|pip=s}               => \%{ $parameter{pip} },
+    q{pyv|python_version=s}    => \$parameter{python_version},
+    q{pic|picardtools:s}       => \$parameter{picardtools},
+    q{sbb|sambamba:s}          => \$parameter{sambamba},
+    q{bet|bedtools:s}          => \$parameter{bedtools},
+    q{vt|vt:s}                 => \$parameter{vt},
+    q{plk|plink2:s}            => \$parameter{plink2},
+    q{snpg|snpeff_genome_versions:s} =>
+      \@{ $parameter{snpeff_genome_versions} },
+    q{vep|varianteffectpredictor:s} => \$parameter{varianteffectpredictor},
+    q{vepai|vep_auto_flag:s}        => \$parameter{vep_auto_flag},
+    q{vepc|vep_cache_dir:s}         => \$parameter{vep_cache_dir},
+    q{vepa|vep_assemblies:s}        => \@{ $parameter{vep_assemblies} },
+    q{vepp|vep_plugins:s}           => \@{ $parameter{vep_plugins} },
+    q{rhc|rhocall:s}                => \$parameter{rhocall},
+    q{rhcp|rhocall_path:s}          => \$parameter{rhocall_path},
+    q{cnv|cnvnator:s}               => \$parameter{cnvnator},
+    q{cnvnr|cnvnator_root_binary:s} => \$parameter{cnvnator_root_binary},
+    q{tid|tiddit:s}                 => \$parameter{tiddit},
+    q{svdb|svdb:s}                  => \$parameter{svdb},
+    q{psh|prefer_shell}             => \$parameter{prefer_shell},
+
+    # Display parameter defaults
+    q{ppd|print_parameters_default} => sub {
         print_parameters(
             {
                 parameter_href       => \%parameter,
@@ -173,22 +175,27 @@ GetOptions(
             }
         );
         exit;
-    },    # Display parameter defaults
-    'nup|noupdate'         => \$parameter{noupdate},
-    'sp|select_programs:s' => \@{ $parameter{select_programs} },
-    'rd|reference_dir:s'   => \$parameter{reference_dir},
-    'rg|reference_genome_versions:s' =>
+    },
+    q{nup|noupdate}         => \$parameter{noupdate},
+    q{sp|select_programs:s} => \@{ $parameter{select_programs} },
+    q{rd|reference_dir:s}   => \$parameter{reference_dir},
+    q{l|log:s}              => \$parameter{log_file},
+    q{rg|reference_genome_versions:s} =>
       \@{ $parameter{reference_genome_versions} },
-    'q|quiet' => \$parameter{quiet},
-    'h|help'  => sub {
+    q{q|quiet} => \$parameter{quiet},
+
+    #Display help text
+    q{h|help} => sub {
         print STDOUT $USAGE, "\n";
         exit;
-    },    #Display help text
-    'ver|version' => sub {
+    },
+
+    #Display version number
+    q{ver|version} => sub {
         print STDOUT "\n" . basename($PROGRAM_NAME) . q{ } . $VERSION, "\n\n";
         exit;
-    },    #Display version number
-    'v|verbose' => \$parameter{verbose},
+    },
+    q{v|verbose} => \$parameter{verbose},
   )
   or croak help(
     {
@@ -196,6 +203,25 @@ GetOptions(
         exit_code => 1,
     }
   );
+
+## Get local time
+my $date_time       = localtime;
+my $date_time_stamp = $date_time->datetime;
+
+## Create default log name
+if ( not $parameter{log_file} ) {
+    $parameter{log_file} = catfile( 
+        q{mip_install} . $UNDERSCORE . $date_time_stamp . $DOT . q{log}
+    );
+}
+
+## Initiate logger
+my $log = initiate_logger(
+    {
+        file_path => $parameter{log_file},
+        log_name  => q{mip_install},
+    }
+);
 
 ## Establish path to conda
 my @conda_dir_paths = check_dir_path_exist(
@@ -205,8 +231,9 @@ my @conda_dir_paths = check_dir_path_exist(
 );
 my $conda_dir_path = $conda_dir_paths[0];
 if ( not defined $conda_dir_path ) {
-    say STDERR q{Could not find miniconda directory in:} . $SPACE . join $SPACE,
-      @{ $parameter{conda_dir_path} };
+    $log->error(
+        q{Could not find miniconda directory in:} . $SPACE . join $SPACE,
+        @{ $parameter{conda_dir_path} } );
     exit 1;
 }
 
@@ -248,21 +275,26 @@ my $FILEHANDLE = IO::Handle->new();
 my $file_name_path = catfile( cwd(), q{mip.sh} );
 
 open $FILEHANDLE, q{>}, $file_name_path
-  or
-  croak( q{Cannot write to '} . $file_name_path . q{' :} . $OS_ERROR . "\n" );
+  or $log->logcroak( q{Cannot write to}
+      . $SPACE . q{'}
+      . $file_name_path . q{'}
+      . $SPACE . q{:}
+      . $OS_ERROR
+      . $NEWLINE );
 
 ## Create bash file for writing install instructions
 create_bash_file(
     {
         file_name   => $file_name_path,
         FILEHANDLE  => $FILEHANDLE,
-        remove_dir  => catfile( cwd(), q{.MIP} ),
+        remove_dir  => catfile( cwd(), $DOT . q{MIP} ),
         set_errexit => $parameter{bash_set_errexit},
         set_nounset => $parameter{bash_set_nounset},
+        log         => $log
     }
 );
 
-print STDOUT q{Will write install instructions to '} . $file_name_path, "'\n";
+$log->info( q{Writing install instructions to:} . $SPACE . $file_name_path );
 
 ## Seting up conda environment and installing default packages
 setup_conda_env(
@@ -272,6 +304,8 @@ setup_conda_env(
         conda_env_path      => $parameter{conda_prefix_path},
         FILEHANDLE          => $FILEHANDLE,
         conda_update        => $parameter{conda_update},
+        quiet               => $parameter{quiet},
+        verbose             => $parameter{verbose},
     }
 );
 
@@ -596,47 +630,49 @@ sub build_usage {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     return <<"END_USAGE";
  $script_name [options]
-    -env/--conda_environment conda environment (Default: "")
-    -cdp/--conda_dir_path The conda directory path (Default: "HOME/miniconda")
-    -cdu/--conda_update Update conda before installing (Supply flag to enable)
-    -bvc/--bioconda Set the module version of the programs that can be installed with bioconda (e.g. 'bwa=0.7.12')
-    -pip/--pip Set the module version of the programs that can be installed with pip (e.g. 'genmod=3.7.2')
-    -pyv/--python_version Set the env python version (Default: "2.7")
+    -env/--conda_environment        Conda environment (Default: "")
+    -cdp/--conda_dir_path           The conda directory path (Default: "HOME/miniconda")
+    -cdu/--conda_update             Update conda before installing (Supply flag to enable)
+    -bvc/--bioconda                 Set the module version of the programs that can be installed with bioconda (e.g. 'bwa=0.7.12')
+    -pip/--pip                      Set the module version of the programs that can be installed with pip (e.g. 'genmod=3.7.2')
+    -pyv/--python_version           Set the env python version (Default: "2.7")
 
     ## SHELL
-    -pic/--picardtools Set the picardtools version (Default: "2.5.9"),
-    -sbb/--sambamba Set the sambamba version (Default: "0.6.6")
-    -bet/--bedtools Set the bedtools version (Default: "2.26.0")
-    -vt/--vt Set the vt version (Default: "0.57")
-    -plk/--plink  Set the plink version (Default: "160224")
-    -snpg/--snpeff_genome_versions Set the snpEff genome version (Default: ["GRCh37.75", "GRCh38.82"])
-    -vep/--varianteffectpredictor Set the VEP version (Default: "90")
-    -vepa/--vep_auto_flag Set the VEP auto installer flags
-    -vepc/--vep_cache_dir Specify the cache directory to use (whole path; defaults to "[--conda_dir_path]/ensembl-tools-release-varianteffectpredictorVersion/cache")
-    -vepa/--vep_assemblies Select the assembly version (Default: ["GRCh37", "GRCh38"])
-    -vepp/--vep_plugins Supply VEP plugins (Default: "UpDownDistance, LoFtool, Lof")
-    -rhc/--rhocall Set the rhocall version (Default: "0.4")
-    -rhcp/--rhocall_path Set the path to where to install rhocall (Defaults: "HOME/rhocall")
-    -cnvn/--cnvnator Set the cnvnator version (Default: 0.3.3)
-    -cnvnr/--cnvnator_root_binary Set the cnvnator root binary (Default: "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz")
-    -tid/--tiddit Set the tiddit version (Default: "1.1.6")
-    -svdb/--svdb Set the svdb version (Default: "1.0.6")
+    -pic/--picardtools              Set the picardtools version (Default: "2.5.9"),
+    -sbb/--sambamba                 Set sthe 
+    sambamba version (Default: "0.6.6")
+    -bet/--bedtools                 Set the bedtools version (Default: "2.26.0")
+    -vt/--vt                        Set the vt version (Default: "0.57")
+    -plk/--plink                    Set the plink version (Default: "160224")
+    -snpg/--snpeff_genome_versions  Set the snpEff genome version (Default: ["GRCh37.75", "GRCh38.82"])
+    -vep/--varianteffectpredictor   Set the VEP version (Default: "90")
+    -vepa/--vep_auto_flag           Set the VEP auto installer flags
+    -vepc/--vep_cache_dir           Specify the cache directory to use (whole path; 
+                                        defaults to "[--conda_dir_path]/ensembl-tools-release-varianteffectpredictorVersion/cache")
+    -vepa/--vep_assemblies          Select the assembly version (Default: ["GRCh37", "GRCh38"])
+    -vepp/--vep_plugins             Supply VEP plugins (Default: "UpDownDistance, LoFtool, Lof")
+    -rhc/--rhocall                  Set the rhocall version (Default: "0.4")
+    -rhcp/--rhocall_path            Set the path to where to install rhocall (Defaults: "HOME/rhocall")
+    -cnvn/--cnvnator                Set the cnvnator version (Default: 0.3.3)
+    -cnvnr/--cnvnator_root_binary   Set the cnvnator root binary (Default: "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz")
+    -tid/--tiddit                   Set the tiddit version (Default: "1.1.6")
+    -svdb/--svdb                    Set the svdb version (Default: "1.0.6")
 
     ## Utility
-    -psh/--prefer_shell Shell will be used for overlapping shell and biconda installations (Supply flag to enable)
+    -psh/--prefer_shell             Shell will be used for overlapping shell and biconda installations (Supply flag to enable)
     -ppd/--print_parameters_default Print the parameter defaults
-    -nup/--noupdate Do not update already installed programs (Supply flag to enable)
-    -sp/--select_programs Install supplied programs e.g. -sp perl -sp bedtools (Default: "")
-    -rd/--reference_dir Reference(s) directory (Default: "")
+    -nup/--noupdate                 Do not update already installed programs (Supply flag to enable)
+    -sp/--select_programs           Install supplied programs e.g. -sp perl -sp bedtools (Default: "")
+    -rd/--reference_dir             Reference(s) directory (Default: "")
     -rd/--reference_genome_versions Reference versions to download ((Default: ["GRCh37", "hg38"]))
-    -q/--quiet Quiet (Supply flag to enable; no output from individual program that has a quiet flag)
-    -h/--help Display this help message
-    -ver/--version Display version
-    -v/--verbose Set verbosity
+    -q/--quiet                      Quiet (Supply flag to enable; no output from individual program that has a quiet flag)
+    -h/--help                       Display this help message
+    -ver/--version                  Display version
+    -v/--verbose                    Set verbosity
 END_USAGE
 }
 
@@ -1542,13 +1578,13 @@ sub cnvnator {
 
     if ( -d $miniconda_bin_dir ) {
 
-        print STDERR 'Found Root in miniconda directory: ' . $miniconda_bin_dir,
-          "\n";
+        $log->info( q{Found root in miniconda directory:}
+              . $SPACE
+              . $miniconda_bin_dir );
 
         if ( $parameter_href->{noupdate} ) {
 
-            print STDERR 'Skipping writting installation process for Root',
-              "\n";
+            $log->info(q{Skipping writting installation process for Root});
             return;
         }
         else {
@@ -1568,7 +1604,7 @@ sub cnvnator {
     }
     else {
 
-        print STDERR 'Writting install instructions for Root', "\n";
+        $log->info(q{Writting install instructions for Root});
     }
 
     ## Install Root
@@ -2578,44 +2614,56 @@ sub check_conda_bin_file_exists {
 
         if ($program_version) {
 
-            print STDERR 'Found '
-              . $program_name
-              . ' version '
-              . $program_version
-              . ' in miniconda directory: '
-              . catdir( $parameter_href->{conda_prefix_path}, 'bin' ), "\n";
+            $log->info( q{Found}
+                  . $SPACE
+                  . $program_name
+                  . $SPACE
+                  . q{version}
+                  . $SPACE
+                  . $program_version
+                  . $SPACE
+                  . q{in miniconda directory:}
+                  . $SPACE
+                  . catdir( $parameter_href->{conda_prefix_path}, q{bin} ) );
 
             if ( $parameter_href->{noupdate} ) {
 
-                print STDERR 'Skipping writting installation process for '
-                  . $program_name . q{ }
-                  . $program_version, "\n";
+                $log->info( q{Skipping writting installation process for}
+                      . $SPACE
+                      . $program_name
+                      . $SPACE
+                      . $program_version );
                 return 1;
             }
-            print STDERR 'Writting install instructions for ' . $program_name,
-              "\n";
+            $log->info(
+                q{Writting install instructions for} . $SPACE . $program_name );
         }
         else {
 
-            print STDERR 'Found '
-              . $program_name
-              . ' in miniconda directory: '
-              . catdir( $parameter_href->{conda_prefix_path}, 'bin' ), "\n";
+            $log->info( q{Found}
+                  . $SPACE
+                  . $program_name
+                  . $SPACE
+                  . q{in miniconda directory:}
+                  . $SPACE
+                  . catdir( $parameter_href->{conda_prefix_path}, q{bin} ) );
 
             if ( $parameter_href->{noupdate} ) {
 
-                print STDERR 'Skipping writting installation process for '
-                  . $program_name, "\n";
+                $log->info( q{Skipping writting installation process for}
+                      . $SPACE
+                      . $program_name );
                 return 1;
             }
-            print STDERR 'Writting install instructions for ' . $program_name,
-              "\n";
+            $log->info(
+                q{Writting install instructions for} . $SPACE . $program_name );
         }
         return 0;
     }
     else {
 
-        print STDERR 'Writting install instructions for ' . $program_name, "\n";
+        $log->info(
+            q{Writting install instructions for} . $SPACE . $program_name );
         return 0;
     }
     return;
@@ -2665,7 +2713,7 @@ sub references {
         say $FILEHANDLE $NEWLINE;
     }
 
-    print STDERR 'Writting install instructions for references', "\n";
+    $log->info(q{Writting install instructions for references});
 
     print $FILEHANDLE 'download_reference ';
     print $FILEHANDLE '--reference_dir '
