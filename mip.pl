@@ -44,7 +44,8 @@ use Readonly;
 use lib catdir( $Bin, q{lib} );
 use MIP::Check::Cluster qw{ check_max_core_number };
 use MIP::Check::Modules qw{ check_perl_modules };
-use MIP::Check::Parameter qw{ check_allowed_temp_directory };
+use MIP::Check::Parameter
+  qw{ check_parameter_hash check_allowed_temp_directory };
 use MIP::Check::Reference qw{ check_references_for_vt };
 use MIP::Delete::List qw{ delete_non_wes_contig delete_male_contig };
 use MIP::File::Format::Pedigree qw{ create_fam_file };
@@ -137,13 +138,37 @@ my @order_parameters = order_parameter_names(
     }
 );
 
-## Eval parameter hash
-eval_parameter_hash(
+## Load mandatory keys and values for parameters
+my %mandatory_key = load_yaml(
     {
-        parameter_href => \%parameter,
-        file_path      => $definitions_file,
+        yaml_file =>
+          catfile( $Bin, qw{ definitions mandatory_parameter_keys.yaml } ),
     }
 );
+
+## Load non mandatory keys and values for parameters
+my %non_mandatory_key = load_yaml(
+    {
+        yaml_file =>
+          catfile( $Bin, qw{ definitions non_mandatory_parameter_keys.yaml } ),
+
+    }
+);
+
+## Eval parameter hash
+my $error_msg = check_parameter_hash(
+    {
+        parameter_href         => \%parameter,
+        mandatory_key_href     => \%mandatory_key,
+        non_mandatory_key_href => \%non_mandatory_key,
+        file_path              => $definitions_file,
+    }
+);
+## Broadcast error in parameter key or values
+if ($error_msg) {
+
+    croak($error_msg);
+}
 
 # Set MIP version
 our $VERSION = 'v5.0.9';
@@ -18133,7 +18158,7 @@ sub build_ptchs_metric_prerequisites {
       \$file_info_href->{exome_target_bed}[2];
 
     foreach my $exome_target_bed_file (
-        keys $active_parameter_href->{exome_target_bed} )
+        keys @{ $active_parameter_href->{exome_target_bed} } )
     {
 
         $log->warn( "Will try to create required "
@@ -20416,7 +20441,7 @@ sub add_to_active_parameter {
                     join( $$element_separator_ref, @$values_ref ) );
             }
             elsif (( $parameter_href->{$parameter_name}{data_type} eq "HASH" )
-                && ( keys $parameter_href->{$parameter_name}{value} ) )
+                && ( keys %{ $parameter_href->{$parameter_name}{value} } ) )
             {    #Hash reference
 
                 $active_parameter_href->{$parameter_name} =
@@ -20744,7 +20769,7 @@ sub add_to_active_parameter {
               . $parameter_name . " to: "
               . join( ",",
                 map { "$_=$active_parameter_href->{$parameter_name}{$_}" }
-                  ( keys $active_parameter_href->{$parameter_name} ) );
+                  ( keys %{ $active_parameter_href->{$parameter_name} } ) );
             push( @$broadcasts_ref, $info );    #Add info to broadcasts
         }
         else {
@@ -21142,7 +21167,7 @@ sub check_parameter_files {
                 if ( $parameter_href->{$parameter_name}{data_type} eq "HASH" ) {
 
                     for my $path (
-                        keys $active_parameter_href->{$parameter_name} )
+                        keys %{ $active_parameter_href->{$parameter_name} } )
                     {
 
                         if ( $parameter_name eq "exome_target_bed" ) {
@@ -21810,8 +21835,10 @@ sub write_cmd_mip_log {
                         map {
 "$_=$active_parameter_href->{$order_parameter_element}{$_} "
                           } (
-                            keys
-                              $active_parameter_href->{$order_parameter_element}
+                            keys %{
+                                $active_parameter_href
+                                  ->{$order_parameter_element}
+                            }
                           )
                     );
                 }
@@ -21873,7 +21900,7 @@ sub check_unique_array_element {
     }
     if ( ref($query_ref) eq "SCALAR" ) {    #Scalar reference
 
-        push( $array_query_ref, $$query_ref );    #Standardize to array
+        push( @{$array_query_ref}, $$query_ref );    #Standardize to array
     }
 
     ##For each array_query_ref element, loop through corresponding array_to_check_ref element(s), add if there are none or an updated/unique entry.
@@ -23591,7 +23618,7 @@ sub remove_pedigree_elements {
     foreach my $sample_id ( keys %{ $hash_ref->{sample} } ) {
 
       SAMPLE_INFO:
-        for my $pedigree_element ( keys $hash_ref->{sample}{$sample_id} ) {
+        for my $pedigree_element ( keys %{ $hash_ref->{sample}{$sample_id} } ) {
 
             if ( !any { $_ eq $pedigree_element } @allowed_entries )
             {    #If element is not part of array
@@ -24663,7 +24690,7 @@ sub update_sample_info_hash {
 
     foreach my $sample_id ( keys %{ $sample_info_href->{sample} } ) {
 
-        foreach my $key ( keys $sample_info_href->{sample}{$sample_id} ) {
+        foreach my $key ( keys %{ $sample_info_href->{sample}{$sample_id} } ) {
 
             if ( exists( $temp_href->{sample}{$sample_id}{$key} ) )
             { #Previous run information, which should be updated using pedigree from current analysis
@@ -25003,375 +25030,6 @@ sub add_to_sample_info {
           $path;    #Add log_file_dir to SampleInfoFile
         $sample_info_href->{last_log_file_path} =
           $active_parameter_href->{log_file};
-    }
-}
-
-sub eval_parameter_hash {
-
-##eval_parameter_hash
-
-##Function : Evaluate parameters in parameters hash
-##Returns  : ""
-##Arguments: $parameter_href, $file_path
-##         : $parameter_href => Hash with paremters from yaml file {REF}
-##         : $file_path      => Path to yaml file
-
-    my ($arg_href) = @_;
-
-    ##Flatten argument(s)
-    my $parameter_href;
-    my $file_path;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        file_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$file_path
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my %mandatory_key;
-    $mandatory_key{associated_program}{key_data_type} = "ARRAY";
-    $mandatory_key{data_type}{key_data_type}          = "SCALAR";
-    $mandatory_key{data_type}{values}   = [ "SCALAR", "ARRAY", "HASH" ];
-    $mandatory_key{type}{key_data_type} = "SCALAR";
-    $mandatory_key{type}{values} =
-      [ "mip", "path", "program", "program_argument" ];
-
-    my %non_mandatory_key;
-    $non_mandatory_key{build_file}{key_data_type} = "SCALAR";
-    $non_mandatory_key{build_file}{values} =
-      [ "no_auto_build", "yes_auto_build" ];
-    $non_mandatory_key{mandatory}{key_data_type}      = "SCALAR";
-    $non_mandatory_key{mandatory}{values}             = ["no"];
-    $non_mandatory_key{exists_check}{key_data_type}   = "SCALAR";
-    $non_mandatory_key{exists_check}{values}          = [ "file", "directory" ];
-    $non_mandatory_key{chain}{key_data_type}          = "SCALAR";
-    $non_mandatory_key{file_tag}{key_data_type}       = "SCALAR";
-    $non_mandatory_key{infile_suffix}{key_data_type}  = "SCALAR";
-    $non_mandatory_key{outfile_suffix}{key_data_type} = "SCALAR";
-    $non_mandatory_key{program_name_path}{key_data_type} = "ARRAY";
-    $non_mandatory_key{element_separator}{key_data_type} = "SCALAR";
-    $non_mandatory_key{reduce_io}{key_data_type}         = "SCALAR";
-    $non_mandatory_key{reduce_io}{values}                = [1];
-    $non_mandatory_key{program_type}{key_data_type}      = "SCALAR";
-    $non_mandatory_key{program_type}{values} =
-      [ "aligners", "variant_callers", "structural_variant_callers" ];
-    $non_mandatory_key{outdir_name}{key_data_type}                   = "SCALAR";
-    $non_mandatory_key{file_endings}{key_data_type}                  = "ARRAY";
-    $non_mandatory_key{remove_redundant_file}{key_data_type}         = "SCALAR";
-    $non_mandatory_key{remove_redundant_file}{values}                = ["yes"];
-    $non_mandatory_key{remove_redundant_file_setting}{key_data_type} = "SCALAR";
-    $non_mandatory_key{remove_redundant_file_setting}{values} =
-      [ "single", "merged", "family", "variant_annotation" ];
-    $non_mandatory_key{reference}{key_data_type} = "SCALAR";
-    $non_mandatory_key{reference}{values}        = ["reference_dir"];
-
-    check_keys(
-        {
-            parameter_href         => $parameter_href,
-            mandatory_key_href     => \%mandatory_key,
-            non_mandatory_key_href => \%non_mandatory_key,
-            file_path_ref          => \$file_path,
-        }
-    );
-}
-
-sub check_keys {
-
-##check_keys
-
-##Function : Evaluate keys in hash
-##Returns  : ""
-##Arguments: $parameter_href, $mandatory_key_href, $non_mandatory_key_href, $file_path
-##         : $parameter_href         => Hash with parameters from yaml file {REF}
-##         : $mandatory_key_href     => Hash with mandatory key {REF}
-##         : $non_mandatory_key_href => Hash with non mandatory key {REF}
-##         : $file_path_ref          => Path to yaml file {REF}
-
-    my ($arg_href) = @_;
-
-    ##Flatten argument(s)
-    my $parameter_href;
-    my $mandatory_key_href;
-    my $non_mandatory_key_href;
-    my $file_path_ref;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        mandatory_key_href => {
-            required    => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$mandatory_key_href
-        },
-        non_mandatory_key_href => {
-            required    => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$non_mandatory_key_href
-        },
-        file_path_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$file_path_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    foreach my $parameter ( keys %$parameter_href ) {
-
-        foreach my $mandatory_key ( keys %$mandatory_key_href ) {
-
-            ## Mandatory key exists
-            if ( exists( $parameter_href->{$parameter}{$mandatory_key} ) ) {
-
-                ## Check key data type
-                check_data_type(
-                    {
-                        parameter_href => $parameter_href,
-                        key_href       => $mandatory_key_href,
-                        parameter      => $parameter,
-                        key            => $mandatory_key,
-                        file_path_ref  => $file_path_ref,
-                    }
-                );
-                ## Evaluate key values
-                check_values(
-                    {
-                        parameter_href => $parameter_href,
-                        key_href       => $mandatory_key_href,
-                        parameter      => $parameter,
-                        key            => $mandatory_key,
-                        file_path_ref  => $file_path_ref,
-                    }
-                );
-            }
-            else {
-
-                warn(   "Missing mandatory key: '"
-                      . $mandatory_key
-                      . "' for parameter: '"
-                      . $parameter
-                      . "' in file: '"
-                      . $$file_path_ref
-                      . "'\n" );
-                exit 1;
-            }
-        }
-        foreach my $non_mandatory_key ( keys %$non_mandatory_key_href ) {
-
-            ## Non_mandatory key exists
-            if ( exists( $parameter_href->{$parameter}{$non_mandatory_key} ) ) {
-
-                ## Check key data type
-                check_data_type(
-                    {
-                        parameter_href => $parameter_href,
-                        key_href       => $non_mandatory_key_href,
-                        parameter      => $parameter,
-                        key            => $non_mandatory_key,
-                        file_path_ref  => $file_path_ref,
-                    }
-                );
-
-                ## Evaluate key values
-                check_values(
-                    {
-                        parameter_href => $parameter_href,
-                        key_href       => $non_mandatory_key_href,
-                        parameter      => $parameter,
-                        key            => $non_mandatory_key,
-                        file_path_ref  => $file_path_ref,
-                    }
-                );
-            }
-        }
-    }
-}
-
-sub check_values {
-
-##check_values
-
-##Function : Evaluate key values
-##Returns  : ""
-##Arguments: $parameter_href, $key_href, $key, $file_path_ref
-##         : $parameter_href => Hash with parameters from yaml file {REF}
-##         : $key_href       => Hash with  key {REF}
-##         : $key            => Hash with non  key
-##         : $file_path_ref  => Path to yaml file {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $key_href;
-    my $parameter;
-    my $key;
-    my $file_path_ref;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        key_href => {
-            required    => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$key_href
-        },
-        parameter => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$parameter
-        },
-        key =>
-          { required => 1, defined => 1, strict_type => 1, store => \$key },
-        file_path_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$file_path_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Check value(s)
-    if ( $key_href->{$key}{values} ) {
-
-        my $value_ref = \$parameter_href->{$parameter}{$key};
-
-        if ( !( any { $_ eq $$value_ref } @{ $key_href->{$key}{values} } ) ) {
-
-            warn(   "Found illegal value '"
-                  . $$value_ref
-                  . "' for parameter: '"
-                  . $parameter
-                  . "' in key: '"
-                  . $key
-                  . "' in file: '"
-                  . $$file_path_ref
-                  . "'\n" );
-            warn(   "Allowed entries: '"
-                  . join( "', '", @{ $key_href->{$key}{values} } )
-                  . "'\n" );
-            exit 1;
-        }
-    }
-}
-
-sub check_data_type {
-
-##check_data_type
-
-##Function : Check key data type
-##Returns  : ""
-##Arguments: $parameter_href, $key_href, $key, $file_path_ref
-##         : $parameter_href => Hash with paremters from yaml file {REF}
-##         : $key_href       => Hash with  key {REF}
-##         : $key            => Hash with non  key
-##         : $file_path_ref  => Path to yaml file {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $key_href;
-    my $parameter;
-    my $key;
-    my $file_path_ref;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        key_href => {
-            required    => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$key_href
-        },
-        parameter => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$parameter
-        },
-        key =>
-          { required => 1, defined => 1, strict_type => 1, store => \$key },
-        file_path_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$file_path_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Check data_type
-    my $data_type = ref( $parameter_href->{$parameter}{$key} );
-
-    if ($data_type) {    #Array or hash
-
-        ## Wrong data_type
-        unless ( $data_type eq $key_href->{$key}{key_data_type} ) {
-
-            warn(   "Found '"
-                  . $data_type
-                  . "' but expected datatype '"
-                  . $key_href->{$key}{key_data_type}
-                  . "' for parameter: '"
-                  . $parameter
-                  . "' in key: '"
-                  . $key
-                  . "' in file: '"
-                  . $$file_path_ref
-                  . "'\n" );
-            exit 1;
-        }
-    }
-    elsif ( $key_href->{$key}{key_data_type} ne "SCALAR" ) {
-
-        ## Wrong data_type
-        warn(   "Found 'SCALAR' but expected datatype '"
-              . $key_href->{$key}{key_data_type}
-              . "' for parameter: '"
-              . $parameter
-              . "' in key: '"
-              . $key
-              . "' in file: '"
-              . $$file_path_ref
-              . "'\n" );
-        exit 1;
     }
 }
 
@@ -26903,7 +26561,8 @@ sub check_sample_id_in_parameter_path {
 
         my %seen;    #Hash to test duplicate sample_ids later
 
-        foreach my $key ( keys $active_parameter_href->{$parameter_name} ) {
+        foreach my $key ( keys %{ $active_parameter_href->{$parameter_name} } )
+        {
 
             my @parameter_samples =
               split( ",", $active_parameter_href->{$parameter_name}{$key} );
@@ -27024,7 +26683,7 @@ sub check_sample_id_in_parameter {
                 if (
                     !(
                         any { $_ eq $sample_id }
-                        ( keys $active_parameter_href->{$parameter_name} )
+                        ( keys %{ $active_parameter_href->{$parameter_name} } )
                     )
                   )
                 {
@@ -27035,8 +26694,12 @@ sub check_sample_id_in_parameter {
                           . " for parameter '--"
                           . $parameter_name
                           . "'. Provided sample_ids for parameter are: "
-                          . join( ", ",
-                            ( keys $active_parameter_href->{$parameter_name} )
+                          . join(
+                            ", ",
+                            (
+                                keys
+                                  %{ $active_parameter_href->{$parameter_name} }
+                            )
                           ),
                         "\n"
                     );
@@ -27682,7 +27345,8 @@ sub update_mip_reference_path {
     }
     elsif ( $parameter_href->{$parameter_name}{data_type} eq "HASH" ) {
 
-        foreach my $file ( keys $active_parameter_href->{$parameter_name} ) {
+        foreach my $file ( keys %{ $active_parameter_href->{$parameter_name} } )
+        {
 
             my ( $volume, $directory, $file_name ) =
               File::Spec->splitpath($file);    #Split to restate
@@ -28125,8 +27789,8 @@ sub MergeTargetListFlag {
         print $FILEHANDLE "UNIQUE=TRUE "
           ; #Merge overlapping and adjacent intervals to create a list of unique intervals
 
-        foreach
-          my $targetFile ( keys $active_parameter_href->{exome_target_bed} )
+        foreach my $targetFile (
+            keys %{ $active_parameter_href->{exome_target_bed} } )
         {
 
             print $FILEHANDLE "INPUT=" . $targetFile . " ";

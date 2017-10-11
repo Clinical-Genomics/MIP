@@ -147,7 +147,7 @@ sub check_references_for_vt {
 
               ANNOTATION_FILE:
                 for my $annotation_file (
-                    keys $active_parameter_href->{$parameter_name} )
+                    keys %{ $active_parameter_href->{$parameter_name} } )
                 {
 
                     if ( not exists $seen{$annotation_file} ) {

@@ -14,6 +14,7 @@ bcftools_stats.t
 bcftools_view.t
 bedtools_genomecov.t
 bwa_mem.t
+check_parameter_hash.t
 check_if_processed_by_vt.t
 chanjo_sex.t
 cnvnator_calling.t
@@ -71,6 +72,7 @@ list_delete_male_contig.t
 list_delete_non_wes_contig.t
 manta_config.t
 manta_workflow.t
+order_parameter_names.t
 parameter_check_allowed_temp_directory.t
 path_check_file_version_exist.t
 picardtools_base.t
