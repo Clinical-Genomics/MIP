@@ -65,8 +65,8 @@ $parameter{bioconda}{cmake} = '3.3.1';
 ## Bioconda pathes
 # For correct softlinking in share and bin in conda env
 $parameter{bioconda_bwakit_patch}  = '-0';
-$parameter{bioconda_snpeff_patch}  = 'q-0';
-$parameter{bioconda_snpsift_patch} = 'p-0';
+$parameter{bioconda_snpeff_patch}  = 'r-0';
+$parameter{bioconda_snpsift_patch} = 'r-0';
 $parameter{bioconda_picard_patch}  = '-1';
 $parameter{bioconda_manta_patch}   = '-0';
 
