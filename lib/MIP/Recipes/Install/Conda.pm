@@ -166,7 +166,7 @@ sub setup_conda_env {
                   . $SPACE
                   . q{already exists} );
             $log->warn(
-                q{Will try to install packages into existing envronment});
+                q{Will try to install packages into existing environment});
             say {$FILEHANDLE}
               q{## Installing conda packages into existing environment};
             conda_install(

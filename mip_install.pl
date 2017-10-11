@@ -86,6 +86,7 @@ $parameter{bioconda}{multiqc}   = q{0.9.1a0};
 $parameter{bioconda}{peddy}     = q{0.2.9};
 $parameter{bioconda}{plink2}    = q{1.90b3.35};
 $parameter{bioconda}{vcfanno}   = q{0.1.0};
+$parameter{bioconda}{q{rtg-tools}} = q{3.8.4};
 
 # Required for CNVnator
 $parameter{bioconda}{gcc}   = q{4.8.5};
@@ -94,8 +95,8 @@ $parameter{bioconda}{cmake} = q{3.3.1};
 ## Bioconda pathes
 # For correct softlinking in share and bin in conda env
 $parameter{bioconda_patches}{bioconda_bwakit_patch}  = q{-0};
-$parameter{bioconda_patches}{bioconda_snpeff_patch}  = q{q-0};
-$parameter{bioconda_patches}{bioconda_snpsift_patch} = q{p-0};
+$parameter{bioconda_patches}{bioconda_snpeff_patch}  = q{r-0};
+$parameter{bioconda_patches}{bioconda_snpsift_patch} = q{r-0};
 $parameter{bioconda_patches}{bioconda_picard_patch}  = q{-1};
 $parameter{bioconda_patches}{bioconda_manta_patch}   = q{-0};
 
