@@ -27,7 +27,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{create_bash_file build_shebang
@@ -45,12 +45,9 @@ Readonly my $TAB          => qq{\t};
 
 sub create_bash_file {
 
-##create_bash_file
-
 ##Function : Create bash file with header
 ##Returns  : ""
-##Arguments: $file_name, $FILEHANDLE, $remove_dir, $log, $invoke_login_shell, $set_errexit, $set_nounset, $set_pipefail
-##         : $file_name          => File name
+##Arguments: $file_name          => File name
 ##         : $FILEHANDLE         => Filehandle to write to
 ##         : $remove_dir         => Directory to remove when caught by trap function
 ##         : $log                => Log object to write to
@@ -158,7 +155,7 @@ sub create_bash_file {
 
     if ( ( defined $log ) && ($log) ) {
 
-        say $log->info( q{Created bash file: '} . catfile($file_name),
+        $log->info( q{Created bash file: '} . catfile($file_name),
             $SINGLE_QUOTE );
     }
     else {
@@ -172,12 +169,9 @@ sub create_bash_file {
 
 sub build_shebang {
 
-##build_shebang
-
 ##Function : Build bash shebang line. Returns "@commands" or writes to already opened filehandle.
 ##Returns  : "@commands"
-##Arguments: $FILEHANDLE, $bash_bin_path, $invoke_login_shell, $separator
-##         : $FILEHANDLE         => Filehandle to write to
+##Arguments: $FILEHANDLE         => Filehandle to write to
 ##         : $bash_bin_path      => Location of bash bin
 ##         : $invoke_login_shell => Invoked as a login shell (-l). Reinitilize bashrc and bash_profile
 ##         : $separator          => Separator to use when writing
@@ -243,12 +237,9 @@ sub build_shebang {
 
 sub create_housekeeping_function {
 
-##create_housekeeping_function
-
 ##Function : Create housekeeping function which removes entire directory when finished
 ##Returns  : ""
-##Arguments: $job_ids_ref, $sacct_format_fields_ref, $log_file_path, $FILEHANDLE, $remove_dir, $trap_function_call, $trap_signals_ref, $trap_function_name
-##         : $job_ids_ref             => Job ids
+##Arguments: $job_ids_ref             => Job ids
 ##         : $sacct_format_fields_ref => Format and fields of sacct output
 ##         : $log_file_path           => Log file to write job_id progress to {REF}
 ##         : $FILEHANDLE              => Filehandle to write to
@@ -359,12 +350,9 @@ sub create_housekeeping_function {
 
 sub create_error_trap_function {
 
-##create_error_trap_function
-
 ##Function : Create error handling function and trap
 ##Returns  : ""
-##Arguments: $job_ids_ref, sacct_format_fields_ref, $log_file_path, $FILEHANDLE, $trap_function_call, $trap_signals_ref, $trap_function_name
-##         : $job_ids_ref             => Job ids
+##Arguments: $job_ids_ref             => Job ids
 ##         : $sacct_format_fields_ref => Format and fields of sacct output
 ##         : $log_file_path           => Log file to write job_id progress to {REF}
 ##         : $FILEHANDLE              => Filehandle to write to
@@ -456,12 +444,9 @@ sub create_error_trap_function {
 
 sub clear_trap {
 
-##clear_trap
-
 ##Function : Clear trap for signal(s), e.g. in exome analysis since the might be no variants in MT or Y contigs. This will cause premature exit from sbatch
 ##Returns  : ""
-##Arguments: $FILEHANDLE, $trap_signals_ref
-##         : $FILEHANDLE       => The FILEHANDLE to write to
+##Arguments: $FILEHANDLE       => The FILEHANDLE to write to
 ##         : $trap_signals_ref => Array with signals to clear trap for {REF}
 
     my ($arg_href) = @_;
@@ -503,12 +488,9 @@ sub clear_trap {
 
 sub enable_trap {
 
-##enable_trap
-
 ##Function : Enable trap function with trap signal(s).
 ##Returns  : ""
-##Arguments: $FILEHANDLE, $trap_signals_ref, $trap_function_call
-##         : $FILEHANDLE         => The FILEHANDLE to write to
+##Arguments: $FILEHANDLE         => The FILEHANDLE to write to
 ##         : $trap_signals_ref   => Array with signals to enable trap for {REF}
 ##         : $trap_function_call => The trap function argument
 
@@ -555,12 +537,9 @@ sub enable_trap {
 
 sub track_progress {
 
-##track_progress
-
 ##Function : Output SLURM info on each job via sacct command and write to log file(.status)
 ##Returns  : ""
-##Arguments: $job_ids_ref, $sacct_format_fields_ref, $log_file_path, $FILEHANDLE
-##         : $job_ids_ref             => Job ids
+##Arguments: $job_ids_ref             => Job ids
 ##         : $sacct_format_fields_ref => Format and fields of sacct output
 ##         : $log_file_path           => The log file {REF}
 ##         : $FILEHANDLE              => Sbatch filehandle to write to
@@ -626,12 +605,9 @@ sub track_progress {
 
 sub quote_bash_variable {
 
-##quote_bash_variable
-
 ##Function : Double quote incoming variables in string
 ##Returns  : "String with double quoted variables"
-##Arguments: $string_with_variable_to_quote
-##         : $string_with_variable_to_quote => String to find variables in
+##Arguments: $string_with_variable_to_quote => String to find variables in
 
     my ($arg_href) = @_;
 

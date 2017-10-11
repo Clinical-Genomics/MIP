@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.0.0;
+    our $VERSION = 1.0.1;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_pip_packages };
@@ -30,24 +30,21 @@ BEGIN {
 
 sub install_pip_packages {
 
-## pip_install_pacakages
-
 ## Function  : Recipe for install pip package(s).
 ## Returns   :
-## Arguments : $pip_packages_href, $quiet, $conda_env, $FILEHANDLE
-##           : $pip_packages_href => Hash with pip packages and their version numbers {REF}
+## Arguments : $pip_packages_href => Hash with pip packages and their version numbers {REF}
 ##           : $quiet             => Optionally turn on quiet output
 ##           : $conda_env         => Name of conda environment
 ##           : $FILEHANDLE        => Filehandle to write to
 
     my ($arg_href) = @_;
 
-
     ## Flatten argument(s)
     my $pip_packages_href;
     my $quiet;
     my $conda_env;
     my $FILEHANDLE;
+    my $verbose;
 
     my $tmpl = {
         pip_packages_href => {
@@ -58,7 +55,7 @@ sub install_pip_packages {
             store       => \$pip_packages_href,
         },
         quiet => {
-            allow       => [undef, 0, 1],
+            allow       => [ undef, 0, 1 ],
             strict_type => 1,
             store       => \$quiet,
         },
@@ -69,7 +66,11 @@ sub install_pip_packages {
         FILEHANDLE => {
             required => 1,
             store    => \$FILEHANDLE,
-        }
+        },
+        verbose => {
+            allow => [ undef, 0, 1 ],
+            store => \$verbose
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -78,8 +79,18 @@ sub install_pip_packages {
     use MIP::Package_manager::Pip qw{ pip_install };
     use MIP::Package_manager::Conda
       qw{ conda_source_activate conda_source_deactivate };
+    use MIP::Log::MIP_log4perl qw{ retrieve_log };
 
-    say STDERR q{Writting install instructions for pip packages};
+    ## Retrieve logger object
+    my $log = retrieve_log(
+        {
+            log_name => q{mip_install::install_pip_packages},
+            quiet    => $quiet,
+            verbose  => $verbose,
+        }
+    );
+
+    $log->info(q{Writting install instructions for pip packages});
     say {$FILEHANDLE} q{### Install PIP packages};
 
     ## Install PIP packages in conda environment
@@ -136,14 +147,11 @@ sub install_pip_packages {
 
 sub _create_package_array {
 
-## create_package_list
-
 ##Function  : Takes a reference to hash of packages and creates an array with
 ##          : package and version joined with a supplied separator if value is defined.
 ##          : Also checks that the version number makes sense
 ##Returns   : "@packages"
-##Arguments : $package_href, $package_version_separator
-##          : $package_href              => Hash with packages {REF}
+##Arguments : $package_href              => Hash with packages {REF}
 ##          : $package_version_separator => Scalar separating the package and the version
 
     my ($arg_href) = @_;

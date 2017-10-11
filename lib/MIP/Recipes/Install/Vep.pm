@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_varianteffectpredictor };
@@ -92,7 +92,8 @@ sub install_varianteffectpredictor {
         noupdate          => { strict_type => 1, store => \$noupdate },
         auto              => { strict_type => 1, store => \$auto },
         cache_directory   => { strict_type => 1, store => \$cache_directory },
-        quiet => { allow => [ undef, 0, 1 ], strict_type => 1, store => \$quiet },
+        quiet =>
+          { allow => [ undef, 0, 1 ], strict_type => 1, store => \$quiet },
         verbose =>
           { allow => [ undef, 0, 1 ], strict_type => 1, store => \$verbose },
         FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
@@ -109,6 +110,16 @@ sub install_varianteffectpredictor {
     use MIP::Program::Variantcalling::Vep
       qw{ variant_effect_predictor_install };
     use MIP::Versionmanager::Git qw{ git_clone git_checkout };
+    use MIP::Log::MIP_log4perl qw{ retrieve_log };
+
+    ## Retrieve logger object
+    my $log = retrieve_log(
+        {
+            log_name => q{mip_install::install_varianteffectpredictor},
+            quiet    => $quiet,
+            verbose  => $verbose,
+        }
+    );
 
     ## Store original working directory
     my $pwd = cwd();
@@ -117,13 +128,14 @@ sub install_varianteffectpredictor {
 
     if ( -d $miniconda_bin_dir ) {
 
-        say {*STDERR} q{Found varianteffectpredictor in miniconda directory: }
-          . $miniconda_bin_dir;
+        $log->info( q{Found varianteffectpredictor in miniconda directory: }
+              . $miniconda_bin_dir );
 
         if ($noupdate) {
 
-            say {*STDERR}
-q{Skipping writting installation process for varianteffectpredictor};
+            $log->inf(
+q{Skipping writting installation process for varianteffectpredictor}
+            );
             return;
         }
         else {
@@ -143,8 +155,7 @@ q{Skipping writting installation process for varianteffectpredictor};
     }
     else {
 
-        say {*STDERR}
-          q{Writting install instructions for varianteffectpredictor};
+        $log->info(q{Writting install instructions for varianteffectpredictor});
     }
 
     ## Install VEP

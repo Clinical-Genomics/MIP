@@ -30,7 +30,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -259,8 +259,8 @@ sub conda_check_env_status {
 
 ## conda_check_env_status
 
-## Function  : Check if a conda environment is active (exit if true).
-## Returns   :
+## Function  : Check if a conda environment is active (returns name of env if true).
+## Returns   : $env_status
 ## Arguments :
 
     ## Deactivate any activate env prior to installation
@@ -276,21 +276,14 @@ sub conda_check_env_status {
 
     # Pipes the output from the shell command "conda info --envs"
     #   to $detect_active_conda_env.
-    #   Output is captured in $run_output.
-    my $run_output;
+    #   Output is captured in $env_status.
+    my $env_status;
     run(
         command => qq{conda info --envs | $detect_active_conda_env},
-        buffer  => \$run_output
+        buffer  => \$env_status
     );
 
-    if ($run_output) {
-        say STDOUT q{Found activated conda env:} . $SPACE . $run_output;
-        say STDOUT q{Please exit conda env:} . $SPACE . $run_output . $SPACE
-          . q{with 'source deactivate' before executing install script};
-        exit 1;
-    }
-
-    return;
+    return $env_status;
 }
 
 sub conda_install {
