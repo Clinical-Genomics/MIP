@@ -12,6 +12,7 @@ use Params::Check qw{ check allow last_error };
 
 ## CPANM
 use Readonly;
+use autodie;
 
 BEGIN {
     require Exporter;
@@ -25,16 +26,15 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $SPACE => q{ };
+Readonly my $DOT     => q{.};
+Readonly my $NEWLINE => qq(\n);
+Readonly my $SPACE   => q{ };
 
 sub help {
 
-## help
-
 ## Function : Print help text and exit with supplied exit code
-## Returns  : ""
-## Arguments: $USAGE, $exit_code
-##          : $USAGE     => Help text
+## Returns  :
+## Arguments: $USAGE     => Help text
 ##          : $exit_code => Exit code
 
     my ($arg_href) = @_;
@@ -52,7 +52,7 @@ sub help {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store       => \$exit_code
+            store       => \$exit_code,
         },
     };
 
@@ -64,12 +64,9 @@ sub help {
 
 sub set_default_array_parameters {
 
-## set_default_array_parameters
-
 ## Function : Set default for array parameters unless parameter already exists in parameter hash
-## Returns  : ""
-## Arguments: $parameter_href, $array_parameter_href
-##          : $parameter_href       => Parameters hash {REF}
+## Returns  :
+## Arguments: $parameter_href       => Parameters hash {REF}
 ##          : $array_parameter_href => Hold the array parameter defaults as {REF}
 
     my ($arg_href) = @_;
@@ -84,14 +81,14 @@ sub set_default_array_parameters {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         array_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$array_parameter_href
+            store       => \$array_parameter_href,
         },
     };
 

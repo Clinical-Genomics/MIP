@@ -42,17 +42,17 @@ use Readonly;
 ##MIPs lib/
 # Add MIPs internal lib
 use lib catdir( $Bin, q{lib} );
+use MIP::Check::Cluster qw{ check_max_core_number };
 use MIP::Check::Modules qw{ check_perl_modules };
+use MIP::Check::Parameter qw{ check_allowed_temp_directory };
 use MIP::Check::Reference qw{ check_references_for_vt };
-use MIP::File::Format::Yaml qw{ load_yaml write_yaml };
+use MIP::Delete::List qw{ delete_non_wes_contig delete_male_contig };
+use MIP::File::Format::Pedigree qw{ create_fam_file };
+use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
+use MIP::Get::Analysis qw{ get_overall_analysis_type };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
-use MIP::File::Format::Pedigree qw{ create_fam_file };
-use MIP::Check::Cluster qw{ check_max_core_number };
-use MIP::Get::Analysis qw{ get_overall_analysis_type };
-use MIP::Check::Parameter qw{ check_allowed_temp_directory };
 use MIP::Set::Contigs qw{ set_contigs };
-use MIP::Delete::List qw{ delete_non_wes_contig delete_male_contig };
 use MIP::Update::Contigs qw{ update_contigs_for_run };
 
 ##Recipes
@@ -102,19 +102,12 @@ BEGIN {
 ## Constants
 Readonly my $DOT       => q{.};
 Readonly my $EMPTY_STR => q{};
-Readonly my $NEWLINE   => qq{\n};
 Readonly my $TAB       => qq{\t};
 
 #### Script parameters
 
-# Holds all parameters for MIP
-my %parameter;
-
 # Holds all active parameters after the value has been set
 my %active_parameter;
-
-# To add/write parameters in the correct order
-my @order_parameters;
 
 # Holds all set parameters info after add_to_active_parameter
 my @broadcasts;
@@ -132,16 +125,15 @@ chomp( $date_time_stamp, $date, $script );
 
 #### Set program parameters
 
-### Project specific
-
+### %parameter holds all parameters for MIP
 ## Loads a YAML file into an arbitrary hash and returns it.
-%parameter = load_yaml( { yaml_file => $definitions_file, } );
+my %parameter = load_yaml( { yaml_file => $definitions_file, } );
 
+### To add/write parameters in the correct order
 ## Adds the order of first level keys from yaml file to array
-order_parameter_names(
+my @order_parameters = order_parameter_names(
     {
-        order_parameters_ref => \@order_parameters,
-        file_path            => $definitions_file,
+        file_path => $definitions_file,
     }
 );
 
@@ -984,7 +976,7 @@ while ( my ( $variant_caller_type, $prioritize_parameter_name ) =
 ## Broadcast set parameters info
 foreach my $parameter_info (@broadcasts) {
 
-    $log->info( $parameter_info, $NEWLINE );
+    $log->info($parameter_info);
 }
 
 ## Update program mode depending on analysis run value as some programs are not applicable for e.g. wes
@@ -1160,8 +1152,8 @@ if (   $active_parameter{vt_decompose}
   REFERENCE:
     foreach my $reference_file_path (@to_process_references) {
 
-        $log->info( q{[VT - Normalize and decompose]},       $NEWLINE );
-        $log->info( $TAB . q{File: } . $reference_file_path, $NEWLINE );
+        $log->info(q{[VT - Normalize and decompose]});
+        $log->info( $TAB . q{File: } . $reference_file_path );
 
         ## Split multi allelic records into single records and normalize
         analysis_vt_core(
@@ -1182,7 +1174,7 @@ if (   $active_parameter{vt_decompose}
 ## Split of fastq files in batches
 if ( $active_parameter{psplit_fastq_file} > 0 ) {
 
-    $log->info( q{[Split fastq files in batches]}, $NEWLINE );
+    $log->info(q{[Split fastq files in batches]});
 
     my $program_name = lc q{split_fastq_file};
 
@@ -1214,7 +1206,7 @@ if (   ( $active_parameter{pgzip_fastq} > 0 )
     && ( $uncompressed_file_switch eq q{uncompressed} ) )
 {
 
-    $log->info( q{[Gzip for fastq files]}, $NEWLINE );
+    $log->info(q{[Gzip for fastq files]});
 
     my $program_name = lc q{gzip_fastq};
 
@@ -1254,7 +1246,7 @@ if (   ( $active_parameter{pgzip_fastq} > 0 )
 # Run FastQC
 if ( $active_parameter{pfastqc} > 0 ) {
 
-    $log->info( q{[Fastqc]}, $NEWLINE );
+    $log->info(q{[Fastqc]});
 
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
@@ -1282,7 +1274,7 @@ if ( $active_parameter{pfastqc} > 0 ) {
 # Run BWA Mem
 if ( $active_parameter{pbwa_mem} > 0 ) {
 
-    $log->info( q{[BWA Mem]}, $NEWLINE );
+    $log->info(q{[BWA Mem]});
 
     my $program_name = lc q{bwa_mem};
 
@@ -1356,7 +1348,7 @@ else {
 
     ##Always run even for single samples to rename them correctly for standardised downstream processing.
     ##Will also split alignment per contig and copy to temporary directory for '-rio 1' block to enable selective removal of block submodules.
-    $log->info( q{[Picardtools mergesamfiles]} . $NEWLINE );
+    $log->info(q{[Picardtools mergesamfiles]});
 
     my $program_name = lc q{picardtools_mergesamfiles};
 
@@ -1387,7 +1379,7 @@ else {
     # Markduplicates
     if ( $active_parameter{pmarkduplicates} > 0 ) {
 
-        $log->info( q{[Markduplicates]} . $NEWLINE );
+        $log->info(q{[Markduplicates]});
 
       SAMPLE_ID:
         foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
@@ -1514,7 +1506,7 @@ else {
 
 if ( $active_parameter{pchanjo_sexcheck} > 0 ) {
 
-    $log->info( q{[Chanjo sexcheck]} . $NEWLINE );
+    $log->info(q{[Chanjo sexcheck]});
 
     my $program_name = lc q{chanjo_sexcheck};
 
@@ -1547,7 +1539,7 @@ if ( $active_parameter{pchanjo_sexcheck} > 0 ) {
 
 if ( $active_parameter{psambamba_depth} > 0 ) {
 
-    $log->info( q{[Sambamba depth]} . $NEWLINE );
+    $log->info(q{[Sambamba depth]});
 
     my $program_name = lc q{sambamba_depth};
 
@@ -1581,7 +1573,7 @@ if ( $active_parameter{psambamba_depth} > 0 ) {
 # Run bedtools genomecov
 if ( $active_parameter{pbedtools_genomecov} > 0 ) {
 
-    $log->info( q{[Bedtools genomecov]} . $NEWLINE );
+    $log->info(q{[Bedtools genomecov]});
 
     my $program_name = lc q{bedtools_genomecov};
 
@@ -1616,7 +1608,7 @@ if ( $active_parameter{pbedtools_genomecov} > 0 ) {
 ## Run picardtools_collectmultiplemetrics
 if ( $active_parameter{ppicardtools_collectmultiplemetrics} > 0 ) {
 
-    $log->info( q{[Picardtools collectmultiplemetrics]} . $NEWLINE );
+    $log->info(q{[Picardtools collectmultiplemetrics]});
 
     my $program_name = lc q{picardtools_collectmultiplemetrics};
 
@@ -1663,7 +1655,7 @@ if ( $active_parameter{ppicardtools_collectmultiplemetrics} > 0 ) {
 ## Run Picardtools_collecthsmetrics
 if ( $active_parameter{ppicardtools_collecthsmetrics} > 0 ) {
 
-    $log->info( q{[Picardtools collecthsmetrics]} . $NEWLINE );
+    $log->info(q{[Picardtools collecthsmetrics]});
 
     my $program_name = lc q{picardtools_collecthsmetrics};
 
@@ -1727,7 +1719,7 @@ if ( $active_parameter{prcovplots} > 0 ) {
 
     if ( $active_parameter{pbedtools_genomecov} > 0 ) {
 
-        $log->info( q{[Rcovplots]} . $NEWLINE );
+        $log->info(q{[Rcovplots]});
 
         my $program_name = lc q{rcovplots};
 
@@ -1858,7 +1850,7 @@ if ( $active_parameter{pdelly_reformat} > 0 )
 
 if ( $active_parameter{pmanta} > 0 ) {    #Run Manta
 
-    $log->info( q{[Manta]} . $NEWLINE );
+    $log->info(q{[Manta]});
     my $program_name = lc q{manta};
 
     my $outfamily_directory = catfile(
@@ -1894,7 +1886,7 @@ if ( $active_parameter{pmanta} > 0 ) {    #Run Manta
 
 if ( $active_parameter{ptiddit} > 0 ) {    #Run Tiddit
 
-    $log->info( q{[Tiddit]} . $NEWLINE );
+    $log->info(q{[Tiddit]});
     my $program_name = lc q{tiddit};
 
     my $outfamily_directory = catfile(
@@ -1937,7 +1929,7 @@ if ( $active_parameter{psv_combinevariantcallsets} > 0 )
 # Run sv_varianteffectpredictor. Family-level
 if ( $active_parameter{psv_varianteffectpredictor} > 0 ) {
 
-    $log->info( q{[SV varianteffectpredictor]} . $NEWLINE );
+    $log->info(q{[SV varianteffectpredictor]});
 
     my $program_name = lc q{sv_varianteffectpredictor};
 
@@ -2261,7 +2253,7 @@ if ( $active_parameter{pplink} > 0 ) {    #Run plink. Done per family
 if ( $active_parameter{pvariant_integrity} > 0 ) {
 
     #Run variant_integrity. Done per family
-    $log->info( q{[Variant_integrity]} . $NEWLINE );
+    $log->info(q{[Variant_integrity]});
 
     my $program_name = lc q{variant_integrity};
 
@@ -2439,7 +2431,7 @@ else {
     ## Run varianteffectpredictor {family-level}
     if ( $active_parameter{pvarianteffectpredictor} > 0 ) {
 
-        $log->info( q{[Varianteffectpredictor]} . $NEWLINE );
+        $log->info(q{[Varianteffectpredictor]});
 
         my $program_name = lc q{varianteffectpredictor};
 
@@ -2675,12 +2667,9 @@ if ( $active_parameter{sample_info_file} ne 0 ) { #Write SampleInfo to yaml file
 
 sub build_usage {
 
-##build_usage
-
 ##Function : Build the USAGE instructions
-##Returns  : ""
-##Arguments: $program_name
-##         : $program_name => Name of the script
+##Returns  :
+##Arguments: $program_name => Name of the script
 
     my ($arg_href) = @_;
 
@@ -17528,7 +17517,7 @@ sub variantannotationblock {
     # Run varianteffectpredictor. Family-level
     if ( $active_parameter_href->{pvarianteffectpredictor} > 0 ) {
 
-        $log->info( $TAB . q{[Varianteffectpredictor]} . $NEWLINE );
+        $log->info( $TAB . q{[Varianteffectpredictor]} );
     }
     if ( $active_parameter_href->{pvcfparser} > 0 )
     {    #Run pvcfparser. Done per family
@@ -17850,12 +17839,12 @@ sub bamcalibrationblock {
 
     ##Always run even for single samples to rename them correctly for standardised downstream processing.
     ##Will also split alignment per contig and copy to temporary directory for '-rio 1' block to enable selective removal of block submodules.
-    $log->info( $TAB . q{[Picardtools mergesamfiles]} . $NEWLINE );
+    $log->info( $TAB . q{[Picardtools mergesamfiles]} );
 
     # Markduplicates
     if ( $active_parameter{pmarkduplicates} > 0 ) {
 
-        $log->info( $TAB . q{[Markduplicates]} . $NEWLINE );
+        $log->info( $TAB . q{[Markduplicates]} );
     }
     if ( $active_parameter{pgatk_realigner} > 0 )
     {    #Run GATK realignertargetcreator/indelrealigner
@@ -24815,61 +24804,6 @@ sub update_to_absolute_path {
             }
         }
     }
-}
-
-sub order_parameter_names {
-
-##order_parameter_names
-
-##Function : Adds the order of first level keys from yaml file to array
-##Returns  : ""
-##Arguments: $order_parameters_ref
-##         : $order_parameters_ref => The parameter array {REF}
-##         : $file_path            => File path
-
-    my ($arg_href) = @_;
-
-    ##Flatten argument(s)
-    my $order_parameters_ref;
-    my $file_path;
-
-    my $tmpl = {
-        order_parameters_ref => {
-            required    => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$order_parameters_ref
-        },
-        file_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$file_path
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    open( my $DFY, "<", $file_path )
-      or die( "Can't open '" . $file_path . "': " . $! . "\n" );
-
-    while (<$DFY>) {
-
-        chomp $_;    #Remove new line
-
-        if ( ( $. == 1 ) && ( $_ =~ /---/ ) ) {    #Header
-
-            next;
-        }
-        if ( ( $_ !~ /^#/ ) && ( $_ =~ /^(\w+):/ ) ) {    # First level key
-
-            my $parameter_name = $1;
-            push( @$order_parameters_ref, $parameter_name )
-              ; #Add to enable later evaluation of parameters in proper order & write to MIP log file
-            next;
-        }
-    }
-    close($DFY);
 }
 
 sub add_to_sample_info {

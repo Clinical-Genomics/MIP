@@ -23,12 +23,9 @@ BEGIN {
 
 sub check_perl_modules {
 
-## check_perl_modules
-
 ## Function : Evaluate that all perl modules required by MIP are installed
 ## Returns  :
-## Arguments: $modules_ref, $program_name
-##          : $modules_ref  => Array of module names
+## Arguments: $modules_ref  => Array of module names
 ##          : $program_name => Program name
 
     my ($arg_href) = @_;

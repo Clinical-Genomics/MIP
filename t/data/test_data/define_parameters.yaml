@@ -1,0 +1,16 @@
+---
+## Version: 2.0.0
+###Enable/activate MIP
+mip:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: mip
+# This is the root path on the cluster
+cluster_constant_path:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  type: path
+### Project specific
