@@ -129,6 +129,8 @@ slurm_build_sbatch_header.t
 slurm_reformat_sacct_output.t
 tar.t
 tiddit.t
+update_prioritize_flag.t
+update_program_mode.t
 variant_effect_predictor.t
 snpeff_download.t
 variant_integrity_father.t

@@ -55,6 +55,8 @@ use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Update::Contigs qw{ update_contigs_for_run };
+use MIP::Update::Programs
+  qw{ update_program_mode_with_dry_run_all update_program_mode update_prioritize_flag };
 
 ##Recipes
 use MIP::Recipes::Bwa_mem qw{ analysis_bwa_mem };
@@ -578,16 +580,18 @@ update_to_absolute_path( { parameter_href => \%parameter, } );
 ##Special case:Enable/activate MIP. Cannot be changed from cmd or config
 $active_parameter{mip} = $parameter{mip}{default};
 
-if ( defined( $parameter{config_file}{value} ) ) {    #Input from cmd
+### Config file
+## Input from cmd
+if ( defined $parameter{config_file}{value} ) {
 
     ## Loads a YAML file into an arbitrary hash and returns it.
     %active_parameter =
       load_yaml( { yaml_file => $parameter{config_file}{value}, } );
 
-    ## Special case:Enable/activate MIP. Cannot be changed from cmd or config
+    ## Special case: Enable/activate MIP. Cannot be changed from cmd or config
     $active_parameter{mip} = $parameter{mip}{default};
 
-    ## Special case:Required when turning of vcfParser to know how many files should be analysed (.select.vcf or just .vcf)
+    ## Special case: Required when turning of vcfParser to know how many files should be analysed (.select.vcf or just .vcf)
     $active_parameter{vcfparser_outfile_count} =
       $parameter{vcfparser_outfile_count}{default};
 
@@ -611,8 +615,9 @@ if ( defined( $parameter{config_file}{value} ) ) {    #Input from cmd
         }
     );
 
-    foreach my $order_parameter_element (@order_parameters)
-    {    #Loop through all parameters and update info
+    ## Loop through all parameters and update info
+  PARAMETER:
+    foreach my $order_parameter_element (@order_parameters) {
 
         ## Updates the config file to particular user/cluster for entries following specifications. Leaves other entries untouched.
         update_config_file(
@@ -624,7 +629,7 @@ if ( defined( $parameter{config_file}{value} ) ) {    #Input from cmd
         );
     }
 
-    ##Remove previous analysis specific info not relevant for current run e.g. log file, sample_ids which are read from pedigree or cmd
+    ## Remove previous analysis specific info not relevant for current run e.g. log file, sample_ids which are read from pedigree or cmd
     my @remove_keys = (qw{ log_file sample_ids });
 
   KEY:
@@ -946,7 +951,6 @@ check_program_mode(
 );
 
 ## Update program mode depending on dry_run_all flag
-use MIP::Update::Programs qw{update_program_mode_with_dry_run_all};
 update_program_mode_with_dry_run_all(
     {
         active_parameter_href => \%active_parameter,
@@ -970,7 +974,7 @@ my %priority_call_parameter = (
     structural_variant_callers => 'sv_svdb_merge_prioritize',
 );
 while ( my ( $variant_caller_type, $prioritize_parameter_name ) =
-    each(%priority_call_parameter) )
+    each %priority_call_parameter )
 {
 
     ## Check if we have any active callers
@@ -1005,21 +1009,47 @@ foreach my $parameter_info (@broadcasts) {
 }
 
 ## Update program mode depending on analysis run value as some programs are not applicable for e.g. wes
-update_program_mode(
+my @warning_msgs = update_program_mode(
     {
         active_parameter_href => \%active_parameter,
-        ,
         programs_ref => [qw{ cnvnator delly_call delly_reformat tiddit }],
-        consensus_analysis_type_ref =>
-          \$parameter{dynamic_parameter}{consensus_analysis_type},
+        consensus_analysis_type =>
+          $parameter{dynamic_parameter}{consensus_analysis_type},
     }
 );
 
-if ( $active_parameter{config_file_analysis} ne 0 )
-{    #Write config file for family
+## Broadcast
+if (@warning_msgs) {
 
-    make_path( dirname( $active_parameter{config_file_analysis} ) )
-      ;    #Create directory unless it already exists
+    foreach my $warning_msg (@warning_msgs) {
+
+        $log->warn($warning_msg);
+    }
+}
+## Update prioritize flag depending on analysis run value as some programs are not applicable for e.g. wes
+$active_parameter{sv_svdb_merge_prioritize} = update_prioritize_flag(
+    {
+        prioritize_key => $active_parameter{sv_svdb_merge_prioritize},
+        programs_ref   => [qw{ cnvnator delly_call delly_reformat tiddit }],
+        consensus_analysis_type =>
+          $parameter{dynamic_parameter}{consensus_analysis_type},
+    }
+);
+
+## Write config file for family
+if ( $active_parameter{config_file_analysis} ne 0 ) {
+
+    ## Create directory unless it already exists
+    make_path( dirname( $active_parameter{config_file_analysis} ) );
+
+    ## Remove previous analysis specific info not relevant for current run e.g. log file, sample_ids which are read from pedigree or cmd
+    my @remove_keys = (qw{ associated_program });
+
+  KEY:
+    foreach my $key (@remove_keys) {
+
+        delete $active_parameter{$key};
+    }
 
     ## Writes a YAML hash to file
     write_yaml(
@@ -21777,33 +21807,35 @@ sub write_cmd_mip_log {
 
     my @nowrite = (
         "mip",                  "bwa_build_reference",
-        "pbamcalibrationblock", "pvariantannotationblock"
+        "pbamcalibrationblock", "pvariantannotationblock",
+        q{associated_program},
     );
 
-    foreach my $order_parameter_element (@$order_parameters_ref) {
+  PARAMETER_KEY:
+    foreach my $order_parameter_element ( @{$order_parameters_ref} ) {
 
-        if ( defined( $active_parameter_href->{$order_parameter_element} ) ) {
+        if ( defined $active_parameter_href->{$order_parameter_element} ) {
 
-            if (   ( $order_parameter_element eq "config_file" )
-                && ( $active_parameter_href->{config_file} eq 0 ) )
-            {    #Do not print
+            ## If no config file do not print
+            if (   $order_parameter_element eq q{config_file}
+                && $active_parameter_href->{config_file} eq 0 )
+            {
             }
             else {
 
-                if ( ( any { $_ eq $order_parameter_element } @nowrite ) )
-                {    #If element is part of array - do nothing
+                ## If element is part of array - do nothing
+                if ( ( any { $_ eq $order_parameter_element } @nowrite ) ) {
                 }
                 elsif (
+                    ## Array reference
                     (
-                        exists(
-                            $parameter_href->{$order_parameter_element}
-                              {data_type}
-                        )
+                        exists $parameter_href->{$order_parameter_element}
+                        {data_type}
                     )
                     && ( $parameter_href->{$order_parameter_element}{data_type}
-                        eq "ARRAY" )
+                        eq q{ARRAY} )
                   )
-                {    #Array reference
+                {
 
                     my $separator = $parameter_href->{$order_parameter_element}
                       {element_separator};
@@ -21817,19 +21849,18 @@ sub write_cmd_mip_log {
                       ) . " ";
                 }
                 elsif (
+                    ## HASH reference
                     (
-                        exists(
-                            $parameter_href->{$order_parameter_element}
-                              {data_type}
-                        )
+                        exists $parameter_href->{$order_parameter_element}
+                        {data_type}
                     )
                     && ( $parameter_href->{$order_parameter_element}{data_type}
-                        eq "HASH" )
+                        eq q{HASH} )
                   )
-                {    #HASH reference
+                {
 
-                    $cmd_line .=
-                      "-" . $order_parameter_element . " ";    #First key
+                    # First key
+                    $cmd_line .= "-" . $order_parameter_element . " ";
                     $cmd_line .= join(
                         "-" . $order_parameter_element . " ",
                         map {
@@ -21852,15 +21883,16 @@ sub write_cmd_mip_log {
             }
         }
     }
-    $log->info( $cmd_line,                           "\n" );
-    $log->info( 'MIP Version: ' . $$mip_version_ref, "\n" );
+    $log->info( $cmd_line,                            "\n" );
+    $log->info( q{MIP Version: } . $$mip_version_ref, "\n" );
     $log->info(
-        'Script parameters and info from '
+        q{Script parameters and info from }
           . $$script_ref
-          . ' are saved in file: '
+          . q{ are saved in file: }
           . $$log_file_ref,
         "\n"
     );
+    return;
 }
 
 sub check_unique_array_element {
@@ -25858,15 +25890,12 @@ sub add_to_parameter {
 
 sub check_prioritize_variant_callers {
 
-##check_prioritize_variant_callers
-
-##Function : Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $variant_callers_ref, $parameter_names_ref
-##         : $parameter_href        => Parameter hash {REF}
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $variant_callers_ref   => Variant callers to check {REF}
-##         : $parameter_names_ref   => Parameter name list {REF}
+## Function : Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller.
+## Returns  :
+## Arguments: $parameter_href        => Parameter hash {REF}
+##          : $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $variant_callers_ref   => Variant callers to check {REF}
+##          : $parameter_names_ref   => Parameter name list {REF}
 
     my ($arg_href) = @_;
 
@@ -25882,27 +25911,27 @@ sub check_prioritize_variant_callers {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         parameter_names_ref => {
             required => 1,
             defined  => 1,
             default  => [],
-            store    => \$parameter_names_ref
+            store    => \$parameter_names_ref,
         },
         variant_callers_ref => {
             required    => 1,
             defined     => 1,
             default     => [],
             strict_type => 1,
-            store       => \$variant_callers_ref
+            store       => \$variant_callers_ref,
         },
     };
 
@@ -25913,38 +25942,41 @@ sub check_prioritize_variant_callers {
 
     my @priority_calls =
       split( ",", $active_parameter_href->{$$parameter_names_ref} );
-    my @variant_caller_aliases;    #No matching variant caller
+
+    ## No matching variant caller
+    my @variant_caller_aliases;
 
     ## Check that all active variant callers have a priority order
+  CALLER:
     foreach my $variant_caller ( @{$variant_callers_ref} ) {
 
         my $variant_caller_alias =
           $parameter_href->{$variant_caller}{outdir_name};
-        push( @variant_caller_aliases, $variant_caller_alias );
+        push @variant_caller_aliases, $variant_caller_alias;
 
-        if ( $active_parameter_href->{$variant_caller} > 0 )
-        {                          #Only active programs
+        ## Only active programs
+        if ( $active_parameter_href->{$variant_caller} > 0 ) {
 
-            if ( !( any { $_ eq $variant_caller_alias } @priority_calls ) )
-            {                      #If element is not part of string
+            ## If element is not part of string
+            if ( !( any { $_ eq $variant_caller_alias } @priority_calls ) ) {
 
                 $log->fatal( $$parameter_names_ref
-                      . " does not contain active variant caller: '"
+                      . q{ does not contain active variant caller: '}
                       . $variant_caller_alias
-                      . "'" );
+                      . q{'} );
                 exit 1;
             }
         }
-        if ( $active_parameter_href->{$variant_caller} == 0 )
-        {                          #Only NOT active programs
+        ## Only NOT active programs
+        if ( $active_parameter_href->{$variant_caller} == 0 ) {
 
-            if ( ( any { $_ eq $variant_caller_alias } @priority_calls ) )
-            {                      #If element is part of string
+            ## If element is part of string
+            if ( ( any { $_ eq $variant_caller_alias } @priority_calls ) ) {
 
                 $log->fatal( $$parameter_names_ref
-                      . " contains deactivated variant caller: '"
+                      . q{ contains deactivated variant caller: '}
                       . $variant_caller_alias
-                      . "'" );
+                      . q{'} );
                 exit 1;
             }
         }
@@ -27587,65 +27619,6 @@ sub check_element_exists_in_hash {
     }
 }
 
-sub update_program_mode {
-
-##update_program_mode
-
-##Function : Update program mode depending on analysis run value as some programs are not applicable for e.g. wes
-##Returns  : ""
-##Arguments: $active_parameter_href, $programs_ref, $consensus_analysis_type_ref
-##         : $active_parameter_href       => Active parameters for this analysis hash {REF}
-##         : $programs_ref                => Programs to update {REF}
-##         : $consensus_analysis_type_ref => Consensus analysis_type {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $programs_ref;
-    my $consensus_analysis_type_ref;
-
-    my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        programs_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$programs_ref
-        },
-        consensus_analysis_type_ref => {
-            default     => \$$,
-            strict_type => 1,
-            store       => \$consensus_analysis_type_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    if ( $$consensus_analysis_type_ref ne "wgs" ) {
-
-        foreach my $program (@$programs_ref) {
-
-            $active_parameter_href->{ "p" . $program } = 0;
-            $log->warn( "Turned off: "
-                  . $program
-                  . " as it is not applicable for "
-                  . $$consensus_analysis_type_ref
-                  . " analysis\n" );
-        }
-    }
-}
-
 ##Investigate potential autodie error
 if ( $@ and $@->isa("autodie::exception") ) {
 
@@ -27665,336 +27638,4 @@ if ( $@ and $@->isa("autodie::exception") ) {
 elsif ($@) {
 
     say "A non-autodie exception.";
-}
-
-####
-#Decommissioned
-####
-
-sub prepare_gatk_target_intervals {
-
-##prepare_gatk_target_intervals
-
-##Function : Prepare target interval file. Copies file to temporary directory, and adds fileExtension to fit GATK
-##Returns  : "$target_interval_path"
-##Arguments: $analysis_type_ref, $target_interval_file_list_ref, $reference_dir_ref, $temp_directory_ref, $FILEHANDLE
-##         : $analysis_type_ref             => The analysis type {REF}
-##         : $target_interval_file_list_ref => Target interval list file {REF}
-##         : $reference_dir_ref             => Reference directory {REF}
-##         : $temp_directory_ref            => Temporary directory {REF}
-##         : $FILEHANDLE                    => Filehandle to write to
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $call_type  = $arg_href->{call_type}  //= "BOTH";
-    my $add_ending = $arg_href->{add_ending} //= 1;
-
-    ## Flatten argument(s)
-    my $analysis_type_ref = $arg_href->{analysis_type_ref};
-    my $FILEHANDLE        = $arg_href->{FILEHANDLE};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref};
-    my $target_interval_file_list_ref =
-      $arg_href->{target_interval_file_list_ref};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref};
-
-    use MIP::IO::Files qw(migrate_file);
-    use MIP::Gnu::Coreutils qw(gnu_mv);
-
-    if (   ( $$analysis_type_ref eq "wes" )
-        || ( $$analysis_type_ref eq "rapid" ) )
-    {    #Exome/rapid analysis
-
-        my $target_interval_path =
-          catfile( $$temp_directory_ref, $$target_interval_file_list_ref );
-
-        ## Copies file to temporary directory.
-        migrate_file(
-            {
-                FILEHANDLE  => $FILEHANDLE,
-                infile_path => catfile(
-                    $$reference_dir_ref, $$target_interval_file_list_ref
-                ),
-                outfile_path => $$temp_directory_ref,
-            }
-        );
-        say $FILEHANDLE "wait ";
-
-        if ($add_ending) {
-
-            $target_interval_path .= ".intervals";
-
-            ## Add the by GATK required ".interval" ending
-            gnu_mv(
-                {
-                    infile_path => catfile(
-                        $$temp_directory_ref, $$target_interval_file_list_ref
-                    ),
-                    outfile_path => catfile(
-                        $$temp_directory_ref,
-                        $$target_interval_file_list_ref . ".intervals"
-                    ),
-                    FILEHANDLE => $FILEHANDLE,
-                }
-            );
-            say $FILEHANDLE "\n";
-        }
-        return $target_interval_path;
-    }
-}
-
-sub MergeTargetListFlag {
-
-##MergeTargetListFlag
-
-##Function : Detects if there are different capture kits across sample_ids. Creates a temporary merged interval_list for all interval_list that have been supplied and returns temporary list.
-##Returns  : "Filepath"
-##Arguments: $active_parameter_href, $FILEHANDLE, $contig_ref
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $FILEHANDLE            => FILEHANDLE to write to
-##         : $contig_ref            => The contig to extract {REF}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $temp_directory_ref;
-
-    ## Flatten argument(s)
-    my $active_parameter_href = $arg_href->{active_parameter_href};
-    my $FILEHANDLE            = $arg_href->{FILEHANDLE};
-
-    ##Determine file to print to module (untouched/merged and/or splited)
-    my $outdirectory =
-      $active_parameter_href->{temp_directory};    #For merged and/or splitet
-
-    if ( scalar( keys %{ $active_parameter_href->{exome_target_bed} } ) > 1 )
-    {                                              #Merge files
-
-        say $FILEHANDLE "\n## Generate merged interval_list\n";
-
-        java_core(
-            {
-                FILEHANDLE        => $FILEHANDLE,
-                memory_allocation => "Xmx2g",
-                java_use_large_pages =>
-                  $active_parameter_href->{java_use_large_pages},
-                temp_directory => $$temp_directory_ref,
-                java_jar       => catfile(
-                    $active_parameter_href->{picardtools_path}, "picard.jar"
-                ),
-            }
-        );
-
-        print $FILEHANDLE "IntervalListTools ";
-        print $FILEHANDLE "UNIQUE=TRUE "
-          ; #Merge overlapping and adjacent intervals to create a list of unique intervals
-
-        foreach my $targetFile (
-            keys %{ $active_parameter_href->{exome_target_bed} } )
-        {
-
-            print $FILEHANDLE "INPUT=" . $targetFile . " ";
-        }
-        say $FILEHANDLE "OUTPUT="
-          . catfile( $$temp_directory_ref, "merged.interval_list" ),
-          "\n";    #Merged outfile
-    }
-}
-
-sub GATKTargetListFlag {
-
-##GATKTargetListFlag
-
-##Function : Detects if there are different capture kits across sample_ids. Creates a temporary merged interval_list for all interval_list that have been supplied and returns temporary list. Will also extract specific contigs if requested and return that list if enabled.
-##Returns  : "Filepath"
-##Arguments: $active_parameter_href, $FILEHANDLE, $contig_ref
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $FILEHANDLE             => FILEHANDLE to write to
-##         : $contig_ref              => The contig to extract {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href = $arg_href->{active_parameter_href};
-    my $FILEHANDLE            = $arg_href->{FILEHANDLE};
-    my $contig_ref            = $arg_href->{contig_ref};
-
-    my %GATKTargetPaddedBedIntervalListTracker;
-    my @GATKTargetPaddedBedIntervalListFiles;
-
-    for (
-        my $sample_id_counter = 0 ;
-        $sample_id_counter <
-        scalar( @{ $active_parameter_href->{sample_ids} } ) ;
-        $sample_id_counter++
-      )
-    {    #Collect infiles for all sample_ids
-
-        if (
-            defined(
-                $active_parameter_href->{ $active_parameter_href->{family_id} }
-                  { $active_parameter_href->{sample_ids}[$sample_id_counter] }
-                  {GATKTargetPaddedBedIntervalLists}
-            )
-          )
-        {
-
-            $active_parameter_href->{GATKTargetPaddedBedIntervalLists} =
-              catfile(
-                $active_parameter_href->{reference_dir},
-                $active_parameter_href->{ $active_parameter_href->{family_id} }
-                  { $active_parameter_href->{sample_ids}[$sample_id_counter] }
-                  {GATKTargetPaddedBedIntervalLists}
-              );    #Transfer to active_parameter top level
-
-            $GATKTargetPaddedBedIntervalListTracker{ $active_parameter_href
-                  ->{GATKTargetPaddedBedIntervalLists} }++
-              ;     #Increment to track file record
-
-            if (
-                $GATKTargetPaddedBedIntervalListTracker{ $active_parameter_href
-                      ->{GATKTargetPaddedBedIntervalLists} } == 1 )
-            {       #Not detected previously
-
-                push(
-                    @GATKTargetPaddedBedIntervalListFiles,
-                    $active_parameter_href
-                      ->{ $active_parameter_href->{family_id} }{
-                        $active_parameter_href->{sample_ids}[$sample_id_counter]
-                      }{GATKTargetPaddedBedIntervalLists}
-                );
-            }
-        }
-    }
-
-    ##Determine file to print to module (untouched/merged and/or splited)
-    my $outdirectory =
-      $active_parameter_href->{temp_directory};    #For merged and/or splitet
-
-    if ( scalar(@GATKTargetPaddedBedIntervalListFiles) > 1 ) {    #Merge files
-
-        say $FILEHANDLE "\n## Generate merged interval_list\n";
-
-        java_core(
-            {
-                FILEHANDLE        => $FILEHANDLE,
-                memory_allocation => "Xmx2g",
-                java_use_large_pages =>
-                  $active_parameter_href->{java_use_large_pages},
-                temp_directory => $active_parameter_href->{temp_directory},
-                java_jar       => catfile(
-                    $active_parameter_href->{picardtools_path}, "picard.jar"
-                ),
-            }
-        );
-
-        print $FILEHANDLE "IntervalListTools ";
-        print $FILEHANDLE "UNIQUE=TRUE "
-          ; #Merge overlapping and adjacent intervals to create a list of unique intervals
-
-        for (
-            my $file_counter = 0 ;
-            $file_counter < scalar(@GATKTargetPaddedBedIntervalListFiles) ;
-            $file_counter++
-          )
-        {
-
-            print $FILEHANDLE "INPUT="
-              . catfile( $active_parameter_href->{reference_dir},
-                $GATKTargetPaddedBedIntervalListFiles[$file_counter] )
-              . " ";
-        }
-        say $FILEHANDLE "OUTPUT="
-          . catfile( $outdirectory, "merged.interval_list" ),
-          "\n";    #Merged outfile
-
-        if ( defined($$contig_ref) ) {
-
-            my $indirectory = $active_parameter_href->{temp_directory};
-            my $infile      = "merged.interval_list";
-            return split_target_file(
-                {
-                    FILEHANDLE       => $FILEHANDLE,
-                    indirectory_ref  => \$indirectory,
-                    outdirectory_ref => \$outdirectory,
-                    infile_ref       => \$infile,
-                    contig_ref       => $contig_ref,
-                }
-            );
-        }
-        return catfile( $outdirectory, "merged.interval_list" );    #No split
-    }
-    elsif ( defined($$contig_ref) )
-    {    #Supply original file but create splitted temp file
-
-        return split_target_file(
-            {
-                FILEHANDLE       => $FILEHANDLE,
-                indirectory_ref  => \$active_parameter_href->{reference_dir},
-                outdirectory_ref => \$outdirectory,
-                infile_ref       => \$GATKTargetPaddedBedIntervalListFiles[0],
-                contig_ref       => $contig_ref,
-            }
-        );
-    }
-    else {    #No merge and no split. return original and only file
-
-        return catfile(
-            $active_parameter_href->{reference_dir},
-            $GATKTargetPaddedBedIntervalListFiles[0]
-        );
-    }
-}
-
-sub CheckTemplateFilesPaths {
-
-##CheckTemplateFilesPaths
-
-##Function : Checks that file paths in template files exist
-##Returns  : ""
-##Arguments: $file_name_ref, $parameter_name
-##         : $file_name_ref   => File name {REF}
-##         : $parameter_name => MIP parameter name
-
-    my $file_name_ref  = $_[0];
-    my $parameter_name = $_[1];
-
-    ## Retrieve logger object now that log_file has been set
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    open( my $TF, "<", $$file_name_ref )
-      or $log->logdie( "Can't open '" . $$file_name_ref . "':" . $! . "\n" );
-
-    while (<$TF>) {
-
-        chomp $_;
-
-        if (m/^\s+$/) {    # Avoid blank lines
-            next;
-        }
-        if (m/^\#/) {      # Avoid "#"
-            next;
-        }
-        if ( $_ =~ /(\S+)/ ) {
-
-            my $file_path = $_;
-
-            if ( $file_path =~ /^(RD!)/ ) {    #intersectCollect file
-
-                my @file_path = split( '\t', $file_path );
-                $file_path[0] =~ s/^RD!/$active_parameter{reference_dir}/g;
-
-                check_existance( \%parameter, \%active_parameter,
-                    \$file_path[0], \$parameter_name, "file" )
-                  ;    #Only check paths that pointing to reference directory
-            }
-            if ( $parameter_name eq "gatk_haplotypecallerRefBAMInfile" )
-            {          #Only Paths should be present i.e. check all lines
-
-                check_existance( \%parameter, \%active_parameter, \$file_path,
-                    \$parameter_name, "file" );
-            }
-        }
-    }
-    close(TF);
 }
