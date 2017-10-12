@@ -1514,7 +1514,7 @@ sub gatk_combinevariants {
     if ($genotype_merge_option) {
 
         push @commands,
-          q{-genotypemergeoption} . $SPACE . $genotype_merge_option;
+          q{--genotypemergeoption} . $SPACE . $genotype_merge_option;
     }
 
     if ($prioritize_caller) {
@@ -1526,7 +1526,7 @@ sub gatk_combinevariants {
     if ( @{$infile_paths_ref} ) {
 
         push @commands,
-          q{--variant} . $SPACE . join $SPACE . q{--variant} . $SPACE,
+          q{--variant:} . join $SPACE . q{--variant:},
           @{$infile_paths_ref};
 
     }

@@ -26385,14 +26385,11 @@ sub print_program {
         }
     );
 
-    my @order_parameters;
-
     ## Adds the order of first level keys from yaml file to array
-    order_parameter_names(
+    my @order_parameters = order_parameter_names(
         {
-            order_parameters_ref => \@order_parameters,
             file_path =>
-              catfile( $Bin, "definitions", "define_parameters.yaml" ),
+              catfile( $Bin, qw{ definitions define_parameters.yaml } ),
         }
     );
 
