@@ -32,6 +32,7 @@ BEGIN {
 }
 
 ##Constants
+Readonly my $SINGLE_QUOTE => q{'};
 Readonly my $NEWLINE => qq{\n};
 
 sub check_parameter_hash {
@@ -81,7 +82,7 @@ sub check_parameter_hash {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Check that mandatory keys exists for each parameter
-    my $error_msg = check_parameter_mandatory_keys_exits(
+    my $error_msg = _check_parameter_mandatory_keys_exits(
         {
             parameter_href     => $parameter_href,
             mandatory_key_href => $mandatory_key_href,
@@ -100,7 +101,7 @@ sub check_parameter_hash {
     foreach my $argument_href (@arguments) {
 
         ## Mandatory keys
-        $error_msg = check_parameter_keys(
+        $error_msg = _check_parameter_keys(
             {
                 parameter_href => $parameter_href,
                 key_href       => $argument_href,
@@ -115,7 +116,7 @@ sub check_parameter_hash {
     return;
 }
 
-sub check_parameter_mandatory_keys_exits {
+sub _check_parameter_mandatory_keys_exits {
 
 ## Function : Check that mandatory keys exists
 ## Returns  :
@@ -168,7 +169,7 @@ sub check_parameter_mandatory_keys_exits {
                   . q{' for parameter: '}
                   . $parameter
                   . q{' in file: '}
-                  . $file_path . q{'} . qq{\n};
+                  . $file_path . $SINGLE_QUOTE . $NEWLINE;
                 return $error_msg;
             }
         }
@@ -176,7 +177,7 @@ sub check_parameter_mandatory_keys_exits {
     return;
 }
 
-sub check_parameter_keys {
+sub _check_parameter_keys {
 
 ## Function : Evaluate parameter keys in hash
 ## Returns  :
@@ -226,7 +227,7 @@ sub check_parameter_keys {
             if ( exists $parameter_href->{$parameter}{$key} ) {
 
                 ## Check key data type
-                $error_msg = check_parameter_data_type(
+                $error_msg = _check_parameter_data_type(
                     {
                         parameter_href => $parameter_href,
                         key_href       => $key_href,
@@ -241,7 +242,7 @@ sub check_parameter_keys {
                 }
 
                 ## Evaluate key values
-                $error_msg = check_parameter_values(
+                $error_msg = _check_parameter_values(
                     {
                         parameter_href => $parameter_href,
                         key_href       => $key_href,
@@ -260,7 +261,7 @@ sub check_parameter_keys {
     return;
 }
 
-sub check_parameter_values {
+sub _check_parameter_values {
 
 ## Function : Evaluate parameter key values
 ## Returns  :
@@ -324,16 +325,16 @@ sub check_parameter_values {
               . q{' in key: '}
               . $key
               . q{' in file: '}
-              . $file_path . q{'} . qq{\n}
+              . $file_path . $SINGLE_QUOTE . $NEWLINE
               . q{Allowed entries: '}
-              . join( q{', '}, @{ $key_href->{$key}{values} } ) . q{'} . qq{\n};
+              . join( q{', '}, @{ $key_href->{$key}{values} } ) . $SINGLE_QUOTE . $NEWLINE;
             return $error_msg;
         }
     }
     return;
 }
 
-sub check_parameter_data_type {
+sub _check_parameter_data_type {
 
 ## Function : Check key data type
 ## Returns  :
@@ -401,7 +402,7 @@ sub check_parameter_data_type {
               . q{' in key: '}
               . $key
               . q{' in file: '}
-              . $file_path . q{'} . qq{\n};
+              . $file_path . $SINGLE_QUOTE . $NEWLINE;
             return $error_msg;
         }
     }
@@ -416,7 +417,7 @@ sub check_parameter_data_type {
           . q{' in key: '}
           . $key
           . q{' in file: '}
-          . $file_path . q{'} . qq{\n};
+          . $file_path . $SINGLE_QUOTE . $NEWLINE;
         return $error_msg;
     }
     return;
