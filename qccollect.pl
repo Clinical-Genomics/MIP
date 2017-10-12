@@ -1,89 +1,84 @@
 #!/usr/bin/env perl
 
-use Modern::Perl '2014';
-use warnings qw( FATAL utf8 );
-use autodie qw(open close :all);
+#### Collects MPS QC from MIP. Loads information on files to examine and values to extract from in YAML format and outputs exracted metrics in YAML format.
+
+use Modern::Perl qw{ 2014 };
+use warnings qw{ FATAL utf8 };
+use autodie qw{ open close :all };
 use v5.18;
 use utf8;
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
+use open qw{ :encoding(UTF-8) :std };
+use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 
-##Collects MPS QC from MIP. Loads information on files to examine and values to extract from in YAML format and outputs exracted metrics in YAML format.
-#Copyright 2013 Henrik Stranneheim
-
 use Cwd;
-use Cwd qw(abs_path);  #Import absolute path function
-use File::Basename qw(dirname basename);
-use File::Spec::Functions qw(catdir catfile devnull);
-use FindBin qw($Bin);  #Find directory of script
+use Cwd qw{ abs_path };
+use File::Basename qw{ dirname basename fileparse };
+use File::Spec::Functions qw{ catdir catfile devnull };
+use FindBin qw{ $Bin };
 use Getopt::Long;
-use Params::Check qw[check allow last_error];
+use Params::Check qw{ check allow last_error };
 $Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
 use Pod::Usage;
 use Pod::Text;
 use POSIX;
+use Carp;
+
+## CPANM
+use Readonly;
 
 ##MIPs lib/
-use lib catdir($Bin, "lib");
+use lib catdir($Bin, q{lib});
 use MIP::Check::Modules qw{ check_perl_modules };
-use MIP::File::Format::Yaml qw(load_yaml write_yaml);
-use MIP::Log::MIP_log4perl qw(initiate_logger);
-use MIP::Script::Utils qw(help);
+use MIP::File::Format::Yaml qw{ load_yaml write_yaml };
+use MIP::Log::MIP_log4perl qw{ initiate_logger };
+use MIP::Script::Utils qw{ help };
 
-our $USAGE;
+our $USAGE = build_usage( {} );
 
 BEGIN {
 
   require MIP::Check::Modules;
 
-    my @modules = ("Modern::Perl",
-		   "autodie",
-		   "YAML",
-		   "MIP::File::Format::Yaml",
-		   "Log::Log4perl",
-		   "MIP::Log::MIP_log4perl",
-	);
+    my @modules = qw{ Modern::Perl autodie YAML Log::Log4perl };
 
     ## Evaluate that all modules required are installed
     check_perl_modules({modules_ref => \@modules,
 			program_name => $PROGRAM_NAME,
 		       });
-
-    $USAGE =
-        basename($0).qq{ -si [sample_info.yaml] -r [regexp.yaml] -o [outfile]
-               -si/--sample_info_file Sample info file (YAML format, Supply whole path, mandatory)
-               -r/--regexp_file Regular expression file (YAML format, Supply whole path, mandatory)
-               -o/--outfile The data file output (Supply whole path, defaults to "qcmetrics.yaml")
-               -preg/--print_regexp Print the regexp used at CMMS switch (defaults to "0" (=no))
-               -prego/--print_regexp_outfile Regexp YAML outfile (defaults to "qc_regexp.yaml")
-               -ske/--skip_evaluation Skip evaluation step
-               -l/--log_file Log file (Default: "qccollect.log")
-               -h/--help Display this help message
-               -v/--version Display version};
 }
+
+## Constants
+Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE => q{ };
 
 my ($sample_info_file, $regexp_file, $print_regexp, $skip_evaluation);
 
 ##Scalar parameters with defaults
-my ($outfile, $print_regexp_outfile, $log_file) = ("qcmetrics.yaml", "qc_regexp.yaml", catfile(cwd(), "qccollect.log"));
+my ($outfile, $print_regexp_outfile, $log_file) = (q{qcmetrics.yaml}, q{qc_regexp.yaml}, catfile(cwd(), q{qccollect.log}));
 
 my (%qc_data, %evaluate_metric);
-my %qc_header; #Save header(s) in each outfile
-my %qc_program_data; #Save data in each outfile
 
-my $qccollect_version = "2.0.3";
+## Save header(s) in each outfile
+my %qc_header;
+
+## Save data in each outfile
+my %qc_program_data;
+
+my $qccollect_version = q{2.0.4};
 
 ###User Options
-GetOptions('si|sample_info_file:s' => \$sample_info_file,
-	   'r|regexp_file:s' => \$regexp_file,
-	   'o|outfile:s'  => \$outfile,
-	   'preg|print_regexp:n' => \$print_regexp,
-	   'prego|print_regexp_outfile:s' => \$print_regexp_outfile,
-	   'ske|skip_evaluation' => \$skip_evaluation,
-	   'l|log_file:s' => \$log_file,
-	   'h|help' => sub { say STDOUT $USAGE; exit;},  #Display help text
-	   'v|version' => sub { say STDOUT "\n".basename($0)." ".$qccollect_version, "\n"; exit;},  #Display version number
+GetOptions(q{si|sample_info_file:s} => \$sample_info_file,
+	   q{r|regexp_file:s} => \$regexp_file,
+	   q{o|outfile:s}  => \$outfile,
+	   q{preg|print_regexp:n} => \$print_regexp,
+	   q{prego|print_regexp_outfile:s} => \$print_regexp_outfile,
+	   q{ske|skip_evaluation} => \$skip_evaluation,
+	   q{l|log_file:s} => \$log_file,
+	   ## Display help text
+	   q{h|help} => sub { say STDOUT $USAGE; exit;},
+	   ## Display version number
+	   q{v|version} => sub { say STDOUT $NEWLINE . basename($PROGRAM_NAME). $SPACE .$qccollect_version, $NEWLINE; exit;},
     ) or help({USAGE => $USAGE,
 			       exit_code => 1,
 			      });
@@ -98,34 +93,36 @@ if ($print_regexp) {
     ## Write default regexp to YAML
     regexp_to_yaml({print_regexp_outfile => $print_regexp_outfile,
 		   });
-    $log->info("Wrote regexp YAML file to: ".$print_regexp_outfile, "\n");
+    $log->info(q{Wrote regexp YAML file to: } . $print_regexp_outfile);
     exit;
 }
 
-if (! $sample_info_file) {
+if (not $sample_info_file) {
 
     $log->info($USAGE);
-    $log->fatal("Must supply a '-sample_info_file' (supply whole path)", "\n\n");
+    $log->fatal(q{Must supply a '-sample_info_file' (supply whole path)}, $NEWLINE);
     exit;
 }
-if (! $regexp_file) {
+if (not $regexp_file) {
 
     $log->info($USAGE);
-    $log->fatal("Must supply a '-regexp_file' (supply whole path)", "\n\n");
+    $log->fatal(q{Must supply a '-regexp_file' (supply whole path)}, $NEWLINE);
     exit;
 }
 
-####MAIN
+###########
+####MAIN###
+###########
 
 ## Loads a YAML file into an arbitrary hash and returns it
 my %sample_info = load_yaml({yaml_file => $sample_info_file,
 						});
-$log->info("Loaded: ".$sample_info_file, "\n");
+$log->info(q{Loaded: } . $sample_info_file);
 
 ## Loads a YAML file into an arbitrary hash and returns it
 my %regexp = load_yaml({yaml_file => $regexp_file,
 					   });
-$log->info("Loaded: ".$regexp_file, "\n");
+$log->info(q{Loaded: } . $regexp_file);
 
 ## Extracts all qcdata on sample_id level using information in %sample_info and %regexp
 sample_qc({sample_info_href => \%sample_info,
@@ -166,20 +163,60 @@ if(! $skip_evaluation) {
 
 ## Writes a YAML hash to file
 write_yaml({yaml_href => \%qc_data,
-				yaml_file_path_ref => \$outfile,
+				yaml_file_path => $outfile,
 			       });
-$log->info("Wrote: ".$outfile, "\n");
+$log->info(q{Wrote: } . $outfile);
 
-####SubRoutines
+##################
+####SubRoutines###
+##################
+
+
+######################
+####Sub routines######
+######################
+
+sub build_usage {
+
+##Function : Build the USAGE instructions
+##Returns  :
+##Arguments: $program_name => Name of the script
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $program_name;
+
+    my $tmpl = {
+        program_name => {
+            default     => basename($PROGRAM_NAME),
+            strict_type => 1,
+            store       => \$program_name,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return <<"END_USAGE";
+ $program_name [options] -si [sample_info.yaml] -r [regexp.yaml] -o [outfile]
+   -si/--sample_info_file Sample info file (YAML format, Supply whole path, mandatory)
+   -r/--regexp_file Regular expression file (YAML format, Supply whole path, mandatory)
+   -o/--outfile The data file output (Supply whole path, defaults to "qcmetrics.yaml")
+   -preg/--print_regexp Print the regexp used at CMMS switch (defaults to "0" (=no))
+   -prego/--print_regexp_outfile Regexp YAML outfile (defaults to "qc_regexp.yaml")
+   -ske/--skip_evaluation Skip evaluation step
+   -l/--log_file Log file (Default: "qccollect.log")
+   -h/--help Display this help message
+   -v/--version Display version;
+END_USAGE
+}
 
 sub family_qc {
 
-##family_qc
 
 ##Function : Extracts all qcdata on family level using information in %sample_info_file and %regexp
-##Returns  : ""
-##Arguments: $sample_info_href, $regexp_href, $qc_data_href, $qc_header_href, $qc_program_data_href
-##         : $sample_info_href     => Info on samples and family hash {REF}
+##Returns  :
+##Arguments: $sample_info_href     => Info on samples and family hash {REF}
 ##         : $regexp_href          => RegExp hash {REF}
 ##         : $qc_data_href         => QCData hash {REF}
 ##         : $qc_header_href       => Save header(s) in each outfile {REF}
@@ -202,9 +239,11 @@ sub family_qc {
 	qc_program_data_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$qc_program_data_href},
     };
 
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or croak q{Could not parse arguments!};
 
-    for my $program ( keys %{ $sample_info_href->{program} } ) { #For every program
+     ## For every program
+  PROGRAM:
+    for my $program ( keys %{ $sample_info_href->{program} } ) {
 
 	my $outdirectory;
 	my $outfile;
@@ -220,6 +259,10 @@ sub family_qc {
 	if ($sample_info_href->{program}{$program}{outfile} ) {
 
 	    $outfile = $sample_info_href->{program}{$program}{outfile}; #Extract OutFile
+	}
+	if ($sample_info_href->{program}{$program}{path} ) {
+
+	  ($outfile, $outdirectory) = fileparse($sample_info_href->{program}{$program}{path});
 	}
 
 	## Parses the RegExpHash structure to identify if the info is 1) Paragraf section(s) (both header and data line(s)); 2) Seperate data line.
@@ -272,19 +315,33 @@ sub sample_qc {
 	qc_program_data_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$qc_program_data_href},
     };
 
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or croak q{Could not parse arguments!};
 
   SAMPLE_ID:
-    for my $sample_id ( keys %{ $sample_info_href->{sample} } ) { #For every sample id
+    for my $sample_id ( keys %{ $sample_info_href->{sample} } ) {
 
       PROGRAM:
-	for my $program ( keys %{ $sample_info_href->{sample}{$sample_id}{program} } ) { #For every program
+	for my $program ( keys %{ $sample_info_href->{sample}{$sample_id}{program} } ) {
 
 	  INFILE:
-	    for my $infile ( keys %{ $sample_info_href->{sample}{$sample_id}{program}{$program} } ) { #For every infile
+	    for my $infile ( keys %{ $sample_info_href->{sample}{$sample_id}{program}{$program} } ) {
 
-		my $outdirectory = $sample_info_href->{sample}{$sample_id}{program}{$program}{$infile}{outdirectory};
-		my $outfile = $sample_info_href->{sample}{$sample_id}{program}{$program}{$infile}{outfile};
+	      my $outdirectory;
+	      my $outfile;
+	      if ($sample_info_href->{sample}{$sample_id}{program}{$program}{$infile}{outdirectory} ) {
+
+		 ## Extract OutDirectory
+		$outdirectory = $sample_info_href->{sample}{$sample_id}{program}{$program}{$infile}{outdirectory};
+	      }
+	      if ($sample_info_href->{sample}{$sample_id}{program}{$program}{$infile}{outfile} ) {
+
+		## Extract OutFile
+		$outfile = $sample_info_href->{sample}{$sample_id}{program}{$program}{$infile}{outfile};
+	      }
+	      if ($sample_info_href->{sample}{$sample_id}{program}{$program}{$infile}{path} ) {
+
+		($outfile, $outdirectory) = fileparse($sample_info_href->{sample}{$sample_id}{program}{$program}{$infile}{path});
+	      }
 
 		## Parses the RegExpHash structure to identify if the info is 1) Paragraf section(s) (both header and data line(s)); 2) Seperate data line.
 		parse_regexp_hash_and_collect({regexp_href => $regexp_href,
@@ -343,7 +400,7 @@ sub parse_regexp_hash_and_collect {
 	outfile => { strict_type => 1, store => \$outfile},
     };
 
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or croak q{Could not parse arguments!};
 
     my $regexp; #Holds the current regexp
     my @separators = ('\s+','!',','); #Covers both whitespace and tab. Add other separators if required
@@ -438,7 +495,7 @@ sub add_to_qc_data {
 	infile => { strict_type => 1, store => \$infile},
     };
 
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or croak q{Could not parse arguments!};
 
   REGEXP:
     for my $regexp_key ( keys %{ $regexp_href->{$program} } ) { #All regexp per program
@@ -553,7 +610,7 @@ sub define_evaluate_metric {
 	sample_id => { required => 1, defined => 1, strict_type => 1, store => \$sample_id},
     };
 
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or croak q{Could not parse arguments!};
 
     $evaluate_metric{$sample_id}{bamstats}{percentage_mapped_reads}{lt} = 95;
     $evaluate_metric{$sample_id}{collecthsmetrics}{PCT_TARGET_BASES_10X}{lt} = 0.95;
@@ -597,7 +654,7 @@ sub evaluate_qc_parameters {
 	evaluate_metric_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$evaluate_metric_href},
     };
 
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or croak q{Could not parse arguments!};
 
   PROGRAM:
     for my $program ( keys %{$qc_data_href->{program}} ) {
@@ -721,7 +778,7 @@ sub check_metric {
 	qc_metric_value => { required => 1, defined => 1, strict_type => 1, store => \$qc_metric_value},
     };
      
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or croak q{Could not parse arguments!};
 
     my $status = "FAILED:";
 
@@ -772,7 +829,7 @@ sub relation_check {
 	sample_orders_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$sample_orders_ref},
     };
 
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or croak q{Could not parse arguments!};
 
     my %family; #Stores family relations and pairwise comparisons family{$sample_id}{$sample_id}["column"] -> [pairwise]
     my $sample_id_counter = 0;
@@ -899,7 +956,7 @@ sub gender_check {
 	chanjo_sexcheck_gender_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$chanjo_sexcheck_gender_ref},
     };
 
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or croak q{Could not parse arguments!};
 
     my $sample_id_sex_ref = \$sample_info_href->{sample}{$$sample_id_ref}{sex}; #Alias
 
@@ -950,7 +1007,7 @@ sub plink_gender_check {
 	plink_sexcheck_gender_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$plink_sexcheck_gender_ref},
     };
 
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or croak q{Could not parse arguments!};
 
     my $sample_id_sex_ref = \$sample_info_href->{sample}{$$sample_id_ref}{sex}; #Alias
 
@@ -992,7 +1049,7 @@ sub regexp_to_yaml {
 	print_regexp_outfile => { required => 1, defined => 1, strict_type => 1, store => \$print_regexp_outfile},
     };
 
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or croak q{Could not parse arguments!};
 
     my %regexp;
 
