@@ -198,7 +198,7 @@ sub update_prioritize_flag {
     if ( $consensus_analysis_type ne q{wgs} ) {
 
         ## Split string into array
-        my @callers = split /$COMMA/sxm, $prioritize_key;
+        my @callers = split $COMMA, $prioritize_key;
 
       CALLER:
         foreach my $caller ( @{$programs_ref} ) {
