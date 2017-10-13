@@ -66,26 +66,26 @@ $parameter{conda_packages}{python} = q{2.7};
 $parameter{conda_packages}{pip}    = undef;
 
 ## Bioconda channel
-$parameter{bioconda}{bwa}       = q{0.7.15};
-$parameter{bioconda}{bwakit}    = q{0.7.12};
-$parameter{bioconda}{fastqc}    = q{0.11.5};
-$parameter{bioconda}{cramtools} = q{3.0.b47};
-$parameter{bioconda}{samtools}  = q{1.4.1};
-$parameter{bioconda}{bcftools}  = q{1.4.1};
-$parameter{bioconda}{snpeff}    = q{4.3.1};
-$parameter{bioconda}{snpsift}   = q{4.3.1};
-$parameter{bioconda}{picard}    = q{2.9.2};
-$parameter{bioconda}{htslib}    = q{1.4.1};
-$parameter{bioconda}{bedtools}  = q{2.26.0};
-$parameter{bioconda}{vt}        = q{2015.11.10};
-$parameter{bioconda}{sambamba}  = q{0.6.6};
-$parameter{bioconda}{freebayes} = q{1.1.0};
-$parameter{bioconda}{delly}     = q{0.7.7};
-$parameter{bioconda}{manta}     = q{1.1.0};
-$parameter{bioconda}{multiqc}   = q{0.9.1a0};
-$parameter{bioconda}{peddy}     = q{0.2.9};
-$parameter{bioconda}{plink2}    = q{1.90b3.35};
-$parameter{bioconda}{vcfanno}   = q{0.1.0};
+$parameter{bioconda}{bwa}          = q{0.7.15};
+$parameter{bioconda}{bwakit}       = q{0.7.12};
+$parameter{bioconda}{fastqc}       = q{0.11.5};
+$parameter{bioconda}{cramtools}    = q{3.0.b47};
+$parameter{bioconda}{samtools}     = q{1.4.1};
+$parameter{bioconda}{bcftools}     = q{1.4.1};
+$parameter{bioconda}{snpeff}       = q{4.3.1};
+$parameter{bioconda}{snpsift}      = q{4.3.1};
+$parameter{bioconda}{picard}       = q{2.9.2};
+$parameter{bioconda}{htslib}       = q{1.4.1};
+$parameter{bioconda}{bedtools}     = q{2.26.0};
+$parameter{bioconda}{vt}           = q{2015.11.10};
+$parameter{bioconda}{sambamba}     = q{0.6.6};
+$parameter{bioconda}{freebayes}    = q{1.1.0};
+$parameter{bioconda}{delly}        = q{0.7.7};
+$parameter{bioconda}{manta}        = q{1.1.0};
+$parameter{bioconda}{multiqc}      = q{0.9.1a0};
+$parameter{bioconda}{peddy}        = q{0.2.9};
+$parameter{bioconda}{plink2}       = q{1.90b3.35};
+$parameter{bioconda}{vcfanno}      = q{0.1.0};
 $parameter{bioconda}{q{rtg-tools}} = q{3.8.4};
 
 # Required for CNVnator
@@ -205,15 +205,14 @@ GetOptions(
     }
   );
 
-## Get local time
-my $date_time       = localtime;
-my $date_time_stamp = $date_time->datetime;
-
 ## Create default log name
 if ( not $parameter{log_file} ) {
-    $parameter{log_file} = catfile( 
-        q{mip_install} . $UNDERSCORE . $date_time_stamp . $DOT . q{log}
-    );
+    ## Get local time
+    my $date_time       = localtime;
+    my $date_time_stamp = $date_time->datetime;
+
+    $parameter{log_file} = catfile(
+        q{mip_install} . $UNDERSCORE . $date_time_stamp . $DOT . q{log} );
 }
 
 ## Initiate logger
@@ -223,6 +222,8 @@ my $log = initiate_logger(
         log_name  => q{mip_install},
     }
 );
+
+$log->info( q{Writing log messages to:} . $SPACE . $parameter{log_file} );
 
 ## Establish path to conda
 my @conda_dir_paths = check_dir_path_exist(
@@ -331,6 +332,8 @@ finish_bioconda_package_install(
         conda_env_path             => $parameter{conda_prefix_path},
         FILEHANDLE                 => $FILEHANDLE,
         snpeff_genome_versions_ref => $parameter{snpeff_genome_versions},
+        verbose                    => $parameter{verbose},
+        quiet                      => $parameter{quiet},
     }
 );
 
@@ -670,6 +673,7 @@ sub build_usage {
     -sp/--select_programs           Install supplied programs e.g. -sp perl -sp bedtools (Default: "")
     -rd/--reference_dir             Reference(s) directory (Default: "")
     -rd/--reference_genome_versions Reference versions to download ((Default: ["GRCh37", "hg38"]))
+    -l/--log                        File for writing log messages (Default: "mip_install_TIMESTAMP.log")
     -q/--quiet                      Quiet (Supply flag to enable; no output from individual program that has a quiet flag)
     -h/--help                       Display this help message
     -ver/--version                  Display version

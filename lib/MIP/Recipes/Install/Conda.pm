@@ -316,6 +316,8 @@ sub finish_bioconda_package_install {
     my $conda_env_path;
     my $FILEHANDLE;
     my $conda_env;
+    my $quiet;
+    my $verbose;
 
     my $tmpl = {
         bioconda_packages_href => {
@@ -354,6 +356,14 @@ sub finish_bioconda_package_install {
             required => 1,
             store    => \$conda_env,
         },
+        verbose => {
+            allow => [ undef, 0, 1 ],
+            store => \$verbose,
+        },
+        quiet => {
+            allow => [ undef, 0, 1 ],
+            store => \$quiet,
+        }
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -401,6 +411,8 @@ sub finish_bioconda_package_install {
                 share_dir      => $share_dir,
                 config_file    => q{snpEff.config},
                 genome_version => $genome_version,
+                verbose        => $verbose,
+                quiet          => $quiet
             }
         );
 
@@ -418,31 +430,33 @@ sub finish_bioconda_package_install {
                 );
                 say {$FILEHANDLE} $NEWLINE;
             }
-        }
-        ## Write instructions to download snpeff database.
-        ## This is done by install script to avoid race conditin when doing first analysis run in MIP
-        say {$FILEHANDLE} q{## Downloading snpeff database};
-        my $jar_path = catfile( $conda_env_path, qw{ bin snpEff.jar} );
-        my $config_file_path =
-          catfile( $conda_env_path, qw{bin snpEff.config} );
-        snpeff_download(
-            {
-                FILEHANDLE              => $FILEHANDLE,
-                genome_version_database => $genome_version,
-                jar_path                => $jar_path,
-                config_file_path        => $config_file_path,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-        ## Deactivate conda environment if conda_environment exists
-        if ($conda_env) {
-            say {$FILEHANDLE} q{## Deactivate conda environment};
-            conda_source_deactivate(
+
+            ## Write instructions to download snpeff database.
+            ## This is done by install script to avoid race conditin when doing first analysis run in MIP
+            say {$FILEHANDLE} q{## Downloading snpeff database};
+            my $jar_path = catfile( $conda_env_path, qw{ bin snpEff.jar} );
+            my $config_file_path =
+              catfile( $conda_env_path, qw{bin snpEff.config} );
+            snpeff_download(
                 {
-                    FILEHANDLE => $FILEHANDLE,
+                    FILEHANDLE              => $FILEHANDLE,
+                    genome_version_database => $genome_version,
+                    jar_path                => $jar_path,
+                    config_file_path        => $config_file_path,
+                    temp_directory          => 1,
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
+            ## Deactivate conda environment if conda_environment exists
+            if ($conda_env) {
+                say {$FILEHANDLE} q{## Deactivate conda environment};
+                conda_source_deactivate(
+                    {
+                        FILEHANDLE => $FILEHANDLE,
+                    }
+                );
+                say {$FILEHANDLE} $NEWLINE;
+            }
         }
     }
 
@@ -645,6 +659,8 @@ sub _check_mt_codon_table {
     my $share_dir;
     my $config_file;
     my $genome_version;
+    my $verbose;
+    my $quiet;
 
     my $tmpl = {
         FILEHANDLE => {
@@ -670,6 +686,14 @@ sub _check_mt_codon_table {
             strict_type => 1,
             store       => \$genome_version
         },
+        verbose => {
+            allow => [ undef, 0, 1 ],
+            store => \$verbose,
+        },
+        quiet => {
+            allow => [ undef, 0, 1 ],
+            store => \$quiet,
+        }
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -678,8 +702,14 @@ sub _check_mt_codon_table {
     use IPC::Cmd qw{ can_run run };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
 
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{mip_install});
+    ## Get logger
+    my $log = retrieve_log(
+        {
+            log_name => q{mip_install::finish_bioconda_package_install},
+            verbose  => $verbose,
+            quiet    => $quiet,
+        }
+    );
 
     my $detect_regexp =
 
@@ -712,11 +742,11 @@ sub _check_mt_codon_table {
       # If no match: print line
       . q?else {print $_;}' ?;
 
-    my @ret =
-      my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf );
-
+    ## Test if config file contains the desired MT codon table
+    my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf );
     if ( -f catfile( $share_dir, $config_file ) ) {
-        @ret = run( command => [ $detect_regexp, $share_dir, $config_file ] );
+        ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) = run(
+            command => $detect_regexp . catfile( $share_dir, $config_file ) );
     }
 
     #No MT.codonTable in config
