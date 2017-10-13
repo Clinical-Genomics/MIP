@@ -13,7 +13,7 @@ use Params::Check qw{ check allow last_error };
 
 use FindBin qw{ $Bin };    #Find directory of script
 use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use Getopt::Long;
 use Test::More;
 use Readonly;
@@ -28,18 +28,22 @@ my $VERBOSE = 1;
 our $VERSION = 1.0.0;
 
 ## Constants
-Readonly my $SPACE              => q{ };
-Readonly my $NEWLINE            => qq{\n};
-Readonly my $COMMA              => q{,};
-Readonly my $N_SUPPORTING_PAIRS => 50;
+Readonly my $SPACE    => q{ };
+Readonly my $NEWLINE  => qq{\n};
+Readonly my $COMMA    => q{,};
+Readonly my $COVERAGE => 90;
 
-###User Options
+### User Options
 GetOptions(
+
+    # Display help text
     q{h|help} => sub {
         done_testing();
         say {*STDOUT} $USAGE;
         exit;
-    },    #Display help text
+    },
+
+    # Display version number
     q{v|version} => sub {
         done_testing();
         say {*STDOUT} $NEWLINE
@@ -48,7 +52,7 @@ GetOptions(
           . $VERSION
           . $NEWLINE;
         exit;
-    },    #Display version number
+    },
     q{vb|verbose} => $VERBOSE,
   )
   or (
@@ -97,7 +101,7 @@ diag(   q{Test gatk_catvariants from Gatk v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{-cp path_to_gatk};
+my $function_base_command = q{-cp dir/gatk_executable};
 
 my %base_argument = (
     FILEHANDLE => {
@@ -110,27 +114,29 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     gatk_path => {
-        input           => q{path_to_gatk},
-        expected_output => q{-cp path_to_gatk},
+        input           => catfile(qw{ dir gatk_executable }),
+        expected_output => q{-cp} . $SPACE . catfile(qw{ dir gatk_executable }),
     },
     infile_paths_ref => {
-        inputs_ref      => [qw{ infile1 infile2 }],
-        expected_output => q{--variant infile1 --variant infile2},
+        inputs_ref => [qw{ var_1.vcf var_2.vcf var_3.vcf }],
+        expected_output =>
+          q{--variant var_1.vcf --variant var_2.vcf --variant var_3.vcf},
     },
     outfile_path => {
-        input           => q{outfile},
-        expected_output => q{--outputFile outfile},
+        input           => catfile(qw{ dir outfile.vcf }),
+        expected_output => q{--outputFile} . $SPACE . catfile(qw{ dir outfile.vcf }),
     },
     referencefile_path => {
-        input           => q{path_to_reference},
-        expected_output => q{--reference_sequence path_to_reference},
+        input           => catfile(qw{reference_dir human_genome_build.fasta }),
+        expected_output => q{--reference_sequence} . $SPACE
+          . catfile(qw{reference_dir human_genome_build.fasta }),
     },
 );
 
 my %specific_argument = (
     downsample_to_coverage => {
-        input           => 90,
-        expected_output => q{--downsample_to_coverage 90},
+        input           => $COVERAGE,
+        expected_output => q{--downsample_to_coverage } . $COVERAGE,
     },
     gatk_disable_auto_index_and_file_lock => {
         input => 1,

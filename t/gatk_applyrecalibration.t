@@ -13,7 +13,7 @@ use Params::Check qw{ check allow last_error };
 
 use FindBin qw{ $Bin };    #Find directory of script
 use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use Getopt::Long;
 use Test::More;
 use Readonly;
@@ -28,18 +28,24 @@ my $VERBOSE = 1;
 our $VERSION = 1.0.0;
 
 ## Constants
-Readonly my $SPACE              => q{ };
-Readonly my $NEWLINE            => qq{\n};
-Readonly my $COMMA              => q{,};
-Readonly my $N_SUPPORTING_PAIRS => 50;
+Readonly my $SPACE       => q{ };
+Readonly my $NEWLINE     => qq{\n};
+Readonly my $COMMA       => q{,};
+Readonly my $COVERAGE    => 90;
+Readonly my $TS_FILTER   => 99;
+Readonly my $CPU_THREADS => 8;
 
-###User Options
+### User Options
 GetOptions(
+
+    # Display help text
     q{h|help} => sub {
         done_testing();
         say {*STDOUT} $USAGE;
         exit;
-    },    #Display help text
+    },
+
+    # Display version number
     q{v|version} => sub {
         done_testing();
         say {*STDOUT} $NEWLINE
@@ -48,7 +54,7 @@ GetOptions(
           . $VERSION
           . $NEWLINE;
         exit;
-    },    #Display version number
+    },
     q{vb|verbose} => $VERBOSE,
   )
   or (
@@ -110,16 +116,19 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     infile_path => {
-        input           => q{infile_path},
-        expected_output => q{--input infile_path},
+        input           => catfile(qw{ path_to_analysis_dir infile.vcf }),
+        expected_output => q{--input} . $SPACE
+          . catfile(qw{ path_to_analysis_dir infile.vcf }),
     },
     outfile_path => {
-        input           => q{outfile},
-        expected_output => q{--out outfile},
+        input           => catfile(qw{ path_to_analysis_dir outfile.vcf }),
+        expected_output => q{--out} . $SPACE
+          . catfile(qw{ path_to_analysis_dir outfile.vcf }),
     },
     referencefile_path => {
-        input           => q{path_to_reference},
-        expected_output => q{--reference_sequence path_to_reference},
+        input           => catfile(qw{reference_dir human_genome_build.fasta }),
+        expected_output => q{--reference_sequence} . $SPACE
+          . catfile(qw{reference_dir human_genome_build.fasta }),
     },
     mode => {
         inputs_ref      => q{SNP},
@@ -129,8 +138,8 @@ my %required_argument = (
 
 my %specific_argument = (
     downsample_to_coverage => {
-        input           => 90,
-        expected_output => q{--downsample_to_coverage 90},
+        input           => $COVERAGE,
+        expected_output => q{--downsample_to_coverage } . $COVERAGE,
     },
     gatk_disable_auto_index_and_file_lock => {
         input => 1,
@@ -147,37 +156,41 @@ my %specific_argument = (
           q{--intervals chr1 --intervals chr2 --intervals chr3},
     },
     pedigree => {
-        input           => q{pedigree_file},
-        expected_output => q{--pedigree pedigree_file},
+        input           => catfile(qw{ dir pedigree.fam }),
+        expected_output => q{--pedigree} . $SPACE . catfile(qw{ dir pedigree.fam }),
     },
     pedigree_validation_type => {
         input           => q{SILENT},
         expected_output => q{--pedigreeValidationType SILENT},
     },
     read_filters_ref => {
-        inputs_ref      => [qw{ filter1 filter2 }],
-        expected_output => q{--read_filter filter1 --read_filter filter2},
+        inputs_ref => [qw{ MaxReadLength MappingQuality }],
+        expected_output =>
+          q{--read_filter MaxReadLength --read_filter MappingQuality},
     },
     static_quantized_quals_ref => {
-        inputs_ref => [qw{ qual1 qual2 }],
+        inputs_ref => [qw{ 10 20 }],
         expected_output =>
-          q{--static_quantized_quals qual1 --static_quantized_quals qual2},
+          q{--static_quantized_quals 10 --static_quantized_quals 20},
     },
     base_quality_score_recalibration_file => {
-        input           => q{recal_score},
-        expected_output => q{--BQSR recal_score},
+        input           => catfile(qw{ dir recalibration_report.grp }),
+        expected_output => q{--BQSR} . $SPACE
+          . catfile(qw{ dir recalibration_report.grp }),
     },
     recal_file_path => {
-        input           => q{path_to_recalfile},
-        expected_output => q{--recal_file path_to_recalfile},
+        input           => catfile(qw{ dir recal_file.intervals }),
+        expected_output => q{--recal_file} . $SPACE
+          . catfile(qw{ dir recal_file.intervals }),
     },
     tranches_file_path => {
-        input           => q{path_to_tranchesfile},
-        expected_output => q{--tranches_file path_to_tranchesfile},
+        input           => catfile(qw{ dir tranchesfile.tranches }),
+        expected_output => q{--tranches_file} . $SPACE
+          . catfile(qw{ dir tranchesfile.tranches }),
     },
     num_cpu_threads_per_data_thread => {
-        input           => 24,
-        expected_output => q{--num_cpu_threads_per_data_thread 24},
+        input           => $CPU_THREADS,
+        expected_output => q{--num_cpu_threads_per_data_thread } . $CPU_THREADS,
     },
     disable_indel_qual => {
         input           => 1,
@@ -185,7 +198,7 @@ my %specific_argument = (
     },
     ts_filter_level => {
         input           => 99,
-        expected_output => q{--ts_filter_level 99},
+        expected_output => q{--ts_filter_level } . $TS_FILTER,
     },
 
 );

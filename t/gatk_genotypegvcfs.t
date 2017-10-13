@@ -13,7 +13,7 @@ use Params::Check qw{ check allow last_error };
 
 use FindBin qw{ $Bin };    #Find directory of script
 use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use Getopt::Long;
 use Test::More;
 use Readonly;
@@ -28,18 +28,22 @@ my $VERBOSE = 1;
 our $VERSION = 1.0.0;
 
 ## Constants
-Readonly my $SPACE              => q{ };
-Readonly my $NEWLINE            => qq{\n};
-Readonly my $COMMA              => q{,};
-Readonly my $N_SUPPORTING_PAIRS => 50;
+Readonly my $SPACE    => q{ };
+Readonly my $NEWLINE  => qq{\n};
+Readonly my $COMMA    => q{,};
+Readonly my $COVERAGE => 90;
 
-###User Options
+### User Options
 GetOptions(
+
+    # Display help text
     q{h|help} => sub {
         done_testing();
         say {*STDOUT} $USAGE;
         exit;
-    },    #Display help text
+    },
+
+    # Display version number
     q{v|version} => sub {
         done_testing();
         say {*STDOUT} $NEWLINE
@@ -48,7 +52,7 @@ GetOptions(
           . $VERSION
           . $NEWLINE;
         exit;
-    },    #Display version number
+    },
     q{vb|verbose} => $VERBOSE,
   )
   or (
@@ -110,51 +114,57 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     infile_paths_ref => {
-        inputs_ref      => [qw{ input1 input2 input3 }],
-        expected_output => q{--variant input1 --variant input2 --variant input3},
+        inputs_ref => [qw{ var_1.vcf var_2.vcf var_3.vcf }],
+        expected_output =>
+          q{--variant var_1.vcf --variant var_2.vcf --variant var_3.vcf},
     },
     outfile_path => {
-      input => q{outfile},
-      expected_output => q{--out outfile},
+        input           => catfile(qw{ path_to_analysis_dir outfile.vcf }),
+        expected_output => q{--out} . $SPACE
+          . catfile(qw{ path_to_analysis_dir outfile.vcf }),
     },
     referencefile_path => {
-      input =>  q{path_to_reference},
-      expected_output => q{--reference_sequence path_to_reference},
+        input           => catfile(qw{reference_dir human_genome_build.fasta }),
+        expected_output => q{--reference_sequence} . $SPACE
+          . catfile(qw{reference_dir human_genome_build.fasta }),
     },
 );
 
 my %specific_argument = (
     downsample_to_coverage => {
-      input => 90,
-      expected_output => q{--downsample_to_coverage 90},
+        input           => $COVERAGE,
+        expected_output => q{--downsample_to_coverage } . $COVERAGE,
     },
     gatk_disable_auto_index_and_file_lock => {
-      input => 1,
-      expected_output => q{--disable_auto_index_creation_and_locking_when_reading_rods},
+        input => 1,
+        expected_output =>
+          q{--disable_auto_index_creation_and_locking_when_reading_rods},
     },
     logging_level => {
-      input => q{INFO},
-      expected_output => q{--logging_level INFO},
+        input           => q{INFO},
+        expected_output => q{--logging_level INFO},
     },
     intervals_ref => {
-      inputs_ref      => [qw{ chr1 chr2 chr3 }],
-      expected_output => q{--intervals chr1 --intervals chr2 --intervals chr3},
+        inputs_ref => [qw{ chr1 chr2 chr3 }],
+        expected_output =>
+          q{--intervals chr1 --intervals chr2 --intervals chr3},
     },
     pedigree => {
-      input => q{pedigree_file},
-      expected_output => q{--pedigree pedigree_file},
+        input           => catfile(qw{ dir pedigree.fam }),
+        expected_output => q{--pedigree} . $SPACE . catfile(qw{ dir pedigree.fam }),
     },
     pedigree_validation_type => {
-      input => q{SILENT},
-      expected_output => q{--pedigreeValidationType SILENT},
+        input           => q{SILENT},
+        expected_output => q{--pedigreeValidationType SILENT},
     },
     dbsnp_file_path => {
-      input => q{dbsnp_file},
-      expected_output => q{--dbsnp dbsnp_file},
+        input           => catfile(qw{ dir GRCh37_dbsnp_-138-.vcf}),
+        expected_output => q{--dbsnp} . $SPACE
+          . catfile(qw{ dir GRCh37_dbsnp_-138-.vcf}),
     },
     include_nonvariant_sites => {
-      input => 1,
-      expected_output => q{--includeNonVariantSites},
+        input           => 1,
+        expected_output => q{--includeNonVariantSites},
     },
 
 );
