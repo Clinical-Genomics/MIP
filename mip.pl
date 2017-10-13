@@ -17682,7 +17682,7 @@ sub build_ptchs_metric_prerequisites {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Gnu::Coreutils qw(gnu_rm gnu_cat);
     use MIP::Language::Java qw{java_core};
-    use Program::Interval::Picardtools qw(intervallisttools);
+    use MIP::Program::Interval::Picardtools qw(picardtools_intervallisttools);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_no_dependency_add_to_samples);
 

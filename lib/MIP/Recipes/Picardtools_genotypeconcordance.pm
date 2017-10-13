@@ -174,7 +174,7 @@ sub analysis_picardtools_genotypeconcordance {
     use MIP::Language::Java qw{ java_core };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_family_dead_end };
-    use Program::Interval::Picardtools qw{ intervallisttools };
+    use MIP::Program::Interval::Picardtools qw{ picardtools_intervallisttools };
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_stats bcftools_rename_vcf_samples };
     use MIP::Program::Variantcalling::Gatk
@@ -194,6 +194,7 @@ sub analysis_picardtools_genotypeconcordance {
     my $core_number =
       $active_parameter_href->{module_core_number}{$mip_program_name};
     my $time = $active_parameter_href->{module_time}{$mip_program_name};
+    my $referencefile_path = $active_parameter_href->{human_genome_reference};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -301,13 +302,12 @@ sub analysis_picardtools_genotypeconcordance {
                 $active_parameter_href->{gatk_path},
                 q{GenomeAnalysisTK.jar}
             ),
-            sample_names_ref => [ $sample_id . q{XXX} ],
-            logging_level    => $active_parameter_href->{gatk_logging_level},
-            referencefile_path =>
-              $active_parameter_href->{human_genome_reference},
-            infile_path  => $nist_file_path . $DOT . q{vcf},
-            outfile_path => $nist_file_path . q{XXX.vcf},
-            FILEHANDLE   => $FILEHANDLE,
+            sample_names_ref   => [ $sample_id . q{XXX} ],
+            logging_level      => $active_parameter_href->{gatk_logging_level},
+            referencefile_path => $referencefile_path,
+            infile_path        => $nist_file_path . $DOT . q{vcf},
+            outfile_path       => $nist_file_path . q{XXX.vcf},
+            FILEHANDLE         => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -361,9 +361,9 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
       . $active_parameter_href->{nist_high_confidence_call_set_bed}
       . $DOT
       . q{interval_list};
-    java_core(
+
+    picardtools_intervallisttools(
         {
-            FILEHANDLE        => $FILEHANDLE,
             memory_allocation => q{Xmx2g},
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
@@ -372,15 +372,11 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
                 $active_parameter_href->{picardtools_path},
                 q{picard.jar}
             ),
-        }
-    );
-
-    intervallisttools(
-        {
             infile_paths_ref =>
               [ $nist_file_path . $DOT . q{bed.dict_body_col_5.interval_list} ],
-            outfile_path => $nist_file_path . $DOT . q{bed.interval_list},
-            FILEHANDLE   => $FILEHANDLE,
+            outfile_path       => $nist_file_path . $DOT . q{bed.interval_list},
+            referencefile_path => $referencefile_path,
+            FILEHANDLE         => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -399,10 +395,9 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
                 $active_parameter_href->{gatk_path},
                 q{GenomeAnalysisTK.jar}
             ),
-            sample_names_ref => [$sample_id],
-            logging_level    => $active_parameter_href->{gatk_logging_level},
-            referencefile_path =>
-              $active_parameter_href->{human_genome_reference},
+            sample_names_ref    => [$sample_id],
+            logging_level       => $active_parameter_href->{gatk_logging_level},
+            referencefile_path  => $referencefile_path,
             infile_path         => $file_path_prefix . $DOT . q{vcf},
             outfile_path        => $call_file_path . $DOT . q{vcf},
             exclude_nonvariants => 1,
@@ -424,10 +419,9 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
                 $active_parameter_href->{gatk_path},
                 q{GenomeAnalysisTK.jar}
             ),
-            infile_path   => $call_file_path . $DOT . q{vcf},
-            logging_level => $active_parameter_href->{gatk_logging_level},
-            referencefile_path =>
-              $active_parameter_href->{human_genome_reference},
+            infile_path         => $call_file_path . $DOT . q{vcf},
+            logging_level       => $active_parameter_href->{gatk_logging_level},
+            referencefile_path  => $referencefile_path,
             split_multiallelics => 1,
             outfile_path        => $call_file_path . $UNDERSCORE . q{lts.vcf},
             FILEHANDLE          => $FILEHANDLE,
@@ -479,10 +473,9 @@ q?perl -nae 'unless($_=~/##contig=<ID=NC_007605,length=171823>/ || $_=~/##contig
                 $active_parameter_href->{gatk_path},
                 q{GenomeAnalysisTK.jar}
             ),
-            sample_names_ref => [ $sample_id . q{XXX} ],
-            logging_level    => $active_parameter_href->{gatk_logging_level},
-            referencefile_path =>
-              $active_parameter_href->{human_genome_reference},
+            sample_names_ref   => [ $sample_id . q{XXX} ],
+            logging_level      => $active_parameter_href->{gatk_logging_level},
+            referencefile_path => $referencefile_path,
             infile_path  => $call_file_path . $UNDERSCORE . q{lts_refrm.vcf},
             outfile_path => $call_file_path . q{XXX.vcf},
             FILEHANDLE   => $FILEHANDLE,

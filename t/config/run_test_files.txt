@@ -79,6 +79,7 @@ picardtools_base.t
 picardtools_collecthsmetrics.t
 picardtools_collectmultiplemetrics.t
 picardtools_gatherbamfiles.t
+picardtools_intervallisttools.t
 picardtools_markduplicates.t
 picardtools_mergesamfiles.t
 pigz.t
