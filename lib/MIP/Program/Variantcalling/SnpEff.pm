@@ -10,15 +10,19 @@ use Carp;
 use English qw{ -no_match_vars };
 use Params::Check qw{ check allow last_error };
 use Readonly;
+use Cwd;
+use File::Spec::Functions qw{ catdir };
 
 ## MIPs lib/
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Language::Java qw{ java_core };
+use MIP::Gnu::Coreutils qw{ gnu_rm };
 
 ## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE      => q{ };
+Readonly my $NEWLINE    => qq{\n};
+Readonly my $UNDERSCORE => q{_};
 
 BEGIN {
 
@@ -26,7 +30,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.0.0;
+    our $VERSION = 1.0.1;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ snpeff_download };
@@ -63,6 +67,7 @@ sub snpeff_download {
     my $stdoutfile_path;
     my $memory_allocation;
     my $verbose;
+    my $temp_directory;
 
     my $tmpl = {
         FILEHANDLE => {
@@ -110,15 +115,27 @@ sub snpeff_download {
             strict_type => 1,
             store       => \$verbose,
         },
+        temp_directory => {
+            default => 0,
+            allow   => [ 0, 1 ],
+            store   => \$temp_directory,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Create optional temporary directory
+    if ($temp_directory) {
+        $temp_directory =
+          catdir( cwd, q{snpeff_temp} . $UNDERSCORE . int rand 1000 );
+    }
 
     ## Build base command
     my @base = java_core(
         {
             memory_allocation => $memory_allocation,
             java_jar          => $jar_path,
+            temp_directory    => $temp_directory,
         }
     );
     my @commands = ( @base, qw{download} );
@@ -154,6 +171,16 @@ sub snpeff_download {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
+
+    if ($temp_directory) {
+        gnu_rm(
+            {
+                infile_path => $temp_directory,
+                recursive   => 1,
+                FILEHANDLE  => $FILEHANDLE,
+            }
+        );
+    }
 
     return @commands;
 }
