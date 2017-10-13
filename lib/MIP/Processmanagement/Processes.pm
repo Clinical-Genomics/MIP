@@ -232,7 +232,7 @@ sub add_sample_ids_job_ids_to_job_id_dependency_string {
 
       INFILES:
         while ( my ($infile_index) =
-            each @{$infile_lane_prefix_href->{$sample_id} } )
+            each @{ $infile_lane_prefix_href->{$sample_id} } )
         {
 
             # Create key
@@ -301,7 +301,8 @@ sub add_parallel_job_ids_to_job_id_dependency_string {
 
     if ( defined $job_id_href->{$family_id_chain_key} ) {
 
-        foreach my $chain_key ( keys %{$job_id_href->{$family_id_chain_key}} ) {
+        foreach my $chain_key ( keys %{ $job_id_href->{$family_id_chain_key} } )
+        {
 
             ## Check if chain_key actually is a parallel
             if ( $chain_key =~ /parallel/ ) {
@@ -524,7 +525,9 @@ sub add_parallel_job_id_to_sample_id_dependency_tree {
 
     ## Push parallel job_ids
   INFILES:
-    while ( my ($infile_index) = each @{$infile_lane_prefix_href->{$sample_id}} ) {
+    while ( my ($infile_index) =
+        each @{ $infile_lane_prefix_href->{$sample_id} } )
+    {
 
         # Set key
         $parallel_jobs_chain_key =
@@ -787,7 +790,7 @@ sub add_sample_id_parallel_job_id_to_family_id_dependency_tree {
         ## Push parallel job_ids
       INFILES:
         while ( my ($infile_index) =
-            each @{$infile_lane_prefix_href->{$sample_id}} )
+            each @{ $infile_lane_prefix_href->{$sample_id} } )
         {
 
             # Set parallel sample key
@@ -815,7 +818,7 @@ sub add_sample_id_parallel_job_id_to_family_id_dependency_tree {
                   \@{ $job_id_href->{$family_id_chain_key}
                       {$parallel_jobs_chain_key} };
 
-                push $family_id_job_ids_ref, @{$job_ids_ref};
+                push @{$family_id_job_ids_ref}, @{$job_ids_ref};
             }
         }
     }
@@ -959,7 +962,7 @@ sub add_pan_job_id_to_sample_id_dependency_tree {
           \@{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} };
 
         # Add job_ids to sample_id job_ids
-        push $sample_id_job_ids_ref, @{$job_ids_ref};
+        push @{$sample_id_job_ids_ref}, @{$job_ids_ref};
     }
     return;
 }
@@ -1021,7 +1024,7 @@ sub add_sample_job_id_to_sample_id_dependency_tree {
       \@{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} };
 
     # Add to sample_id job dependency tree
-    push $sample_id_job_ids_ref, $job_id_returned;
+    push @{$sample_id_job_ids_ref}, $job_id_returned;
 
     return;
 }
@@ -1082,7 +1085,7 @@ sub add_sample_job_id_to_family_id_dependency_tree {
           \@{ $job_id_href->{$family_id_chain_key}{$family_id_chain_key} };
 
         # Add job_ids to family_id job_ids
-        push $family_id_job_ids_ref, @{$job_ids_ref};
+        push @{$family_id_job_ids_ref}, @{$job_ids_ref};
     }
     return;
 }
@@ -1466,7 +1469,9 @@ sub clear_sample_id_parallel_job_id_dependency_tree {
 
     ## Clear all latest parallel jobs within chainkey
   INFILES:
-    while ( my ($infile_index) = each $infile_lane_prefix_href->{$sample_id} ) {
+    while ( my ($infile_index) =
+        each @{ $infile_lane_prefix_href->{$sample_id} } )
+    {
 
         # Create key
         my $sample_id_parallel_chain_key =
@@ -1667,7 +1672,7 @@ sub clear_all_job_ids_within_chain_key_dependency_tree {
 
     ## Clear all jobs within chainkey
   CHAIN_KEYS:
-    foreach my $chain_key ( keys $job_id_href->{$family_id_chain_key} ) {
+    foreach my $chain_key ( keys %{ $job_id_href->{$family_id_chain_key} } ) {
 
         ## Clear all family_id/sample_id chain submission for path
         @{ $job_id_href->{$family_id_chain_key}{$chain_key} } =

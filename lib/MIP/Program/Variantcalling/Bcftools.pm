@@ -3,18 +3,18 @@ package MIP::Program::Variantcalling::Bcftools;
 use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;    #Allow unicode characters in this script
+use utf8;
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
 use Carp;
 use English qw{ -no_match_vars };
 use Params::Check qw{ check allow last_error };
-
-use Readonly;
-
-use FindBin qw{ $Bin };    #Find directory of script
+use FindBin qw{ $Bin };
 use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
+
+## CPANM
+use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -26,36 +26,36 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ bcftools_call bcftools_index bcftools_view bcftools_filter bcftools_norm bcftools_merge bcftools_concat bcftools_annotate bcftools_roh bcftools_stats bcftools_reheader };
+      qw{ bcftools_call bcftools_index bcftools_view bcftools_filter bcftools_norm bcftools_merge bcftools_concat bcftools_annotate bcftools_roh bcftools_stats bcftools_reheader bcftools_rename_vcf_samples };
 
 }
 
 ## Constants
-Readonly my $SPACE => q{ };
-Readonly my $COMMA => q{,};
+Readonly my $COMMA        => q{,};
+Readonly my $DOUBLE_QUOTE => q{"};
+Readonly my $PIPE         => q{|};
+Readonly my $NEWLINE      => qq{\n};
+Readonly my $SPACE        => q{ };
 
 sub bcftools_call {
 
-    ## bcftools_call
-
-    ## Function : Perl wrapper for writing bcftools call recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
-    ## Returns  : "@commands"
-    ## Arguments: $form_fields_ref, $outfile_path, $infile_path, $stderrfile_path, $stderrfile_path_append, $FILEHANDLE, $samples_file, $multiallelic_caller, $output_type, $variants_only
-    ##          : $form_fields_ref        => Output format fields {REF}
-    ##          : $outfile_path           => Outfile path to write to
-    ##          : $infile_path            => Infile path to read from
-    ##          : $stderrfile_path        => Stderr file path to write to {OPTIONAL}
-    ##          : $stderrfile_path_append => Append stderr info to file path
-    ##          : $FILEHANDLE             => Filehandle to write to
-    ##          : $samples_file           => PED file or a file with an optional column with sex
-    ##          : $constrain              => One of: alleles, trio
-    ##          : $multiallelic_caller    => Alternative model for multiallelic and rare-variant calling
-    ##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
-    ##          : $variants_only          => Output variant sites only
+## Function : Perl wrapper for writing bcftools call recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
+## Returns  : @commands
+## Arguments: $form_fields_ref        => Output format fields {REF}
+##          : $outfile_path           => Outfile path to write to
+##          : $infile_path            => Infile path to read from
+##          : $stderrfile_path        => Stderr file path to write to {OPTIONAL}
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $samples_file           => PED file or a file with an optional column with sex
+##          : $constrain              => One of: alleles, trio
+##          : $multiallelic_caller    => Alternative model for multiallelic and rare-variant calling
+##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
+##          : $variants_only          => Output variant sites only
 
     my ($arg_href) = @_;
 
@@ -186,16 +186,13 @@ sub bcftools_call {
 
 sub bcftools_index {
 
-    ## bcftools_index
-
-    ## Function : Perl wrapper for writing bcftools index recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
-    ## Returns  : "@commands"
-    ## Arguments: $infile_path, $stderrfile_path, $stderrfile_path_append, $FILEHANDLE, $output_type
-    ##          : $infile_path            => Infile path to read from
-    ##          : $stderrfile_path        => Stderr file path to write to {OPTIONAL}
-    ##          : $stderrfile_path_append => Append stderr info to file path
-    ##          : $FILEHANDLE             => Filehandle to write to
-    ##          : $output_type            => 'csi' generate CSI-format index, 'tbi' generate TBI-format index
+## Function : Perl wrapper for writing bcftools index recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
+## Returns  : @commands
+## Arguments: $infile_path            => Infile path to read from
+##          : $stderrfile_path        => Stderr file path to write to {OPTIONAL}
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $output_type            => 'csi' generate CSI-format index, 'tbi' generate TBI-format index
 
     my ($arg_href) = @_;
 
@@ -267,20 +264,17 @@ sub bcftools_index {
 
 sub bcftools_view {
 
-    ## bcftools_view
-
-    ## Function : Perl wrapper for writing bcftools view recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
-    ## Returns  : "@commands"
-    ## Arguments: $apply_filters_ref, $exclude_types_ref, $infile_path, $outfile_path, $stderrfile_path, $stderrfile_path_append, $stdoutfile_path, $FILEHANDLE, $output_type
-    ##          : $apply_filters_ref      => Require at least one of the listed FILTER strings
-    ##          : $exclude_types_ref      => Exclude comma-separated list of variant types: snps,indels,mnps,other
-    ##          : $infile_path            => Infile path to read from
-    ##          : $outfile_path           => Outfile path to write to
-    ##          : $stderrfile_path        => Stderr file path to write to
-    ##          : $stderrfile_path_append => Append stderr info to file path
-    ##          : $stdoutfile_path        => Stdoutfile file path to write to
-    ##          : $FILEHANDLE             => Filehandle to write to
-    ##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
+## Function : Perl wrapper for writing bcftools view recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
+## Returns  : @commands
+## Arguments: $apply_filters_ref      => Require at least one of the listed FILTER strings
+##          : $exclude_types_ref      => Exclude comma-separated list of variant types: snps,indels,mnps,other
+##          : $infile_path            => Infile path to read from
+##          : $outfile_path           => Outfile path to write to
+##          : $stderrfile_path        => Stderr file path to write to
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile file path to write to
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
 
     my ($arg_href) = @_;
 
@@ -376,20 +370,17 @@ sub bcftools_view {
 
 sub bcftools_filter {
 
-    ## bcftools_filter
-
-    ## Function : Perl wrapper for writing bcftools filter recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
-    ## Returns  : "@commands"
-    ## Arguments: $infile_path, $outfile_path, $stderrfile_path, $stderrfile_path_append, $FILEHANDLE, $exclude, $soft_filter, $snp_gap, $indel_gap
-    ##          : $infile_path            => Infile paths
-    ##          : $outfile_path           => Outfile path
-    ##          : $stderrfile_path        => Stderrfile path
-    ##          : $stderrfile_path_append => Append stderr info to file path
-    ##          : $FILEHANDLE             => Filehandle to write to
-    ##          : $exclude                => Exclude sites for which the expression is true
-    ##          : $soft_filter            => Annotate FILTER column with <string> or unique filter name
-    ##          : $snp_gap                => Filter SNPs within <int> base pairs of an indel
-    ##          : $indel_gap              => Filter clusters of indels separated by <int> or fewer base pairs allowing only one to pass
+## Function : Perl wrapper for writing bcftools filter recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
+## Returns  : @commands
+## Arguments: $infile_path            => Infile paths
+##          : $outfile_path           => Outfile path
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $exclude                => Exclude sites for which the expression is true
+##          : $soft_filter            => Annotate FILTER column with <string> or unique filter name
+##          : $snp_gap                => Filter SNPs within <int> base pairs of an indel
+##          : $indel_gap              => Filter clusters of indels separated by <int> or fewer base pairs allowing only one to pass
 
     my ($arg_href) = @_;
 
@@ -485,20 +476,17 @@ sub bcftools_filter {
 
 sub bcftools_norm {
 
-    ## bcftools_norm
-
-    ## Function : Perl wrapper for writing bcftools norm recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
-    ## Returns  : "@commands"
-    ## Arguments: $outfile_path, $reference_path, $infile_path, $stderrfile_path, $stderrfile_path_append, $FILEHANDLE, $multiallelic, $output_type, $multiallelic_type
-    ##          : $outfile_path           => Outfile path to write to
-    ##          : $reference_path         => Human genome reference path
-    ##          : $infile_path            => Infile path to read from
-    ##          : $stderrfile_path        => Stderr file path to write to {OPTIONAL}
-    ##          : $stderrfile_path_append => Append stderr info to file path
-    ##          : $FILEHANDLE             => Filehandle to write to
-    ##          : $multiallelic           => To split/join multiallelic calls or not
-    ##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
-    ##          : $multiallelic_type      => Type of multiallelic to split/join {OPTIONAL}
+## Function : Perl wrapper for writing bcftools norm recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
+## Returns  : @commands
+## Arguments: $outfile_path           => Outfile path to write to
+##          : $reference_path         => Human genome reference path
+##          : $infile_path            => Infile path to read from
+##          : $stderrfile_path        => Stderr file path to write to {OPTIONAL}
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $multiallelic           => To split/join multiallelic calls or not
+##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
+##          : $multiallelic_type      => Type of multiallelic to split/join {OPTIONAL}
 
     my ($arg_href) = @_;
 
@@ -609,18 +597,15 @@ sub bcftools_norm {
 
 sub bcftools_merge {
 
-    ## bcftools_merge
-
-    ## Function : Perl wrapper for writing bcftools merge recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
-    ## Returns  : "@commands"
-    ## Arguments: $infile_paths_ref, $outfile_path, $stderrfile_path, $stderrfile_path_append, $stdoutfile_path, $FILEHANDLE, $output_type
-    ##          : $infile_paths_ref       => Infile path to read from
-    ##          : $outfile_path           => Outfile path to write to
-    ##          : $stderrfile_path        => Stderr file path to write to
-    ##          : $stderrfile_path_append => Append stderr info to file path
-    ##          : $stdoutfile_path        => Stdoutfile file path to write to
-    ##          : $FILEHANDLE             => Filehandle to write to
-    ##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
+## Function : Perl wrapper for writing bcftools merge recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
+## Returns  : @commands
+## Arguments: $infile_paths_ref       => Infile path to read from
+##          : $outfile_path           => Outfile path to write to
+##          : $stderrfile_path        => Stderr file path to write to
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile file path to write to
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
 
     my ($arg_href) = @_;
 
@@ -697,18 +682,16 @@ sub bcftools_merge {
 
 sub bcftools_concat {
 
-    ## bcftools_concat
-
-    ## Function : Perl wrapper for writing bcftools concat recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
-    ## Returns  : "@commands"
-    ## Arguments: $infile_paths_ref, $outfile_path, $stderrfile_path, $stderrfile_path_append, $stdoutfile_path, $FILEHANDLE, $allow_overlaps, $output_type
-    ##          : $infile_paths_ref       => Infile path to read from
-    ##          : $outfile_path           => Outfile path to write to
-    ##          : $stderrfile_path        => Stderr file path to write to
-    ##          : $stderrfile_path_append => Append stderr info to file path
-    ##          : $stdoutfile_path        => Stdoutfile file path to write to
-    ##          : $FILEHANDLE             => Filehandle to write to
-    ##          : $allow_overlaps         => First coordinate of the next file can precede last record of the current file
+## Function : Perl wrapper for writing bcftools concat recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
+## Returns  : @commands
+## Arguments: $infile_paths_ref, $outfile_path, $stderrfile_path, $stderrfile_path_append, $stdoutfile_path, $FILEHANDLE, $allow_overlaps, $output_type
+##          : $infile_paths_ref       => Infile path to read from
+##          : $outfile_path           => Outfile path to write to
+##          : $stderrfile_path        => Stderr file path to write to
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile file path to write to
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $allow_overlaps         => First coordinate of the next file can precede last record of the current file
     ##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
 
     my ($arg_href) = @_;
@@ -799,21 +782,18 @@ sub bcftools_concat {
 
 sub bcftools_annotate {
 
-    ## bcftools_annotate
-
-    ## Function : Perl wrapper for writing bcftools annotate recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
-    ## Returns  : "@commands"
-    ## Arguments: $remove_ids_ref, $infile_path, $outfile_path, $stderrfile_path, $stderrfile_path_append, $FILEHANDLE, $samples_file, $headerfile_path, $output_type, $set_id
-    ##          : $remove_ids_ref         => List of annotations to remove
-    ##          : $infile_path            => Infile path to read from
-    ##          : $outfile_path           => Outfile path to write to
-    ##          : $stderrfile_path        => Stderr file path to write to {OPTIONAL}
-    ##          : $stderrfile_path_append => Append stderr info to file path
-    ##          : $FILEHANDLE             => Filehandle to write to
-    ##          : $samples_file           => File of samples to annotate
-    ##          : $headerfile_path        => File with lines which should be appended to the VCF header
-    ##          : $set_id                 => Set ID column
-    ##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
+## Function : Perl wrapper for writing bcftools annotate recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
+## Returns  : @commands
+## Arguments: $remove_ids_ref         => List of annotations to remove
+##          : $infile_path            => Infile path to read from
+##          : $outfile_path           => Outfile path to write to
+##          : $stderrfile_path        => Stderr file path to write to {OPTIONAL}
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $samples_file           => File of samples to annotate
+##          : $headerfile_path        => File with lines which should be appended to the VCF header
+##          : $set_id                 => Set ID column
+##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
 
     my ($arg_href) = @_;
 
@@ -920,20 +900,17 @@ sub bcftools_annotate {
 
 sub bcftools_roh {
 
-    ## bcftools_roh
-
-    ## Function : Perl wrapper for writing bcftools roh recipe to $FILEHANDLE or return commands array. Based on bcftools 1.4.1.
-    ## Returns  : "@commands"
-    ## Arguments: $sample_ids_ref, $infile_path, $outfile_path, $stderrfile_path, $stderrfile_path_append, $stdoutfile_path, $FILEHANDLE, $af_file_path, $skip_indels
-    ##          : $sample_ids_ref         => Sample to analyze
-    ##          : $infile_path            => Infile path to read from
-    ##          : $outfile_path           => Outfile path to write to
-    ##          : $stderrfile_path        => Stderr file path to write to
-    ##          : $stdoutfile_path        => Stdoutfile file path to write to
-    ##          : $stderrfile_path_append => Append stderr info to file path
-    ##          : $FILEHANDLE             => Filehandle to write to
-    ##          : $af_file_path           => Read allele frequencies from file (CHR\tPOS\tREF,ALT\tAF)
-    ##          : $skip_indels            => Skip indels as their genotypes are enriched for errors
+## Function : Perl wrapper for writing bcftools roh recipe to $FILEHANDLE or return commands array. Based on bcftools 1.4.1.
+## Returns  : @commands
+## Arguments: $sample_ids_ref         => Sample to analyze
+##          : $infile_path            => Infile path to read from
+##          : $outfile_path           => Outfile path to write to
+##          : $stderrfile_path        => Stderr file path to write to
+##          : $stdoutfile_path        => Stdoutfile file path to write to
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $af_file_path           => Read allele frequencies from file (CHR\tPOS\tREF,ALT\tAF)
+##          : $skip_indels            => Skip indels as their genotypes are enriched for errors
 
     my ($arg_href) = @_;
 
@@ -1030,18 +1007,15 @@ sub bcftools_roh {
 
 sub bcftools_stats {
 
-    ## bcftools_stats
-
-    ## Function : Perl wrapper for writing bcftools stats recipe to already open $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
-    ## Returns  : "@commands"
-    ## Arguments: $infile_path, $outfile_path, $stderrfile_path, $stderrfile_path_append, $stdoutfile_path, $FILEHANDLE, $append_stderr_info
-    ##          : $infile_path            => Infile path
-    ##          : $outfile_path           => Outfile path
-    ##          : $stderrfile_path        => Stderrfile path
-    ##          : $stderrfile_path_append => Append stderr info to file path
-    ##          : $stdoutfile_path        => Stdoutfile path
-    ##          : $FILEHANDLE             => Filehandle to write to
-    ##          : $append_stderr_info     => Append stderr info to file
+## Function : Perl wrapper for writing bcftools stats recipe to already open $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
+## Returns  : @commands
+## Arguments: $infile_path            => Infile path
+##          : $outfile_path           => Outfile path
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $append_stderr_info     => Append stderr info to file
 
     my ($arg_href) = @_;
 
@@ -1117,26 +1091,23 @@ sub bcftools_stats {
 
 sub bcftools_reheader {
 
-    ##reheader
-
-    ##Function : Perl wrapper for writing bcftools reheader recipe to already open $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
-    ##Returns  : "@commands"
-    ##Arguments: $infile_path, $outfile_path, $stderrfile_path, $stderrfile_path_append, $stdoutfile_path, $samples_file_path, $FILEHANDLE, $append_stderr_info
-    ##         : $infile_path            => Infile path
-    ##         : $outfile_path           => Outfile path
-    ##         : $stderrfile_path        => Stderrfile path
-    ##         : $stderrfile_path_append => Append stderr info to file path
-    ##         : $stdoutfile_path        => Stdoutfile path
-    ##         : $samples_file_path      => File with new sample names
-    ##         : $FILEHANDLE             => Filehandle to write to
-    ##         : $append_stderr_info     => Append stderr info to file
+## Function : Perl wrapper for writing bcftools reheader recipe to already open $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
+## Returns  : @commands
+## Arguments: $infile_path            => Infile path
+##          : $outfile_path           => Outfile path
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
+##          : $samples_file_path      => File with new sample names
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $append_stderr_info     => Append stderr info to file
 
     my ($arg_href) = @_;
 
-## Default(s)
+    ## Default(s)
     my $append_stderr_info;
 
-## Flatten argument(s)
+    ## Flatten argument(s)
     my $infile_path;
     my $outfile_path;
     my $stderrfile_path;
@@ -1173,13 +1144,13 @@ sub bcftools_reheader {
         push @commands, q{--samples} . $SPACE . $samples_file_path;
     }
 
-## Infile
+    ## Infile
     if ($infile_path) {
 
         push @commands, $infile_path;
     }
 
-## Outfile
+    ## Outfile
     if ($outfile_path) {
 
         push @commands, q{>} . $SPACE . $outfile_path;
@@ -1209,6 +1180,106 @@ sub bcftools_reheader {
 
     return @commands;
 
+}
+
+sub bcftools_rename_vcf_samples {
+
+## Function : Rename vcf samples. The samples array will replace the sample names in the same order as supplied.
+## Returns  :
+## Arguments: $sample_ids_ref => Samples to rename in the same order as in the vcf {REF}
+##          : $temp_directory => Temporary directory
+##          : $infile         => Vcf infile to rename samples for
+##          : $outfile        => Output vcf with samples renamed
+##          : $FILEHANDLE     => Filehandle to write to
+##          : $output_type    => Output type
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $output_type;
+
+    ## Flatten argument(s)
+    my $sample_ids_ref;
+    my $temp_directory;
+    my $infile;
+    my $outfile;
+    my $FILEHANDLE;
+
+    my $tmpl = {
+        sample_ids_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => [],
+            strict_type => 1,
+            store       => \$sample_ids_ref,
+        },
+        temp_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$temp_directory,
+        },
+        infile =>
+          { required => 1, defined => 1, strict_type => 1, store => \$infile, },
+        outfile => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$outfile,
+        },
+        FILEHANDLE  => { required => 1, defined => 1, store => \$FILEHANDLE, },
+        output_type => {
+            default     => q{v},
+            allow       => [qw{ b u z v }],
+            strict_type => 1,
+            store       => \$output_type,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Gnu::Coreutils qw{ gnu_printf };
+
+    ## Create new sample names file
+    say {$FILEHANDLE} q{## Create new sample(s) names file};
+
+    ## Get parameters
+    my $format_string = $DOUBLE_QUOTE;
+    foreach my $sample_id ( @{$sample_ids_ref} ) {
+
+        $format_string .= $sample_id . q{\n};
+    }
+    $format_string .= $DOUBLE_QUOTE;
+    gnu_printf(
+        {
+            format_string   => $format_string,
+            stdoutfile_path => catfile( $temp_directory, q{sample_name.txt} ),
+            FILEHANDLE      => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
+    ## Rename samples in VCF
+    say {$FILEHANDLE} q{## Rename sample(s) names in VCF file};
+    bcftools_reheader(
+        {
+            infile_path       => $infile,
+            samples_file_path => catfile( $temp_directory, q{sample_name.txt} ),
+            FILEHANDLE        => $FILEHANDLE,
+        }
+    );
+    ## Pipe
+    print {$FILEHANDLE} $PIPE . $SPACE;
+
+    bcftools_view(
+        {
+            outfile_path => $outfile,
+            output_type  => q{v},
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+    return;
 }
 
 1;

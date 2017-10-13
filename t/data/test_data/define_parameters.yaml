@@ -14,3 +14,20 @@ cluster_constant_path:
   data_type: SCALAR
   type: path
 ### Project specific
+email_types:
+  associated_program:
+   - mip
+  element_separator: ","
+  data_type: ARRAY
+  mandatory: no
+  default:
+   - FAIL
+  type: mip
+bwa_mem_rapid_db:
+  associated_program:
+   - pbwa_mem
+  build_file: no_auto_build
+  data_type: SCALAR
+  exists_check: file
+  reference: reference_dir
+  type: path

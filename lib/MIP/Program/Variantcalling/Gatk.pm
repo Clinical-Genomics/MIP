@@ -182,7 +182,6 @@ sub gatk_genotypegvcfs {
             downsample_to_coverage   => $downsample_to_coverage,
             gatk_disable_auto_index_and_file_lock =>
               $gatk_disable_auto_index_and_file_lock,
-            FILEHANDLE => $FILEHANDLE,
         }
     );
 
@@ -378,7 +377,6 @@ sub gatk_selectvariants {
             downsample_to_coverage   => $downsample_to_coverage,
             gatk_disable_auto_index_and_file_lock =>
               $gatk_disable_auto_index_and_file_lock,
-            FILEHANDLE => $FILEHANDLE,
         }
     );
 
@@ -817,7 +815,6 @@ sub gatk_variantrecalibrator {
               $base_quality_score_recalibration_file,
             disable_indel_qual         => $disable_indel_qual,
             static_quantized_quals_ref => $static_quantized_quals_ref,
-            FILEHANDLE                 => $FILEHANDLE,
         }
     );
 
@@ -1104,7 +1101,6 @@ sub gatk_applyrecalibration {
               $base_quality_score_recalibration_file,
             disable_indel_qual         => $disable_indel_qual,
             static_quantized_quals_ref => $static_quantized_quals_ref,
-            FILEHANDLE                 => $FILEHANDLE,
         }
     );
 
@@ -1308,7 +1304,6 @@ sub gatk_calculategenotypeposteriors {
             downsample_to_coverage   => $downsample_to_coverage,
             gatk_disable_auto_index_and_file_lock =>
               $gatk_disable_auto_index_and_file_lock,
-            FILEHANDLE => $FILEHANDLE,
         }
     );
 
@@ -1501,7 +1496,6 @@ sub gatk_combinevariants {
             downsample_to_coverage   => $downsample_to_coverage,
             gatk_disable_auto_index_and_file_lock =>
               $gatk_disable_auto_index_and_file_lock,
-            FILEHANDLE => $FILEHANDLE,
         }
     );
 
@@ -1514,7 +1508,7 @@ sub gatk_combinevariants {
     if ($genotype_merge_option) {
 
         push @commands,
-          q{-genotypemergeoption} . $SPACE . $genotype_merge_option;
+          q{--genotypemergeoption} . $SPACE . $genotype_merge_option;
     }
 
     if ($prioritize_caller) {
@@ -1526,7 +1520,7 @@ sub gatk_combinevariants {
     if ( @{$infile_paths_ref} ) {
 
         push @commands,
-          q{--variant} . $SPACE . join $SPACE . q{--variant} . $SPACE,
+          q{--variant:} . join $SPACE . q{--variant:},
           @{$infile_paths_ref};
 
     }
@@ -1694,7 +1688,6 @@ sub gatk_varianteval {
             downsample_to_coverage   => $downsample_to_coverage,
             gatk_disable_auto_index_and_file_lock =>
               $gatk_disable_auto_index_and_file_lock,
-            FILEHANDLE => $FILEHANDLE,
         }
     );
 
@@ -1879,7 +1872,6 @@ sub gatk_leftalignandtrimvariants {
             downsample_to_coverage   => $downsample_to_coverage,
             gatk_disable_auto_index_and_file_lock =>
               $gatk_disable_auto_index_and_file_lock,
-            FILEHANDLE => $FILEHANDLE,
         }
     );
 
