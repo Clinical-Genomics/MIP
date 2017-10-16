@@ -48,7 +48,6 @@ sub analysis_cnvnator {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $sample_id               => Sample id
-##          : $infile                  => Infile
 ##          : $program_name            => Program name
 ##          : $family_id               => Family id
 ##          : $temp_directory          => Temporary directory
@@ -73,7 +72,6 @@ sub analysis_cnvnator {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $sample_id;
-    my $infile;
     my $program_name;
     my $FILEHANDLE;
 
@@ -132,11 +130,6 @@ sub analysis_cnvnator {
             defined     => 1,
             strict_type => 1,
             store       => \$program_name
-        },
-        infile => {
-            default => $file_info_href->{merged_infile},
-            strict_type => 1,
-            store       => \$infile
         },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
@@ -238,7 +231,7 @@ sub analysis_cnvnator {
       $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag =
       $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
-    say {$FILEHANDLE} "\n\ninfile is:". $file_info_href->{$sample_id}{merged_infile} . "####, infile tag is:$infile_tag";
+    my $infile = $file_info_href->{$sample_id}{merged_infile};
     my $infile_prefix       = $infile . $infile_tag;
     my $file_path_prefix    = catfile( $temp_directory, $infile_prefix );
     my $outfile_prefix      = $infile . $outfile_tag;
