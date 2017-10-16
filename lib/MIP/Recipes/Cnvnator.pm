@@ -39,11 +39,8 @@ Readonly my $SEMICOLON  => q{;};
 
 sub analysis_cnvnator {
 
-## analysis_cnvnator
-
 ## Function : Call structural variants using cnvnator
 ## Returns  : ""
-## Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, $program_info_path, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $xargs_file_counter
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $sample_info_href        => Info on samples and family hash {REF}
@@ -51,6 +48,7 @@ sub analysis_cnvnator {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $sample_id               => Sample id
+##          : $infile                  => Infile
 ##          : $program_name            => Program name
 ##          : $family_id               => Family id
 ##          : $temp_directory          => Temporary directory
@@ -75,6 +73,7 @@ sub analysis_cnvnator {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $sample_id;
+    my $infile;
     my $program_name;
     my $FILEHANDLE;
 
@@ -133,6 +132,11 @@ sub analysis_cnvnator {
             defined     => 1,
             strict_type => 1,
             store       => \$program_name
+        },
+        infile => {
+            default     => $file_info_href->{$sample_id}{merge_infile};
+            strict_type => 1,
+            store       => \$infile
         },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
@@ -195,9 +199,6 @@ sub analysis_cnvnator {
     my $time = $active_parameter_href->{module_time}{$mip_program_name};
     my $phenotype_info =
       $sample_info_href->{sample}{$sample_id}{phenotype};
-
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$sample_id}{merge_infile};
 
     ## Filehandles
     # Create anonymous filehandle
