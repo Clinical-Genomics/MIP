@@ -41,12 +41,9 @@ Readonly my $SPACE => q{ };
 
 sub gatk_genotypegvcfs {
 
-## gatk_genotypegvcfs
-
 ## Function : Perl wrapper for writing GATK genotypegvcfs recipe to $FILEHANDLE. Based on GATK 3.7.0.
-## Returns  : "@commands"
-## Arguments: $memory_allocation, $java_use_large_pages, $temp_directory, $java_jar, $intervals_ref, $infile_paths_ref, $outfile_path, $referencefile_path, $stderrfile_path, $FILEHANDLE, $pedigree, $dbsnp_file_path, $downsample_to_coverage, $gatk_disable_auto_index_and_file_lock, $logging_level, $pedigree_validation_type, $include_nonvariant_sites
-##          : $memory_allocation                     => Memory allocation to run Gatk
+## Returns  : @commands
+## Arguments: $memory_allocation                     => Memory allocation to run Gatk
 ##          : $java_use_large_pages                  => Use java large pages
 ##          : $temp_directory                        => Redirect tmp files to java temp
 ##          : $java_jar                              => Java jar
@@ -232,12 +229,9 @@ sub gatk_genotypegvcfs {
 
 sub gatk_selectvariants {
 
-## gatk_selectvariants
-
 ## Function : Perl wrapper for writing GATK selectvariants recipe to $FILEHANDLE. Based on GATK 3.7.0.
-## Returns  : "@commands"
-## Arguments: $memory_allocation, $java_use_large_pages, $temp_directory, $java_jar, $intervals_ref, $sample_names_ref, $infile_path, $outfile_path, $referencefile_path, $stderrfile_path, $FILEHANDLE, $pedigree, $downsample_to_coverage, $gatk_disable_auto_index_and_file_lock, $logging_level, $pedigree_validation_type, $exclude_nonvariants
-##          : $memory_allocation                     => Memory allocation to run Gatk
+## Returns  : @commands
+## Arguments: $memory_allocation                     => Memory allocation to run Gatk
 ##          : $java_use_large_pages                  => Use java large pages
 ##          : $temp_directory                        => Redirect tmp files to java temp
 ##          : $java_jar                              => Java jar
@@ -426,12 +420,9 @@ sub gatk_selectvariants {
 
 sub gatk_catvariants {
 
-## gatk_catvariants
-
 ## Function : Perl wrapper for writing GATK catvariants recipe to $FILEHANDLE. Based on GATK 3.7.0.
-## Returns  : "@commands"
-## Arguments: $memory_allocation, $java_use_large_pages, $temp_directory, $java_jar, $gatk_path, $intervals_ref, $infile_paths_ref, $outfile_path, $referencefile_path, $stderrfile_path, $FILEHANDLE, $downsample_to_coverage, $gatk_disable_auto_index_and_file_lock, $logging_level, $assume_sorted
-##          : $memory_allocation                     => Memory allocation to run Gatk
+## Returns  : @commands
+## Arguments: $memory_allocation                     => Memory allocation to run Gatk
 ##          : $java_use_large_pages                  => Use java large pages
 ##          : $temp_directory                        => Redirect tmp files to java temp
 ##          : $java_jar                              => Java jar
@@ -532,18 +523,20 @@ sub gatk_catvariants {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    # Stores commands depending on input parameters
     my @commands;
 
-    # Write java core commands to filehandle.
-    java_core(
-        {
-            FILEHANDLE           => $FILEHANDLE,
-            memory_allocation    => $memory_allocation,
-            java_use_large_pages => $java_use_large_pages,
-            temp_directory       => $temp_directory,
-        }
-    );
+    ## Write java core commands to filehandle
+    if ($memory_allocation) {
 
+        @commands = java_core(
+            {
+                memory_allocation    => $memory_allocation,
+                java_use_large_pages => $java_use_large_pages,
+                temp_directory       => $temp_directory,
+            }
+        );
+    }
     ## Base command
     push @commands, q{-cp};
 
@@ -618,12 +611,9 @@ sub gatk_catvariants {
 
 sub gatk_variantrecalibrator {
 
-## gatk_variantrecalibrator
-
 ## Function : Perl wrapper for writing GATK variantrecalibrator recipe to $FILEHANDLE. Based on GATK 3.7.0.
-## Returns  : "@commands"
-## Arguments: $memory_allocation, $java_use_large_pages, $temp_directory, $java_jar, $infile_paths_ref, $resources_ref, $intervals_ref, $read_filters_ref, $static_quantized_quals_ref, $annotations_ref, $referencefile_path, $base_quality_score_recalibration_file, $stderrfile_path, $FILEHANDLE, $pedigree, $rscript_file_path, $recal_file_path, $tranches_file_path, $num_cpu_threads_per_data_thread, $downsample_to_coverage, $max_gaussian_level, $gatk_disable_auto_index_and_file_lock, $disable_indel_qual, $logging_level, $pedigree_validation_type, $mode
-##          : $memory_allocation                     => Memory allocation to run Gatk
+## Returns  : @commands
+## Arguments: $memory_allocation                     => Memory allocation to run Gatk
 ##          : $java_use_large_pages                  => Use java large pages
 ##          : $temp_directory                        => Redirect tmp files to java temp
 ##          : $java_jar                              => Java jar
@@ -917,12 +907,9 @@ sub gatk_variantrecalibrator {
 
 sub gatk_applyrecalibration {
 
-## gatk_applyrecalibration
-
 ## Function : Perl wrapper for writing GATK applyrecalibration recipe to $FILEHANDLE. Based on GATK 3.7.0.
-## Returns  : "@commands"
-## Arguments: $memory_allocation, $java_use_large_pages, $temp_directory, $java_jar, $infile_path, $resources_ref, $intervals_ref, $read_filters_ref, $static_quantized_quals_ref, $annotations_ref, $outfile_path, $referencefile_path, $base_quality_score_recalibration_file, $stderrfile_path, $FILEHANDLE, $pedigree, $ts_filter_level, $recal_file_path, $tranches_file_path, $num_cpu_threads_per_data_thread, $downsample_to_coverage, $gatk_disable_auto_index_and_file_lock, $disable_indel_qual, $logging_level, $pedigree_validation_type, $mode
-##          : $memory_allocation                     => Memory allocation to run Gatk
+## Returns  : @commands
+## Arguments: $memory_allocation                     => Memory allocation to run Gatk
 ##          : $java_use_large_pages                  => Use java large pages
 ##          : $temp_directory                        => Redirect tmp files to java temp
 ##          : $java_jar                              => Java jar
@@ -1176,12 +1163,9 @@ sub gatk_applyrecalibration {
 
 sub gatk_calculategenotypeposteriors {
 
-## gatk_calculategenotypeposteriors
-
 ## Function : Perl wrapper for writing GATK calculategenotypeposteriors recipe to $FILEHANDLE. Based on GATK 3.7.0.
-## Returns  : "@commands"
-## Arguments: $memory_allocation, $java_use_large_pages, $temp_directory, $java_jar, $intervals_ref, $infile_path, $outfile_path, $referencefile_path, $stderrfile_path, $FILEHANDLE, $pedigree, $supporting_callset_file_path, $downsample_to_coverage, $gatk_disable_auto_index_and_file_lock, $logging_level, $pedigree_validation_type
-##          : $memory_allocation                     => Memory allocation to run Gatk
+## Returns  : @commands
+## Arguments: $memory_allocation                     => Memory allocation to run Gatk
 ##          : $java_use_large_pages                  => Use java large pages
 ##          : $temp_directory                        => Redirect tmp files to java temp
 ##          : $java_jar                              => Java jar
@@ -1351,12 +1335,9 @@ sub gatk_calculategenotypeposteriors {
 
 sub gatk_combinevariants {
 
-## gat_combinevariants
-
 ## Function : Perl wrapper for writing GATK combinevariants recipe to $FILEHANDLE. Based on GATK 3.7.0.
-## Returns  : "@commands"
-## Arguments: $memory_allocation, $java_use_large_pages, $temp_directory, $java_jar, $intervals_ref, $infile_paths_ref, $outfile_path, $referencefile_path, $stderrfile_path, $FILEHANDLE, $pedigree, $prioritize_caller, $downsample_to_coverage, $gatk_disable_auto_index_and_file_lock, $logging_level, $pedigree_validation_type, $exclude_nonvariants, $genotype_merge_option,
-##          : $memory_allocation                     => Memory allocation to run Gatk
+## Returns  : @commands
+## Arguments: $memory_allocation                     => Memory allocation to run Gatk
 ##          : $java_use_large_pages                  => Use java large pages
 ##          : $temp_directory                        => Redirect tmp files to java temp
 ##          : $java_jar                              => Java jar
@@ -1556,12 +1537,9 @@ sub gatk_combinevariants {
 
 sub gatk_varianteval {
 
-## gatk_varianteval
-
 ## Function : Perl wrapper for writing GATK varianteval recipe to $FILEHANDLE. Based on GATK 3.7.0.
-## Returns  : "@commands"
-## Arguments: $memory_allocation, $java_use_large_pages, $temp_directory, $java_jar, $intervals_ref, $infile_paths_ref, $outfile_path, $referencefile_path, $stderrfile_path, $FILEHANDLE, $pedigree, $dbsnp_file_path, $indel_gold_standard_file_path, $downsample_to_coverage, $gatk_disable_auto_index_and_file_lock, $logging_level, $pedigree_validation_type
-##          : $memory_allocation                     => Memory allocation to run Gatk
+## Returns  : @commands
+## Arguments: $memory_allocation                     => Memory allocation to run Gatk
 ##          : $java_use_large_pages                  => Use java large pages
 ##          : $temp_directory                        => Redirect tmp files to java temp
 ##          : $java_jar                              => Java jar
@@ -1740,12 +1718,9 @@ sub gatk_varianteval {
 
 sub gatk_leftalignandtrimvariants {
 
-## gatk_leftalignandtrimvariants
-
 ## Function : Perl wrapper for writing GATK leftalignandtrimvariants recipe to $FILEHANDLE. Based on GATK 3.7.0.
-## Returns  : "@commands"
-## Arguments: $memory_allocation, $java_use_large_pages, $temp_directory, $java_jar, $intervals_ref, $infile_path, $outfile_path, $referencefile_path, $stderrfile_path, $FILEHANDLE, $pedigree, $downsample_to_coverage, $gatk_disable_auto_index_and_file_lock, $logging_level, $pedigree_validation_type, $split_multiallelics
-##          : $memory_allocation                     => Memory allocation to run Gatk
+## Returns  : @commands
+## Arguments: $memory_allocation                     => Memory allocation to run Gatk
 ##          : $java_use_large_pages                  => Use java large pages
 ##          : $temp_directory                        => Redirect tmp files to java temp
 ##          : $java_jar                              => Java jar
