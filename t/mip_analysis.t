@@ -38,35 +38,35 @@ BEGIN {
     require MIP::Check::Modules;
 
     my @modules = (
-        q{Modern::Perl},              # MIP
-        q{autodie},                   # MIP
-        q{IPC::System::Simple},       # MIP
-        q{Path::Iterator::Rule},      # MIP
-        q{YAML},                      # MIP
-        q{MIP::File::Format::Yaml},   # MIP
-        q{Log::Log4perl},             # MIP
-        q{MIP::Log::MIP_log4perl},    # MIP
-        q{List::Util},                # MIP
-        q{Readonly},                  # MIP
-        q{Try::Tiny},                 # MIP
-        q{Set::IntervalTree},         # MIP/vcfParser.pl
-        q{Net::SSLeay},               # VEP
-        q{LWP::Simple},               # VEP
-        q{LWP::Protocol::https},      # VEP
-        q{PerlIO::gzip},              # VEP
-        q{IO::Uncompress::Gunzip},    # VEP
-        q{HTML::Lint},                # VEP
-        q{Archive::Zip},              # VEP
-        q{Archive::Extract},          # VEP
-        q{DBI},                       # VEP
-        q{JSON},                      # VEP
-        q{DBD::mysql},                # VEP
-        q{CGI},                       # VEP
-        q{Sereal::Encoder},           # VEP
-        q{Sereal::Decoder},           # VEP
-        q{Bio::Root::Version},        # VEP
-        q{Module::Build},             # VEP
-        q{File::Copy::Recursive},     # VEP
+        q{Modern::Perl},               # MIP
+        q{autodie},                    # MIP
+        q{IPC::System::Simple},        # MIP
+        q{Path::Iterator::Rule},       # MIP
+        q{YAML},                       # MIP
+        q{MIP::File::Format::Yaml},    # MIP
+        q{Log::Log4perl},              # MIP
+        q{MIP::Log::MIP_log4perl},     # MIP
+        q{List::Util},                 # MIP
+        q{Readonly},                   # MIP
+        q{Try::Tiny},                  # MIP
+        q{Set::IntervalTree},          # MIP/vcfParser.pl
+        q{Net::SSLeay},                # VEP
+        q{LWP::Simple},                # VEP
+        q{LWP::Protocol::https},       # VEP
+        q{PerlIO::gzip},               # VEP
+        q{IO::Uncompress::Gunzip},     # VEP
+        q{HTML::Lint},                 # VEP
+        q{Archive::Zip},               # VEP
+        q{Archive::Extract},           # VEP
+        q{DBI},                        # VEP
+        q{JSON},                       # VEP
+        q{DBD::mysql},                 # VEP
+        q{CGI},                        # VEP
+        q{Sereal::Encoder},            # VEP
+        q{Sereal::Decoder},            # VEP
+        q{Bio::Root::Version},         # VEP
+        q{Module::Build},              # VEP
+        q{File::Copy::Recursive},      # VEP
     );
 
     ## Evaluate that all modules required are installed
@@ -81,6 +81,7 @@ BEGIN {
 ## Constants
 Readonly my $COMMA     => q{,};
 Readonly my $NEWLINE   => qq{\n};
+Readonly my $PIPE      => q{|};
 Readonly my $SEMICOLON => q{;};
 Readonly my $SPACE     => q{ };
 Readonly my $TAB       => qq{\t};
@@ -306,7 +307,7 @@ sub test_modules {
     my $log = initiate_logger(
         {
             categories_ref => [qw{ TRACE ScreenApp }],
-            file_path  => $log_file,
+            file_path      => $log_file,
             log_name       => q{Test},
         }
     );
@@ -836,7 +837,7 @@ sub check_if_vep_csq_in_line {
         if (/ Format:\s(\S+)"\> /sxm) {
 
             my $vep_format_string = $1;
-            my @vep_format_fields = split /[|]/xsm, $vep_format_string;
+            my @vep_format_fields = split $PIPE, $vep_format_string;
 
             while ( my ( $field_index, $field ) = each @vep_format_fields ) {
 
@@ -1304,7 +1305,7 @@ sub parse_vep_csq_info {
       CSQ_TRANSCRIPT:
         while ( my ( $transcript_index, $transcript ) = each @transcripts ) {
 
-            my @transcript_effects = split /[|]/sxm, $transcript;
+            my @transcript_effects = split $PIPE, $transcript;
 
           TRANSCRIP_EFFECT:
             while ( my ( $effect_index, $effect ) = each @transcript_effects ) {

@@ -44,7 +44,8 @@ use Readonly;
 use lib catdir( $Bin, q{lib} );
 use MIP::Check::Cluster qw{ check_max_core_number };
 use MIP::Check::Modules qw{ check_perl_modules };
-use MIP::Check::Parameter qw{ check_allowed_temp_directory };
+use MIP::Check::Parameter
+  qw{ check_parameter_hash check_allowed_temp_directory };
 use MIP::Check::Reference qw{ check_references_for_vt };
 use MIP::Delete::List qw{ delete_non_wes_contig delete_male_contig };
 use MIP::File::Format::Pedigree qw{ create_fam_file };
@@ -54,6 +55,8 @@ use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Update::Contigs qw{ update_contigs_for_run };
+use MIP::Update::Programs
+  qw{ update_program_mode_with_dry_run_all update_program_mode update_prioritize_flag };
 
 ##Recipes
 use MIP::Recipes::Bwa_mem qw{ analysis_bwa_mem };
@@ -67,6 +70,8 @@ use MIP::Recipes::Picardtools_collecthsmetrics
   qw{ analysis_picardtools_collecthsmetrics };
 use MIP::Recipes::Picardtools_collectmultiplemetrics
   qw{ analysis_picardtools_collectmultiplemetrics };
+use MIP::Recipes::Picardtools_genotypeconcordance
+  qw{ analysis_picardtools_genotypeconcordance };
 use MIP::Recipes::Picardtools_mergesamfiles
   qw{ analysis_picardtools_mergesamfiles analysis_picardtools_mergesamfiles_rio };
 use MIP::Recipes::Rcoverageplots qw{ analysis_rcoverageplots };
@@ -137,13 +142,37 @@ my @order_parameters = order_parameter_names(
     }
 );
 
-## Eval parameter hash
-eval_parameter_hash(
+## Load mandatory keys and values for parameters
+my %mandatory_key = load_yaml(
     {
-        parameter_href => \%parameter,
-        file_path      => $definitions_file,
+        yaml_file =>
+          catfile( $Bin, qw{ definitions mandatory_parameter_keys.yaml } ),
     }
 );
+
+## Load non mandatory keys and values for parameters
+my %non_mandatory_key = load_yaml(
+    {
+        yaml_file =>
+          catfile( $Bin, qw{ definitions non_mandatory_parameter_keys.yaml } ),
+
+    }
+);
+
+## Eval parameter hash
+my $error_msg = check_parameter_hash(
+    {
+        parameter_href         => \%parameter,
+        mandatory_key_href     => \%mandatory_key,
+        non_mandatory_key_href => \%non_mandatory_key,
+        file_path              => $definitions_file,
+    }
+);
+## Broadcast error in parameter key or values
+if ($error_msg) {
+
+    croak($error_msg);
+}
 
 # Set MIP version
 our $VERSION = 'v5.0.9';
@@ -553,16 +582,18 @@ update_to_absolute_path( { parameter_href => \%parameter, } );
 ##Special case:Enable/activate MIP. Cannot be changed from cmd or config
 $active_parameter{mip} = $parameter{mip}{default};
 
-if ( defined( $parameter{config_file}{value} ) ) {    #Input from cmd
+### Config file
+## Input from cmd
+if ( defined $parameter{config_file}{value} ) {
 
     ## Loads a YAML file into an arbitrary hash and returns it.
     %active_parameter =
       load_yaml( { yaml_file => $parameter{config_file}{value}, } );
 
-    ## Special case:Enable/activate MIP. Cannot be changed from cmd or config
+    ## Special case: Enable/activate MIP. Cannot be changed from cmd or config
     $active_parameter{mip} = $parameter{mip}{default};
 
-    ## Special case:Required when turning of vcfParser to know how many files should be analysed (.select.vcf or just .vcf)
+    ## Special case: Required when turning of vcfParser to know how many files should be analysed (.select.vcf or just .vcf)
     $active_parameter{vcfparser_outfile_count} =
       $parameter{vcfparser_outfile_count}{default};
 
@@ -586,8 +617,9 @@ if ( defined( $parameter{config_file}{value} ) ) {    #Input from cmd
         }
     );
 
-    foreach my $order_parameter_element (@order_parameters)
-    {    #Loop through all parameters and update info
+    ## Loop through all parameters and update info
+  PARAMETER:
+    foreach my $order_parameter_element (@order_parameters) {
 
         ## Updates the config file to particular user/cluster for entries following specifications. Leaves other entries untouched.
         update_config_file(
@@ -599,7 +631,7 @@ if ( defined( $parameter{config_file}{value} ) ) {    #Input from cmd
         );
     }
 
-    ##Remove previous analysis specific info not relevant for current run e.g. log file, sample_ids which are read from pedigree or cmd
+    ## Remove previous analysis specific info not relevant for current run e.g. log file, sample_ids which are read from pedigree or cmd
     my @remove_keys = (qw{ log_file sample_ids });
 
   KEY:
@@ -921,7 +953,6 @@ check_program_mode(
 );
 
 ## Update program mode depending on dry_run_all flag
-use MIP::Update::Programs qw{update_program_mode_with_dry_run_all};
 update_program_mode_with_dry_run_all(
     {
         active_parameter_href => \%active_parameter,
@@ -945,7 +976,7 @@ my %priority_call_parameter = (
     structural_variant_callers => 'sv_svdb_merge_prioritize',
 );
 while ( my ( $variant_caller_type, $prioritize_parameter_name ) =
-    each(%priority_call_parameter) )
+    each %priority_call_parameter )
 {
 
     ## Check if we have any active callers
@@ -980,21 +1011,47 @@ foreach my $parameter_info (@broadcasts) {
 }
 
 ## Update program mode depending on analysis run value as some programs are not applicable for e.g. wes
-update_program_mode(
+my @warning_msgs = update_program_mode(
     {
         active_parameter_href => \%active_parameter,
-        ,
         programs_ref => [qw{ cnvnator delly_call delly_reformat tiddit }],
-        consensus_analysis_type_ref =>
-          \$parameter{dynamic_parameter}{consensus_analysis_type},
+        consensus_analysis_type =>
+          $parameter{dynamic_parameter}{consensus_analysis_type},
     }
 );
 
-if ( $active_parameter{config_file_analysis} ne 0 )
-{    #Write config file for family
+## Broadcast
+if (@warning_msgs) {
 
-    make_path( dirname( $active_parameter{config_file_analysis} ) )
-      ;    #Create directory unless it already exists
+    foreach my $warning_msg (@warning_msgs) {
+
+        $log->warn($warning_msg);
+    }
+}
+## Update prioritize flag depending on analysis run value as some programs are not applicable for e.g. wes
+$active_parameter{sv_svdb_merge_prioritize} = update_prioritize_flag(
+    {
+        prioritize_key => $active_parameter{sv_svdb_merge_prioritize},
+        programs_ref   => [qw{ cnvnator delly_call delly_reformat tiddit }],
+        consensus_analysis_type =>
+          $parameter{dynamic_parameter}{consensus_analysis_type},
+    }
+);
+
+## Write config file for family
+if ( $active_parameter{config_file_analysis} ne 0 ) {
+
+    ## Create directory unless it already exists
+    make_path( dirname( $active_parameter{config_file_analysis} ) );
+
+    ## Remove previous analysis specific info not relevant for current run e.g. log file, sample_ids which are read from pedigree or cmd
+    my @remove_keys = (qw{ associated_program });
+
+  KEY:
+    foreach my $key (@remove_keys) {
+
+        delete $active_parameter{$key};
+    }
 
     ## Writes a YAML hash to file
     write_yaml(
@@ -2295,7 +2352,21 @@ if ( $active_parameter{pevaluation} > 0 ) {    #Run evaluation. Done per family
 
             $log->info("[Evaluation]\n");
 
-            evaluation(
+            my $program_name = lc q{evaluation};
+
+            ## Assign directories
+            my $infamily_directory = catdir(
+                $active_parameter{outdata_dir},
+                $active_parameter{family_id},
+                $active_parameter{outaligner_dir}
+            );
+            my $outfamily_directory = catfile(
+                $active_parameter{outdata_dir},
+                $active_parameter{family_id},
+                $active_parameter{outaligner_dir},
+                $program_name
+            );
+            analysis_picardtools_genotypeconcordance(
                 {
                     parameter_href          => \%parameter,
                     active_parameter_href   => \%active_parameter,
@@ -2303,9 +2374,11 @@ if ( $active_parameter{pevaluation} > 0 ) {    #Run evaluation. Done per family
                     file_info_href          => \%file_info,
                     infile_lane_prefix_href => \%infile_lane_prefix,
                     job_id_href             => \%job_id,
-                    sample_id_ref           => \$sample_id,
-                    call_type               => "BOTH",
-                    program_name            => "evaluation",
+                    sample_id               => $sample_id,
+                    call_type               => q{BOTH},
+                    infamily_directory      => $infamily_directory,
+                    outfamily_directory     => $outfamily_directory,
+                    program_name            => $program_name,
                 }
             );
         }
@@ -2375,7 +2448,7 @@ if ( $active_parameter{reduce_io} ) {    #Run consecutive models
             infile_lane_prefix_href => \%infile_lane_prefix,
             job_id_href             => \%job_id,
             outaligner_dir_ref      => \$active_parameter{outaligner_dir},
-            call_type               => "BOTH",
+            call_type               => q{BOTH},
             program_name            => "variantannotationblock",
         }
     );
@@ -2392,7 +2465,7 @@ else {
             file_info_href          => \%file_info,
             infile_lane_prefix_href => \%infile_lane_prefix,
             job_id_href             => \%job_id,
-            call_type               => "BOTH",
+            call_type               => q{BOTH},
             program_name            => "prepareforvariantannotationblock",
         }
     );
@@ -2409,7 +2482,7 @@ else {
                 file_info_href          => \%file_info,
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
-                call_type               => "BOTH",
+                call_type               => q{BOTH},
                 program_name            => "rhocall",
             }
         );
@@ -2426,7 +2499,7 @@ else {
                 file_info_href          => \%file_info,
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
-                call_type               => "BOTH",
+                call_type               => q{BOTH},
                 program_name            => "vt",
             }
         );
@@ -2463,7 +2536,7 @@ else {
                 file_info_href          => \%file_info,
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
-                call_type               => "BOTH",
+                call_type               => q{BOTH},
                 program_name            => "vcfparser",
             }
         );
@@ -2481,7 +2554,7 @@ else {
                 file_info_href          => \%file_info,
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
-                call_type               => "BOTH",
+                call_type               => q{BOTH},
                 program_name            => "snpeff",
             }
         );
@@ -2499,7 +2572,7 @@ else {
                 file_info_href          => \%file_info,
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
-                call_type               => "BOTH",
+                call_type               => q{BOTH},
                 program_name            => "rankvariant",
             }
         );
@@ -2517,7 +2590,7 @@ else {
                 file_info_href          => \%file_info,
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
-                call_type               => "BOTH",
+                call_type               => q{BOTH},
                 program_name            => "endvariantannotationblock",
             }
         );
@@ -2687,7 +2760,7 @@ sub build_usage {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     return <<"END_USAGE";
  $program_name [options] -ifd [infile_dirs=sample_id] -rd [reference_dir] -p [project_id] -s [sample_ids,.,.,.,n] -em [email] -osd [outscript_dir] -odd [outdata_dir] -f [family_id] -p[program] -at [sample_id=analysis_type]
@@ -2983,46 +3056,46 @@ sub msacct {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
     };
 
@@ -3064,7 +3137,7 @@ sub msacct {
     );
     say $FILEHANDLE "\n";
 
-    close($FILEHANDLE);
+    close $FILEHANDLE;
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -3114,46 +3187,46 @@ sub analysisrunstatus {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
     };
 
@@ -3198,13 +3271,13 @@ sub analysisrunstatus {
         }
     );
 
-    print $FILEHANDLE q?readonly FILES=(?;    #Create bash array
+    print {$FILEHANDLE} q?readonly FILES=(?;    #Create bash array
     foreach my $path (@paths_ref) {
 
         if ( defined($path) )
         { #First analysis and dry run will otherwise cause try to print uninitialized values
 
-            print $FILEHANDLE q?"? . $path . q?" ?;    #Add to array
+            print {$FILEHANDLE} q?"? . $path . q?" ?;    #Add to array
         }
     }
     say $FILEHANDLE ")";                           #Close bash array
@@ -3236,7 +3309,8 @@ sub analysisrunstatus {
               {path},
         );
 
-        print $FILEHANDLE q?if grep -q "WARNING Unable to fork" ?
+        print {$FILEHANDLE}
+          q?if grep -q "WARNING Unable to fork" ?
           ;    #not output the matched text only return the exit status code
         say $FILEHANDLE $variant_effect_predictor_file . q?; then?;    #Infile
         say $FILEHANDLE "\t" . q?STATUS="1"?;    #Found pattern
@@ -3262,7 +3336,8 @@ sub analysisrunstatus {
                 $sample_info_href->{program}{qccollect}{outfile}
             );
 
-            print $FILEHANDLE q?if grep -q "FAIL" ?
+            print {$FILEHANDLE}
+              q?if grep -q "FAIL" ?
               ;    #not output the matched text only return the exit status code
             say $FILEHANDLE $qccollect_file . q?; then?;    #Infile
             say $FILEHANDLE "\t" . q?STATUS="1"?;           #Found pattern
@@ -3286,95 +3361,98 @@ sub analysisrunstatus {
         || ( defined( $sample_info_href->{sv_vcf_file}{research}{path} ) ) )
     {
 
-        print $FILEHANDLE q?perl -MTest::Harness -e ' ?;    #Execute on cmd
-        print $FILEHANDLE q?my %args = (?;   #Adjust arguments to harness object
-        print $FILEHANDLE
+        print {$FILEHANDLE} q?perl -MTest::Harness -e ' ?;    #Execute on cmd
+        print {$FILEHANDLE} q?my %args = (?; #Adjust arguments to harness object
+        print {$FILEHANDLE}
           q?verbosity => 1, ?;    #Print individual test results to STDOUT
-        print $FILEHANDLE q?test_args => { ?;    #Argument to test script
+        print {$FILEHANDLE} q?test_args => { ?;    #Argument to test script
 
         if ( defined( $sample_info_href->{vcf_file}{clinical}{path} ) ) {
 
-            print $FILEHANDLE
+            print {$FILEHANDLE}
               q?"test select file" => [ ?; #Add test for select file using alias
-            print $FILEHANDLE q?"?
+            print {$FILEHANDLE} q?"?
               . $sample_info_href->{vcf_file}{clinical}{path}
               . q?", ?;                    #Infile
-            print $FILEHANDLE q?"?
+            print {$FILEHANDLE} q?"?
               . $active_parameter_href->{config_file_analysis}
               . q?", ?;                    #ConfigFile
-            print $FILEHANDLE q?], ?;
+            print {$FILEHANDLE} q?], ?;
         }
 
         if ( defined( $sample_info_href->{vcf_file}{research}{path} ) ) {
 
-            print $FILEHANDLE
+            print {$FILEHANDLE}
               q?"test research file" => [ ?; #Add test research file using alias
-            print $FILEHANDLE q?"?
+            print {$FILEHANDLE} q?"?
               . $sample_info_href->{vcf_file}{research}{path}
               . q?", ?;                      #Infile
-            print $FILEHANDLE q?"?
+            print {$FILEHANDLE} q?"?
               . $active_parameter_href->{config_file_analysis}
               . q?", ?;                      #ConfigFile
-            print $FILEHANDLE q?], ?;
+            print {$FILEHANDLE} q?], ?;
         }
         if ( defined( $sample_info_href->{sv_vcf_file}{clinical}{path} ) ) {
 
-            print $FILEHANDLE q?"test sv select file" => [ ?
+            print {$FILEHANDLE}
+              q?"test sv select file" => [ ?
               ;    #Add test for select file using alias
-            print $FILEHANDLE q?"?
+            print {$FILEHANDLE} q?"?
               . $sample_info_href->{vcf_file}{clinical}{path}
               . q?", ?;    #Infile
-            print $FILEHANDLE q?"?
+            print {$FILEHANDLE} q?"?
               . $active_parameter_href->{config_file_analysis}
               . q?", ?;    #ConfigFile
-            print $FILEHANDLE q?], ?;
+            print {$FILEHANDLE} q?], ?;
         }
 
         if ( defined( $sample_info_href->{sv_vcf_file}{research}{path} ) ) {
 
-            print $FILEHANDLE q?"test sv research file" => [ ?
+            print {$FILEHANDLE}
+              q?"test sv research file" => [ ?
               ;            #Add test research file using alias
-            print $FILEHANDLE q?"?
+            print {$FILEHANDLE} q?"?
               . $sample_info_href->{vcf_file}{research}{path}
               . q?", ?;    #Infile
-            print $FILEHANDLE q?"?
+            print {$FILEHANDLE} q?"?
               . $active_parameter_href->{config_file_analysis}
               . q?", ?;    #ConfigFile
-            print $FILEHANDLE q?], ?;
+            print {$FILEHANDLE} q?], ?;
         }
 
-        print $FILEHANDLE q?}); ?;
-        print $FILEHANDLE q?my $harness = TAP::Harness->new( \%args ); ?
+        print {$FILEHANDLE} q?}); ?;
+        print {$FILEHANDLE}
+          q?my $harness = TAP::Harness->new( \%args ); ?
           ;                #Create harness using arguments provided
-        print $FILEHANDLE q?$harness->runtests( ?;    #Execute test(s)
+        print {$FILEHANDLE} q?$harness->runtests( ?;    #Execute test(s)
 
         if ( defined( $sample_info_href->{vcf_file}{clinical}{path} ) ) {
 
-            print $FILEHANDLE q?["?
+            print {$FILEHANDLE} q?["?
               . catfile( $Bin, "t", "mip_analysis.t" )
               . q?", "test select file"], ?;
         }
 
         if ( defined( $sample_info_href->{vcf_file}{research}{path} ) ) {
 
-            print $FILEHANDLE q?["?
+            print {$FILEHANDLE} q?["?
               . catfile( $Bin, "t", "mip_analysis.t" )
               . q?", "test research file"], ?;
         }
         if ( defined( $sample_info_href->{sv_vcf_file}{clinical}{path} ) ) {
 
-            print $FILEHANDLE q?["?
+            print {$FILEHANDLE} q?["?
               . catfile( $Bin, "t", "mip_analysis.t" )
               . q?", "test sv select file"], ?;
         }
 
         if ( defined( $sample_info_href->{sv_vcf_file}{research}{path} ) ) {
 
-            print $FILEHANDLE q?["?
+            print {$FILEHANDLE} q?["?
               . catfile( $Bin, "t", "mip_analysis.t" )
               . q?", "test sv research file"], ?;
         }
-        print $FILEHANDLE q?)'?;
+        print {$FILEHANDLE} q?)'?;
         say $FILEHANDLE "\n";
     }
 
@@ -3386,7 +3464,7 @@ sub analysisrunstatus {
     say $FILEHANDLE "\t" . q?exit 1?;
     say $FILEHANDLE q?fi?, "\n";
 
-    close($FILEHANDLE);
+    close $FILEHANDLE;
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -3419,7 +3497,7 @@ sub removeredundantfiles {
 ##         : $program_name               => Program name
 ##         : $family_id_ref              => Family id {REF}
 ##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => The variant call type
+##         : $call_type                  => Variant call type
 
     my ($arg_href) = @_;
 
@@ -3444,42 +3522,42 @@ sub removeredundantfiles {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         lane_href => {
             required    => 1,
@@ -3492,20 +3570,20 @@ sub removeredundantfiles {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         call_type =>
-          { default => "BOTH", strict_type => 1, store => \$call_type },
+          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -3570,7 +3648,7 @@ sub removeredundantfiles {
             outaligner_dir_ref      => $outaligner_dir_ref,
         }
     );
-    close($FILEHANDLE);
+    close $FILEHANDLE;
 }
 
 sub mmultiqc {
@@ -3607,46 +3685,46 @@ sub mmultiqc {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
     };
 
@@ -3701,7 +3779,7 @@ sub mmultiqc {
         say $FILEHANDLE "\n";
     }
 
-    close($FILEHANDLE);
+    close $FILEHANDLE;
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -3730,7 +3808,7 @@ sub mqccollect {
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $program_name               => Program name
 ##         : $family_id_ref              => Family id {REF}
-##         : $call_type                  => The variant call type
+##         : $call_type                  => Variant call type
 
     my ($arg_href) = @_;
 
@@ -3752,49 +3830,49 @@ sub mqccollect {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         call_type =>
-          { default => "BOTH", strict_type => 1, store => \$call_type },
+          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -3848,7 +3926,7 @@ sub mqccollect {
     );
     say $FILEHANDLE "\n";
 
-    close($FILEHANDLE);
+    close $FILEHANDLE;
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -3867,501 +3945,6 @@ sub mqccollect {
         slurm_submit_chain_job_ids_dependency_add_to_path(
             {
                 job_id_href      => $job_id_href,
-                path             => $job_id_chain,
-                log              => $log,
-                sbatch_file_name => $file_path,
-            }
-        );
-    }
-}
-
-sub evaluation {
-
-##evaluation
-
-##Function : Compare metrics for this analysis run with the NIST reference dataset.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => File info hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $sample_id_ref              => Sample id {REF}
-##         : $program_name               => Program name
-##         : $family_id_ref              => Family id {REF}
-##         : $temp_directory_ref         => Temporary directory {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
-##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => The variant call type
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-    my $reference_dir_ref;
-    my $outaligner_dir_ref;
-    my $call_type;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $sample_id_ref;
-    my $program_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
-        },
-        sample_id_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$sample_id_ref
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref
-        },
-        reference_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{reference_dir},
-            strict_type => 1,
-            store       => \$reference_dir_ref
-        },
-        outaligner_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir_ref
-        },
-        call_type =>
-          { default => "BOTH", strict_type => 1, store => \$call_type },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::IO::Files qw(migrate_file);
-    use MIP::Gnu::Coreutils qw(gnu_cat);
-    use MIP::Language::Java qw{java_core};
-    use MIP::Program::Variantcalling::Gatk
-      qw(gatk_selectvariants gatk_leftalignandtrimvariants);
-    use MIP::Program::Variantcalling::Bcftools qw(bcftools_stats);
-    use Program::Interval::Picardtools qw(intervallisttools);
-    use Program::Variantcalling::Picardtools qw(genotypeconcordance);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_sample_id_dependency_family_dead_end);
-
-    my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
-
-    ## Filehandles
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $$family_id_ref,
-            program_name          => $program_name,
-            program_directory =>
-              catfile( $$outaligner_dir_ref, lc($program_name) ),
-            core_number => $active_parameter_href->{module_core_number}
-              { "p" . $program_name },
-            process_time =>
-              $active_parameter_href->{module_time}{ "p" . $program_name },
-            temp_directory => $$temp_directory_ref,
-            set_errexit => 0,    #Special case to allow "vcf.idx" to be created
-            error_trap  => 0,    #Special case to allow "vcf.idx" to be created
-        }
-    );
-
-    ## Assign directories
-    my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $$family_id_ref, $$outaligner_dir_ref );
-    my $outfamily_directory = catfile( $active_parameter_href->{outdata_dir},
-        $$family_id_ref, $$outaligner_dir_ref, lc($program_name) );
-    $parameter_href->{ "p" . $program_name }{indirectory} =
-      $outfamily_directory;      #Used downstream
-
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}
-      {file_tag};
-    my $infile_prefix = $$family_id_ref . $infile_tag . $call_type;
-    my $file_path_prefix = catfile( $$temp_directory_ref, $infile_prefix );
-    my $outfile_prefix =
-        $$family_id_ref . ".Vs."
-      . $active_parameter_href->{nist_id}
-      . "-NIST_genome";
-    my $outfile_path_prefix = catfile( $$temp_directory_ref, $outfile_prefix ),
-      my $call_file_path    = catfile( $$temp_directory_ref, $$family_id_ref );
-    my $nist_file_path = catfile( $$temp_directory_ref, "NIST" );
-
-    ## Copy file(s) to temporary directory
-    say $FILEHANDLE "## Copy file(s) to temporary directory";
-    migrate_file(
-        {
-            FILEHANDLE => $FILEHANDLE,
-            infile_path =>
-              catfile( $infamily_directory, $infile_prefix . q{.vcf*} ),
-            outfile_path => $$temp_directory_ref
-        }
-    );
-    say $FILEHANDLE q{wait}, "\n";
-
-    ## Rename vcf samples. The samples array will replace the sample names in the same order as supplied.
-    rename_vcf_samples(
-        {
-            sample_ids_ref => [ $active_parameter_href->{nist_id} . "-NIST" ],
-            temp_directory_ref => $temp_directory_ref,
-            infile  => $active_parameter_href->{nist_high_confidence_call_set},
-            outfile => $nist_file_path . "_refrm.vcf",
-            FILEHANDLE => $FILEHANDLE,
-        }
-    );
-
-    ## Modify since different ref genomes
-    say $FILEHANDLE "## Modify since different ref genomes";
-    print $FILEHANDLE
-      q?perl -nae 'unless($_=~/##contig=<ID=GL\d+/) {print $_}' ?;
-    print $FILEHANDLE $nist_file_path . "_refrm.vcf" . " ";     #Infile
-    print $FILEHANDLE "> " . $nist_file_path . ".vcf" . " ";    #Outfile
-    say $FILEHANDLE "\n";
-
-    ## BcfTools Stats
-    say $FILEHANDLE "## bcftools stats";
-    bcftools_stats(
-        {
-            infile_path  => $nist_file_path . ".vcf",
-            outfile_path => $nist_file_path . ".vcf.stats",
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE "\n";
-
-    ## Generate ".idx" for downstream Picard by failling this process
-    say $FILEHANDLE
-      "## Generate '.idx' for downstream Picard by failling this process";
-
-    gatk_selectvariants(
-        {
-            memory_allocation => "Xmx2g",
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory => $$temp_directory_ref,
-            java_jar       => catfile(
-                $active_parameter_href->{gatk_path},
-                "GenomeAnalysisTK.jar"
-            ),
-            sample_names_ref => [ $$sample_id_ref . "XXX " ],
-            logging_level    => $active_parameter_href->{gatk_logging_level},
-            referencefile_path =>
-              $active_parameter_href->{human_genome_reference},
-            infile_path  => $nist_file_path . ".vcf",
-            outfile_path => $nist_file_path . "XXX.vcf",
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE "\n";
-
-    ## Create .interval_list file from NIST union bed
-    say $FILEHANDLE "## Prepare .interval_list file from NIST union bed\n";
-
-    my $genome_dict_file_path = catfile( $$temp_directory_ref,
-        $file_info_href->{human_genome_reference_name_prefix} . ".dict" );
-    print $FILEHANDLE
-q?perl -nae 'unless($_=~/NC_007605/ || $_=~/hs37d5/ || $_=~/GL\d+/) {print $_}' ?;
-    print $FILEHANDLE catfile( $$reference_dir_ref,
-        $file_info_href->{human_genome_reference_name_prefix} . ".dict" )
-      . " ";
-    print $FILEHANDLE "> " . $genome_dict_file_path . " ";
-    say $FILEHANDLE "\n";
-
-    gnu_cat(
-        {
-            infile_paths_ref => [
-                $genome_dict_file_path,
-                $active_parameter_href->{nist_high_confidence_call_set_bed}
-            ],
-            outfile_path => $nist_file_path . ".bed.dict_body",
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE "\n";
-
-    say $FILEHANDLE
-      "## Remove target annotations, 'track', 'browse' and keep only 5 columns";
-    print $FILEHANDLE
-q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^browser/) {} else {print @F[0], "\t", (@F[1] + 1), "\t", @F[2], "\t", "+", "\t", "-", "\n";}' ?;
-    print $FILEHANDLE $nist_file_path . ".bed.dict_body" . " ";    #Infile
-    print $FILEHANDLE "> "
-      . $nist_file_path
-      . ".bed.dict_body_col_5.interval_list"
-      . " ";    #Remove unnecessary info and reformat
-    say $FILEHANDLE "\n";
-
-    say $FILEHANDLE "## Create "
-      . $active_parameter_href->{nist_high_confidence_call_set_bed}
-      . ".interval_list";
-    java_core(
-        {
-            FILEHANDLE        => $FILEHANDLE,
-            memory_allocation => "Xmx2g",
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory => $active_parameter_href->{temp_directory},
-            java_jar       => catfile(
-                $active_parameter_href->{picardtools_path}, "picard.jar"
-            ),
-        }
-    );
-
-    intervallisttools(
-        {
-            infile_paths_ref =>
-              [ $nist_file_path . ".bed.dict_body_col_5.interval_list" ],
-            outfile_path => $nist_file_path . ".bed.interval_list",
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE "\n";
-
-    ### MIP data
-    ## GATK SelectVariants
-    say $FILEHANDLE "## GATK SelectVariants";
-
-    gatk_selectvariants(
-        {
-            memory_allocation => "Xmx2g",
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory => $$temp_directory_ref,
-            java_jar       => catfile(
-                $active_parameter_href->{gatk_path},
-                "GenomeAnalysisTK.jar"
-            ),
-            sample_names_ref => [$$sample_id_ref],
-            logging_level    => $active_parameter_href->{gatk_logging_level},
-            referencefile_path =>
-              $active_parameter_href->{human_genome_reference},
-            infile_path         => $file_path_prefix . ".vcf",
-            outfile_path        => $call_file_path . ".vcf",
-            exclude_nonvariants => 1,
-            FILEHANDLE          => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE "\n";
-
-    ## Left align, trim and split allels
-    say $FILEHANDLE "## GATK LeftAlignAndTrimVariants";
-
-    gatk_leftalignandtrimvariants(
-        {
-            memory_allocation => "Xmx2g",
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory => $$temp_directory_ref,
-            java_jar       => catfile(
-                $active_parameter_href->{gatk_path},
-                "GenomeAnalysisTK.jar"
-            ),
-            infile_path   => $call_file_path . ".vcf",
-            logging_level => $active_parameter_href->{gatk_logging_level},
-            referencefile_path =>
-              $active_parameter_href->{human_genome_reference},
-            split_multiallelics => 1,
-            outfile_path        => $call_file_path . "_lts.vcf",
-            FILEHANDLE          => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE "\n";
-
-    ## Modify since different ref genomes
-    say $FILEHANDLE "## Modify since different ref genomes";
-    print $FILEHANDLE
-q?perl -nae 'unless($_=~/##contig=<ID=NC_007605,length=171823>/ || $_=~/##contig=<ID=hs37d5,length=35477943>/ || $_=~/##contig=<ID=GL\d+/) {print $_}' ?;
-    print $FILEHANDLE $call_file_path . "_lts.vcf" . " ";               #Infile
-    print $FILEHANDLE "> " . $call_file_path . "_lts_refrm.vcf" . " ";  #Outfile
-    say $FILEHANDLE "\n";
-
-    ## BcfTools Stats
-    say $FILEHANDLE "## bcftools stats";
-    bcftools_stats(
-        {
-            infile_path  => $call_file_path . "_lts_refrm.vcf",
-            outfile_path => $call_file_path . "_lts_refrm.vcf.stats",
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE "\n";
-
-    ## Generate ".idx" for downstream Picard by failling this process
-    say $FILEHANDLE
-      "## Generate '.idx' for downstream Picard by failling this process";
-
-    gatk_selectvariants(
-        {
-            memory_allocation => "Xmx2g",
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory => $$temp_directory_ref,
-            java_jar       => catfile(
-                $active_parameter_href->{gatk_path},
-                "GenomeAnalysisTK.jar"
-            ),
-            sample_names_ref => [ $$sample_id_ref . "XXX " ],
-            logging_level    => $active_parameter_href->{gatk_logging_level},
-            referencefile_path =>
-              $active_parameter_href->{human_genome_reference},
-            infile_path  => $call_file_path . "_lts_refrm.vcf",
-            outfile_path => $call_file_path . "XXX.vcf",
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE "\n";
-
-    say $FILEHANDLE
-"## Picard GenotypeConcordance - Genome restricted by union - good quality ";
-    java_core(
-        {
-            FILEHANDLE        => $FILEHANDLE,
-            memory_allocation => "Xmx2g",
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory => $active_parameter_href->{temp_directory},
-            java_jar       => catfile(
-                $active_parameter_href->{picardtools_path}, "picard.jar"
-            ),
-        }
-    );
-
-    genotypeconcordance(
-        {
-            intervals_ref        => [ $nist_file_path . ".bed.interval_list" ],
-            infile_path          => $call_file_path . "_lts_refrm.vcf",
-            truth_file_path      => $nist_file_path . ".vcf",
-            outfile_prefix_path  => $outfile_path_prefix . "_bed",
-            truth_sample         => $active_parameter_href->{nist_id} . "-NIST",
-            call_sample          => $$sample_id_ref,
-            min_genotype_quality => 20,
-            min_depth            => 10,
-            FILEHANDLE           => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE "\n";
-
-    say $FILEHANDLE "## Picard GenotypeConcordance - Genome - good quality ";
-    java_core(
-        {
-            FILEHANDLE        => $FILEHANDLE,
-            memory_allocation => "Xmx2g",
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory => $active_parameter_href->{temp_directory},
-            java_jar       => catfile(
-                $active_parameter_href->{picardtools_path}, "picard.jar"
-            ),
-        }
-    );
-
-    genotypeconcordance(
-        {
-            infile_path          => $call_file_path . "_lts_refrm.vcf",
-            truth_file_path      => $nist_file_path . ".vcf",
-            outfile_prefix_path  => $outfile_path_prefix,
-            truth_sample         => $active_parameter_href->{nist_id} . "-NIST",
-            call_sample          => $$sample_id_ref,
-            min_genotype_quality => 20,
-            min_depth            => 10,
-            FILEHANDLE           => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE "\n";
-
-    ## Copies file from temporary directory.
-    say $FILEHANDLE "## Copy file from temporary directory";
-    my @outfiles = ( $outfile_prefix . "*", "*vcf.stats" );
-    foreach my $outfile (@outfiles) {
-
-        migrate_file(
-            {
-                infile_path  => catfile( $$temp_directory_ref, $outfile ),
-                outfile_path => $outfamily_directory,
-                FILEHANDLE   => $FILEHANDLE,
-            }
-        );
-    }
-    say $FILEHANDLE q{wait}, "\n";
-
-    close($FILEHANDLE);
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        slurm_submit_job_sample_id_dependency_family_dead_end(
-            {
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                family_id        => $$family_id_ref,
                 path             => $job_id_chain,
                 log              => $log,
                 sbatch_file_name => $file_path,
@@ -4391,7 +3974,7 @@ sub endvariantannotationblock {
 ##         : $temp_directory_ref         => Temporary directory {REF}
 ##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => The variant call type
+##         : $call_type                  => Variant call type
 ##         : $xargs_file_counter         => The xargs file counter
 
     my ($arg_href) = @_;
@@ -4422,74 +4005,74 @@ sub endvariantannotationblock {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         program_info_path => { strict_type => 1, store => \$program_info_path },
         file_path         => { strict_type => 1, store => \$file_path },
-        FILEHANDLE    => { store => \$FILEHANDLE },
+        FILEHANDLE    => { store => \$FILEHANDLE, },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
         reference_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{reference_dir},
             strict_type => 1,
-            store       => \$reference_dir_ref
+            store       => \$reference_dir_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         call_type =>
-          { default => "BOTH", strict_type => 1, store => \$call_type },
+          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
         xargs_file_counter => {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
@@ -4622,7 +4205,7 @@ sub endvariantannotationblock {
         if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
             ## Copy file(s) to temporary directory
-            say $FILEHANDLE "## Copy file(s) to temporary directory";
+            say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
             $xargs_file_counter = xargs_migrate_contig_files(
                 {
                     FILEHANDLE         => $FILEHANDLE,
@@ -4678,7 +4261,7 @@ sub endvariantannotationblock {
                     FILEHANDLE   => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE "\n";
+            say {$FILEHANDLE} "\n";
 
             if ( $vcfparser_outfile_counter == 1 ) {
 
@@ -4700,7 +4283,7 @@ sub endvariantannotationblock {
             }
 
             ## Copies file from temporary directory.
-            say $FILEHANDLE "## Copy file from temporary directory";
+            say {$FILEHANDLE} q{## Copy file from temporary directory};
             migrate_file(
                 {
                     infile_path => $outfile_path_prefix
@@ -4711,7 +4294,7 @@ sub endvariantannotationblock {
                     FILEHANDLE   => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE q{wait}, "\n";
+            say {$FILEHANDLE} q{wait}, "\n";
         }
 
         if ( $active_parameter_href->{rankvariant_binary_file} ) {
@@ -4729,7 +4312,7 @@ sub endvariantannotationblock {
                     write_to_stdout => 1,
                 }
             );
-            say $FILEHANDLE "\n";
+            say {$FILEHANDLE} "\n";
 
             ## Index file using tabix
             tabix(
@@ -4742,11 +4325,11 @@ sub endvariantannotationblock {
                     preset => substr( $outfile_suffix, 1 ),
                 }
             );
-            say $FILEHANDLE "\n";
+            say {$FILEHANDLE} "\n";
         }
 
         ## Copies file from temporary directory.
-        say $FILEHANDLE "## Copy file from temporary directory";
+        say {$FILEHANDLE} q{## Copy file from temporary directory};
         migrate_file(
             {
                 infile_path => $outfile_path_prefix
@@ -4756,7 +4339,7 @@ sub endvariantannotationblock {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE q{wait}, "\n";
+        say {$FILEHANDLE} q{wait}, "\n";
 
         ## Adds the most complete vcf file to sample_info
         add_most_complete_vcf(
@@ -4824,7 +4407,7 @@ sub endvariantannotationblock {
         }
     }
 
-    close($FILEHANDLE);
+    close $FILEHANDLE;
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -4868,7 +4451,7 @@ sub rankvariant {
 ##         : $family_id_ref              => Family id {REF}
 ##         : $temp_directory_ref         => Temporary directory {REF}
 ##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => The variant call type
+##         : $call_type                  => Variant call type
 ##         : $xargs_file_counter         => The xargs file counter
 
     my ($arg_href) = @_;
@@ -4898,69 +4481,69 @@ sub rankvariant {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         program_info_path => { strict_type => 1, store => \$program_info_path },
         file_path         => { strict_type => 1, store => \$file_path },
-        FILEHANDLE    => { store => \$FILEHANDLE },
+        FILEHANDLE    => { store => \$FILEHANDLE, },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         call_type =>
-          { default => "BOTH", strict_type => 1, store => \$call_type },
+          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
         xargs_file_counter => {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
@@ -5134,7 +4717,7 @@ sub rankvariant {
         if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
             ## Copy file(s) to temporary directory
-            say $FILEHANDLE "## Copy file(s) to temporary directory";
+            say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
             $xargs_file_counter = xargs_migrate_contig_files(
                 {
                     FILEHANDLE         => $FILEHANDLE,
@@ -5154,7 +4737,7 @@ sub rankvariant {
         }
 
         ## Genmod
-        say $FILEHANDLE "## GeneMod";
+        say {$FILEHANDLE} "## GeneMod";
 
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
@@ -5334,7 +4917,7 @@ sub rankvariant {
         if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
             ## Copies file from temporary directory. Per contig
-            say $FILEHANDLE "## Copy file from temporary directory";
+            say {$FILEHANDLE} q{## Copy file from temporary directory};
             ($xargs_file_counter) = xargs_migrate_contig_files(
                 {
                     FILEHANDLE        => $FILEHANDLE,
@@ -5365,7 +4948,7 @@ sub rankvariant {
                     FILEHANDLE   => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE q{wait}, "\n";
+            say {$FILEHANDLE} q{wait}, "\n";
         }
 
         if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
@@ -5410,7 +4993,7 @@ sub rankvariant {
     }
     if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
-        close($FILEHANDLE);
+        close $FILEHANDLE;
 
         if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -5454,7 +5037,7 @@ sub gatk_variantevalexome {
 ##         : $family_id_ref              => Family id {REF}
 ##         : $temp_directory_ref         => Temporary directory {REF}
 ##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => The variant call type
+##         : $call_type                  => Variant call type
 
     my ($arg_href) = @_;
 
@@ -5480,42 +5063,42 @@ sub gatk_variantevalexome {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         sample_id_ref => {
             required    => 1,
@@ -5528,25 +5111,25 @@ sub gatk_variantevalexome {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         call_type =>
-          { default => "BOTH", strict_type => 1, store => \$call_type },
+          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -5637,7 +5220,7 @@ sub gatk_variantevalexome {
       q?perl -ne ' if ( ($_=~/exonic/) || ($_=~/splicing/) ) {print $_;}' ?;
 
     ## Copy file(s) to temporary directory
-    say $FILEHANDLE "## Copy file(s) to temporary directory";
+    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
     migrate_file(
         {
             FILEHANDLE  => $FILEHANDLE,
@@ -5648,12 +5231,12 @@ sub gatk_variantevalexome {
         }
     );
 
-    say $FILEHANDLE q{wait}, "\n";
+    say {$FILEHANDLE} q{wait}, "\n";
 
     ## Select sample id from family id vcf file
 
     ## GATK SelectVariants
-    say $FILEHANDLE "## GATK SelectVariants";
+    say {$FILEHANDLE} "## GATK SelectVariants";
 
     gatk_selectvariants(
         {
@@ -5676,7 +5259,7 @@ sub gatk_variantevalexome {
             FILEHANDLE => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "\n";
+    say {$FILEHANDLE} "\n";
 
     ## Update file_tags
     $infile_tag    = $file_info_href->{$$family_id_ref}{prankvariant}{file_tag};
@@ -5684,7 +5267,7 @@ sub gatk_variantevalexome {
     $file_path_prefix = catfile( $$temp_directory_ref, $infile_prefix );
 
     ## Copy file(s) to temporary directory
-    say $FILEHANDLE "## Copy file(s) to temporary directory";
+    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
     migrate_file(
         {
             FILEHANDLE  => $FILEHANDLE,
@@ -5694,13 +5277,13 @@ sub gatk_variantevalexome {
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say {$FILEHANDLE} q{wait}, "\n";
 
     ## Extract exonic variants
-    say $FILEHANDLE "## Extract exonic variants";
-    print $FILEHANDLE $extract_exonic_regexp;
-    print $FILEHANDLE $file_path_prefix . $infile_suffix . " ";    #InFile
-    say $FILEHANDLE "> "
+    say   {$FILEHANDLE} "## Extract exonic variants";
+    print {$FILEHANDLE} $extract_exonic_regexp;
+    print {$FILEHANDLE} $file_path_prefix . $infile_suffix . " ";    #InFile
+    say   {$FILEHANDLE} "> "
       . catfile(
         $$temp_directory_ref,
         $$sample_id_ref
@@ -5709,7 +5292,7 @@ sub gatk_variantevalexome {
           . "_exonic_variants"
           . $infile_suffix
       ),
-      "\n";                                                        #OutFile
+      "\n";                                                          #OutFile
 
     ## Include potential select file variants
     if ( $active_parameter_href->{vcfparser_outfile_count} == 2 ) {
@@ -5717,7 +5300,7 @@ sub gatk_variantevalexome {
         my $vcfparser_analysis_type = ".selected";    #SelectFile variants
 
         ## Copy file(s) to temporary directory
-        say $FILEHANDLE "## Copy file(s) to temporary directory";
+        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
         migrate_file(
             {
                 FILEHANDLE  => $FILEHANDLE,
@@ -5730,16 +5313,16 @@ sub gatk_variantevalexome {
                 outfile_path => $$temp_directory_ref
             }
         );
-        say $FILEHANDLE q{wait}, "\n";
+        say {$FILEHANDLE} q{wait}, "\n";
 
         ## Extract exonic variants
-        say $FILEHANDLE "## Extract exonic variants";
-        print $FILEHANDLE $extract_exonic_regexp;
-        print $FILEHANDLE $file_path_prefix
+        say   {$FILEHANDLE} "## Extract exonic variants";
+        print {$FILEHANDLE} $extract_exonic_regexp;
+        print {$FILEHANDLE} $file_path_prefix
           . $vcfparser_analysis_type
           . $infile_suffix
           . " ";    #InFile
-        say $FILEHANDLE "> "
+        say {$FILEHANDLE} "> "
           . catfile(
             $$temp_directory_ref,
             $$sample_id_ref
@@ -5752,7 +5335,7 @@ sub gatk_variantevalexome {
           "\n";     #OutFile
 
         ## Merge orphans and selectfiles
-        say $FILEHANDLE "## Merge orphans and selectfile(s)";
+        say {$FILEHANDLE} "## Merge orphans and selectfile(s)";
         gnu_cat(
             {
                 infile_paths_ref => [
@@ -5785,10 +5368,10 @@ sub gatk_variantevalexome {
                 FILEHANDLE => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "\n";
+        say {$FILEHANDLE} "\n";
 
         ## Sort combined file
-        say $FILEHANDLE "## Sort combined file";
+        say {$FILEHANDLE} "## Sort combined file";
         gnu_sort(
             {
                 keys_ref    => [ "1,1", "2,2n" ],
@@ -5811,12 +5394,12 @@ sub gatk_variantevalexome {
                 FILEHANDLE => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "\n";
+        say {$FILEHANDLE} "\n";
     }
 
-    print $FILEHANDLE q?perl -ne ' if ($_=~/^#/) {print $_;}' ?;
-    print $FILEHANDLE $file_path_prefix . $infile_suffix . " ";    #InFile
-    print $FILEHANDLE "| ";                                        #Pipe
+    print {$FILEHANDLE} q?perl -ne ' if ($_=~/^#/) {print $_;}' ?;
+    print {$FILEHANDLE} $file_path_prefix . $infile_suffix . " ";    #InFile
+    print {$FILEHANDLE} "| ";                                        #Pipe
     gnu_cat(
         {
             infile_paths_ref => [
@@ -5841,10 +5424,10 @@ sub gatk_variantevalexome {
             FILEHANDLE => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "\n";
+    say {$FILEHANDLE} "\n";
 
     ## Intersect exonic variants from created sample_id vcf file (required for gatk_varianteval for exonic variants)
-    say $FILEHANDLE
+    say {$FILEHANDLE}
       "## Intersect exonic variants from created sample_id vcf file";
     intersectbed(
         {
@@ -5867,10 +5450,10 @@ sub gatk_variantevalexome {
             FILEHANDLE => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "\n";
+    say {$FILEHANDLE} "\n";
 
     ## VariantEval
-    say $FILEHANDLE "## GATK varianteval";
+    say {$FILEHANDLE} "## GATK varianteval";
 
     gatk_varianteval(
         {
@@ -5897,10 +5480,10 @@ sub gatk_variantevalexome {
             FILEHANDLE => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "\n";
+    say {$FILEHANDLE} "\n";
 
     ## Copies file from temporary directory.
-    say $FILEHANDLE "## Copy file from temporary directory";
+    say {$FILEHANDLE} q{## Copy file from temporary directory};
     migrate_file(
         {
             infile_path => $outfile_path_prefix
@@ -5911,7 +5494,7 @@ sub gatk_variantevalexome {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say {$FILEHANDLE} q{wait}, "\n";
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -5929,7 +5512,7 @@ sub gatk_variantevalexome {
             }
         );
     }
-    close($FILEHANDLE);
+    close $FILEHANDLE;
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -5987,42 +5570,42 @@ sub gatk_variantevalall {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         sample_id_ref => {
             required    => 1,
@@ -6035,25 +5618,25 @@ sub gatk_variantevalall {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         call_type =>
-          { default => "BOTH", strict_type => 1, store => \$call_type },
+          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -6141,7 +5724,7 @@ sub gatk_variantevalall {
     );
 
     ## Copy file(s) to temporary directory
-    say $FILEHANDLE "## Copy file(s) to temporary directory";
+    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
     migrate_file(
         {
             FILEHANDLE  => $FILEHANDLE,
@@ -6151,12 +5734,12 @@ sub gatk_variantevalall {
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say {$FILEHANDLE} q{wait}, "\n";
 
     ## Select sample id from family id vcf file
 
     ## GATK SelectVariants
-    say $FILEHANDLE "## GATK SelectVariants";
+    say {$FILEHANDLE} "## GATK SelectVariants";
 
     gatk_selectvariants(
         {
@@ -6177,10 +5760,10 @@ sub gatk_variantevalall {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "\n";
+    say {$FILEHANDLE} "\n";
 
     ## GATK varianteval
-    say $FILEHANDLE "## GATK varianteval";
+    say {$FILEHANDLE} "## GATK varianteval";
 
     gatk_varianteval(
         {
@@ -6211,10 +5794,10 @@ sub gatk_variantevalall {
             FILEHANDLE => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "\n";
+    say {$FILEHANDLE} "\n";
 
     ## Copies file from temporary directory.
-    say $FILEHANDLE "## Copy file from temporary directory";
+    say {$FILEHANDLE} q{## Copy file from temporary directory};
     migrate_file(
         {
             infile_path  => $outfile_path_prefix . $call_type . $outfile_suffix,
@@ -6222,7 +5805,7 @@ sub gatk_variantevalall {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say {$FILEHANDLE} q{wait}, "\n";
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -6238,7 +5821,7 @@ sub gatk_variantevalall {
             }
         );
     }
-    close($FILEHANDLE);
+    close $FILEHANDLE;
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -6276,7 +5859,7 @@ sub snpeff {
 ##         : $family_id_ref              => Family id {REF}
 ##         : $temp_directory_ref         => Temporary directory {REF}
 ##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => The variant call type
+##         : $call_type                  => Variant call type
 
     my ($arg_href) = @_;
 
@@ -6305,69 +5888,69 @@ sub snpeff {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         program_info_path => { strict_type => 1, store => \$program_info_path },
         file_path         => { strict_type => 1, store => \$file_path },
-        FILEHANDLE    => { store => \$FILEHANDLE },
+        FILEHANDLE    => { store => \$FILEHANDLE, },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         call_type =>
-          { default => "BOTH", strict_type => 1, store => \$call_type },
+          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
         xargs_file_counter => {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
@@ -6490,7 +6073,7 @@ sub snpeff {
         if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
             ## Copy file(s) to temporary directory
-            say $FILEHANDLE "## Copy file(s) to temporary directory";
+            say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
             ($xargs_file_counter) = xargs_migrate_contig_files(
                 {
                     FILEHANDLE         => $FILEHANDLE,
@@ -6510,7 +6093,7 @@ sub snpeff {
         }
 
         ## SnpSift Annotation
-        say $FILEHANDLE "## SnpSift Annotation";
+        say {$FILEHANDLE} "## SnpSift Annotation";
 
         my $annotation_file_counter = 0;
 
@@ -6667,7 +6250,7 @@ sub snpeff {
         if ( @{ $active_parameter_href->{snpsift_dbnsfp_annotations} } ) {
 
             ## SnpSiftDbNSFP Annotation
-            say $FILEHANDLE "## SnpSiftDnNSFP Annotation";
+            say {$FILEHANDLE} "## SnpSiftDnNSFP Annotation";
 
             ## Create file commands for xargs
             ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
@@ -6729,7 +6312,7 @@ sub snpeff {
         }
 
         ## Add INFO headers and FIX_INFO for annotations using vcfparser
-        say $FILEHANDLE
+        say {$FILEHANDLE}
           "## Add INFO headers and FIX_INFO for annotations using vcfparser";
 
         ## Create file commands for xargs
@@ -6772,7 +6355,7 @@ sub snpeff {
         if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
             ## Copies file from temporary directory. Per contig
-            say $FILEHANDLE "## Copy file from temporary directory";
+            say {$FILEHANDLE} q{## Copy file from temporary directory};
             ($xargs_file_counter) = xargs_migrate_contig_files(
                 {
                     FILEHANDLE        => $FILEHANDLE,
@@ -6803,7 +6386,7 @@ sub snpeff {
                     FILEHANDLE   => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE q{wait}, "\n";
+            say {$FILEHANDLE} q{wait}, "\n";
         }
     }
 
@@ -6827,7 +6410,7 @@ sub snpeff {
 
     if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
-        close($FILEHANDLE);
+        close $FILEHANDLE;
 
         if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -6873,7 +6456,7 @@ sub mvcfparser {
 ##         : $family_id_ref              => Family id {REF}
 ##         : $temp_directory_ref         => Temporary directory {REF}
 ##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => The variant call type
+##         : $call_type                  => Variant call type
 ##         : $xargs_file_counter         => The xargs file counter
 
     my ($arg_href) = @_;
@@ -6903,69 +6486,69 @@ sub mvcfparser {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         program_info_path => { strict_type => 1, store => \$program_info_path },
         file_path         => { strict_type => 1, store => \$file_path },
-        FILEHANDLE    => { store => \$FILEHANDLE },
+        FILEHANDLE    => { store => \$FILEHANDLE, },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         call_type =>
-          { default => "BOTH", strict_type => 1, store => \$call_type },
+          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
         xargs_file_counter => {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
@@ -7067,7 +6650,7 @@ sub mvcfparser {
     if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
         ## Copy file(s) to temporary directory
-        say $FILEHANDLE "## Copy file(s) to temporary directory";
+        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
         ($xargs_file_counter) = xargs_migrate_contig_files(
             {
                 FILEHANDLE      => $FILEHANDLE,
@@ -7085,7 +6668,7 @@ sub mvcfparser {
     }
 
     ## vcfparser
-    say $FILEHANDLE "## vcfparser";
+    say {$FILEHANDLE} "## vcfparser";
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
@@ -7198,7 +6781,7 @@ sub mvcfparser {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say {$FILEHANDLE} q{wait}, "\n";
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -7267,7 +6850,7 @@ sub mvcfparser {
             }
 
             ## Copies file from temporary directory.
-            say $FILEHANDLE "## Copy file(s) from temporary directory";
+            say {$FILEHANDLE} "## Copy file(s) from temporary directory";
             ($xargs_file_counter) = xargs_migrate_contig_files(
                 {
                     FILEHANDLE         => $FILEHANDLE,
@@ -7285,7 +6868,7 @@ sub mvcfparser {
                 }
             );
         }
-        close($FILEHANDLE);
+        close $FILEHANDLE;
     }
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
@@ -7331,7 +6914,7 @@ sub mpeddy {
 ##         : $family_id_ref              => Family id {REF}
 ##         : $temp_directory_ref         => Temporary directory {REF}
 ##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => The variant call type
+##         : $call_type                  => Variant call type
 
     my ($arg_href) = @_;
 
@@ -7356,66 +6939,66 @@ sub mpeddy {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         call_type =>
-          { default => "BOTH", strict_type => 1, store => \$call_type },
+          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -7505,7 +7088,7 @@ sub mpeddy {
     );
 
     ## Copy file(s) to temporary directory
-    say $FILEHANDLE "## Copy file(s) to temporary directory";
+    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
     migrate_file(
         {
             FILEHANDLE  => $FILEHANDLE,
@@ -7515,7 +7098,7 @@ sub mpeddy {
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say {$FILEHANDLE} q{wait}, "\n";
 
     ## Reformat variant calling file and index
     view_vcf(
@@ -7538,7 +7121,7 @@ sub mpeddy {
             FILEHANDLE          => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "\n";
+    say {$FILEHANDLE} "\n";
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -7564,7 +7147,7 @@ sub mpeddy {
         }
     }
 
-    close($FILEHANDLE);
+    close $FILEHANDLE;
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -7599,7 +7182,7 @@ sub mplink {
 ##         : $family_id_ref              => Family id {REF}
 ##         : $temp_directory_ref         => Temporary directory {REF}
 ##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => The variant call type
+##         : $call_type                  => Variant call type
 
     my ($arg_href) = @_;
 
@@ -7624,66 +7207,66 @@ sub mplink {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         call_type =>
-          { default => "BOTH", strict_type => 1, store => \$call_type },
+          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -7773,7 +7356,7 @@ sub mplink {
     );
 
     ## Copy file(s) to temporary directory
-    say $FILEHANDLE "## Copy file(s) to temporary directory";
+    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
     migrate_file(
         {
             FILEHANDLE  => $FILEHANDLE,
@@ -7783,10 +7366,10 @@ sub mplink {
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say {$FILEHANDLE} q{wait}, "\n";
 
     ## Prepare input
-    say $FILEHANDLE "## Remove indels using bcftools ";
+    say {$FILEHANDLE} "## Remove indels using bcftools ";
     bcftools_view(
         {
             infile_path  => $file_path_prefix . $infile_suffix,
@@ -7796,9 +7379,9 @@ sub mplink {
             FILEHANDLE        => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "\n";
+    say {$FILEHANDLE} "\n";
 
-    say $FILEHANDLE "## Create uniq IDs and remove duplicate variants";
+    say {$FILEHANDLE} "## Create uniq IDs and remove duplicate variants";
     bcftools_annotate(
         {
             remove_ids_ref => ["ID"],
@@ -7809,7 +7392,7 @@ sub mplink {
         }
     );
 
-    print $FILEHANDLE "| ";    #Pipe
+    print {$FILEHANDLE} "| ";    #Pipe
 
     ## Drops duplicate variants that appear later in the the VCF file
     Program::Variantcalling::Vt::vt_uniq(
@@ -7821,10 +7404,10 @@ sub mplink {
             FILEHANDLE => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "\n";
+    say {$FILEHANDLE} "\n";
 
     ### Plink
-    say $FILEHANDLE "## Create pruning set and uniq IDs";
+    say {$FILEHANDLE} "## Create pruning set and uniq IDs";
     plink(
         {
             vcffile_path => $file_path_prefix
@@ -7846,9 +7429,9 @@ sub mplink {
             FILEHANDLE          => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "\n";
+    say {$FILEHANDLE} "\n";
 
-    say $FILEHANDLE
+    say {$FILEHANDLE}
       "## Update Plink fam. Create ped and map file and frequency report";
     plink(
         {
@@ -7863,12 +7446,12 @@ sub mplink {
             FILEHANDLE => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "\n";
+    say {$FILEHANDLE} "\n";
 
     # Only perform if more than 1 sample
     if ( scalar( @{ $active_parameter_href->{sample_ids} } ) > 1 ) {
 
-        say $FILEHANDLE "## Calculate inbreeding coefficients per family";
+        say {$FILEHANDLE} "## Calculate inbreeding coefficients per family";
         plink(
             {
                 binary_fileset_prefix =>
@@ -7884,9 +7467,9 @@ sub mplink {
                 FILEHANDLE => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "\n";
+        say {$FILEHANDLE} "\n";
 
-        say $FILEHANDLE "## Create Plink .mibs per family";
+        say {$FILEHANDLE} "## Create Plink .mibs per family";
         plink(
             {
                 ped_file_path => catfile(
@@ -7902,7 +7485,7 @@ sub mplink {
                 FILEHANDLE => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "\n";
+        say {$FILEHANDLE} "\n";
     }
 
     ### Plink sex-check
@@ -7931,7 +7514,7 @@ sub mplink {
             FILEHANDLE => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "\n";
+    say {$FILEHANDLE} "\n";
 
     ##Get parameters
     my $sex_check_min_F;
@@ -7961,7 +7544,7 @@ sub mplink {
             FILEHANDLE     => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "\n";
+    say {$FILEHANDLE} "\n";
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -8010,7 +7593,7 @@ sub mplink {
         );
     }
 
-    close($FILEHANDLE);
+    close $FILEHANDLE;
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -8049,7 +7632,7 @@ sub vt {
 ##         : $family_id_ref              => Family id {REF}
 ##         : $temp_directory_ref         => Temporary directory {REF}
 ##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => The variant call type
+##         : $call_type                  => Variant call type
 ##         : $xargs_file_counter         => The xargs file counter
 
     my ($arg_href) = @_;
@@ -8080,70 +7663,70 @@ sub vt {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         program_info_path => { strict_type => 1, store => \$program_info_path },
         file_path         => { strict_type => 1, store => \$file_path },
         stderr_path       => { strict_type => 1, store => \$stderr_path },
-        FILEHANDLE    => { store => \$FILEHANDLE },
+        FILEHANDLE    => { store => \$FILEHANDLE, },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         call_type =>
-          { default => "BOTH", strict_type => 1, store => \$call_type },
+          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
         xargs_file_counter => {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
@@ -8255,7 +7838,7 @@ sub vt {
     if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
         ## Copy file(s) to temporary directory
-        say $FILEHANDLE "## Copy file(s) to temporary directory";
+        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
         ($xargs_file_counter) = xargs_migrate_contig_files(
             {
                 FILEHANDLE      => $FILEHANDLE,
@@ -8272,7 +7855,7 @@ sub vt {
         );
     }
 
-    say $FILEHANDLE
+    say {$FILEHANDLE}
 "## vt - Decompose (split multi allelic records into single records) and/or normalize variants";
 
     ## Create file commands for xargs
@@ -8426,7 +8009,7 @@ sub vt {
     if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
         ## Copies file from temporary directory.
-        say $FILEHANDLE "## Copy file from temporary directory";
+        say {$FILEHANDLE} q{## Copy file from temporary directory};
         migrate_file(
             {
                 infile_path => $outfile_path_prefix . q{_*}
@@ -8435,9 +8018,9 @@ sub vt {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE q{wait}, "\n";
+        say {$FILEHANDLE} q{wait}, "\n";
 
-        close($FILEHANDLE);
+        close $FILEHANDLE;
     }
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -8486,7 +8069,7 @@ sub rhocall {
 ##         : $family_id_ref              => Family id {REF}
 ##         : $temp_directory_ref         => Temporary directory {REF}
 ##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => The variant call type
+##         : $call_type                  => Variant call type
 ##         : $xargs_file_counter         => The xargs file counter
 
     my ($arg_href) = @_;
@@ -8517,70 +8100,70 @@ sub rhocall {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         program_info_path => { strict_type => 1, store => \$program_info_path },
         file_path         => { strict_type => 1, store => \$file_path },
         stderr_path       => { strict_type => 1, store => \$stderr_path },
-        FILEHANDLE    => { store => \$FILEHANDLE },
+        FILEHANDLE    => { store => \$FILEHANDLE, },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         call_type =>
-          { default => "BOTH", strict_type => 1, store => \$call_type },
+          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
         xargs_file_counter => {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
@@ -8689,7 +8272,7 @@ sub rhocall {
     if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
         ## Copy file(s) to temporary directory
-        say $FILEHANDLE "## Copy file(s) to temporary directory";
+        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
         ($xargs_file_counter) = xargs_migrate_contig_files(
             {
                 FILEHANDLE      => $FILEHANDLE,
@@ -8706,7 +8289,7 @@ sub rhocall {
         );
     }
 
-    say $FILEHANDLE "## bcftools rho calculation";
+    say {$FILEHANDLE} "## bcftools rho calculation";
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
@@ -8771,7 +8354,7 @@ sub rhocall {
     if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
         ## Copies file from temporary directory.
-        say $FILEHANDLE "## Copy file from temporary directory";
+        say {$FILEHANDLE} q{## Copy file from temporary directory};
         migrate_file(
             {
                 infile_path => $outfile_path_prefix . q{_*}
@@ -8780,9 +8363,9 @@ sub rhocall {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE q{wait}, "\n";
+        say {$FILEHANDLE} q{wait}, "\n";
 
-        close($FILEHANDLE);
+        close $FILEHANDLE;
     }
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -8831,7 +8414,7 @@ sub prepareforvariantannotationblock {
 ##         : $family_id_ref              => Family id {REF}
 ##         : $temp_directory_ref         => Temporary directory {REF}
 ##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => The variant call type
+##         : $call_type                  => Variant call type
 ##         : $xargs_file_counter         => The xargs file counter
 
     my ($arg_href) = @_;
@@ -8862,70 +8445,70 @@ sub prepareforvariantannotationblock {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         program_info_path => { strict_type => 1, store => \$program_info_path },
         file_path         => { strict_type => 1, store => \$file_path },
         stderr_path       => { strict_type => 1, store => \$stderr_path },
-        FILEHANDLE    => { store => \$FILEHANDLE },
+        FILEHANDLE    => { store => \$FILEHANDLE, },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         call_type =>
-          { default => "BOTH", strict_type => 1, store => \$call_type },
+          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
         xargs_file_counter => {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
@@ -9027,7 +8610,7 @@ sub prepareforvariantannotationblock {
     );
 
     ## Copy file(s) to temporary directory
-    say $FILEHANDLE "## Copy file(s) to temporary directory";
+    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
     migrate_file(
         {
             FILEHANDLE  => $FILEHANDLE,
@@ -9037,7 +8620,7 @@ sub prepareforvariantannotationblock {
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say {$FILEHANDLE} q{wait}, "\n";
 
     ## Compress or decompress original file or stream to outfile (if supplied)
     bgzip(
@@ -9048,7 +8631,7 @@ sub prepareforvariantannotationblock {
             write_to_stdout => 1,
         }
     );
-    say $FILEHANDLE "\n";
+    say {$FILEHANDLE} "\n";
 
     ## Index file using tabix
     tabix(
@@ -9059,7 +8642,7 @@ sub prepareforvariantannotationblock {
             preset      => "vcf",
         }
     );
-    say $FILEHANDLE "\n";
+    say {$FILEHANDLE} "\n";
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
@@ -9114,7 +8697,7 @@ sub prepareforvariantannotationblock {
     if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
         ## Copies file from temporary directory.
-        say $FILEHANDLE "## Copy file from temporary directory";
+        say {$FILEHANDLE} q{## Copy file from temporary directory};
         migrate_file(
             {
                 infile_path => $file_path_prefix . q{_*}
@@ -9123,9 +8706,9 @@ sub prepareforvariantannotationblock {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE q{wait}, "\n";
+        say {$FILEHANDLE} q{wait}, "\n";
 
-        close($FILEHANDLE);
+        close $FILEHANDLE;
     }
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -9170,7 +8753,7 @@ sub gatk_combinevariantcallsets {
 ##         : $family_id_ref              => Family id {REF}
 ##         : $temp_directory_ref         => Temporary directory {REF}
 ##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => The variant call type
+##         : $call_type                  => Variant call type
 
     my ($arg_href) = @_;
 
@@ -9195,66 +8778,66 @@ sub gatk_combinevariantcallsets {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         call_type =>
-          { default => "BOTH", strict_type => 1, store => \$call_type },
+          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -9368,7 +8951,7 @@ sub gatk_combinevariantcallsets {
             }
 
             ## Copy file(s) to temporary directory
-            say $FILEHANDLE "## Copy file(s) to temporary directory";
+            say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
             migrate_file(
                 {
                     FILEHANDLE  => $FILEHANDLE,
@@ -9381,10 +8964,10 @@ sub gatk_combinevariantcallsets {
             );
         }
     }
-    say $FILEHANDLE q{wait}, "\n";
+    say {$FILEHANDLE} q{wait}, "\n";
 
     ## GATK CombineVariants
-    say $FILEHANDLE "## GATK CombineVariants";
+    say {$FILEHANDLE} "## GATK CombineVariants";
 
     gatk_combinevariants(
         {
@@ -9409,7 +8992,7 @@ sub gatk_combinevariantcallsets {
             FILEHANDLE          => $FILEHANDLE
         }
     );
-    say $FILEHANDLE "\n";
+    say {$FILEHANDLE} "\n";
 
     if ( $active_parameter_href->{gatk_combinevariantcallsets_bcf_file} ) {
 
@@ -9424,7 +9007,7 @@ sub gatk_combinevariantcallsets {
         );
 
         ## Copies file from temporary directory.
-        say $FILEHANDLE "## Copy file from temporary directory";
+        say {$FILEHANDLE} q{## Copy file from temporary directory};
         migrate_file(
             {
                 infile_path  => $outfile_path_prefix . q{.bcf*},
@@ -9435,7 +9018,7 @@ sub gatk_combinevariantcallsets {
     }
 
     ## Copies file from temporary directory.
-    say $FILEHANDLE "## Copy file from temporary directory";
+    say {$FILEHANDLE} q{## Copy file from temporary directory};
     migrate_file(
         {
             infile_path  => $outfile_path_prefix . $outfile_suffix,
@@ -9443,9 +9026,9 @@ sub gatk_combinevariantcallsets {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say {$FILEHANDLE} q{wait}, "\n";
 
-    close($FILEHANDLE);
+    close $FILEHANDLE;
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -9490,7 +9073,7 @@ sub gatk_variantrecalibration {
 ##         : $family_id_ref              => Family id {REF}
 ##         : $temp_directory_ref         => Temporary directory {REF}
 ##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => The variant call type
+##         : $call_type                  => Variant call type
 
     my ($arg_href) = @_;
 
@@ -9515,66 +9098,66 @@ sub gatk_variantrecalibration {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         call_type =>
-          { default => "BOTH", strict_type => 1, store => \$call_type },
+          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -9690,7 +9273,7 @@ sub gatk_variantrecalibration {
     );
 
     ## Copy file(s) to temporary directory
-    say $FILEHANDLE "## Copy file(s) to temporary directory";
+    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
     migrate_file(
         {
             FILEHANDLE  => $FILEHANDLE,
@@ -9700,7 +9283,7 @@ sub gatk_variantrecalibration {
             outfile_path => $$temp_directory_ref
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say {$FILEHANDLE} q{wait}, "\n";
 
     ### GATK VariantRecalibrator
     ## Set mode to be used in variant recalibration
@@ -9710,13 +9293,13 @@ sub gatk_variantrecalibration {
         || ( $consensus_analysis_type eq "rapid" ) )
     {    #Exome/rapid analysis
 
-        @modes = ("BOTH");
+        @modes = (q{BOTH});
     }
 
     foreach my $mode (@modes)
     { #SNP and INDEL will be recalibrated successively in the same file because when you specify eg SNP mode, the indels are emitted without modification, and vice-versa. Exome and rapid will be processed using mode BOTH since there are to few INDELS to use in the recalibration model even though using 30 exome BAMS in Haplotypecaller step.
 
-        say $FILEHANDLE "## GATK VariantRecalibrator";
+        say {$FILEHANDLE} "## GATK VariantRecalibrator";
 
         ##Get parameters
         my @infiles;
@@ -9763,7 +9346,7 @@ sub gatk_variantrecalibration {
         }
 
         my @resources;
-        if ( ( $mode eq "SNP" ) || ( $mode eq "BOTH" ) ) {
+        if ( ( $mode eq "SNP" ) || ( $mode eq q{BOTH} ) ) {
 
             while (
                 my ( $resource_file, $resource_string ) = each(
@@ -9778,7 +9361,7 @@ sub gatk_variantrecalibration {
                 push( @resources, $resource_string . " " . $resource_file );
             }
         }
-        if ( ( $mode eq "INDEL" ) || ( $mode eq "BOTH" ) ) {
+        if ( ( $mode eq "INDEL" ) || ( $mode eq q{BOTH} ) ) {
 
             while (
                 my ( $resource_file, $resource_string ) = each(
@@ -9829,10 +9412,10 @@ sub gatk_variantrecalibration {
                 FILEHANDLE               => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "\n";
+        say {$FILEHANDLE} "\n";
 
         ## GATK ApplyRecalibration
-        say $FILEHANDLE "## GATK ApplyRecalibration";
+        say {$FILEHANDLE} "## GATK ApplyRecalibration";
 
         ## Get parameters
         my $infile_path;
@@ -9892,7 +9475,7 @@ sub gatk_variantrecalibration {
                 FILEHANDLE               => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "\n";
+        say {$FILEHANDLE} "\n";
     }
 
     if (   ( $consensus_analysis_type eq "wes" )
@@ -9917,7 +9500,7 @@ sub gatk_variantrecalibration {
                   . "_filtered_normalized.stderr",
             }
         );
-        say $FILEHANDLE "\n";
+        say {$FILEHANDLE} "\n";
     }
 
     ### GATK SelectVariants
@@ -9927,7 +9510,7 @@ sub gatk_variantrecalibration {
         || ( $consensus_analysis_type eq "rapid" ) )
     {    #Exome/rapid analysis
 
-        say $FILEHANDLE "## GATK SelectVariants";
+        say {$FILEHANDLE} "## GATK SelectVariants";
 
         gatk_selectvariants(
             {
@@ -9951,14 +9534,14 @@ sub gatk_variantrecalibration {
                 FILEHANDLE          => $FILEHANDLE,
             }
         );
-        print $FILEHANDLE " &";
+        print {$FILEHANDLE} " &";
 
         ## Produces another vcf file containing non-variant loci (useful for example in MAF comparisons), but is not used downstream in MIP
         if ( $active_parameter_href
             ->{gatk_variantrecalibration_exclude_nonvariants_file} eq 1 )
         {
 
-            say $FILEHANDLE "\n\n#GATK SelectVariants", "\n";
+            say {$FILEHANDLE} "\n\n#GATK SelectVariants", "\n";
 
             gatk_selectvariants(
                 {
@@ -9985,10 +9568,10 @@ sub gatk_variantrecalibration {
                     FILEHANDLE => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE "\n\nwait\n";
+            say {$FILEHANDLE} "\n\nwait\n";
 
             ## Copies file from temporary directory.
-            say $FILEHANDLE "## Copy file from temporary directory";
+            say {$FILEHANDLE} q{## Copy file from temporary directory};
             migrate_file(
                 {
                     infile_path => $outfile_path_prefix
@@ -9999,13 +9582,13 @@ sub gatk_variantrecalibration {
                 }
             );
         }
-        say $FILEHANDLE "\n\nwait\n";
+        say {$FILEHANDLE} "\n\nwait\n";
     }
 
     ## GenotypeRefinement
     if ( $parameter_href->{dynamic_parameter}{trio} ) {
 
-        say $FILEHANDLE "## GATK CalculateGenotypePosteriors";
+        say {$FILEHANDLE} "## GATK CalculateGenotypePosteriors";
 
         gatk_calculategenotypeposteriors(
             {
@@ -10031,7 +9614,7 @@ sub gatk_variantrecalibration {
                 FILEHANDLE               => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "\n";
+        say {$FILEHANDLE} "\n";
 
         ## Change name of file to accomodate downstream
         gnu_mv(
@@ -10043,7 +9626,7 @@ sub gatk_variantrecalibration {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "\n";
+        say {$FILEHANDLE} "\n";
     }
 
     ## BcfTools norm, Left-align and normalize indels, split multiallelics
@@ -10059,7 +9642,7 @@ sub gatk_variantrecalibration {
             multiallelic => "-",
         }
     );
-    say $FILEHANDLE "\n";
+    say {$FILEHANDLE} "\n";
 
     ## Change name of file to accomodate downstream
     gnu_mv(
@@ -10071,7 +9654,7 @@ sub gatk_variantrecalibration {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "\n";
+    say {$FILEHANDLE} "\n";
 
     ## Produce a bcf compressed and index from vcf
     if ( $active_parameter_href->{gatk_variantrecalibration_bcf_file} ) {
@@ -10087,7 +9670,7 @@ sub gatk_variantrecalibration {
         );
 
         ## Copies file from temporary directory.
-        say $FILEHANDLE "## Copy file from temporary directory";
+        say {$FILEHANDLE} q{## Copy file from temporary directory};
         migrate_file(
             {
                 infile_path  => $outfile_path_prefix . q{.bcf*},
@@ -10095,11 +9678,11 @@ sub gatk_variantrecalibration {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE q{wait}, "\n";
+        say {$FILEHANDLE} q{wait}, "\n";
     }
 
     ## Copies file from temporary directory.
-    say $FILEHANDLE "## Copy file from temporary directory";
+    say {$FILEHANDLE} q{## Copy file from temporary directory};
     my @outfiles = (
         $outfile_path_prefix . $outfile_suffix . "*",
         $file_path_prefix . ".intervals.tranches.pdf"
@@ -10114,9 +9697,9 @@ sub gatk_variantrecalibration {
             }
         );
     }
-    say $FILEHANDLE q{wait}, "\n";
+    say {$FILEHANDLE} q{wait}, "\n";
 
-    close($FILEHANDLE);
+    close $FILEHANDLE;
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -10193,66 +9776,66 @@ sub gatk_concatenate_genotypegvcfs {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         call_type =>
-          { default => "BOTH", strict_type => 1, store => \$call_type },
+          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -10355,7 +9938,7 @@ sub gatk_concatenate_genotypegvcfs {
             }
         );
     }
-    say $FILEHANDLE q{wait}, "\n";
+    say {$FILEHANDLE} q{wait}, "\n";
 
     ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
     concatenate_variants(
@@ -10376,9 +9959,9 @@ sub gatk_concatenate_genotypegvcfs {
             || ( $consensus_analysis_type eq "rapid" ) )
         {    #Exome/rapid analysis
 
-            say $FILEHANDLE "###Remove extra reference samples", "\n";
+            say {$FILEHANDLE} "###Remove extra reference samples", "\n";
 
-            say $FILEHANDLE "##GATK SelectVariants", "\n";
+            say {$FILEHANDLE} "##GATK SelectVariants", "\n";
 
             gatk_selectvariants(
                 {
@@ -10403,7 +9986,7 @@ sub gatk_concatenate_genotypegvcfs {
                     FILEHANDLE => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE "\n";
+            say {$FILEHANDLE} "\n";
 
             ## Move to original filename
             gnu_mv(
@@ -10415,7 +9998,7 @@ sub gatk_concatenate_genotypegvcfs {
                     FILEHANDLE   => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE "\n";
+            say {$FILEHANDLE} "\n";
         }
 
         ## Reformat variant calling file and index
@@ -10429,7 +10012,7 @@ sub gatk_concatenate_genotypegvcfs {
         );
 
         ## Copies file from temporary directory.
-        say $FILEHANDLE "## Copy file from temporary directory";
+        say {$FILEHANDLE} q{## Copy file from temporary directory};
         migrate_file(
             {
                 infile_path  => $outfile_path_prefix . q{.bcf*},
@@ -10437,11 +10020,11 @@ sub gatk_concatenate_genotypegvcfs {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE q{wait}, "\n";
+        say {$FILEHANDLE} q{wait}, "\n";
     }
 
     ## Copies file from temporary directory.
-    say $FILEHANDLE "## Copy file from temporary directory";
+    say {$FILEHANDLE} q{## Copy file from temporary directory};
     migrate_file(
         {
             infile_path  => $outfile_path_prefix . $outfile_suffix . q{*},
@@ -10449,9 +10032,9 @@ sub gatk_concatenate_genotypegvcfs {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say {$FILEHANDLE} q{wait}, "\n";
 
-    close($FILEHANDLE);
+    close $FILEHANDLE;
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -10496,7 +10079,7 @@ sub mgatk_genotypegvcfs {
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $family_id_ref              => Family id {REF}
 ##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => The variant call type
+##         : $call_type                  => Variant call type
 ##         : $program_name               => Program name
 
     my ($arg_href) = @_;
@@ -10522,66 +10105,66 @@ sub mgatk_genotypegvcfs {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         call_type =>
-          { default => "BOTH", strict_type => 1, store => \$call_type },
+          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -10719,7 +10302,7 @@ sub mgatk_genotypegvcfs {
             );
 
             ## Copy file(s) to temporary directory
-            say $FILEHANDLE "## Copy file(s) to temporary directory";
+            say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
             migrate_file(
                 {
                     FILEHANDLE  => $FILEHANDLE,
@@ -10730,11 +10313,11 @@ sub mgatk_genotypegvcfs {
                     outfile_path => $$temp_directory_ref
                 }
             );
-            say $FILEHANDLE q{wait}, "\n";
+            say {$FILEHANDLE} q{wait}, "\n";
         }
 
         ## GATK GenoTypeGVCFs
-        say $FILEHANDLE "## GATK GenoTypeGVCFs";
+        say {$FILEHANDLE} "## GATK GenoTypeGVCFs";
 
         ## Get parameters
         ## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
@@ -10781,10 +10364,10 @@ sub mgatk_genotypegvcfs {
                 FILEHANDLE => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "\n";
+        say {$FILEHANDLE} "\n";
 
         ## Copies file from temporary directory.
-        say $FILEHANDLE "## Copy file from temporary directory";
+        say {$FILEHANDLE} q{## Copy file from temporary directory};
         migrate_file(
             {
                 infile_path  => $outfile_path_prefix . $outfile_suffix . q{*},
@@ -10792,9 +10375,9 @@ sub mgatk_genotypegvcfs {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE q{wait}, "\n";
+        say {$FILEHANDLE} q{wait}, "\n";
 
-        close($FILEHANDLE);
+        close $FILEHANDLE;
 
         if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -10830,14 +10413,14 @@ sub sv_reformat {
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $family_id_ref              => The family_id_ref {REF}
-##         : $call_type                  => The variant call type
+##         : $call_type                  => Variant call type
 ##         : $program_name               => Program name
 ##         : $FILEHANDLE                 => Sbatch filehandle to write to
 ##         : $family_id_ref              => Family id {REF}
 ##         : $temp_directory_ref         => Temporary directory {REF}
 ##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => The variant call type
+##         : $call_type                  => Variant call type
 ##         : $xargs_file_counter         => The xargs file counter
 
     my ($arg_href) = @_;
@@ -10865,71 +10448,71 @@ sub sv_reformat {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
         reference_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{reference_dir},
             strict_type => 1,
-            store       => \$reference_dir_ref
+            store       => \$reference_dir_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         call_type =>
-          { default => "SV", strict_type => 1, store => \$call_type },
+          { default => "SV", strict_type => 1, store => \$call_type, },
         xargs_file_counter => {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
@@ -11089,7 +10672,7 @@ sub sv_reformat {
         {    #Transfer contig files
 
             ## Copy file(s) to temporary directory
-            say $FILEHANDLE "## Copy file(s) to temporary directory";
+            say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
             $xargs_file_counter = xargs_migrate_contig_files(
                 {
                     FILEHANDLE         => $FILEHANDLE,
@@ -11110,7 +10693,7 @@ sub sv_reformat {
         else {
 
             ## Copy file(s) to temporary directory
-            say $FILEHANDLE "## Copy file(s) to temporary directory";
+            say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
             migrate_file(
                 {
                     FILEHANDLE  => $FILEHANDLE,
@@ -11123,7 +10706,7 @@ sub sv_reformat {
                     outfile_path => $$temp_directory_ref
                 }
             );
-            say $FILEHANDLE q{wait}, "\n";
+            say {$FILEHANDLE} q{wait}, "\n";
         }
 
         my $concatenate_ending = "";
@@ -11171,7 +10754,7 @@ sub sv_reformat {
             }
         );
 
-        print $FILEHANDLE "\n";
+        print {$FILEHANDLE} "\n";
 
         ## Remove variants in hgnc_id list from vcf
         if ( $active_parameter_href->{sv_reformat_remove_genes_file} ) {
@@ -11194,7 +10777,7 @@ sub sv_reformat {
                     FILEHANDLE   => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE "\n";
+            say {$FILEHANDLE} "\n";
 
             if ( $vcfparser_outfile_counter == 1 ) {
 
@@ -11216,7 +10799,7 @@ sub sv_reformat {
             }
 
             ## Copies file from temporary directory.
-            say $FILEHANDLE "## Copy file from temporary directory";
+            say {$FILEHANDLE} q{## Copy file from temporary directory};
             migrate_file(
                 {
                     infile_path => $outfile_path_prefix
@@ -11227,7 +10810,7 @@ sub sv_reformat {
                     FILEHANDLE   => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE q{wait}, "\n";
+            say {$FILEHANDLE} q{wait}, "\n";
         }
 
         if ( $active_parameter_href->{sv_rankvariant_binary_file} ) {
@@ -11245,7 +10828,7 @@ sub sv_reformat {
                     write_to_stdout => 1,
                 }
             );
-            say $FILEHANDLE "\n";
+            say {$FILEHANDLE} "\n";
 
             ## Index file using tabix
             tabix(
@@ -11258,11 +10841,11 @@ sub sv_reformat {
                     preset => substr( $file_suffix, 1 ),
                 }
             );
-            say $FILEHANDLE "\n";
+            say {$FILEHANDLE} "\n";
         }
 
         ## Copies file from temporary directory.
-        say $FILEHANDLE "## Copy file from temporary directory";
+        say {$FILEHANDLE} q{## Copy file from temporary directory};
         migrate_file(
             {
                 infile_path => $outfile_path_prefix
@@ -11272,7 +10855,7 @@ sub sv_reformat {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE q{wait}, "\n";
+        say {$FILEHANDLE} q{wait}, "\n";
 
         ## Adds the most complete vcf file to sample_info
         add_most_complete_vcf(
@@ -11336,7 +10919,7 @@ sub sv_reformat {
             }
         }
     }
-    close($FILEHANDLE);
+    close $FILEHANDLE;
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -11368,14 +10951,13 @@ sub sv_rankvariant {
 ##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => Job id hash {REF}
 ##         : $family_id_ref              => The family_id_ref {REF}
-##         : $call_type                  => The variant call type
 ##         : $program_name               => Program name
 ##         : $FILEHANDLE                 => Sbatch filehandle to write to
 ##         : $family_id_ref              => Family id {REF}
 ##         : $temp_directory_ref         => Temporary directory {REF}
 ##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => The variant call type
+##         : $call_type                  => Variant call type
 ##         : $xargs_file_counter         => The xargs file counter
 
     my ($arg_href) = @_;
@@ -11403,71 +10985,71 @@ sub sv_rankvariant {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
         reference_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{reference_dir},
             strict_type => 1,
-            store       => \$reference_dir_ref
+            store       => \$reference_dir_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         call_type =>
-          { default => "SV", strict_type => 1, store => \$call_type },
+          { default => "SV", strict_type => 1, store => \$call_type, },
         xargs_file_counter => {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
@@ -11652,7 +11234,7 @@ sub sv_rankvariant {
         {    #Transfer contig files
 
             ## Copy file(s) to temporary directory
-            say $FILEHANDLE "## Copy file(s) to temporary directory";
+            say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
             $xargs_file_counter = xargs_migrate_contig_files(
                 {
                     FILEHANDLE         => $FILEHANDLE,
@@ -11673,7 +11255,7 @@ sub sv_rankvariant {
         else {
 
             ## Copy file(s) to temporary directory
-            say $FILEHANDLE "## Copy file(s) to temporary directory";
+            say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
             migrate_file(
                 {
                     FILEHANDLE  => $FILEHANDLE,
@@ -11686,7 +11268,7 @@ sub sv_rankvariant {
                     outfile_path => $$temp_directory_ref
                 }
             );
-            say $FILEHANDLE q{wait}, "\n";
+            say {$FILEHANDLE} q{wait}, "\n";
         }
 
         my $genmod_module = "";   #Track which genmod modules has been processed
@@ -11708,7 +11290,7 @@ sub sv_rankvariant {
         }
 
         ## Genmod
-        say $FILEHANDLE "## Genmod";
+        say {$FILEHANDLE} "## Genmod";
 
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
@@ -11906,7 +11488,7 @@ sub sv_rankvariant {
         {
 
             ## Copies file from temporary directory.
-            say $FILEHANDLE "## Copy file(s) from temporary directory";
+            say {$FILEHANDLE} "## Copy file(s) from temporary directory";
             ($xargs_file_counter) = xargs_migrate_contig_files(
                 {
                     FILEHANDLE         => $FILEHANDLE,
@@ -11927,7 +11509,7 @@ sub sv_rankvariant {
         else {
 
             ## Copies file from temporary directory.
-            say $FILEHANDLE "## Copy file from temporary directory";
+            say {$FILEHANDLE} q{## Copy file from temporary directory};
             migrate_file(
                 {
                     infile_path => catfile(
@@ -11940,7 +11522,7 @@ sub sv_rankvariant {
                     FILEHANDLE   => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE q{wait}, "\n";
+            say {$FILEHANDLE} q{wait}, "\n";
 
             ## Adds the most complete vcf file to sample_info
             add_most_complete_vcf(
@@ -11960,7 +11542,7 @@ sub sv_rankvariant {
             );
         }
     }
-    close($FILEHANDLE);
+    close $FILEHANDLE;
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -12034,7 +11616,7 @@ sub sv_vcfparser {
 ##         : $family_id_ref              => Family id {REF}
 ##         : $temp_directory_ref         => Temporary directory {REF}
 ##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => The variant call type
+##         : $call_type                  => Variant call type
 ##         : $xargs_file_counter         => The xargs file counter
 
     my ($arg_href) = @_;
@@ -12061,66 +11643,66 @@ sub sv_vcfparser {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         call_type =>
-          { default => "SV", strict_type => 1, store => \$call_type },
+          { default => "SV", strict_type => 1, store => \$call_type, },
         xargs_file_counter => {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
@@ -12217,7 +11799,7 @@ sub sv_vcfparser {
     {    #Transfer contig files
 
         ## Copy file(s) to temporary directory
-        say $FILEHANDLE "## Copy file(s) to temporary directory";
+        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
         ($xargs_file_counter) = xargs_migrate_contig_files(
             {
                 FILEHANDLE         => $FILEHANDLE,
@@ -12236,7 +11818,7 @@ sub sv_vcfparser {
     else {
 
         ## Copy file(s) to temporary directory
-        say $FILEHANDLE "## Copy file(s) to temporary directory";
+        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
         migrate_file(
             {
                 FILEHANDLE  => $FILEHANDLE,
@@ -12247,11 +11829,11 @@ sub sv_vcfparser {
                 outfile_path => $$temp_directory_ref
             }
         );
-        say $FILEHANDLE q{wait}, "\n";
+        say {$FILEHANDLE} q{wait}, "\n";
     }
 
     ## vcfparser
-    say $FILEHANDLE "## vcfparser";
+    say {$FILEHANDLE} "## vcfparser";
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
@@ -12391,7 +11973,7 @@ sub sv_vcfparser {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE q{wait}, "\n";
+        say {$FILEHANDLE} q{wait}, "\n";
     }
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
@@ -12473,7 +12055,7 @@ sub sv_vcfparser {
         {
 
             ## Copies file from temporary directory.
-            say $FILEHANDLE "## Copy file(s) from temporary directory";
+            say {$FILEHANDLE} "## Copy file(s) from temporary directory";
             ($xargs_file_counter) = xargs_migrate_contig_files(
                 {
                     FILEHANDLE         => $FILEHANDLE,
@@ -12494,7 +12076,7 @@ sub sv_vcfparser {
         else {
 
             ## Copies file from temporary directory.
-            say $FILEHANDLE "## Copy file from temporary directory";
+            say {$FILEHANDLE} q{## Copy file from temporary directory};
             migrate_file(
                 {
                     infile_path => $outfile_path_prefix
@@ -12504,7 +12086,7 @@ sub sv_vcfparser {
                     FILEHANDLE   => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE q{wait}, "\n";
+            say {$FILEHANDLE} q{wait}, "\n";
 
             ## Adds the most complete vcf file to sample_info
             add_most_complete_vcf(
@@ -12524,7 +12106,7 @@ sub sv_vcfparser {
             );
         }
     }
-    close($FILEHANDLE);
+    close $FILEHANDLE;
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -12560,7 +12142,7 @@ sub sv_combinevariantcallsets {
 ##         : $temp_directory_ref         => Temporary directory {REF}
 ##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => The variant call type
+##         : $call_type                  => Variant call type
 
     my ($arg_href) = @_;
 
@@ -12586,71 +12168,71 @@ sub sv_combinevariantcallsets {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
         reference_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{reference_dir},
             strict_type => 1,
-            store       => \$reference_dir_ref
+            store       => \$reference_dir_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         call_type =>
-          { default => "SV", strict_type => 1, store => \$call_type },
+          { default => "SV", strict_type => 1, store => \$call_type, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -12792,7 +12374,7 @@ sub sv_combinevariantcallsets {
                 }
 
                 ## Copy file(s) to temporary directory
-                say $FILEHANDLE "## Copy file(s) to temporary directory";
+                say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
                 migrate_file(
                     {
                         FILEHANDLE  => $FILEHANDLE,
@@ -12805,7 +12387,7 @@ sub sv_combinevariantcallsets {
                     }
                 );
 
-                say $FILEHANDLE q{wait}, "\n";
+                say {$FILEHANDLE} q{wait}, "\n";
 
                 ## Reformat variant calling file and index
                 view_vcf(
@@ -12843,7 +12425,7 @@ sub sv_combinevariantcallsets {
             if ( scalar( @{ $active_parameter_href->{sample_ids} } ) > 1 ) {
 
                 ## Merge all structural variant caller's vcf files per sample_id
-                say $FILEHANDLE
+                say {$FILEHANDLE}
 "## Merge all structural variant caller's vcf files per sample_id";
 
                 bcftools_merge(
@@ -12862,12 +12444,12 @@ sub sv_combinevariantcallsets {
                         FILEHANDLE => $FILEHANDLE,
                     }
                 );
-                say $FILEHANDLE "\n";
+                say {$FILEHANDLE} "\n";
             }
             else {
 
                 ## Reformat all structural variant caller's vcf files per sample_id
-                say $FILEHANDLE
+                say {$FILEHANDLE}
 "## Reformat all structural variant caller's vcf files per sample_id";
 
                 bcftools_view(
@@ -12886,7 +12468,7 @@ sub sv_combinevariantcallsets {
                         FILEHANDLE => $FILEHANDLE,
                     }
                 );
-                say $FILEHANDLE "\n";
+                say {$FILEHANDLE} "\n";
             }
         }
     }
@@ -12942,7 +12524,7 @@ sub sv_combinevariantcallsets {
             }
 
             ## Copy file(s) to temporary directory
-            say $FILEHANDLE "## Copy file(s) to temporary directory";
+            say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
             migrate_file(
                 {
                     FILEHANDLE  => $FILEHANDLE,
@@ -12953,12 +12535,12 @@ sub sv_combinevariantcallsets {
                     outfile_path => $$temp_directory_ref
                 }
             );
-            say $FILEHANDLE q{wait}, "\n";
+            say {$FILEHANDLE} q{wait}, "\n";
 
             if ( $active_parameter_href->{sv_vt_decompose} > 0 ) {
 
                 ## Split multiallelic variants
-                say $FILEHANDLE "## Split multiallelic variants";
+                say {$FILEHANDLE} "## Split multiallelic variants";
                 decompose(
                     {
                         infile_path => catfile(
@@ -12975,13 +12557,13 @@ sub sv_combinevariantcallsets {
                         smart_decomposition => 1,
                     }
                 );
-                say $FILEHANDLE "\n";
+                say {$FILEHANDLE} "\n";
             }
         }
     }
 
     ## Merge structural variant caller's family vcf files
-    say $FILEHANDLE "## Merge structural variant caller's family vcf files";
+    say {$FILEHANDLE} "## Merge structural variant caller's family vcf files";
 
     ## Get parameters
     my @infile_paths;
@@ -13015,7 +12597,7 @@ sub sv_combinevariantcallsets {
             FILEHANDLE => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "\n";
+    say {$FILEHANDLE} "\n";
 
     my $alt_file_tag = "";    #Alternative file tag
 
@@ -13024,7 +12606,7 @@ sub sv_combinevariantcallsets {
         $alt_file_tag = "_vt";    #Update file tag
 
         ## Split multiallelic variants
-        say $FILEHANDLE "## Split multiallelic variants";
+        say {$FILEHANDLE} "## Split multiallelic variants";
         decompose(
             {
                 infile_path  => $merged_file_path_prefix . $outfile_suffix,
@@ -13035,7 +12617,7 @@ sub sv_combinevariantcallsets {
                 smart_decomposition => 1,
             }
         );
-        say $FILEHANDLE "\n";
+        say {$FILEHANDLE} "\n";
     }
     if ( $active_parameter_href->{sv_svdb_query} > 0 ) {
 
@@ -13076,7 +12658,7 @@ sub sv_combinevariantcallsets {
                     FILEHANDLE    => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE "\n";
+            say {$FILEHANDLE} "\n";
             $annotation_file_counter++;
         }
 
@@ -13093,7 +12675,7 @@ sub sv_combinevariantcallsets {
                 FILEHANDLE => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "\n";
+        say {$FILEHANDLE} "\n";
     }
 
     my $outfile_alt_file_tag .= $alt_file_tag . "_sorted"; #Alternative file tag
@@ -13114,14 +12696,14 @@ sub sv_combinevariantcallsets {
               . $outfile_suffix,
         }
     );
-    print $FILEHANDLE "\n";
+    print {$FILEHANDLE} "\n";
 
     $alt_file_tag = $outfile_alt_file_tag;
 
     ## Remove FILTER ne PASS
     if ( $active_parameter_href->{sv_bcftools_view_filter} > 0 ) {
 
-        say $FILEHANDLE "## Remove FILTER ne PASS";
+        say {$FILEHANDLE} "## Remove FILTER ne PASS";
         bcftools_view(
             {
                 apply_filters_ref => ["PASS"],
@@ -13134,7 +12716,7 @@ sub sv_combinevariantcallsets {
                 FILEHANDLE => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "\n";
+        say {$FILEHANDLE} "\n";
 
         $alt_file_tag .= "_filt";    #Update file tag
     }
@@ -13142,7 +12724,7 @@ sub sv_combinevariantcallsets {
     ## Remove common variants
     if ( $active_parameter_href->{sv_genmod_filter} > 0 ) {
 
-        say $FILEHANDLE "## Remove common variants";
+        say {$FILEHANDLE} "## Remove common variants";
         Program::Variantcalling::Genmod::annotate(
             {
                 infile_path => $outfile_path_prefix
@@ -13156,7 +12738,7 @@ sub sv_combinevariantcallsets {
                 FILEHANDLE => $FILEHANDLE,
             }
         );
-        print $FILEHANDLE "| ";
+        print {$FILEHANDLE} "| ";
 
         $alt_file_tag .= "_genmod_filter";    #Update file tag
 
@@ -13172,13 +12754,13 @@ sub sv_combinevariantcallsets {
                 FILEHANDLE => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "\n";
+        say {$FILEHANDLE} "\n";
     }
 
     ## Annotate 1000G structural variants
     if ( $active_parameter_href->{sv_vcfanno} > 0 ) {
 
-        say $FILEHANDLE "## Annotate 1000G structural variants";
+        say {$FILEHANDLE} "## Annotate 1000G structural variants";
         vcfanno(
             {
                 infile_path => $outfile_path_prefix
@@ -13191,14 +12773,14 @@ sub sv_combinevariantcallsets {
                 FILEHANDLE => $FILEHANDLE,
             }
         );
-        print $FILEHANDLE "| ";
-        print $FILEHANDLE
+        print {$FILEHANDLE} "| ";
+        print {$FILEHANDLE}
 q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", @F), "\n"}' ?
           ;    #Remove "[" and "]" from INFO as it breaks vcf format
 
         $alt_file_tag .= "_vcfanno";    #Update file tag
 
-        say $FILEHANDLE "> "
+        say {$FILEHANDLE} "> "
           . $outfile_path_prefix
           . $alt_file_tag
           . $outfile_suffix, "\n";
@@ -13215,7 +12797,7 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
             );
         }
 
-        say $FILEHANDLE
+        say {$FILEHANDLE}
           "## Add header for 1000G annotation of structural variants";
         bcftools_annotate(
             {
@@ -13232,7 +12814,7 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
                 FILEHANDLE => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "\n";
+        say {$FILEHANDLE} "\n";
         $alt_file_tag .= "_bcftools_annotate";    #Update file tag
     }
 
@@ -13254,7 +12836,7 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
             }
         );
 
-        print $FILEHANDLE "\n";
+        print {$FILEHANDLE} "\n";
     }
 
     if ( $active_parameter_href->{sv_combinevariantcallsets_bcf_file} ) {
@@ -13270,7 +12852,7 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
         );
 
         ## Copies file from temporary directory.
-        say $FILEHANDLE "## Copy file from temporary directory";
+        say {$FILEHANDLE} q{## Copy file from temporary directory};
         migrate_file(
             {
                 infile_path  => $outfile_path_prefix . q{.bcf*},
@@ -13281,7 +12863,7 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
     }
 
     ## Copies file from temporary directory.
-    say $FILEHANDLE "## Copy file from temporary directory";
+    say {$FILEHANDLE} q{## Copy file from temporary directory};
     migrate_file(
         {
             infile_path  => $outfile_path_prefix . $outfile_suffix,
@@ -13289,9 +12871,9 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say {$FILEHANDLE} q{wait}, "\n";
 
-    close($FILEHANDLE);
+    close $FILEHANDLE;
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -13332,6 +12914,497 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
     }
 }
 
+<<<<<<< HEAD
+=======
+sub cnvnator {
+
+##cnvnator
+
+##Function : Call structural variants using cnvnator
+##Returns  : ""
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, $program_info_path, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $xargs_file_counter
+##         : $parameter_href             => Parameter hash {REF}
+##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
+##         : $sample_info_href           => Info on samples and family hash {REF}
+##         : $file_info_href             => File info hash {REF}
+##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##         : $job_id_href                => Job id hash {REF}
+##         : $sample_id_ref              => Sample id
+##         : $program_name               => Program name
+##         : $family_id_ref              => Family id {REF}
+##         : $temp_directory_ref         => Temporary directory {REF}
+##         : $reference_dir_ref          => MIP reference directory {REF}
+##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
+##         : $xargs_file_counter         => The xargs file counter
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $reference_dir_ref;
+    my $outaligner_dir_ref;
+    my $xargs_file_counter;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $active_parameter_href;
+    my $sample_info_href;
+    my $file_info_href;
+    my $infile_lane_prefix_href;
+    my $job_id_href;
+    my $sample_id_ref;
+    my $program_name;
+    my $FILEHANDLE;
+
+    my $tmpl = {
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
+        active_parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$active_parameter_href,
+        },
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href,
+        },
+        file_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$file_info_href,
+        },
+        infile_lane_prefix_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$infile_lane_prefix_href,
+        },
+        job_id_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$job_id_href,
+        },
+        sample_id_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => \$$,
+            strict_type => 1,
+            store       => \$sample_id_ref
+        },
+        program_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$program_name,
+        },
+        family_id_ref => {
+            default     => \$arg_href->{active_parameter_href}{family_id},
+            strict_type => 1,
+            store       => \$family_id_ref,
+        },
+        temp_directory_ref => {
+            default     => \$arg_href->{active_parameter_href}{temp_directory},
+            strict_type => 1,
+            store       => \$temp_directory_ref,
+        },
+        reference_dir_ref => {
+            default     => \$arg_href->{active_parameter_href}{reference_dir},
+            strict_type => 1,
+            store       => \$reference_dir_ref,
+        },
+        outaligner_dir_ref => {
+            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
+            strict_type => 1,
+            store       => \$outaligner_dir_ref,
+        },
+        xargs_file_counter => {
+            default     => 0,
+            allow       => qr/ ^\d+$ /xsm,
+            strict_type => 1,
+            store       => \$xargs_file_counter
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Processmanagement::Processes qw(print_wait);
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
+    use MIP::Get::File qw{get_file_suffix};
+    use MIP::Set::File qw{set_file_suffix};
+    use MIP::Recipes::Xargs qw{ xargs_command };
+    use MIP::Program::Alignment::Samtools qw(samtools_faidx);
+    use MIP::Program::Variantcalling::Cnvnator
+      qw{ cnvnator_read_extraction cnvnator_histogram cnvnator_statistics cnvnator_partition cnvnator_calling cnvnator_convert_to_vcf };
+    use MIP::Program::Variantcalling::Bcftools qw(bcftools_annotate);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
+    use MIP::Processmanagement::Slurm_processes
+      qw(slurm_submit_job_sample_id_dependency_add_to_sample);
+
+    my $core_number =
+      $active_parameter_href->{module_core_number}{ "p" . $program_name };
+    my $program_outdirectory_name =
+      $parameter_href->{ "p" . $program_name }{outdir_name};
+    my $xargs_file_path_prefix;
+    my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
+
+    ## Filehandles
+    $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
+    my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
+
+    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+    my ( $file_path, $program_info_path ) = setup_script(
+        {
+            active_parameter_href => $active_parameter_href,
+            job_id_href           => $job_id_href,
+            FILEHANDLE            => $FILEHANDLE,
+            directory_id          => $$sample_id_ref,
+            program_name          => $program_name,
+            program_directory     => catfile(
+                lc($$outaligner_dir_ref),
+                lc($program_outdirectory_name)
+            ),
+            core_number => $core_number,
+            process_time =>
+              $active_parameter_href->{module_time}{ "p" . $program_name },
+            temp_directory => $$temp_directory_ref
+        }
+    );
+
+    ## Assign directories
+    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
+        $$sample_id_ref, $$outaligner_dir_ref );
+    my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
+        $$sample_id_ref, $$outaligner_dir_ref, $program_outdirectory_name );
+    $parameter_href->{ "p" . $program_name }{$$sample_id_ref}{indirectory} =
+      $outsample_directory;    #Used downstream
+
+    ## Add merged infile name after merging all BAM files per sample_id
+    my $infile = $file_info_href->{$$sample_id_ref}{merged_infile};    #Alias
+
+    ## Assign file_tags
+    my $infile_tag =
+      $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
+    my $outfile_tag =
+      $file_info_href->{$$sample_id_ref}{ "p" . $program_name }{file_tag};
+    my $infile_prefix       = $infile . $infile_tag;
+    my $file_path_prefix    = catfile( $$temp_directory_ref, $infile_prefix );
+    my $outfile_prefix      = $infile . $outfile_tag;
+    my $outfile_path_prefix = catfile( $$temp_directory_ref, $outfile_prefix );
+
+    ### Assign suffix
+    my $infile_suffix = get_file_suffix(
+        {
+            parameter_href => $parameter_href,
+            suffix_key     => q{alignment_file_suffix},
+            jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain}
+            ,    #Get infile_suffix from baserecalibration jobid chain
+        }
+    );
+
+    ## Set file suffix for next module within jobid chain
+    my $outfile_suffix = set_file_suffix(
+        {
+            parameter_href => $parameter_href,
+            suffix_key     => "variant_file_suffix",
+            job_id_chain   => $job_id_chain,
+            file_suffix =>
+              $parameter_href->{ "p" . $program_name }{outfile_suffix},
+        }
+    );
+
+    my $root_file;
+    my $phenotype_info =
+      $sample_info_href->{sample}{$$sample_id_ref}{phenotype};    #Alias
+
+    my $perl_vcf_fix =
+q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my @a = split("\t", $_); pop(@a);print join("\t", @a)."\t?
+      . $$sample_id_ref
+      . q?", "\n"} else {print $_, "\n"}'?;
+
+    my $perl_add_contigs =
+      q?perl -nae '{print "##contig=<ID=".$F[0].",length=".$F[1].">", "\n"}'?;
+
+    ##Special fix to accomodate outdated versions of .so libraries required by root
+    if ( exists $active_parameter_href->{cnv_root_ld_lib} ) {
+
+        say {$FILEHANDLE} 'LD_LIBRARY_PATH='
+          . $active_parameter_href->{cnv_root_ld_lib}
+          . '/:$LD_LIBRARY_PATH';
+        say {$FILEHANDLE} 'export LD_LIBRARY_PATH', "\n";
+    }
+
+    ## Add contigs to vcfheader
+    print {$FILEHANDLE} $perl_add_contigs . " ";
+    print {$FILEHANDLE} $active_parameter_href->{human_genome_reference}
+      . ".fai ";    #Reference fai file
+    say {$FILEHANDLE} "> "
+      . catfile( $$temp_directory_ref, "contig_header.txt" ),
+      "\n";
+
+    my $process_batches_count = 1;
+
+    ## Create by cnvnator required "chr.fa" files
+    say {$FILEHANDLE} "## Create by cnvnator required 'chr.fa' files";
+    while ( my ( $contig_index, $contig ) =
+        each( @{ $file_info_href->{contigs} } ) )
+    {
+
+        $process_batches_count = print_wait(
+            {
+                process_counter       => $contig_index,
+                max_process_number    => $core_number,
+                process_batches_count => $process_batches_count,
+                FILEHANDLE            => $FILEHANDLE,
+            }
+        );
+
+        samtools_faidx(
+            {
+                regions_ref => [$contig],
+                infile_path => $active_parameter_href->{human_genome_reference},
+                outfile_path =>
+                  catfile( $$temp_directory_ref, $contig . ".fa" ),
+                FILEHANDLE => $FILEHANDLE,
+            }
+        );
+        say {$FILEHANDLE} " &";
+    }
+    say {$FILEHANDLE} q{wait}, "\n";
+
+    ## Copy file(s) to temporary directory
+    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
+    ($xargs_file_counter) = xargs_migrate_contig_files(
+        {
+            FILEHANDLE         => $FILEHANDLE,
+            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
+            file_path          => $file_path,
+            program_info_path  => $program_info_path,
+            core_number        => $core_number,
+            xargs_file_counter => $xargs_file_counter,
+            infile             => $infile_prefix,
+            indirectory        => $insample_directory,
+            file_ending        => substr( $infile_suffix, 0, 2 ) . "*",
+            temp_directory     => $$temp_directory_ref,
+        }
+    );
+
+    ## cnvnator
+    say {$FILEHANDLE} "## cnvnator";
+
+    ## Create file commands for xargs
+    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
+        {
+            FILEHANDLE         => $FILEHANDLE,
+            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            file_path          => $file_path,
+            program_info_path  => $program_info_path,
+            core_number        => $core_number,
+            xargs_file_counter => $xargs_file_counter,
+        }
+    );
+
+    ## Process per contig
+    foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
+
+        ## Assemble parameter
+        $root_file =
+          $file_path_prefix . "_" . $contig . ".root";    #Output ROOT file
+
+        cnvnator_read_extraction(
+            {
+                infile_paths_ref =>
+                  [ $file_path_prefix . "_" . $contig . q{.bam} ],
+                outfile_path    => $root_file,
+                regions_ref     => [$contig],
+                unique          => 1,
+                stdoutfile_path => $xargs_file_path_prefix . "."
+                  . $contig
+                  . ".stdout.txt",
+                stderrfile_path => $xargs_file_path_prefix . "."
+                  . $contig
+                  . ".stderr.txt",
+                FILEHANDLE => $XARGSFILEHANDLE,
+            }
+        );
+        print $XARGSFILEHANDLE "; ";
+
+        cnvnator_histogram(
+            {
+                infile_path  => $root_file,
+                regions_ref  => [$contig],
+                cnv_bin_size => $active_parameter_href->{cnv_bin_size},
+                referencedirectory_path => $$temp_directory_ref,
+                FILEHANDLE              => $XARGSFILEHANDLE,
+                stdoutfile_path         => $xargs_file_path_prefix . "."
+                  . $contig
+                  . "_histogram.stdout.txt",
+                stderrfile_path => $xargs_file_path_prefix . "."
+                  . $contig
+                  . "_histogram.stderr.txt",
+            }
+        );
+        print $XARGSFILEHANDLE "; ";
+
+        cnvnator_statistics(
+            {
+                infile_path     => $root_file,
+                regions_ref     => [$contig],
+                cnv_bin_size    => $active_parameter_href->{cnv_bin_size},
+                FILEHANDLE      => $XARGSFILEHANDLE,
+                stdoutfile_path => $xargs_file_path_prefix . "."
+                  . $contig
+                  . "_statistics.stdout.txt",
+                stderrfile_path => $xargs_file_path_prefix . "."
+                  . $contig
+                  . "_statistics.stderr.txt",
+            }
+        );
+        print $XARGSFILEHANDLE "; ";
+
+        cnvnator_partition(
+            {
+                infile_path     => $root_file,
+                regions_ref     => [$contig],
+                cnv_bin_size    => $active_parameter_href->{cnv_bin_size},
+                FILEHANDLE      => $XARGSFILEHANDLE,
+                stdoutfile_path => $xargs_file_path_prefix . "."
+                  . $contig
+                  . "_partition.stdout.txt",
+                stderrfile_path => $xargs_file_path_prefix . "."
+                  . $contig
+                  . "_partition.stderr.txt",
+            }
+        );
+        print $XARGSFILEHANDLE "; ";
+
+        cnvnator_calling(
+            {
+                infile_path     => $root_file,
+                stdoutfile_path => $outfile_path_prefix . "_"
+                  . $contig
+                  . ".cnvnator",
+                regions_ref     => [$contig],
+                cnv_bin_size    => $active_parameter_href->{cnv_bin_size},
+                FILEHANDLE      => $XARGSFILEHANDLE,
+                stderrfile_path => $xargs_file_path_prefix . "."
+                  . $contig
+                  . "_calling.stderr.txt",
+            }
+        );
+        print $XARGSFILEHANDLE "; ";
+
+        cnvnator_convert_to_vcf(
+            {
+                infile_path => $outfile_path_prefix . "_"
+                  . $contig
+                  . ".cnvnator",
+                stdoutfile_path => $outfile_path_prefix . "_"
+                  . $contig
+                  . $outfile_suffix,
+                stderrfile_path => $xargs_file_path_prefix . "."
+                  . $contig
+                  . "_convert_to_vcf.stderr.txt",
+                referencedirectory_path => $$temp_directory_ref,
+                FILEHANDLE              => $XARGSFILEHANDLE,
+            }
+        );
+        print $XARGSFILEHANDLE "\n";
+    }
+
+    ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
+    concatenate_variants(
+        {
+            active_parameter_href => $active_parameter_href,
+            FILEHANDLE            => $FILEHANDLE,
+            elements_ref          => \@{ $file_info_href->{contigs} },
+            infile_prefix         => $outfile_path_prefix . "_",
+            infile_postfix        => $outfile_suffix,
+            outfile => $outfile_path_prefix . "_concat" . $outfile_suffix,
+        }
+    );
+
+    ## Fix GT FORMAT in header and Sample_id and GT and Genotype call
+    print {$FILEHANDLE} $perl_vcf_fix . " ";
+    print {$FILEHANDLE} $outfile_path_prefix
+      . "_concat"
+      . $outfile_suffix . " ";
+    say {$FILEHANDLE} "> "
+      . $outfile_path_prefix
+      . "_concat_fix"
+      . $outfile_suffix, "\n";
+
+    ##Add contigs to header
+    bcftools_annotate(
+        {
+            infile_path => $outfile_path_prefix
+              . "_concat_fix"
+              . $outfile_suffix,
+            outfile_path => $outfile_path_prefix . $outfile_suffix,
+            output_type  => "v",
+            headerfile_path =>
+              catfile( $$temp_directory_ref, "contig_header.txt" ),
+            FILEHANDLE => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} "\n";
+
+    ## Copies file from temporary directory.
+    say {$FILEHANDLE} q{## Copy file from temporary directory};
+    migrate_file(
+        {
+            infile_path  => $outfile_path_prefix . $outfile_suffix . q{*},
+            outfile_path => $outsample_directory,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} q{wait}, "\n";
+
+    close $FILEHANDLE;
+
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
+
+        add_program_outfile_to_sample_info(
+            {
+                sample_info_href => $sample_info_href,
+                program_name     => 'cnvnator',
+                outdirectory     => $outsample_directory,
+                outfile          => $outfile_prefix . $outfile_suffix,
+            }
+        );
+
+        slurm_submit_job_sample_id_dependency_add_to_sample(
+            {
+                job_id_href             => $job_id_href,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                family_id               => $$family_id_ref,
+                sample_id               => $$sample_id_ref,
+                path                    => $job_id_chain,
+                log                     => $log,
+                sbatch_file_name        => $file_path
+            }
+        );
+    }
+}
+
+>>>>>>> fc15d916cc79ce1910f24c08d7922fc514e21ccb
 sub delly_reformat {
 
 ##delly_reformat
@@ -13351,7 +13424,7 @@ sub delly_reformat {
 ##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
 ##         : $xargs_file_counter         => The xargs file counter
-##         : $call_type                  => The variant call type
+##         : $call_type                  => Variant call type
 
     my ($arg_href) = @_;
 
@@ -13379,68 +13452,68 @@ sub delly_reformat {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
         reference_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{reference_dir},
             strict_type => 1,
-            store       => \$reference_dir_ref
+            store       => \$reference_dir_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         xargs_file_counter => {
             default     => 0,
@@ -13449,7 +13522,7 @@ sub delly_reformat {
             store       => \$xargs_file_counter
         },
         call_type =>
-          { default => "SV", strict_type => 1, store => \$call_type },
+          { default => "SV", strict_type => 1, store => \$call_type, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -13603,8 +13676,8 @@ sub delly_reformat {
                     if ( $sv_type ne "TRA" ) {
 
                         ## Copy file(s) to temporary directory
-                        say $FILEHANDLE
-                          "## Copy file(s) to temporary directory";
+                        say {$FILEHANDLE}
+                          q{## Copy file(s) to temporary directory};
                         ($xargs_file_counter) = xargs_migrate_contig_files(
                             {
                                 FILEHANDLE         => $FILEHANDLE,
@@ -13623,8 +13696,8 @@ sub delly_reformat {
                     }
                     else {
 
-                        say $FILEHANDLE
-                          "## Copy file(s) to temporary directory";
+                        say {$FILEHANDLE}
+                          q{## Copy file(s) to temporary directory};
                         migrate_file(
                             {
                                 FILEHANDLE  => $FILEHANDLE,
@@ -13657,7 +13730,7 @@ sub delly_reformat {
                   substr( $suffix{$infile_tag_key}, 0, 2 ) . "*";
 
                 ## Copy file(s) to temporary directory
-                say $FILEHANDLE "## Copy file(s) to temporary directory";
+                say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
                 migrate_file(
                     {
                         FILEHANDLE  => $FILEHANDLE,
@@ -13670,7 +13743,7 @@ sub delly_reformat {
                 );
 
                 ## Copy file(s) to temporary directory
-                say $FILEHANDLE "## Copy file(s) to temporary directory";
+                say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
                 ($xargs_file_counter) = xargs_migrate_contig_files(
                     {
                         FILEHANDLE        => $FILEHANDLE,
@@ -13688,18 +13761,18 @@ sub delly_reformat {
                     }
                 );
             }
-            say $FILEHANDLE q{wait}, "\n";
+            say {$FILEHANDLE} q{wait}, "\n";
         }
     }
 
     if ( scalar( @{ $active_parameter_href->{sample_ids} } ) > 1 ) {
 
         ### Delly merge
-        say $FILEHANDLE "## delly merge \n";
+        say {$FILEHANDLE} "## delly merge \n";
 
-        say $FILEHANDLE
+        say {$FILEHANDLE}
           "## Fix locale bug using old centosOS and Boost library";
-        say $FILEHANDLE q?LC_ALL="C"; export LC_ALL ?, "\n\n";
+        say {$FILEHANDLE} q?LC_ALL="C"; export LC_ALL ?, "\n\n";
 
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
@@ -13782,7 +13855,7 @@ sub delly_reformat {
         }
 
         ## Delly call regenotype
-        say $FILEHANDLE "## delly call regenotype";
+        say {$FILEHANDLE} "## delly call regenotype";
 
       SAMPLE_ID:
         foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
@@ -13880,7 +13953,7 @@ sub delly_reformat {
         }
 
         ### Merge calls
-        say $FILEHANDLE "## bcftools merge";
+        say {$FILEHANDLE} "## bcftools merge";
 
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
@@ -13991,7 +14064,8 @@ sub delly_reformat {
         }
 
         ### Concatenate SV types
-        say $FILEHANDLE "## bcftools concat - concatenate SV type per contigs";
+        say {$FILEHANDLE}
+          "## bcftools concat - concatenate SV type per contigs";
 
         ## Assemble file paths by adding file ending
         my @file_paths;
@@ -14034,7 +14108,7 @@ sub delly_reformat {
                     FILEHANDLE     => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE "\n";
+            say {$FILEHANDLE} "\n";
 
             bcftools_index(
                 {
@@ -14049,11 +14123,11 @@ sub delly_reformat {
                     FILEHANDLE  => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE "\n";
+            say {$FILEHANDLE} "\n";
         }
 
         ### Filter calls
-        say $FILEHANDLE "## Delly filter";
+        say {$FILEHANDLE} "## Delly filter";
 
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
@@ -14127,7 +14201,7 @@ sub delly_reformat {
     ### Concatenate SV types
     if ( scalar( @{ $active_parameter_href->{sample_ids} } ) > 1 ) {
 
-        say $FILEHANDLE "## bcftools concat - merge all SV types";
+        say {$FILEHANDLE} "## bcftools concat - merge all SV types";
 
         @file_paths = map {
                 $outfile_path_prefix . "_"
@@ -14138,8 +14212,8 @@ sub delly_reformat {
     }
     else {    #Only one sample
 
-        say $FILEHANDLE "## Only one sample - skip merging and regenotyping";
-        say $FILEHANDLE "## bcftools concat - merge all SV types and contigs";
+        say {$FILEHANDLE} "## Only one sample - skip merging and regenotyping";
+        say {$FILEHANDLE} "## bcftools concat - merge all SV types and contigs";
 
       SV_TYPE:
         foreach my $sv_type ( @{ $active_parameter_href->{delly_types} } ) {
@@ -14184,7 +14258,7 @@ sub delly_reformat {
             FILEHANDLE      => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "\n";
+    say {$FILEHANDLE} "\n";
 
     ## Writes sbatch code to supplied filehandle to sort variants in vcf format
     sort_vcf(
@@ -14202,7 +14276,7 @@ sub delly_reformat {
     );
 
     ## Copies file from temporary directory.
-    say $FILEHANDLE "\n## Copy file from temporary directory";
+    say {$FILEHANDLE} "\n## Copy file from temporary directory";
     migrate_file(
         {
             infile_path  => $outfile_path_prefix . $outfile_suffix,
@@ -14210,7 +14284,7 @@ sub delly_reformat {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say {$FILEHANDLE} q{wait}, "\n";
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -14223,7 +14297,7 @@ sub delly_reformat {
             }
         );
     }
-    close($FILEHANDLE);
+    close $FILEHANDLE;
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -14287,42 +14361,42 @@ sub delly_call {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         sample_id_ref => {
             required    => 1,
@@ -14335,27 +14409,27 @@ sub delly_call {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
         reference_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{reference_dir},
             strict_type => 1,
-            store       => \$reference_dir_ref
+            store       => \$reference_dir_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         xargs_file_counter => {
             default     => 0,
@@ -14474,7 +14548,7 @@ sub delly_call {
 
         ## Required for processing complete file (TRA)
         ## Copy file(s) to temporary directory
-        say $FILEHANDLE "## Copy file(s) to temporary directory";
+        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
         migrate_file(
             {
                 FILEHANDLE  => $FILEHANDLE,
@@ -14495,7 +14569,7 @@ sub delly_call {
     {    #If element is part of array
 
         ## Copy file(s) to temporary directory
-        say $FILEHANDLE "## Copy file(s) to temporary directory";
+        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
         ($xargs_file_counter) = xargs_migrate_contig_files(
             {
                 FILEHANDLE        => $FILEHANDLE,
@@ -14512,11 +14586,11 @@ sub delly_call {
                 temp_directory     => $$temp_directory_ref,
             }
         );
-        say $FILEHANDLE q{wait}, "\n";
+        say {$FILEHANDLE} q{wait}, "\n";
     }
 
     ## delly
-    say $FILEHANDLE "## delly";
+    say {$FILEHANDLE} "## delly";
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
@@ -14592,7 +14666,7 @@ sub delly_call {
     }
 
     ## Copies file from temporary directory.
-    say $FILEHANDLE "## Copy file from temporary directory";
+    say {$FILEHANDLE} q{## Copy file from temporary directory};
     migrate_file(
         {
             infile_path => $outfile_path_prefix . q{*} . $outfile_suffix . q{*},
@@ -14600,9 +14674,9 @@ sub delly_call {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say {$FILEHANDLE} q{wait}, "\n";
 
-    close($FILEHANDLE);
+    close $FILEHANDLE;
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -14638,7 +14712,7 @@ sub msamtools_mpileup {
 ##         : $family_id_ref              => Family id {REF}
 ##         : $temp_directory_ref         => Temporary directory {REF}
 ##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => The variant call type
+##         : $call_type                  => Variant call type
 ##         : $xargs_file_counter          => The xargs file counter
 
     my ($arg_href) = @_;
@@ -14666,66 +14740,66 @@ sub msamtools_mpileup {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         call_type =>
-          { default => "BOTH", strict_type => 1, store => \$call_type },
+          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
         xargs_file_counter => {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
@@ -14852,7 +14926,7 @@ sub msamtools_mpileup {
           catfile( $$temp_directory_ref, $infile_prefix );
 
         ## Copy file(s) to temporary directory
-        say $FILEHANDLE "## Copy file(s) to temporary directory";
+        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
         ($xargs_file_counter) = xargs_migrate_contig_files(
             {
                 FILEHANDLE      => $FILEHANDLE,
@@ -14872,7 +14946,7 @@ sub msamtools_mpileup {
     }
 
     ## SamTools mpileup
-    say $FILEHANDLE "## SamTools mpileup";
+    say {$FILEHANDLE} "## SamTools mpileup";
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
@@ -14999,7 +15073,7 @@ q?\'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %M
     );
 
     ## Copies file from temporary directory.
-    say $FILEHANDLE "## Copy file from temporary directory";
+    say {$FILEHANDLE} q{## Copy file from temporary directory};
     migrate_file(
         {
             infile_path  => $outfile_path_prefix . $outfile_suffix . q{*},
@@ -15007,9 +15081,9 @@ q?\'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %M
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say {$FILEHANDLE} q{wait}, "\n";
 
-    close($FILEHANDLE);
+    close $FILEHANDLE;
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -15095,66 +15169,66 @@ sub freebayes {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         call_type =>
-          { default => "BOTH", strict_type => 1, store => \$call_type },
+          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
         xargs_file_counter => {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
@@ -15268,7 +15342,7 @@ sub freebayes {
           catfile( $$temp_directory_ref, $infile_prefix );
 
         ## Copy file(s) to temporary directory
-        say $FILEHANDLE "## Copy file(s) to temporary directory";
+        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
         ($xargs_file_counter) = xargs_migrate_contig_files(
             {
                 FILEHANDLE      => $FILEHANDLE,
@@ -15288,7 +15362,7 @@ sub freebayes {
     }
 
     ## Freebayes
-    say $FILEHANDLE "## Freebayes";
+    say {$FILEHANDLE} "## Freebayes";
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
@@ -15386,7 +15460,7 @@ sub freebayes {
     );
 
     ## Copies file from temporary directory.
-    say $FILEHANDLE "## Copy file from temporary directory";
+    say {$FILEHANDLE} q{## Copy file from temporary directory};
     migrate_file(
         {
             infile_path  => $outfile_path_prefix . $outfile_suffix . q{*},
@@ -15394,9 +15468,9 @@ sub freebayes {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say {$FILEHANDLE} q{wait}, "\n";
 
-    close($FILEHANDLE);
+    close $FILEHANDLE;
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -15475,42 +15549,42 @@ sub mgatk_haplotypecaller {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         sample_id_ref => {
             required    => 1,
@@ -15523,22 +15597,22 @@ sub mgatk_haplotypecaller {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         xargs_file_counter => {
             default     => 0,
@@ -15688,7 +15762,7 @@ sub mgatk_haplotypecaller {
     }
 
     ## Copy file(s) to temporary directory
-    say $FILEHANDLE "## Copy file(s) to temporary directory";
+    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
     ($xargs_file_counter) = xargs_migrate_contig_files(
         {
             FILEHANDLE         => $FILEHANDLE,
@@ -15707,7 +15781,7 @@ sub mgatk_haplotypecaller {
     );
 
     ## GATK HaplotypeCaller
-    say $FILEHANDLE "## GATK HaplotypeCaller";
+    say {$FILEHANDLE} "## GATK HaplotypeCaller";
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
@@ -15805,7 +15879,7 @@ sub mgatk_haplotypecaller {
     }
 
     ## Copies file from temporary directory. Per contig
-    say $FILEHANDLE "## Copy file from temporary directory";
+    say {$FILEHANDLE} q{## Copy file from temporary directory};
     ($xargs_file_counter) = xargs_migrate_contig_files(
         {
             FILEHANDLE         => $FILEHANDLE,
@@ -15821,7 +15895,7 @@ sub mgatk_haplotypecaller {
             file_ending        => $outfile_suffix . "*",
         }
     );
-    close($FILEHANDLE);
+    close $FILEHANDLE;
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -15889,42 +15963,42 @@ sub gatk_baserecalibration {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         sample_id_ref => {
             required    => 1,
@@ -15937,25 +16011,25 @@ sub gatk_baserecalibration {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         program_info_path => { strict_type => 1, store => \$program_info_path },
         file_path         => { strict_type => 1, store => \$file_path },
-        FILEHANDLE    => { store => \$FILEHANDLE },
+        FILEHANDLE    => { store => \$FILEHANDLE, },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         xargs_file_counter => {
             default     => 0,
@@ -16085,7 +16159,7 @@ sub gatk_baserecalibration {
     if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
         ## Copy file(s) to temporary directory
-        say $FILEHANDLE "## Copy file(s) to temporary directory";
+        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
         ($xargs_file_counter) = xargs_migrate_contig_files(
             {
                 FILEHANDLE      => $FILEHANDLE,
@@ -16116,7 +16190,7 @@ sub gatk_baserecalibration {
     );                      #To not exceed maximum
 
     ## GATK BaseRecalibrator
-    say $FILEHANDLE "## GATK BaseRecalibrator";
+    say {$FILEHANDLE} "## GATK BaseRecalibrator";
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
@@ -16192,7 +16266,7 @@ sub gatk_baserecalibration {
     }
 
     ## GATK PrintReads
-    say $FILEHANDLE "## GATK PrintReads";
+    say {$FILEHANDLE} "## GATK PrintReads";
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
@@ -16276,7 +16350,7 @@ sub gatk_baserecalibration {
     }
 
     ## Copies file from temporary directory. Per contig for variant callers.
-    say $FILEHANDLE "## Copy file from temporary directory";
+    say {$FILEHANDLE} q{## Copy file from temporary directory};
     ($xargs_file_counter) = xargs_migrate_contig_files(
         {
             FILEHANDLE         => $FILEHANDLE,
@@ -16312,7 +16386,7 @@ sub gatk_baserecalibration {
     }
 
     ## Gather BAM files
-    say $FILEHANDLE "## Gather BAM files";
+    say {$FILEHANDLE} "## Gather BAM files";
 
     ## Assemble infile paths by adding directory and file ending
     my @infile_paths = map {
@@ -16346,10 +16420,10 @@ sub gatk_baserecalibration {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "\n";
+    say {$FILEHANDLE} "\n";
 
     ## Copies file from temporary directory.
-    say $FILEHANDLE "## Copy file from temporary directory";
+    say {$FILEHANDLE} q{## Copy file from temporary directory};
     migrate_file(
         {
             infile_path => $outfile_path_prefix
@@ -16358,7 +16432,7 @@ sub gatk_baserecalibration {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE q{wait}, "\n";
+    say {$FILEHANDLE} q{wait}, "\n";
 
     ## Remove concatenated BAM file at temporary directory
     gnu_rm(
@@ -16381,7 +16455,7 @@ sub gatk_baserecalibration {
 
     close($XARGSFILEHANDLE);
 
-    close($FILEHANDLE);
+    close $FILEHANDLE;
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -16449,42 +16523,42 @@ sub gatk_realigner {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         sample_id_ref => {
             required    => 1,
@@ -16496,21 +16570,21 @@ sub gatk_realigner {
         program_name      => { strict_type => 1, store => \$program_name },
         program_info_path => { strict_type => 1, store => \$program_info_path },
         file_path         => { strict_type => 1, store => \$file_path },
-        FILEHANDLE    => { store => \$FILEHANDLE },
+        FILEHANDLE    => { store => \$FILEHANDLE, },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         xargs_file_counter => {
             default     => 0,
@@ -16634,7 +16708,7 @@ sub gatk_realigner {
     if ( !$$reduce_io_ref ) {                  #Run as individual sbatch script
 
         ## Copy file(s) to temporary directory
-        say $FILEHANDLE "## Copy file(s) to temporary directory";
+        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
         ($xargs_file_counter) = xargs_migrate_contig_files(
             {
                 FILEHANDLE      => $FILEHANDLE,
@@ -16654,7 +16728,7 @@ sub gatk_realigner {
     }
 
     ## GATK ReAlignerTargetCreator
-    say $FILEHANDLE "## GATK ReAlignerTargetCreator";
+    say {$FILEHANDLE} "## GATK ReAlignerTargetCreator";
 
     $core_number = floor( $active_parameter_href->{node_ram_memory} / 4 )
       ;                     #Division by 4 since the java heap is 4GB
@@ -16738,7 +16812,7 @@ sub gatk_realigner {
     }
 
     ## GATK IndelRealigner
-    say $FILEHANDLE "## GATK IndelRealigner";
+    say {$FILEHANDLE} "## GATK IndelRealigner";
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
@@ -16816,7 +16890,7 @@ sub gatk_realigner {
     if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
         ## Copies file from temporary directory. Per contig
-        say $FILEHANDLE "## Copy file from temporary directory";
+        say {$FILEHANDLE} q{## Copy file from temporary directory};
         ($xargs_file_counter) = xargs_migrate_contig_files(
             {
                 FILEHANDLE      => $FILEHANDLE,
@@ -16864,7 +16938,7 @@ sub gatk_realigner {
 
     if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
-        close($FILEHANDLE);
+        close $FILEHANDLE;
 
         if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -16905,7 +16979,7 @@ sub variantannotationblock {
 ##         : $program_name               => Program name
 ##         : $family_id_ref              => Family id {REF}
 ##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => The variant call type
+##         : $call_type                  => Variant call type
 ##         : $xargs_file_counter         => The xargs file counter
 
     my ($arg_href) = @_;
@@ -16931,61 +17005,61 @@ sub variantannotationblock {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         call_type =>
-          { default => "BOTH", strict_type => 1, store => \$call_type },
+          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
         xargs_file_counter => {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
@@ -17275,35 +17349,35 @@ sub bamcalibrationblock {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         lane_href => {
             required    => 1,
@@ -17317,28 +17391,28 @@ sub bamcalibrationblock {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
     };
 
@@ -17548,64 +17622,64 @@ sub build_ptchs_metric_prerequisites {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
-        FILEHANDLE    => { store => \$FILEHANDLE },
+        FILEHANDLE    => { store => \$FILEHANDLE, },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
     };
 
@@ -17614,7 +17688,7 @@ sub build_ptchs_metric_prerequisites {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Gnu::Coreutils qw(gnu_rm gnu_cat);
     use MIP::Language::Java qw{java_core};
-    use Program::Interval::Picardtools qw(intervallisttools);
+    use MIP::Program::Interval::Picardtools qw(picardtools_intervallisttools);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_no_dependency_add_to_samples);
 
@@ -17651,7 +17725,7 @@ sub build_ptchs_metric_prerequisites {
       \$file_info_href->{exome_target_bed}[2];
 
     foreach my $exome_target_bed_file (
-        keys $active_parameter_href->{exome_target_bed} )
+        keys @{ $active_parameter_href->{exome_target_bed} } )
     {
 
         $log->warn( "Will try to create required "
@@ -17663,7 +17737,7 @@ sub build_ptchs_metric_prerequisites {
         my $exome_target_bed_file_random =
           $exome_target_bed_file . "_" . $random_integer;    #Add random integer
 
-        say $FILEHANDLE "## CreateSequenceDictionary from reference";
+        say {$FILEHANDLE} "## CreateSequenceDictionary from reference";
 
         java_core(
             {
@@ -17678,14 +17752,14 @@ sub build_ptchs_metric_prerequisites {
             }
         );
 
-        print $FILEHANDLE "CreateSequenceDictionary ";
-        print $FILEHANDLE "R="
+        print {$FILEHANDLE} "CreateSequenceDictionary ";
+        print {$FILEHANDLE} "R="
           . $active_parameter_href->{human_genome_reference}
           . " ";    #Reference genome
-        say $FILEHANDLE "OUTPUT=" . $exome_target_bed_file_random . ".dict",
+        say {$FILEHANDLE} "OUTPUT=" . $exome_target_bed_file_random . ".dict",
           "\n";     #Output sequence dictionnary
 
-        say $FILEHANDLE
+        say {$FILEHANDLE}
           "## Add target file to headers from sequence dictionary";
         gnu_cat(
             {
@@ -17697,21 +17771,21 @@ sub build_ptchs_metric_prerequisites {
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "\n";
+        say {$FILEHANDLE} "\n";
 
-        say $FILEHANDLE
+        say {$FILEHANDLE}
 "#Remove target annotations, 'track', 'browse' and keep only 5 columns";
-        print $FILEHANDLE
+        print {$FILEHANDLE}
 q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^browser/) {} else {print @F[0], "\t", (@F[1] + 1), "\t", @F[2], "\t", "+", "\t", "-", "\n";}' ?;
-        print $FILEHANDLE $exome_target_bed_file_random
+        print {$FILEHANDLE} $exome_target_bed_file_random
           . ".dict_body"
           . " ";    #Infile
-        print $FILEHANDLE "> ";    #Write to
-        say $FILEHANDLE $exome_target_bed_file_random
+        print {$FILEHANDLE} "> ";                           #Write to
+        say   {$FILEHANDLE} $exome_target_bed_file_random
           . ".dict_body_col_5.interval_list",
-          "\n";                    #Remove unnecessary info and reformat
+          "\n";    #Remove unnecessary info and reformat
 
-        say $FILEHANDLE "## Create" . $$infile_list_ending_ref;
+        say {$FILEHANDLE} "## Create" . $$infile_list_ending_ref;
         java_core(
             {
                 FILEHANDLE        => $FILEHANDLE,
@@ -17737,7 +17811,7 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
                 FILEHANDLE => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "\n";
+        say {$FILEHANDLE} "\n";
 
         my $intended_file_path =
           $exome_target_bed_file . $$infile_list_ending_ref;
@@ -17755,7 +17829,7 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
             }
         );
 
-        say $FILEHANDLE "#Create" . $$padded_infile_list_ending_ref;
+        say {$FILEHANDLE} "#Create" . $$padded_infile_list_ending_ref;
         java_core(
             {
                 FILEHANDLE        => $FILEHANDLE,
@@ -17782,7 +17856,7 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
                 FILEHANDLE => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "\n";
+        say {$FILEHANDLE} "\n";
 
         $intended_file_path =
           $exome_target_bed_file . $$padded_infile_list_ending_ref;
@@ -17800,22 +17874,22 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
             }
         );
 
-        say $FILEHANDLE "#Create "
+        say {$FILEHANDLE} "#Create "
           . $$padded_interval_list_ending_ref
           . " by softlinking";
 
         ##Softlink '.interval_list' to padded .infile_list", "\n";
-        print $FILEHANDLE "ln -f -s ";    #Softlink
-        print $FILEHANDLE $exome_target_bed_file
+        print {$FILEHANDLE} "ln -f -s ";             #Softlink
+        print {$FILEHANDLE} $exome_target_bed_file
           . $$padded_infile_list_ending_ref
-          . " ";                          #Origin file
-        print $FILEHANDLE $exome_target_bed_file
-          . $$padded_interval_list_ending_ref;    #interval_list file
+          . " ";                                     #Origin file
+        print {$FILEHANDLE} $exome_target_bed_file
+          . $$padded_interval_list_ending_ref;       #interval_list file
 
-        say $FILEHANDLE "\n";
+        say {$FILEHANDLE} "\n";
 
         ## Remove temporary files
-        say $FILEHANDLE "#Remove temporary files";
+        say {$FILEHANDLE} "#Remove temporary files";
 
         my @temp_files = (
             $exome_target_bed_file_random . ".dict_body_col_5.interval_list",
@@ -17831,13 +17905,13 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
                     FILEHANDLE  => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE "\n";
+            say {$FILEHANDLE} "\n";
         }
     }
     unless ( defined($FILEHANDLE) )
     {    #Unless FILEHANDLE was supplied close filehandle and submit
 
-        close($FILEHANDLE);
+        close $FILEHANDLE;
 
         if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -17904,42 +17978,42 @@ sub build_bwa_prerequisites {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         bwa_build_reference_file_endings_ref => {
             required    => 1,
@@ -17952,22 +18026,22 @@ sub build_bwa_prerequisites {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         human_genome_reference_ref => {
             default =>
@@ -18025,15 +18099,15 @@ sub build_bwa_prerequisites {
               . $program_name
               . "\n" );
 
-        say $FILEHANDLE "## Building BWA index";
-        print $FILEHANDLE "bwa index ";    #Index sequences in the FASTA format
-        print $FILEHANDLE "-p "
+        say {$FILEHANDLE} "## Building BWA index";
+        print {$FILEHANDLE} "bwa index ";   #Index sequences in the FASTA format
+        print {$FILEHANDLE} "-p "
           . $$human_genome_reference_ref . "_"
           . $random_integer
-          . " ";                           #Prefix of the index
-        print $FILEHANDLE "-a bwtsw ";     #BWT construction algorithm
-        say $FILEHANDLE $$human_genome_reference_ref,
-          "\n";                            #The FASTA reference sequences file
+          . " ";                            #Prefix of the index
+        print {$FILEHANDLE} "-a bwtsw ";    #BWT construction algorithm
+        say {$FILEHANDLE} $$human_genome_reference_ref,
+          "\n";                             #The FASTA reference sequences file
 
         foreach my $file (@$bwa_build_reference_file_endings_ref) {
 
@@ -18053,7 +18127,7 @@ sub build_bwa_prerequisites {
         $parameter_href->{bwa_build_reference}{build_file} =
           0;    #Ensure that this subrutine is only executed once
     }
-    close($FILEHANDLE);
+    close $FILEHANDLE;
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
@@ -18104,48 +18178,48 @@ sub check_build_human_genome_prerequisites {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
     };
 
@@ -18227,54 +18301,54 @@ sub check_build_ptchs_metric_prerequisites {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
-        FILEHANDLE    => { store => \$FILEHANDLE },
+        FILEHANDLE    => { store => \$FILEHANDLE, },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
     };
 
@@ -18346,61 +18420,61 @@ sub build_human_genome_prerequisites {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program =>
           { required => 1, defined => 1, strict_type => 1, store => \$program },
-        FILEHANDLE     => { strict_type => 1, store => \$FILEHANDLE },
+        FILEHANDLE     => { strict_type => 1, store => \$FILEHANDLE, },
         random_integer => { strict_type => 1, store => \$random_integer },
         family_id_ref  => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         reference_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{reference_dir},
             strict_type => 1,
-            store       => \$reference_dir_ref
+            store       => \$reference_dir_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         human_genome_reference_ref => {
             default =>
@@ -18454,7 +18528,7 @@ sub build_human_genome_prerequisites {
             FILEHANDLE     => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "\n";
+    say {$FILEHANDLE} "\n";
 
     ## Check for compressed files
     if ( $file_info_href->{human_genome_compressed} eq "compressed" ) {
@@ -18473,7 +18547,7 @@ sub build_human_genome_prerequisites {
                 FILEHANDLE  => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "\n";
+        say {$FILEHANDLE} "\n";
 
         $$human_genome_reference_ref =~ s/.fasta.gz/.fasta/g
           ; #Replace the .fasta.gz ending with .fasta since this will execute before the analysis, hence changing the original file name ending from ".fastq" to ".fastq.gz".
@@ -18517,7 +18591,7 @@ sub build_human_genome_prerequisites {
                 my $filename_prefix = catfile( $$reference_dir_ref,
                     $file_info_href->{human_genome_reference_name_prefix} );
 
-                say $FILEHANDLE "#CreateSequenceDictionary from reference";
+                say {$FILEHANDLE} "#CreateSequenceDictionary from reference";
                 java_core(
                     {
                         FILEHANDLE        => $FILEHANDLE,
@@ -18533,11 +18607,11 @@ sub build_human_genome_prerequisites {
                     }
                 );
 
-                print $FILEHANDLE "CreateSequenceDictionary ";
-                print $FILEHANDLE "R="
+                print {$FILEHANDLE} "CreateSequenceDictionary ";
+                print {$FILEHANDLE} "R="
                   . $$human_genome_reference_ref
                   . " ";    #Reference genome
-                say $FILEHANDLE "OUTPUT="
+                say {$FILEHANDLE} "OUTPUT="
                   . $filename_prefix . "_"
                   . $random_integer
                   . $file_ending, "\n";    #Output sequence dictionnary
@@ -18568,15 +18642,15 @@ sub build_human_genome_prerequisites {
                 my $human_genome_reference_temp_file =
                   $$human_genome_reference_ref . "_" . $random_integer;
 
-                say $FILEHANDLE "## Fai file from reference";
-                print $FILEHANDLE "ln -s ";    #Softlink
-                print $FILEHANDLE $$human_genome_reference_ref
-                  . " ";                       #Reference genome
-                say $FILEHANDLE $human_genome_reference_temp_file,
-                  "\n";                        #Softlink to reference genome
+                say   {$FILEHANDLE} "## Fai file from reference";
+                print {$FILEHANDLE} "ln -s ";                       #Softlink
+                print {$FILEHANDLE} $$human_genome_reference_ref
+                  . " ";    #Reference genome
+                say {$FILEHANDLE} $human_genome_reference_temp_file,
+                  "\n";     #Softlink to reference genome
 
-                print $FILEHANDLE "samtools faidx ";    #index/extract FASTA
-                say $FILEHANDLE $human_genome_reference_temp_file,
+                print {$FILEHANDLE} "samtools faidx ";    #index/extract FASTA
+                say {$FILEHANDLE} $human_genome_reference_temp_file,
                   "\n";    #Softlink to reference genome
 
                 my $intended_file_path =
@@ -18601,15 +18675,15 @@ sub build_human_genome_prerequisites {
                         FILEHANDLE  => $FILEHANDLE,
                     }
                 );
-                say $FILEHANDLE "\n";    #Softlink to reference genome
+                say {$FILEHANDLE} "\n";    #Softlink to reference genome
             }
             $parameter_href->{ "human_genome_reference" . $file_ending }
-              {build_file} = 0;          #Only create once
+              {build_file} = 0;            #Only create once
         }
     }
     if ($submit_switch) {    #Unless FILEHANDLE was supplied close it and submit
 
-        close($FILEHANDLE);
+        close $FILEHANDLE;
 
         if ( $active_parameter_href->{ "p" . $program } == 1 ) {
 
@@ -18664,28 +18738,28 @@ sub read_yaml_pedigree_file {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         pedigree_href => {
             required    => 1,
@@ -18703,7 +18777,7 @@ sub read_yaml_pedigree_file {
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
     };
 
@@ -18956,7 +19030,7 @@ sub collect_infiles {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         indir_path_href => {
             required    => 1,
@@ -19095,21 +19169,21 @@ sub infiles_reformat {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_href => {
             required    => 1,
@@ -19130,7 +19204,7 @@ sub infiles_reformat {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         infile_both_strands_prefix_href => {
             required    => 1,
@@ -19151,18 +19225,18 @@ sub infiles_reformat {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
     };
 
@@ -19337,7 +19411,7 @@ sub check_sample_id_match {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         infile_href => {
             required    => 1,
@@ -19350,7 +19424,7 @@ sub check_sample_id_match {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$sample_id
+            store       => \$sample_id,
         },
         infile_sample_id => {
             required    => 1,
@@ -19510,21 +19584,21 @@ sub add_infile_info {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_href => {
             required    => 1,
@@ -19545,7 +19619,7 @@ sub add_infile_info {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         infile_both_strands_prefix_href => {
             required    => 1,
@@ -19565,7 +19639,7 @@ sub add_infile_info {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$sample_id
+            store       => \$sample_id,
         },
         lane => {
             required    => 1,
@@ -19615,7 +19689,7 @@ sub add_infile_info {
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
     };
 
@@ -19855,28 +19929,28 @@ sub add_to_active_parameter {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         broadcasts_ref => {
             required    => 1,
@@ -19897,7 +19971,7 @@ sub add_to_active_parameter {
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
     };
 
@@ -19934,7 +20008,7 @@ sub add_to_active_parameter {
                     join( $$element_separator_ref, @$values_ref ) );
             }
             elsif (( $parameter_href->{$parameter_name}{data_type} eq "HASH" )
-                && ( keys $parameter_href->{$parameter_name}{value} ) )
+                && ( keys %{ $parameter_href->{$parameter_name}{value} } ) )
             {    #Hash reference
 
                 $active_parameter_href->{$parameter_name} =
@@ -20262,7 +20336,7 @@ sub add_to_active_parameter {
               . $parameter_name . " to: "
               . join( ",",
                 map { "$_=$active_parameter_href->{$parameter_name}{$_}" }
-                  ( keys $active_parameter_href->{$parameter_name} ) );
+                  ( keys %{ $active_parameter_href->{$parameter_name} } ) );
             push( @$broadcasts_ref, $info );    #Add info to broadcasts
         }
         else {
@@ -20313,28 +20387,28 @@ sub check_parameter_files {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         broadcasts_ref => {
             required    => 1,
@@ -20354,7 +20428,7 @@ sub check_parameter_files {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$parameter_name
+            store       => \$parameter_name,
         },
         parameter_exists_check => {
             required    => 1,
@@ -20365,7 +20439,7 @@ sub check_parameter_files {
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
     };
 
@@ -20660,7 +20734,7 @@ sub check_parameter_files {
                 if ( $parameter_href->{$parameter_name}{data_type} eq "HASH" ) {
 
                     for my $path (
-                        keys $active_parameter_href->{$parameter_name} )
+                        keys %{ $active_parameter_href->{$parameter_name} } )
                     {
 
                         if ( $parameter_name eq "exome_target_bed" ) {
@@ -20756,28 +20830,28 @@ sub create_file_endings {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         order_parameters_ref => {
             required    => 1,
@@ -20789,7 +20863,7 @@ sub create_file_endings {
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
     };
 
@@ -21067,7 +21141,7 @@ sub split_target_file {
     my $file_ending;
 
     my $tmpl = {
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
+        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE, },
         indirectory_ref => {
             required    => 1,
             defined     => 1,
@@ -21097,22 +21171,23 @@ sub split_target_file {
 
     if ( defined($$contig_ref) ) {    #The contig to split
 
-        print $FILEHANDLE q?perl -nae 'if($_=~/^\@/) {print $_;} elsif($_=~/^?
+        print {$FILEHANDLE}
+          q?perl -nae 'if($_=~/^\@/) {print $_;} elsif($_=~/^?
           . $$contig_ref
           . q?\s+/) {print $_;}' ?;    #Select header and contig
-        print $FILEHANDLE catfile( $$indirectory_ref, $$infile_ref )
+        print {$FILEHANDLE} catfile( $$indirectory_ref, $$infile_ref )
           . " ";                       #Infile
 
         if ( defined($file_ending) ) {
 
-            say $FILEHANDLE "> "
+            say {$FILEHANDLE} "> "
               . catfile( $$outdirectory_ref,
                 $$contig_ref . "_" . $$infile_ref . $file_ending )
               . " &";                  #Outfile with supplied file ending
         }
         else {
 
-            say $FILEHANDLE "> "
+            say {$FILEHANDLE} "> "
               . catfile( $$outdirectory_ref, $$contig_ref . "_" . $$infile_ref )
               . " &";                  #Outfile
         }
@@ -21147,7 +21222,7 @@ sub gatk_pedigree_flag {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         fam_file_path => {
             required    => 1,
@@ -21159,7 +21234,7 @@ sub gatk_pedigree_flag {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         pedigree_validation_type => {
             default     => "SILENT",
@@ -21222,14 +21297,14 @@ sub write_cmd_mip_log {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         order_parameters_ref => {
             required    => 1,
@@ -21270,33 +21345,35 @@ sub write_cmd_mip_log {
 
     my @nowrite = (
         "mip",                  "bwa_build_reference",
-        "pbamcalibrationblock", "pvariantannotationblock"
+        "pbamcalibrationblock", "pvariantannotationblock",
+        q{associated_program},
     );
 
-    foreach my $order_parameter_element (@$order_parameters_ref) {
+  PARAMETER_KEY:
+    foreach my $order_parameter_element ( @{$order_parameters_ref} ) {
 
-        if ( defined( $active_parameter_href->{$order_parameter_element} ) ) {
+        if ( defined $active_parameter_href->{$order_parameter_element} ) {
 
-            if (   ( $order_parameter_element eq "config_file" )
-                && ( $active_parameter_href->{config_file} eq 0 ) )
-            {    #Do not print
+            ## If no config file do not print
+            if (   $order_parameter_element eq q{config_file}
+                && $active_parameter_href->{config_file} eq 0 )
+            {
             }
             else {
 
-                if ( ( any { $_ eq $order_parameter_element } @nowrite ) )
-                {    #If element is part of array - do nothing
+                ## If element is part of array - do nothing
+                if ( ( any { $_ eq $order_parameter_element } @nowrite ) ) {
                 }
                 elsif (
+                    ## Array reference
                     (
-                        exists(
-                            $parameter_href->{$order_parameter_element}
-                              {data_type}
-                        )
+                        exists $parameter_href->{$order_parameter_element}
+                        {data_type}
                     )
                     && ( $parameter_href->{$order_parameter_element}{data_type}
-                        eq "ARRAY" )
+                        eq q{ARRAY} )
                   )
-                {    #Array reference
+                {
 
                     my $separator = $parameter_href->{$order_parameter_element}
                       {element_separator};
@@ -21310,26 +21387,27 @@ sub write_cmd_mip_log {
                       ) . " ";
                 }
                 elsif (
+                    ## HASH reference
                     (
-                        exists(
-                            $parameter_href->{$order_parameter_element}
-                              {data_type}
-                        )
+                        exists $parameter_href->{$order_parameter_element}
+                        {data_type}
                     )
                     && ( $parameter_href->{$order_parameter_element}{data_type}
-                        eq "HASH" )
+                        eq q{HASH} )
                   )
-                {    #HASH reference
+                {
 
-                    $cmd_line .=
-                      "-" . $order_parameter_element . " ";    #First key
+                    # First key
+                    $cmd_line .= "-" . $order_parameter_element . " ";
                     $cmd_line .= join(
                         "-" . $order_parameter_element . " ",
                         map {
 "$_=$active_parameter_href->{$order_parameter_element}{$_} "
                           } (
-                            keys
-                              $active_parameter_href->{$order_parameter_element}
+                            keys %{
+                                $active_parameter_href
+                                  ->{$order_parameter_element}
+                            }
                           )
                     );
                 }
@@ -21343,15 +21421,16 @@ sub write_cmd_mip_log {
             }
         }
     }
-    $log->info( $cmd_line,                           "\n" );
-    $log->info( 'MIP Version: ' . $$mip_version_ref, "\n" );
+    $log->info( $cmd_line,                            "\n" );
+    $log->info( q{MIP Version: } . $$mip_version_ref, "\n" );
     $log->info(
-        'Script parameters and info from '
+        q{Script parameters and info from }
           . $$script_ref
-          . ' are saved in file: '
+          . q{ are saved in file: }
           . $$log_file_ref,
         "\n"
     );
+    return;
 }
 
 sub check_unique_array_element {
@@ -21391,7 +21470,7 @@ sub check_unique_array_element {
     }
     if ( ref($query_ref) eq "SCALAR" ) {    #Scalar reference
 
-        push( $array_query_ref, $$query_ref );    #Standardize to array
+        push( @{$array_query_ref}, $$query_ref );    #Standardize to array
     }
 
     ##For each array_query_ref element, loop through corresponding array_to_check_ref element(s), add if there are none or an updated/unique entry.
@@ -21505,7 +21584,7 @@ sub check_unique_ids {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_ids_ref => {
             required    => 1,
@@ -21517,7 +21596,7 @@ sub check_unique_ids {
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
     };
 
@@ -21590,7 +21669,7 @@ sub update_config_file {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         parameter_name_ref => {
             required    => 1,
@@ -21602,7 +21681,7 @@ sub update_config_file {
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
     };
 
@@ -21668,14 +21747,14 @@ sub check_auto_build {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         parameter_name_ref => {
             required    => 1,
@@ -21687,7 +21766,7 @@ sub check_auto_build {
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
     };
 
@@ -21732,7 +21811,7 @@ sub parse_human_genome_reference {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         human_genome_reference_ref => {
             required    => 1,
@@ -21803,14 +21882,14 @@ sub check_file_endings_to_build {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         file_endings_ref => {
             required    => 1,
@@ -21823,7 +21902,7 @@ sub check_file_endings_to_build {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$parameter_name
+            store       => \$parameter_name,
         },
         file_name => {
             required    => 1,
@@ -21881,14 +21960,14 @@ sub check_existance {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         item_name_ref => {
             required    => 1,
@@ -22007,7 +22086,7 @@ sub check_user_supplied_info {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         data_ref => { required => 1, defined => 1, store => \$data_ref },
         parameter_name => { strict_type => 1, store => \$parameter_name },
@@ -22123,7 +22202,7 @@ sub check_target_bed_file_exist {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         file =>
           { required => 1, defined => 1, strict_type => 1, store => \$file },
@@ -22131,7 +22210,7 @@ sub check_target_bed_file_exist {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$parameter_name
+            store       => \$parameter_name,
         },
 
     };
@@ -22193,7 +22272,7 @@ sub compare_array_elements {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$parameter_name
+            store       => \$parameter_name,
         },
         parameter_name_query => {
             required    => 1,
@@ -22243,7 +22322,7 @@ sub check_exist_and_move_file {
     my $temporary_file_path_ref;
 
     my $tmpl = {
-        FILEHANDLE             => { required => 1, store => \$FILEHANDLE },
+        FILEHANDLE             => { required => 1, store => \$FILEHANDLE, },
         intended_file_path_ref => {
             required    => 1,
             defined     => 1,
@@ -22264,10 +22343,10 @@ sub check_exist_and_move_file {
 
     use MIP::Gnu::Coreutils qw(gnu_rm gnu_mv);
 
-    print $FILEHANDLE "[ -s "
+    print {$FILEHANDLE} "[ -s "
       . $$intended_file_path_ref
       . " ] ";    #Check file exists and is larger than 0
-    print $FILEHANDLE "&& ";
+    print {$FILEHANDLE} "&& ";
 
     ## If other processes already has created file, remove temp file
     gnu_rm(
@@ -22276,7 +22355,7 @@ sub check_exist_and_move_file {
             FILEHANDLE  => $FILEHANDLE,
         }
     );
-    print $FILEHANDLE "|| ";    #File has not been created by other processes
+    print {$FILEHANDLE} "|| ";    #File has not been created by other processes
     gnu_mv(
         {
             infile_path  => $$temporary_file_path_ref,
@@ -22284,7 +22363,7 @@ sub check_exist_and_move_file {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "\n";
+    say {$FILEHANDLE} "\n";
 }
 
 sub collect_seq_contigs {
@@ -22318,7 +22397,7 @@ sub collect_seq_contigs {
             defined     => 1,
             default     => \$$,
             strict_type => 1,
-            store       => \$reference_dir_ref
+            store       => \$reference_dir_ref,
         },
         human_genome_reference_name_prefix_ref => {
             required    => 1,
@@ -22419,7 +22498,7 @@ sub size_sort_select_file_contigs {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         consensus_analysis_type_ref => {
             required    => 1,
@@ -22525,14 +22604,14 @@ sub replace_config_parameters_with_cmd_info {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         parameter_names_ref => {
             required    => 1,
@@ -22630,7 +22709,7 @@ sub check_most_complete_and_remove_file {
     my $file_ending;
 
     my $tmpl = {
-        FILEHANDLE    => { required => 1, defined => 1, store => \$FILEHANDLE },
+        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE, },
         file_path_ref => {
             required    => 1,
             defined     => 1,
@@ -22673,7 +22752,7 @@ sub check_most_complete_and_remove_file {
                     FILEHANDLE  => $FILEHANDLE,
                 }
             );
-            say $FILEHANDLE "\n";    #Remove file(s)
+            say {$FILEHANDLE} "\n";    #Remove file(s)
         }
     }
     else {
@@ -22694,7 +22773,7 @@ sub check_most_complete_and_remove_file {
                 FILEHANDLE  => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "\n";    #Remove file(s)
+        say {$FILEHANDLE} "\n";    #Remove file(s)
     }
 }
 
@@ -22803,22 +22882,22 @@ sub concatenate_vcfs {
         }
     );
 
-    print $FILEHANDLE "split -j ";    #Joinf VCFs together
+    print {$FILEHANDLE} "split -j ";    #Joinf VCFs together
 
     foreach my $element (@$arrays_ref) {
 
-        print $FILEHANDLE $infile_prefix
+        print {$FILEHANDLE} $infile_prefix
           . $element
           . $infile_postfix
-          . " ";                      #files to combined
+          . " ";                        #files to combined
     }
     if ( ( defined( $_[6] ) ) && $reorder_swith eq "reorder_header" ) {
 
-        print $FILEHANDLE "| ";            #Pipe
-        print $FILEHANDLE "vcfparser ";    #Parses the vcf output
+        print {$FILEHANDLE} "| ";            #Pipe
+        print {$FILEHANDLE} "vcfparser ";    #Parses the vcf output
     }
 
-    print $FILEHANDLE "> " . $outfile;     #OutFile
+    print {$FILEHANDLE} "> " . $outfile;     #OutFile
 }
 
 sub concatenate_variants {
@@ -22855,7 +22934,7 @@ sub concatenate_variants {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         elements_ref => {
             required    => 1,
@@ -22864,7 +22943,7 @@ sub concatenate_variants {
             strict_type => 1,
             store       => \$elements_ref
         },
-        FILEHANDLE    => { required => 1, defined => 1, store => \$FILEHANDLE },
+        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE, },
         infile_prefix => {
             required    => 1,
             defined     => 1,
@@ -22872,7 +22951,7 @@ sub concatenate_variants {
             store       => \$infile_prefix
         },
         infile_postfix => { strict_type => 1, store => \$infile_postfix },
-        outfile        => { strict_type => 1, store => \$outfile },
+        outfile        => { strict_type => 1, store => \$outfile, },
         human_genome_reference_ref => {
             default =>
               \$arg_href->{active_parameter_href}{human_genome_reference},
@@ -22895,7 +22974,7 @@ sub concatenate_variants {
         $outfile = $infile_prefix . ".vcf";
     }
 
-    say $FILEHANDLE "## GATK CatVariants";
+    say {$FILEHANDLE} "## GATK CatVariants";
 
     ## Assemble infile paths
     my @infile_paths =
@@ -22917,7 +22996,7 @@ sub concatenate_variants {
             FILEHANDLE         => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "\n";
+    say {$FILEHANDLE} "\n";
 }
 
 sub sort_vcf {
@@ -22948,7 +23027,7 @@ sub sort_vcf {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         infile_paths_ref => {
             required    => 1,
@@ -22957,47 +23036,47 @@ sub sort_vcf {
             strict_type => 1,
             store       => \$infile_paths_ref
         },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
+        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE, },
         sequence_dict_file => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$sequence_dict_file
         },
-        outfile =>
-          { required => 1, defined => 1, strict_type => 1, store => \$outfile },
+        outfile => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$outfile,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Language::Java qw{java_core};
-    use Program::Variantcalling::Picardtools qw(sortvcf);
+    use MIP::Program::Variantcalling::Picardtools qw(picardtools_sortvcf);
 
-    say $FILEHANDLE "## Picard SortVcf";
+    say {$FILEHANDLE} "## Picard SortVcf";
 
     ## Writes java core commands to filehandle.
-    java_core(
-        {
-            FILEHANDLE        => $FILEHANDLE,
-            memory_allocation => "Xmx2g",
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory => $active_parameter_href->{temp_directory},
-            java_jar       => catfile(
-                $active_parameter_href->{picardtools_path}, "picard.jar"
-            ),
-        }
-    );
-
-    sortvcf(
+    picardtools_sortvcf(
         {
             infile_paths_ref    => \@$infile_paths_ref,
             outfile_path        => $outfile,
             sequence_dictionary => $sequence_dict_file,
-            FILEHANDLE          => $FILEHANDLE,
+            memory_allocation   => q{Xmx2g},
+            referencefile_path =>
+              $active_parameter_href->{human_genome_reference},
+            java_use_large_pages =>
+              $active_parameter_href->{java_use_large_pages},
+            temp_directory => $active_parameter_href->{temp_directory},
+            java_jar       => catfile(
+                $active_parameter_href->{picardtools_path},
+                q{picard.jar}
+            ),
+            FILEHANDLE => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "\n";
+    say {$FILEHANDLE} "\n";
 }
 
 sub detect_sample_id_gender {
@@ -23022,14 +23101,14 @@ sub detect_sample_id_gender {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
     };
 
@@ -23109,7 +23188,7 @@ sub remove_pedigree_elements {
     foreach my $sample_id ( keys %{ $hash_ref->{sample} } ) {
 
       SAMPLE_INFO:
-        for my $pedigree_element ( keys $hash_ref->{sample}{$sample_id} ) {
+        for my $pedigree_element ( keys %{ $hash_ref->{sample}{$sample_id} } ) {
 
             if ( !any { $_ eq $pedigree_element } @allowed_entries )
             {    #If element is not part of array
@@ -23154,7 +23233,7 @@ sub deafult_log4perl_file {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         cmd_input_ref =>
           { default => \$$, strict_type => 1, store => \$cmd_input_ref },
@@ -23182,7 +23261,7 @@ sub deafult_log4perl_file {
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         outdata_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outdata_dir},
@@ -23236,28 +23315,28 @@ sub check_human_genome_file_endings {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         parameter_name_ref =>
           { default => \$$, strict_type => 1, store => \$parameter_name_ref },
         reference_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{reference_dir},
             strict_type => 1,
-            store       => \$reference_dir_ref
+            store       => \$reference_dir_ref,
         },
         human_genome_reference_name_prefix_ref => {
             default =>
@@ -23338,7 +23417,7 @@ sub collect_path_entries {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         paths_ref => {
             required    => 1,
@@ -23614,7 +23693,7 @@ sub add_capture_kit {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         supported_capture_kit_href => {
             required    => 1,
@@ -23701,7 +23780,7 @@ sub split_bam {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         contigs_ref => {
             required    => 1,
@@ -23710,7 +23789,7 @@ sub split_bam {
             strict_type => 1,
             store       => \$contigs_ref
         },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
+        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE, },
         XARGSFILEHANDLE =>
           { required => 1, defined => 1, store => \$XARGSFILEHANDLE },
         file_path => {
@@ -23732,11 +23811,11 @@ sub split_bam {
             store       => \$core_number
         },
         infile =>
-          { required => 1, defined => 1, strict_type => 1, store => \$infile },
+          { required => 1, defined => 1, strict_type => 1, store => \$infile, },
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
         xargs_file_counter => {
             default     => 0,
@@ -23880,14 +23959,14 @@ sub collect_gene_panels {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         family_id_ref => {
             required    => 1,
             defined     => 1,
             default     => \$$,
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         program_name_ref => {
             required    => 1,
@@ -24012,14 +24091,14 @@ sub add_most_complete_vcf {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         path =>
           { required => 1, defined => 1, strict_type => 1, store => \$path },
@@ -24027,12 +24106,12 @@ sub add_most_complete_vcf {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         vcfparser_outfile_counter => {
             default     => 0,
@@ -24084,14 +24163,14 @@ sub check_command_in_path {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
     };
 
@@ -24159,7 +24238,7 @@ sub update_sample_info_hash {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         temp_href => {
             required    => 1,
@@ -24173,7 +24252,7 @@ sub update_sample_info_hash {
             defined     => 1,
             default     => \$$,
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
     };
 
@@ -24181,7 +24260,7 @@ sub update_sample_info_hash {
 
     foreach my $sample_id ( keys %{ $sample_info_href->{sample} } ) {
 
-        foreach my $key ( keys $sample_info_href->{sample}{$sample_id} ) {
+        foreach my $key ( keys %{ $sample_info_href->{sample}{$sample_id} } ) {
 
             if ( exists( $temp_href->{sample}{$sample_id}{$key} ) )
             { #Previous run information, which should be updated using pedigree from current analysis
@@ -24221,7 +24300,7 @@ sub update_to_absolute_path {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
     };
 
@@ -24354,26 +24433,26 @@ sub add_to_sample_info {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         human_genome_reference_ref => {
             default =>
@@ -24524,375 +24603,6 @@ sub add_to_sample_info {
     }
 }
 
-sub eval_parameter_hash {
-
-##eval_parameter_hash
-
-##Function : Evaluate parameters in parameters hash
-##Returns  : ""
-##Arguments: $parameter_href, $file_path
-##         : $parameter_href => Hash with paremters from yaml file {REF}
-##         : $file_path      => Path to yaml file
-
-    my ($arg_href) = @_;
-
-    ##Flatten argument(s)
-    my $parameter_href;
-    my $file_path;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        file_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$file_path
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my %mandatory_key;
-    $mandatory_key{associated_program}{key_data_type} = "ARRAY";
-    $mandatory_key{data_type}{key_data_type}          = "SCALAR";
-    $mandatory_key{data_type}{values}   = [ "SCALAR", "ARRAY", "HASH" ];
-    $mandatory_key{type}{key_data_type} = "SCALAR";
-    $mandatory_key{type}{values} =
-      [ "mip", "path", "program", "program_argument" ];
-
-    my %non_mandatory_key;
-    $non_mandatory_key{build_file}{key_data_type} = "SCALAR";
-    $non_mandatory_key{build_file}{values} =
-      [ "no_auto_build", "yes_auto_build" ];
-    $non_mandatory_key{mandatory}{key_data_type}      = "SCALAR";
-    $non_mandatory_key{mandatory}{values}             = ["no"];
-    $non_mandatory_key{exists_check}{key_data_type}   = "SCALAR";
-    $non_mandatory_key{exists_check}{values}          = [ "file", "directory" ];
-    $non_mandatory_key{chain}{key_data_type}          = "SCALAR";
-    $non_mandatory_key{file_tag}{key_data_type}       = "SCALAR";
-    $non_mandatory_key{infile_suffix}{key_data_type}  = "SCALAR";
-    $non_mandatory_key{outfile_suffix}{key_data_type} = "SCALAR";
-    $non_mandatory_key{program_name_path}{key_data_type} = "ARRAY";
-    $non_mandatory_key{element_separator}{key_data_type} = "SCALAR";
-    $non_mandatory_key{reduce_io}{key_data_type}         = "SCALAR";
-    $non_mandatory_key{reduce_io}{values}                = [1];
-    $non_mandatory_key{program_type}{key_data_type}      = "SCALAR";
-    $non_mandatory_key{program_type}{values} =
-      [ "aligners", "variant_callers", "structural_variant_callers" ];
-    $non_mandatory_key{outdir_name}{key_data_type}                   = "SCALAR";
-    $non_mandatory_key{file_endings}{key_data_type}                  = "ARRAY";
-    $non_mandatory_key{remove_redundant_file}{key_data_type}         = "SCALAR";
-    $non_mandatory_key{remove_redundant_file}{values}                = ["yes"];
-    $non_mandatory_key{remove_redundant_file_setting}{key_data_type} = "SCALAR";
-    $non_mandatory_key{remove_redundant_file_setting}{values} =
-      [ "single", "merged", "family", "variant_annotation" ];
-    $non_mandatory_key{reference}{key_data_type} = "SCALAR";
-    $non_mandatory_key{reference}{values}        = ["reference_dir"];
-
-    check_keys(
-        {
-            parameter_href         => $parameter_href,
-            mandatory_key_href     => \%mandatory_key,
-            non_mandatory_key_href => \%non_mandatory_key,
-            file_path_ref          => \$file_path,
-        }
-    );
-}
-
-sub check_keys {
-
-##check_keys
-
-##Function : Evaluate keys in hash
-##Returns  : ""
-##Arguments: $parameter_href, $mandatory_key_href, $non_mandatory_key_href, $file_path
-##         : $parameter_href         => Hash with parameters from yaml file {REF}
-##         : $mandatory_key_href     => Hash with mandatory key {REF}
-##         : $non_mandatory_key_href => Hash with non mandatory key {REF}
-##         : $file_path_ref          => Path to yaml file {REF}
-
-    my ($arg_href) = @_;
-
-    ##Flatten argument(s)
-    my $parameter_href;
-    my $mandatory_key_href;
-    my $non_mandatory_key_href;
-    my $file_path_ref;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        mandatory_key_href => {
-            required    => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$mandatory_key_href
-        },
-        non_mandatory_key_href => {
-            required    => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$non_mandatory_key_href
-        },
-        file_path_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$file_path_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    foreach my $parameter ( keys %$parameter_href ) {
-
-        foreach my $mandatory_key ( keys %$mandatory_key_href ) {
-
-            ## Mandatory key exists
-            if ( exists( $parameter_href->{$parameter}{$mandatory_key} ) ) {
-
-                ## Check key data type
-                check_data_type(
-                    {
-                        parameter_href => $parameter_href,
-                        key_href       => $mandatory_key_href,
-                        parameter      => $parameter,
-                        key            => $mandatory_key,
-                        file_path_ref  => $file_path_ref,
-                    }
-                );
-                ## Evaluate key values
-                check_values(
-                    {
-                        parameter_href => $parameter_href,
-                        key_href       => $mandatory_key_href,
-                        parameter      => $parameter,
-                        key            => $mandatory_key,
-                        file_path_ref  => $file_path_ref,
-                    }
-                );
-            }
-            else {
-
-                warn(   "Missing mandatory key: '"
-                      . $mandatory_key
-                      . "' for parameter: '"
-                      . $parameter
-                      . "' in file: '"
-                      . $$file_path_ref
-                      . "'\n" );
-                exit 1;
-            }
-        }
-        foreach my $non_mandatory_key ( keys %$non_mandatory_key_href ) {
-
-            ## Non_mandatory key exists
-            if ( exists( $parameter_href->{$parameter}{$non_mandatory_key} ) ) {
-
-                ## Check key data type
-                check_data_type(
-                    {
-                        parameter_href => $parameter_href,
-                        key_href       => $non_mandatory_key_href,
-                        parameter      => $parameter,
-                        key            => $non_mandatory_key,
-                        file_path_ref  => $file_path_ref,
-                    }
-                );
-
-                ## Evaluate key values
-                check_values(
-                    {
-                        parameter_href => $parameter_href,
-                        key_href       => $non_mandatory_key_href,
-                        parameter      => $parameter,
-                        key            => $non_mandatory_key,
-                        file_path_ref  => $file_path_ref,
-                    }
-                );
-            }
-        }
-    }
-}
-
-sub check_values {
-
-##check_values
-
-##Function : Evaluate key values
-##Returns  : ""
-##Arguments: $parameter_href, $key_href, $key, $file_path_ref
-##         : $parameter_href => Hash with parameters from yaml file {REF}
-##         : $key_href       => Hash with  key {REF}
-##         : $key            => Hash with non  key
-##         : $file_path_ref  => Path to yaml file {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $key_href;
-    my $parameter;
-    my $key;
-    my $file_path_ref;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        key_href => {
-            required    => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$key_href
-        },
-        parameter => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$parameter
-        },
-        key =>
-          { required => 1, defined => 1, strict_type => 1, store => \$key },
-        file_path_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$file_path_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Check value(s)
-    if ( $key_href->{$key}{values} ) {
-
-        my $value_ref = \$parameter_href->{$parameter}{$key};
-
-        if ( !( any { $_ eq $$value_ref } @{ $key_href->{$key}{values} } ) ) {
-
-            warn(   "Found illegal value '"
-                  . $$value_ref
-                  . "' for parameter: '"
-                  . $parameter
-                  . "' in key: '"
-                  . $key
-                  . "' in file: '"
-                  . $$file_path_ref
-                  . "'\n" );
-            warn(   "Allowed entries: '"
-                  . join( "', '", @{ $key_href->{$key}{values} } )
-                  . "'\n" );
-            exit 1;
-        }
-    }
-}
-
-sub check_data_type {
-
-##check_data_type
-
-##Function : Check key data type
-##Returns  : ""
-##Arguments: $parameter_href, $key_href, $key, $file_path_ref
-##         : $parameter_href => Hash with paremters from yaml file {REF}
-##         : $key_href       => Hash with  key {REF}
-##         : $key            => Hash with non  key
-##         : $file_path_ref  => Path to yaml file {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $key_href;
-    my $parameter;
-    my $key;
-    my $file_path_ref;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        key_href => {
-            required    => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$key_href
-        },
-        parameter => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$parameter
-        },
-        key =>
-          { required => 1, defined => 1, strict_type => 1, store => \$key },
-        file_path_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$file_path_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Check data_type
-    my $data_type = ref( $parameter_href->{$parameter}{$key} );
-
-    if ($data_type) {    #Array or hash
-
-        ## Wrong data_type
-        unless ( $data_type eq $key_href->{$key}{key_data_type} ) {
-
-            warn(   "Found '"
-                  . $data_type
-                  . "' but expected datatype '"
-                  . $key_href->{$key}{key_data_type}
-                  . "' for parameter: '"
-                  . $parameter
-                  . "' in key: '"
-                  . $key
-                  . "' in file: '"
-                  . $$file_path_ref
-                  . "'\n" );
-            exit 1;
-        }
-    }
-    elsif ( $key_href->{$key}{key_data_type} ne "SCALAR" ) {
-
-        ## Wrong data_type
-        warn(   "Found 'SCALAR' but expected datatype '"
-              . $key_href->{$key}{key_data_type}
-              . "' for parameter: '"
-              . $parameter
-              . "' in key: '"
-              . $key
-              . "' in file: '"
-              . $$file_path_ref
-              . "'\n" );
-        exit 1;
-    }
-}
-
 sub check_config_vs_definition_file {
 
 ##check_config_vs_definition_file
@@ -25031,7 +24741,7 @@ sub remove_redundant_files {
 ##         : $FILEHANDLE                 => Filehandle to write to
 ##         : $family_id_ref              => Family id {REF}
 ##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => The variant call type
+##         : $call_type                  => Variant call type
 
     my ($arg_href) = @_;
 
@@ -25058,28 +24768,28 @@ sub remove_redundant_files {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         lane_href => {
             required    => 1,
@@ -25093,7 +24803,7 @@ sub remove_redundant_files {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         reduce_io_ref => {
             required    => 1,
@@ -25105,19 +24815,19 @@ sub remove_redundant_files {
         sample_id => { strict_type => 1, store => \$sample_id },
         insample_directory =>
           { strict_type => 1, store => \$insample_directory },
-        FILEHANDLE    => { store => \$FILEHANDLE },
+        FILEHANDLE    => { store => \$FILEHANDLE, },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref
+            store       => \$family_id_ref,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
         call_type =>
-          { default => "BOTH", strict_type => 1, store => \$call_type },
+          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -25377,7 +25087,7 @@ sub detect_most_complete_file {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_ending_ref => {
             required    => 1,
@@ -25484,14 +25194,14 @@ sub detect_founders {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
     };
 
@@ -25554,14 +25264,14 @@ sub detect_trio {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
     };
 
@@ -25679,7 +25389,7 @@ sub add_to_parameter {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         aggregates_ref => {
             required    => 1,
@@ -25718,15 +25428,12 @@ sub add_to_parameter {
 
 sub check_prioritize_variant_callers {
 
-##check_prioritize_variant_callers
-
-##Function : Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $variant_callers_ref, $parameter_names_ref
-##         : $parameter_href        => Parameter hash {REF}
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $variant_callers_ref   => Variant callers to check {REF}
-##         : $parameter_names_ref   => Parameter name list {REF}
+## Function : Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller.
+## Returns  :
+## Arguments: $parameter_href        => Parameter hash {REF}
+##          : $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $variant_callers_ref   => Variant callers to check {REF}
+##          : $parameter_names_ref   => Parameter name list {REF}
 
     my ($arg_href) = @_;
 
@@ -25742,27 +25449,29 @@ sub check_prioritize_variant_callers {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
+            ,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
+            ,
         },
         parameter_names_ref => {
             required => 1,
             defined  => 1,
             default  => [],
-            store    => \$parameter_names_ref
+            store    => \$parameter_names_ref,
         },
         variant_callers_ref => {
             required    => 1,
             defined     => 1,
             default     => [],
             strict_type => 1,
-            store       => \$variant_callers_ref
+            store       => \$variant_callers_ref,
         },
     };
 
@@ -25773,38 +25482,41 @@ sub check_prioritize_variant_callers {
 
     my @priority_calls =
       split( ",", $active_parameter_href->{$$parameter_names_ref} );
-    my @variant_caller_aliases;    #No matching variant caller
+
+    ## No matching variant caller
+    my @variant_caller_aliases;
 
     ## Check that all active variant callers have a priority order
+  CALLER:
     foreach my $variant_caller ( @{$variant_callers_ref} ) {
 
         my $variant_caller_alias =
           $parameter_href->{$variant_caller}{outdir_name};
-        push( @variant_caller_aliases, $variant_caller_alias );
+        push @variant_caller_aliases, $variant_caller_alias;
 
-        if ( $active_parameter_href->{$variant_caller} > 0 )
-        {                          #Only active programs
+        ## Only active programs
+        if ( $active_parameter_href->{$variant_caller} > 0 ) {
 
-            if ( !( any { $_ eq $variant_caller_alias } @priority_calls ) )
-            {                      #If element is not part of string
+            ## If element is not part of string
+            if ( !( any { $_ eq $variant_caller_alias } @priority_calls ) ) {
 
                 $log->fatal( $$parameter_names_ref
-                      . " does not contain active variant caller: '"
+                      . q{ does not contain active variant caller: '}
                       . $variant_caller_alias
-                      . "'" );
+                      . q{'} );
                 exit 1;
             }
         }
-        if ( $active_parameter_href->{$variant_caller} == 0 )
-        {                          #Only NOT active programs
+        ## Only NOT active programs
+        if ( $active_parameter_href->{$variant_caller} == 0 ) {
 
-            if ( ( any { $_ eq $variant_caller_alias } @priority_calls ) )
-            {                      #If element is part of string
+            ## If element is part of string
+            if ( ( any { $_ eq $variant_caller_alias } @priority_calls ) ) {
 
                 $log->fatal( $$parameter_names_ref
-                      . " contains deactivated variant caller: '"
+                      . q{ contains deactivated variant caller: '}
                       . $variant_caller_alias
-                      . "'" );
+                      . q{'} );
                 exit 1;
             }
         }
@@ -25859,7 +25571,7 @@ sub view_vcf {
             strict_type => 1,
             store       => \$infile_path
         },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
+        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE, },
         outfile_path_prefix =>
           { strict_type => 1, store => \$outfile_path_prefix },
         output_type => {
@@ -25901,7 +25613,7 @@ sub view_vcf {
           $outfile_path_prefix . $output_type_ending{$output_type};
     }
 
-    say $FILEHANDLE q{## Reformat variant calling file};
+    say {$FILEHANDLE} q{## Reformat variant calling file};
     bcftools_view(
         {
             infile_path  => $infile_path,
@@ -25910,11 +25622,11 @@ sub view_vcf {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-    say $FILEHANDLE "\n";
+    say {$FILEHANDLE} "\n";
 
     if ($index) {
 
-        say $FILEHANDLE q{## Index};
+        say {$FILEHANDLE} q{## Index};
         bcftools_index(
             {
                 infile_path => $outfile_path,
@@ -25922,7 +25634,7 @@ sub view_vcf {
                 FILEHANDLE  => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE "\n";
+        say {$FILEHANDLE} "\n";
     }
     return;
 }
@@ -25955,14 +25667,14 @@ sub check_aligner {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         broadcasts_ref => {
             required    => 1,
@@ -25974,7 +25686,7 @@ sub check_aligner {
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir_ref
+            store       => \$outaligner_dir_ref,
         },
     };
 
@@ -26018,107 +25730,6 @@ sub check_aligner {
         );
         exit 1;
     }
-}
-
-sub rename_vcf_samples {
-
-##rename_vcf_samples
-
-##Function : Rename vcf samples. The samples array will replace the sample names in the same order as supplied.
-##Returns  : ""
-##Arguments: $sample_ids_ref, $temp_directory_ref, $infile, $outfile, $FILEHANDLE, $output_type
-##         : $sample_ids_ref     => Samples to rename in the same order as in the vcf {REF}
-##         : $temp_directory_ref => Temporary directory {REF}
-##         : $infile             => The vcf infile to rename samples for
-##         : $outfile            => Output vcf with samples renamed
-##         : $FILEHANDLE         => Filehandle to write to
-##         : $output_type        => Output type
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $output_type;
-
-    ## Flatten argument(s)
-    my $sample_ids_ref;
-    my $temp_directory_ref;
-    my $infile;
-    my $outfile;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-        sample_ids_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$sample_ids_ref
-        },
-        temp_directory_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$temp_directory_ref
-        },
-        infile =>
-          { required => 1, defined => 1, strict_type => 1, store => \$infile },
-        outfile =>
-          { required => 1, defined => 1, strict_type => 1, store => \$outfile },
-        FILEHANDLE  => { required => 1, defined => 1, store => \$FILEHANDLE },
-        output_type => {
-            default     => "v",
-            allow       => [ "b", "u", "z", "v" ],
-            strict_type => 1,
-            store       => \$output_type
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Gnu::Coreutils qw(gnu_printf);
-    use MIP::Program::Variantcalling::Bcftools
-      qw(bcftools_view bcftools_reheader);
-
-    ## Create new sample names file
-    say $FILEHANDLE "## Create new sample(s) names file";
-    ## Get parameters
-    my $format_string = q?"?;
-    foreach my $sample_id (@$sample_ids_ref) {
-
-        $format_string .= $sample_id . q?\n?;
-    }
-    $format_string .= q?"?;
-    gnu_printf(
-        {
-            format_string => $format_string,
-            stdoutfile_path =>
-              catfile( $$temp_directory_ref, "sample_name.txt" ),
-            FILEHANDLE => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE "\n";
-
-    ## Rename samples in VCF
-    say $FILEHANDLE "## Rename sample(s) names in VCF file";
-    bcftools_reheader(
-        {
-            infile_path => $infile,
-            samples_file_path =>
-              catfile( $$temp_directory_ref, "sample_name.txt" ),
-            FILEHANDLE => $FILEHANDLE,
-        }
-    );
-    print $FILEHANDLE "| ";    #Pipe
-
-    bcftools_view(
-        {
-            outfile_path => $outfile,
-            output_type  => "v",
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE "\n";
 }
 
 sub collect_read_length {
@@ -26194,7 +25805,7 @@ sub print_program {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         print_program_mode => {
             default => $arg_href->{print_program_mode} //= 2,
@@ -26213,14 +25824,11 @@ sub print_program {
         }
     );
 
-    my @order_parameters;
-
     ## Adds the order of first level keys from yaml file to array
-    order_parameter_names(
+    my @order_parameters = order_parameter_names(
         {
-            order_parameters_ref => \@order_parameters,
             file_path =>
-              catfile( $Bin, "definitions", "define_parameters.yaml" ),
+              catfile( $Bin, qw{ definitions define_parameters.yaml } ),
         }
     );
 
@@ -26269,14 +25877,14 @@ sub check_program_mode {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
     };
 
@@ -26394,7 +26002,7 @@ sub check_sample_id_in_parameter_path {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_ids_ref => {
             required    => 1,
@@ -26421,7 +26029,8 @@ sub check_sample_id_in_parameter_path {
 
         my %seen;    #Hash to test duplicate sample_ids later
 
-        foreach my $key ( keys $active_parameter_href->{$parameter_name} ) {
+        foreach my $key ( keys %{ $active_parameter_href->{$parameter_name} } )
+        {
 
             my @parameter_samples =
               split( ",", $active_parameter_href->{$parameter_name}{$key} );
@@ -26491,7 +26100,7 @@ sub check_sample_id_in_parameter {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_ids_ref => {
             required    => 1,
@@ -26542,7 +26151,7 @@ sub check_sample_id_in_parameter {
                 if (
                     !(
                         any { $_ eq $sample_id }
-                        ( keys $active_parameter_href->{$parameter_name} )
+                        ( keys %{ $active_parameter_href->{$parameter_name} } )
                     )
                   )
                 {
@@ -26553,8 +26162,12 @@ sub check_sample_id_in_parameter {
                           . " for parameter '--"
                           . $parameter_name
                           . "'. Provided sample_ids for parameter are: "
-                          . join( ", ",
-                            ( keys $active_parameter_href->{$parameter_name} )
+                          . join(
+                            ", ",
+                            (
+                                keys
+                                  %{ $active_parameter_href->{$parameter_name} }
+                            )
                           ),
                         "\n"
                     );
@@ -26599,16 +26212,16 @@ sub generate_contig_specific_target_bed_file {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
-        FILEHANDLE                => { store => \$FILEHANDLE },
+        FILEHANDLE                => { store => \$FILEHANDLE, },
         exome_target_bed_file_ref => {
             required    => 1,
             defined     => 1,
@@ -26620,12 +26233,12 @@ sub generate_contig_specific_target_bed_file {
         temp_directory_ref => {
             default     => \$arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory_ref
+            store       => \$temp_directory_ref,
         },
         reference_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{reference_dir},
             strict_type => 1,
-            store       => \$reference_dir_ref
+            store       => \$reference_dir_ref,
         },
     };
 
@@ -26636,7 +26249,7 @@ sub generate_contig_specific_target_bed_file {
     my $core_number           = $active_parameter_href->{max_cores_per_node};
     my $process_batches_count = 1;
 
-    say $FILEHANDLE "## Generate contig specific interval_list\n";
+    say {$FILEHANDLE} "## Generate contig specific interval_list\n";
 
     while ( my ( $contig_index, $contig ) =
         each( @{ $file_info_href->{contigs_size_ordered} } ) )
@@ -26663,7 +26276,7 @@ sub generate_contig_specific_target_bed_file {
             }
         );
     }
-    say $FILEHANDLE q{wait}, "\n";
+    say {$FILEHANDLE} q{wait}, "\n";
 }
 
 sub replace_iupac {
@@ -26704,24 +26317,24 @@ sub replace_iupac {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    print $FILEHANDLE "| ";    #Pipe
-    print $FILEHANDLE "perl -nae ";
+    print {$FILEHANDLE} "| ";           #Pipe
+    print {$FILEHANDLE} "perl -nae ";
 
-    if ($xargs) {              #Add escape char
+    if ($xargs) {                       #Add escape char
 
-        print $FILEHANDLE
+        print {$FILEHANDLE}
 q?\'if($_=~/^#/) {print $_;} else { @F[4] =~ s/W|K|Y|R|S|M/N/g; print join(\"\\\t\", @F), \"\\\n\"; }\' ?
           ; #substitute IUPAC code with N to not break vcf specifications (GRCh38)
     }
     else {
 
-        print $FILEHANDLE
+        print {$FILEHANDLE}
 q?'if($_=~/^#/) {print $_;} else { @F[4] =~ s/W|K|Y|R|S|M/N/g; print join("\t", @F), "\n"; }' ?
           ; #substitute IUPAC code with N to not break vcf specifications (GRCh38)
     }
     if ($stderr_path) {
 
-        print $FILEHANDLE "2>> "
+        print {$FILEHANDLE} "2>> "
           . $stderr_path
           . " ";    #Redirect output to program specific stderr file
     }
@@ -26751,7 +26364,7 @@ sub get_matching_values_key {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         query_value_ref => {
             required    => 1,
@@ -26764,7 +26377,7 @@ sub get_matching_values_key {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$parameter_name
+            store       => \$parameter_name,
         },
     };
 
@@ -26801,14 +26414,14 @@ sub get_user_supplied_info {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
     };
 
@@ -26893,28 +26506,28 @@ sub get_pedigree_sample_info {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         exom_target_bed_test_file_tracker_href => {
             required    => 1,
@@ -26941,7 +26554,7 @@ sub get_pedigree_sample_info {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$sample_id
+            store       => \$sample_id,
         },
     };
 
@@ -27154,20 +26767,20 @@ sub update_mip_reference_path {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         parameter_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$parameter_name
+            store       => \$parameter_name,
         },
     };
 
@@ -27200,7 +26813,8 @@ sub update_mip_reference_path {
     }
     elsif ( $parameter_href->{$parameter_name}{data_type} eq "HASH" ) {
 
-        foreach my $file ( keys $active_parameter_href->{$parameter_name} ) {
+        foreach my $file ( keys %{ $active_parameter_href->{$parameter_name} } )
+        {
 
             my ( $volume, $directory, $file_name ) =
               File::Spec->splitpath($file);    #Split to restate
@@ -27275,7 +26889,7 @@ sub check_vcfanno_toml {
             last;
         }
     }
-    close($FILEHANDLE);
+    close $FILEHANDLE;
 }
 
 sub check_snpsift_keys {
@@ -27441,65 +27055,6 @@ sub check_element_exists_in_hash {
     }
 }
 
-sub update_program_mode {
-
-##update_program_mode
-
-##Function : Update program mode depending on analysis run value as some programs are not applicable for e.g. wes
-##Returns  : ""
-##Arguments: $active_parameter_href, $programs_ref, $consensus_analysis_type_ref
-##         : $active_parameter_href       => Active parameters for this analysis hash {REF}
-##         : $programs_ref                => Programs to update {REF}
-##         : $consensus_analysis_type_ref => Consensus analysis_type {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $programs_ref;
-    my $consensus_analysis_type_ref;
-
-    my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href
-        },
-        programs_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$programs_ref
-        },
-        consensus_analysis_type_ref => {
-            default     => \$$,
-            strict_type => 1,
-            store       => \$consensus_analysis_type_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    if ( $$consensus_analysis_type_ref ne "wgs" ) {
-
-        foreach my $program (@$programs_ref) {
-
-            $active_parameter_href->{ "p" . $program } = 0;
-            $log->warn( "Turned off: "
-                  . $program
-                  . " as it is not applicable for "
-                  . $$consensus_analysis_type_ref
-                  . " analysis\n" );
-        }
-    }
-}
-
 ##Investigate potential autodie error
 if ( $@ and $@->isa("autodie::exception") ) {
 
@@ -27519,336 +27074,4 @@ if ( $@ and $@->isa("autodie::exception") ) {
 elsif ($@) {
 
     say "A non-autodie exception.";
-}
-
-####
-#Decommissioned
-####
-
-sub prepare_gatk_target_intervals {
-
-##prepare_gatk_target_intervals
-
-##Function : Prepare target interval file. Copies file to temporary directory, and adds fileExtension to fit GATK
-##Returns  : "$target_interval_path"
-##Arguments: $analysis_type_ref, $target_interval_file_list_ref, $reference_dir_ref, $temp_directory_ref, $FILEHANDLE
-##         : $analysis_type_ref             => The analysis type {REF}
-##         : $target_interval_file_list_ref => Target interval list file {REF}
-##         : $reference_dir_ref             => Reference directory {REF}
-##         : $temp_directory_ref            => Temporary directory {REF}
-##         : $FILEHANDLE                    => Filehandle to write to
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $call_type  = $arg_href->{call_type}  //= "BOTH";
-    my $add_ending = $arg_href->{add_ending} //= 1;
-
-    ## Flatten argument(s)
-    my $analysis_type_ref = $arg_href->{analysis_type_ref};
-    my $FILEHANDLE        = $arg_href->{FILEHANDLE};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref};
-    my $target_interval_file_list_ref =
-      $arg_href->{target_interval_file_list_ref};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref};
-
-    use MIP::IO::Files qw(migrate_file);
-    use MIP::Gnu::Coreutils qw(gnu_mv);
-
-    if (   ( $$analysis_type_ref eq "wes" )
-        || ( $$analysis_type_ref eq "rapid" ) )
-    {    #Exome/rapid analysis
-
-        my $target_interval_path =
-          catfile( $$temp_directory_ref, $$target_interval_file_list_ref );
-
-        ## Copies file to temporary directory.
-        migrate_file(
-            {
-                FILEHANDLE  => $FILEHANDLE,
-                infile_path => catfile(
-                    $$reference_dir_ref, $$target_interval_file_list_ref
-                ),
-                outfile_path => $$temp_directory_ref,
-            }
-        );
-        say $FILEHANDLE "wait ";
-
-        if ($add_ending) {
-
-            $target_interval_path .= ".intervals";
-
-            ## Add the by GATK required ".interval" ending
-            gnu_mv(
-                {
-                    infile_path => catfile(
-                        $$temp_directory_ref, $$target_interval_file_list_ref
-                    ),
-                    outfile_path => catfile(
-                        $$temp_directory_ref,
-                        $$target_interval_file_list_ref . ".intervals"
-                    ),
-                    FILEHANDLE => $FILEHANDLE,
-                }
-            );
-            say $FILEHANDLE "\n";
-        }
-        return $target_interval_path;
-    }
-}
-
-sub MergeTargetListFlag {
-
-##MergeTargetListFlag
-
-##Function : Detects if there are different capture kits across sample_ids. Creates a temporary merged interval_list for all interval_list that have been supplied and returns temporary list.
-##Returns  : "Filepath"
-##Arguments: $active_parameter_href, $FILEHANDLE, $contig_ref
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $FILEHANDLE            => FILEHANDLE to write to
-##         : $contig_ref            => The contig to extract {REF}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $temp_directory_ref;
-
-    ## Flatten argument(s)
-    my $active_parameter_href = $arg_href->{active_parameter_href};
-    my $FILEHANDLE            = $arg_href->{FILEHANDLE};
-
-    ##Determine file to print to module (untouched/merged and/or splited)
-    my $outdirectory =
-      $active_parameter_href->{temp_directory};    #For merged and/or splitet
-
-    if ( scalar( keys %{ $active_parameter_href->{exome_target_bed} } ) > 1 )
-    {                                              #Merge files
-
-        say $FILEHANDLE "\n## Generate merged interval_list\n";
-
-        java_core(
-            {
-                FILEHANDLE        => $FILEHANDLE,
-                memory_allocation => "Xmx2g",
-                java_use_large_pages =>
-                  $active_parameter_href->{java_use_large_pages},
-                temp_directory => $$temp_directory_ref,
-                java_jar       => catfile(
-                    $active_parameter_href->{picardtools_path}, "picard.jar"
-                ),
-            }
-        );
-
-        print $FILEHANDLE "IntervalListTools ";
-        print $FILEHANDLE "UNIQUE=TRUE "
-          ; #Merge overlapping and adjacent intervals to create a list of unique intervals
-
-        foreach
-          my $targetFile ( keys $active_parameter_href->{exome_target_bed} )
-        {
-
-            print $FILEHANDLE "INPUT=" . $targetFile . " ";
-        }
-        say $FILEHANDLE "OUTPUT="
-          . catfile( $$temp_directory_ref, "merged.interval_list" ),
-          "\n";    #Merged outfile
-    }
-}
-
-sub GATKTargetListFlag {
-
-##GATKTargetListFlag
-
-##Function : Detects if there are different capture kits across sample_ids. Creates a temporary merged interval_list for all interval_list that have been supplied and returns temporary list. Will also extract specific contigs if requested and return that list if enabled.
-##Returns  : "Filepath"
-##Arguments: $active_parameter_href, $FILEHANDLE, $contig_ref
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $FILEHANDLE             => FILEHANDLE to write to
-##         : $contig_ref              => The contig to extract {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href = $arg_href->{active_parameter_href};
-    my $FILEHANDLE            = $arg_href->{FILEHANDLE};
-    my $contig_ref            = $arg_href->{contig_ref};
-
-    my %GATKTargetPaddedBedIntervalListTracker;
-    my @GATKTargetPaddedBedIntervalListFiles;
-
-    for (
-        my $sample_id_counter = 0 ;
-        $sample_id_counter <
-        scalar( @{ $active_parameter_href->{sample_ids} } ) ;
-        $sample_id_counter++
-      )
-    {    #Collect infiles for all sample_ids
-
-        if (
-            defined(
-                $active_parameter_href->{ $active_parameter_href->{family_id} }
-                  { $active_parameter_href->{sample_ids}[$sample_id_counter] }
-                  {GATKTargetPaddedBedIntervalLists}
-            )
-          )
-        {
-
-            $active_parameter_href->{GATKTargetPaddedBedIntervalLists} =
-              catfile(
-                $active_parameter_href->{reference_dir},
-                $active_parameter_href->{ $active_parameter_href->{family_id} }
-                  { $active_parameter_href->{sample_ids}[$sample_id_counter] }
-                  {GATKTargetPaddedBedIntervalLists}
-              );    #Transfer to active_parameter top level
-
-            $GATKTargetPaddedBedIntervalListTracker{ $active_parameter_href
-                  ->{GATKTargetPaddedBedIntervalLists} }++
-              ;     #Increment to track file record
-
-            if (
-                $GATKTargetPaddedBedIntervalListTracker{ $active_parameter_href
-                      ->{GATKTargetPaddedBedIntervalLists} } == 1 )
-            {       #Not detected previously
-
-                push(
-                    @GATKTargetPaddedBedIntervalListFiles,
-                    $active_parameter_href
-                      ->{ $active_parameter_href->{family_id} }{
-                        $active_parameter_href->{sample_ids}[$sample_id_counter]
-                      }{GATKTargetPaddedBedIntervalLists}
-                );
-            }
-        }
-    }
-
-    ##Determine file to print to module (untouched/merged and/or splited)
-    my $outdirectory =
-      $active_parameter_href->{temp_directory};    #For merged and/or splitet
-
-    if ( scalar(@GATKTargetPaddedBedIntervalListFiles) > 1 ) {    #Merge files
-
-        say $FILEHANDLE "\n## Generate merged interval_list\n";
-
-        java_core(
-            {
-                FILEHANDLE        => $FILEHANDLE,
-                memory_allocation => "Xmx2g",
-                java_use_large_pages =>
-                  $active_parameter_href->{java_use_large_pages},
-                temp_directory => $active_parameter_href->{temp_directory},
-                java_jar       => catfile(
-                    $active_parameter_href->{picardtools_path}, "picard.jar"
-                ),
-            }
-        );
-
-        print $FILEHANDLE "IntervalListTools ";
-        print $FILEHANDLE "UNIQUE=TRUE "
-          ; #Merge overlapping and adjacent intervals to create a list of unique intervals
-
-        for (
-            my $file_counter = 0 ;
-            $file_counter < scalar(@GATKTargetPaddedBedIntervalListFiles) ;
-            $file_counter++
-          )
-        {
-
-            print $FILEHANDLE "INPUT="
-              . catfile( $active_parameter_href->{reference_dir},
-                $GATKTargetPaddedBedIntervalListFiles[$file_counter] )
-              . " ";
-        }
-        say $FILEHANDLE "OUTPUT="
-          . catfile( $outdirectory, "merged.interval_list" ),
-          "\n";    #Merged outfile
-
-        if ( defined($$contig_ref) ) {
-
-            my $indirectory = $active_parameter_href->{temp_directory};
-            my $infile      = "merged.interval_list";
-            return split_target_file(
-                {
-                    FILEHANDLE       => $FILEHANDLE,
-                    indirectory_ref  => \$indirectory,
-                    outdirectory_ref => \$outdirectory,
-                    infile_ref       => \$infile,
-                    contig_ref       => $contig_ref,
-                }
-            );
-        }
-        return catfile( $outdirectory, "merged.interval_list" );    #No split
-    }
-    elsif ( defined($$contig_ref) )
-    {    #Supply original file but create splitted temp file
-
-        return split_target_file(
-            {
-                FILEHANDLE       => $FILEHANDLE,
-                indirectory_ref  => \$active_parameter_href->{reference_dir},
-                outdirectory_ref => \$outdirectory,
-                infile_ref       => \$GATKTargetPaddedBedIntervalListFiles[0],
-                contig_ref       => $contig_ref,
-            }
-        );
-    }
-    else {    #No merge and no split. return original and only file
-
-        return catfile(
-            $active_parameter_href->{reference_dir},
-            $GATKTargetPaddedBedIntervalListFiles[0]
-        );
-    }
-}
-
-sub CheckTemplateFilesPaths {
-
-##CheckTemplateFilesPaths
-
-##Function : Checks that file paths in template files exist
-##Returns  : ""
-##Arguments: $file_name_ref, $parameter_name
-##         : $file_name_ref   => File name {REF}
-##         : $parameter_name => MIP parameter name
-
-    my $file_name_ref  = $_[0];
-    my $parameter_name = $_[1];
-
-    ## Retrieve logger object now that log_file has been set
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    open( my $TF, "<", $$file_name_ref )
-      or $log->logdie( "Can't open '" . $$file_name_ref . "':" . $! . "\n" );
-
-    while (<$TF>) {
-
-        chomp $_;
-
-        if (m/^\s+$/) {    # Avoid blank lines
-            next;
-        }
-        if (m/^\#/) {      # Avoid "#"
-            next;
-        }
-        if ( $_ =~ /(\S+)/ ) {
-
-            my $file_path = $_;
-
-            if ( $file_path =~ /^(RD!)/ ) {    #intersectCollect file
-
-                my @file_path = split( '\t', $file_path );
-                $file_path[0] =~ s/^RD!/$active_parameter{reference_dir}/g;
-
-                check_existance( \%parameter, \%active_parameter,
-                    \$file_path[0], \$parameter_name, "file" )
-                  ;    #Only check paths that pointing to reference directory
-            }
-            if ( $parameter_name eq "gatk_haplotypecallerRefBAMInfile" )
-            {          #Only Paths should be present i.e. check all lines
-
-                check_existance( \%parameter, \%active_parameter, \$file_path,
-                    \$parameter_name, "file" );
-            }
-        }
-    }
-    close(TF);
 }

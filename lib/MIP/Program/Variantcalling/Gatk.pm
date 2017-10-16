@@ -182,7 +182,6 @@ sub gatk_genotypegvcfs {
             downsample_to_coverage   => $downsample_to_coverage,
             gatk_disable_auto_index_and_file_lock =>
               $gatk_disable_auto_index_and_file_lock,
-            FILEHANDLE => $FILEHANDLE,
         }
     );
 
@@ -237,7 +236,7 @@ sub gatk_selectvariants {
 
 ## Function : Perl wrapper for writing GATK selectvariants recipe to $FILEHANDLE. Based on GATK 3.7.0.
 ## Returns  : "@commands"
-## Arguments: $memory_allocation, $java_use_large_pages, $temp_directory, $java_jar, $intervals_ref, $sample_names_ref, $infile_path, $outfile_path, $referencefile_path, $stderrfile_path, $FILEHANDLE, $gatk_path, $pedigree, $downsample_to_coverage, $gatk_disable_auto_index_and_file_lock, $logging_level, $pedigree_validation_type, $exclude_nonvariants
+## Arguments: $memory_allocation, $java_use_large_pages, $temp_directory, $java_jar, $intervals_ref, $sample_names_ref, $infile_path, $outfile_path, $referencefile_path, $stderrfile_path, $FILEHANDLE, $pedigree, $downsample_to_coverage, $gatk_disable_auto_index_and_file_lock, $logging_level, $pedigree_validation_type, $exclude_nonvariants
 ##          : $memory_allocation                     => Memory allocation to run Gatk
 ##          : $java_use_large_pages                  => Use java large pages
 ##          : $temp_directory                        => Redirect tmp files to java temp
@@ -249,7 +248,6 @@ sub gatk_selectvariants {
 ##          : $referencefile_path                    => Reference sequence file
 ##          : $stderrfile_path                       => Stderrfile path
 ##          : $FILEHANDLE                            => Sbatch filehandle to write to
-##          : $gatk_path                             => Path to java jar and analysis to run
 ##          : $pedigree                              => Pedigree files for samples
 ##          : $downsample_to_coverage                => Target coverage threshold for downsampling to coverage
 ##          : $gatk_disable_auto_index_and_file_lock => Disable both auto-generation of index files and index file locking
@@ -275,7 +273,6 @@ sub gatk_selectvariants {
     my $infile_path;
     my $outfile_path;
     my $referencefile_path;
-    my $gatk_path;
     my $stderrfile_path;
     my $FILEHANDLE;
     my $pedigree;
@@ -318,7 +315,6 @@ sub gatk_selectvariants {
             strict_type => 1,
             store       => \$referencefile_path
         },
-        gatk_path       => { strict_type => 1, store => \$gatk_path },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
         FILEHANDLE => { store       => \$FILEHANDLE },
         pedigree   => { strict_type => 1, store => \$pedigree },
@@ -381,7 +377,6 @@ sub gatk_selectvariants {
             downsample_to_coverage   => $downsample_to_coverage,
             gatk_disable_auto_index_and_file_lock =>
               $gatk_disable_auto_index_and_file_lock,
-            FILEHANDLE => $FILEHANDLE,
         }
     );
 
@@ -549,7 +544,11 @@ sub gatk_catvariants {
         }
     );
 
-    push @commands, q{-cp} . $SPACE . $gatk_path;
+    ## Base command
+    push @commands, q{-cp};
+
+    ## Gatk path
+    push @commands, $gatk_path;
 
     push @commands, q{--logging_level} . $SPACE . $logging_level;
 
@@ -820,7 +819,6 @@ sub gatk_variantrecalibrator {
               $base_quality_score_recalibration_file,
             disable_indel_qual         => $disable_indel_qual,
             static_quantized_quals_ref => $static_quantized_quals_ref,
-            FILEHANDLE                 => $FILEHANDLE,
         }
     );
 
@@ -923,7 +921,7 @@ sub gatk_applyrecalibration {
 
 ## Function : Perl wrapper for writing GATK applyrecalibration recipe to $FILEHANDLE. Based on GATK 3.7.0.
 ## Returns  : "@commands"
-## Arguments: $memory_allocation, $java_use_large_pages, $temp_directory, $java_jar, $infile_path, $resources_ref, $intervals_ref, $read_filters_ref, $static_quantized_quals_ref, $annotations_ref, $outfile_path, $referencefile_path, $base_quality_score_recalibration_file, $stderrfile_path, $FILEHANDLE, $pedigree, $ts_filter_level, $recal_file_path, $tranches_file_path, $num_cpu_threads_per_data_thread, $downsample_to_coverage, $max_gaussian_level, $gatk_disable_auto_index_and_file_lock, $disable_indel_qual, $logging_level, $pedigree_validation_type, $mode
+## Arguments: $memory_allocation, $java_use_large_pages, $temp_directory, $java_jar, $infile_path, $resources_ref, $intervals_ref, $read_filters_ref, $static_quantized_quals_ref, $annotations_ref, $outfile_path, $referencefile_path, $base_quality_score_recalibration_file, $stderrfile_path, $FILEHANDLE, $pedigree, $ts_filter_level, $recal_file_path, $tranches_file_path, $num_cpu_threads_per_data_thread, $downsample_to_coverage, $gatk_disable_auto_index_and_file_lock, $disable_indel_qual, $logging_level, $pedigree_validation_type, $mode
 ##          : $memory_allocation                     => Memory allocation to run Gatk
 ##          : $java_use_large_pages                  => Use java large pages
 ##          : $temp_directory                        => Redirect tmp files to java temp
@@ -1107,7 +1105,6 @@ sub gatk_applyrecalibration {
               $base_quality_score_recalibration_file,
             disable_indel_qual         => $disable_indel_qual,
             static_quantized_quals_ref => $static_quantized_quals_ref,
-            FILEHANDLE                 => $FILEHANDLE,
         }
     );
 
@@ -1183,7 +1180,7 @@ sub gatk_calculategenotypeposteriors {
 
 ## Function : Perl wrapper for writing GATK calculategenotypeposteriors recipe to $FILEHANDLE. Based on GATK 3.7.0.
 ## Returns  : "@commands"
-## Arguments: $memory_allocation, $java_use_large_pages, $temp_directory, $java_jar, $intervals_ref, $infile_path, $outfile_path, $referencefile_path, $stderrfile_path, $FILEHANDLE, $gatk_path, $pedigree, $supporting_callset_file_path, $downsample_to_coverage, $gatk_disable_auto_index_and_file_lock, $logging_level, $pedigree_validation_type
+## Arguments: $memory_allocation, $java_use_large_pages, $temp_directory, $java_jar, $intervals_ref, $infile_path, $outfile_path, $referencefile_path, $stderrfile_path, $FILEHANDLE, $pedigree, $supporting_callset_file_path, $downsample_to_coverage, $gatk_disable_auto_index_and_file_lock, $logging_level, $pedigree_validation_type
 ##          : $memory_allocation                     => Memory allocation to run Gatk
 ##          : $java_use_large_pages                  => Use java large pages
 ##          : $temp_directory                        => Redirect tmp files to java temp
@@ -1194,7 +1191,6 @@ sub gatk_calculategenotypeposteriors {
 ##          : $referencefile_path                    => Reference sequence file
 ##          : $stderrfile_path                       => Stderrfile path
 ##          : $FILEHANDLE                            => Sbatch filehandle to write to
-##          : $gatk_path                             => Path to java jar and analysis to run
 ##          : $pedigree                              => Pedigree files for samples
 ##          : $supporting_callset_file_path          => Other callsets to use in generating genotype posteriors
 ##          : $downsample_to_coverage                => Target coverage threshold for downsampling to coverage
@@ -1218,7 +1214,6 @@ sub gatk_calculategenotypeposteriors {
     my $infile_path;
     my $outfile_path;
     my $referencefile_path;
-    my $gatk_path;
     my $stderrfile_path;
     my $FILEHANDLE;
     my $pedigree;
@@ -1255,7 +1250,6 @@ sub gatk_calculategenotypeposteriors {
             strict_type => 1,
             store       => \$referencefile_path
         },
-        gatk_path       => { strict_type => 1, store => \$gatk_path },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
         FILEHANDLE => { store       => \$FILEHANDLE },
         pedigree   => { strict_type => 1, store => \$pedigree },
@@ -1314,7 +1308,6 @@ sub gatk_calculategenotypeposteriors {
             downsample_to_coverage   => $downsample_to_coverage,
             gatk_disable_auto_index_and_file_lock =>
               $gatk_disable_auto_index_and_file_lock,
-            FILEHANDLE => $FILEHANDLE,
         }
     );
 
@@ -1507,7 +1500,6 @@ sub gatk_combinevariants {
             downsample_to_coverage   => $downsample_to_coverage,
             gatk_disable_auto_index_and_file_lock =>
               $gatk_disable_auto_index_and_file_lock,
-            FILEHANDLE => $FILEHANDLE,
         }
     );
 
@@ -1520,7 +1512,7 @@ sub gatk_combinevariants {
     if ($genotype_merge_option) {
 
         push @commands,
-          q{-genotypemergeoption} . $SPACE . $genotype_merge_option;
+          q{--genotypemergeoption} . $SPACE . $genotype_merge_option;
     }
 
     if ($prioritize_caller) {
@@ -1532,7 +1524,7 @@ sub gatk_combinevariants {
     if ( @{$infile_paths_ref} ) {
 
         push @commands,
-          q{--variant} . $SPACE . join $SPACE . q{--variant} . $SPACE,
+          q{--variant:} . join $SPACE . q{--variant:},
           @{$infile_paths_ref};
 
     }
@@ -1568,7 +1560,7 @@ sub gatk_varianteval {
 
 ## Function : Perl wrapper for writing GATK varianteval recipe to $FILEHANDLE. Based on GATK 3.7.0.
 ## Returns  : "@commands"
-## Arguments: $memory_allocation, $java_use_large_pages, $temp_directory, $java_jar, $intervals_ref, $infile_paths_ref, $outfile_path, $referencefile_path, $stderrfile_path, $FILEHANDLE, $gatk_path, $pedigree, $dbsnp_file_path, $indel_gold_standard_file_path, $downsample_to_coverage, $gatk_disable_auto_index_and_file_lock, $logging_level, $pedigree_validation_type
+## Arguments: $memory_allocation, $java_use_large_pages, $temp_directory, $java_jar, $intervals_ref, $infile_paths_ref, $outfile_path, $referencefile_path, $stderrfile_path, $FILEHANDLE, $pedigree, $dbsnp_file_path, $indel_gold_standard_file_path, $downsample_to_coverage, $gatk_disable_auto_index_and_file_lock, $logging_level, $pedigree_validation_type
 ##          : $memory_allocation                     => Memory allocation to run Gatk
 ##          : $java_use_large_pages                  => Use java large pages
 ##          : $temp_directory                        => Redirect tmp files to java temp
@@ -1579,7 +1571,6 @@ sub gatk_varianteval {
 ##          : $referencefile_path                    => Reference sequence file
 ##          : $stderrfile_path                       => Stderrfile path
 ##          : $FILEHANDLE                            => Sbatch filehandle to write to
-##          : $gatk_path                             => Path to java jar and analysis to run
 ##          : $pedigree                              => Pedigree files for samples
 ##          : $dbsnp_file_path                       => DbSNP file path
 ##          : $indel_gold_standard_file_path         => Evaluations that count calls at sites of true variation (e.g., indel calls) will use this argument as their gold standard for comparison
@@ -1604,7 +1595,6 @@ sub gatk_varianteval {
     my $infile_paths_ref;
     my $outfile_path;
     my $referencefile_path;
-    my $gatk_path;
     my $stderrfile_path;
     my $FILEHANDLE;
     my $pedigree;
@@ -1643,7 +1633,6 @@ sub gatk_varianteval {
             strict_type => 1,
             store       => \$referencefile_path
         },
-        gatk_path       => { strict_type => 1, store => \$gatk_path },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
         FILEHANDLE      => { store       => \$FILEHANDLE },
         pedigree        => { strict_type => 1, store => \$pedigree },
@@ -1703,7 +1692,6 @@ sub gatk_varianteval {
             downsample_to_coverage   => $downsample_to_coverage,
             gatk_disable_auto_index_and_file_lock =>
               $gatk_disable_auto_index_and_file_lock,
-            FILEHANDLE => $FILEHANDLE,
         }
     );
 
@@ -1756,7 +1744,7 @@ sub gatk_leftalignandtrimvariants {
 
 ## Function : Perl wrapper for writing GATK leftalignandtrimvariants recipe to $FILEHANDLE. Based on GATK 3.7.0.
 ## Returns  : "@commands"
-## Arguments: $memory_allocation, $java_use_large_pages, $temp_directory, $java_jar, $intervals_ref, $infile_path, $outfile_path, $referencefile_path, $stderrfile_path, $FILEHANDLE, $gatk_path, $pedigree, $downsample_to_coverage, $gatk_disable_auto_index_and_file_lock, $logging_level, $pedigree_validation_type, $split_multiallelics
+## Arguments: $memory_allocation, $java_use_large_pages, $temp_directory, $java_jar, $intervals_ref, $infile_path, $outfile_path, $referencefile_path, $stderrfile_path, $FILEHANDLE, $pedigree, $downsample_to_coverage, $gatk_disable_auto_index_and_file_lock, $logging_level, $pedigree_validation_type, $split_multiallelics
 ##          : $memory_allocation                     => Memory allocation to run Gatk
 ##          : $java_use_large_pages                  => Use java large pages
 ##          : $temp_directory                        => Redirect tmp files to java temp
@@ -1767,7 +1755,6 @@ sub gatk_leftalignandtrimvariants {
 ##          : $referencefile_path                    => Reference sequence file
 ##          : $stderrfile_path                       => Stderrfile path
 ##          : $FILEHANDLE                            => Sbatch filehandle to write to
-##          : $gatk_path                             => Path to java jar and analysis to run
 ##          : $pedigree                              => Pedigree files for samples
 ##          : $downsample_to_coverage                => Target coverage threshold for downsampling to coverage
 ##          : $gatk_disable_auto_index_and_file_lock => Disable both auto-generation of index files and index file locking
@@ -1792,7 +1779,6 @@ sub gatk_leftalignandtrimvariants {
     my $infile_path;
     my $outfile_path;
     my $referencefile_path;
-    my $gatk_path;
     my $stderrfile_path;
     my $FILEHANDLE;
     my $pedigree;
@@ -1828,7 +1814,6 @@ sub gatk_leftalignandtrimvariants {
             strict_type => 1,
             store       => \$referencefile_path
         },
-        gatk_path       => { strict_type => 1, store => \$gatk_path },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
         FILEHANDLE => { store       => \$FILEHANDLE },
         pedigree   => { strict_type => 1, store => \$pedigree },
@@ -1891,7 +1876,6 @@ sub gatk_leftalignandtrimvariants {
             downsample_to_coverage   => $downsample_to_coverage,
             gatk_disable_auto_index_and_file_lock =>
               $gatk_disable_auto_index_and_file_lock,
-            FILEHANDLE => $FILEHANDLE,
         }
     );
 

@@ -12,6 +12,8 @@ use Params::Check qw{ check allow last_error };
 use FindBin qw{ $Bin };
 use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir };
+
+## CPANM
 use Readonly;
 
 ## MIPs lib/
@@ -26,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -38,12 +40,9 @@ Readonly my $SPACE => q{ };
 
 sub picardtools_mergesamfiles {
 
-## picardtools_mergesamfiles
-
 ## Function : Perl wrapper for writing picardtools mergesamfiles recipe to $FILEHANDLE. Based on picardtools 2.5.0.
 ## Returns  : @commands
-## Arguments: $infile_paths_ref, $outfile_path, $referencefile_path, $regionsfile_path, $stderrfile_path, $stderrfile_path_append, $FILEHANDLE, $memory_allocation, $temp_directory, $java_use_large_pages, $java_jar, $create_index, $threading
-##          : $infile_paths_ref       => Infile paths {REF}
+## Arguments: $infile_paths_ref       => Infile paths {REF}
 ##          : $outfile_path           => Outfile path
 ##          : $referencefile_path     => Genome reference file
 ##          : $regionsfile_path       => The regions to process {REF}
@@ -70,9 +69,11 @@ sub picardtools_mergesamfiles {
     my $memory_allocation;
     my $temp_directory;
     my $java_jar;
+    my $threading;
+
+    ## Default(s)
     my $java_use_large_pages;
     my $create_index;
-    my $threading;
 
     my $tmpl = {
         infile_paths_ref => {
@@ -153,7 +154,7 @@ sub picardtools_mergesamfiles {
 
     if ($threading) {
 
-# Create a background thread to encode, compress and write to disk the output file
+        ## Create a background thread to encode, compress and write to disk the output file
         push @commands, q{USE_THREADING=} . $threading;
     }
 
@@ -189,12 +190,9 @@ sub picardtools_mergesamfiles {
 
 sub picardtools_markduplicates {
 
-## picardtools_markduplicates
-
 ## Function : Perl wrapper for writing picardtools markduplicates recipe to $FILEHANDLE. Based on picardtools 2.5.0.
 ## Returns  : @commands
-## Arguments: $infile_paths_ref, $outfile_path, $referencefile_path, $metrics_file, $stderrfile_path, $stderrfile_path_append, $FILEHANDLE, $memory_allocation, $temp_directory, $java_use_large_pages, $java_jar, $create_index
-##          : $infile_paths_ref       => Infile paths {REF}
+## Arguments: $infile_paths_ref       => Infile paths {REF}
 ##          : $outfile_path           => Outfile path
 ##          : $referencefile_path     => Genome reference file
 ##          : $metrics_file           => File to write duplication metrics to
@@ -220,6 +218,8 @@ sub picardtools_markduplicates {
     my $memory_allocation;
     my $temp_directory;
     my $java_jar;
+
+    ## Default(s)
     my $java_use_large_pages;
     my $create_index;
 
@@ -332,12 +332,9 @@ sub picardtools_markduplicates {
 
 sub picardtools_gatherbamfiles {
 
-## picardtools_gatherbamfiles
-
 ## Function : Perl wrapper for writing picardtools gatherbamfiles recipe to $FILEHANDLE. Based on picardtools 2.5.0.
 ## Returns  : @commands
-## Arguments: $infile_paths_ref, $outfile_path, $referencefile_path, $stderrfile_path, $stderrfile_path_append, $FILEHANDLE, $memory_allocation, $temp_directory, $java_use_large_pages, $java_jar, $create_index
-##          : $infile_paths_ref       => Infile paths {REF}
+## Arguments: $infile_paths_ref       => Infile paths {REF}
 ##          : $outfile_path           => Outfile path
 ##          : $referencefile_path     => Genome reference file
 ##          : $stderrfile_path        => Stderrfile path
@@ -361,6 +358,8 @@ sub picardtools_gatherbamfiles {
     my $memory_allocation;
     my $temp_directory;
     my $java_jar;
+
+    ## Default(s)
     my $java_use_large_pages;
     my $create_index;
 
@@ -461,12 +460,9 @@ sub picardtools_gatherbamfiles {
 
 sub picardtools_collectmultiplemetrics {
 
-## picardtools_collectmultiplemetrics
-
 ## Function : Perl wrapper for writing picardtools collectmultiplemetrics recipe to $FILEHANDLE. Based on picardtools 2.5.0.
 ## Returns  : @commands
-## Arguments: $infile_path, $outfile_path, $referencefile_path, $stderrfile_path, $stderrfile_path_append, $FILEHANDLE, $memory_allocation, $temp_directory, $java_use_large_pages, $java_jar, $create_index
-##          : $infile_path            => Infile paths
+## Arguments: $infile_path            => Infile paths
 ##          : $outfile_path           => Outfile path
 ##          : $referencefile_path     => Genome reference file
 ##          : $stderrfile_path        => Stderrfile path
@@ -490,6 +486,8 @@ sub picardtools_collectmultiplemetrics {
     my $memory_allocation;
     my $temp_directory;
     my $java_jar;
+
+    ## Default(s)
     my $java_use_large_pages;
     my $create_index;
 
@@ -589,12 +587,9 @@ sub picardtools_collectmultiplemetrics {
 
 sub picardtools_collecthsmetrics {
 
-## picardtools_collecthsmetrics
-
 ## Function : Perl wrapper for writing picardtools collecthsmetrics recipe to $FILEHANDLE. Based on picardtools 2.5.0.
 ## Returns  : @commands
-## Arguments: $bait_interval_file_paths_ref, $target_interval_file_paths_ref, $infile_path, $outfile_path, $referencefile_path, $stderrfile_path, $stderrfile_path_append, $FILEHANDLE, $memory_allocation, $temp_directory, $java_use_large_pages, $java_jar, $create_index,
-##          : $bait_interval_file_paths_ref   => Interval list file(s) that contains the locations of the baits used {REF}
+## Arguments: $bait_interval_file_paths_ref   => Interval list file(s) that contains the locations of the baits used {REF}
 ##          : $target_interval_file_paths_ref => Interval list file(s) that contains the locations of the targets
 ##          : $infile_path                    => Infile paths
 ##          : $outfile_path                   => Outfile path
@@ -621,6 +616,8 @@ sub picardtools_collecthsmetrics {
     my $memory_allocation;
     my $temp_directory;
     my $java_jar;
+
+    ## Default(s)
     my $java_use_large_pages;
     my $create_index;
 
