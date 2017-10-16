@@ -480,7 +480,7 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
     $infile_prefix = $outfile_path_prefix . $UNDERSCORE;
     my $infile_postfix = $outfile_suffix;
     my $outfile        = $outfile_path_prefix . q{_concat} . $outfile_suffix;
-    my $elements_ref   = @{ $file_info_href->{contigs} };
+    my $elements_ref   = \@{ $file_info_href->{contigs} };
 
     unless ( defined $infile_postfix ) {
 
