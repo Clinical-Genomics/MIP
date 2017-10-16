@@ -134,7 +134,8 @@ sub analysis_cnvnator {
             store       => \$program_name
         },
         infile => {
-            default     => $arg_href->{active_parameter_href}{merge_infile},
+            required    => 1,
+            defined     => 1,
             strict_type => 1,
             store       => \$infile
         },
@@ -238,7 +239,7 @@ sub analysis_cnvnator {
       $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag =
       $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
-    say {$FILEHANDLE} "infile is:$infile####, infile tag is:$infile_tag###";
+    say {$FILEHANDLE} "infile is:$infile####, infile tag is:$infile_tag"
     my $infile_prefix       = $infile . $infile_tag;
     my $file_path_prefix    = catfile( $temp_directory, $infile_prefix );
     my $outfile_prefix      = $infile . $outfile_tag;
