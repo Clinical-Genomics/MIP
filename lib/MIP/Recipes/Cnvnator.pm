@@ -134,7 +134,7 @@ sub analysis_cnvnator {
             store       => \$program_name
         },
         infile => {
-            default     => $file_info_href->{merge_infile},
+            default     => $arg_href->{active_parameter_href}{merge_infile},
             strict_type => 1,
             store       => \$infile
         },
