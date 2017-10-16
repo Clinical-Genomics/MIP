@@ -134,8 +134,7 @@ sub analysis_cnvnator {
             store       => \$program_name
         },
         infile => {
-            required    => 1,
-            defined     => 1,
+            default => $file_info_href->{merged_infile},
             strict_type => 1,
             store       => \$infile
         },
