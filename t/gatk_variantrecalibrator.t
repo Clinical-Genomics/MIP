@@ -34,6 +34,8 @@ Readonly my $COMMA       => q{,};
 Readonly my $COVERAGE    => 90;
 Readonly my $CPU_THREADS => 4;
 Readonly my $GAUSSIANS   => 8;
+Readonly my $QUALSCORE_1 => 10;
+Readonly my $QUALSCORE_2 => 20;
 
 ### User Options
 GetOptions(
@@ -117,7 +119,7 @@ my %base_argument = (
 my %required_argument = (
     infile_paths_ref => {
         inputs_ref      => [qw{ infile_1.vcf infile_2.vcf }],
-        expected_output => q{--input nfile_1.vcf --input infile_2.vcf},
+        expected_output => q{--input infile_1.vcf --input infile_2.vcf},
     },
     resources_ref => {
         inputs_ref => [qw{ 1000G mills dbsnp }],
@@ -172,9 +174,9 @@ my %specific_argument = (
           q{--read_filter MalformedRead --read_filter BadCigar},
     },
     static_quantized_quals_ref => {
-        inputs_ref => [qw{ 10 20 }],
+        inputs_ref => [ $QUALSCORE_1, $QUALSCORE_2 ],
         expected_output =>
-          q{--static_quantized_quals 10 --static_quantized_quals 20},
+          q{--static_quantized_quals} . $SPACE . $QUALSCORE_1 . $SPACE . q{--static_quantized_quals} . $SPACE . $QUALSCORE_2,
     },
     base_quality_score_recalibration_file => {
         input           => catfile(qw{ dir recalibration_report.grp }),

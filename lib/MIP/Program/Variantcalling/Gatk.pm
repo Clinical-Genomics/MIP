@@ -544,7 +544,11 @@ sub gatk_catvariants {
         }
     );
 
-    push @commands, q{-cp} . $SPACE . $gatk_path;
+    ## Base command
+    push @commands, q{-cp};
+
+    ## Gatk path
+    push @commands, $gatk_path;
 
     push @commands, q{--logging_level} . $SPACE . $logging_level;
 

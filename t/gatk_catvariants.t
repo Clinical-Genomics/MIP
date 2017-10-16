@@ -101,7 +101,7 @@ diag(   q{Test gatk_catvariants from Gatk v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{-cp dir/gatk_executable};
+my $function_base_command = q{-cp};
 
 my %base_argument = (
     FILEHANDLE => {
@@ -115,7 +115,7 @@ my %base_argument = (
 my %required_argument = (
     gatk_path => {
         input           => catfile(qw{ dir gatk_executable }),
-        expected_output => q{-cp} . $SPACE . catfile(qw{ dir gatk_executable }),
+        expected_output => catfile(qw{ dir gatk_executable }),
     },
     infile_paths_ref => {
         inputs_ref => [qw{ var_1.vcf var_2.vcf var_3.vcf }],
@@ -155,6 +155,10 @@ my %specific_argument = (
     assume_sorted => {
         input           => 1,
         expected_output => q{--assumeSorted},
+    },
+    gatk_path => {
+        input           => catfile(qw{ dir gatk_executable }),
+        expected_output => catfile(qw{ dir gatk_executable }),
     },
 );
 

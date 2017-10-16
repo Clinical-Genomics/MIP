@@ -34,6 +34,8 @@ Readonly my $COMMA       => q{,};
 Readonly my $COVERAGE    => 90;
 Readonly my $TS_FILTER   => 99;
 Readonly my $CPU_THREADS => 8;
+Readonly my $QUALSCORE_1 => 10;
+Readonly my $QUALSCORE_2 => 20;
 
 ### User Options
 GetOptions(
@@ -169,9 +171,9 @@ my %specific_argument = (
           q{--read_filter MaxReadLength --read_filter MappingQuality},
     },
     static_quantized_quals_ref => {
-        inputs_ref => [qw{ 10 20 }],
+        inputs_ref => [ $QUALSCORE_1, $QUALSCORE_2 ],
         expected_output =>
-          q{--static_quantized_quals 10 --static_quantized_quals 20},
+          q{--static_quantized_quals} . $SPACE . $QUALSCORE_1 . $SPACE . q{--static_quantized_quals} . $SPACE . $QUALSCORE_2,
     },
     base_quality_score_recalibration_file => {
         input           => catfile(qw{ dir recalibration_report.grp }),
