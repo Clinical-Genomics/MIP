@@ -124,11 +124,14 @@ my %required_argument = (
     },
     outfile_path => {
         input           => catfile(qw{ dir outfile.vcf }),
-        expected_output => q{--outputFile} . $SPACE . catfile(qw{ dir outfile.vcf }),
+        expected_output => q{--outputFile}
+          . $SPACE
+          . catfile(qw{ dir outfile.vcf }),
     },
     referencefile_path => {
         input           => catfile(qw{reference_dir human_genome_build.fasta }),
-        expected_output => q{--reference_sequence} . $SPACE
+        expected_output => q{--reference_sequence}
+          . $SPACE
           . catfile(qw{reference_dir human_genome_build.fasta }),
     },
 );
