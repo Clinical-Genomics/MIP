@@ -1831,7 +1831,7 @@ if ( $active_parameter{pcnvnator} > 0 ) {    #Run CNVnator
 
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
-        $infile = $file_info_href->{$sample_id}{merged_infile};
+        $infile = $file_info->{$sample_id}{merged_infile};
 
         analysis_cnvnator(
             {
