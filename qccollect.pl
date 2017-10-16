@@ -638,8 +638,8 @@ sub evaluate_qc_parameters {
 
 		next;
 	    }
-	    elsif ($infile =~/Undetermined/) { #Special case do not evaluate fastq files with Undetermined in file name
-		
+	    elsif ($infile =~/undetermined/i) { #Special case do not evaluate fastq files with Undetermined in file name
+
 		next;
 	    }
 
