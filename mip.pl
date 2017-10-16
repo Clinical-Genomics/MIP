@@ -1840,7 +1840,6 @@ if ( $active_parameter{pcnvnator} > 0 ) {    #Run CNVnator
                 job_id_href             => \%job_id,
                 sample_id               => $sample_id,
                 program_name            => $program_name,
-                infile                  => $infile,
             }
         );
     }
