@@ -494,8 +494,7 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
     say {$FILEHANDLE} q{## GATK CatVariants};
 
     ## Assemble infile paths
-    my @infile_paths =
-      map { $infile_prefix . $_ . $infile_postfix } @{$elements_ref};
+    my @infile_paths = map { $infile_prefix . $_ . $infile_postfix } 1..@{$elements_ref};
 
     gatk_catvariants(
         {
