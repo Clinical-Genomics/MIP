@@ -171,7 +171,6 @@ sub analysis_picardtools_genotypeconcordance {
 
     use MIP::Gnu::Coreutils qw{ gnu_cat };
     use MIP::IO::Files qw{ migrate_file };
-    use MIP::Language::Java qw{ java_core };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_family_dead_end };
     use MIP::Program::Interval::Picardtools qw{ picardtools_intervallisttools };
@@ -179,7 +178,8 @@ sub analysis_picardtools_genotypeconcordance {
       qw{ bcftools_stats bcftools_rename_vcf_samples };
     use MIP::Program::Variantcalling::Gatk
       qw{ gatk_selectvariants gatk_leftalignandtrimvariants };
-    use Program::Variantcalling::Picardtools qw{ genotypeconcordance };
+    use MIP::Program::Variantcalling::Picardtools
+      qw{ picardtools_genotypeconcordance };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Retrieve logger object
@@ -485,21 +485,7 @@ q?perl -nae 'unless($_=~/##contig=<ID=NC_007605,length=171823>/ || $_=~/##contig
 
     say {$FILEHANDLE}
 q{## Picard GenotypeConcordance - Genome restricted by union - good quality};
-    java_core(
-        {
-            FILEHANDLE        => $FILEHANDLE,
-            memory_allocation => q{Xmx2g},
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory => $active_parameter_href->{temp_directory},
-            java_jar       => catfile(
-                $active_parameter_href->{picardtools_path},
-                q{picard.jar}
-            ),
-        }
-    );
-
-    genotypeconcordance(
+    picardtools_genotypeconcordance(
         {
             intervals_ref => [ $nist_file_path . $DOT . q{bed.interval_list} ],
             infile_path   => $call_file_path . $UNDERSCORE . q{lts_refrm.vcf},
@@ -510,15 +496,8 @@ q{## Picard GenotypeConcordance - Genome restricted by union - good quality};
             min_genotype_quality => 20,
             min_depth            => 10,
             FILEHANDLE           => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-    say {$FILEHANDLE} q{## Picard GenotypeConcordance - Genome - good quality};
-    java_core(
-        {
-            FILEHANDLE        => $FILEHANDLE,
-            memory_allocation => q{Xmx2g},
+            referencefile_path   => $referencefile_path,
+            memory_allocation    => q{Xmx2g},
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
             temp_directory => $active_parameter_href->{temp_directory},
@@ -528,8 +507,10 @@ q{## Picard GenotypeConcordance - Genome restricted by union - good quality};
             ),
         }
     );
+    say {$FILEHANDLE} $NEWLINE;
 
-    genotypeconcordance(
+    say {$FILEHANDLE} q{## Picard GenotypeConcordance - Genome - good quality};
+    picardtools_genotypeconcordance(
         {
             infile_path     => $call_file_path . $UNDERSCORE . q{lts_refrm.vcf},
             truth_file_path => $nist_file_path . $DOT . q{vcf},
@@ -539,6 +520,15 @@ q{## Picard GenotypeConcordance - Genome restricted by union - good quality};
             min_genotype_quality => 20,
             min_depth            => 10,
             FILEHANDLE           => $FILEHANDLE,
+            referencefile_path   => $referencefile_path,
+            memory_allocation    => q{Xmx2g},
+            java_use_large_pages =>
+              $active_parameter_href->{java_use_large_pages},
+            temp_directory => $active_parameter_href->{temp_directory},
+            java_jar       => catfile(
+                $active_parameter_href->{picardtools_path},
+                q{picard.jar}
+            ),
         }
     );
     say {$FILEHANDLE} $NEWLINE;

@@ -23047,31 +23047,27 @@ sub sort_vcf {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Language::Java qw{java_core};
-    use Program::Variantcalling::Picardtools qw(sortvcf);
+    use MIP::Program::Variantcalling::Picardtools qw(picardtools_sortvcf);
 
     say {$FILEHANDLE} "## Picard SortVcf";
 
     ## Writes java core commands to filehandle.
-    java_core(
-        {
-            FILEHANDLE        => $FILEHANDLE,
-            memory_allocation => "Xmx2g",
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory => $active_parameter_href->{temp_directory},
-            java_jar       => catfile(
-                $active_parameter_href->{picardtools_path}, "picard.jar"
-            ),
-        }
-    );
-
-    sortvcf(
+    picardtools_sortvcf(
         {
             infile_paths_ref    => \@$infile_paths_ref,
             outfile_path        => $outfile,
             sequence_dictionary => $sequence_dict_file,
-            FILEHANDLE          => $FILEHANDLE,
+            memory_allocation   => q{Xmx2g},
+            referencefile_path =>
+              $active_parameter_href->{human_genome_reference},
+            java_use_large_pages =>
+              $active_parameter_href->{java_use_large_pages},
+            temp_directory => $active_parameter_href->{temp_directory},
+            java_jar       => catfile(
+                $active_parameter_href->{picardtools_path},
+                q{picard.jar}
+            ),
+            FILEHANDLE => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} "\n";
