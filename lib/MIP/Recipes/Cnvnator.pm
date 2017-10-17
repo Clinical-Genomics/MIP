@@ -620,7 +620,7 @@ sub _add_contigs_to_vcfheader {
 
     my $perl_add_contigs = q?perl -nae '{print "##contig=<ID=".$F[0].",length=".$F[1].">", "\n"}'?;
 
-    print {$FILEHANDLE} "im here".$perl_add_contigs.$SPACE."####";
+    print {$FILEHANDLE} "im here" . $SPACE;
 
     # Reference fai file
     print {$FILEHANDLE} $human_genome_reference
