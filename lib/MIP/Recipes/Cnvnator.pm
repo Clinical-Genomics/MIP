@@ -135,6 +135,12 @@ sub analysis_cnvnator {
             strict_type => 1,
             store       => \$insample_directory,
         },
+        outsample_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$outsample_directory,
+        },
         program_name => {
             required    => 1,
             defined     => 1,
