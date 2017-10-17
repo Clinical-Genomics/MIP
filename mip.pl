@@ -1826,9 +1826,19 @@ if ( $active_parameter{pcnvnator} > 0 ) {    #Run CNVnator
     );
 
     use MIP::Recipes::Cnvnator qw{ analysis_cnvnator };
+
     my $program_name = lc q{cnvnator};
+    my $insample_directory;
+    my $outsample_directory;
 
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
+
+        ## Assign directories
+        $insample_directory = catdir( $active_parameter{outdata_dir},
+            $sample_id, $active_parameter{outaligner_dir} );
+
+        $outsample_directory = catdir( $active_parameter{outdata_dir},
+           $sample_id, $active_parameter{outaligner_dir}, $program_name);
 
         analysis_cnvnator(
             {
@@ -1839,6 +1849,8 @@ if ( $active_parameter{pcnvnator} > 0 ) {    #Run CNVnator
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
                 sample_id               => $sample_id,
+                insample_directory      => $insample_directory,
+                outsample_directory     => $outsample_directory,
                 program_name            => $program_name,
             }
         );

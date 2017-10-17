@@ -40,7 +40,7 @@ Readonly my $SEMICOLON  => q{;};
 sub analysis_cnvnator {
 
 ## Function : Call structural variants using cnvnator
-## Returns  : ""
+## Returns  :
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $sample_info_href        => Info on samples and family hash {REF}
@@ -48,6 +48,8 @@ sub analysis_cnvnator {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $sample_id               => Sample id
+##          : $insample_directory      => In sample directory
+##          : $outsample_directory     => Out sample directory
 ##          : $program_name            => Program name
 ##          : $family_id               => Family id
 ##          : $temp_directory          => Temporary directory
@@ -72,6 +74,8 @@ sub analysis_cnvnator {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $sample_id;
+    my $insample_directory;
+    my $outsample_directory;
     my $program_name;
     my $FILEHANDLE;
 
@@ -81,99 +85,107 @@ sub analysis_cnvnator {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         sample_id => {
             required    => 1,
             defined     => 1,
             default     => 1,
             strict_type => 1,
-            store       => \$sample_id
+            store       => \$sample_id,
+        },
+        insample_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$insample_directory,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id
+            store       => \$family_id,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory
+            store       => \$temp_directory,
         },
         reference_dir => {
             default     => $arg_href->{active_parameter_href}{reference_dir},
             strict_type => 1,
-            store       => \$reference_dir
+            store       => \$reference_dir,
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir
+            store       => \$outaligner_dir,
         },
         xargs_file_counter => {
             default     => 0,
             allow       => qr/ ^\d+$ /sxm,
             strict_type => 1,
-            store       => \$xargs_file_counter
+            store       => \$xargs_file_counter,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Processmanagement::Processes qw(print_wait);
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Get::File qw{get_file_suffix};
-    use MIP::Set::File qw{set_file_suffix};
-    use MIP::Recipes::Xargs qw{ xargs_command };
-    use MIP::Program::Alignment::Samtools qw(samtools_faidx);
-    use MIP::Program::Variantcalling::Cnvnator
-      qw{ cnvnator_read_extraction cnvnator_histogram cnvnator_statistics cnvnator_partition cnvnator_calling cnvnator_convert_to_vcf };
-    use MIP::Program::Variantcalling::Bcftools qw(bcftools_annotate);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
+    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
+    use MIP::Language::Java qw{java_core};
+    use MIP::Processmanagement::Processes qw(print_wait);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_sample);
+    use MIP::Program::Alignment::Samtools qw(samtools_faidx);
+    use MIP::Program::Variantcalling::Bcftools qw(bcftools_annotate);
+    use MIP::Program::Variantcalling::Cnvnator
+      qw{ cnvnator_read_extraction cnvnator_histogram cnvnator_statistics cnvnator_partition cnvnator_calling cnvnator_convert_to_vcf };
+    use MIP::Program::Variantcalling::Gatk qw(gatk_catvariants);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
+    use MIP::Recipes::Xargs qw{ xargs_command };
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::Set::File qw{set_file_suffix};
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -217,24 +229,26 @@ sub analysis_cnvnator {
     );
 
     ## Assign directories
-    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $sample_id, $outaligner_dir );
-    my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $sample_id, $outaligner_dir, $program_outdirectory_name );
+
+    ## Alias
+    my $human_genome_reference_ref =
+      $arg_href->{active_parameter_href}{human_genome_reference};
 
     #Used downstream
     $parameter_href->{$mip_program_name}{$sample_id}{indirectory} =
       $outsample_directory;
 
-    ## Assign file_tags
+    ## Files
+    my $infile = $file_info_href->{$sample_id}{merged_infile};
     my $infile_tag =
       $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag =
       $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
-    my $infile              = $file_info_href->{$sample_id}{merged_infile};
     my $infile_prefix       = $infile . $infile_tag;
-    my $file_path_prefix    = catfile( $temp_directory, $infile_prefix );
     my $outfile_prefix      = $infile . $outfile_tag;
+
+    ## Paths
+    my $file_path_prefix    = catfile( $temp_directory, $infile_prefix );
     my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
 
     ### Assign suffix
@@ -258,14 +272,6 @@ sub analysis_cnvnator {
 
     my $root_file;
 
-    my $perl_vcf_fix =
-q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my @a = split("\t", $_); pop(@a);print join("\t", @a)."\t?
-      . $sample_id
-      . q?", "\n"} else {print $_, "\n"}'?;
-
-    my $perl_add_contigs =
-      q?perl -nae '{print "##contig=<ID=".$F[0].",length=".$F[1].">", "\n"}'?;
-
     ##Special fix to accomodate outdated versions of .so libraries required by root
     if ( exists $active_parameter_href->{cnv_root_ld_lib} ) {
 
@@ -276,16 +282,13 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
     }
 
     ## Add contigs to vcfheader
-    print {$FILEHANDLE} $perl_add_contigs . $SPACE;
-
-    # Reference fai file
-    print {$FILEHANDLE} $active_parameter_href->{human_genome_reference}
-      . q{.fai}
-      . $SPACE;
-    say {$FILEHANDLE} q{>}
-      . $SPACE
-      . catfile( $temp_directory, q{contig_header.txt} ),
-      $NEWLINE;
+    _add_contigs_to_vcfheader(
+      {
+        human_genome_reference => $active_parameter_href->{human_genome_reference},
+        temp_directory         => $temp_directory,
+        FILEHANDLE             => $FILEHANDLE,
+      }
+    );
 
     my $process_batches_count = 1;
 
@@ -350,17 +353,21 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
         }
     );
 
-    ## Process per contig
+    my $stderrfile_path_prefix;
+
+    CONTIG:
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
+
+        $stderrfile_path_prefix = $xargs_file_path_prefix . $DOT . $contig;
 
         ## Assemble parameter
         # Output ROOT file
-        $root_file = $file_path_prefix . $UNDERSCORE . $contig . q{.root};
+        $root_file = $file_path_prefix . $UNDERSCORE . $contig . $DOT . q{.root};
 
         cnvnator_read_extraction(
             {
                 infile_paths_ref =>
-                  [ $file_path_prefix . $UNDERSCORE . $contig . q{.bam} ],
+                  [ $file_path_prefix . $UNDERSCORE . $contig . $infile_suffix ],
                 outfile_path    => $root_file,
                 regions_ref     => [$contig],
                 unique          => 1,
@@ -368,10 +375,9 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
                   . $DOT
                   . $contig
                   . q{.stdout.txt},
-                stderrfile_path => $xargs_file_path_prefix
+                stderrfile_path => $stderrfile_path_prefix
                   . $DOT
-                  . $contig
-                  . q{.stderr.txt},
+                  . q{stderr.txt},
                 FILEHANDLE => $XARGSFILEHANDLE,
             }
         );
@@ -384,9 +390,7 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
                 cnv_bin_size => $active_parameter_href->{cnv_bin_size},
                 referencedirectory_path => $temp_directory,
                 FILEHANDLE              => $XARGSFILEHANDLE,
-                stdoutfile_path         => $xargs_file_path_prefix
-                  . $DOT
-                  . $contig
+                stdoutfile_path         => $stderrfile_path_prefix
                   . q{_histogram.stdout.txt},
                 stderrfile_path => $xargs_file_path_prefix
                   . $DOT
@@ -472,23 +476,19 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
     }
 
     ## Write sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
-    use MIP::Language::Java qw{java_core};
-    use MIP::Program::Variantcalling::Gatk qw(gatk_catvariants);
-
-    my $human_genome_reference_ref =
-      $arg_href->{active_parameter_href}{human_genome_reference};
     $infile_prefix = $outfile_path_prefix . $UNDERSCORE;
     my $infile_postfix = $outfile_suffix;
-    my $outfile        = $outfile_path_prefix . q{_concat} . $outfile_suffix;
+    my $outfile        = $outfile_path_prefix . $UNDERSCORE .q{concat} . $outfile_suffix;
     my $elements_ref   = \@{ $file_info_href->{contigs} };
 
-    unless ( defined $infile_postfix ) {
+    if ( not defined $infile_postfix ) {
 
         $infile_postfix = q{};    #No postfix
     }
-    unless ( defined $outfile ) {
 
-        $outfile = $infile_prefix . q{.vcf};
+    if ( not defined $outfile ) {
+
+        $outfile = $infile_prefix . $outfile_suffix;
     }
 
     say {$FILEHANDLE} q{## GATK CatVariants};
@@ -497,16 +497,18 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
     my @infile_paths =
       map { $infile_prefix . $_ . $infile_postfix } @$elements_ref;
 
+    my $gatk_path = catfile( $active_parameter_href->{gatk_path},
+        q{GenomeAnalysisTK.jar} )
+      . $SPACE
+      . q{org.broadinstitute.gatk.tools.CatVariants};
+
     gatk_catvariants(
         {
             memory_allocation => q{Xmx4g},
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
             temp_directory => $active_parameter_href->{temp_directory},
-            gatk_path      => catfile( $active_parameter_href->{gatk_path},
-                q{GenomeAnalysisTK.jar} )
-              . $SPACE
-              . q{org.broadinstitute.gatk.tools.CatVariants},
+            gatk_path      => $gatk_path,
             infile_paths_ref   => \@infile_paths,
             outfile_path       => $outfile,
             referencefile_path => $human_genome_reference_ref,
@@ -517,22 +519,22 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
     say {$FILEHANDLE} $NEWLINE;
 
     ## Fix GT FORMAT in header and Sample_id and GT and Genotype call
-    print {$FILEHANDLE} $perl_vcf_fix . $SPACE;
-    print {$FILEHANDLE} $outfile_path_prefix
-      . q{_concat}
-      . $outfile_suffix
-      . $SPACE;
-    say {$FILEHANDLE} q{>}
-      . $SPACE
-      . $outfile_path_prefix
-      . q{_concat_fix}
-      . $outfile_suffix, $NEWLINE;
+    _fix_gt_format_in_header(
+      {
+        sample_id           => $sample_id,
+        outfile_path_prefix => $outfile_path_prefix,
+        outfile_suffix      => $outfile_suffix,
+        FILEHANDLE          => $FILEHANDLE,
+
+      }
+    );
 
     ## Add contigs to header
     bcftools_annotate(
         {
             infile_path => $outfile_path_prefix
-              . q{_concat_fix}
+              . $UNDERSCORE
+              . q{concat_fix}
               . $outfile_suffix,
             outfile_path    => $outfile_path_prefix . $outfile_suffix,
             output_type     => q{v},
@@ -580,6 +582,111 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
     }
 
     return;
+
+}
+
+sub _add_contigs_to_vcfheader {
+
+    ## Function : Add contigs to VCF header
+    ##          : $human_genome_reference => Human genome reference
+    ##          : $temp_directory         => Temporary directory
+    ##          : $FILEHANDLE             => Filehandle to write to
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $human_genome_reference;
+    my $temp_directory;
+    my $FILEHANDLE;
+
+    my $tmpl = {
+        human_genome_reference => {
+            required => 1,
+            defined => 1,
+            store => \$human_genome_reference,
+        },
+        temp_directory => {
+            required => 1,
+            defined => 1,
+            store => \$temp_directory,
+        },
+        FILEHANDLE => {
+            required => 1,
+            defined => 1,
+            store => \$FILEHANDLE,
+        },
+
+    };
+
+    my $perl_add_contigs = q?perl -nae '{print "##contig=<ID=".$F[0].",length=".$F[1].">", "\n"}'?;
+    print {$FILEHANDLE} $perl_add_contigs . $SPACE;
+
+    # Reference fai file
+    print {$FILEHANDLE} $human_genome_reference
+      . q{.fai}
+      . $SPACE;
+    say {$FILEHANDLE} q{>}
+      . $SPACE
+      . catfile( $temp_directory, q{contig_header.txt} ),
+      $NEWLINE;
+  }
+
+sub _fix_gt_format_in_header {
+
+    ## Function : Fix GT format in header
+    ##          : $sample_id           => Sample id
+    ##          : $outfile_path_prefix => Outfile path prefix
+    ##          : $outfile_suffix      => Outfile suffix
+    ##          : $FILEHANDLE          => Filehandle to write to
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $sample_id;
+    my $outfile_path_prefix;
+    my $outfile_suffix;
+    my $FILEHANDLE;
+
+    my $tmpl = {
+        sample_id => {
+            required => 1,
+            defined => 1,
+            store => \$sample_id,
+        },
+        outfile_path_prefix => {
+            required => 1,
+            defined => 1,
+            store => \$outfile_path_prefix,
+        },
+        outfile_suffix => {
+            required => 1,
+            defined => 1,
+            store => \$outfile_suffix,
+        },
+        FILEHANDLE => {
+            required => 1,
+            defined => 1,
+            store => \$FILEHANDLE,
+        },
+
+    };
+
+    my $perl_vcf_fix =
+    q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my @a = split("\t", $_); pop(@a);print join("\t", @a)."\t?
+          . $sample_id
+          . q?", "\n"} else {print $_, "\n"}'?;
+
+    print {$FILEHANDLE} $perl_vcf_fix . $SPACE;
+    print {$FILEHANDLE} $outfile_path_prefix
+      . q{_concat}
+      . $outfile_suffix
+      . $SPACE;
+    say {$FILEHANDLE} q{>}
+      . $SPACE
+      . $outfile_path_prefix
+      . $UNDERSCORE
+      . q{concat_fix}
+      . $outfile_suffix, $NEWLINE;
 
 }
 
