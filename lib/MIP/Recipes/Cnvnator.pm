@@ -618,9 +618,10 @@ sub _add_contigs_to_vcfheader {
 
     };
 
-    my $perl_add_contigs = q?perl -nae '{print "##contig=<ID=".$F[0].",length=".$F[1].">", "\n"}'?;
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    print {$FILEHANDLE} "im here" . $SPACE;
+    my $regexp = q?perl -nae '{print "##contig=<ID=".$F[0].",length=".$F[1].">", "\n"}'?;
+    print {$FILEHANDLE} $regexp . $SPACE;
 
     # Reference fai file
     print {$FILEHANDLE} $human_genome_reference
@@ -673,12 +674,14 @@ sub _fix_gt_format_in_header {
 
     };
 
-    my $perl_vcf_fix =
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $regexp =
     q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my @a = split("\t", $_); pop(@a);print join("\t", @a)."\t?
           . $sample_id
           . q?", "\n"} else {print $_, "\n"}'?;
 
-    print {$FILEHANDLE} $perl_vcf_fix . $SPACE;
+    print {$FILEHANDLE} $regexp . $SPACE;
     print {$FILEHANDLE} $outfile_path_prefix
       . q{_concat}
       . $outfile_suffix
