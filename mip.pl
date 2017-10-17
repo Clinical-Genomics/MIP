@@ -63,6 +63,8 @@ use MIP::Recipes::Bwa_mem qw{ analysis_bwa_mem };
 use MIP::Recipes::Bedtools_genomecov qw{ analysis_bedtools_genomecov };
 use MIP::Recipes::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
 use MIP::Recipes::Fastqc qw{ analysis_fastqc };
+use MIP::Recipes::Gatk_realigner
+  qw{ analysis_gatk_realigner analysis_gatk_realigner_rio };
 use MIP::Recipes::Manta qw{ analysis_manta };
 use MIP::Recipes::Markduplicates
   qw{ analysis_markduplicates analysis_markduplicates_rio };
@@ -1438,6 +1440,8 @@ else {
 
         $log->info(q{[Markduplicates]});
 
+        my $program_name = lc q{markduplicates};
+
       SAMPLE_ID:
         foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
@@ -1458,16 +1462,18 @@ else {
                     insample_directory      => $insample_directory,
                     outsample_directory     => $outsample_directory,
                     sample_id               => $sample_id,
-                    program_name            => q{markduplicates},
+                    program_name            => $program_name,
                 }
             );
         }
     }
 
-    if ( $active_parameter{pgatk_realigner} > 0 )
-    {    #Run GATK realignertargetcreator/indelrealigner
+    #Run GATK realignertargetcreator/indelrealigner
+    if ( $active_parameter{pgatk_realigner} > 0 ) {
 
-        $log->info("[GATK realignertargetcreator/indelrealigner]\n");
+        $log->info(q{[GATK realignertargetcreator/indelrealigner]});
+
+        my $program_name = lc q{gatk_realigner};
 
         check_build_human_genome_prerequisites(
             {
@@ -1477,7 +1483,7 @@ else {
                 file_info_href          => \%file_info,
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
-                program_name            => "gatk_realigner",
+                program_name            => $program_name,
             }
         );
 
@@ -1491,13 +1497,20 @@ else {
                     file_info_href          => \%file_info,
                     infile_lane_prefix_href => \%infile_lane_prefix,
                     job_id_href             => \%job_id,
-                    program_name            => "gatk_realigner",
+                    program_name            => $program_name,
                 }
             );
         }
+      SAMPLE_ID:
         foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
-            gatk_realigner(
+            ## Assign directories
+            my $insample_directory = catdir( $active_parameter{outdata_dir},
+                $sample_id, $active_parameter{outaligner_dir} );
+            my $outsample_directory = catdir( $active_parameter{outdata_dir},
+                $sample_id, $active_parameter{outaligner_dir} );
+
+            analysis_gatk_realigner(
                 {
                     parameter_href          => \%parameter,
                     active_parameter_href   => \%active_parameter,
@@ -1505,8 +1518,10 @@ else {
                     file_info_href          => \%file_info,
                     infile_lane_prefix_href => \%infile_lane_prefix,
                     job_id_href             => \%job_id,
-                    sample_id_ref           => \$sample_id,
-                    program_name            => "gatk_realigner",
+                    sample_id               => $sample_id,
+                    insample_directory      => $insample_directory,
+                    outsample_directory     => $outsample_directory,
+                    program_name            => $program_name,
                 }
             );
         }
@@ -4074,7 +4089,7 @@ sub endvariantannotationblock {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store       => \$xargs_file_counter
+            store       => \$xargs_file_counter,
         },
     };
 
@@ -4545,7 +4560,7 @@ sub rankvariant {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store       => \$xargs_file_counter
+            store       => \$xargs_file_counter,
         },
     };
 
@@ -5952,7 +5967,7 @@ sub snpeff {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store       => \$xargs_file_counter
+            store       => \$xargs_file_counter,
         },
     };
 
@@ -6550,7 +6565,7 @@ sub mvcfparser {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store       => \$xargs_file_counter
+            store       => \$xargs_file_counter,
         },
     };
 
@@ -7728,7 +7743,7 @@ sub vt {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store       => \$xargs_file_counter
+            store       => \$xargs_file_counter,
         },
     };
 
@@ -8165,7 +8180,7 @@ sub rhocall {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store       => \$xargs_file_counter
+            store       => \$xargs_file_counter,
         },
     };
 
@@ -8510,7 +8525,7 @@ sub prepareforvariantannotationblock {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store       => \$xargs_file_counter
+            store       => \$xargs_file_counter,
         },
     };
 
@@ -10514,7 +10529,7 @@ sub sv_reformat {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store       => \$xargs_file_counter
+            store       => \$xargs_file_counter,
         },
     };
 
@@ -11051,7 +11066,7 @@ sub sv_rankvariant {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store       => \$xargs_file_counter
+            store       => \$xargs_file_counter,
         },
     };
 
@@ -11704,7 +11719,7 @@ sub sv_vcfparser {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store       => \$xargs_file_counter
+            store       => \$xargs_file_counter,
         },
     };
 
@@ -13032,7 +13047,7 @@ sub cnvnator {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store       => \$xargs_file_counter
+            store       => \$xargs_file_counter,
         },
     };
 
@@ -13513,7 +13528,7 @@ sub delly_reformat {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store       => \$xargs_file_counter
+            store       => \$xargs_file_counter,
         },
         call_type =>
           { default => "SV", strict_type => 1, store => \$call_type, },
@@ -14429,7 +14444,7 @@ sub delly_call {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store       => \$xargs_file_counter
+            store       => \$xargs_file_counter,
         },
     };
 
@@ -14798,7 +14813,7 @@ sub msamtools_mpileup {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store       => \$xargs_file_counter
+            store       => \$xargs_file_counter,
         },
     };
 
@@ -15227,7 +15242,7 @@ sub freebayes {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store       => \$xargs_file_counter
+            store       => \$xargs_file_counter,
         },
     };
 
@@ -15612,12 +15627,13 @@ sub mgatk_haplotypecaller {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store       => \$xargs_file_counter
+            store       => \$xargs_file_counter,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File::Interval qw{ generate_contig_interval_file };
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File
@@ -15742,12 +15758,14 @@ sub mgatk_haplotypecaller {
     {    #Exome/rapid analysis
 
         ## Generate contig specific interval_list
-        generate_contig_specific_target_bed_file(
+        generate_contig_interval_file(
             {
-                active_parameter_href     => $active_parameter_href,
-                file_info_href            => $file_info_href,
-                FILEHANDLE                => $FILEHANDLE,
-                exome_target_bed_file_ref => \$exome_target_bed_file,
+                contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
+                exome_target_bed_file => $exome_target_bed_file,
+                reference_dir      => $active_parameter_href->{reference_dir},
+                outdirectory       => $$temp_directory_ref,
+                max_cores_per_node => $core_number,
+                FILEHANDLE         => $FILEHANDLE,
             }
         );
 
@@ -16029,12 +16047,13 @@ sub gatk_baserecalibration {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store       => \$xargs_file_counter
+            store       => \$xargs_file_counter,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File::Interval qw{ generate_contig_interval_file };
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Get::File
@@ -16136,13 +16155,15 @@ sub gatk_baserecalibration {
     {    #Exome/rapid analysis
 
         ## Generate contig specific interval_list
-        generate_contig_specific_target_bed_file(
+        generate_contig_interval_file(
             {
-                active_parameter_href     => $active_parameter_href,
-                file_info_href            => $file_info_href,
-                FILEHANDLE                => $FILEHANDLE,
-                exome_target_bed_file_ref => \$exome_target_bed_file,
-                file_ending               => ".intervals",
+                contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
+                exome_target_bed_file => $exome_target_bed_file,
+                reference_dir      => $active_parameter_href->{reference_dir},
+                outdirectory       => $$temp_directory_ref,
+                max_cores_per_node => $core_number,
+                file_ending        => q{.intervals},
+                FILEHANDLE         => $FILEHANDLE,
             }
         );
 
@@ -16467,496 +16488,6 @@ sub gatk_baserecalibration {
     }
 }
 
-sub gatk_realigner {
-
-##gatk_realigner
-
-##Function : GATK ReAlignerTargetCreator/IndelRealigner to rearrange reads around INDELs. Both ReAlignerTargetCreator and IndelRealigner will be executed within the same sbatch script.
-##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id, $program_name, $program_info_path, $file_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $xargs_file_counter
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => File info hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $sample_id_ref              => Sample id {REF}
-##         : $program_name               => Program name
-##         : $program_info_path          => The program info path
-##         : $file_path                  => File path
-##         : $FILEHANDLE                 => Filehandle to write to
-##         : $family_id_ref              => Family id {REF}
-##         : $temp_directory_ref         => Temporary directory {REF}
-##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $xargs_file_counter         => The xargs file counter
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-    my $outaligner_dir_ref;
-    my $xargs_file_counter;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $sample_id_ref;
-    my $program_name;
-    my $program_info_path;
-    my $file_path;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href,
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href,
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href,
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href,
-        },
-        sample_id_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$sample_id_ref
-        },
-        program_name      => { strict_type => 1, store => \$program_name },
-        program_info_path => { strict_type => 1, store => \$program_info_path },
-        file_path         => { strict_type => 1, store => \$file_path },
-        FILEHANDLE    => { store => \$FILEHANDLE, },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref,
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref,
-        },
-        outaligner_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir_ref,
-        },
-        xargs_file_counter => {
-            default     => 0,
-            allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
-            store       => \$xargs_file_counter
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::Get::File
-      qw{get_file_suffix get_merged_infile_prefix get_exom_target_bed_file };
-    use MIP::IO::Files qw{ xargs_migrate_contig_files };
-    use MIP::Recipes::Xargs qw{ xargs_command };
-    use MIP::Program::Alignment::Gatk
-      qw(gatk_realignertargetcreator gatk_indelrealigner);
-    use MIP::Delete::File qw{ delete_contig_files };
-    use MIP::Processmanagement::Slurm_processes
-      qw{slurm_submit_job_sample_id_dependency_add_to_sample};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    my $core_number =
-      $active_parameter_href->{module_core_number}{ "p" . $program_name };
-    my $reduce_io_ref = \$active_parameter_href->{reduce_io};
-    my $analysis_type_ref =
-      \$active_parameter_href->{analysis_type}{$$sample_id_ref};
-    my $xargs_file_path_prefix;
-    my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
-
-    ## Filehandles
-    my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    unless ( defined($FILEHANDLE) ) {           #Run as individual sbatch script
-
-        ## Filehandles
-        $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
-
-        ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_path, $program_info_path ) = setup_script(
-            {
-                active_parameter_href => $active_parameter_href,
-                job_id_href           => $job_id_href,
-                FILEHANDLE            => $FILEHANDLE,
-                directory_id          => $$sample_id_ref,
-                program_name          => $program_name,
-                program_directory     => catfile( lc($$outaligner_dir_ref) ),
-                core_number           => $core_number,
-                process_time =>
-                  $active_parameter_href->{module_time}{ "p" . $program_name },
-                temp_directory => $$temp_directory_ref,
-            }
-        );
-    }
-
-    ## Assign directories
-    my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $$sample_id_ref, $$outaligner_dir_ref );
-    my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
-        $$sample_id_ref, $$outaligner_dir_ref );
-    $parameter_href->{ "p" . $program_name }{$$sample_id_ref}{indirectory} =
-      $outsample_directory;    #Used downstream
-
-    ## Add merged infile name prefix after merging all BAM files per sample_id
-    my $merged_infile_prefix = get_merged_infile_prefix(
-        {
-            file_info_href => $file_info_href,
-            sample_id      => $$sample_id_ref,
-        }
-    );
-
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$$sample_id_ref}{pmarkduplicates}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$$sample_id_ref}{ "p" . $program_name }{file_tag};
-    my $infile_prefix       = $merged_infile_prefix . $infile_tag;
-    my $file_path_prefix    = catfile( $$temp_directory_ref, $infile_prefix );
-    my $outfile_prefix      = $merged_infile_prefix . $outfile_tag;
-    my $outfile_path_prefix = catfile( $$temp_directory_ref, $outfile_prefix );
-
-    ## Assign suffix
-    my $infile_suffix = my $outfile_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
-            jobid_chain    => $job_id_chain,
-        }
-    );
-
-    ## Get exome_target_bed file for specfic sample_id and add file_ending from file_info hash if supplied
-    my $exome_target_bed_file = get_exom_target_bed_file(
-        {
-            exome_target_bed_href => $active_parameter_href->{exome_target_bed},
-            sample_id             => $$sample_id_ref,
-            log                   => $log,
-            file_ending           => $file_info_href->{exome_target_bed}[2],
-        }
-    );
-
-    if (   ( $$analysis_type_ref eq "wes" )
-        || ( $$analysis_type_ref eq "rapid" ) )
-    {    #Exome/rapid analysis
-
-        ## Generate contig specific interval_list
-        generate_contig_specific_target_bed_file(
-            {
-                active_parameter_href     => $active_parameter_href,
-                file_info_href            => $file_info_href,
-                FILEHANDLE                => $FILEHANDLE,
-                exome_target_bed_file_ref => \$exome_target_bed_file,
-            }
-        );
-        $exome_target_bed_file =
-          basename($exome_target_bed_file);    #Reroute to only filename
-    }
-
-    if ( !$$reduce_io_ref ) {                  #Run as individual sbatch script
-
-        ## Copy file(s) to temporary directory
-        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-        ($xargs_file_counter) = xargs_migrate_contig_files(
-            {
-                FILEHANDLE      => $FILEHANDLE,
-                XARGSFILEHANDLE => $XARGSFILEHANDLE,
-                contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
-                file_path   => $file_path,
-                program_info_path  => $program_info_path,
-                core_number        => $core_number,
-                xargs_file_counter => $xargs_file_counter,
-                infile             => $infile_prefix,
-                indirectory        => $insample_directory,
-                file_ending        => substr( $infile_suffix, 0, 2 )
-                  . "*",    #q{.bam} -> ".b*" for getting index as well
-                temp_directory => $$temp_directory_ref,
-            }
-        );
-    }
-
-    ## GATK ReAlignerTargetCreator
-    say {$FILEHANDLE} "## GATK ReAlignerTargetCreator";
-
-    $core_number = floor( $active_parameter_href->{node_ram_memory} / 4 )
-      ;                     #Division by 4 since the java heap is 4GB
-
-    ## Limit number of cores requested to the maximum number of cores available per node
-    $core_number = check_max_core_number(
-        {
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-            core_number_requested => $core_number
-        }
-    );                      #To not exceed maximum
-
-    ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
-        {
-            FILEHANDLE         => $FILEHANDLE,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_path          => $file_path,
-            program_info_path  => $program_info_path,
-            core_number        => $core_number,
-            xargs_file_counter => $xargs_file_counter,
-            first_command      => "java",
-            memory_allocation  => "Xmx4g",
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory => $$temp_directory_ref,
-            java_jar       => catfile(
-                $active_parameter_href->{gatk_path},
-                "GenomeAnalysisTK.jar"
-            ),
-        }
-    );
-
-    ## Process per contig
-    foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
-
-        ## Get parameters
-        my @intervals;
-        if (   ( $$analysis_type_ref eq "wes" )
-            || ( $$analysis_type_ref eq "rapid" ) )
-        {    #Exome/rapid analysis
-
-            @intervals = (
-                catfile(
-                    $$temp_directory_ref,
-                    $contig . "_" . $exome_target_bed_file
-                )
-            );    #Limit to targets kit target file
-        }
-        else {    #wgs
-
-            @intervals = ($contig);    #Per contig
-        }
-
-        gatk_realignertargetcreator(
-            {
-                known_alleles_ref => \@{
-                    $active_parameter_href->{gatk_realigner_indel_known_sites}
-                },
-                intervals_ref => \@intervals,
-                infile_path   => $file_path_prefix . "_"
-                  . $contig
-                  . $infile_suffix,
-                outfile_path => $outfile_path_prefix . "_"
-                  . $contig
-                  . ".intervals",
-                stderrfile_path => $xargs_file_path_prefix . "."
-                  . $contig
-                  . ".stderr.txt",
-                referencefile_path =>
-                  $active_parameter_href->{human_genome_reference},
-                logging_level => $active_parameter_href->{gatk_logging_level},
-                downsample_to_coverage =>
-                  $active_parameter_href->{gatk_downsample_to_coverage},
-                gatk_disable_auto_index_and_file_lock => $active_parameter_href
-                  ->{gatk_disable_auto_index_and_file_lock},
-                FILEHANDLE => $XARGSFILEHANDLE,
-            }
-        );
-        say $XARGSFILEHANDLE "\n";
-    }
-
-    ## GATK IndelRealigner
-    say {$FILEHANDLE} "## GATK IndelRealigner";
-
-    ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
-        {
-            FILEHANDLE         => $FILEHANDLE,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_path          => $file_path,
-            program_info_path  => $program_info_path,
-            core_number        => $core_number,
-            xargs_file_counter => $xargs_file_counter,
-            first_command      => "java",
-            memory_allocation  => "Xmx4g",
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory => $$temp_directory_ref,
-            java_jar       => catfile(
-                $active_parameter_href->{gatk_path},
-                "GenomeAnalysisTK.jar"
-            ),
-        }
-    );
-
-    ## Process per contig
-    foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
-
-        ## Get parameters
-        my @intervals;
-        if (   ( $$analysis_type_ref eq "wes" )
-            || ( $$analysis_type_ref eq "rapid" ) )
-        {    #Exome/rapid analysis
-
-            @intervals = (
-                catfile(
-                    $$temp_directory_ref,
-                    $contig . "_" . $exome_target_bed_file
-                )
-            );    #Limit to targets kit target file
-        }
-        else {    #wgs
-
-            @intervals = ($contig);    #Per contig
-        }
-
-        indelrealigner(
-            {
-                known_alleles_ref => \@{
-                    $active_parameter_href->{gatk_realigner_indel_known_sites}
-                },
-                intervals_ref => \@intervals,
-                infile_path   => $file_path_prefix . "_"
-                  . $contig
-                  . $infile_suffix,
-                outfile_path => $outfile_path_prefix . "_"
-                  . $contig
-                  . $outfile_suffix,
-                target_intervals_file => $outfile_path_prefix . "_"
-                  . $contig
-                  . ".intervals",
-                stderrfile_path => $xargs_file_path_prefix . "."
-                  . $contig
-                  . ".stderr.txt",
-                referencefile_path =>
-                  $active_parameter_href->{human_genome_reference},
-                logging_level => $active_parameter_href->{gatk_logging_level},
-                downsample_to_coverage =>
-                  $active_parameter_href->{gatk_downsample_to_coverage},
-                gatk_disable_auto_index_and_file_lock => $active_parameter_href
-                  ->{gatk_disable_auto_index_and_file_lock},
-                FILEHANDLE => $XARGSFILEHANDLE,
-            }
-        );
-        say $XARGSFILEHANDLE "\n";
-    }
-
-    if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
-
-        ## Copies file from temporary directory. Per contig
-        say {$FILEHANDLE} q{## Copy file from temporary directory};
-        ($xargs_file_counter) = xargs_migrate_contig_files(
-            {
-                FILEHANDLE      => $FILEHANDLE,
-                XARGSFILEHANDLE => $XARGSFILEHANDLE,
-                contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
-                file_path   => $file_path,
-                program_info_path  => $program_info_path,
-                core_number        => $core_number,
-                xargs_file_counter => $xargs_file_counter,
-                outfile            => $outfile_prefix,
-                outdirectory       => $outsample_directory,
-                temp_directory     => $$temp_directory_ref,
-                file_ending        => substr( $infile_suffix, 0, 2 )
-                  . "*",    #q{.bam} -> ".b*" for getting index as well
-            }
-        );
-
-        if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-            my $most_complete_format_key =
-              "most_complete_" . substr( $outfile_suffix, 1 );
-            $sample_info_href->{sample}{$$sample_id_ref}
-              {$most_complete_format_key}{path} = catfile( $outsample_directory,
-                $outfile_prefix . $outfile_suffix );
-        }
-    }
-    else {
-
-        ## Remove file at temporary Directory
-        delete_contig_files(
-            {
-                file_elements_ref =>
-                  \@{ $file_info_href->{contigs_size_ordered} },
-                FILEHANDLE  => $FILEHANDLE,
-                core_number => $core_number,
-                file_name   => $infile_prefix,
-                file_ending => substr( $infile_suffix, 0, 2 )
-                  . "*",    #q{.bam} -> ".b*" for getting index as well
-                indirectory => $$temp_directory_ref,
-            }
-        );
-    }
-
-    close($XARGSFILEHANDLE);
-
-    if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
-
-        close $FILEHANDLE;
-
-        if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-            slurm_submit_job_sample_id_dependency_add_to_sample(
-                {
-                    job_id_href             => $job_id_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    family_id               => $$family_id_ref,
-                    sample_id               => $$sample_id_ref,
-                    path                    => $job_id_chain,
-                    log                     => $log,
-                    sbatch_file_name        => $file_path
-                }
-            );
-        }
-    }
-    else {
-
-        return
-          $xargs_file_counter
-          ; #Track the number of created xargs scripts per module for Block algorithm
-    }
-}
-
 sub variantannotationblock {
 
 ##variantannotationblock
@@ -17058,7 +16589,7 @@ sub variantannotationblock {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store       => \$xargs_file_counter
+            store       => \$xargs_file_counter,
         },
     };
 
@@ -17427,15 +16958,15 @@ sub bamcalibrationblock {
     ##Will also split alignment per contig and copy to temporary directory for '-rio 1' block to enable selective removal of block submodules.
     $log->info( $TAB . q{[Picardtools mergesamfiles]} );
 
-    # Markduplicates
+    ## Markduplicates
     if ( $active_parameter{pmarkduplicates} > 0 ) {
 
         $log->info( $TAB . q{[Markduplicates]} );
     }
-    if ( $active_parameter{pgatk_realigner} > 0 )
-    {    #Run GATK realignertargetcreator/indelrealigner
+    ## Run GATK realignertargetcreator/indelrealigner
+    if ( $active_parameter{pgatk_realigner} > 0 ) {
 
-        $log->info("\t[GATK realignertargetcreator/indelrealigner]\n");
+        $log->info( $TAB . q{[GATK realignertargetcreator/indelrealigner]} );
 
         check_build_human_genome_prerequisites(
             {
@@ -17445,14 +16976,14 @@ sub bamcalibrationblock {
                 file_info_href          => $file_info_href,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
-                program_name            => "gatk_realigner",
+                program_name            => q{gatk_realigner},
             }
         );
     }
-    if ( $active_parameter{pgatk_baserecalibration} > 0 )
-    {    #Run GATK baserecalibrator/printreads
+    ## Run GATK baserecalibrator/printreads
+    if ( $active_parameter{pgatk_baserecalibration} > 0 ) {
 
-        $log->info("\t[GATK baserecalibrator/printreads]\n");
+        $log->info( $TAB . q{[GATK baserecalibrator/printreads]} );
 
         check_build_human_genome_prerequisites(
             {
@@ -17467,6 +16998,7 @@ sub bamcalibrationblock {
         );
     }
 
+  SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
         my $xargs_file_counter = 0;
@@ -17515,38 +17047,34 @@ sub bamcalibrationblock {
 
             ($xargs_file_counter) = analysis_markduplicates_rio(
                 {
-                    parameter_href          => $parameter_href,
-                    active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    sample_id               => $sample_id,
-                    program_name            => q{markduplicates},
-                    file_path               => $file_path,
-                    program_info_path       => $program_info_path,
-                    FILEHANDLE              => $FILEHANDLE,
-                    xargs_file_counter      => $xargs_file_counter,
+                    parameter_href        => $parameter_href,
+                    active_parameter_href => $active_parameter_href,
+                    sample_info_href      => $sample_info_href,
+                    file_info_href        => $file_info_href,
+                    sample_id             => $sample_id,
+                    program_name          => q{markduplicates},
+                    file_path             => $file_path,
+                    program_info_path     => $program_info_path,
+                    FILEHANDLE            => $FILEHANDLE,
+                    xargs_file_counter    => $xargs_file_counter,
                 }
             );
         }
-        if ( $active_parameter{pgatk_realigner} > 0 )
-        {    #Run GATK realignertargetcreator/indelrealigner
 
-            ($xargs_file_counter) = gatk_realigner(
+        ## Run GATK realignertargetcreator/indelrealigner
+        if ( $active_parameter{pgatk_realigner} > 0 ) {
+
+            ($xargs_file_counter) = analysis_gatk_realigner_rio(
                 {
-                    parameter_href          => $parameter_href,
-                    active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    sample_id_ref           => \$sample_id,
-                    program_name            => "gatk_realigner",
-                    file_path               => $file_path,
-                    program_info_path       => $program_info_path,
-                    FILEHANDLE              => $FILEHANDLE,
-                    xargs_file_counter      => $xargs_file_counter,
+                    parameter_href        => $parameter_href,
+                    active_parameter_href => $active_parameter_href,
+                    file_info_href        => $file_info_href,
+                    sample_id             => $sample_id,
+                    program_name          => q{gatk_realigner},
+                    file_path             => $file_path,
+                    program_info_path     => $program_info_path,
+                    FILEHANDLE            => $FILEHANDLE,
+                    xargs_file_counter    => $xargs_file_counter,
                 }
             );
         }
@@ -21110,84 +20638,6 @@ sub create_file_endings {
     }
 }
 
-sub split_target_file {
-
-##split_target_file
-
-##Function : Splits a target file into new contig specific target file
-##Returns  : ""
-##Arguments: $FILEHANDLE, $indirectory_ref, $outdirectory_ref, $infile_ref, $contig_ref, $file_ending
-##         : $FILEHANDLE       => FILEHANDLE to write to
-##         : $indirectory_ref  => Indirectory {REF}
-##         : $outdirectory_ref => Analysis outdirectory {REF}
-##         : $infile_ref       => Target file {REF}
-##         : $contig_ref       => The contig to extract {REF}
-##         : $file_ending      => File ending to add
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $FILEHANDLE;
-    my $indirectory_ref;
-    my $outdirectory_ref;
-    my $infile_ref;
-    my $contig_ref;
-    my $file_ending;
-
-    my $tmpl = {
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE, },
-        indirectory_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$indirectory_ref
-        },
-        outdirectory_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$outdirectory_ref
-        },
-        infile_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$infile_ref
-        },
-        contig_ref  => { store       => \$contig_ref },
-        file_ending => { strict_type => 1, store => \$file_ending },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    if ( defined($$contig_ref) ) {    #The contig to split
-
-        print {$FILEHANDLE}
-          q?perl -nae 'if($_=~/^\@/) {print $_;} elsif($_=~/^?
-          . $$contig_ref
-          . q?\s+/) {print $_;}' ?;    #Select header and contig
-        print {$FILEHANDLE} catfile( $$indirectory_ref, $$infile_ref )
-          . " ";                       #Infile
-
-        if ( defined($file_ending) ) {
-
-            say {$FILEHANDLE} "> "
-              . catfile( $$outdirectory_ref,
-                $$contig_ref . "_" . $$infile_ref . $file_ending )
-              . " &";                  #Outfile with supplied file ending
-        }
-        else {
-
-            say {$FILEHANDLE} "> "
-              . catfile( $$outdirectory_ref, $$contig_ref . "_" . $$infile_ref )
-              . " &";                  #Outfile
-        }
-    }
-}
-
 sub gatk_pedigree_flag {
 
 ##gatk_pedigree_flag
@@ -23815,7 +23265,7 @@ sub split_bam {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store       => \$xargs_file_counter
+            store       => \$xargs_file_counter,
         },
     };
 
@@ -26170,107 +25620,6 @@ sub check_sample_id_in_parameter {
             }
         }
     }
-}
-
-sub generate_contig_specific_target_bed_file {
-
-##generate_contig_specific_target_bed_file
-
-##Function : Generate contig specific interval_list
-##Returns  : ""
-##Arguments: $active_parameter_href, $file_info_href, $FILEHANDLE, $exome_target_bed_file, $temp_directory_ref, $reference_dir_ref, $file_ending
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $file_info_href        => File info hash {REF}
-##         : $FILEHANDLE            => Filehandle to write to
-##         : $exome_target_bed_file => Target file to split
-##         : $temp_directory_ref    => Temporary directory {REF}
-##         : $reference_dir_ref     => MIP reference directory {REF}
-##         : $file_ending           => File ending to add {Optional}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $temp_directory_ref;
-    my $reference_dir_ref;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $file_info_href;
-    my $FILEHANDLE;
-    my $exome_target_bed_file_ref;
-    my $file_ending;
-
-    my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href,
-        },
-        FILEHANDLE                => { store => \$FILEHANDLE, },
-        exome_target_bed_file_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$exome_target_bed_file_ref
-        },
-        file_ending        => { strict_type => 1, store => \$file_ending },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref,
-        },
-        reference_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{reference_dir},
-            strict_type => 1,
-            store       => \$reference_dir_ref,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Processmanagement::Processes qw(print_wait);
-
-    my $core_number           = $active_parameter_href->{max_cores_per_node};
-    my $process_batches_count = 1;
-
-    say {$FILEHANDLE} "## Generate contig specific interval_list\n";
-
-    while ( my ( $contig_index, $contig ) =
-        each( @{ $file_info_href->{contigs_size_ordered} } ) )
-    {
-
-        $process_batches_count = print_wait(
-            {
-                process_counter       => $contig_index,
-                max_process_number    => $core_number,
-                process_batches_count => $process_batches_count,
-                FILEHANDLE            => $FILEHANDLE,
-            }
-        );
-
-        ## Splits a target file into new contig specific target file
-        split_target_file(
-            {
-                FILEHANDLE       => $FILEHANDLE,
-                indirectory_ref  => $reference_dir_ref,
-                outdirectory_ref => $temp_directory_ref,
-                infile_ref       => \basename($$exome_target_bed_file_ref),
-                contig_ref       => \$contig,
-                file_ending      => $file_ending,
-            }
-        );
-    }
-    say {$FILEHANDLE} q{wait}, "\n";
 }
 
 sub replace_iupac {

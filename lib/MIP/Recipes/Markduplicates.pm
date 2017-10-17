@@ -38,14 +38,9 @@ Readonly my $UNDERSCORE => q{_};
 
 sub analysis_markduplicates {
 
-## analysis_markduplicates
-
 ## Function : Mark duplicated reads using Picardtools markduplicates or Sambamba markduplicates in files generated from alignment (sorted, merged).
 ## Returns  : |$xargs_file_counter
-## Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href
-##            $job_id_href, $insample_directory, $outsample_directory, $sample_id, $program_name, $program_info_path,
-##            $file_path, family_id, $temp_directory, $outaligner_dir, $xargs_file_counter
-##          : $parameter_href          => Parameter hash {REF}
+## Arguments: $parameter_href          => Parameter hash {REF}
 ##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $file_info_href          => File info hash {REF}
@@ -64,12 +59,6 @@ sub analysis_markduplicates {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $family_id;
-    my $temp_directory;
-    my $outaligner_dir;
-    my $xargs_file_counter;
-
     ## Flatten argument(s)
     my $parameter_href;
     my $active_parameter_href;
@@ -84,95 +73,102 @@ sub analysis_markduplicates {
     my $program_info_path;
     my $file_path;
 
+    ## Default(s)
+    my $family_id;
+    my $temp_directory;
+    my $outaligner_dir;
+    my $xargs_file_counter;
+
     my $tmpl = {
         parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
+            store       => \$infile_lane_prefix_href,
         },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$job_id_href,
         },
         insample_directory => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$insample_directory
+            store       => \$insample_directory,
         },
         outsample_directory => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$outsample_directory
+            store       => \$outsample_directory,
         },
         sample_id => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$sample_id
+            store       => \$sample_id,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
-        program_info_path => { strict_type => 1, store => \$program_info_path },
-        file_path         => { strict_type => 1, store => \$file_path },
-        family_id         => {
+        program_info_path =>
+          { strict_type => 1, store => \$program_info_path, },
+        file_path => { strict_type => 1, store => \$file_path, },
+        family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id
+            store       => \$family_id,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory
+            store       => \$temp_directory,
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir
+            store       => \$outaligner_dir,
         },
         xargs_file_counter => {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store       => \$xargs_file_counter
+            store       => \$xargs_file_counter,
         },
     };
 
@@ -515,17 +511,12 @@ sub analysis_markduplicates {
 
 sub analysis_markduplicates_rio {
 
-## analysis_markduplicates_rio
-
 ## Function : Mark duplicated reads using Picardtools markduplicates or Sambamba markduplicates in files generated from alignment (sorted, merged).
 ## Returns  : |$xargs_file_counter
-## Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id, $program_name, $program_info_path, $file_path, $FILEHANDLE, family_id, $temp_directory, $outaligner_dir, $xargs_file_counter
-##          : $parameter_href          => Parameter hash {REF}
+## Arguments: $parameter_href          => Parameter hash {REF}
 ##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $file_info_href          => File info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $job_id_href             => Job id hash {REF}
 ##          : $sample_id               => Sample id
 ##          : $program_name            => Program name
 ##          : $program_info_path       => The program info path
@@ -538,24 +529,22 @@ sub analysis_markduplicates_rio {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $family_id;
-    my $temp_directory;
-    my $outaligner_dir;
-    my $xargs_file_counter;
-
     ## Flatten argument(s)
     my $parameter_href;
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
     my $sample_id;
     my $program_name;
     my $program_info_path;
     my $file_path;
     my $FILEHANDLE;
+
+    ## Default(s)
+    my $family_id;
+    my $temp_directory;
+    my $outaligner_dir;
+    my $xargs_file_counter;
 
     my $tmpl = {
         parameter_href => {
@@ -563,78 +552,65 @@ sub analysis_markduplicates_rio {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         sample_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href
+            store       => \$file_info_href,
         },
         sample_id => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$sample_id
+            store       => \$sample_id,
         },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program_name
+            store       => \$program_name,
         },
-        program_info_path => { strict_type => 1, store => \$program_info_path },
-        file_path         => { strict_type => 1, store => \$file_path },
-        FILEHANDLE => { store => \$FILEHANDLE },
+        program_info_path =>
+          { strict_type => 1, store => \$program_info_path, },
+        file_path  => { strict_type => 1, store => \$file_path, },
+        FILEHANDLE => { store       => \$FILEHANDLE, },
         family_id  => {
             default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id
+            store       => \$family_id,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$temp_directory
+            store       => \$temp_directory,
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$outaligner_dir
+            store       => \$outaligner_dir,
         },
         xargs_file_counter => {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store       => \$xargs_file_counter
+            store       => \$xargs_file_counter,
         },
     };
 
@@ -929,11 +905,9 @@ sub analysis_markduplicates_rio {
 
 sub _calculate_fraction_duplicates_for_all_metric_files {
 
-    ## _calculate_fraction_duplicates_for_all_metric_files
-    ## Function : Collect duplicate reads and reads mapped across all metric contig files. Calculate fraction duplicates. Write it to stdout.
-## Returns  : ""
-## Arguments: $outfile_path_prefix, $FILEHANDLE
-##          : $outfile_path_prefix => Outfile path prefix
+## Function : Collect duplicate reads and reads mapped across all metric contig files. Calculate fraction duplicates. Write it to stdout.
+## Returns  :
+## Arguments: $outfile_path_prefix => Outfile path prefix
 ##          : $FILEHANDLE          => Filehandle to write to
 
     my ($arg_href) = @_;
@@ -947,9 +921,9 @@ sub _calculate_fraction_duplicates_for_all_metric_files {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$outfile_path_prefix
+            store       => \$outfile_path_prefix,
         },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
+        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
