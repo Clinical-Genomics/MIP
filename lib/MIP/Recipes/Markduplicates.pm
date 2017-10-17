@@ -626,7 +626,6 @@ sub analysis_markduplicates_rio {
       qw{ sambamba_markdup sambamba_flagstat };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_markduplicates };
     use MIP::Recipes::Xargs qw{ xargs_command };
-    use MIP::Script::Setup_script qw{ setup_script };
     use MIP::QC::Record
       qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info };
 
