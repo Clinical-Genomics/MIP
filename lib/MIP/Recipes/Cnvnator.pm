@@ -231,7 +231,7 @@ sub analysis_cnvnator {
       $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag =
       $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
-    my $infile = $file_info_href->{$sample_id}{merged_infile};
+    my $infile              = $file_info_href->{$sample_id}{merged_infile};
     my $infile_prefix       = $infile . $infile_tag;
     my $file_path_prefix    = catfile( $temp_directory, $infile_prefix );
     my $outfile_prefix      = $infile . $outfile_tag;
@@ -494,7 +494,8 @@ q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my 
     say {$FILEHANDLE} q{## GATK CatVariants};
 
     ## Assemble infile paths
-    my @infile_paths = map { $infile_prefix . $_ . $infile_postfix } @$elements_ref;
+    my @infile_paths =
+      map { $infile_prefix . $_ . $infile_postfix } @$elements_ref;
 
     gatk_catvariants(
         {
