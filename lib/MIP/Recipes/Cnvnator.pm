@@ -178,11 +178,12 @@ sub analysis_cnvnator {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_file_suffix };
-    use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files} ;
+    use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files};
     use MIP::Language::Java qw{ java_core };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
-    use MIP::Program::Alignment::Samtools qw{ samtools_create_chromosome_files };
+    use MIP::Program::Alignment::Samtools
+      qw{ samtools_create_chromosome_files };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_annotate };
     use MIP::Program::Variantcalling::Cnvnator
       qw{ cnvnator_read_extraction cnvnator_histogram cnvnator_statistics cnvnator_partition cnvnator_calling cnvnator_convert_to_vcf };
@@ -247,8 +248,8 @@ sub analysis_cnvnator {
       $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag =
       $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
-    my $infile_prefix       = $infile . $infile_tag;
-    my $outfile_prefix      = $infile . $outfile_tag;
+    my $infile_prefix  = $infile . $infile_tag;
+    my $outfile_prefix = $infile . $outfile_tag;
 
     ## Paths
     my $file_path_prefix    = catfile( $temp_directory, $infile_prefix );
@@ -286,24 +287,25 @@ sub analysis_cnvnator {
 
     ## Add contigs to vcfheader
     _add_contigs_to_vcfheader(
-      {
-        human_genome_reference => $active_parameter_href->{human_genome_reference},
-        temp_directory         => $temp_directory,
-        FILEHANDLE             => $FILEHANDLE,
-      }
+        {
+            human_genome_reference =>
+              $active_parameter_href->{human_genome_reference},
+            temp_directory => $temp_directory,
+            FILEHANDLE     => $FILEHANDLE,
+        }
     );
 
     ## Call to Samtools to create chromosome sequence files (.fa) used by Cnvnator
     say {$FILEHANDLE} q{## Create by cnvnator required 'chr.fa' files};
     samtools_create_chromosome_files(
-      {
-        regions_ref        => $file_info_href->{contigs},
-        infile_path        => $active_parameter_href->{human_genome_reference},
-        temp_directory     => $temp_directory,
-        suffix             => q{.fa},
-        max_process_number => $core_number,
-        FILEHANDLE         => $FILEHANDLE,
-      }
+        {
+            regions_ref    => $file_info_href->{contigs},
+            infile_path    => $active_parameter_href->{human_genome_reference},
+            temp_directory => $temp_directory,
+            suffix         => q{.fa},
+            max_process_number => $core_number,
+            FILEHANDLE         => $FILEHANDLE,
+        }
     );
 
     say {$FILEHANDLE} q{wait}, $NEWLINE;
@@ -343,19 +345,21 @@ sub analysis_cnvnator {
 
     my $stderrfile_path_prefix;
 
-    CONTIG:
+  CONTIG:
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
         $stderrfile_path_prefix = $xargs_file_path_prefix . $DOT . $contig;
 
         ## Assemble parameter
         # Output ROOT file
-        $root_file = $file_path_prefix . $UNDERSCORE . $contig . $DOT . q{.root};
+        $root_file =
+          $file_path_prefix . $UNDERSCORE . $contig . $DOT . q{.root};
 
         cnvnator_read_extraction(
             {
-                infile_paths_ref =>
-                  [ $file_path_prefix . $UNDERSCORE . $contig . $infile_suffix ],
+                infile_paths_ref => [
+                    $file_path_prefix . $UNDERSCORE . $contig . $infile_suffix
+                ],
                 outfile_path    => $root_file,
                 regions_ref     => [$contig],
                 unique          => 1,
@@ -466,8 +470,9 @@ sub analysis_cnvnator {
     ## Write sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
     $infile_prefix = $outfile_path_prefix . $UNDERSCORE;
     my $infile_postfix = $outfile_suffix;
-    my $outfile        = $outfile_path_prefix . $UNDERSCORE .q{concat} . $outfile_suffix;
-    my $elements_ref   = \@{ $file_info_href->{contigs} };
+    my $outfile =
+      $outfile_path_prefix . $UNDERSCORE . q{concat} . $outfile_suffix;
+    my $elements_ref = \@{ $file_info_href->{contigs} };
 
     if ( not defined $infile_postfix ) {
 
@@ -483,10 +488,10 @@ sub analysis_cnvnator {
 
     ## Assemble infile paths
     my @infile_paths =
-      map { $infile_prefix . $_ . $infile_postfix } @$elements_ref;
+      map { $infile_prefix . $_ . $infile_postfix } @{$elements_ref};
 
-    my $gatk_path = catfile( $active_parameter_href->{gatk_path},
-        q{GenomeAnalysisTK.jar} )
+    my $gatk_path =
+        catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} )
       . $SPACE
       . q{org.broadinstitute.gatk.tools.CatVariants};
 
@@ -495,8 +500,8 @@ sub analysis_cnvnator {
             memory_allocation => q{Xmx4g},
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
-            temp_directory => $active_parameter_href->{temp_directory},
-            gatk_path      => $gatk_path,
+            temp_directory     => $active_parameter_href->{temp_directory},
+            gatk_path          => $gatk_path,
             infile_paths_ref   => \@infile_paths,
             outfile_path       => $outfile,
             referencefile_path => $human_genome_reference_ref,
@@ -508,13 +513,13 @@ sub analysis_cnvnator {
 
     ## Fix GT FORMAT in header and Sample_id and GT and Genotype call
     _fix_gt_format_in_header(
-      {
-        sample_id           => $sample_id,
-        outfile_path_prefix => $outfile_path_prefix,
-        outfile_suffix      => $outfile_suffix,
-        FILEHANDLE          => $FILEHANDLE,
+        {
+            sample_id           => $sample_id,
+            outfile_path_prefix => $outfile_path_prefix,
+            outfile_suffix      => $outfile_suffix,
+            FILEHANDLE          => $FILEHANDLE,
 
-      }
+        }
     );
 
     ## Add contigs to header
@@ -590,37 +595,38 @@ sub _add_contigs_to_vcfheader {
     my $tmpl = {
         human_genome_reference => {
             required => 1,
-            defined => 1,
-            store => \$human_genome_reference,
+            defined  => 1,
+            store    => \$human_genome_reference,
         },
         temp_directory => {
             required => 1,
-            defined => 1,
-            store => \$temp_directory,
+            defined  => 1,
+            store    => \$temp_directory,
         },
         FILEHANDLE => {
             required => 1,
-            defined => 1,
-            store => \$FILEHANDLE,
+            defined  => 1,
+            store    => \$FILEHANDLE,
         },
 
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my $regexp = q?perl -nae '{print "##contig=<ID=".$F[0].",length=".$F[1].">", "\n"}'?;
+    my $regexp =
+      q?perl -nae '{print "##contig=<ID=".$F[0].",length=".$F[1].">", "\n"}'?;
     print {$FILEHANDLE} $regexp . $SPACE;
 
     # Reference fai file
-    print {$FILEHANDLE} $human_genome_reference
-      . q{.fai}
-      . $SPACE;
+    print {$FILEHANDLE} $human_genome_reference . q{.fai} . $SPACE;
 
     say {$FILEHANDLE} q{>}
       . $SPACE
       . catfile( $temp_directory, q{contig_header.txt} ),
       $NEWLINE;
-  }
+
+    return;
+}
 
 sub _fix_gt_format_in_header {
 
@@ -641,23 +647,23 @@ sub _fix_gt_format_in_header {
     my $tmpl = {
         sample_id => {
             required => 1,
-            defined => 1,
-            store => \$sample_id,
+            defined  => 1,
+            store    => \$sample_id,
         },
         outfile_path_prefix => {
             required => 1,
-            defined => 1,
-            store => \$outfile_path_prefix,
+            defined  => 1,
+            store    => \$outfile_path_prefix,
         },
         outfile_suffix => {
             required => 1,
-            defined => 1,
-            store => \$outfile_suffix,
+            defined  => 1,
+            store    => \$outfile_suffix,
         },
         FILEHANDLE => {
             required => 1,
-            defined => 1,
-            store => \$FILEHANDLE,
+            defined  => 1,
+            store    => \$FILEHANDLE,
         },
 
     };
@@ -665,9 +671,9 @@ sub _fix_gt_format_in_header {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my $regexp =
-    q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my @a = split("\t", $_); pop(@a);print join("\t", @a)."\t?
-          . $sample_id
-          . q?", "\n"} else {print $_, "\n"}'?;
+q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my @a = split("\t", $_); pop(@a);print join("\t", @a)."\t?
+      . $sample_id
+      . q?", "\n"} else {print $_, "\n"}'?;
 
     print {$FILEHANDLE} $regexp . $SPACE;
     print {$FILEHANDLE} $outfile_path_prefix
@@ -680,6 +686,8 @@ sub _fix_gt_format_in_header {
       . $UNDERSCORE
       . q{concat_fix}
       . $outfile_suffix, $NEWLINE;
+
+    return;
 
 }
 

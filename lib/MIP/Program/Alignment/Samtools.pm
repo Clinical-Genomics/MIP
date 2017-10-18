@@ -37,9 +37,9 @@ use Params::Check qw{check allow last_error};
 use Readonly;
 
 ## Constants
-Readonly my $SPACE => q{ };
-Readonly my $COMMA => q{,};
-Readonly my $AMPERSAND  => q{&};
+Readonly my $SPACE     => q{ };
+Readonly my $COMMA     => q{,};
+Readonly my $AMPERSAND => q{&};
 
 sub samtools_view {
 
@@ -586,68 +586,69 @@ sub samtools_create_chromosome_files {
 ##          : $max_process_number => Max number of processeses
 ##          : $FILEHANDLE         => Sbatch filehandle to write to
 
-  my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-  ## Flatten argument(s)
-  my $regions_ref;
-  my $infile_path;
-  my $temp_directory;
-  my $suffix;
-  my $max_process_number;
-  my $FILEHANDLE;
+    ## Flatten argument(s)
+    my $regions_ref;
+    my $infile_path;
+    my $temp_directory;
+    my $suffix;
+    my $max_process_number;
+    my $FILEHANDLE;
 
-  my $tmpl = {
-      regions_ref => {
-          required    => 1,
-          default => [],
-          strict_type => 1,
-          store => \$regions_ref,
-      },
-      infile_path => {
-          required    => 1,
-          defined     => 1,
-          strict_type => 1,
-          store       => \$infile_path,
-      },
-      temp_directory  => {
-          required    => 1,
-          strict_type => 1,
-          store => \$temp_directory,
-      },
-      suffix => { strict_type => 1, store => \$suffix, },
-      max_process_number => {
-          allow       => qr/^\d+$/,
-          strict_type => 1,
-          store => \$max_process_number,
-      },
-      FILEHANDLE => { store => \$FILEHANDLE, },
-  };
+    my $tmpl = {
+        regions_ref => {
+            required    => 1,
+            default     => [],
+            strict_type => 1,
+            store       => \$regions_ref,
+        },
+        infile_path => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$infile_path,
+        },
+        temp_directory => {
+            required    => 1,
+            strict_type => 1,
+            store       => \$temp_directory,
+        },
+        suffix             => { strict_type => 1, store => \$suffix, },
+        max_process_number => {
+            allow       => qr/^\d+$/,
+            strict_type => 1,
+            store       => \$max_process_number,
+        },
+        FILEHANDLE => { store => \$FILEHANDLE, },
+    };
 
-  check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-  my $process_batches_count = 1;
+    my $process_batches_count = 1;
 
-  while ( my ( $contig_index, $contig ) = each @{ $regions_ref } ) {
-    $process_batches_count = print_wait(
-        {
-            process_counter       => $contig_index,
-            max_process_number    => $max_process_number,
-            process_batches_count => $process_batches_count,
-            FILEHANDLE            => $FILEHANDLE,
-        }
-    );
+    while ( my ( $contig_index, $contig ) = each @{$regions_ref} ) {
+        $process_batches_count = print_wait(
+            {
+                process_counter       => $contig_index,
+                max_process_number    => $max_process_number,
+                process_batches_count => $process_batches_count,
+                FILEHANDLE            => $FILEHANDLE,
+            }
+        );
 
-    samtools_faidx(
-        {
-            regions_ref => [$contig],
-            infile_path => $infile_path,
-            outfile_path => catfile( $temp_directory, $contig . $suffix  ),
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $SPACE . $AMPERSAND;
+        samtools_faidx(
+            {
+                regions_ref  => [$contig],
+                infile_path  => $infile_path,
+                outfile_path => catfile( $temp_directory, $contig . $suffix ),
+                FILEHANDLE   => $FILEHANDLE,
+            }
+        );
+        say {$FILEHANDLE} $SPACE . $AMPERSAND;
 
-  }
+    }
+    return;
 }
 
 1;
