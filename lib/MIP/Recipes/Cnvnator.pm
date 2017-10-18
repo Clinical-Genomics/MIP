@@ -177,21 +177,20 @@ sub analysis_cnvnator {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{get_file_suffix};
-    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
-    use MIP::Language::Java qw{java_core};
-    use MIP::Processmanagement::Processes qw(print_wait);
+    use MIP::Get::File qw{ get_file_suffix };
+    use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files} ;
+    use MIP::Language::Java qw{ java_core };
     use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_sample_id_dependency_add_to_sample);
-    use MIP::Program::Alignment::Samtools qw(samtools_faidx);
-    use MIP::Program::Variantcalling::Bcftools qw(bcftools_annotate);
+      qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
+    use MIP::Program::Alignment::Samtools qw{ samtools_create_chromosome_files };
+    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_annotate };
     use MIP::Program::Variantcalling::Cnvnator
       qw{ cnvnator_read_extraction cnvnator_histogram cnvnator_statistics cnvnator_partition cnvnator_calling cnvnator_convert_to_vcf };
-    use MIP::Program::Variantcalling::Gatk qw(gatk_catvariants);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
+    use MIP::Program::Variantcalling::Gatk qw{ gatk_catvariants };
+    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Recipes::Xargs qw{ xargs_command };
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::Set::File qw{set_file_suffix};
+    use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Set::File qw{ set_file_suffix };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -233,8 +232,6 @@ sub analysis_cnvnator {
             temp_directory => $temp_directory
         }
     );
-
-    ## Assign directories
 
     ## Alias
     my $human_genome_reference_ref =
@@ -296,33 +293,18 @@ sub analysis_cnvnator {
       }
     );
 
-    my $process_batches_count = 1;
-
-    ## Create by cnvnator required "chr.fa" files
+    ## Call to Samtools to create chromosome sequence files (.fa) used by Cnvnator
     say {$FILEHANDLE} q{## Create by cnvnator required 'chr.fa' files};
-    while ( my ( $contig_index, $contig ) =
-        each @{ $file_info_href->{contigs} } )
-    {
-
-        $process_batches_count = print_wait(
-            {
-                process_counter       => $contig_index,
-                max_process_number    => $core_number,
-                process_batches_count => $process_batches_count,
-                FILEHANDLE            => $FILEHANDLE,
-            }
-        );
-
-        samtools_faidx(
-            {
-                regions_ref => [$contig],
-                infile_path => $active_parameter_href->{human_genome_reference},
-                outfile_path => catfile( $temp_directory, $contig . q{.fa} ),
-                FILEHANDLE   => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $SPACE . $AMPERSAND;
-    }
+    samtools_create_chromosome_files(
+      {
+        regions_ref        => $file_info_href->{contigs},
+        infile_path        => $active_parameter_href->{human_genome_reference},
+        temp_directory     => $temp_directory,
+        suffix             => q{.fa},
+        max_process_number => $core_number,
+        FILEHANDLE         => $FILEHANDLE,
+      }
+    );
 
     say {$FILEHANDLE} q{wait}, $NEWLINE;
 
