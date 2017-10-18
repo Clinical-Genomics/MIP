@@ -8,9 +8,9 @@ use utf8;    #Allow unicode characters in this script
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
 
-use FindBin qw{$Bin};    # Find directory of script
-use File::Basename qw{dirname};
-use File::Spec::Functions qw{catdir};
+use FindBin qw{ $Bin };    # Find directory of script
+use File::Basename qw{ dirname };
+use File::Spec::Functions qw{ catdir catfile };
 
 BEGIN {
     require Exporter;
@@ -47,7 +47,6 @@ sub samtools_view {
 
 ## Function : Perl wrapper for writing samtools view recipe to $FILEHANDLE. Based on samtools 1.3.1 (using htslib 1.3.1).
 ## Returns  : "@commands"
-## Arguments: $regions_ref, $infile_path, $outfile_path, $stderrfile_path, $FILEHANDLE, $thread_number, $with_header, $output_format, $auto_detect_input_format, $uncompressed_bam_output
 ##          : $regions_ref              => The regions to process {REF}
 ##          : $infile_path              => Infile path
 ##          : $outfile_path             => Outfile path
@@ -196,7 +195,6 @@ sub samtools_index {
 
 ## Function : Perl wrapper for writing samtools index recipe to $FILEHANDLE. Based on samtools 1.3.1 (using htslib 1.3.1).
 ## Returns  : "@commands"
-## Arguments: $infile_path, $stderrfile_path, stdoutfile_path, $FILEHANDLE, $bai_format
 ##          : $infile_path            => Infile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stdoutfile_path        => Stdoutfile path
@@ -270,7 +268,6 @@ sub samtools_stats {
 
 ## Function : Perl wrapper for writing samtools stats recipe to $FILEHANDLE. Based on samtools 1.3.1 (using htslib 1.3.1).
 ## Returns  : "@commands"
-## Arguments: $regions_ref, $infile_path, $outfile_path, $stderrfile_path, $FILEHANDLE, $auto_detect_input_format
 ##          : $regions_ref              => The regions to process {REF}
 ##          : $infile_path              => Infile path
 ##          : $outfile_path             => Outfile path
@@ -364,7 +361,6 @@ sub samtools_mpileup {
 
 ## Function : Perl wrapper for writing samtools mpileup recipe to $FILEHANDLE. Based on samtools 1.3.1 (using htslib 1.3.1).
 ## Returns  : "@commands"
-## Arguments: $infile_paths_ref, $output_tags_ref, $outfile_path, $referencefile_path, $stderrfile_path, $FILEHANDLE, $output_bcf, $adjust_mq
 ##          : $infile_paths_ref                 => Infile paths {REF}
 ##          : $output_tags_ref                  => Optional tags to output {REF}
 ##          : $outfile_path                     => Outfile path
@@ -506,7 +502,6 @@ sub samtools_faidx {
 
 ## Function : Perl wrapper for writing samtools faidx recipe to $FILEHANDLE. Based on samtools 1.3.1 (using htslib 1.3.1).
 ## Returns  : "@commands"
-## Arguments: $regions_ref, $infile_path, $outfile_path, $stderrfile_path, $FILEHANDLE
 ##          : $regions_ref            => The regions to process {REF}
 ##          : $infile_path            => Infile path
 ##          : $outfile_path           => Outfile path
