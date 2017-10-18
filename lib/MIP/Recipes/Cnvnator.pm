@@ -556,8 +556,7 @@ sub analysis_cnvnator {
             {
                 sample_info_href => $sample_info_href,
                 program_name     => q{cnvnator},
-                outdirectory     => $outsample_directory,
-                outfile          => $outfile_prefix . $outfile_suffix,
+                path             => catfile( $outsample_directory, $outfile_prefix . $outfile_suffix ),
             }
         );
 
