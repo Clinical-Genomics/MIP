@@ -19,21 +19,21 @@ BEGIN {
     our $VERSION = 1.01;
 
     # Inherit from Exporter to export functions and variables
-    use base qw {Exporter};
+    use base qw{ Exporter };
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{samtools_view samtools_index samtools_stats samtools_mpileup samtools_faidx samtools_create_chromosome_files};
+      qw{ samtools_view samtools_index samtools_stats samtools_mpileup samtools_faidx samtools_create_chromosome_files };
 
 }
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), 'lib' );
-use MIP::Processmanagement::Processes qw(print_wait);
-use MIP::Unix::Standard_streams qw{unix_standard_streams};
-use MIP::Unix::Write_to_file qw{unix_write_to_file};
+use MIP::Processmanagement::Processes qw{ print_wait };
+use MIP::Unix::Standard_streams qw{ unix_standard_streams };
+use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
-use Params::Check qw{check allow last_error};
+use Params::Check qw{ check allow last_error };
 use Readonly;
 
 ## Constants
@@ -103,7 +103,7 @@ sub samtools_view {
         },
         output_format => {
             default     => q{bam},
-            allow       => [qw{sam bam cram json}],
+            allow       => [qw{ sam bam cram json }],
             strict_type => 1,
             store       => \$output_format
         },
@@ -121,10 +121,10 @@ sub samtools_view {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Array @commands stores commands depending on input parameters
-    my @commands = qw{samtools view};
+    my @commands = qw{ samtools view };
 
     ## Options
     if ($thread_number) {
@@ -227,10 +227,10 @@ sub samtools_index {
         bai_format => { strict_type => 1, store => \$bai_format },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Array @commands stores commands depending on input parameters
-    my @commands = qw{samtools index};
+    my @commands = qw{ samtools index };
 
     ## Options
     if ($bai_format) {
@@ -311,10 +311,10 @@ sub samtools_stats {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Array @commands stores commands depending on input parameters
-    my @commands = qw{samtools stats};
+    my @commands = qw{ samtools stats };
 
     if ($auto_detect_input_format) {
 
@@ -426,16 +426,16 @@ sub samtools_mpileup {
         },
         adjust_mq => {
             default     => 50,
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /sxm,
             strict_type => 1,
             store       => \$adjust_mq
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Array @commands stores commands depending on input parameters
-    my @commands = qw{samtools mpileup};
+    my @commands = qw{ samtools mpileup };
 
     ## Options
     push @commands, q{--adjust-MQ} . $SPACE . $adjust_mq;
@@ -535,10 +535,10 @@ sub samtools_faidx {
         FILEHANDLE => { store => \$FILEHANDLE },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Array @commands stores commands depending on input parameters
-    my @commands = qw{samtools faidx};
+    my @commands = qw{ samtools faidx };
 
     ## Infile
     push @commands, $infile_path;
@@ -616,7 +616,7 @@ sub samtools_create_chromosome_files {
         },
         suffix             => { strict_type => 1, store => \$suffix, },
         max_process_number => {
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /sxm,
             strict_type => 1,
             store       => \$max_process_number,
         },

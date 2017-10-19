@@ -62,6 +62,7 @@ use MIP::Update::Programs
 use MIP::Recipes::Bwa_mem qw{ analysis_bwa_mem };
 use MIP::Recipes::Bedtools_genomecov qw{ analysis_bedtools_genomecov };
 use MIP::Recipes::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
+use MIP::Recipes::Cnvnator qw{ analysis_cnvnator };
 use MIP::Recipes::Fastqc qw{ analysis_fastqc };
 use MIP::Recipes::Gatk_realigner
   qw{ analysis_gatk_realigner analysis_gatk_realigner_rio };
@@ -1837,8 +1838,10 @@ if ( $active_parameter{prcovplots} > 0 ) {
     }
 }
 
-if ( $active_parameter{pcnvnator} > 0 ) {    #Run CNVnator
-    $log->info("[CNVnator]\n");
+#Run CNVnator
+if ( $active_parameter{pcnvnator} > 0 ) {
+
+    $log->info( q{[CNVnator]} );
 
 
     check_build_human_genome_prerequisites(
@@ -1853,19 +1856,15 @@ if ( $active_parameter{pcnvnator} > 0 ) {    #Run CNVnator
         }
     );
 
-    use MIP::Recipes::Cnvnator qw{ analysis_cnvnator };
-
     my $program_name = lc q{cnvnator};
-    my $insample_directory;
-    my $outsample_directory;
 
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
         ## Assign directories
-        $insample_directory = catdir( $active_parameter{outdata_dir},
+        my $insample_directory = catdir( $active_parameter{outdata_dir},
             $sample_id, $active_parameter{outaligner_dir} );
 
-        $outsample_directory = catdir( $active_parameter{outdata_dir},
+        my $outsample_directory = catdir( $active_parameter{outdata_dir},
            $sample_id, $active_parameter{outaligner_dir}, $program_name);
 
         analysis_cnvnator(

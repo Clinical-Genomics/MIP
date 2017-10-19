@@ -10,7 +10,7 @@ use charnames qw{ :full :short };
 use Carp;
 use English qw{ -no_match_vars };
 use Params::Check qw{ check allow last_error };
-use File::Spec::Functions qw{ catdir catfile devnull };
+use File::Spec::Functions qw{ catdir catfile };
 
 ## CPANM
 use Readonly;
@@ -36,6 +36,7 @@ Readonly my $ASTERISK   => q{*};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $AMPERSAND  => q{&};
 Readonly my $SEMICOLON  => q{;};
+Readonly my $EMPTY_STR  => q{};
 
 sub analysis_cnvnator {
 
@@ -210,6 +211,8 @@ sub analysis_cnvnator {
     my $time = $active_parameter_href->{module_time}{$mip_program_name};
     my $phenotype_info =
       $sample_info_href->{sample}{$sample_id}{phenotype};
+    my $human_genome_reference_ref =
+      $arg_href->{active_parameter_href}{human_genome_reference};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -233,10 +236,6 @@ sub analysis_cnvnator {
             temp_directory => $temp_directory
         }
     );
-
-    ## Alias
-    my $human_genome_reference_ref =
-      $arg_href->{active_parameter_href}{human_genome_reference};
 
     #Used downstream
     $parameter_href->{$mip_program_name}{$sample_id}{indirectory} =
@@ -274,8 +273,6 @@ sub analysis_cnvnator {
         }
     );
 
-    my $root_file;
-
     ##Special fix to accomodate outdated versions of .so libraries required by root
     if ( exists $active_parameter_href->{cnv_root_ld_lib} ) {
 
@@ -288,10 +285,9 @@ sub analysis_cnvnator {
     ## Add contigs to vcfheader
     _add_contigs_to_vcfheader(
         {
-            human_genome_reference =>
-              $active_parameter_href->{human_genome_reference},
-            temp_directory => $temp_directory,
-            FILEHANDLE     => $FILEHANDLE,
+            human_genome_reference => $human_genome_reference_ref,
+            temp_directory         => $temp_directory,
+            FILEHANDLE             => $FILEHANDLE,
         }
     );
 
@@ -299,10 +295,10 @@ sub analysis_cnvnator {
     say {$FILEHANDLE} q{## Create by cnvnator required 'chr.fa' files};
     samtools_create_chromosome_files(
         {
-            regions_ref    => $file_info_href->{contigs},
-            infile_path    => $active_parameter_href->{human_genome_reference},
-            temp_directory => $temp_directory,
-            suffix         => q{.fa},
+            regions_ref        => $file_info_href->{contigs},
+            infile_path        => $human_genome_reference_ref,
+            temp_directory     => $temp_directory,
+            suffix             => $DOT . q{fa},
             max_process_number => $core_number,
             FILEHANDLE         => $FILEHANDLE,
         }
@@ -343,17 +339,15 @@ sub analysis_cnvnator {
         }
     );
 
-    my $stderrfile_path_prefix;
-
   CONTIG:
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
-        $stderrfile_path_prefix = $xargs_file_path_prefix . $DOT . $contig;
+        my $stderrfile_path_prefix = $xargs_file_path_prefix . $DOT . $contig;
 
         ## Assemble parameter
         # Output ROOT file
-        $root_file =
-          $file_path_prefix . $UNDERSCORE . $contig . $DOT . q{.root};
+        my $root_file =
+          $file_path_prefix . $UNDERSCORE . $contig . $DOT . q{root};
 
         cnvnator_read_extraction(
             {
@@ -366,7 +360,8 @@ sub analysis_cnvnator {
                 stdoutfile_path => $xargs_file_path_prefix
                   . $DOT
                   . $contig
-                  . q{.stdout.txt},
+                  . $DOT
+                  . q{stdout.txt},
                 stderrfile_path => $stderrfile_path_prefix
                   . $DOT
                   . q{stderr.txt},
@@ -383,11 +378,13 @@ sub analysis_cnvnator {
                 referencedirectory_path => $temp_directory,
                 FILEHANDLE              => $XARGSFILEHANDLE,
                 stdoutfile_path         => $stderrfile_path_prefix
-                  . q{_histogram.stdout.txt},
+                  . $UNDERSCORE
+                  . q{histogram.stdout.txt},
                 stderrfile_path => $xargs_file_path_prefix
                   . $DOT
                   . $contig
-                  . q{_histogram.stderr.txt},
+                  . $UNDERSCORE
+                  . q{histogram.stderr.txt},
             }
         );
         print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
@@ -401,11 +398,13 @@ sub analysis_cnvnator {
                 stdoutfile_path => $xargs_file_path_prefix
                   . $DOT
                   . $contig
-                  . q{_statistics.stdout.txt},
+                  . $UNDERSCORE
+                  . q{statistics.stdout.txt},
                 stderrfile_path => $xargs_file_path_prefix
                   . $DOT
                   . $contig
-                  . q{_statistics.stderr.txt},
+                  . $UNDERSCORE
+                  . q{statistics.stderr.txt},
             }
         );
         print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
@@ -419,11 +418,13 @@ sub analysis_cnvnator {
                 stdoutfile_path => $xargs_file_path_prefix
                   . $DOT
                   . $contig
-                  . q{_partition.stdout.txt},
+                  . $UNDERSCORE
+                  . q{partition.stdout.txt},
                 stderrfile_path => $xargs_file_path_prefix
                   . $DOT
                   . $contig
-                  . q{_partition.stderr.txt},
+                  . $UNDERSCORE
+                  . q{partition.stderr.txt},
             }
         );
         print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
@@ -434,14 +435,16 @@ sub analysis_cnvnator {
                 stdoutfile_path => $outfile_path_prefix
                   . $UNDERSCORE
                   . $contig
-                  . q{.cnvnator},
+                  . $DOT
+                  . q{cnvnator},
                 regions_ref     => [$contig],
                 cnv_bin_size    => $active_parameter_href->{cnv_bin_size},
                 FILEHANDLE      => $XARGSFILEHANDLE,
                 stderrfile_path => $xargs_file_path_prefix
                   . $DOT
                   . $contig
-                  . q{_calling.stderr.txt},
+                  . $UNDERSCORE
+                  . q{calling.stderr.txt},
             }
         );
         print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
@@ -451,7 +454,8 @@ sub analysis_cnvnator {
                 infile_path => $outfile_path_prefix
                   . $UNDERSCORE
                   . $contig
-                  . q{.cnvnator},
+                  . $DOT
+                  . q{cnvnator},
                 stdoutfile_path => $outfile_path_prefix
                   . $UNDERSCORE
                   . $contig
@@ -459,7 +463,8 @@ sub analysis_cnvnator {
                 stderrfile_path => $xargs_file_path_prefix
                   . $DOT
                   . $contig
-                  . q{_convert_to_vcf.stderr.txt},
+                  . $UNDERSCORE
+                  . q{convert_to_vcf.stderr.txt},
                 referencedirectory_path => $temp_directory,
                 FILEHANDLE              => $XARGSFILEHANDLE,
             }
@@ -476,7 +481,8 @@ sub analysis_cnvnator {
 
     if ( not defined $infile_postfix ) {
 
-        $infile_postfix = q{};    #No postfix
+        #No postfix
+        $infile_postfix = $EMPTY_STR;
     }
 
     if ( not defined $outfile ) {
@@ -556,7 +562,9 @@ sub analysis_cnvnator {
             {
                 sample_info_href => $sample_info_href,
                 program_name     => q{cnvnator},
-                path             => catfile( $outsample_directory, $outfile_prefix . $outfile_suffix ),
+                path             => catfile(
+                    $outsample_directory, $outfile_prefix . $outfile_suffix
+                ),
             }
         );
 
@@ -579,10 +587,10 @@ sub analysis_cnvnator {
 
 sub _add_contigs_to_vcfheader {
 
-    ## Function : Add contigs to VCF header
-    ##          : $human_genome_reference => Human genome reference
-    ##          : $temp_directory         => Temporary directory
-    ##          : $FILEHANDLE             => Filehandle to write to
+## Function : Add contigs to VCF header
+##          : $human_genome_reference => Human genome reference
+##          : $temp_directory         => Temporary directory
+##          : $FILEHANDLE             => Filehandle to write to
 
     my ($arg_href) = @_;
 
@@ -612,12 +620,18 @@ sub _add_contigs_to_vcfheader {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my $regexp =
-      q?perl -nae '{print "##contig=<ID=".$F[0].",length=".$F[1].">", "\n"}'?;
+    my $regexp;
+
+    ## Execute perl
+    $regexp = q?perl -nae '?;
+
+    ## Write contig ID from header
+    $regexp .= q?{print "##contig=<ID=".$F[0].",length=".$F[1].">", "\n"}'?;
+
     print {$FILEHANDLE} $regexp . $SPACE;
 
     # Reference fai file
-    print {$FILEHANDLE} $human_genome_reference . q{.fai} . $SPACE;
+    print {$FILEHANDLE} $human_genome_reference . $DOT . q{fai} . $SPACE;
 
     say {$FILEHANDLE} q{>}
       . $SPACE
@@ -629,11 +643,11 @@ sub _add_contigs_to_vcfheader {
 
 sub _fix_gt_format_in_header {
 
-    ## Function : Fix GT format in header
-    ##          : $sample_id           => Sample id
-    ##          : $outfile_path_prefix => Outfile path prefix
-    ##          : $outfile_suffix      => Outfile suffix
-    ##          : $FILEHANDLE          => Filehandle to write to
+## Function : Fix GT format in header
+##          : $sample_id           => Sample id
+##          : $outfile_path_prefix => Outfile path prefix
+##          : $outfile_suffix      => Outfile suffix
+##          : $FILEHANDLE          => Filehandle to write to
 
     my ($arg_href) = @_;
 
@@ -669,14 +683,22 @@ sub _fix_gt_format_in_header {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my $regexp =
-q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my @a = split("\t", $_); pop(@a);print join("\t", @a)."\t?
-      . $sample_id
-      . q?", "\n"} else {print $_, "\n"}'?;
+    my $regexp;
+
+    ## Execute perl
+    $regexp = q?perl -nae '?;
+
+    ## Fix standard header fields
+    $regexp .=
+q?chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my @a = split("\t", $_); pop(@a);print join("\t", @a)."\t?;
+
+    ## Add sample ID
+    $regexp .= $sample_id . q?", "\n"} else {print $_, "\n"}'?;
 
     print {$FILEHANDLE} $regexp . $SPACE;
     print {$FILEHANDLE} $outfile_path_prefix
-      . q{_concat}
+      . $UNDERSCORE
+      . q{concat}
       . $outfile_suffix
       . $SPACE;
     say {$FILEHANDLE} q{>}
