@@ -180,7 +180,7 @@ if ($error_msg) {
 }
 
 # Set MIP version
-our $VERSION = 'v5.0.9';
+our $VERSION = 'v5.0.10';
 
 ## Directories, files, job_ids and sample_info
 my ( %infile, %indir_path, %infile_lane_prefix, %lane,
@@ -1074,9 +1074,11 @@ if ( $active_parameter{config_file_analysis} ne 0 ) {
 
 ## Detect the gender included in current analysis
 (
+
     $active_parameter{found_male},
     $active_parameter{found_female},
-    $active_parameter{found_other}
+    $active_parameter{found_other},
+ $active_parameter{found_other_count},
   )
   = detect_sample_id_gender(
     {
@@ -8755,6 +8757,7 @@ sub prepareforvariantannotationblock {
         }
     }
     if ($$reduce_io_ref) {
+
 
         return
           $xargs_file_counter
