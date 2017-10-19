@@ -180,7 +180,7 @@ if ($error_msg) {
 }
 
 # Set MIP version
-our $VERSION = 'v5.0.9';
+our $VERSION = 'v5.0.10';
 
 ## Directories, files, job_ids and sample_info
 my ( %infile, %indir_path, %infile_lane_prefix, %lane,
@@ -1074,9 +1074,11 @@ if ( $active_parameter{config_file_analysis} ne 0 ) {
 
 ## Detect the gender included in current analysis
 (
-    $active_parameter{found_male},
-    $active_parameter{found_female},
-    $active_parameter{found_other}
+
+    $active_parameter{male_found},
+    $active_parameter{female_found},
+    $active_parameter{other_found},
+ $active_parameter{other_found_count},
   )
   = detect_sample_id_gender(
     {
@@ -8562,6 +8564,7 @@ sub prepareforvariantannotationblock {
         }
     }
     if ($$reduce_io_ref) {
+
 
         return
           $xargs_file_counter
@@ -18947,6 +18950,15 @@ sub write_cmd_mip_log {
         "\n"
     );
     return;
+=======
+            $male_found =
+              1;    #Include since it might be male to enable analysis of Y.
+            $other_found = 1;
+	    $other_found_count++;
+        }
+    }
+    return $male_found, $female_found, $other_found, $other_found_count;
+>>>>>>> hotfix/plink_unknown_sex
 }
 
 sub check_unique_array_element {
