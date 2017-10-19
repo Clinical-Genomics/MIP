@@ -56,7 +56,8 @@ sub picardtools_base {
     my $create_index;
 
     my $tmpl = {
-		commands_ref => { default => [], strict_type => 1, store => \$commands_ref},
+        commands_ref =>
+          { default => [], strict_type => 1, store => \$commands_ref },
         create_index => {
             default     => q{false},
             allow       => [qw{ true false }],
@@ -83,7 +84,7 @@ sub picardtools_base {
     }
     if ($referencefile_path) {
 
-        push @commands, q{REFERENCE_SEQUENCE=} . $referencefile_path;
+        push @commands, q{R=} . $referencefile_path;
     }
     unix_write_to_file(
         {

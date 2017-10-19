@@ -195,7 +195,13 @@ human_genome_reference:
    - pgatk_haplotypecaller
    - pgatk_genotypegvcfs
    - psamtools_mpileup
+   - pfreebayes
+   - pmanta
+   - pdelly_call
+   - pcnvnator
+   - ptiddit
    - pgatk_variantrecalibration
+   - pvt
    - pgatk_variantevalall
    - pgatk_variantevalexome
    - ppicardtools_collecthsmetrics

@@ -25,23 +25,24 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ check_references_for_vt check_if_processed_by_vt };
+    our @EXPORT_OK =
+      qw{ check_references_for_vt check_if_processed_by_vt check_human_genome_prerequisites check_capture_file_prerequisites };
 }
 
 ## Constants
 Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
+Readonly my $TAB     => qq{\t};
 
 sub check_references_for_vt {
 
-##check_references_for_vt
-
-##Function : Check if vt has processed references
-##Returns  : @to_process_references
-##Arguments: $parameter_href, $active_parameter_href, $vt_references_ref
-##         : $parameter_href        => Parameter hash {REF}
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $vt_references_ref     => The references to check with vt {REF}
+## Function : Check if vt has processed references
+## Returns  : @to_process_references
+## Arguments: $parameter_href, $active_parameter_href, $vt_references_ref
+##          : $parameter_href        => Parameter hash {REF}
+##          : $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $vt_references_ref     => The references to check with vt {REF}
+##          : $log                   => Log object
 
     my ($arg_href) = @_;
 
@@ -49,6 +50,7 @@ sub check_references_for_vt {
     my $parameter_href;
     my $active_parameter_href;
     my $vt_references_ref;
+    my $log;
 
     my $tmpl = {
         parameter_href => {
@@ -56,28 +58,26 @@ sub check_references_for_vt {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$active_parameter_href
+            store       => \$active_parameter_href,
         },
         vt_references_ref => {
             required    => 1,
             defined     => 1,
             default     => [],
             strict_type => 1,
-            store       => \$vt_references_ref
+            store       => \$vt_references_ref,
         },
+        log => { store => \$log },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Checked references
     my @checked_references;
@@ -218,10 +218,19 @@ sub check_if_processed_by_vt {
     foreach my $vt_parameter_name ( keys %vt_regexp ) {
         ## MIP flags
 
-        my $regexp =
-            q?perl -nae 'if($_=~/ID\=?
-          . $vt_regexp{$vt_parameter_name}{vcf_key}
-          . q?/) {print $_} if($_=~/#CHROM/) {last}'?;
+        ### Assemble perl regexp for detecting VT keys in vcf
+        ## Execute perl
+        my $regexp = q?perl -nae '?;
+
+        ## Find vcf_key
+        $regexp .=
+          q?if($_=~/ID\=? . $vt_regexp{$vt_parameter_name}{vcf_key} . q?/) { ?;
+
+        ## Write to stdout
+        $regexp .= q?print $_} ?;
+
+        ## If header is finished quit
+        $regexp .= q?if($_=~/#CHROM/) {last}'?;
 
         ## Detect if vt program has processed reference
         my $ret = `less $reference_file_path | $regexp`;
@@ -231,7 +240,8 @@ sub check_if_processed_by_vt {
 
             ## Add reference for downstream processing
             push @to_process_references, $reference_file_path;
-            $log->warn( q{Cannot detect that }
+            $log->warn( $TAB
+                  . q{Cannot detect that }
                   . $vt_parameter_name
                   . q{ has processed reference: }
                   . $reference_file_path
@@ -240,7 +250,8 @@ sub check_if_processed_by_vt {
         else {
             ## Found vt processing trace
 
-            $log->info( q{Reference check: }
+            $log->info( $TAB
+                  . q{Reference check: }
                   . $reference_file_path
                   . q{ vt: }
                   . $vt_parameter_name
@@ -249,6 +260,258 @@ sub check_if_processed_by_vt {
         }
     }
     return uniq(@to_process_references);
+}
+
+sub check_human_genome_prerequisites {
+
+## Function : Checks if the Human genome prerequisites needs to be built and builds them if required
+## Returns  :
+## Arguments: $parameter_href          => Parameter hash {REF}
+##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $file_info_href          => File info hash {REF}
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $job_id_href             => Job id hash {REF}
+##          : $program_name            => Program name
+##          : $log                     => Log object
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $active_parameter_href;
+    my $sample_info_href;
+    my $file_info_href;
+    my $infile_lane_prefix_href;
+    my $job_id_href;
+    my $program_name;
+    my $log;
+
+    my $tmpl = {
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
+        active_parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$active_parameter_href,
+        },
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href,
+        },
+        file_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$file_info_href,
+        },
+        infile_lane_prefix_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$infile_lane_prefix_href,
+        },
+        job_id_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$job_id_href,
+        },
+        program_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$program_name,
+        },
+        log => {
+            required => 1,
+            defined  => 1,
+            store    => \$log
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Recipes::Build::Human_genome_prerequisites
+      qw{ build_human_genome_prerequisites };
+
+    ## Files assocaiated with human genome reference
+  FILE_ENDING:
+    foreach my $file_ending (
+        @{ $file_info_href->{human_genome_reference_file_endings} } )
+    {
+
+        if (
+            (
+                $parameter_href->{ q{human_genome_reference} . $file_ending }
+                {build_file} == 1
+            )
+            || ( $file_info_href->{human_genome_compressed} eq q{compressed} )
+          )
+        {
+
+            ## Creates the humanGenomePreRequisites using active_parameters{human_genome_reference} as reference.
+            build_human_genome_prerequisites(
+                {
+                    parameter_href          => $parameter_href,
+                    active_parameter_href   => $active_parameter_href,
+                    sample_info_href        => $sample_info_href,
+                    file_info_href          => $file_info_href,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    job_id_href             => $job_id_href,
+                    family_id      => $active_parameter_href->{family_id},
+                    outaligner_dir => $active_parameter_href->{outaligner_dir},
+                    program_name   => $program_name,
+                    log            => $log,
+                }
+            );
+
+            ## Will handle all metafiles build within sbatch script
+            last FILE_ENDING;
+        }
+    }
+    return 1;
+}
+
+sub check_capture_file_prerequisites {
+
+## Function : Check if capture file prerequisites needs to be built and initate process to build them if required
+## Returns  :
+## Arguments: $parameter_href              => Parameter hash {REF}
+##          : $active_parameter_href       => Active parameters for this analysis hash {REF}
+##          : $sample_info_href            => Info on samples and family hash {REF}
+##          : $infile_lane_prefix_href     => Infile(s) without the ".ending" {REF}
+##          : $job_id_href                 => Job id hash {REF}
+##          : $infile_list_suffix          => Infile list suffix
+##          : $padded_infile_list_suffix   => Padded infile list suffix
+##          : $padded_interval_list_suffix => Padded interval list suffix
+##          : $program_name                => Program name
+##          : $FILEHANDLE                  => Filehandle to write to
+##          : $log                         => Log object
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $active_parameter_href;
+    my $sample_info_href;
+    my $infile_lane_prefix_href;
+    my $job_id_href;
+    my $infile_list_suffix;
+    my $padded_infile_list_suffix;
+    my $padded_interval_list_suffix;
+    my $program_name;
+    my $FILEHANDLE;
+    my $log;
+
+    my $tmpl = {
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
+        active_parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$active_parameter_href,
+        },
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href,
+        },
+        infile_lane_prefix_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$infile_lane_prefix_href,
+        },
+        job_id_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$job_id_href,
+        },
+        infile_list_suffix => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$infile_list_suffix,
+        },
+        padded_infile_list_suffix => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$padded_infile_list_suffix,
+        },
+        padded_interval_list_suffix => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$padded_interval_list_suffix,
+        },
+        program_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$program_name,
+        },
+        FILEHANDLE => { store => \$FILEHANDLE, },
+        log        => {
+            required => 1,
+            defined  => 1,
+            store    => \$log,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Recipes::Build::Capture_file_prerequisites
+      qw{ build_capture_file_prerequisites };
+
+    if ( $parameter_href->{exome_target_bed}{build_file} == 1 ) {
+
+        build_capture_file_prerequisites(
+            {
+                parameter_href              => $parameter_href,
+                active_parameter_href       => $active_parameter_href,
+                sample_info_href            => $sample_info_href,
+                infile_lane_prefix_href     => $infile_lane_prefix_href,
+                job_id_href                 => $job_id_href,
+                infile_list_suffix          => $infile_list_suffix,
+                padded_infile_list_suffix   => $padded_infile_list_suffix,
+                padded_interval_list_suffix => $padded_interval_list_suffix,
+                program_name                => $program_name,
+                FILEHANDLE                  => $FILEHANDLE,
+                log                         => $log,
+            }
+        );
+
+        ## Only build once for all modules and files
+        $parameter_href->{exome_target_bed}{build_file} = 0;
+    }
+    return;
 }
 
 1;

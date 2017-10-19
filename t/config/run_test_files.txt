@@ -87,6 +87,7 @@ path_check_file_version_exist.t
 picardtools_base.t
 picardtools_collecthsmetrics.t
 picardtools_collectmultiplemetrics.t
+picardtools_createsequencedictionary.t
 picardtools_gatherbamfiles.t
 picardtools_genotypeconcordance.t
 picardtools_intervallisttools.t
