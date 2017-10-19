@@ -1,8 +1,8 @@
 #!/usr/bin/env perl
 
-#### Master script for analysing paired end reads from the Illumina plattform in fastq(.gz) format to annotated ranked disease causing variants. The program performs QC, aligns reads using BWA, performs variant discovery and annotation as well as ranking the found variants according to disease potential.
+###Master script for analysing paired end reads from the Illumina plattform in fastq(.gz) format to annotated ranked disease causing variants. The program performs QC, aligns reads using BWA, performs variant discovery and annotation as well as ranking the found variants according to disease potential.
 
-#### Copyright 2011 Henrik Stranneheim
+###Copyright 2011 Henrik Stranneheim
 
 # Require at least perl 5.18
 use 5.018;
@@ -46,8 +46,7 @@ use MIP::Check::Cluster qw{ check_max_core_number };
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Check::Parameter
   qw{ check_parameter_hash check_allowed_temp_directory };
-use MIP::Check::Reference
-  qw{ check_references_for_vt check_human_genome_prerequisites check_capture_file_prerequisites };
+use MIP::Check::Reference qw{ check_references_for_vt };
 use MIP::Delete::List qw{ delete_non_wes_contig delete_male_contig };
 use MIP::File::Format::Pedigree qw{ create_fam_file };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
@@ -59,19 +58,19 @@ use MIP::Update::Contigs qw{ update_contigs_for_run };
 use MIP::Update::Programs
   qw{ update_program_mode_with_dry_run_all update_program_mode update_prioritize_flag };
 
-## Recipes
-use MIP::Recipes::Bamcalibrationblock qw{ analysis_bamcalibrationblock };
-use MIP::Recipes::Bedtools_genomecov qw{ analysis_bedtools_genomecov };
+##Recipes
 use MIP::Recipes::Bwa_mem qw{ analysis_bwa_mem };
-use MIP::Recipes::Build::Human_genome_prerequisites
-  qw{ build_human_genome_prerequisites };
+use MIP::Recipes::Bedtools_genomecov qw{ analysis_bedtools_genomecov };
 use MIP::Recipes::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
 use MIP::Recipes::Cnvnator qw{ analysis_cnvnator };
 use MIP::Recipes::Fastqc qw{ analysis_fastqc };
-use MIP::Recipes::Gatk_realigner qw{ analysis_gatk_realigner };
-use MIP::Recipes::Gatk_baserecalibration qw{ analysis_gatk_baserecalibration };
+use MIP::Recipes::Gatk_realigner
+  qw{ analysis_gatk_realigner analysis_gatk_realigner_rio };
+use MIP::Recipes::Gatk_baserecalibration
+  qw{ analysis_gatk_baserecalibration analysis_gatk_baserecalibration_rio };
 use MIP::Recipes::Manta qw{ analysis_manta };
-use MIP::Recipes::Markduplicates qw{ analysis_markduplicates };
+use MIP::Recipes::Markduplicates
+  qw{ analysis_markduplicates analysis_markduplicates_rio };
 use MIP::Recipes::Picardtools_collecthsmetrics
   qw{ analysis_picardtools_collecthsmetrics };
 use MIP::Recipes::Picardtools_collectmultiplemetrics
@@ -79,7 +78,7 @@ use MIP::Recipes::Picardtools_collectmultiplemetrics
 use MIP::Recipes::Picardtools_genotypeconcordance
   qw{ analysis_picardtools_genotypeconcordance };
 use MIP::Recipes::Picardtools_mergesamfiles
-  qw{ analysis_picardtools_mergesamfiles };
+  qw{ analysis_picardtools_mergesamfiles analysis_picardtools_mergesamfiles_rio };
 use MIP::Recipes::Rcoverageplots qw{ analysis_rcoverageplots };
 use MIP::Recipes::Sambamba_depth qw{ analysis_sambamba_depth };
 use MIP::Recipes::Split_fastq_file qw{ analysis_split_fastq_file };
@@ -1198,67 +1197,7 @@ if ( $active_parameter{dry_run_all} == 0 ) {
     $sample_info{mip_version}   = $VERSION;
 }
 
-### Build recipes
-$log->info(q{[Reference check - Reference prerequisites]});
-## Check capture file prerequistes exists
-foreach
-  my $program_name ( @{ $parameter{exome_target_bed}{associated_program} } )
-{
-
-    if ( $active_parameter{$program_name} > 0 ) {
-
-        ## Remove initial "p" from program_name
-        substr( $program_name, 0, 1 ) = $EMPTY_STR;
-
-        check_capture_file_prerequisites(
-            {
-                parameter_href              => \%parameter,
-                active_parameter_href       => \%active_parameter,
-                sample_info_href            => \%sample_info,
-                infile_lane_prefix_href     => \%infile_lane_prefix,
-                job_id_href                 => \%job_id,
-                infile_list_suffix          => $file_info{exome_target_bed}[0],
-                padded_infile_list_suffix   => $file_info{exome_target_bed}[1],
-                padded_interval_list_suffix => $file_info{exome_target_bed}[2],
-                program_name                => $program_name,
-                log                         => $log,
-            }
-        );
-    }
-}
-
-## Check human genome prerequistes exists
-PROGRAM:
-foreach my $program_name (
-    @{ $parameter{human_genome_reference}{associated_program} } )
-{
-
-    next PROGRAM if ( $program_name eq q{mip} );
-
-    if ( $active_parameter{$program_name} > 0 ) {
-
-        ## Remove initial "p" from program_name
-        substr( $program_name, 0, 1 ) = $EMPTY_STR;
-
-        my $is_finished = check_human_genome_prerequisites(
-            {
-                parameter_href          => \%parameter,
-                active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
-                file_info_href          => \%file_info,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                program_name            => $program_name,
-                log                     => $log,
-            }
-        );
-        last PROGRAM if ($is_finished);
-    }
-}
-$log->info( $TAB . q{Reference check: Reference prerequisites checked} );
-
 ## Check if vt has processed references, if not try to reprocesses them before launcing modules
-$log->info(q{[Reference check - Reference processed by VT]});
 if (   $active_parameter{vt_decompose}
     || $active_parameter{vt_normalize} )
 {
@@ -1269,7 +1208,6 @@ if (   $active_parameter{vt_decompose}
             active_parameter_href => \%active_parameter,
             vt_references_ref =>
               \@{ $active_parameter{decompose_normalize_references} },
-            log => $log,
         }
     );
 
@@ -1448,16 +1386,12 @@ if ( $active_parameter{pbwa_mem} > 0 ) {
     }
 }
 
-## Run consecutive models
-if ( $active_parameter{reduce_io} ) {
+if ( $active_parameter{reduce_io} ) {    #Run consecutive models
 
-    ## Enable as program
-    $active_parameter{pbamcalibrationblock} = 1;
-    $log->info(q{[Bamcalibrationblock]});
+    $active_parameter{pbamcalibrationblock} = 1;    #Enable as program
+    $log->info("[Bamcalibrationblock]\n");
 
-    my $program_name = lc q{bamcalibrationblock};
-
-    analysis_bamcalibrationblock(
+    bamcalibrationblock(
         {
             parameter_href          => \%parameter,
             active_parameter_href   => \%active_parameter,
@@ -1466,9 +1400,8 @@ if ( $active_parameter{reduce_io} ) {
             infile_lane_prefix_href => \%infile_lane_prefix,
             lane_href               => \%lane,
             job_id_href             => \%job_id,
-            outaligner_dir          => $active_parameter{outaligner_dir},
-            program_name            => q{bamcalibrationblock},
-            log                     => $log,
+            outaligner_dir_ref      => \$active_parameter{outaligner_dir},
+            program_name            => "bamcalibrationblock",
         }
     );
 
@@ -1545,6 +1478,32 @@ else {
 
         my $program_name = lc q{gatk_realigner};
 
+        check_build_human_genome_prerequisites(
+            {
+                parameter_href          => \%parameter,
+                active_parameter_href   => \%active_parameter,
+                sample_info_href        => \%sample_info,
+                file_info_href          => \%file_info,
+                infile_lane_prefix_href => \%infile_lane_prefix,
+                job_id_href             => \%job_id,
+                program_name            => $program_name,
+            }
+        );
+
+        if ( $active_parameter{dry_run_all} != 1 ) {
+
+            check_build_ptchs_metric_prerequisites(
+                {
+                    parameter_href          => \%parameter,
+                    active_parameter_href   => \%active_parameter,
+                    sample_info_href        => \%sample_info,
+                    file_info_href          => \%file_info,
+                    infile_lane_prefix_href => \%infile_lane_prefix,
+                    job_id_href             => \%job_id,
+                    program_name            => $program_name,
+                }
+            );
+        }
       SAMPLE_ID:
         foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
@@ -1578,6 +1537,32 @@ else {
 
         my $program_name = lc q{gatk_baserecalibration};
 
+        check_build_human_genome_prerequisites(
+            {
+                parameter_href          => \%parameter,
+                active_parameter_href   => \%active_parameter,
+                sample_info_href        => \%sample_info,
+                file_info_href          => \%file_info,
+                infile_lane_prefix_href => \%infile_lane_prefix,
+                job_id_href             => \%job_id,
+                program_name            => $program_name,
+            }
+        );
+
+        if ( $active_parameter{dry_run_all} != 1 ) {
+
+            check_build_ptchs_metric_prerequisites(
+                {
+                    parameter_href          => \%parameter,
+                    active_parameter_href   => \%active_parameter,
+                    sample_info_href        => \%sample_info,
+                    file_info_href          => \%file_info,
+                    infile_lane_prefix_href => \%infile_lane_prefix,
+                    job_id_href             => \%job_id,
+                    program_name            => $program_name,
+                }
+            );
+        }
       SAMPLE_ID:
         foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
@@ -1713,6 +1698,18 @@ if ( $active_parameter{ppicardtools_collectmultiplemetrics} > 0 ) {
 
     my $program_name = lc q{picardtools_collectmultiplemetrics};
 
+    check_build_human_genome_prerequisites(
+        {
+            parameter_href          => \%parameter,
+            active_parameter_href   => \%active_parameter,
+            sample_info_href        => \%sample_info,
+            file_info_href          => \%file_info,
+            infile_lane_prefix_href => \%infile_lane_prefix,
+            job_id_href             => \%job_id,
+            program_name            => $program_name,
+        }
+    );
+
   SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
@@ -1747,6 +1744,33 @@ if ( $active_parameter{ppicardtools_collecthsmetrics} > 0 ) {
     $log->info(q{[Picardtools collecthsmetrics]});
 
     my $program_name = lc q{picardtools_collecthsmetrics};
+
+    check_build_human_genome_prerequisites(
+        {
+            parameter_href          => \%parameter,
+            active_parameter_href   => \%active_parameter,
+            sample_info_href        => \%sample_info,
+            file_info_href          => \%file_info,
+            infile_lane_prefix_href => \%infile_lane_prefix,
+            job_id_href             => \%job_id,
+            program_name            => $program_name,
+        }
+    );
+
+    if ( $active_parameter{dry_run_all} != 1 ) {
+
+        check_build_ptchs_metric_prerequisites(
+            {
+                parameter_href          => \%parameter,
+                active_parameter_href   => \%active_parameter,
+                sample_info_href        => \%sample_info,
+                file_info_href          => \%file_info,
+                infile_lane_prefix_href => \%infile_lane_prefix,
+                job_id_href             => \%job_id,
+                program_name            => $program_name,
+            }
+        );
+    }
 
   SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
@@ -1819,19 +1843,6 @@ if ( $active_parameter{pcnvnator} > 0 ) {
 
     $log->info( q{[CNVnator]} );
 
-
-    check_build_human_genome_prerequisites(
-        {
-            parameter_href          => \%parameter,
-            active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
-            file_info_href          => \%file_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            program_name            => "cnvnator",
-        }
-    );
-
     my $program_name = lc q{cnvnator};
 
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
@@ -1864,6 +1875,18 @@ if ( $active_parameter{pdelly_call} > 0 ) {    #Run delly_call
 
     $log->info("[Delly_call]\n");
 
+    check_build_human_genome_prerequisites(
+        {
+            parameter_href          => \%parameter,
+            active_parameter_href   => \%active_parameter,
+            sample_info_href        => \%sample_info,
+            file_info_href          => \%file_info,
+            infile_lane_prefix_href => \%infile_lane_prefix,
+            job_id_href             => \%job_id,
+            program_name            => "delly_call",
+        }
+    );
+
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
         delly_call(
@@ -1886,6 +1909,18 @@ if ( $active_parameter{pdelly_reformat} > 0 )
 
     $log->info("[Delly_reformat]\n");
 
+    check_build_human_genome_prerequisites(
+        {
+            parameter_href          => \%parameter,
+            active_parameter_href   => \%active_parameter,
+            sample_info_href        => \%sample_info,
+            file_info_href          => \%file_info,
+            infile_lane_prefix_href => \%infile_lane_prefix,
+            job_id_href             => \%job_id,
+            program_name            => "delly_reformat",
+        }
+    );
+
     delly_reformat(
         {
             parameter_href          => \%parameter,
@@ -1907,6 +1942,18 @@ if ( $active_parameter{pmanta} > 0 ) {    #Run Manta
     my $outfamily_directory = catfile(
         $active_parameter{outdata_dir},    $active_parameter{family_id},
         $active_parameter{outaligner_dir}, $program_name,
+    );
+
+    check_build_human_genome_prerequisites(
+        {
+            parameter_href          => \%parameter,
+            active_parameter_href   => \%active_parameter,
+            sample_info_href        => \%sample_info,
+            file_info_href          => \%file_info,
+            infile_lane_prefix_href => \%infile_lane_prefix,
+            job_id_href             => \%job_id,
+            program_name            => $program_name,
+        }
     );
 
     analysis_manta(
@@ -2042,6 +2089,18 @@ if ( $active_parameter{psamtools_mpileup} > 0 ) {    #Run samtools mpileup
 
     $log->info("[Samtools mpileup]\n");
 
+    check_build_human_genome_prerequisites(
+        {
+            parameter_href          => \%parameter,
+            active_parameter_href   => \%active_parameter,
+            sample_info_href        => \%sample_info,
+            file_info_href          => \%file_info,
+            infile_lane_prefix_href => \%infile_lane_prefix,
+            job_id_href             => \%job_id,
+            program_name            => "samtools_mpileup",
+        }
+    );
+
     msamtools_mpileup(
         {
             parameter_href          => \%parameter,
@@ -2058,6 +2117,18 @@ if ( $active_parameter{psamtools_mpileup} > 0 ) {    #Run samtools mpileup
 if ( $active_parameter{pfreebayes} > 0 ) {    #Run Freebayes
 
     $log->info("[Freebayes]\n");
+
+    check_build_human_genome_prerequisites(
+        {
+            parameter_href          => \%parameter,
+            active_parameter_href   => \%active_parameter,
+            sample_info_href        => \%sample_info,
+            file_info_href          => \%file_info,
+            infile_lane_prefix_href => \%infile_lane_prefix,
+            job_id_href             => \%job_id,
+            program_name            => "freebayes",
+        }
+    );
 
     freebayes(
         {
@@ -2076,7 +2147,36 @@ if ( $active_parameter{pgatk_haplotypecaller} > 0 ) {  #Run GATK haplotypecaller
 
     $log->info("[GATK haplotypecaller]\n");
 
+    check_build_human_genome_prerequisites(
+        {
+            parameter_href          => \%parameter,
+            active_parameter_href   => \%active_parameter,
+            sample_info_href        => \%sample_info,
+            file_info_href          => \%file_info,
+            infile_lane_prefix_href => \%infile_lane_prefix,
+            job_id_href             => \%job_id,
+            program_name            => "gatk_haplotypecaller",
+        }
+    );
+
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
+
+        if (   ( $active_parameter{dry_run_all} != 1 )
+            && ( $active_parameter{analysis_type}{$sample_id} ne "wgs" ) )
+        {
+
+            check_build_ptchs_metric_prerequisites(
+                {
+                    parameter_href          => \%parameter,
+                    active_parameter_href   => \%active_parameter,
+                    sample_info_href        => \%sample_info,
+                    file_info_href          => \%file_info,
+                    infile_lane_prefix_href => \%infile_lane_prefix,
+                    job_id_href             => \%job_id,
+                    program_name            => "gatk_haplotypecaller",
+                }
+            );
+        }
 
         mgatk_haplotypecaller(
             {
@@ -2097,6 +2197,18 @@ if ( $active_parameter{pgatk_genotypegvcfs} > 0 )
 {    #Run GATK genotypegvcfs. Done per family
 
     $log->info("[GATK genotypegvcfs]\n");
+
+    check_build_human_genome_prerequisites(
+        {
+            parameter_href          => \%parameter,
+            active_parameter_href   => \%active_parameter,
+            sample_info_href        => \%sample_info,
+            file_info_href          => \%file_info,
+            infile_lane_prefix_href => \%infile_lane_prefix,
+            job_id_href             => \%job_id,
+            program_name            => "gatk_genotypegvcfs",
+        }
+    );
 
     mgatk_genotypegvcfs(
         {
@@ -2128,6 +2240,37 @@ if ( $active_parameter{pgatk_variantrecalibration} > 0 )
 
     $log->info("[GATK variantrecalibrator/applyrecalibration]\n");
 
+    check_build_human_genome_prerequisites(
+        {
+            parameter_href          => \%parameter,
+            active_parameter_href   => \%active_parameter,
+            sample_info_href        => \%sample_info,
+            file_info_href          => \%file_info,
+            infile_lane_prefix_href => \%infile_lane_prefix,
+            job_id_href             => \%job_id,
+            program_name            => "gatk_variantrecalibration",
+        }
+    );
+
+    foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
+
+        if (   ( $active_parameter{dry_run_all} != 1 )
+            && ( $active_parameter{analysis_type}{$sample_id} ne "wgs" ) )
+        {
+
+            check_build_ptchs_metric_prerequisites(
+                {
+                    parameter_href          => \%parameter,
+                    active_parameter_href   => \%active_parameter,
+                    sample_info_href        => \%sample_info,
+                    file_info_href          => \%file_info,
+                    infile_lane_prefix_href => \%infile_lane_prefix,
+                    job_id_href             => \%job_id,
+                    program_name            => "gatk_variantrecalibration",
+                }
+            );
+        }
+    }
     gatk_variantrecalibration(
         {
             parameter_href          => \%parameter,
@@ -2273,6 +2416,18 @@ if ( $active_parameter{pgatk_variantevalall} > 0 )
 {    #Run GATK varianteval for all variants. Done per sample_id
 
     $log->info("[GATK variantevalall]\n");
+
+    check_build_human_genome_prerequisites(
+        {
+            parameter_href          => \%parameter,
+            active_parameter_href   => \%active_parameter,
+            sample_info_href        => \%sample_info,
+            file_info_href          => \%file_info,
+            infile_lane_prefix_href => \%infile_lane_prefix,
+            job_id_href             => \%job_id,
+            program_name            => "gatk_variantevalall",
+        }
+    );
 
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
@@ -2472,6 +2627,18 @@ if ( $active_parameter{pgatk_variantevalexome} > 0 )
 {    #Run GATK varianteval for exome variants. Done per sample_id
 
     $log->info("[GATK variantevalexome]\n");
+
+    check_build_human_genome_prerequisites(
+        {
+            parameter_href          => \%parameter,
+            active_parameter_href   => \%active_parameter,
+            sample_info_href        => \%sample_info,
+            file_info_href          => \%file_info,
+            infile_lane_prefix_href => \%infile_lane_prefix,
+            job_id_href             => \%job_id,
+            program_name            => "gatk_variantevalexome",
+        }
+    );
 
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
@@ -5099,7 +5266,7 @@ sub gatk_variantevalexome {
 
     gatk_selectvariants(
         {
-            memory_allocation => q{Xmx2g},
+            memory_allocation => "Xmx2g",
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
             temp_directory => $$temp_directory_ref,
@@ -5316,7 +5483,7 @@ sub gatk_variantevalexome {
 
     gatk_varianteval(
         {
-            memory_allocation => q{Xmx2g},
+            memory_allocation => "Xmx2g",
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
             temp_directory => $$temp_directory_ref,
@@ -5602,7 +5769,7 @@ sub gatk_variantevalall {
 
     gatk_selectvariants(
         {
-            memory_allocation => q{Xmx2g},
+            memory_allocation => "Xmx2g",
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
             temp_directory => $$temp_directory_ref,
@@ -5626,7 +5793,7 @@ sub gatk_variantevalall {
 
     gatk_varianteval(
         {
-            memory_allocation => q{Xmx2g},
+            memory_allocation => "Xmx2g",
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
             temp_directory => $$temp_directory_ref,
@@ -8830,7 +8997,7 @@ sub gatk_combinevariantcallsets {
 
     gatk_combinevariants(
         {
-            memory_allocation => q{Xmx2g},
+            memory_allocation => "Xmx2g",
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
             temp_directory => $$temp_directory_ref,
@@ -9373,7 +9540,7 @@ sub gatk_variantrecalibration {
 
         gatk_selectvariants(
             {
-                memory_allocation => q{Xmx2g},
+                memory_allocation => "Xmx2g",
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
                 temp_directory => $$temp_directory_ref,
@@ -9404,7 +9571,7 @@ sub gatk_variantrecalibration {
 
             gatk_selectvariants(
                 {
-                    memory_allocation => q{Xmx2g},
+                    memory_allocation => "Xmx2g",
                     java_use_large_pages =>
                       $active_parameter_href->{java_use_large_pages},
                     temp_directory => $$temp_directory_ref,
@@ -9824,7 +9991,7 @@ sub gatk_concatenate_genotypegvcfs {
 
             gatk_selectvariants(
                 {
-                    memory_allocation => q{Xmx2g},
+                    memory_allocation => "Xmx2g",
                     java_use_large_pages =>
                       $active_parameter_href->{java_use_large_pages},
                     temp_directory => $$temp_directory_ref,
@@ -15413,6 +15580,18 @@ sub variantannotationblock {
     if ( $active_parameter_href->{pvt} > 0 ) {
 
         $log->info("\t[Vt]\n");            #Run vt. Done per family
+
+        check_build_human_genome_prerequisites(
+            {
+                parameter_href          => $parameter_href,
+                active_parameter_href   => $active_parameter_href,
+                sample_info_href        => $sample_info_href,
+                file_info_href          => $file_info_href,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                program_name            => "vt",
+            }
+        );
     }
 
     # Run varianteffectpredictor. Family-level
@@ -15421,7 +15600,7 @@ sub variantannotationblock {
         $log->info( $TAB . q{[Varianteffectpredictor]} );
     }
     if ( $active_parameter_href->{pvcfparser} > 0 )
-    {                                      #Run pvcfparser. Done per family
+    {    #Run pvcfparser. Done per family
 
         $log->info("\t[Vcfparser]\n");
     }
@@ -15618,6 +15797,630 @@ sub variantannotationblock {
     }
 }
 
+sub bamcalibrationblock {
+
+##bamcalibrationblock
+
+##Function : Run consecutive module
+##Returns  : ""
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $lane_href, $job_id_href, $outaligner_dir, $program_name
+##         : $parameter_href                  => Parameter hash {REF}
+##         : $active_parameter_href           => Active parameters for this analysis hash {REF}
+##         : $sample_info_href                => Info on samples and family hash {REF}
+##         : $file_info_href                  => File info hash {REF}
+##         : $infile_lane_prefix_href      => Infile(s) without the ".ending" {REF}
+##         : $lane_href                       => The lane info hash {REF}
+##         : $job_id_href                     => Job id hash {REF}
+##         : $outaligner_dir                  => The outaligner_dir used
+##         : $program_name                    => Program name
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $active_parameter_href;
+    my $sample_info_href;
+    my $file_info_href;
+    my $infile_lane_prefix_href;
+    my $lane_href;
+    my $job_id_href;
+    my $program_name;
+
+    my $tmpl = {
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
+        active_parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$active_parameter_href,
+        },
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href,
+        },
+        file_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$file_info_href,
+        },
+        infile_lane_prefix_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$infile_lane_prefix_href,
+        },
+        lane_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$lane_href
+        },
+        job_id_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$job_id_href,
+        },
+        program_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$program_name,
+        },
+        family_id_ref => {
+            default     => \$arg_href->{active_parameter_href}{family_id},
+            strict_type => 1,
+            store       => \$family_id_ref,
+        },
+        temp_directory_ref => {
+            default     => \$arg_href->{active_parameter_href}{temp_directory},
+            strict_type => 1,
+            store       => \$temp_directory_ref,
+        },
+        outaligner_dir_ref => {
+            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
+            strict_type => 1,
+            store       => \$outaligner_dir_ref,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Script::Setup_script qw(setup_script);
+
+    my $core_number = $active_parameter_href->{max_cores_per_node};
+    my $time        = 80;
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger(q{MIP});
+
+    ## Filehandles
+    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
+
+    ##Always run even for single samples to rename them correctly for standardised downstream processing.
+    ##Will also split alignment per contig and copy to temporary directory for '-rio 1' block to enable selective removal of block submodules.
+    $log->info( $TAB . q{[Picardtools mergesamfiles]} );
+
+    ## Markduplicates
+    if ( $active_parameter{pmarkduplicates} > 0 ) {
+
+        $log->info( $TAB . q{[Markduplicates]} );
+    }
+    ## Run GATK realignertargetcreator/indelrealigner
+    if ( $active_parameter{pgatk_realigner} > 0 ) {
+
+        $log->info( $TAB . q{[GATK realignertargetcreator/indelrealigner]} );
+
+        check_build_human_genome_prerequisites(
+            {
+                parameter_href          => $parameter_href,
+                active_parameter_href   => $active_parameter_href,
+                sample_info_href        => $sample_info_href,
+                file_info_href          => $file_info_href,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                program_name            => q{gatk_realigner},
+            }
+        );
+    }
+    ## Run GATK baserecalibrator/printreads
+    if ( $active_parameter{pgatk_baserecalibration} > 0 ) {
+
+        $log->info( $TAB . q{[GATK baserecalibrator/printreads]} );
+
+        check_build_human_genome_prerequisites(
+            {
+                parameter_href          => $parameter_href,
+                active_parameter_href   => $active_parameter_href,
+                sample_info_href        => $sample_info_href,
+                file_info_href          => $file_info_href,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                program_name            => q{gatk_baserecalibration},
+            }
+        );
+    }
+
+  SAMPLE_ID:
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+        my $xargs_file_counter = 0;
+        my $xargs_file_path_prefix;
+
+        my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
+            $sample_id, $$outaligner_dir_ref );
+        my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
+            $sample_id, $$outaligner_dir_ref );
+
+        ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+        my ( $file_path, $program_info_path ) = setup_script(
+            {
+                active_parameter_href => $active_parameter_href,
+                job_id_href           => $job_id_href,
+                FILEHANDLE            => $FILEHANDLE,
+                directory_id          => $sample_id,
+                program_name          => $program_name,
+                program_directory     => lc($$outaligner_dir_ref),
+                core_number           => $core_number,
+                process_time          => $time,
+                temp_directory        => $$temp_directory_ref
+            }
+        );
+
+        ##Always run even for single samples to rename them correctly for standardised downstream processing.
+        ##Will also split alignment per contig and copy to temporary directory for -rio 1 block to enable selective removal of block submodules.
+        ($xargs_file_counter) = analysis_picardtools_mergesamfiles_rio(
+            {
+                parameter_href          => $parameter_href,
+                active_parameter_href   => $active_parameter_href,
+                sample_info_href        => $sample_info_href,
+                file_info_href          => $file_info_href,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                lane_href               => $lane_href,
+                job_id_href             => $job_id_href,
+                insample_directory      => $insample_directory,
+                sample_id               => $sample_id,
+                program_name            => lc q{picardtools_mergesamfiles},
+                file_path               => $file_path,
+                program_info_path       => $program_info_path,
+                FILEHANDLE              => $FILEHANDLE,
+            }
+        );
+
+        # Markduplicates
+        if ( $active_parameter{pmarkduplicates} > 0 ) {
+
+            ($xargs_file_counter) = analysis_markduplicates_rio(
+                {
+                    parameter_href        => $parameter_href,
+                    active_parameter_href => $active_parameter_href,
+                    sample_info_href      => $sample_info_href,
+                    file_info_href        => $file_info_href,
+                    sample_id             => $sample_id,
+                    program_name          => q{markduplicates},
+                    file_path             => $file_path,
+                    program_info_path     => $program_info_path,
+                    FILEHANDLE            => $FILEHANDLE,
+                    xargs_file_counter    => $xargs_file_counter,
+                }
+            );
+        }
+
+        ## Run GATK realignertargetcreator/indelrealigner
+        if ( $active_parameter{pgatk_realigner} > 0 ) {
+
+            ($xargs_file_counter) = analysis_gatk_realigner_rio(
+                {
+                    parameter_href        => $parameter_href,
+                    active_parameter_href => $active_parameter_href,
+                    file_info_href        => $file_info_href,
+                    sample_id             => $sample_id,
+                    program_name          => q{gatk_realigner},
+                    file_path             => $file_path,
+                    program_info_path     => $program_info_path,
+                    FILEHANDLE            => $FILEHANDLE,
+                    xargs_file_counter    => $xargs_file_counter,
+                }
+            );
+        }
+
+        ## Run GATK baserecalibrator/printreads
+        if ( $active_parameter{pgatk_baserecalibration} > 0 ) {
+
+            ($xargs_file_counter) = analysis_gatk_baserecalibration_rio(
+                {
+                    parameter_href          => $parameter_href,
+                    active_parameter_href   => $active_parameter_href,
+                    sample_info_href        => $sample_info_href,
+                    file_info_href          => $file_info_href,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    job_id_href             => $job_id_href,
+                    sample_id               => $sample_id,
+                    outsample_directory     => $outsample_directory,
+                    program_name            => q{gatk_baserecalibration},
+                    file_path               => $file_path,
+                    program_info_path       => $program_info_path,
+                    FILEHANDLE              => $FILEHANDLE,
+                    xargs_file_counter      => $xargs_file_counter,
+                }
+            );
+        }
+    }
+}
+
+sub build_ptchs_metric_prerequisites {
+
+##build_ptchs_metric_prerequisites
+
+##Function : Creates the target "infiles_list" "padded.infile_list" and interval_list files.
+##Returns  : ""
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $FILEHANDLE, $family_id_ref, $outaligner_dir_ref, temp_directory_ref
+##         : $parameter_href             => Parameter hash {REF}
+##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
+##         : $sample_info_href           => Info on samples and family hash {REF}
+##         : $file_info_href             => File info hash {REF}
+##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##         : $job_id_href                => Job id hash {REF}
+##         : $program_name               => Program name
+##         : $FILEHANDLE                 => Filehandle to write to
+##         : $family_id_ref              => Family ID {REF}
+##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
+##         : $temp_directory_ref         => Temporary directory
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $family_id_ref;
+    my $outaligner_dir_ref;
+    my $temp_directory_ref;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $active_parameter_href;
+    my $sample_info_href;
+    my $file_info_href;
+    my $infile_lane_prefix_href;
+    my $job_id_href;
+    my $program_name;
+    my $FILEHANDLE
+      ; #Decides if a new sbatch script will be generated or handled by supplied FILEHANDLE
+
+    my $tmpl = {
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
+        active_parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$active_parameter_href,
+        },
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href,
+        },
+        file_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$file_info_href,
+        },
+        infile_lane_prefix_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$infile_lane_prefix_href,
+        },
+        job_id_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$job_id_href,
+        },
+        program_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$program_name,
+        },
+        FILEHANDLE    => { store => \$FILEHANDLE, },
+        family_id_ref => {
+            default     => \$arg_href->{active_parameter_href}{family_id},
+            strict_type => 1,
+            store       => \$family_id_ref,
+        },
+        outaligner_dir_ref => {
+            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
+            strict_type => 1,
+            store       => \$outaligner_dir_ref,
+        },
+        temp_directory_ref => {
+            default     => \$arg_href->{active_parameter_href}{temp_directory},
+            strict_type => 1,
+            store       => \$temp_directory_ref,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::Gnu::Coreutils qw(gnu_rm gnu_cat);
+    use MIP::Language::Java qw{java_core};
+    use MIP::Program::Interval::Picardtools qw(picardtools_intervallisttools);
+    use MIP::Processmanagement::Slurm_processes
+      qw(slurm_submit_job_no_dependency_add_to_samples);
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger(q{MIP});
+
+    my $file_path;
+
+    unless ( defined($FILEHANDLE) )
+    {    #No supplied FILEHANDLE i.e. create new sbatch script
+
+        $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
+
+        ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+        ($file_path) = setup_script(
+            {
+                active_parameter_href => $active_parameter_href,
+                job_id_href           => $job_id_href,
+                FILEHANDLE            => $FILEHANDLE,
+                directory_id          => $$family_id_ref,
+                program_name          => $program_name,
+                program_directory     => lc($$outaligner_dir_ref),
+            }
+        );
+    }
+
+    my $random_integer =
+      int( rand(10000) );    #Generate a random integer between 0-10,000.
+
+    ## Alias exome_target_bed endings
+    my $infile_list_ending_ref        = \$file_info_href->{exome_target_bed}[0];
+    my $padded_infile_list_ending_ref = \$file_info_href->{exome_target_bed}[1];
+    my $padded_interval_list_ending_ref =
+      \$file_info_href->{exome_target_bed}[2];
+
+    foreach my $exome_target_bed_file (
+        keys @{ $active_parameter_href->{exome_target_bed} } )
+    {
+
+        $log->warn( "Will try to create required "
+              . $exome_target_bed_file
+              . " associated file(s) before executing "
+              . $program_name
+              . "\n" );
+
+        my $exome_target_bed_file_random =
+          $exome_target_bed_file . "_" . $random_integer;    #Add random integer
+
+        say {$FILEHANDLE} "## CreateSequenceDictionary from reference";
+
+        java_core(
+            {
+                FILEHANDLE        => $FILEHANDLE,
+                memory_allocation => "Xmx2g",
+                java_use_large_pages =>
+                  $active_parameter_href->{java_use_large_pages},
+                temp_directory => $$temp_directory_ref,
+                java_jar       => catfile(
+                    $active_parameter_href->{picardtools_path}, "picard.jar"
+                ),
+            }
+        );
+
+        print {$FILEHANDLE} "CreateSequenceDictionary ";
+        print {$FILEHANDLE} "R="
+          . $active_parameter_href->{human_genome_reference}
+          . " ";    #Reference genome
+        say {$FILEHANDLE} "OUTPUT=" . $exome_target_bed_file_random . ".dict",
+          "\n";     #Output sequence dictionnary
+
+        say {$FILEHANDLE}
+          "## Add target file to headers from sequence dictionary";
+        gnu_cat(
+            {
+                infile_paths_ref => [
+                    $exome_target_bed_file_random . ".dict",
+                    $exome_target_bed_file
+                ],
+                outfile_path => $exome_target_bed_file_random . ".dict_body",
+                FILEHANDLE   => $FILEHANDLE,
+            }
+        );
+        say {$FILEHANDLE} "\n";
+
+        say {$FILEHANDLE}
+"#Remove target annotations, 'track', 'browse' and keep only 5 columns";
+        print {$FILEHANDLE}
+q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^browser/) {} else {print @F[0], "\t", (@F[1] + 1), "\t", @F[2], "\t", "+", "\t", "-", "\n";}' ?;
+        print {$FILEHANDLE} $exome_target_bed_file_random
+          . ".dict_body"
+          . " ";    #Infile
+        print {$FILEHANDLE} "> ";                           #Write to
+        say   {$FILEHANDLE} $exome_target_bed_file_random
+          . ".dict_body_col_5.interval_list",
+          "\n";    #Remove unnecessary info and reformat
+
+        say {$FILEHANDLE} "## Create" . $$infile_list_ending_ref;
+        java_core(
+            {
+                FILEHANDLE        => $FILEHANDLE,
+                memory_allocation => "Xmx2g",
+                java_use_large_pages =>
+                  $active_parameter_href->{java_use_large_pages},
+                temp_directory => $$temp_directory_ref,
+                java_jar       => catfile(
+                    $active_parameter_href->{picardtools_path}, "picard.jar"
+                ),
+            }
+        );
+
+        intervallisttools(
+            {
+                infile_paths_ref => [
+                    $exome_target_bed_file_random
+                      . ".dict_body_col_5.interval_list"
+                ],
+                outfile_path => $exome_target_bed_file_random
+                  . ".dict_body_col_5_"
+                  . $$infile_list_ending_ref,
+                FILEHANDLE => $FILEHANDLE,
+            }
+        );
+        say {$FILEHANDLE} "\n";
+
+        my $intended_file_path =
+          $exome_target_bed_file . $$infile_list_ending_ref;
+        my $temporary_file_path =
+            $exome_target_bed_file_random
+          . ".dict_body_col_5_"
+          . $$infile_list_ending_ref;
+
+        ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
+        check_exist_and_move_file(
+            {
+                FILEHANDLE              => $FILEHANDLE,
+                intended_file_path_ref  => \$intended_file_path,
+                temporary_file_path_ref => \$temporary_file_path,
+            }
+        );
+
+        say {$FILEHANDLE} "#Create" . $$padded_infile_list_ending_ref;
+        java_core(
+            {
+                FILEHANDLE        => $FILEHANDLE,
+                memory_allocation => "Xmx2g",
+                java_use_large_pages =>
+                  $active_parameter_href->{java_use_large_pages},
+                temp_directory => $active_parameter_href->{temp_directory},
+                java_jar       => catfile(
+                    $active_parameter_href->{picardtools_path}, "picard.jar"
+                ),
+            }
+        );
+
+        intervallisttools(
+            {
+                infile_paths_ref => [
+                    $exome_target_bed_file_random
+                      . ".dict_body_col_5.interval_list"
+                ],
+                outfile_path => $exome_target_bed_file_random
+                  . ".dict_body_col_5"
+                  . $$padded_infile_list_ending_ref,
+                padding    => 100,
+                FILEHANDLE => $FILEHANDLE,
+            }
+        );
+        say {$FILEHANDLE} "\n";
+
+        $intended_file_path =
+          $exome_target_bed_file . $$padded_infile_list_ending_ref;
+        $temporary_file_path =
+            $exome_target_bed_file_random
+          . ".dict_body_col_5"
+          . $$padded_infile_list_ending_ref;
+
+        ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
+        check_exist_and_move_file(
+            {
+                FILEHANDLE              => $FILEHANDLE,
+                intended_file_path_ref  => \$intended_file_path,
+                temporary_file_path_ref => \$temporary_file_path,
+            }
+        );
+
+        say {$FILEHANDLE} "#Create "
+          . $$padded_interval_list_ending_ref
+          . " by softlinking";
+
+        ##Softlink '.interval_list' to padded .infile_list", "\n";
+        print {$FILEHANDLE} "ln -f -s ";             #Softlink
+        print {$FILEHANDLE} $exome_target_bed_file
+          . $$padded_infile_list_ending_ref
+          . " ";                                     #Origin file
+        print {$FILEHANDLE} $exome_target_bed_file
+          . $$padded_interval_list_ending_ref;       #interval_list file
+
+        say {$FILEHANDLE} "\n";
+
+        ## Remove temporary files
+        say {$FILEHANDLE} "#Remove temporary files";
+
+        my @temp_files = (
+            $exome_target_bed_file_random . ".dict_body_col_5.interval_list",
+            $exome_target_bed_file_random . ".dict_body",
+            $exome_target_bed_file_random . ".dict",
+        );
+        foreach my $file (@temp_files) {
+
+            gnu_rm(
+                {
+                    infile_path => $file,
+                    force       => 1,
+                    FILEHANDLE  => $FILEHANDLE,
+                }
+            );
+            say {$FILEHANDLE} "\n";
+        }
+    }
+    unless ( defined($FILEHANDLE) )
+    {    #Unless FILEHANDLE was supplied close filehandle and submit
+
+        close $FILEHANDLE;
+
+        if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
+
+            my $slurm_path = q{MAIN};
+
+            slurm_submit_job_no_dependency_add_to_samples(
+                {
+                    job_id_href => $job_id_href,
+                    sample_ids_ref =>
+                      \@{ $active_parameter_href->{sample_ids} },
+                    family_id        => $$family_id_ref,
+                    path             => $slurm_path,
+                    sbatch_file_name => $file_path,
+                    log              => $log,
+                }
+            );
+        }
+    }
+}
+
 sub build_bwa_prerequisites {
 
 ##build_bwa_prerequisites
@@ -15739,9 +16542,6 @@ sub build_bwa_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Language::Shell qw{ check_exist_and_move_file };
-    use MIP::Recipes::Build::Human_genome_prerequisites
-      qw{ build_human_genome_prerequisites };
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_no_dependency_add_to_samples);
@@ -15776,7 +16576,6 @@ sub build_bwa_prerequisites {
             job_id_href             => $job_id_href,
             program                 => $program_name,
             FILEHANDLE              => $FILEHANDLE,
-            log                     => $log,
             random_integer          => $random_integer,
         }
     );
@@ -15808,9 +16607,9 @@ sub build_bwa_prerequisites {
             ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
             check_exist_and_move_file(
                 {
-                    FILEHANDLE          => $FILEHANDLE,
-                    intended_file_path  => $intended_file_path,
-                    temporary_file_path => $temporary_file_path,
+                    FILEHANDLE              => $FILEHANDLE,
+                    intended_file_path_ref  => \$intended_file_path,
+                    temporary_file_path_ref => \$temporary_file_path,
                 }
             );
         }
@@ -15833,6 +16632,564 @@ sub build_bwa_prerequisites {
                 log              => $log,
             }
         );
+    }
+}
+
+sub check_build_human_genome_prerequisites {
+
+##check_build_human_genome_prerequisites
+
+##Function : Checks if the HumanGenomePreRequisites needs to be built
+##Returns  : ""
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name
+##         : $parameter_href                  => Parameter hash {REF}
+##         : $active_parameter_href           => Active parameters for this analysis hash {REF}
+##         : $sample_info_href                => Info on samples and family hash {REF}
+##         : $file_info_href                  => File info hash {REF}
+##         : $infile_lane_prefix_href      => Infile(s) without the ".ending" {REF}
+##         : $job_id_href                     => Job id hash {REF}
+##         : $program_name                    => Program name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $active_parameter_href;
+    my $sample_info_href;
+    my $file_info_href;
+    my $infile_lane_prefix_href;
+    my $job_id_href;
+    my $program_name;
+
+    my $tmpl = {
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
+        active_parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$active_parameter_href,
+        },
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href,
+        },
+        file_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$file_info_href,
+        },
+        infile_lane_prefix_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$infile_lane_prefix_href,
+        },
+        job_id_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$job_id_href,
+        },
+        program_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$program_name,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    foreach my $file_ending (
+        @{ $file_info_href->{human_genome_reference_file_endings} } )
+    {    #Files assocaiated with human genome reference
+
+        if (
+            (
+                $parameter_href->{ "human_genome_reference" . $file_ending }
+                {build_file} eq 1
+            )
+            || ( $file_info_href->{human_genome_compressed} eq "compressed" )
+          )
+        {
+
+            if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
+                && ( $active_parameter_href->{dry_run_all} != 1 ) )
+            {
+
+                ## Creates the humanGenomePreRequisites using active_parameters{human_genome_reference} as reference.
+                build_human_genome_prerequisites(
+                    {
+                        parameter_href          => $parameter_href,
+                        active_parameter_href   => $active_parameter_href,
+                        sample_info_href        => $sample_info_href,
+                        file_info_href          => $file_info_href,
+                        infile_lane_prefix_href => $infile_lane_prefix_href,
+                        job_id_href             => $job_id_href,
+                        family_id_ref => \$active_parameter_href->{family_id},
+                        outaligner_dir_ref =>
+                          \$active_parameter_href->{outaligner_dir},
+                        program => $program_name,
+                    }
+                );
+                last;    #Will handle all metafiles build within sbatch script
+            }
+        }
+    }
+}
+
+sub check_build_ptchs_metric_prerequisites {
+
+##check_build_ptchs_metric_prerequisites
+
+##Function : Check if PicardtoolsHSMetricsPrequisites needs to be built
+##Returns  : ""
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $FILEHANDLE, $family_id_ref
+##         : $parameter_href             => Parameter hash {REF}
+##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
+##         : $sample_info_href           => Info on samples and family hash {REF}
+##         : $file_info_href             => The associated reference file endings {REF}
+##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##         : $job_id_href                => Job id hash {REF}
+##         : $program_name               => Program name
+##         : $FILEHANDLE                 => Filehandle to write to
+##         : $family_id_ref              => The family_id_ref {REF}
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $family_id_ref;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $active_parameter_href;
+    my $sample_info_href;
+    my $file_info_href;
+    my $infile_lane_prefix_href;
+    my $job_id_href;
+    my $program_name;
+    my $FILEHANDLE;
+
+    my $tmpl = {
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
+        active_parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$active_parameter_href,
+        },
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href,
+        },
+        file_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$file_info_href,
+        },
+        infile_lane_prefix_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$infile_lane_prefix_href,
+        },
+        job_id_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$job_id_href,
+        },
+        program_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$program_name,
+        },
+        FILEHANDLE    => { store => \$FILEHANDLE, },
+        family_id_ref => {
+            default     => \$arg_href->{active_parameter_href}{family_id},
+            strict_type => 1,
+            store       => \$family_id_ref,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    if ( $parameter_href->{exome_target_bed}{build_file} eq 1 ) {
+
+        build_ptchs_metric_prerequisites(
+            {
+                parameter_href          => $parameter_href,
+                active_parameter_href   => $active_parameter_href,
+                sample_info_href        => $sample_info_href,
+                file_info_href          => $file_info_href,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                program_name            => $program_name,
+                FILEHANDLE              => $FILEHANDLE,
+            }
+        );
+
+        $parameter_href->{exome_target_bed}{build_file} =
+          0;    #Only build once for all modules and files
+    }
+}
+
+sub build_human_genome_prerequisites {
+
+##build_human_genome_prerequisites
+
+##Function : Creates the human genome prerequisites using active_parameters{human_genome_reference} as reference.
+##Returns  : ""
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program, $FILEHANDLE, $random_integer, $family_id_ref, $reference_dir_ref, $outaligner_dir_ref, $human_genome_reference_ref
+##         : $parameter_href                  => Parameter hash {REF}
+##         : $active_parameter_href           => Active parameters for this analysis hash {REF}
+##         : $sample_info_href                => Info on samples and family hash {REF}
+##         : $file_info_href                  => File info hash {REF}
+##         : $infile_lane_prefix_href      => Infile(s) without the ".ending" {REF}
+##         : $job_id_href                     => Job id hash {REF}
+##         : $program                         => The program under evaluation
+##         : $FILEHANDLE                      => Filehandle to write to. A new sbatch script will be generated if $FILEHANDLE is lacking, else write to exising $FILEHANDLE {Optional}
+##         : $random_integer                  => The random integer to create temporary file name
+##         : $family_id_ref                   => Family ID {REF}
+##         : $reference_dir_ref               => MIP reference directory
+##         : $outaligner_dir_ref              => The outaligner_dir used in the analysis
+##         : $human_genome_reference_ref      => Human genome reference {REF}
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $family_id_ref;
+    my $reference_dir_ref;
+    my $outaligner_dir_ref;
+    my $human_genome_reference_ref;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $active_parameter_href;
+    my $sample_info_href;
+    my $file_info_href;
+    my $infile_lane_prefix_href;
+    my $job_id_href;
+    my $program;
+    my $FILEHANDLE;
+    my $random_integer;
+
+    my $tmpl = {
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
+        active_parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$active_parameter_href,
+        },
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href,
+        },
+        file_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$file_info_href,
+        },
+        infile_lane_prefix_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$infile_lane_prefix_href,
+        },
+        job_id_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$job_id_href,
+        },
+        program =>
+          { required => 1, defined => 1, strict_type => 1, store => \$program },
+        FILEHANDLE     => { strict_type => 1, store => \$FILEHANDLE, },
+        random_integer => { strict_type => 1, store => \$random_integer },
+        family_id_ref  => {
+            default     => \$arg_href->{active_parameter_href}{family_id},
+            strict_type => 1,
+            store       => \$family_id_ref,
+        },
+        reference_dir_ref => {
+            default     => \$arg_href->{active_parameter_href}{reference_dir},
+            strict_type => 1,
+            store       => \$reference_dir_ref,
+        },
+        outaligner_dir_ref => {
+            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
+            strict_type => 1,
+            store       => \$outaligner_dir_ref,
+        },
+        human_genome_reference_ref => {
+            default =>
+              \$arg_href->{active_parameter_href}{human_genome_reference},
+            strict_type => 1,
+            store       => \$human_genome_reference_ref
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Script::Setup_script qw(setup_script);
+    use MIP::Gnu::Bash qw(gnu_cd);
+    use MIP::Gnu::Coreutils qw(gnu_rm);
+    use MIP::Program::Compression::Gzip qw(gzip);
+    use MIP::Language::Java qw{java_core};
+    use MIP::Processmanagement::Slurm_processes
+      qw(slurm_submit_job_no_dependency_add_to_samples);
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger(q{MIP});
+
+    my $file_path;
+    my $submit_switch;
+
+    unless ( defined($FILEHANDLE) )
+    {    #No supplied FILEHANDLE i.e. create new sbatch script
+
+        $submit_switch = 1;
+        $FILEHANDLE    = IO::Handle->new();    #Create anonymous filehandle
+        $random_integer =
+          int( rand(10000) );    #Generate a random integer between 0-10,000.
+
+        ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+        ($file_path) = setup_script(
+            {
+                active_parameter_href => $active_parameter_href,
+                job_id_href           => $job_id_href,
+                FILEHANDLE            => $FILEHANDLE,
+                directory_id          => $$family_id_ref,
+                program_name          => $program,
+                program_directory     => lc($$outaligner_dir_ref),
+            }
+        );
+    }
+
+    ## Move to reference directory
+    gnu_cd(
+        {
+            directory_path => $$reference_dir_ref,
+            FILEHANDLE     => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} "\n";
+
+    ## Check for compressed files
+    if ( $file_info_href->{human_genome_compressed} eq "compressed" ) {
+
+        $log->warn( "Will try to decompres "
+              . $$human_genome_reference_ref
+              . " before executing "
+              . $program
+              . "\n" );
+
+        ## Perl wrapper for writing gzip recipe to $FILEHANDLE
+        gzip(
+            {
+                decompress  => 1,
+                infile_path => $$human_genome_reference_ref,
+                FILEHANDLE  => $FILEHANDLE,
+            }
+        );
+        say {$FILEHANDLE} "\n";
+
+        $$human_genome_reference_ref =~ s/.fasta.gz/.fasta/g
+          ; #Replace the .fasta.gz ending with .fasta since this will execute before the analysis, hence changing the original file name ending from ".fastq" to ".fastq.gz".
+        $log->info(
+            "Set human_genome_reference to: " . $$human_genome_reference_ref,
+            "\n" );
+        $file_info_href->{human_genome_compressedRef} = "uncompressed";
+    }
+
+    check_build_ptchs_metric_prerequisites(
+        {
+            parameter_href          => $parameter_href,
+            active_parameter_href   => $active_parameter_href,
+            sample_info_href        => $sample_info_href,
+            file_info_href          => $file_info_href,
+            infile_lane_prefix_href => $infile_lane_prefix_href,
+            job_id_href             => $job_id_href,
+            program_name            => $program,
+            FILEHANDLE              => $FILEHANDLE,
+        }
+    );
+
+    foreach my $file_ending (
+        @{ $file_info_href->{human_genome_reference_file_endings} } )
+    {
+
+        if ( $parameter_href->{ "human_genome_reference" . $file_ending }
+            {build_file} eq 1 )
+        {
+
+            if ( $file_ending eq ".dict" ) {
+
+                $log->warn( "Will try to create "
+                      . $file_ending
+                      . " file for "
+                      . $$human_genome_reference_ref
+                      . " before executing "
+                      . $program
+                      . "\n" );
+
+                my $filename_prefix = catfile( $$reference_dir_ref,
+                    $file_info_href->{human_genome_reference_name_prefix} );
+
+                say {$FILEHANDLE} "#CreateSequenceDictionary from reference";
+                java_core(
+                    {
+                        FILEHANDLE        => $FILEHANDLE,
+                        memory_allocation => "Xmx2g",
+                        java_use_large_pages =>
+                          $active_parameter_href->{java_use_large_pages},
+                        temp_directory =>
+                          $active_parameter_href->{temp_directory},
+                        java_jar => catfile(
+                            $active_parameter_href->{picardtools_path},
+                            "picard.jar"
+                        ),
+                    }
+                );
+
+                print {$FILEHANDLE} "CreateSequenceDictionary ";
+                print {$FILEHANDLE} "R="
+                  . $$human_genome_reference_ref
+                  . " ";    #Reference genome
+                say {$FILEHANDLE} "OUTPUT="
+                  . $filename_prefix . "_"
+                  . $random_integer
+                  . $file_ending, "\n";    #Output sequence dictionnary
+
+                my $intended_file_path = $filename_prefix . $file_ending;
+                my $temporary_file_path =
+                  $filename_prefix . "_" . $random_integer . $file_ending;
+
+                ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
+                check_exist_and_move_file(
+                    {
+                        FILEHANDLE              => $FILEHANDLE,
+                        intended_file_path_ref  => \$intended_file_path,
+                        temporary_file_path_ref => \$temporary_file_path,
+                    }
+                );
+            }
+            if ( $file_ending eq ".fai" ) {
+
+                $log->warn( "Will try to create "
+                      . $file_ending
+                      . " file for "
+                      . $$human_genome_reference_ref
+                      . " before executing "
+                      . $program
+                      . "\n" );
+
+                my $human_genome_reference_temp_file =
+                  $$human_genome_reference_ref . "_" . $random_integer;
+
+                say   {$FILEHANDLE} "## Fai file from reference";
+                print {$FILEHANDLE} "ln -s ";                       #Softlink
+                print {$FILEHANDLE} $$human_genome_reference_ref
+                  . " ";    #Reference genome
+                say {$FILEHANDLE} $human_genome_reference_temp_file,
+                  "\n";     #Softlink to reference genome
+
+                print {$FILEHANDLE} "samtools faidx ";    #index/extract FASTA
+                say {$FILEHANDLE} $human_genome_reference_temp_file,
+                  "\n";    #Softlink to reference genome
+
+                my $intended_file_path =
+                  $$human_genome_reference_ref . $file_ending;
+                my $temporary_file_path =
+                  $human_genome_reference_temp_file . $file_ending;
+
+                ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
+                check_exist_and_move_file(
+                    {
+                        FILEHANDLE              => $FILEHANDLE,
+                        intended_file_path_ref  => \$intended_file_path,
+                        temporary_file_path_ref => \$temporary_file_path,
+                    }
+                );
+
+                ## Remove softLink
+                gnu_rm(
+                    {
+                        infile_path => $human_genome_reference_temp_file,
+                        force       => 1,
+                        FILEHANDLE  => $FILEHANDLE,
+                    }
+                );
+                say {$FILEHANDLE} "\n";    #Softlink to reference genome
+            }
+            $parameter_href->{ "human_genome_reference" . $file_ending }
+              {build_file} = 0;            #Only create once
+        }
+    }
+    if ($submit_switch) {    #Unless FILEHANDLE was supplied close it and submit
+
+        close $FILEHANDLE;
+
+        if ( $active_parameter_href->{ "p" . $program } == 1 ) {
+
+            my $slurm_path = q{MAIN};
+
+            slurm_submit_job_no_dependency_add_to_samples(
+                {
+                    job_id_href => $job_id_href,
+                    sample_ids_ref =>
+                      \@{ $active_parameter_href->{sample_ids} },
+                    family_id        => $$family_id_ref,
+                    path             => $slurm_path,
+                    sbatch_file_name => $file_path,
+                    log              => $log,
+                }
+            );
+        }
     }
 }
 
@@ -19357,6 +20714,69 @@ sub compare_array_elements {
     }
 }
 
+sub check_exist_and_move_file {
+
+##check_exist_and_move_file
+
+##Function : Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
+##Returns  : ""
+##Arguments: $FILEHANDLE, $intended_file_path_ref, $temporary_file_path_ref
+##         : $FILEHANDLE              => FILEHANDLE to write to
+##         : $intended_file_path_ref  => Path to file to check for existence {REF}
+##         : $temporary_file_path_ref => File that has been created {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $intended_file_path_ref;
+    my $temporary_file_path_ref;
+
+    my $tmpl = {
+        FILEHANDLE             => { required => 1, store => \$FILEHANDLE, },
+        intended_file_path_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => \$$,
+            strict_type => 1,
+            store       => \$intended_file_path_ref
+        },
+        temporary_file_path_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => \$$,
+            strict_type => 1,
+            store       => \$temporary_file_path_ref
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Gnu::Coreutils qw(gnu_rm gnu_mv);
+
+    print {$FILEHANDLE} "[ -s "
+      . $$intended_file_path_ref
+      . " ] ";    #Check file exists and is larger than 0
+    print {$FILEHANDLE} "&& ";
+
+    ## If other processes already has created file, remove temp file
+    gnu_rm(
+        {
+            infile_path => $$temporary_file_path_ref,
+            FILEHANDLE  => $FILEHANDLE,
+        }
+    );
+    print {$FILEHANDLE} "|| ";    #File has not been created by other processes
+    gnu_mv(
+        {
+            infile_path  => $$temporary_file_path_ref,
+            outfile_path => $$intended_file_path_ref,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} "\n";
+}
+
 sub collect_seq_contigs {
 
 ##collect_seq_contigs
@@ -20867,8 +22287,7 @@ sub split_bam {
                   $active_parameter_href->{java_use_large_pages},
                 temp_directory => $$temp_directory_ref,
                 java_jar       => catfile(
-                    $active_parameter_href->{picardtools_path},
-                    q{picard.jar}
+                    $active_parameter_href->{picardtools_path}, "picard.jar"
                 ),
             }
         );
@@ -21507,7 +22926,7 @@ sub add_to_sample_info {
         else {    #Fall back on actually calling program
 
             my $jar_path = catfile( $active_parameter_href->{picardtools_path},
-                q{picard.jar} );
+                "picard.jar" );
             $picardtools_version =
               (`java -jar $jar_path CreateSequenceDictionary --version 2>&1`);
             chomp $picardtools_version;
