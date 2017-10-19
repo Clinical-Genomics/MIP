@@ -1075,10 +1075,10 @@ if ( $active_parameter{config_file_analysis} ne 0 ) {
 ## Detect the gender included in current analysis
 (
 
-    $active_parameter{male_found},
-    $active_parameter{female_found},
-    $active_parameter{other_found},
- $active_parameter{other_found_count},
+    $active_parameter{found_male},
+    $active_parameter{found_female},
+    $active_parameter{found_other},
+ $active_parameter{found_other_count},
   )
   = detect_sample_id_gender(
     {
@@ -18950,15 +18950,6 @@ sub write_cmd_mip_log {
         "\n"
     );
     return;
-=======
-            $male_found =
-              1;    #Include since it might be male to enable analysis of Y.
-            $other_found = 1;
-	    $other_found_count++;
-        }
-    }
-    return $male_found, $female_found, $other_found, $other_found_count;
->>>>>>> hotfix/plink_unknown_sex
 }
 
 sub check_unique_array_element {
