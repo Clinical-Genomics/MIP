@@ -106,7 +106,7 @@ eval_parameter_hash(
 );
 
 # Set MIP version
-our $VERSION = 'v5.0.9';
+our $VERSION = 'v5.0.10';
 
 ## Directories, files, job_ids and sample_info
 my ( %infile, %indir_path, %infile_lane_prefix, %lane,
@@ -1049,7 +1049,8 @@ set_contigs(
 (
     $active_parameter{male_found},
     $active_parameter{female_found},
-    $active_parameter{other_found}
+    $active_parameter{other_found},
+ $active_parameter{other_found_count},
   )
   = detect_sample_id_gender(
     {
@@ -9296,61 +9297,64 @@ sub mplink {
 
     ### Plink sex-check
     ## Get parameters
-    my $genome_build;
-    if ( $file_info_href->{human_genome_reference_source} eq "GRCh" ) {
+    if ($active_parameter_href->{other_found_count} ne scalar @{ $active_parameter_href->{sample_ids} }) {
+
+      my $genome_build;
+      if ( $file_info_href->{human_genome_reference_source} eq "GRCh" ) {
 
         $genome_build = "b" . $file_info_href->{human_genome_reference_version};
-    }
-    else {
+      }
+      else {
 
         $genome_build =
           "hg" . $file_info_href->{human_genome_reference_version};
-    }
-    plink(
-        {
-            regions_ref => [ 23, 24 ],
-            split_x     => $genome_build,
-            no_fail     => 1,
-            make_bed    => 1,
-            binary_fileset_prefix =>
-              catfile( $$temp_directory_ref, $$family_id_ref . "_data" ),
-            outfile_prefix => catfile(
-                $$temp_directory_ref, $$family_id_ref . "_data_unsplit"
-            ),
-            FILEHANDLE => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE "\n";
+      }
+      plink(
+	    {
+	     regions_ref => [ 23, 24 ],
+	     split_x     => $genome_build,
+	     no_fail     => 1,
+	     make_bed    => 1,
+	     binary_fileset_prefix =>
+	     catfile( $$temp_directory_ref, $$family_id_ref . "_data" ),
+	     outfile_prefix => catfile(
+				       $$temp_directory_ref, $$family_id_ref . "_data_unsplit"
+				      ),
+	     FILEHANDLE => $FILEHANDLE,
+	    }
+	   );
+      say $FILEHANDLE "\n";
 
-    ##Get parameters
-    my $sex_check_min_F;
-    if (   ( $consensus_analysis_type eq "wes" )
-        || ( $consensus_analysis_type eq "rapid" ) )
-    {    #Exome/rapid analysis use combined reference for more power
+      ##Get parameters
+      my $sex_check_min_F;
+      if (   ( $consensus_analysis_type eq "wes" )
+	     || ( $consensus_analysis_type eq "rapid" ) )
+	{    #Exome/rapid analysis use combined reference for more power
 
-        $sex_check_min_F = "0.2 0.75";
-    }
-    my $extract_file;
-    if ( scalar( @{ $active_parameter_href->{sample_ids} } ) > 1 ) {
+	  $sex_check_min_F = "0.2 0.75";
+	}
+      my $extract_file;
+      if ( scalar( @{ $active_parameter_href->{sample_ids} } ) > 1 ) {
 
         $extract_file =
           catfile( $$temp_directory_ref, $$family_id_ref . '_data.prune.in' );
+      }
+      plink(
+	    {
+	     check_sex       => 1,
+	     sex_check_min_F => $sex_check_min_F,
+	     extract_file    => $extract_file,
+	     read_freqfile_path =>
+	     catfile( $$temp_directory_ref, $$family_id_ref . "_data.frqx" ),
+	     binary_fileset_prefix => catfile(
+					      $$temp_directory_ref, $$family_id_ref . "_data_unsplit"
+					     ),
+	     outfile_prefix => catfile( $outfamily_directory, $$family_id_ref ),
+	     FILEHANDLE     => $FILEHANDLE,
+	    }
+	   );
+      say $FILEHANDLE "\n";
     }
-    plink(
-        {
-            check_sex       => 1,
-            sex_check_min_F => $sex_check_min_F,
-            extract_file    => $extract_file,
-            read_freqfile_path =>
-              catfile( $$temp_directory_ref, $$family_id_ref . "_data.frqx" ),
-            binary_fileset_prefix => catfile(
-                $$temp_directory_ref, $$family_id_ref . "_data_unsplit"
-            ),
-            outfile_prefix => catfile( $outfamily_directory, $$family_id_ref ),
-            FILEHANDLE     => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE "\n";
 
     if (   ( $active_parameter_href->{ "p" . $program_name } == 1 )
         && ( !$active_parameter_href->{dry_run_all} ) )
@@ -9382,16 +9386,19 @@ sub mplink {
             );
         }
 
-        ## Collect QC metadata info for later use
-        sample_info_qc(
-            {
-                sample_info_href => $sample_info_href,
-                program_name     => "plink_sexcheck",
-                outdirectory     => $outfamily_directory,
-                outfile_ending   => $$family_id_ref . ".sexcheck",
-                outdata_type     => "infile_dependent"
-            }
-        );
+	if ($active_parameter_href->{other_found_count} ne scalar @{ $active_parameter_href->{sample_ids} }) {
+
+	  ## Collect QC metadata info for later use
+	  sample_info_qc(
+			 {
+			  sample_info_href => $sample_info_href,
+			  program_name     => "plink_sexcheck",
+			  outdirectory     => $outfamily_directory,
+			  outfile_ending   => $$family_id_ref . ".sexcheck",
+			  outdata_type     => "infile_dependent"
+			 }
+			);
+	}
 
         ## Collect QC metadata info for later use
         sample_info_qc(
@@ -34678,12 +34685,13 @@ sub detect_sample_id_gender {
     my $male_found   = 0;
     my $female_found = 0;
     my $other_found  = 0;
+    my $other_found_count = 0;
 
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
         if ( $sample_info_href->{sample}{$sample_id}{sex} =~ /1|^male/ ) { #Male
 
-            $male_found = 1;                                               #Male
+            $male_found++;                                               #Male
         }
         elsif ( $sample_info_href->{sample}{$sample_id}{sex} =~ /2|female/ )
         {    #Female
@@ -34695,9 +34703,10 @@ sub detect_sample_id_gender {
             $male_found =
               1;    #Include since it might be male to enable analysis of Y.
             $other_found = 1;
+	    $other_found_count++;
         }
     }
-    return $male_found, $female_found, $other_found;
+    return $male_found, $female_found, $other_found, $other_found_count;
 }
 
 sub remove_pedigree_elements {
