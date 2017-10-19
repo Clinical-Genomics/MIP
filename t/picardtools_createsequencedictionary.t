@@ -79,7 +79,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Program::Alignment::Picardtools});
+    my @modules = (q{MIP::Program::Fasta::Picardtools});
 
   MODULE:
     for my $module (@modules) {
@@ -87,11 +87,12 @@ BEGIN {
     }
 }
 
-use MIP::Program::Alignment::Picardtools qw{ picardtools_markduplicates };
+use MIP::Program::Fasta::Picardtools qw{ picardtools_createsequencedictionary };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test picardtools_markduplicates from Picardtools.pm v}
-      . $MIP::Program::Alignment::Picardtools::VERSION
+diag(
+    q{Test picardtools_createsequencedictionary from Interval::Picardtools.pm v}
+      . $MIP::Program::Fasta::Picardtools::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -100,9 +101,21 @@ diag(   q{Test picardtools_markduplicates from Picardtools.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{MarkDuplicates};
+my $function_base_command = q{CreateSequenceDictionary};
 
 my %base_argument = (
+    stdoutfile_path => {
+        input           => q{stdoutfile.test},
+        expected_output => q{1> stdoutfile.test},
+    },
+    stderrfile_path => {
+        input           => q{stderrfile.test},
+        expected_output => q{2> stderrfile.test},
+    },
+    stderrfile_path_append => {
+        input           => q{stderrfile.test},
+        expected_output => q{2>> stderrfile.test},
+    },
     FILEHANDLE => {
         input           => undef,
         expected_output => $function_base_command,
@@ -112,17 +125,9 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    infile_paths_ref => {
-        inputs_ref      => [qw{ infile_1 infile_2  }],
-        expected_output => q{INPUT=infile_1 INPUT=infile_2},
-    },
     outfile_path => {
-        input           => catfile(qw{ out_directory outfile }),
-        expected_output => q{OUTPUT=} . catfile(qw{ out_directory outfile }),
-    },
-    metrics_file => {
-        input           => q{metric_file},
-        expected_output => q{METRICS_FILE=} . q{metric_file},
+        input           => catfile(qw{ dir outfile }),
+        expected_output => q{OUTPUT=} . catfile(qw{ dir outfile }),
     },
     referencefile_path => {
         input => catfile(qw{ references GRCh37_homo_sapiens_-d5-.fasta }),
@@ -132,26 +137,19 @@ my %required_argument = (
 );
 
 my %specific_argument = (
-    create_index => {
-        input           => q{true},
-        expected_output => q{CREATE_INDEX=true},
-    },
-    infile_paths_ref => {
-        inputs_ref      => [qw{ infile_1 infile_2  }],
-        expected_output => q{INPUT=infile_1 INPUT=infile_2},
+    referencefile_path => {
+        input => catfile(qw{ references GRCh37_homo_sapiens_-d5-.fasta }),
+        expected_output => q{R=}
+          . catfile(qw{ references GRCh37_homo_sapiens_-d5-.fasta }),
     },
     outfile_path => {
-        input           => catfile(qw{ out_directory outfile }),
-        expected_output => q{OUTPUT=} . catfile(qw{ out_directory outfile }),
-    },
-    metrics_file => {
-        input           => q{metric_file},
-        expected_output => q{METRICS_FILE=} . q{metric_file},
+        input           => catfile(qw{ dir outfile }),
+        expected_output => q{OUTPUT=} . catfile(qw{ dir outfile }),
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&picardtools_markduplicates;
+my $module_function_cref = \&picardtools_createsequencedictionary;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
@@ -177,12 +175,9 @@ done_testing();
 
 sub build_usage {
 
-## build_usage
-
 ## Function  : Build the USAGE instructions
-## Returns   : ""
-## Arguments : $program_name
-##           : $program_name => Name of the script
+## Returns   :
+## Arguments : $program_name => Name of the script
 
     my ($arg_href) = @_;
 

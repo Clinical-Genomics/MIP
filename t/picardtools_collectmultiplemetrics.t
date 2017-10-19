@@ -123,7 +123,7 @@ my %required_argument = (
     },
     referencefile_path => {
         input => catfile(qw{ references GRCh37_homo_sapiens_-d5-.fasta }),
-        expected_output => q{REFERENCE_SEQUENCE=}
+        expected_output => q{R=}
           . catfile(qw{ references GRCh37_homo_sapiens_-d5-.fasta }),
     },
 );
@@ -132,11 +132,6 @@ my %specific_argument = (
     create_index => {
         input           => q{true},
         expected_output => q{CREATE_INDEX=true},
-    },
-    referencefile_path => {
-        input => catfile(qw{ references GRCh37_homo_sapiens_-d5-.fasta }),
-        expected_output => q{REFERENCE_SEQUENCE=}
-          . catfile(qw{ references GRCh37_homo_sapiens_-d5-.fasta }),
     },
     infile_path => {
         input           => catfile(qw{ indirectory infile_1 }),

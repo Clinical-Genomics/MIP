@@ -145,7 +145,7 @@ my %required_argument = (
     },
     referencefile_path => {
         input => catfile(qw{ references GRCh37_homo_sapiens_-d5-.fasta }),
-        expected_output => q{REFERENCE_SEQUENCE=}
+        expected_output => q{R=}
           . catfile(qw{ references GRCh37_homo_sapiens_-d5-.fasta }),
     },
 );

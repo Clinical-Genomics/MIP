@@ -100,7 +100,7 @@ diag(   q{Test picardtools_base from Picardtools.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{REFERENCE_SEQUENCE=};
+my $function_base_command = q{R=};
 
 my %base_argument = (
     FILEHANDLE => {
@@ -114,6 +114,8 @@ my %base_argument = (
 my %required_argument = (
     referencefile_path => {
         input => catdir(qw{ references GRCh37_homo_sapiens_-d5-.fasta }),
+        expected_output => q{R=}
+          . catdir(qw{ references GRCh37_homo_sapiens_-d5-.fasta }),
     },
 );
 
@@ -124,7 +126,7 @@ my %specific_argument = (
     },
     referencefile_path => {
         input => catdir(qw{ references GRCh37_homo_sapiens_-d5-.fasta }),
-        expected_output => q{REFERENCE_SEQUENCE=}
+        expected_output => q{R=}
           . catdir(qw{ references GRCh37_homo_sapiens_-d5-.fasta }),
     },
 );
