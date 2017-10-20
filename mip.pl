@@ -106,7 +106,7 @@ eval_parameter_hash(
 );
 
 # Set MIP version
-our $VERSION = 'v5.0.10';
+our $VERSION = 'v5.0.11';
 
 ## Directories, files, job_ids and sample_info
 my ( %infile, %indir_path, %infile_lane_prefix, %lane,
@@ -9240,6 +9240,13 @@ sub mplink {
 
     say $FILEHANDLE
       "## Update Plink fam. Create ped and map file and frequency report";
+    ## Get parameters
+    my $allow_no_sex;
+    if ($active_parameter_href->{other_found_count} eq scalar @{ $active_parameter_href->{sample_ids} }) {
+      ## Only if not all samples have unknown sex
+
+      $allow_no_sex = 1;
+    }
     plink(
         {
             binary_fileset_prefix =>
@@ -9248,6 +9255,7 @@ sub mplink {
             make_just_fam => 1,
             recode        => 1,
             freqx         => 1,
+	 allow_no_sex => $allow_no_sex,
             outfile_prefix =>
               catfile( $$temp_directory_ref, $$family_id_ref . "_data" ),
             FILEHANDLE => $FILEHANDLE,
@@ -9298,6 +9306,7 @@ sub mplink {
     ### Plink sex-check
     ## Get parameters
     if ($active_parameter_href->{other_found_count} ne scalar @{ $active_parameter_href->{sample_ids} }) {
+      ## Only if not all samples have unknown sex
 
       my $genome_build;
       if ( $file_info_href->{human_genome_reference_source} eq "GRCh" ) {
