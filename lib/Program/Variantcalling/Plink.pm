@@ -11,7 +11,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Inherit from Exporter to export functions and variables
     our @ISA = qw(Exporter);
@@ -69,7 +69,8 @@ sub plink {
 ##         : $make_just_fam           => Just update fam file
 ##         : $cluster                 => Perform IBS clustering
 ##         : $matrix                  => Create a N x N matrix of genome-wide average IBS pairwise identities
-##         : $freqx                   => Writes a minor allele frequency report 
+##         : $freqx                   => Writes a minor allele frequency report
+##         : $allow_no_sex            => Allow no sex for sample ids
 
     my ($arg_href) = @_;
 
@@ -112,6 +113,7 @@ sub plink {
     my $sex_check_min_F;
     my $vcf_half_call;
     my $inbreeding_coefficients;
+    my $allow_no_sex;
 
     my $tmpl = {
 	regions_ref => { default => [], strict_type => 1, store => \$regions_ref },
@@ -177,8 +179,11 @@ sub plink {
 	freqx => { default => 0,
 		   allow => [0, 1],
 		   strict_type => 1, store => \$freqx },
+		allow_no_sex => { default => 0,
+			    allow => [undef, 0, 1],
+			    strict_type => 1, store => \$allow_no_sex },
     };
-    
+
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     ## Plink2
@@ -284,6 +289,10 @@ sub plink {
     if ($freqx) {
 
 	push(@commands, "--freqx");
+    }
+    if ($allow_no_sex) {
+
+	push@commands, q{--allow-no-sex};
     }
     if ($read_freqfile_path) {
 
