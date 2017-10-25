@@ -66,6 +66,7 @@ use MIP::Recipes::Bwa_mem qw{ analysis_bwa_mem };
 use MIP::Recipes::Build::Human_genome_prerequisites
   qw{ build_human_genome_prerequisites };
 use MIP::Recipes::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
+use MIP::Recipes::Cnvnator qw{ analysis_cnvnator };
 use MIP::Recipes::Fastqc qw{ analysis_fastqc };
 use MIP::Recipes::Gatk_realigner qw{ analysis_gatk_realigner };
 use MIP::Recipes::Gatk_baserecalibration qw{ analysis_gatk_baserecalibration };
@@ -1815,13 +1816,23 @@ if ( $active_parameter{prcovplots} > 0 ) {
     }
 }
 
-if ( $active_parameter{pcnvnator} > 0 ) {    #Run CNVnator
+#Run CNVnator
+if ( $active_parameter{pcnvnator} > 0 ) {
 
-    $log->info("[CNVnator]\n");
+    $log->info( q{[CNVnator]} );
+
+    my $program_name = lc q{cnvnator};
 
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
-        cnvnator(
+        ## Assign directories
+        my $insample_directory = catdir( $active_parameter{outdata_dir},
+            $sample_id, $active_parameter{outaligner_dir} );
+
+        my $outsample_directory = catdir( $active_parameter{outdata_dir},
+           $sample_id, $active_parameter{outaligner_dir}, $program_name);
+
+        analysis_cnvnator(
             {
                 parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
@@ -1829,8 +1840,10 @@ if ( $active_parameter{pcnvnator} > 0 ) {    #Run CNVnator
                 file_info_href          => \%file_info,
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
-                sample_id_ref           => \$sample_id,
-                program_name            => "cnvnator",
+                sample_id               => $sample_id,
+                insample_directory      => $insample_directory,
+                outsample_directory     => $outsample_directory,
+                program_name            => $program_name,
             }
         );
     }
