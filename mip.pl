@@ -1506,34 +1506,37 @@ if ( $active_parameter{reduce_io} ) {
 }
 else {
 
-    ##Always run even for single samples to rename them correctly for standardised downstream processing.
-    ##Will also split alignment per contig and copy to temporary directory for '-rio 1' block to enable selective removal of block submodules.
-    $log->info(q{[Picardtools mergesamfiles]});
+    ## Always run even for single samples to rename them correctly for standardised downstream processing.
+    ## Will also split alignment per contig and copy to temporary directory for '-rio 1' block to enable selective removal of block submodules.
+    if ( $active_parameter{ppicardtools_mergesamfiles} > 0 ) {
 
-    my $program_name = lc q{picardtools_mergesamfiles};
+        $log->info(q{[Picardtools mergesamfiles]});
 
-    foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
+        my $program_name = lc q{picardtools_mergesamfiles};
 
-        my $insample_directory = catdir( $active_parameter{outdata_dir},
-            $sample_id, $active_parameter{outaligner_dir} );
-        my $outsample_directory = catdir( $active_parameter{outdata_dir},
-            $sample_id, $active_parameter{outaligner_dir} );
+        foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
-        analysis_picardtools_mergesamfiles(
-            {
-                parameter_href          => \%parameter,
-                active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
-                file_info_href          => \%file_info,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                lane_href               => \%lane,
-                job_id_href             => \%job_id,
-                insample_directory      => $insample_directory,
-                outsample_directory     => $outsample_directory,
-                sample_id               => $sample_id,
-                program_name            => $program_name,
-            }
-        );
+            my $insample_directory = catdir( $active_parameter{outdata_dir},
+                $sample_id, $active_parameter{outaligner_dir} );
+            my $outsample_directory = catdir( $active_parameter{outdata_dir},
+                $sample_id, $active_parameter{outaligner_dir} );
+
+            analysis_picardtools_mergesamfiles(
+                {
+                    parameter_href          => \%parameter,
+                    active_parameter_href   => \%active_parameter,
+                    sample_info_href        => \%sample_info,
+                    file_info_href          => \%file_info,
+                    infile_lane_prefix_href => \%infile_lane_prefix,
+                    lane_href               => \%lane,
+                    job_id_href             => \%job_id,
+                    insample_directory      => $insample_directory,
+                    outsample_directory     => $outsample_directory,
+                    sample_id               => $sample_id,
+                    program_name            => $program_name,
+                }
+            );
+        }
     }
 
     # Markduplicates
@@ -2346,21 +2349,23 @@ if ( $active_parameter{reduce_io} ) {    #Run consecutive models
 }
 else {
 
-    $log->info("[Prepareforvariantannotationblock]\n");
+    if ( $active_parameter{pprepareforvariantannotationblock} > 0 ) {
 
-    prepareforvariantannotationblock(
-        {
-            parameter_href          => \%parameter,
-            active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
-            file_info_href          => \%file_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            call_type               => q{BOTH},
-            program_name            => "prepareforvariantannotationblock",
-        }
-    );
+        $log->info("[Prepareforvariantannotationblock]\n");
 
+        prepareforvariantannotationblock(
+            {
+                parameter_href          => \%parameter,
+                active_parameter_href   => \%active_parameter,
+                sample_info_href        => \%sample_info,
+                file_info_href          => \%file_info,
+                infile_lane_prefix_href => \%infile_lane_prefix,
+                job_id_href             => \%job_id,
+                call_type               => q{BOTH},
+                program_name            => "prepareforvariantannotationblock",
+            }
+        );
+    }
     if ( $active_parameter{prhocall} > 0 ) {    #Run rhocall. Done per family
 
         $log->info("[Rhocall]\n");
@@ -15423,8 +15428,10 @@ sub variantannotationblock {
     ## Filehandles
     my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
 
-    $log->info("\t[Prepareforvariantannotationblock]\n");
+    if ( $active_parameter_href->{pprepareforvariantannotationblock} > 0 ) {
 
+        $log->info("\t[Prepareforvariantannotationblock]\n");
+    }
     if ( $active_parameter_href->{prhocall} > 0 )
     {                                      #Run rhocall. Done per family
 
@@ -15475,23 +15482,26 @@ sub variantannotationblock {
     );
 
     ## Copy files for variantannotationblock to enable restart and skip of modules within block
-    ($xargs_file_counter) = prepareforvariantannotationblock(
-        {
-            parameter_href          => $parameter_href,
-            active_parameter_href   => $active_parameter_href,
-            sample_info_href        => $sample_info_href,
-            file_info_href          => $file_info_href,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            job_id_href             => $job_id_href,
-            call_type               => $call_type,
-            program_name            => "prepareforvariantannotationblock",
-            file_path               => $file_path,
-            program_info_path       => $program_info_path,
-            FILEHANDLE              => $FILEHANDLE,
-            xargs_file_counter      => $xargs_file_counter,
-            stderr_path             => $program_info_path . ".stderr.txt",
-        }
-    );
+    if ( $active_parameter_href->{pprepareforvariantannotationblock} > 0 ) {
+
+        ($xargs_file_counter) = prepareforvariantannotationblock(
+            {
+                parameter_href          => $parameter_href,
+                active_parameter_href   => $active_parameter_href,
+                sample_info_href        => $sample_info_href,
+                file_info_href          => $file_info_href,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                call_type               => $call_type,
+                program_name            => "prepareforvariantannotationblock",
+                file_path               => $file_path,
+                program_info_path       => $program_info_path,
+                FILEHANDLE              => $FILEHANDLE,
+                xargs_file_counter      => $xargs_file_counter,
+                stderr_path             => $program_info_path . ".stderr.txt",
+            }
+        );
+    }
     if ( $active_parameter_href->{prhocall} > 0 ) {    #Run vt. Done per family
 
         ($xargs_file_counter) = rhocall(

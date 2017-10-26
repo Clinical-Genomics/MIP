@@ -161,15 +161,15 @@ sub update_prioritize_flag {
 ##Function : Update prioritize flag depending on analysis run value as some programs are not applicable for e.g. wes
 ##Returns  :
 ##Arguments: $programs_ref            => Programs to update {REF}
-##         : $prioritize_key          => Prioritize key to update
 ##         : $consensus_analysis_type => Consensus analysis_type
+##         : $prioritize_key          => Prioritize key to update
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $programs_ref;
-    my $prioritize_key;
     my $consensus_analysis_type;
+    my $prioritize_key;
 
     my $tmpl = {
         programs_ref => {
@@ -179,23 +179,23 @@ sub update_prioritize_flag {
             strict_type => 1,
             store       => \$programs_ref,
         },
-        prioritize_key => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$prioritize_key,
-        },
         consensus_analysis_type => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$consensus_analysis_type,
         },
+        prioritize_key => {
+            strict_type => 1,
+            store       => \$prioritize_key,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    if ( $consensus_analysis_type ne q{wgs} ) {
+    if (   $consensus_analysis_type ne q{wgs}
+        && $prioritize_key )
+    {
 
         ## Split string into array
         my @callers = split $COMMA, $prioritize_key;
@@ -206,6 +206,7 @@ sub update_prioritize_flag {
             ## Remove all wgs specific callers
             @callers = grep { $caller !~ /^$_/sxm } @callers;
         }
+
         ## Update sv_svdb_merge_prioritize flag
         $prioritize_key = join q{,}, @callers;
     }

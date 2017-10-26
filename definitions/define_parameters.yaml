@@ -415,7 +415,7 @@ pfastqc:
    - mip
   chain: RawSeqQC
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: nofile_tag
   infile_suffix: ".fastq"
   program_name_path:
@@ -427,7 +427,7 @@ pbwa_mem:
    - mip
   chain: MAIN
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _sorted
   outfile_suffix: ".bam"
   outdir_name: bwa
@@ -504,7 +504,7 @@ ppicardtools_mergesamfiles:
    - mip
   chain: MAIN
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _merged
   file_endings:
    - .bam
@@ -516,7 +516,7 @@ pmarkduplicates:
    - mip
   chain: MAIN
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _md
   program_name_path:
    - sambamba
@@ -584,7 +584,7 @@ pgatk_baserecalibration:
    - mip
   chain: MAIN
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _brecal
   file_endings:
    - .bam
@@ -646,7 +646,7 @@ pchanjo_sexcheck:
    - mip
   chain: coverage_report_gender
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _sex
   outfile_suffix: ".tsv"
   program_name_path:
@@ -663,7 +663,7 @@ psambamba_depth:
    - mip
   chain: coverage_report
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _coverage
   outfile_suffix: ".bed"
   program_name_path:
@@ -740,7 +740,7 @@ ppicardtools_collectmultiplemetrics:
    - mip
   chain: CoverageQCPTCMM
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: nofile_tag
   type: program
 ppicardtools_collecthsmetrics:
@@ -748,7 +748,7 @@ ppicardtools_collecthsmetrics:
    - mip
   chain: CoverageQCPTCHSM
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _collecthsmetrics
   type: program
 prcovplots:
@@ -765,7 +765,7 @@ pcnvnator:
    - mip
   chain: SVCNV
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _cnvnator
   program_name_path:
    - cnvnator
@@ -793,7 +793,7 @@ pdelly_call:
    - mip
   chain: SVDEL
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _dellycall
   program_name_path:
    - delly
@@ -805,7 +805,7 @@ pdelly_reformat:
    - mip
   chain: SVDEL
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _dellyreformat
   program_name_path:
    - delly
@@ -841,7 +841,7 @@ pmanta:
    - mip
   chain: SVMAN
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _manta
   program_name_path:
    - configManta.py
@@ -854,7 +854,7 @@ ptiddit:
    - mip
   chain: SVTIDDIT
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _tiddit
   program_name_path:
    - TIDDIT
@@ -874,7 +874,7 @@ psv_combinevariantcallsets:
    - mip
   chain: SV
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _comb_
   outfile_suffix: ".vcf"
   program_name_path:
@@ -985,7 +985,7 @@ psv_varianteffectpredictor:
    - mip
   chain: SV
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: vep_
   type: program
 sv_vep_features:
@@ -1029,7 +1029,7 @@ psv_vcfparser:
    - mip
   chain: SV
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: parsed_
   type: program
 sv_vcfparser_vep_transcripts:
@@ -1083,7 +1083,7 @@ psv_rankvariant:
    - mip
   chain: SV
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: ranked_
   type: program
 sv_genmod_annotate_regions:
@@ -1126,7 +1126,7 @@ psv_reformat:
    - mip
   chain: SV
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: ""
   program_name_path:
    - grep
@@ -1152,7 +1152,7 @@ psamtools_mpileup:
    - mip
   chain: SAMMP
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _mpileup_
   outdir_name: samtools
   program_name_path:
@@ -1171,7 +1171,7 @@ pfreebayes:
    - mip
   chain: FREEB
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _freebayes_
   program_name_path:
    - freebayes
@@ -1190,7 +1190,7 @@ pgatk_haplotypecaller:
    - mip
   chain: MAIN
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _haptc
   file_endings:
    - .vcf
@@ -1263,7 +1263,7 @@ pgatk_genotypegvcfs:
    - mip
   chain: MAIN
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _
   file_endings:
    - .vcf
@@ -1296,7 +1296,7 @@ pgatk_variantrecalibration:
    - mip
   chain: MAIN
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: vrecal_
   program_name_path:
    - bcftools
@@ -1399,7 +1399,7 @@ pgatk_combinevariantcallsets:
    - mip
   chain: MAIN
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: comb_
   file_endings:
    - .vcf
@@ -1441,7 +1441,7 @@ pprepareforvariantannotationblock:
    - mip
   chain: MAIN
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: nofile_tag
   outfile_suffix: ".vcf.gz"
   type: program
@@ -1451,7 +1451,7 @@ prhocall:
    - mip
   chain: MAIN
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: rhocall_
   program_name_path:
    - rhocall
@@ -1477,7 +1477,7 @@ pvt:
    - mip
   chain: MAIN
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: vt_
   program_name_path:
    - vt
@@ -1546,7 +1546,7 @@ pgatk_variantevalall:
    - mip
   chain: AllVariantQC
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: nofile_tag
   outfile_suffix: ".varianteval"
   type: program
@@ -1555,7 +1555,7 @@ pgatk_variantevalexome:
    - mip
   chain: ExomeVariantQC
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: nofile_tag
   outfile_suffix: ".varianteval"
   program_name_path:
@@ -1618,7 +1618,7 @@ pvarianteffectpredictor:
    - mip
   chain: MAIN
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: vep_
   file_endings:
    - .vcf
@@ -1688,7 +1688,7 @@ pvcfparser:
    - mip
   chain: MAIN
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: parsed_
   file_endings:
    - .vcf
@@ -1748,7 +1748,7 @@ psnpeff:
    - mip
   chain: MAIN
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: snpeff_
   file_endings:
    - .vcf
@@ -1879,7 +1879,7 @@ ppeddy:
    - mip
   chain: PEDDYQC
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: nofile_tag
   type: program
 pplink:
@@ -1887,7 +1887,7 @@ pplink:
    - mip
   chain: PLINKQC
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: nofile_tag
   program_name_path:
    - plink2
@@ -1897,7 +1897,7 @@ pvariant_integrity:
    - mip
   chain: VIQC
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: nofile_tag
   program_name_path:
    - variant_integrity
@@ -1943,7 +1943,7 @@ prankvariant:
    - mip
   chain: MAIN
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: ranked_
   outfile_suffix: ".vcf"
   type: program
@@ -2005,7 +2005,7 @@ pendvariantannotationblock:
    - mip
   chain: MAIN
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: nofile_tag
   outfile_suffix: ".vcf"
   program_name_path:
@@ -2032,7 +2032,7 @@ pqccollect:
    - mip
   chain: ALL
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: nofile_tag
   type: program
 qccollect_sampleinfo_file:
@@ -2063,7 +2063,7 @@ pmultiqc:
    - mip
   chain: ALL
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: nofile_tag
   outdir_name: multiqc
   type: program
@@ -2073,7 +2073,7 @@ premoveredundantfiles:
    - mip
   chain: MAIN
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: nofile_tag
   type: program
 ## AnalysisRunStatus
@@ -2082,7 +2082,7 @@ panalysisrunstatus:
    - mip
   chain: ALL
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: nofile_tag
   type: program
 ## Sacct
@@ -2091,7 +2091,7 @@ psacct:
    - mip
   chain: ALL
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: nofile_tag
   type: program
 sacct_format_fields:
