@@ -154,7 +154,7 @@ sub analysis_gatk_genotypegvcfs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Pedigree qw{ create_fam_file };
+    use MIP::File::Format::Pedigree qw{ create_fam_file pedigree_flag };
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Language::Java qw{ java_core };
@@ -302,7 +302,7 @@ sub analysis_gatk_genotypegvcfs {
 
         ## Get parameters
         ## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-        my %commands = gatk_pedigree_flag(
+        my %commands = pedigree_flag(
             {
                 active_parameter_href => $active_parameter_href,
                 fam_file_path         => catfile(

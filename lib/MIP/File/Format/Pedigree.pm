@@ -26,7 +26,7 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ create_fam_file };
+    our @EXPORT_OK = qw{ create_fam_file pedigree_flag };
 }
 
 ## Constants
@@ -37,6 +37,78 @@ Readonly my $DOUBLE_QUOTE => q{"};
 
 # Ignore the warning from putting '#' in qw{}
 no warnings qw{ qw };
+
+sub pedigree_flag {
+
+## Function : Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
+## Returns  : "%command"
+## Arguments: $active_parameter_href, $fam_file_path, $program_name, $pedigree_validation_type
+##          : $active_parameter_href    => Active parameters for this analysis hash {REF}
+##          : $fam_file_path            => The family file path
+##          : $program_name             => The program to use the pedigree file
+##          : $pedigree_validation_type => The pedigree validation strictness level
+
+  my ($arg_href) = @_;
+
+  ## Default(s)
+  my $pedigree_validation_type;
+
+  ## Flatten argument(s)
+  my $active_parameter_href;
+  my $fam_file_path;
+  my $program_name;
+
+  my $tmpl = {
+      active_parameter_href => {
+          required    => 1,
+          defined     => 1,
+          default     => {},
+          strict_type => 1,
+          store       => \$active_parameter_href,
+      },
+      fam_file_path => {
+          required    => 1,
+          defined     => 1,
+          strict_type => 1,
+          store       => \$fam_file_path
+      },
+      program_name => {
+          required    => 1,
+          defined     => 1,
+          strict_type => 1,
+          store       => \$program_name,
+      },
+      pedigree_validation_type => {
+          default     => q{SILENT},
+          allow       => [ qw{ SILENT STRICT } ],
+          strict_type => 1,
+          store       => \$pedigree_validation_type
+      },
+  };
+
+  check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  my $parent_counter;
+  my $pq_parent_counter =
+q?perl -ne 'my $parent_counter=0; while (<>) { my @line = split(/\t/, $_); unless ($_=~/^#/) { if ( ($line[2] eq 0) || ($line[3] eq 0) ) { $parent_counter++} } } print $parent_counter; last;'?;
+  my $child_counter;
+  my $pq_child_counter =
+q?perl -ne 'my $child_counter=0; while (<>) { my @line = split(/\t/, $_); unless ($_=~/^#/) { if ( ($line[2] ne 0) || ($line[3] ne 0) ) { $child_counter++} } } print $child_counter; last;'?;
+  my %command;
+
+  $parent_counter =
+    `$pq_parent_counter $fam_file_path`;    #Count the number of parents
+  $child_counter =
+    `$pq_child_counter $fam_file_path`;     #Count the number of children
+
+  if ( $parent_counter > 0 ) {              #Parents present
+
+      $command{pedigree_validation_type} = $pedigree_validation_type;
+      $command{pedigree} = $fam_file_path;    #Pedigree files for samples
+  }
+  return %command;
+
+}
 
 sub create_fam_file {
 
@@ -134,7 +206,7 @@ sub create_fam_file {
     SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
         my $sample_line = ${$family_id_ref};
-        
+
         HEADER:
         foreach my $header (@fam_headers) {
 
