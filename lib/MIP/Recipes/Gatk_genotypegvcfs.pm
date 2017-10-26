@@ -242,7 +242,7 @@ sub analysis_gatk_genotypegvcfs {
         my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        my ($file_name) = program_prerequisites(
+        my ($file_name) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
