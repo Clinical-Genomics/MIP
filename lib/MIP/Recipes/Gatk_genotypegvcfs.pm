@@ -264,7 +264,7 @@ sub analysis_gatk_genotypegvcfs {
         foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
             ## Add merged infile name after merging all BAM files per sample_id
-            my $infile = $file_info_href->{$sample_id}{merge_infile};    #Alias
+            my $infile = $file_info_href->{$sample_id}{merged_infile};    #Alias
 
             ## Assign directories
             my $insample_directory =
