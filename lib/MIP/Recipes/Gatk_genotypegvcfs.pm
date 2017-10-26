@@ -186,7 +186,7 @@ sub analysis_gatk_genotypegvcfs {
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    say {$FILEHANDLE} "##Jobid_chain:$jobid_chain##";
+    say {$FILEHANDLE} "\n\n\n###Jobidchain is:$jobid_chain\n\n\n";
 
     #Used downstream
     $parameter_href->{$mip_program_name}{$family_id}{indirectory} =
