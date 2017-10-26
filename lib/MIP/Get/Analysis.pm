@@ -59,7 +59,7 @@ sub get_overall_analysis_type {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @analysis_types = (qw{ wes wgs rapid });
+    my @analysis_types = (qw{ wes wgs wts });
 
   ANALYSIS:
     foreach my $analysis_type (@analysis_types) {
