@@ -133,6 +133,11 @@ sub analysis_gatk_genotypegvcfs {
             strict_type => 1,
             store       => \$program_name,
         },
+        temp_directory => {
+            default     => $arg_href->{active_parameter_href}{temp_directory},
+            strict_type => 1,
+            store       => \$temp_directory,
+        },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
@@ -185,8 +190,6 @@ sub analysis_gatk_genotypegvcfs {
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
-
-    say {$FILEHANDLE} "\n\n\n###Jobidchain is:$jobid_chain\n\n\n";
 
     #Used downstream
     $parameter_href->{$mip_program_name}{$family_id}{indirectory} =
