@@ -80,6 +80,7 @@ use MIP::Recipes::Picardtools_genotypeconcordance
   qw{ analysis_picardtools_genotypeconcordance };
 use MIP::Recipes::Picardtools_mergesamfiles
   qw{ analysis_picardtools_mergesamfiles };
+use MIP::Recipes::Pipeline::Wts qw{ pipeline_wts };
 use MIP::Recipes::Rcoverageplots qw{ analysis_rcoverageplots };
 use MIP::Recipes::Sambamba_depth qw{ analysis_sambamba_depth };
 use MIP::Recipes::Split_fastq_file qw{ analysis_split_fastq_file };
@@ -732,7 +733,7 @@ foreach my $order_parameter_element (@order_parameters) {
             remove_pedigree_elements( { hash_ref => \%sample_info, } );
         }
     }
-    if ( $order_parameter_element eq 'analysis_type' ) {
+    if ( $order_parameter_element eq q{analysis_type} ) {
 
         ## Detect if all samples has the same sequencing type and return consensus if reached
         $parameter{dynamic_parameter}{consensus_analysis_type} =
@@ -890,7 +891,7 @@ check_sample_id_in_parameter(
     {
         active_parameter_href => \%active_parameter,
         sample_ids_ref        => \@{ $active_parameter{sample_ids} },
-        parameter_names_ref   => [qw(expected_coverage analysis_type)],
+        parameter_names_ref   => [qw{ expected_coverage analysis_type }],
     }
 );
 
@@ -899,7 +900,7 @@ check_sample_id_in_parameter_path(
     {
         active_parameter_href => \%active_parameter,
         sample_ids_ref        => \@{ $active_parameter{sample_ids} },
-        parameter_names_ref   => [qw(infile_dirs exome_target_bed)],
+        parameter_names_ref   => [qw{ infile_dirs exome_target_bed }],
     }
 );
 
@@ -1079,7 +1080,7 @@ if ( $active_parameter{config_file_analysis} ne 0 ) {
     $active_parameter{found_male},
     $active_parameter{found_female},
     $active_parameter{found_other},
- $active_parameter{found_other_count},
+    $active_parameter{found_other_count},
   )
   = detect_sample_id_gender(
     {
@@ -1326,6 +1327,34 @@ if ( $active_parameter{psplit_fastq_file} > 0 ) {
     # End here if this module is turned on
     exit;
 }
+
+### WTS
+if ( $parameter{dynamic_parameter}{consensus_analysis_type} eq q{wts} ) {
+
+    $log->info( q{Pipeline analysis type: }
+          . $parameter{dynamic_parameter}{consensus_analysis_type} );
+
+    ## Pipeline recipe for wts data
+    pipeline_wts(
+        {
+            parameter_href          => \%parameter,
+            active_parameter_href   => \%active_parameter,
+            sample_info_href        => \%sample_info,
+            file_info_href          => \%file_info,
+            indir_path_href         => \%indir_path,
+            infile_href             => \%infile,
+            infile_lane_prefix_href => \%infile_lane_prefix,
+            lane_href               => \%lane,
+            job_id_href             => \%job_id,
+            outaligner_dir          => $active_parameter{outaligner_dir},
+            log                     => $log,
+        }
+    );
+
+    exit;
+}
+
+### WES|WGS
 
 ## GZip of fastq files
 if (   ( $active_parameter{pgzip_fastq} > 0 )
@@ -1819,7 +1848,7 @@ if ( $active_parameter{prcovplots} > 0 ) {
 #Run CNVnator
 if ( $active_parameter{pcnvnator} > 0 ) {
 
-    $log->info( q{[CNVnator]} );
+    $log->info(q{[CNVnator]});
 
     my $program_name = lc q{cnvnator};
 
@@ -1829,8 +1858,10 @@ if ( $active_parameter{pcnvnator} > 0 ) {
         my $insample_directory = catdir( $active_parameter{outdata_dir},
             $sample_id, $active_parameter{outaligner_dir} );
 
-        my $outsample_directory = catdir( $active_parameter{outdata_dir},
-           $sample_id, $active_parameter{outaligner_dir}, $program_name);
+        my $outsample_directory = catdir(
+            $active_parameter{outdata_dir},    $sample_id,
+            $active_parameter{outaligner_dir}, $program_name
+        );
 
         analysis_cnvnator(
             {
@@ -2626,7 +2657,7 @@ sub build_usage {
     -ped/--pedigree_file Meta data on samples (defaults to "")
     -hgr/--human_genome_reference Fasta file for the human genome reference (defaults to "GRCh37_homo_sapiens_-d5-.fasta;1000G decoy version 5")
     -ald/--outaligner_dir Setting which aligner out directory was used for alignment in previous analysis (defaults to "{outdata_dir}{outaligner_dir}")
-    -at/--analysis_type Type of analysis to perform (sample_id=analysis_type, defaults to "wgs";Valid entries: "wgs", "wes", "rapid")
+    -at/--analysis_type Type of analysis to perform (sample_id=analysis_type, defaults to "wgs";Valid entries: "wgs", "wes", "wts")
     -pl/--platform Platform/technology used to produce the reads (defaults to "ILLUMINA")
     -ec/--expected_coverage Expected mean target coverage for analysis (sample_id=expected_coverage, defaults to "")
     -c/--config_file YAML config file for analysis parameters (defaults to "")
@@ -8577,7 +8608,6 @@ sub prepareforvariantannotationblock {
         }
     }
     if ($$reduce_io_ref) {
-
 
         return
           $xargs_file_counter
