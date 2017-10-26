@@ -213,7 +213,7 @@ sub analysis_gatk_genotypegvcfs {
         {
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
-            jobid_chain    => $jobid_chain,
+            jobid_chain    => $parameter_href->{$mip_program_name}{chain},
             file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
         }
     );
