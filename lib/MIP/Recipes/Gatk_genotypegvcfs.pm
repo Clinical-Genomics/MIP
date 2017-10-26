@@ -171,7 +171,7 @@ sub analysis_gatk_genotypegvcfs {
     my $mip_program_mode = $active_parameter_href->{$mip_program_name};
 
     ## Alias
-    my $jobid_chain = $parameter_href->{$mip_program_name}{chain};
+    my $jobid_chain = $parameter_href->{q{p} . $program_name}{chain};
     my $time        = $active_parameter_href->{module_time}{$mip_program_name};
     if ( $active_parameter_href->{gatk_genotypegvcfs_all_sites} == 1 ) {
 
@@ -213,7 +213,7 @@ sub analysis_gatk_genotypegvcfs {
         {
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
-            jobid_chain    => $parameter_href->{$mip_program_name}{chain},
+            jobid_chain    => $jobid_chain,
             file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
         }
     );
