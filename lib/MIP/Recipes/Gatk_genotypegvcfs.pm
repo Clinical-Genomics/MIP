@@ -154,6 +154,7 @@ sub analysis_gatk_genotypegvcfs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Language::Java qw{ java_core };
