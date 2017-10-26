@@ -343,7 +343,7 @@ sub analysis_gatk_genotypegvcfs {
                 logging_level => $active_parameter_href->{gatk_logging_level},
                 referencefile_path =>
                   $active_parameter_href->{human_genome_reference},
-                dbsnp =>
+                dbsnp_file_path =>
                   $active_parameter_href->{gatk_haplotypecaller_snp_known_set},
                 pedigree_validation_type => $commands{pedigree_validation_type},
                 pedigree                 => $commands{pedigree},
