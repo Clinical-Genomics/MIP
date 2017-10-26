@@ -379,7 +379,7 @@ sub analysis_gatk_genotypegvcfs {
                     job_id_href             => $job_id_href,
                     infile_lane_prefix_href => $infile_lane_prefix_href,
                     dependencies => q{sample_id_dependency_step_in_parallel},
-                    path         => $jobid_chain,
+                    path         => $job_id_chain,
                     sbatch_file_name      => $file_name,
                     sbatch_script_tracker => $sbatch_script_tracker
                 }
