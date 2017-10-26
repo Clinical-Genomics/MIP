@@ -48,65 +48,65 @@ sub pedigree_flag {
 ##          : $program_name             => The program to use the pedigree file
 ##          : $pedigree_validation_type => The pedigree validation strictness level
 
-  my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-  ## Default(s)
-  my $pedigree_validation_type;
+    ## Default(s)
+    my $pedigree_validation_type;
 
-  ## Flatten argument(s)
-  my $active_parameter_href;
-  my $fam_file_path;
-  my $program_name;
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $fam_file_path;
+    my $program_name;
 
-  my $tmpl = {
-      active_parameter_href => {
-          required    => 1,
-          defined     => 1,
-          default     => {},
-          strict_type => 1,
-          store       => \$active_parameter_href,
-      },
-      fam_file_path => {
-          required    => 1,
-          defined     => 1,
-          strict_type => 1,
-          store       => \$fam_file_path
-      },
-      program_name => {
-          required    => 1,
-          defined     => 1,
-          strict_type => 1,
-          store       => \$program_name,
-      },
-      pedigree_validation_type => {
-          default     => q{SILENT},
-          allow       => [ qw{ SILENT STRICT } ],
-          strict_type => 1,
-          store       => \$pedigree_validation_type
-      },
-  };
+    my $tmpl = {
+        active_parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$active_parameter_href,
+        },
+        fam_file_path => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$fam_file_path
+        },
+        program_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$program_name,
+        },
+        pedigree_validation_type => {
+            default     => q{SILENT},
+            allow       => [qw{ SILENT STRICT }],
+            strict_type => 1,
+            store       => \$pedigree_validation_type
+        },
+    };
 
-  check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-  my $parent_counter;
-  my $pq_parent_counter =
+    my $parent_counter;
+    my $pq_parent_counter =
 q?perl -ne 'my $parent_counter=0; while (<>) { my @line = split(/\t/, $_); unless ($_=~/^#/) { if ( ($line[2] eq 0) || ($line[3] eq 0) ) { $parent_counter++} } } print $parent_counter; last;'?;
-  my $child_counter;
-  my $pq_child_counter =
+    my $child_counter;
+    my $pq_child_counter =
 q?perl -ne 'my $child_counter=0; while (<>) { my @line = split(/\t/, $_); unless ($_=~/^#/) { if ( ($line[2] ne 0) || ($line[3] ne 0) ) { $child_counter++} } } print $child_counter; last;'?;
-  my %command;
+    my %command;
 
-  $parent_counter =
-    `$pq_parent_counter $fam_file_path`;    #Count the number of parents
-  $child_counter =
-    `$pq_child_counter $fam_file_path`;     #Count the number of children
+    $parent_counter =
+      `$pq_parent_counter $fam_file_path`;    #Count the number of parents
+    $child_counter =
+      `$pq_child_counter $fam_file_path`;     #Count the number of children
 
-  if ( $parent_counter > 0 ) {              #Parents present
+    if ( $parent_counter > 0 ) {              #Parents present
 
-      $command{pedigree_validation_type} = $pedigree_validation_type;
-      $command{pedigree} = $fam_file_path;    #Pedigree files for samples
-  }
-  return %command;
+        $command{pedigree_validation_type} = $pedigree_validation_type;
+        $command{pedigree} = $fam_file_path;    #Pedigree files for samples
+    }
+    return %command;
 
 }
 
@@ -203,11 +203,11 @@ sub create_fam_file {
         push @pedigree_lines, join $TAB, @fam_headers;
     }
 
-    SAMPLE_ID:
+  SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
         my $sample_line = ${$family_id_ref};
 
-        HEADER:
+      HEADER:
         foreach my $header (@fam_headers) {
 
             if (
@@ -232,8 +232,9 @@ sub create_fam_file {
         open $FILEHANDLE_SYS, '>', $fam_file_path
           or $log->logdie(qq{Can't open $fam_file_path: $ERRNO $NEWLINE});
 
-        LINE:
-        # Adds the information from the samples in pedigree_lines, separated by \n
+      LINE:
+
+      # Adds the information from the samples in pedigree_lines, separated by \n
         foreach my $line (@pedigree_lines) {
             say {$FILEHANDLE_SYS} $line;
         }
