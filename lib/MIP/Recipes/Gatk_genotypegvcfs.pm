@@ -167,8 +167,6 @@ sub analysis_gatk_genotypegvcfs {
 
     ## Alias
     my $jobid_chain = $parameter_href->{$mip_program_name}{chain};
-    say {$FILEHANDLE} "##Jobid_chain:$jobid_chain##";
-
     my $time        = $active_parameter_href->{module_time}{$mip_program_name};
     if ( $active_parameter_href->{gatk_genotypegvcfs_all_sites} == 1 ) {
 
@@ -187,6 +185,8 @@ sub analysis_gatk_genotypegvcfs {
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
+
+    say {$FILEHANDLE} "##Jobid_chain:$jobid_chain##";
 
     #Used downstream
     $parameter_href->{$mip_program_name}{$family_id}{indirectory} =
