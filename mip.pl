@@ -115,6 +115,8 @@ BEGIN {
 ## Constants
 Readonly my $DOT       => q{.};
 Readonly my $EMPTY_STR => q{};
+Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE => q{ };
 Readonly my $TAB       => qq{\t};
 
 #### Script parameters
@@ -259,12 +261,13 @@ GetOptions(
         exit;
     },
     q{l|log_file:s} => \$parameter{log_file}{value},
-    q{h|help}       => sub { say STDOUT $USAGE; exit; },    #Display help text
+    q{h|help}       => sub { say STDOUT $USAGE; exit; },
     q{v|version}    => sub {
-        say STDOUT "\n" . basename($PROGRAM_NAME) . q{ } . $VERSION, "\n";
+        say STDOUT $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
         exit;
     },
-    ####Bash
+
+    #### Bash
     q{bse|bash_set_errexit:s}   => \$parameter{bash_set_errexit}{value},
     q{bsu|bash_set_nounset:s}   => \$parameter{bash_set_nounset}{value},
     q{bsp|bash_set_pipefail:s}  => \$parameter{bash_set_pipefail}{value},
@@ -311,8 +314,7 @@ GetOptions(
     q{psdt|psambamba_depth=n}       => \$parameter{psambamba_depth}{value},
     q{sdtmod|sambamba_depth_mode:s} => \$parameter{sambamba_depth_mode}{value},
     q{sdtcut|sambamba_depth_cutoffs:s} =>
-      \@{ $parameter{sambamba_depth_cutoffs}{value} }
-    ,    # Cutoff used for completeness
+      \@{ $parameter{sambamba_depth_cutoffs}{value} },
     q{sdtbed|sambamba_depth_bed:s} => \$parameter{sambamba_depth_bed}{value},
     q{sdtbaq|sambamba_depth_base_quality=n} =>
       \$parameter{sambamba_depth_base_quality}{value},
@@ -542,8 +544,7 @@ GetOptions(
     q{ravspi|genmod_annotate_spidex_file:s} =>
       \$parameter{genmod_annotate_spidex_file}{value},
     q{ravwg|genmod_models_whole_gene=n} =>
-      \$parameter{genmod_models_whole_gene}{value}
-    ,    #Allow compound pairs in intronic regions
+      \$parameter{genmod_models_whole_gene}{value},
     q{ravrpf|genmod_models_reduced_penetrance_file:s} =>
       \$parameter{genmod_models_reduced_penetrance_file}{value},
     q{ravrm|rank_model_file:s} => \$parameter{rank_model_file}{value},
