@@ -161,8 +161,10 @@ sub analysis_bamcalibrationblock {
 
     ### Always run Picardtools mergesamfiles even for single samples to rename them correctly for standardised downstream processing.
     ## Will also split alignment per contig and copy to temporary directory for '-rio 1' block to enable selective removal of block submodules.
-    $log->info( $TAB . q{[Picardtools mergesamfiles]} );
+    if ( $active_parameter_href->{ppicardtools_mergesamfiles} > 0 ) {
 
+        $log->info( $TAB . q{[Picardtools mergesamfiles]} );
+    }
     ## Markduplicates
     if ( $active_parameter_href->{pmarkduplicates} > 0 ) {
 
@@ -208,23 +210,26 @@ sub analysis_bamcalibrationblock {
 
         ## Always run Picardtools mergesamfiles even for single samples to rename them correctly for standardised downstream processing.
         ## Will also split alignment per contig and copy to temporary directory for -rio 1 block to enable selective removal of block submodules.
-        ($xargs_file_counter) = analysis_picardtools_mergesamfiles_rio(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                lane_href               => $lane_href,
-                job_id_href             => $job_id_href,
-                insample_directory      => $insample_directory,
-                sample_id               => $sample_id,
-                program_name            => q{picardtools_mergesamfiles},
-                file_path               => $file_path,
-                program_info_path       => $program_info_path,
-                FILEHANDLE              => $FILEHANDLE,
-            }
-        );
+        if ( $active_parameter_href->{ppicardtools_mergesamfiles} > 0 ) {
+
+            ($xargs_file_counter) = analysis_picardtools_mergesamfiles_rio(
+                {
+                    parameter_href          => $parameter_href,
+                    active_parameter_href   => $active_parameter_href,
+                    sample_info_href        => $sample_info_href,
+                    file_info_href          => $file_info_href,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    lane_href               => $lane_href,
+                    job_id_href             => $job_id_href,
+                    insample_directory      => $insample_directory,
+                    sample_id               => $sample_id,
+                    program_name            => q{picardtools_mergesamfiles},
+                    file_path               => $file_path,
+                    program_info_path       => $program_info_path,
+                    FILEHANDLE              => $FILEHANDLE,
+                }
+            );
+        }
 
         # Markduplicates
         if ( $active_parameter_href->{pmarkduplicates} > 0 ) {
