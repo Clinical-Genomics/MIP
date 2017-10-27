@@ -51,10 +51,11 @@ use MIP::Check::Reference
 use MIP::Delete::List qw{ delete_non_wes_contig delete_male_contig };
 use MIP::File::Format::Pedigree qw{ create_fam_file };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
-use MIP::Get::Analysis qw{ get_overall_analysis_type };
+use MIP::Get::Analysis qw{ get_overall_analysis_type print_program };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
 use MIP::Set::Contigs qw{ set_contigs };
+use MIP::Set::Parameter qw{ set_dynamic_parameter };
 use MIP::Update::Contigs qw{ update_contigs_for_run };
 use MIP::Update::Programs
   qw{ update_program_mode_with_dry_run_all update_program_mode update_prioritize_flag };
@@ -935,19 +936,23 @@ check_snpsift_keys(
 );
 
 ## Adds dynamic aggregate information from definitions to parameter hash
-add_to_parameter(
+set_dynamic_parameter(
     {
         parameter_href => \%parameter,
         aggregates_ref => [
-            'type:program',    #Collects all programs that MIP can handle
-            'program_type:variant_callers',    #Collects all variant_callers
-            'program_type:structural_variant_callers'
-            ,    #Collects all structural variant_callers
-            'program_type:aligners',
-            'reference:reference_dir'
-            , #Collects all references in that are supposed to be in referenceDirectory
-            'remove_redundant_file:yes'
-        ],    #Collect all programs outfiles that are redundant
+            ## Collects all programs that MIP can handle
+            q{type:program},
+            ## Collects all variant_callers
+            q{program_type:variant_callers},
+            ## Collects all structural variant_callers
+            q{program_type:structural_variant_callers},
+            ## Collect all aligners
+            q{program_type:aligners},
+            ## Collects all references in that are supposed to be in reference directory
+            q{reference:reference_dir},
+            ## Collect all programs outfiles that are redundant
+            q{remove_redundant_file:yes},
+        ],
     }
 );
 
@@ -21331,11 +21336,11 @@ sub update_to_absolute_path {
     use MIP::Set::File qw(set_absolute_path);
 
     ## Adds dynamic aggregate information from definitions to parameter hash
-    add_to_parameter(
+    # Collect all path that should be made absolute
+    set_dynamic_parameter(
         {
             parameter_href => \%parameter,
-            aggregates_ref => ["update_path:absolute_path"]
-            ,    #Collect all path that should be made absolute
+            aggregates_ref => [q{update_path:absolute_path}],
         }
     );
 
@@ -22389,65 +22394,6 @@ sub check_string {
     }
 }
 
-sub add_to_parameter {
-
-##add_to_parameter
-
-##Function : Adds dynamic aggregate information from definitions to parameter hash
-##Returns  : ""
-##Arguments: $parameter_href, $aggregates_ref
-##         : $parameter_href => Parameter hash {REF}
-##         : $aggregates_ref => The data to aggregate and add to parameter hash{REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $aggregates_ref;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        aggregates_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$aggregates_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    foreach my $key ( keys %$parameter_href ) {
-
-        foreach my $aggregate_element (@$aggregates_ref) {
-
-            my @tmps            = split( ":", $aggregate_element );
-            my $second_key      = $tmps[0];
-            my $string_to_match = $tmps[1];
-
-            if (   ( defined( $parameter_href->{$key}{$second_key} ) )
-                && ( $parameter_href->{$key}{$second_key} eq $string_to_match )
-              )
-            {
-
-                push(
-                    @{
-                        $parameter_href->{dynamic_parameter}{$string_to_match}
-                    },
-                    $key
-                );
-            }
-        }
-    }
-}
-
 sub check_prioritize_variant_callers {
 
 ## Function : Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller.
@@ -22801,80 +22747,6 @@ q?perl -ne 'if ($_!~/@/) {chomp($_);my $seq_length = length($_);print $seq_lengt
     my $ret =
       `$read_file_command $file | $seq_length_regexp;`; #Collect sequence length
     return $ret;
-}
-
-sub print_program {
-
-##print_program
-
-##Function : Print all supported programs in '-ppm' mode
-##Returns  : ""
-##Arguments: $parameter_href, $print_program_mode
-##         : $parameter_href     => Parameter hash {REF}
-##         : $print_program_mode => Mode to run modules in
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $print_program_mode;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        print_program_mode => {
-            default => $arg_href->{print_program_mode} //= 2,
-            allow       => [ undef, 0, 1, 2 ],
-            strict_type => 1,
-            store       => \$print_program_mode
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    add_to_parameter(
-        {
-            parameter_href => $parameter_href,
-            aggregates_ref => ["type:program"],
-        }
-    );
-
-    ## Adds the order of first level keys from yaml file to array
-    my @order_parameters = order_parameter_names(
-        {
-            file_path =>
-              catfile( $Bin, qw{ definitions define_parameters.yaml } ),
-        }
-    );
-
-    foreach my $order_parameter_element (@order_parameters) {
-
-        if (
-            (
-                any { $_ eq $order_parameter_element }
-                @{ $parameter_href->{dynamic_parameter}{program} }
-            )
-          )
-        {    #Only process programs
-
-            unless ( $order_parameter_element =~
-                /pbamcalibrationblock|pvariantannotationblock/ )
-            {
-
-                print STDOUT "--"
-                  . $order_parameter_element . " "
-                  . $print_program_mode . " ";
-            }
-        }
-    }
-    print STDOUT "\n";
 }
 
 sub check_program_mode {
