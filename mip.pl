@@ -2117,10 +2117,9 @@ if ( $active_parameter{pgatk_haplotypecaller} > 0 ) {  #Run GATK haplotypecaller
     }
 }
 
+#Run GATK genotypegvcfs. Done per family
 if ( $active_parameter{pgatk_genotypegvcfs} > 0 )
 {
-    #Run GATK genotypegvcfs. Done per family
-
     $log->info( q{[GATK genotypegvcfs]} );
     my $program_name = lc q{gatk_genotypegvcfs};
 

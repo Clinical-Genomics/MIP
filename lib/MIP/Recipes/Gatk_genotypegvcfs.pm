@@ -33,7 +33,6 @@ Readonly my $NEWLINE     => qq{\n};
 Readonly my $UNDERSCORE  => q{_};
 Readonly my $DOT         => q{.};
 Readonly my $ASTERISK    => q{*};
-Readonly my $LONGER_TIME => 50;
 
 sub analysis_gatk_genotypegvcfs {
 
@@ -49,7 +48,7 @@ sub analysis_gatk_genotypegvcfs {
 ##          : $temp_directory           => Temporary directory
 ##          : $outfamily_directory      => Outfamily directory
 ##          : $outfamily_file_directory => Outfamily file directory
-##          : $outaligner_dir           => Outaligner_dir used in the analysis {REF}
+##          : $outaligner_dir           => Outaligner_dir used in the analysis
 ##          : $program_name             => Program name
 ##          : $call_type                => Call type
 
@@ -174,15 +173,18 @@ sub analysis_gatk_genotypegvcfs {
     ## Alias
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
     my $time        = $active_parameter_href->{module_time}{$mip_program_name};
+    Readonly my $INCLUDE_NONVARIANT_SITES_TIME => 50;
+
+    # If all sites should be included
     if ( $active_parameter_href->{gatk_genotypegvcfs_all_sites} == 1 ) {
 
         #Including all sites requires longer processing time
-        $time = $LONGER_TIME;
+        $time = $INCLUDE_NONVARIANT_SITES_TIME;
     }
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
 
-#gatk genotype is most safely processed in single thread mode, , but we need some java heap allocation
+    ## gatk genotype is most safely processed in single thread mode, , but we need some java heap allocation
     my $core_number =
       $active_parameter_href->{module_core_number}{$mip_program_name};
 
@@ -192,11 +194,11 @@ sub analysis_gatk_genotypegvcfs {
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    #Used downstream
+    # Used downstream
     $parameter_href->{$mip_program_name}{$family_id}{indirectory} =
       $outfamily_directory;
 
-    ## Files
+    ## Tags
     my $outfile_tag =
       $file_info_href->{$family_id}{$mip_program_name}{file_tag};
 
@@ -233,7 +235,7 @@ sub analysis_gatk_genotypegvcfs {
         }
     );
 
-    ## Split per contig
+    CONTIG:
     foreach my $contig ( @{ $file_info_href->{contigs} } ) {
 
         ## Assign file_tags
@@ -242,28 +244,30 @@ sub analysis_gatk_genotypegvcfs {
         my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        my ($file_name) = setup_script(
+        my ($file_path) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
                 job_id_href           => $job_id_href,
                 FILEHANDLE            => $FILEHANDLE,
                 directory_id          => $family_id,
                 program_name          => $program_name,
-                program_directory => catfile( lc($outaligner_dir), q{gatk} ),
+                program_directory => catfile( $outaligner_dir, q{gatk} ),
                 call_type         => $call_type,
                 core_number       => $core_number,
                 process_time      => $time,
                 temp_directory    => $temp_directory,
-                sleep             => 1
-                , #Let process sleep randomly for 0-60 seconds to avoid race condition
+                sleep             => 1,
             }
         );
 
         ## Collect infiles for all sample_ids to enable migration to temporary directory
         my @file_paths;
+
+
+        ## Add merged infile name after merging all BAM files per sample_id
+        SAMPLE:
         foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
-            ## Add merged infile name after merging all BAM files per sample_id
             my $infile = $file_info_href->{$sample_id}{merged_infile};    #Alias
 
             ## Assign directories
@@ -312,18 +316,15 @@ sub analysis_gatk_genotypegvcfs {
             }
         );
         ## Files for genotypegvcfs
-        if (   ( $consensus_analysis_type eq q{wes} )
-            || ( $consensus_analysis_type eq q{rapid} ) )
+        if ( $consensus_analysis_type eq q{wes} )
         {
 
             push @file_paths,
               $active_parameter_href->{gatk_genotypegvcfs_ref_gvcf};
         }
 
-        ## Writes java core commands to filehandle.
-        java_core(
+        gatk_genotypegvcfs(
             {
-                FILEHANDLE        => $FILEHANDLE,
                 memory_allocation => q{Xmx24g},
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
@@ -332,11 +333,6 @@ sub analysis_gatk_genotypegvcfs {
                     $active_parameter_href->{gatk_path},
                     q{GenomeAnalysisTK.jar}
                 ),
-            }
-        );
-
-        gatk_genotypegvcfs(
-            {
                 intervals_ref    => [$contig],
                 infile_paths_ref => \@file_paths,
                 outfile_path     => $outfile_path_prefix . $outfile_suffix,
@@ -369,25 +365,23 @@ sub analysis_gatk_genotypegvcfs {
 
         close $FILEHANDLE;
 
-        if (   ( $mip_program_mode == 1 )
-            && ( !$active_parameter_href->{dry_run_all} ) )
+        if ( $mip_program_mode == 1 )
         {
 
-            submit_job(
+            slurm_submit_job_sample_id_dependency_step_in_parallel_to_family(
                 {
-                    active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
                     job_id_href             => $job_id_href,
                     infile_lane_prefix_href => $infile_lane_prefix_href,
-                    dependencies => q{sample_id_dependency_step_in_parallel},
-                    path         => $job_id_chain,
-                    sbatch_file_name      => $file_name,
-                    sbatch_script_tracker => $sbatch_script_tracker
+                    sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
+                    family_id               => $$family_id,
+                    path                    => $job_id_chain,
+                    log                     => $log,
+                    sbatch_file_name        => $file_path,
+                    sbatch_script_tracker => $sbatch_script_tracker,
                 }
             );
         }
         $sbatch_script_tracker++;    #Tracks nr of sbatch scripts
-
     }
 
     return;

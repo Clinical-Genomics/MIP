@@ -12,6 +12,7 @@ use Params::Check qw{ check allow last_error};
 $Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 use Readonly;
 use English qw{ -no_match_vars };
+use IPC::Run qw{ run };
 
 ## MIPs lib/
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
@@ -34,6 +35,7 @@ Readonly my $TAB          => qq{\t};
 Readonly my $NEWLINE      => qq{\n};
 Readonly my $QUOTE        => q{'};
 Readonly my $DOUBLE_QUOTE => q{"};
+Readonly my $UNDERSCORE   => q{_};
 
 # Ignore the warning from putting '#' in qw{}
 no warnings qw{ qw };
@@ -42,8 +44,7 @@ sub pedigree_flag {
 
 ## Function : Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
 ## Returns  : "%command"
-## Arguments: $active_parameter_href, $fam_file_path, $program_name, $pedigree_validation_type
-##          : $active_parameter_href    => Active parameters for this analysis hash {REF}
+## Arguments: $active_parameter_href    => Active parameters for this analysis hash {REF}
 ##          : $fam_file_path            => The family file path
 ##          : $program_name             => The program to use the pedigree file
 ##          : $pedigree_validation_type => The pedigree validation strictness level
@@ -89,22 +90,32 @@ sub pedigree_flag {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my $parent_counter;
-    my $pq_parent_counter =
-q?perl -ne 'my $parent_counter=0; while (<>) { my @line = split(/\t/, $_); unless ($_=~/^#/) { if ( ($line[2] eq 0) || ($line[3] eq 0) ) { $parent_counter++} } } print $parent_counter; last;'?;
+    my $pq_parent_counter = _compose_parent_child_counter_regexp {
+
+        family_member => q{parent},
+    };
+
     my $child_counter;
-    my $pq_child_counter =
-q?perl -ne 'my $child_counter=0; while (<>) { my @line = split(/\t/, $_); unless ($_=~/^#/) { if ( ($line[2] ne 0) || ($line[3] ne 0) ) { $child_counter++} } } print $child_counter; last;'?;
+    my $pq_child_counter = _compose_parent_child_counter_regexp {
+
+        family_member => q{child},
+    };
+
     my %command;
 
-    $parent_counter =
-      `$pq_parent_counter $fam_file_path`;    #Count the number of parents
-    $child_counter =
-      `$pq_child_counter $fam_file_path`;     #Count the number of children
+    # Count the number of parents
+    $parent_counter = run ($pq_parent_counter, $fam_file_path);
 
-    if ( $parent_counter > 0 ) {              #Parents present
+    # Count the number of children
+    $child_counter = run ($pq_child_counter, $fam_file_path);
+
+    # Parents are present
+    if ( $parent_counter > 0 ) {
 
         $command{pedigree_validation_type} = $pedigree_validation_type;
-        $command{pedigree} = $fam_file_path;    #Pedigree files for samples
+
+        #Pedigree files for samples
+        $command{pedigree} = $fam_file_path;
     }
     return %command;
 
@@ -112,19 +123,16 @@ q?perl -ne 'my $child_counter=0; while (<>) { my @line = split(/\t/, $_); unless
 
 sub create_fam_file {
 
-##create_fam_file
-
-##Function : Create .fam file to be used in variant calling analyses. Also checks if file already exists when using execution_mode=sbatch.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, sample_info_href, $execution_mode, $fam_file_path, $include_header, $FILEHANDLE, $family_id_ref
-##         : $parameter_href        => Hash with paremters from yaml file {REF}
-##         : $active_parameter_href => The ac:tive parameters for this analysis hash {REF}
-##         : $sample_info_href      => Info on samples and family hash {REF}
-##         : $execution_mode        => Either system (direct) or via sbatch
-##         : $fam_file_path         => The family file path
-##         : $include_header        => Wether to include header ("1") or not ("0")
-##         : $FILEHANDLE            => Filehandle to write to {Optional unless execution_mode=sbatch}
-##         : $family_id_ref         => The family_id {REF}
+## Function : Create .fam file to be used in variant calling analyses. Also checks if file already exists when using execution_mode=sbatch.
+## Returns  :
+## Arguments: $parameter_href        => Hash with paremters from yaml file {REF}
+##          : $active_parameter_href => The ac:tive parameters for this analysis hash {REF}
+##          : $sample_info_href      => Info on samples and family hash {REF}
+##          : $execution_mode        => Either system (direct) or via sbatch
+##          : $fam_file_path         => The family file path
+##          : $include_header        => Wether to include header ("1") or not ("0")
+##          : $FILEHANDLE            => Filehandle to write to {Optional unless execution_mode=sbatch}
+##          : $family_id_ref         => The family_id {REF}
 
     my ($arg_href) = @_;
 
@@ -227,10 +235,11 @@ sub create_fam_file {
         push @pedigree_lines, $sample_line;
     }
 
-    if ( $execution_mode eq q{system} ) {    #Execute directly
-        my $FILEHANDLE_SYS = IO::Handle->new();    #Create anonymous filehandle
-        open $FILEHANDLE_SYS, '>', $fam_file_path
-          or $log->logdie(qq{Can't open $fam_file_path: $ERRNO $NEWLINE});
+    if ( $execution_mode eq q{system} ) {    # Execute directly
+                                             # Create anonymous filehandle
+        my $FILEHANDLE_SYS = IO::Handle->new();
+        open $FILEHANDLE_SYS, q{>}, $fam_file_path
+          or $log->logdie(qq{Can't open $fam_file_path: $ERRNO });
 
       LINE:
 
@@ -276,6 +285,44 @@ q{Create fam file[subroutine]:Using 'execution_mode=sbatch' requires a }
     $sample_info_href->{pedigree_minimal} = $fam_file_path;
 
     return;
+}
+
+sub _compose_parent_child_counter_regexp {
+
+## Function : Create regexp to count the number of parents / children
+##          : $family_member => parent or child
+
+    my ($arg_href) = @_;
+
+    ## Faltten argument
+    my $family_member;
+
+    my $tmpl = {
+        family_member => {
+            required => 1,
+            defined  => 1,
+            store    => \$family_member,
+        },
+    };
+
+    ## Execute perl
+    my $regexp = q?perl -ne '?;
+
+    ## Add parent or child, according to which one needs to be counted
+    $regexp .= q?my $? . $family_member . $UNDERSCORE . q?counter=0; ?;
+
+    ## Split line around tab if it's not a comment
+    $regexp .=
+q?while (<>) { my @line = split(/\t/, $_); unless ($_=~/^#/) { if ( ($line[2] eq 0) || ($line[3] eq 0) ) ?;
+
+    ## Increment the counter
+    $regexp .= q?{ $?
+      . $family_member
+      . q?++} } } print $?
+      . $family_member
+      . q?; last;'?;
+
+    return $regexp;
 }
 
 1;
