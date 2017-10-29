@@ -19,7 +19,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ initiate_logger create_log4perl_congfig retrieve_log };
@@ -134,9 +134,14 @@ $NEWLINE log4perl.appender.LogFile = Log::Log4perl::Appender::File
 $NEWLINE log4perl.appender.LogFile.filename = $file_path
 $NEWLINE log4perl.appender.LogFile.layout=PatternLayout
 $NEWLINE log4perl.appender.LogFile.layout.ConversionPattern = [%p] %d %c - %m%n
-$NEWLINE log4perl.appender.ScreenApp = Log::Log4perl::Appender::Screen
+$NEWLINE log4perl.appender.ScreenApp = Log::Log4perl::Appender::ScreenColoredLevels
 $NEWLINE log4perl.appender.ScreenApp.layout = PatternLayout
 $NEWLINE log4perl.appender.ScreenApp.layout.ConversionPattern = [%p] %d %c - %m%n
+$NEWLINE log4perl.appender.ScreenApp.color.DEBUG=
+$NEWLINE log4perl.appender.ScreenApp.color.INFO=
+$NEWLINE log4perl.appender.ScreenApp.color.WARN=yellow
+$NEWLINE log4perl.appender.ScreenApp.color.ERROR=red
+$NEWLINE log4perl.appender.ScreenApp.color.FATAL=red
 EOF
     return $config;
 }
