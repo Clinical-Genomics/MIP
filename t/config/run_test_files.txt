@@ -132,7 +132,7 @@ samtools_mpileup.t
 samtools_stats.t
 samtools_view.t
 set_file_suffix.t
-set_file_suffix.t
+set_dynamic_parameter.t
 shell_build_shebang.t
 shell_create_housekeeping_function.t
 shell_create_error_trap_function.t
