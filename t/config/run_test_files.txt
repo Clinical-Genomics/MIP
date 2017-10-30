@@ -27,6 +27,7 @@ conda_create.t
 conda_install.t
 conda_source_activate.t
 conda_source_deactivate.t
+conda_uninstall.t
 conda_update.t
 contigs_set_contigs.t
 create_fam_file.t
