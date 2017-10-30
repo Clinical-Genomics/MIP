@@ -38,8 +38,8 @@ sub bzip2 {
 ##          : $outfile_path           => Path to output file
 ##          : $stdout                 => Write on standard output
 ##          : $decompress             => Decompress bzip2 file
-##          : $FILEHANDLE             => Filehandle to write to (scalar undefined)
-##          : $stderrfile_path        => Stderrfile path (scalar )
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $force                  => Overwrite of output files
 ##          : $quiet                  => Suppress all warnings
@@ -136,7 +136,7 @@ sub bzip2 {
         push @commands, q{--decompress};
     }
 
-    #Write to stdout stream
+    ## Write to stdout stream
     if ($stdout) {
         push @commands, q{--stdout};
     }

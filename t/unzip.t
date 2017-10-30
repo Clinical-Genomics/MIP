@@ -13,7 +13,7 @@ use Params::Check qw{ check allow last_error };
 
 use FindBin qw{ $Bin };
 use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use Getopt::Long;
 use Test::More;
 use Readonly;
@@ -121,23 +121,23 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     infile_path => {
-        input           => q{test_file},
-        expected_output => q{test_file},
+        input           => catfile( qw{ path to file } ),
+        expected_output => catfile( qw{ path to file } ),
     },
 );
 
 my %specific_argument = (
     outdir_path => {
         input           => catdir(qw{ a test path }),
-        expected_output => q{-d a/test/path},
+        expected_output => q{-d} . $SPACE . catdir( qw{ a test path } ),
     },
     stdout => {
         input           => 1,
         expected_output => q{-p},
     },
     infile_path => {
-        input           => q{test_file},
-        expected_output => q{test_file},
+        input           => catfile( qw{ path to file } ),
+        expected_output => catfile( qw{ path to file } ),
     },
     FILEHANDLE => {
         input           => undef,

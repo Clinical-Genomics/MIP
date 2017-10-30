@@ -121,8 +121,8 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     infile_path => {
-        input           => q{test_file},
-        expected_output => q{test_file},
+        input           => catfile( qw{ path to file } ),
+        expected_output => catfile( qw{ path to file } ),
     },
 );
 
@@ -140,8 +140,8 @@ my %specific_argument = (
         expected_output => q{--decompress},
     },
     infile_path => {
-        input           => q{test_file},
-        expected_output => q{test_file},
+        input           => catfile( qw{ path to file } ),
+        expected_output => catfile( qw{ path to file } ),
     },
     FILEHANDLE => {
         input           => undef,
