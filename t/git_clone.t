@@ -25,7 +25,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.0;
+our $VERSION = 1.0.1;
 
 ## Constants
 Readonly my $SPACE   => q{ };
@@ -138,6 +138,18 @@ my %specific_argument = (
     FILEHANDLE => {
         input           => undef,
         expected_output => $function_base_command,
+    },
+    outdir_path => {
+        input           => catdir(qw{ a test path }),
+        expected_output => q{a/test/path},
+    },
+    verbose => {
+        input           => 1,
+        expected_output => q{--verbose},
+    },
+    quiet => {
+        input           => 1,
+        expected_output => q{--quiet},
     },
 );
 

@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ git_clone git_checkout};
@@ -35,37 +35,69 @@ Readonly my $SPACE => q{ };
 
 sub git_clone {
 
-## git_clone
-
 ## Function : Perl wrapper for git clone. Based on version 2.13.3.
 ## Returns  : @commands
-
-## Arguments: $url, $stdoutfile_path, $stderrfile_path, stderrfile_path_append, $FILEHANDLE
-##          : $url                    => Url to use for clone
+## Arguments: $url                    => Url to use for clone
+##          : $outdir_path            => Path to output directory, must be empty
 ##          : $stdoutfile_path        => Stdoutfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $FILEHANDLE             => Filehandle to write to
+##          : $verbose                => Verbose output
+##          : $quiet                  => Less chatty output
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $url;
+    my $outdir_path;
     my $stdoutfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $FILEHANDLE;
 
     ## Default(s)
+    my $verbose;
+    my $quiet;
 
     my $tmpl = {
-        url =>
-          { required => 1, defined => 1, strict_type => 1, store => \$url },
-        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        FILEHANDLE => { store => \$FILEHANDLE },
+        url => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$url
+        },
+        outdir_path => {
+            strict_type => 1,
+            store       => \$outdir_path,
+        },
+        stdoutfile_path => {
+            strict_type => 1,
+            store       => \$stdoutfile_path
+        },
+        stderrfile_path => {
+            strict_type => 1,
+            store       => \$stderrfile_path
+        },
+        stderrfile_path_append => {
+            strict_type => 1,
+            store       => \$stderrfile_path_append
+        },
+        FILEHANDLE => {
+            store => \$FILEHANDLE
+        },
+        verbose => {
+            default     => 0,
+            allow       => [ undef, 0, 1 ],
+            strict_type => 1,
+            store       => \$verbose,
+        },
+        quiet => {
+            default     => 0,
+            allow       => [ undef, 0, 1 ],
+            strict_type => 1,
+            store       => \$quiet,
+        },
 
     };
 
@@ -74,7 +106,19 @@ sub git_clone {
     # Stores commands depending on input parameters
     my @commands = qw{ git clone };
 
+    if ($verbose) {
+        push @commands, q{--verbose},;
+    }
+
+    if ($quiet) {
+        push @commands, q{--quiet},;
+    }
+
     push @commands, $url;
+
+    if ($outdir_path) {
+        push @commands, $outdir_path;
+    }
 
     push @commands,
       unix_standard_streams(
@@ -98,13 +142,9 @@ sub git_clone {
 
 sub git_checkout {
 
-## git_checkout
-
 ## Function : Perl wrapper for git checkout. Based on version 2.13.3.
 ## Returns  : @commands
-
-## Arguments: $branch, $stdoutfile_path, $stderrfile_path, stderrfile_path_append, $FILEHANDLE
-##          : $branch                 => Branch to checkout
+## Arguments: $branch                 => Branch to checkout
 ##          : $stdoutfile_path        => Stdoutfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
