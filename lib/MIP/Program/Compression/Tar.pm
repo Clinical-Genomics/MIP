@@ -36,7 +36,7 @@ sub tar {
 
 ##Arguments : $extract                => Extract files from an archive
 ##          : $filter_gzip            => Filter the archive through gzip
-##          : $file_path              => Use archive file or device ARCHIVE
+##          : $file                   => Use archive file or device ARCHIVE
 ##          : $outdir_path            => Extract to other than current directory
 ##          : $stdoutfile_path        => Stdoutfile path
 ##          : $stderrfile_path        => Stderrfile path
@@ -48,7 +48,7 @@ sub tar {
     ## Flatten argument(s)
     my $extract;
     my $filter_gzip;
-    my $file_path;
+    my $file;
     my $outdirectory_path;
     my $stdoutfile_path;
     my $stderrfile_path;
@@ -66,9 +66,9 @@ sub tar {
             strict_type => 1,
             store       => \$filter_gzip
         },
-        file_path => {
+        file => {
             strict_type => 1,
-            store       => \$file_path
+            store       => \$file
         },
         outdirectory_path => {
             strict_type => 1,
@@ -105,9 +105,9 @@ sub tar {
 
         push @commands, q{-z};
     }
-    if ($file_path) {
+    if ($file) {
 
-        push @commands, q{--file=} . $file_path;
+        push @commands, q{--file=} . $file;
     }
     if ($outdirectory_path) {
         push @commands, q{--directory=} . $outdirectory_path;

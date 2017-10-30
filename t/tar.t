@@ -139,7 +139,7 @@ my %specific_argument = (
         input           => 1,
         expected_output => q{-z},
     },
-    file_path => {
+    file => {
         input           => catfile( qw{ path to file } ),
         expected_output => q{--file=} . catfile( qw{ path to file } ),
     },
