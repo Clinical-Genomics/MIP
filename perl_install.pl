@@ -46,6 +46,7 @@ $array_parameter{perl_modules} = [
     q{List::MoreUtils},           # MIP
     q{Readonly},                  # MIP
     q{Try::Tiny},                 # MIP
+    q{Array::Utils}               # MIP
     q{IO::Uncompress::Gunzip},    # VEP
     q{HTML::Lint},                # VEP
     q{Archive::Zip},              # VEP
@@ -61,7 +62,7 @@ $array_parameter{perl_modules} = [
     q{File::Copy::Recursive},     # VEP
 ];
 
-our $VERSION = q{1.0.0};
+our $VERSION = q{1.0.1};
 
 ###User Options
 GetOptions(
@@ -297,6 +298,8 @@ sub install_perl {
     say {$FILEHANDLE} q{cd } . $pwd . qq{\n};
 
     ## Editing PATH and .bashrc
+    say {$FILEHANDLE}
+      q{echo '# Added by MIP's perl installer ' $(date) >> ~/.bashrc};
     say {$FILEHANDLE} q{# Edit PATH and .bashrc};
     say {$FILEHANDLE} q{echo 'export PATH=} . $perl_install_path
       . q{/:$PATH' >> ~/.bashrc};
@@ -310,6 +313,8 @@ sub install_perl {
     say {$FILEHANDLE} q{# Edit bash_profile};
 
     # Add at start-up
+    say {$FILEHANDLE}
+      q{echo '# Added by MIP's perl installer ' $(date) >> ~/.bash_profile};
     say {$FILEHANDLE} q{echo 'eval `perl -I }
       . catdir( $perl_install_path, qw{ lib perl5 } )
       . q{ -Mlocal::lib=}
