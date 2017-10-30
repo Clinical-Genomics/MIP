@@ -140,8 +140,8 @@ my %specific_argument = (
         expected_output => $function_base_command,
     },
     outdir_path => {
-        input           => catdir(qw{ a test path }),
-        expected_output => q{a/test/path},
+        input           => catdir( qw{ a test path } ),
+        expected_output => catdir( qw{ a test path } ),
     },
     verbose => {
         input           => 1,
