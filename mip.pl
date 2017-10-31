@@ -115,8 +115,8 @@ BEGIN {
 ## Constants
 Readonly my $DOT       => q{.};
 Readonly my $EMPTY_STR => q{};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE => q{ };
+Readonly my $NEWLINE   => qq{\n};
+Readonly my $SPACE     => q{ };
 Readonly my $TAB       => qq{\t};
 
 #### Script parameters
@@ -263,7 +263,8 @@ GetOptions(
     q{l|log_file:s} => \$parameter{log_file}{value},
     q{h|help}       => sub { say STDOUT $USAGE; exit; },
     q{v|version}    => sub {
-        say STDOUT $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
+        say STDOUT $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
+          $NEWLINE;
         exit;
     },
 
@@ -462,10 +463,6 @@ GetOptions(
       \$parameter{gatk_variantrecalibration_snv_max_gaussians}{value},
     q{gvrimg|gatk_variantrecalibration_indel_max_gaussians=n} =>
       \$parameter{gatk_variantrecalibration_indel_max_gaussians}{value},
-    q{gvrevf|gatk_variantrecalibration_exclude_nonvariants_file=n} =>
-      \$parameter{gatk_variantrecalibration_exclude_nonvariants_file}{value},
-    q{gvrbcf|gatk_variantrecalibration_bcf_file=n} =>
-      \$parameter{gatk_variantrecalibration_bcf_file}{value},
     q{gcgpss|gatk_calculategenotypeposteriors_support_set:s} =>
       \$parameter{gatk_calculategenotypeposteriors_support_set}{value},
     q{pgcv|pgatk_combinevariantcallsets=n} =>
@@ -2152,22 +2149,56 @@ if ( $active_parameter{pgatk_genotypegvcfs} > 0 )
     );
 }
 
-if ( $active_parameter{pgatk_variantrecalibration} > 0 )
-{    #Run GATK VariantRecalibrator/ApplyRecalibration. Done per family
+## Run GATK VariantRecalibrator/ApplyRecalibration. Done per family
+if ( $active_parameter{pgatk_variantrecalibration} > 0 ) {
 
-    $log->info("[GATK variantrecalibrator/applyrecalibration]\n");
+    $log->info(q{[GATK variantrecalibrator/applyrecalibration]});
 
-    gatk_variantrecalibration(
-        {
-            parameter_href          => \%parameter,
-            active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
-            file_info_href          => \%file_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            program_name            => "gatk_variantrecalibration",
-        }
+    my $program_name = lc q{gatk_variantrecalibration};
+
+    my $program_outdirectory_name =
+      $parameter{pgatk_variantrecalibration}{outdir_name};
+
+    my $infamily_directory = catfile(
+        $active_parameter{outdata_dir},    $active_parameter{family_id},
+        $active_parameter{outaligner_dir}, $program_outdirectory_name
     );
+    my $outfamily_directory = $infamily_directory;
+    my $consensus_analysis_type =
+      $parameter{dynamic_parameter}{consensus_analysis_type};
+
+    if ( $consensus_analysis_type eq q{wes} ) {
+
+        analysis_gatk_variantrecalibration_wes(
+            {
+                parameter_href          => \%parameter,
+                active_parameter_href   => \%active_parameter,
+                sample_info_href        => \%sample_info,
+                file_info_href          => \%file_info,
+                infile_lane_prefix_href => \%infile_lane_prefix,
+                job_id_href             => \%job_id,
+                infamily_directory      => $infamily_directory,
+                outfamily_directory     => $outfamily_directory,
+                program_name            => $program_name,
+            }
+        );
+    }
+    else {
+        ## WGS and WES/WGS
+        analysis_gatk_variantrecalibration_wgs(
+            {
+                parameter_href          => \%parameter,
+                active_parameter_href   => \%active_parameter,
+                sample_info_href        => \%sample_info,
+                file_info_href          => \%file_info,
+                infile_lane_prefix_href => \%infile_lane_prefix,
+                job_id_href             => \%job_id,
+                infamily_directory      => $infamily_directory,
+                outfamily_directory     => $outfamily_directory,
+                program_name            => $program_name,
+            }
+        );
+    }
 }
 
 if ( $active_parameter{pgatk_combinevariantcallsets} > 0 )
@@ -2830,8 +2861,6 @@ sub build_usage {
       -gvrdpa/--gatk_variantrecalibration_dp_annotation Use the DP annotation in variant recalibration. (defaults to "1" (=yes))
       -gvrsmg/--gatk_variantrecalibration_snv_max_gaussians Use hard filtering for snvs (defaults to "0" (=no))
       -gvrimg/--gatk_variantrecalibration_indel_max_gaussians Use hard filtering for indels (defaults to "1" (=yes))
-      -gvrevf/--gatk_variantrecalibration_exclude_nonvariants_file Produce a vcf containing non-variant loci alongside the vcf only containing non-variant loci after GATK VariantRecalibrator (defaults to "0" (=no))
-      -gvrbcf/--gatk_variantrecalibration_bcf_file Produce a bcf from the GATK VariantRecalibrator vcf (defaults to "1" (=yes))
       -gcgpss/--gatk_calculategenotypeposteriors_support_set GATK CalculateGenotypePosteriors support set (defaults to "1000g_sites_GRCh37_phase3_v4_20130502.vcf")
     -pgcv/--pgatk_combinevariantcallsets Combine variant call sets (defaults to "0" (=no))
       -gcvbcf/--gatk_combinevariantcallsets_bcf_file Produce a bcf from the GATK CombineVariantCallSet vcf (defaults to "1" (=yes))
@@ -8941,688 +8970,6 @@ sub gatk_combinevariantcallsets {
                 path                => $job_id_chain,
                 log                 => $log,
                 sbatch_file_name    => $file_path,
-            }
-        );
-    }
-}
-
-sub gatk_variantrecalibration {
-
-##gatk_variantrecalibration
-
-##Function : GATK VariantRecalibrator/ApplyRecalibration.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => File info hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $program_name               => Program name
-##         : $family_id_ref              => Family id {REF}
-##         : $temp_directory_ref         => Temporary directory {REF}
-##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => Variant call type
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-    my $outaligner_dir_ref;
-    my $call_type;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $program_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href,
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href,
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href,
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href,
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name,
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref,
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref,
-        },
-        outaligner_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir_ref,
-        },
-        call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::IO::Files qw(migrate_file);
-    use MIP::Set::File qw{set_file_suffix};
-    use MIP::Get::File qw{get_file_suffix};
-    use MIP::Delete::List qw{ delete_contig_elements };
-    use MIP::Gnu::Coreutils qw(gnu_mv);
-    use MIP::Language::Java qw{java_core};
-    use MIP::Program::Variantcalling::Bcftools qw(bcftools_norm);
-    use MIP::Program::Variantcalling::Gatk
-      qw(gatk_variantrecalibrator gatk_applyrecalibration gatk_selectvariants gatk_calculategenotypeposteriors);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_sample_id_dependency_add_to_family);
-
-    my $consensus_analysis_type =
-      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
-
-    ## Filehandles
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    ## Assign directories
-    my $program_outdirectory_name =
-      $parameter_href->{ "p" . $program_name }{outdir_name};
-    my $outfamily_file_directory =
-      catdir( $active_parameter_href->{outdata_dir}, $$family_id_ref )
-      ;                                    #For ".fam" file
-    my $infamily_directory = catfile( $active_parameter_href->{outdata_dir},
-        $$family_id_ref, $$outaligner_dir_ref, $program_outdirectory_name );
-    my $outfamily_directory = catfile( $active_parameter_href->{outdata_dir},
-        $$family_id_ref, $$outaligner_dir_ref, $program_outdirectory_name );
-    $parameter_href->{ "p" . $program_name }{indirectory} =
-      $outfamily_directory;                #Used downstream
-
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$$family_id_ref}{pgatk_genotypegvcfs}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$$family_id_ref}{ "p" . $program_name }{file_tag};
-    my $infile_prefix       = $$family_id_ref . $infile_tag . $call_type;
-    my $file_path_prefix    = catfile( $$temp_directory_ref, $infile_prefix );
-    my $outfile_prefix      = $$family_id_ref . $outfile_tag . $call_type;
-    my $outfile_path_prefix = catfile( $$temp_directory_ref, $outfile_prefix );
-
-    ### Assign suffix
-    my $infile_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => "outfile_suffix",
-            program_name   => "pgatk_genotypegvcfs",
-        }
-    );
-
-    ## Set file suffix for next module within jobid chain
-    my $outfile_suffix = set_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => "variant_file_suffix",
-            job_id_chain   => $job_id_chain,
-            file_suffix =>
-              $parameter_href->{ "p" . $program_name }{outfile_suffix},
-        }
-    );
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $$family_id_ref,
-            program_name          => $program_name,
-            program_directory     => catfile(
-                lc($$outaligner_dir_ref),
-                lc($program_outdirectory_name)
-            ),
-            call_type   => $call_type,
-            core_number => $active_parameter_href->{module_core_number}
-              { "p" . $program_name },
-            process_time =>
-              $active_parameter_href->{module_time}{ "p" . $program_name },
-            temp_directory => catfile($$temp_directory_ref),
-        }
-    );
-    my ( $volume, $directory, $stderr_file ) =
-      File::Spec->splitpath( $program_info_path . ".stderr.txt" )
-      ;    #Split to enable submission to &sample_info_qc later
-
-    ## Create .fam file to be used in variant calling analyses
-    create_fam_file(
-        {
-            parameter_href        => $parameter_href,
-            active_parameter_href => $active_parameter_href,
-            sample_info_href      => $sample_info_href,
-            FILEHANDLE            => $FILEHANDLE,
-            fam_file_path =>
-              catfile( $outfamily_file_directory, $$family_id_ref . ".fam" ),
-        }
-    );
-
-    ## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-    my %commands = gatk_pedigree_flag(
-        {
-            active_parameter_href => $active_parameter_href,
-            fam_file_path =>
-              catfile( $outfamily_file_directory, $$family_id_ref . ".fam" ),
-            program_name => $program_name,
-        }
-    );
-
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . q{*}
-            ),
-            outfile_path => $$temp_directory_ref
-        }
-    );
-    say {$FILEHANDLE} q{wait}, "\n";
-
-    ### GATK VariantRecalibrator
-    ## Set mode to be used in variant recalibration
-    my @modes = ( "SNP", "INDEL" );
-
-    if (   ( $consensus_analysis_type eq "wes" )
-        || ( $consensus_analysis_type eq "rapid" ) )
-    {    #Exome/rapid analysis
-
-        @modes = (q{BOTH});
-    }
-
-    foreach my $mode (@modes)
-    { #SNP and INDEL will be recalibrated successively in the same file because when you specify eg SNP mode, the indels are emitted without modification, and vice-versa. Exome and rapid will be processed using mode BOTH since there are to few INDELS to use in the recalibration model even though using 30 exome BAMS in Haplotypecaller step.
-
-        say {$FILEHANDLE} "## GATK VariantRecalibrator";
-
-        ##Get parameters
-        my @infiles;
-        my $max_gaussian_level;
-        if (   ( $consensus_analysis_type eq "wes" )
-            || ( $consensus_analysis_type eq "rapid" ) )
-        {    #Exome/rapid analysis use combined reference for more power
-
-            push( @infiles, $file_path_prefix . $infile_suffix )
-              ; #Infile HaplotypeCaller combined vcf which used reference gVCFs to create combined vcf (30> samples gCVFs)
-        }
-        else {    #WGS
-
-            if ( $mode eq "SNP" ) {
-
-                push( @infiles, $file_path_prefix . $infile_suffix );
-
-                if ( $active_parameter_href
-                    ->{gatk_variantrecalibration_snv_max_gaussians} ne 0 )
-                {
-
-                    $max_gaussian_level = 4;    #Use hard filtering
-                }
-            }
-            if ( $mode eq "INDEL" ) { #Use created recalibrated snp vcf as input
-
-                push( @infiles,
-                    $outfile_path_prefix . ".SNV" . $infile_suffix );
-            }
-        }
-
-        my @annotations =
-          @{ $active_parameter_href->{gatk_variantrecalibration_annotations} };
-        if ( $consensus_analysis_type ne "wgs" ) {
-
-            ### Special case: Not to be used with hybrid capture. NOTE: Disable when analysing wes + wgs in the same run
-            ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-            @annotations = delete_contig_elements(
-                {
-                    elements_ref       => \@annotations,
-                    remove_contigs_ref => [qw{ DP }],
-                }
-            );
-        }
-
-        my @resources;
-        if ( ( $mode eq "SNP" ) || ( $mode eq q{BOTH} ) ) {
-
-            while (
-                my ( $resource_file, $resource_string ) = each(
-                    %{
-                        $active_parameter_href
-                          ->{gatk_variantrecalibration_resource_snv}
-                    }
-                )
-              )
-            {
-
-                push( @resources, $resource_string . " " . $resource_file );
-            }
-        }
-        if ( ( $mode eq "INDEL" ) || ( $mode eq q{BOTH} ) ) {
-
-            while (
-                my ( $resource_file, $resource_string ) = each(
-                    %{
-                        $active_parameter_href
-                          ->{gatk_variantrecalibration_resource_indel}
-                    }
-                )
-              )
-            {
-
-                push( @resources, $resource_string . " " . $resource_file );
-            }
-            if ( $active_parameter_href
-                ->{gatk_variantrecalibration_indel_max_gaussians} ne 0 )
-            {
-
-                $max_gaussian_level = 4;    #Use hard filtering
-            }
-        }
-
-        # Create distinct set i.e. no duplicates.
-        @resources = uniq(@resources);
-
-        gatk_variantrecalibrator(
-            {
-                memory_allocation => "Xmx10g",
-                java_use_large_pages =>
-                  $active_parameter_href->{java_use_large_pages},
-                temp_directory => $$temp_directory_ref,
-                java_jar       => catfile(
-                    $active_parameter_href->{gatk_path},
-                    "GenomeAnalysisTK.jar"
-                ),
-                infile_paths_ref => \@infiles,
-                annotations_ref  => \@annotations,
-                resources_ref    => \@resources,
-                logging_level => $active_parameter_href->{gatk_logging_level},
-                referencefile_path =>
-                  $active_parameter_href->{human_genome_reference},
-                recal_file_path    => $file_path_prefix . ".intervals",
-                rscript_file_path  => $file_path_prefix . ".intervals.plots.R",
-                tranches_file_path => $file_path_prefix . ".intervals.tranches",
-                max_gaussian_level => $max_gaussian_level,
-                mode               => $mode,
-                pedigree_validation_type => $commands{pedigree_validation_type},
-                pedigree                 => $commands{pedigree},
-                FILEHANDLE               => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} "\n";
-
-        ## GATK ApplyRecalibration
-        say {$FILEHANDLE} "## GATK ApplyRecalibration";
-
-        ## Get parameters
-        my $infile_path;
-        my $outfile_path;
-        my $ts_filter_level;
-        if (   ( $consensus_analysis_type eq "wes" )
-            || ( $consensus_analysis_type eq "rapid" ) )
-        {    #Exome/rapid analysis use combined reference for more power
-
-            $infile_path = $file_path_prefix
-              . $infile_suffix
-              ; #Infile genotypegvcfs combined vcf which used reference gVCFs to create combined vcf file
-            $outfile_path =
-              $outfile_path_prefix . "_filtered" . $outfile_suffix;
-            $ts_filter_level = $active_parameter_href
-              ->{gatk_variantrecalibration_snv_tsfilter_level};
-        }
-        else {    #WGS
-
-            if ( $mode eq "SNP" ) {
-
-                $infile_path  = $file_path_prefix . $infile_suffix;
-                $outfile_path = $outfile_path_prefix . ".SNV" . $outfile_suffix;
-                $ts_filter_level = $active_parameter_href
-                  ->{gatk_variantrecalibration_snv_tsfilter_level};
-            }
-            if ( $mode eq "INDEL" ) { #Use created recalibrated snp vcf as input
-
-                $infile_path  = $outfile_path_prefix . ".SNV" . $outfile_suffix;
-                $outfile_path = $outfile_path_prefix . $outfile_suffix;
-                $ts_filter_level = $active_parameter_href
-                  ->{gatk_variantrecalibration_indel_tsfilter_level};
-            }
-        }
-
-        gatk_applyrecalibration(
-            {
-                memory_allocation => "Xmx10g",
-                java_use_large_pages =>
-                  $active_parameter_href->{java_use_large_pages},
-                temp_directory => $$temp_directory_ref,
-                java_jar       => catfile(
-                    $active_parameter_href->{gatk_path},
-                    "GenomeAnalysisTK.jar"
-                ),
-                infile_path   => $infile_path,
-                outfile_path  => $outfile_path,
-                logging_level => $active_parameter_href->{gatk_logging_level},
-                referencefile_path =>
-                  $active_parameter_href->{human_genome_reference},
-                recal_file_path    => $file_path_prefix . ".intervals",
-                tranches_file_path => $file_path_prefix . ".intervals.tranches",
-                ts_filter_level    => $ts_filter_level,
-                mode               => $mode,
-                pedigree_validation_type => $commands{pedigree_validation_type},
-                pedigree                 => $commands{pedigree},
-                FILEHANDLE               => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} "\n";
-    }
-
-    if (   ( $consensus_analysis_type eq "wes" )
-        || ( $consensus_analysis_type eq "rapid" ) )
-    {
-
-        ## BcfTools norm, Left-align and normalize indels, split multiallelics
-        bcftools_norm(
-            {
-                FILEHANDLE => $FILEHANDLE,
-                reference_path =>
-                  $active_parameter_href->{human_genome_reference},
-                infile_path => $outfile_path_prefix
-                  . "_filtered"
-                  . $outfile_suffix,
-                output_type  => "v",
-                outfile_path => $outfile_path_prefix
-                  . "_filtered_normalized"
-                  . $outfile_suffix,
-                multiallelic    => "-",
-                stderrfile_path => $outfile_path_prefix
-                  . "_filtered_normalized.stderr",
-            }
-        );
-        say {$FILEHANDLE} "\n";
-    }
-
-    ### GATK SelectVariants
-
-    ## Removes all genotype information for exome ref and recalulates meta-data info for remaining samples in new file.
-    if (   ( $consensus_analysis_type eq "wes" )
-        || ( $consensus_analysis_type eq "rapid" ) )
-    {    #Exome/rapid analysis
-
-        say {$FILEHANDLE} "## GATK SelectVariants";
-
-        gatk_selectvariants(
-            {
-                memory_allocation => q{Xmx2g},
-                java_use_large_pages =>
-                  $active_parameter_href->{java_use_large_pages},
-                temp_directory => $$temp_directory_ref,
-                java_jar       => catfile(
-                    $active_parameter_href->{gatk_path},
-                    "GenomeAnalysisTK.jar"
-                ),
-                sample_names_ref => \@{ $active_parameter_href->{sample_ids} },
-                logging_level => $active_parameter_href->{gatk_logging_level},
-                referencefile_path =>
-                  $active_parameter_href->{human_genome_reference},
-                infile_path => $outfile_path_prefix
-                  . "_filtered_normalized"
-                  . $outfile_suffix,
-                outfile_path        => $outfile_path_prefix . $outfile_suffix,
-                exclude_nonvariants => 1,
-                FILEHANDLE          => $FILEHANDLE,
-            }
-        );
-        print {$FILEHANDLE} " &";
-
-        ## Produces another vcf file containing non-variant loci (useful for example in MAF comparisons), but is not used downstream in MIP
-        if ( $active_parameter_href
-            ->{gatk_variantrecalibration_exclude_nonvariants_file} eq 1 )
-        {
-
-            say {$FILEHANDLE} "\n\n#GATK SelectVariants", "\n";
-
-            gatk_selectvariants(
-                {
-                    memory_allocation => q{Xmx2g},
-                    java_use_large_pages =>
-                      $active_parameter_href->{java_use_large_pages},
-                    temp_directory => $$temp_directory_ref,
-                    java_jar       => catfile(
-                        $active_parameter_href->{gatk_path},
-                        "GenomeAnalysisTK.jar"
-                    ),
-                    sample_names_ref =>
-                      \@{ $active_parameter_href->{sample_ids} },
-                    logging_level =>
-                      $active_parameter_href->{gatk_logging_level},
-                    referencefile_path =>
-                      $active_parameter_href->{human_genome_reference},
-                    infile_path => $outfile_path_prefix
-                      . "_filtered"
-                      . $outfile_suffix,
-                    outfile_path => $outfile_path_prefix
-                      . "_incnonvariantloci"
-                      . $outfile_suffix,
-                    FILEHANDLE => $FILEHANDLE,
-                }
-            );
-            say {$FILEHANDLE} "\n\nwait\n";
-
-            ## Copies file from temporary directory.
-            say {$FILEHANDLE} q{## Copy file from temporary directory};
-            migrate_file(
-                {
-                    infile_path => $outfile_path_prefix
-                      . q{_incnonvariantloci}
-                      . $outfile_suffix . q{*},
-                    outfile_path => $outfamily_directory,
-                    FILEHANDLE   => $FILEHANDLE,
-                }
-            );
-        }
-        say {$FILEHANDLE} "\n\nwait\n";
-    }
-
-    ## GenotypeRefinement
-    if ( $parameter_href->{dynamic_parameter}{trio} ) {
-
-        say {$FILEHANDLE} "## GATK CalculateGenotypePosteriors";
-
-        gatk_calculategenotypeposteriors(
-            {
-                memory_allocation => "Xmx6g",
-                java_use_large_pages =>
-                  $active_parameter_href->{java_use_large_pages},
-                temp_directory => $$temp_directory_ref,
-                java_jar       => catfile(
-                    $active_parameter_href->{gatk_path},
-                    "GenomeAnalysisTK.jar"
-                ),
-                logging_level => $active_parameter_href->{gatk_logging_level},
-                referencefile_path =>
-                  $active_parameter_href->{human_genome_reference},
-                infile_path  => $outfile_path_prefix . $outfile_suffix,
-                outfile_path => $outfile_path_prefix
-                  . "_refined"
-                  . $outfile_suffix,
-                supporting_callset_file_path => $active_parameter_href
-                  ->{gatk_calculategenotypeposteriors_support_set},
-                pedigree_validation_type => $commands{pedigree_validation_type},
-                pedigree                 => $commands{pedigree},
-                FILEHANDLE               => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} "\n";
-
-        ## Change name of file to accomodate downstream
-        gnu_mv(
-            {
-                infile_path => $outfile_path_prefix
-                  . "_refined"
-                  . $outfile_suffix,
-                outfile_path => $outfile_path_prefix . $outfile_suffix,
-                FILEHANDLE   => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} "\n";
-    }
-
-    ## BcfTools norm, Left-align and normalize indels, split multiallelics
-    bcftools_norm(
-        {
-            FILEHANDLE     => $FILEHANDLE,
-            reference_path => $active_parameter_href->{human_genome_reference},
-            infile_path    => $outfile_path_prefix . $outfile_suffix,
-            output_type    => "v",
-            outfile_path   => $outfile_path_prefix
-              . "_normalized"
-              . $outfile_suffix,
-            multiallelic => "-",
-        }
-    );
-    say {$FILEHANDLE} "\n";
-
-    ## Change name of file to accomodate downstream
-    gnu_mv(
-        {
-            infile_path => $outfile_path_prefix
-              . "_normalized"
-              . $outfile_suffix,
-            outfile_path => $outfile_path_prefix . $outfile_suffix,
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} "\n";
-
-    ## Produce a bcf compressed and index from vcf
-    if ( $active_parameter_href->{gatk_variantrecalibration_bcf_file} ) {
-
-        ## Reformat variant calling file and index
-        view_vcf(
-            {
-                infile_path         => $outfile_path_prefix . $outfile_suffix,
-                outfile_path_prefix => $outfile_path_prefix,
-                output_type         => "b",
-                FILEHANDLE          => $FILEHANDLE,
-            }
-        );
-
-        ## Copies file from temporary directory.
-        say {$FILEHANDLE} q{## Copy file from temporary directory};
-        migrate_file(
-            {
-                infile_path  => $outfile_path_prefix . q{.bcf*},
-                outfile_path => $outfamily_directory,
-                FILEHANDLE   => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} q{wait}, "\n";
-    }
-
-    ## Copies file from temporary directory.
-    say {$FILEHANDLE} q{## Copy file from temporary directory};
-    my @outfiles = (
-        $outfile_path_prefix . $outfile_suffix . "*",
-        $file_path_prefix . ".intervals.tranches.pdf"
-    );
-    foreach my $outfile (@outfiles) {
-
-        migrate_file(
-            {
-                infile_path  => $outfile,
-                outfile_path => $outfamily_directory,
-                FILEHANDLE   => $FILEHANDLE,
-            }
-        );
-    }
-    say {$FILEHANDLE} q{wait}, "\n";
-
-    close $FILEHANDLE;
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        ## Collect QC metadata info for later use
-        # Disabled pedigreeCheck to not include relationship test is qccollect
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                program_name     => q{pedigree_check},
-                outdirectory     => $outfamily_directory,
-                outfile          => $outfile_prefix . $outfile_suffix,
-            }
-        );
-
-        $sample_info_href->{vcf_file}{ready_vcf}{path} =
-          catfile( $outfamily_directory, $outfile_prefix . $outfile_suffix );
-
-        if ( $active_parameter_href->{gatk_variantrecalibration_bcf_file} eq 1 )
-        {
-
-            $sample_info_href->{bcf_file}{path} =
-              catfile( $outfamily_directory, $outfile_prefix . ".bcf" );
-        }
-
-        slurm_submit_job_sample_id_dependency_add_to_family(
-            {
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                family_id        => $$family_id_ref,
-                path             => $job_id_chain,
-                log              => $log,
-                sbatch_file_name => $file_path,
             }
         );
     }

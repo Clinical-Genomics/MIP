@@ -16,7 +16,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -26,12 +26,9 @@ BEGIN {
 
 sub add_program_outfile_to_sample_info {
 
-## add_program_outfile_to_sample_info
-
 ## Function : Adds path and/or outdirectory and/or outfile and/or version from programs to sample_info to track all outfiles and extract downstream
 ## Returns  :
-## Arguments: $sample_info_href, $program_name, $path, $outdirectory, $outfile, $sample_id, $infile,
-##          : $sample_info_href => Records on samples and family hash {REF}
+## Arguments: $sample_info_href => Records on samples and family hash {REF}
 ##          : $program_name     => Program name
 ##          : $path             => Path of file
 ##          : $outdirectory     => Outdirectory of the file
@@ -125,12 +122,9 @@ sub add_program_outfile_to_sample_info {
 
 sub add_program_metafile_to_sample_info {
 
-## add_program_metafile_to_sample_info
-
 ## Function : Adds path and/or directory and/or file and/or version from programs to sample_info to track all metafiles and extract downstream
 ## Returns  :
-## Arguments: $sample_info_href, $program_name, $metafile_tag, $path, $directory, $file, $version, $processed_by, $sample_id, $infile,
-##          : $sample_info_href => Records on samples and family hash {REF}
+## Arguments: $sample_info_href => Records on samples and family hash {REF}
 ##          : $program_name     => Program name
 ##          : $metafile_tag     => Id tag of meta file
 ##          : $path             => Path of file
@@ -239,12 +233,9 @@ sub add_program_metafile_to_sample_info {
 
 sub add_processing_metafile_to_sample_info {
 
-## add_processing_metafile_to_sample_info
-
 ## Function : Adds metafile path from sample_id|family_id processing to sample_info to track all metafiles and extract downstream
 ## Returns  :
-## Arguments: $sample_info_href, $metafile_tag, $path, $sample_id
-##          : $sample_info_href => Records on samples and family hash {REF}
+## Arguments: $sample_info_href => Records on samples and family hash {REF}
 ##          : $metafile_tag     => Id tag of meta file
 ##          : $path             => Path of file
 ##          : $sample_id        => Sample_id for data at sample level {Optional}

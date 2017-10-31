@@ -253,7 +253,7 @@ module_time:
     pgatk_genotypegvcfs: 10
     pgatk_variantrecalibration: 10
     pfreebayes: 20
-    psamtools_mpileup: 20
+    psamtools_mpileup: 40
     pgatk_combinevariantcallsets: 2
     pprepareforvariantannotationblock: 5
     prhocall: 5
@@ -1372,18 +1372,6 @@ gatk_variantrecalibration_indel_max_gaussians:
    - pgatk_variantrecalibration
   data_type: SCALAR
   default: 1
-  type: program_argument
-gatk_variantrecalibration_exclude_nonvariants_file:
-  associated_program:
-   - pgatk_variantrecalibration
-  data_type: SCALAR
-  default: 0
-  type: program_argument
-gatk_variantrecalibration_bcf_file:
-  associated_program:
-   - pgatk_variantrecalibration
-  data_type: SCALAR
-  default: 0
   type: program_argument
 gatk_calculategenotypeposteriors_support_set:
   associated_program:
