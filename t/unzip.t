@@ -9,9 +9,9 @@ use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
 use Carp;
 use English qw{ -no_match_vars };
-use Params::Check qw{check allow last_error};
+use Params::Check qw{ check allow last_error };
 
-use FindBin qw{$Bin};
+use FindBin qw{ $Bin };
 use File::Basename qw{ dirname basename };
 use File::Spec::Functions qw{ catdir catfile };
 use Getopt::Long;
@@ -25,7 +25,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.1;
+our $VERSION = 1.0.0;
 
 ## Constants
 Readonly my $SPACE   => q{ };
@@ -79,7 +79,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Program::Compression::Tar});
+    my @modules = (q{MIP::Program::Compression::Zip});
 
   MODULE:
     for my $module (@modules) {
@@ -87,11 +87,11 @@ BEGIN {
     }
 }
 
-use MIP::Program::Compression::Tar qw{ tar };
+use MIP::Program::Compression::Zip qw{ unzip };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test tar from Tar.pm v}
-      . $MIP::Program::Compression::Tar::VERSION
+diag(   q{Test unzip from Zip.pm v}
+      . $MIP::Program::Compression::Zip::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -100,13 +100,9 @@ diag(   q{Test tar from Tar.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{tar};
+my $function_base_command = q{unzip};
 
 my %base_argument = (
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
-    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
@@ -124,37 +120,45 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
+    infile_path => {
+        input           => catfile( qw{ path to file } ),
+        expected_output => catfile( qw{ path to file } ),
     },
 );
 
 my %specific_argument = (
-    extract => {
-        input           => 1,
-        expected_output => q{--extract},
+    outdir_path => {
+        input           => catdir(qw{ a test path }),
+        expected_output => q{-d} . $SPACE . catdir( qw{ a test path } ),
     },
-    filter_gzip => {
+    stdout => {
         input           => 1,
-        expected_output => q{-z},
+        expected_output => q{-p},
     },
-    file_path => {
+    infile_path => {
         input           => catfile( qw{ path to file } ),
-        expected_output => q{--file=} . catfile( qw{ path to file } ),
-    },
-    outdirectory_path => {
-        input           => catdir( qw{ a test dir } ),
-        expected_output => q{--directory=} . catdir( qw{a test dir} ),
+        expected_output => catfile( qw{ path to file } ),
     },
     FILEHANDLE => {
         input           => undef,
         expected_output => $function_base_command,
     },
+    quiet => {
+        input           => 1,
+        expected_output => q{-q},
+    },
+    verbose => {
+        input           => 1,
+        expected_output => q{-v},
+    },
+    force => {
+        input           => 1,
+        expected_output => q{-o},
+    },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&tar;
+my $module_function_cref = \&unzip;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

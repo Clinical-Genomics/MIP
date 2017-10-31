@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_varianteffectpredictor };
@@ -291,7 +291,7 @@ q{http://genes.mit.edu/burgelab/maxent/download/fordownload.tar.gz},
                 {
                     extract     => 1,
                     filter_gzip => 1,
-                    file        => catfile(q{fordownload.tar.gz}),
+                    file_path   => catfile(q{fordownload.tar.gz}),
                     FILEHANDLE  => $FILEHANDLE,
                 }
             );
