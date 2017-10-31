@@ -9,7 +9,6 @@ use charnames qw{ :full :short };
 use Carp;
 use autodie;
 use Params::Check qw{ check allow last_error};
-$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 use Readonly;
 use English qw{ -no_match_vars };
 use IPC::Run qw{ run };
@@ -27,7 +26,7 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ create_fam_file pedigree_flag };
+    our @EXPORT_OK = qw{ create_fam_file gatk_pedigree_flag };
 }
 
 ## Constants
@@ -40,7 +39,7 @@ Readonly my $UNDERSCORE   => q{_};
 # Ignore the warning from putting '#' in qw{}
 no warnings qw{ qw };
 
-sub pedigree_flag {
+sub gatk_pedigree_flag {
 
 ## Function : Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
 ## Returns  : "%command"
@@ -60,13 +59,6 @@ sub pedigree_flag {
     my $program_name;
 
     my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
         fam_file_path => {
             required    => 1,
             defined     => 1,
@@ -90,13 +82,13 @@ sub pedigree_flag {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my $parent_counter;
-    my $pq_parent_counter = _compose_parent_child_counter_regexp {
+    my $pq_parent_counter = _build_parent_child_counter_regexp {
 
         family_member => q{parent},
     };
 
     my $child_counter;
-    my $pq_child_counter = _compose_parent_child_counter_regexp {
+    my $pq_child_counter = _build_parent_child_counter_regexp {
 
         family_member => q{child},
     };
@@ -104,10 +96,10 @@ sub pedigree_flag {
     my %command;
 
     # Count the number of parents
-    $parent_counter = run ($pq_parent_counter, $fam_file_path);
+    $parent_counter = run( $pq_parent_counter, $fam_file_path );
 
     # Count the number of children
-    $child_counter = run ($pq_child_counter, $fam_file_path);
+    $child_counter = run( $pq_child_counter, $fam_file_path );
 
     # Parents are present
     if ( $parent_counter > 0 ) {
@@ -235,15 +227,16 @@ sub create_fam_file {
         push @pedigree_lines, $sample_line;
     }
 
-    if ( $execution_mode eq q{system} ) {    # Execute directly
-                                             # Create anonymous filehandle
+    # Execute directly
+    if ( $execution_mode eq q{system} ) {
+
+        # Create anonymous filehandle
         my $FILEHANDLE_SYS = IO::Handle->new();
         open $FILEHANDLE_SYS, q{>}, $fam_file_path
           or $log->logdie(qq{Can't open $fam_file_path: $ERRNO });
 
-      LINE:
-
       # Adds the information from the samples in pedigree_lines, separated by \n
+      LINE:
         foreach my $line (@pedigree_lines) {
             say {$FILEHANDLE_SYS} $line;
         }
@@ -253,7 +246,8 @@ sub create_fam_file {
 
     if ( $execution_mode eq q{sbatch} ) {
 
-        if ( !-f $fam_file_path ) {    #Check to see if file already exists
+        # Check to see if file already exists
+        if ( !-f $fam_file_path ) {
 
             if ($FILEHANDLE) {
                 say {$FILEHANDLE} q{#Generating '.fam' file};
@@ -287,14 +281,14 @@ q{Create fam file[subroutine]:Using 'execution_mode=sbatch' requires a }
     return;
 }
 
-sub _compose_parent_child_counter_regexp {
+sub _build_parent_child_counter_regexp {
 
 ## Function : Create regexp to count the number of parents / children
-##          : $family_member => parent or child
+##          : $family_member => Parent or child
 
     my ($arg_href) = @_;
 
-    ## Faltten argument
+    ## Flatten argument
     my $family_member;
 
     my $tmpl = {

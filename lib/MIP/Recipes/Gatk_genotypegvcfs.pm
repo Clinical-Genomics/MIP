@@ -29,10 +29,10 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $NEWLINE     => qq{\n};
-Readonly my $UNDERSCORE  => q{_};
-Readonly my $DOT         => q{.};
-Readonly my $ASTERISK    => q{*};
+Readonly my $NEWLINE    => qq{\n};
+Readonly my $UNDERSCORE => q{_};
+Readonly my $DOT        => q{.};
+Readonly my $ASTERISK   => q{*};
 
 sub analysis_gatk_genotypegvcfs {
 
@@ -153,7 +153,7 @@ sub analysis_gatk_genotypegvcfs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Pedigree qw{ create_fam_file pedigree_flag };
+    use MIP::File::Format::Pedigree qw{ create_fam_file gatk_pedigree_flag };
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Language::Java qw{ java_core };
@@ -172,7 +172,9 @@ sub analysis_gatk_genotypegvcfs {
 
     ## Alias
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my $time        = $active_parameter_href->{module_time}{$mip_program_name};
+    my $time         = $active_parameter_href->{module_time}{$mip_program_name};
+
+    ## Constants
     Readonly my $INCLUDE_NONVARIANT_SITES_TIME => 50;
 
     # If all sites should be included
@@ -184,7 +186,7 @@ sub analysis_gatk_genotypegvcfs {
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
 
-    ## gatk genotype is most safely processed in single thread mode, , but we need some java heap allocation
+    ## Gatk genotype is most safely processed in single thread mode, , but we need some java heap allocation
     my $core_number =
       $active_parameter_href->{module_core_number}{$mip_program_name};
 
@@ -216,7 +218,7 @@ sub analysis_gatk_genotypegvcfs {
         {
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
-            job_id_chain    => $job_id_chain,
+            job_id_chain   => $job_id_chain,
             file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
         }
     );
@@ -235,7 +237,7 @@ sub analysis_gatk_genotypegvcfs {
         }
     );
 
-    CONTIG:
+  CONTIG:
     foreach my $contig ( @{ $file_info_href->{contigs} } ) {
 
         ## Assign file_tags
@@ -251,21 +253,20 @@ sub analysis_gatk_genotypegvcfs {
                 FILEHANDLE            => $FILEHANDLE,
                 directory_id          => $family_id,
                 program_name          => $program_name,
-                program_directory => catfile( $outaligner_dir, q{gatk} ),
-                call_type         => $call_type,
-                core_number       => $core_number,
-                process_time      => $time,
-                temp_directory    => $temp_directory,
-                sleep             => 1,
+                program_directory     => catfile( $outaligner_dir, q{gatk} ),
+                call_type             => $call_type,
+                core_number           => $core_number,
+                process_time          => $time,
+                temp_directory        => $temp_directory,
+                sleep                 => 1,
             }
         );
 
         ## Collect infiles for all sample_ids to enable migration to temporary directory
         my @file_paths;
 
-
         ## Add merged infile name after merging all BAM files per sample_id
-        SAMPLE:
+      SAMPLE:
         foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
             my $infile = $file_info_href->{$sample_id}{merged_infile};    #Alias
@@ -306,9 +307,8 @@ sub analysis_gatk_genotypegvcfs {
 
         ## Get parameters
         ## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-        my %commands = pedigree_flag(
+        my %commands = gatk_pedigree_flag(
             {
-                active_parameter_href => $active_parameter_href,
                 fam_file_path         => catfile(
                     $outfamily_file_directory, $family_id . $DOT . q{fam}
                 ),
@@ -316,8 +316,7 @@ sub analysis_gatk_genotypegvcfs {
             }
         );
         ## Files for genotypegvcfs
-        if ( $consensus_analysis_type eq q{wes} )
-        {
+        if ( $consensus_analysis_type eq q{wes} ) {
 
             push @file_paths,
               $active_parameter_href->{gatk_genotypegvcfs_ref_gvcf};
@@ -365,18 +364,18 @@ sub analysis_gatk_genotypegvcfs {
 
         close $FILEHANDLE;
 
-        if ( $mip_program_mode == 1 )
-        {
+        if ( $mip_program_mode == 1 ) {
 
             slurm_submit_job_sample_id_dependency_step_in_parallel_to_family(
                 {
                     job_id_href             => $job_id_href,
                     infile_lane_prefix_href => $infile_lane_prefix_href,
-                    sample_ids_ref          => \@{ $active_parameter_href->{sample_ids} },
-                    family_id               => $$family_id,
-                    path                    => $job_id_chain,
-                    log                     => $log,
-                    sbatch_file_name        => $file_path,
+                    sample_ids_ref =>
+                      \@{ $active_parameter_href->{sample_ids} },
+                    family_id             => $family_id,
+                    path                  => $job_id_chain,
+                    log                   => $log,
+                    sbatch_file_name      => $file_path,
                     sbatch_script_tracker => $sbatch_script_tracker,
                 }
             );
