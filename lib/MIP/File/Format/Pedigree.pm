@@ -101,11 +101,11 @@ my $cmds_ref = [$pq_parent_counter, $fam_file_path];
 
     my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) = run(
     command => $cmds_ref,
-    verbose => $verbose
+    #verbose => $verbose,
 );
 
   $parent_counter = $stdout_buf;
-  
+
     # Count the number of children
     #$child_counter = run( $pq_child_counter, $fam_file_path );
 
