@@ -109,7 +109,7 @@ sub gatk_pedigree_flag {
 
     $parent_counter = join "", @$full_buf;
 
-    my ($success, $error_message, $full_buf, $stdout_buf, $stderr_buf) =
+    ($success, $error_message, $full_buf, $stdout_buf, $stderr_buf) =
       run(
         command => $cmds_ref,
         verbose => 0
