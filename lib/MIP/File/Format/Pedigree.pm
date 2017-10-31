@@ -9,7 +9,6 @@ use charnames qw{ :full :short };
 use Carp;
 use autodie;
 use Params::Check qw{ check allow last_error};
-$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 use Readonly;
 use English qw{ -no_match_vars };
 
@@ -26,7 +25,7 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ create_fam_file };
+    our @EXPORT_OK = qw{ create_fam_file gatk_pedigree_flag };
 }
 
 ## Constants
@@ -34,25 +33,100 @@ Readonly my $TAB          => qq{\t};
 Readonly my $NEWLINE      => qq{\n};
 Readonly my $QUOTE        => q{'};
 Readonly my $DOUBLE_QUOTE => q{"};
+Readonly my $UNDERSCORE   => q{_};
+Readonly my $SPACE        => q{ };
 
 # Ignore the warning from putting '#' in qw{}
 no warnings qw{ qw };
 
+sub gatk_pedigree_flag {
+
+## Function : Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
+## Returns  : "%command"
+## Arguments: $active_parameter_href    => Active parameters for this analysis hash {REF}
+##          : $fam_file_path            => The family file path
+##          : $program_name             => The program to use the pedigree file
+##          : $pedigree_validation_type => The pedigree validation strictness level
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $pedigree_validation_type;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $fam_file_path;
+    my $program_name;
+
+    my $tmpl = {
+        fam_file_path => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$fam_file_path
+        },
+        program_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$program_name,
+        },
+        pedigree_validation_type => {
+            default     => q{SILENT},
+            allow       => [qw{ SILENT STRICT }],
+            strict_type => 1,
+            store       => \$pedigree_validation_type
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $parent_counter;
+    my $pq_parent_counter = _build_parent_child_counter_regexp( {
+
+        family_member => q{parent},
+    });
+
+    my $child_counter;
+    my $pq_child_counter = _build_parent_child_counter_regexp( {
+
+        family_member => q{child},
+    });
+
+    my %command;
+
+  # Count the number of parents
+  $parent_counter =
+      `$pq_parent_counter $fam_file_path`;
+
+  # ount the number of children
+  $child_counter =
+      `$pq_child_counter $fam_file_path`;
+
+
+    if ( $parent_counter > 0 ) {
+
+        $command{pedigree_validation_type} = $pedigree_validation_type;
+
+        #Pedigree files for samples
+        $command{pedigree} = $fam_file_path;
+    }
+    return %command;
+
+}
+
 sub create_fam_file {
 
-##create_fam_file
-
-##Function : Create .fam file to be used in variant calling analyses. Also checks if file already exists when using execution_mode=sbatch.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, sample_info_href, $execution_mode, $fam_file_path, $include_header, $FILEHANDLE, $family_id_ref
-##         : $parameter_href        => Hash with paremters from yaml file {REF}
-##         : $active_parameter_href => The ac:tive parameters for this analysis hash {REF}
-##         : $sample_info_href      => Info on samples and family hash {REF}
-##         : $execution_mode        => Either system (direct) or via sbatch
-##         : $fam_file_path         => The family file path
-##         : $include_header        => Wether to include header ("1") or not ("0")
-##         : $FILEHANDLE            => Filehandle to write to {Optional unless execution_mode=sbatch}
-##         : $family_id_ref         => The family_id {REF}
+## Function : Create .fam file to be used in variant calling analyses. Also checks if file already exists when using execution_mode=sbatch.
+## Returns  :
+## Arguments: $parameter_href        => Hash with paremters from yaml file {REF}
+##          : $active_parameter_href => The ac:tive parameters for this analysis hash {REF}
+##          : $sample_info_href      => Info on samples and family hash {REF}
+##          : $execution_mode        => Either system (direct) or via sbatch
+##          : $fam_file_path         => The family file path
+##          : $include_header        => Wether to include header ("1") or not ("0")
+##          : $FILEHANDLE            => Filehandle to write to {Optional unless execution_mode=sbatch}
+##          : $family_id_ref         => The family_id {REF}
 
     my ($arg_href) = @_;
 
@@ -131,11 +205,11 @@ sub create_fam_file {
         push @pedigree_lines, join $TAB, @fam_headers;
     }
 
-    SAMPLE_ID:
+  SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
         my $sample_line = ${$family_id_ref};
-        
-        HEADER:
+
+      HEADER:
         foreach my $header (@fam_headers) {
 
             if (
@@ -155,13 +229,16 @@ sub create_fam_file {
         push @pedigree_lines, $sample_line;
     }
 
-    if ( $execution_mode eq q{system} ) {    #Execute directly
-        my $FILEHANDLE_SYS = IO::Handle->new();    #Create anonymous filehandle
-        open $FILEHANDLE_SYS, '>', $fam_file_path
-          or $log->logdie(qq{Can't open $fam_file_path: $ERRNO $NEWLINE});
+    # Execute directly
+    if ( $execution_mode eq q{system} ) {
 
-        LINE:
-        # Adds the information from the samples in pedigree_lines, separated by \n
+        # Create anonymous filehandle
+        my $FILEHANDLE_SYS = IO::Handle->new();
+        open $FILEHANDLE_SYS, q{>}, $fam_file_path
+          or $log->logdie(qq{Can't open $fam_file_path: $ERRNO });
+
+      # Adds the information from the samples in pedigree_lines, separated by \n
+      LINE:
         foreach my $line (@pedigree_lines) {
             say {$FILEHANDLE_SYS} $line;
         }
@@ -171,7 +248,8 @@ sub create_fam_file {
 
     if ( $execution_mode eq q{sbatch} ) {
 
-        if ( !-f $fam_file_path ) {    #Check to see if file already exists
+        # Check to see if file already exists
+        if ( !-f $fam_file_path ) {
 
             if ($FILEHANDLE) {
                 say {$FILEHANDLE} q{#Generating '.fam' file};
@@ -203,6 +281,46 @@ q{Create fam file[subroutine]:Using 'execution_mode=sbatch' requires a }
     $sample_info_href->{pedigree_minimal} = $fam_file_path;
 
     return;
+}
+
+sub _build_parent_child_counter_regexp {
+
+## Function : Create regexp to count the number of parents / children
+##          : $family_member => Parent or child
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument
+    my $family_member;
+
+    my $tmpl = {
+        family_member => {
+            required => 1,
+            defined  => 1,
+            store    => \$family_member,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Execute perl
+    my $regexp = q?perl -ne '?;
+
+    ## Add parent or child, according to which one needs to be counted
+    $regexp .= q?my $? . $family_member . $UNDERSCORE . q?counter=0; ?;
+
+    ## Split line around tab if it's not a comment
+    $regexp .=
+q?while (<>) { my @line = split(/\t/, $_); unless ($_=~/^#/) { if ( ($line[2] eq 0) || ($line[3] eq 0) ) ?;
+
+    ## Increment the counter
+    $regexp .= q?{ $?
+      . $family_member
+      . q?++} } } print $?
+      . $family_member
+      . q?; last;'?;
+
+    return $regexp;
 }
 
 1;

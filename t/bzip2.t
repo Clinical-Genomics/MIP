@@ -13,7 +13,7 @@ use Params::Check qw{ check allow last_error };
 
 use FindBin qw{ $Bin };
 use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use Getopt::Long;
 use Test::More;
 use Readonly;
@@ -25,7 +25,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.1;
+our $VERSION = 1.0.0;
 
 ## Constants
 Readonly my $SPACE   => q{ };
@@ -79,7 +79,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Versionmanager::Git});
+    my @modules = (q{MIP::Program::Compression::Bzip2});
 
   MODULE:
     for my $module (@modules) {
@@ -87,11 +87,11 @@ BEGIN {
     }
 }
 
-use MIP::Versionmanager::Git qw{ git_clone };
+use MIP::Program::Compression::Bzip2 qw{ bzip2 };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test git_clone from Git.pm v}
-      . $MIP::Versionmanager::Git::VERSION
+diag(   q{Test bzip2 from Bzip2.pm v}
+      . $MIP::Program::Compression::Bzip2::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -100,13 +100,9 @@ diag(   q{Test git_clone from Git.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{git};
+my $function_base_command = q{bzip2};
 
 my %base_argument = (
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
-    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
@@ -124,37 +120,49 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    url => {
-        input           => q{https://github.com/Clinical-Genomics/MIP.git},
-        expected_output => q{https://github.com/Clinical-Genomics/MIP.git},
-    },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
+    infile_path => {
+        input           => catfile( qw{ path to file } ),
+        expected_output => catfile( qw{ path to file } ),
     },
 );
 
 my %specific_argument = (
+    outfile_path => {
+        input           => catfile(qw{ a test path }),
+        expected_output => q{> a/test/path},
+    },
+    stdout => {
+        input           => 1,
+        expected_output => q{--stdout},
+    },
+    decompress => {
+        input           => 1,
+        expected_output => q{--decompress},
+    },
+    infile_path => {
+        input           => catfile( qw{ path to file } ),
+        expected_output => catfile( qw{ path to file } ),
+    },
     FILEHANDLE => {
         input           => undef,
         expected_output => $function_base_command,
-    },
-    outdir_path => {
-        input           => catdir( qw{ a test path } ),
-        expected_output => catdir( qw{ a test path } ),
-    },
-    verbose => {
-        input           => 1,
-        expected_output => q{--verbose},
     },
     quiet => {
         input           => 1,
         expected_output => q{--quiet},
     },
+    verbose => {
+        input           => 1,
+        expected_output => q{--verbose},
+    },
+    force => {
+        input           => 1,
+        expected_output => q{--force},
+    },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&git_clone;
+my $module_function_cref = \&bzip2;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

@@ -13,7 +13,7 @@ use Params::Check qw{check allow last_error};
 
 use FindBin qw{$Bin};
 use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use Getopt::Long;
 use Test::More;
 use Readonly;
@@ -25,7 +25,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.0;
+our $VERSION = 1.0.1;
 
 ## Constants
 Readonly my $SPACE   => q{ };
@@ -139,9 +139,13 @@ my %specific_argument = (
         input           => 1,
         expected_output => q{-z},
     },
-    file => {
-        input           => q{test_file},
-        expected_output => q{--file=test_file},
+    file_path => {
+        input           => catfile( qw{ path to file } ),
+        expected_output => q{--file=} . catfile( qw{ path to file } ),
+    },
+    outdirectory_path => {
+        input           => catdir( qw{ a test dir } ),
+        expected_output => q{--directory=} . catdir( qw{a test dir} ),
     },
     FILEHANDLE => {
         input           => undef,

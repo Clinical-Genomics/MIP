@@ -3,7 +3,7 @@
 use Modern::Perl qw{ 2014 };
 use warnings qw{ FATAL utf8 };
 use autodie;
-use 5.018;
+use 5.018;    #Require at least perl 5.18
 use utf8;
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
@@ -11,7 +11,7 @@ use Carp;
 use English qw{ -no_match_vars };
 use Params::Check qw{ check allow last_error };
 
-use FindBin qw{ $Bin };
+use FindBin qw{ $Bin };    #Find directory of script
 use File::Basename qw{ dirname basename };
 use File::Spec::Functions qw{ catdir };
 use Getopt::Long;
@@ -25,33 +25,26 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.1;
+our $VERSION = 1.0.0;
 
 ## Constants
 Readonly my $SPACE   => q{ };
 Readonly my $NEWLINE => qq{\n};
-Readonly my $COMMA   => q{,};
+Readonly my $COMMA => q{,};
 
-### User Options
+###User Options
 GetOptions(
-
-    # Display help text
     q{h|help} => sub {
         done_testing();
         say {*STDOUT} $USAGE;
         exit;
-    },
-
-    # Display version number
+    },    #Display help text
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE
-          . basename($PROGRAM_NAME)
-          . $SPACE
-          . $VERSION
-          . $NEWLINE;
+        say {*STDOUT} $NEWLINE, basename($PROGRAM_NAME),
+          $SPACE, $VERSION, $NEWLINE;
         exit;
-    },
+    },    #Display version number
     q{vb|verbose} => $VERBOSE,
   )
   or (
@@ -67,66 +60,51 @@ GetOptions(
 BEGIN {
 
 ### Check all internal dependency modules and imports
-## Modules with import
+##Modules with import
     my %perl_module;
 
     $perl_module{q{MIP::Script::Utils}} = [qw{ help }];
 
-  PERL_MODULE:
+  PERL_MODULES:
     while ( my ( $module, $module_import ) = each %perl_module ) {
         use_ok( $module, @{$module_import} )
           or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 
-## Modules
-    my @modules = (q{MIP::Versionmanager::Git});
+##Modules
+    my @modules = (q{MIP::Package_manager::Conda});
 
-  MODULE:
+  MODULES:
     for my $module (@modules) {
         require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 }
 
-use MIP::Versionmanager::Git qw{ git_clone };
+use MIP::Package_manager::Conda qw{ conda_uninstall };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test git_clone from Git.pm v}
-      . $MIP::Versionmanager::Git::VERSION
-      . $COMMA
-      . $SPACE . q{Perl}
-      . $SPACE
+diag(   q{Test conda_uninstall from Conda.pm v}
+      . $MIP::Package_manager::Conda::VERSION
+      . $COMMA . $SPACE . q{Perl} . $SPACE
       . $PERL_VERSION
       . $SPACE
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{git};
+my $function_base_command = q{conda uninstall};
 
 my %base_argument = (
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
-    },
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
-    },
-    stderrfile_path_append => {
-        input           => q{stderrfile.test},
-        expected_output => q{2>> stderrfile.test},
-    },
     FILEHANDLE => {
         input           => undef,
         expected_output => $function_base_command,
     },
 );
 
-## Can be duplicated with %base_argument and/or %specific_argument
-## to enable testing of each individual argument
+## Can be duplicated with %base and/or %specific to enable testing of each individual argument
 my %required_argument = (
-    url => {
-        input           => q{https://github.com/Clinical-Genomics/MIP.git},
-        expected_output => q{https://github.com/Clinical-Genomics/MIP.git},
+    packages_ref => {
+        inputs_ref      => [qw{ test_package_1 test_package_2 }],
+        expected_output => q{test_package_1 test_package_2},
     },
     FILEHANDLE => {
         input           => undef,
@@ -135,31 +113,34 @@ my %required_argument = (
 );
 
 my %specific_argument = (
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
-    },
-    outdir_path => {
-        input           => catdir( qw{ a test path } ),
-        expected_output => catdir( qw{ a test path } ),
-    },
-    verbose => {
-        input           => 1,
-        expected_output => q{--verbose},
+    env_name => {
+        input           => q{test_env},
+        expected_output => q{--name test_env},
     },
     quiet => {
         input           => 1,
         expected_output => q{--quiet},
     },
+    verbose => {
+        input           => 1,
+        expected_output => q{--verbose},
+    },
+    no_confirmation => {
+        input           => 1,
+        expected_output => q{--yes},
+    },
+    packages_ref => {
+        inputs_ref      => [qw{ test_package_1 test_package_2}],
+        expected_output => q{test_package_1 test_package_2},
+    },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&git_clone;
+my $module_function_cref = \&conda_uninstall;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
 
-ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
@@ -180,12 +161,12 @@ done_testing();
 
 sub build_usage {
 
-## build_usage
+##build_usage
 
-## Function  : Build the USAGE instructions
-## Returns   : ""
-## Arguments : $program_name
-##           : $program_name => Name of the script
+##Function : Build the USAGE instructions
+##Returns  : ""
+##Arguments: $program_name
+##         : $program_name => Name of the script
 
     my ($arg_href) = @_;
 
@@ -200,7 +181,7 @@ sub build_usage {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
 
     return <<"END_USAGE";
  $program_name [options]

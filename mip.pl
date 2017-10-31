@@ -69,9 +69,11 @@ use MIP::Recipes::Build::Human_genome_prerequisites
 use MIP::Recipes::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
 use MIP::Recipes::Cnvnator qw{ analysis_cnvnator };
 use MIP::Recipes::Fastqc qw{ analysis_fastqc };
+use MIP::Recipes::Gatk_genotypegvcfs qw{ analysis_gatk_genotypegvcfs };
 use MIP::Recipes::Gatk_baserecalibration qw{ analysis_gatk_baserecalibration };
 use MIP::Recipes::Gatk_haplotypecaller qw{ analysis_gatk_haplotypecaller };
 use MIP::Recipes::Gatk_realigner qw{ analysis_gatk_realigner };
+use MIP::Recipes::Gatk_variantrecalibration qw{ analysis_gatk_variantrecalibration_wgs analysis_gatk_variantrecalibration_wes };
 use MIP::Recipes::Manta qw{ analysis_manta };
 use MIP::Recipes::Markduplicates qw{ analysis_markduplicates };
 use MIP::Recipes::Picardtools_collecthsmetrics
@@ -2131,20 +2133,33 @@ if ( $active_parameter{pgatk_haplotypecaller} > 0 ) {  #Run GATK haplotypecaller
     }
 }
 
+#Run GATK genotypegvcfs. Done per family
 if ( $active_parameter{pgatk_genotypegvcfs} > 0 )
-{    #Run GATK genotypegvcfs. Done per family
+{
+    $log->info( q{[GATK genotypegvcfs]} );
+    my $program_name = lc q{gatk_genotypegvcfs};
 
-    $log->info("[GATK genotypegvcfs]\n");
+    my $outfamily_directory = catfile(
+        $active_parameter{outdata_dir},    $active_parameter{family_id},
+        $active_parameter{outaligner_dir}, q{gatk},
+    );
 
-    mgatk_genotypegvcfs(
+    my $outfamily_file_directory = catdir(
+        $active_parameter{outdata_dir}, $active_parameter{family_id},
+    );
+
+    analysis_gatk_genotypegvcfs(
         {
-            parameter_href          => \%parameter,
-            active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
-            file_info_href          => \%file_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            program_name            => "gatk_genotypegvcfs",
+            parameter_href           => \%parameter,
+            active_parameter_href    => \%active_parameter,
+            sample_info_href         => \%sample_info,
+            file_info_href           => \%file_info,
+            infile_lane_prefix_href  => \%infile_lane_prefix,
+            job_id_href              => \%job_id,
+            program_name             => $program_name,
+            family_id                => $active_parameter{family_id},
+            outfamily_directory      => $outfamily_directory,
+            outfamily_file_directory => $outfamily_file_directory,
         }
     );
 
