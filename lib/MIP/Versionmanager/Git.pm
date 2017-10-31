@@ -107,11 +107,11 @@ sub git_clone {
     my @commands = qw{ git clone };
 
     if ($verbose) {
-        push @commands, q{--verbose},;
+        push @commands, q{--verbose};
     }
 
     if ($quiet) {
-        push @commands, q{--quiet},;
+        push @commands, q{--quiet};
     }
 
     push @commands, $url;
