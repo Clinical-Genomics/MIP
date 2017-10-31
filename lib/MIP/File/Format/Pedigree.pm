@@ -11,7 +11,6 @@ use autodie;
 use Params::Check qw{ check allow last_error};
 use Readonly;
 use English qw{ -no_match_vars };
-use IPC::Run qw{ run };
 
 ## MIPs lib/
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
@@ -96,36 +95,15 @@ sub gatk_pedigree_flag {
 
     my %command;
 
-
-    #my $cmds = $pq_parent_counter . $SPACE . $fam_file_path;
-
-    #scalar run( command => $cmds,
-    #               verbose => 0,
-    #               buffer  => \$parent_counter,
-    #          );
-
-   #$cmds = $pq_child_counter . $SPACE . $fam_file_path;
-
-   #scalar run( command => $cmds,
-  #              verbose => 0,
-  #                buffer  => \$child_counter,
-  #           );
-
+  # Count the number of parents
   $parent_counter =
-      `$pq_parent_counter $fam_file_path`;    #Count the number of parents
-    $child_counter =
-      `$pq_child_counter $fam_file_path`;     #Count the number of children
+      `$pq_parent_counter $fam_file_path`;
+
+  # ount the number of children
+  $child_counter =
+      `$pq_child_counter $fam_file_path`;
 
 
-
-#my $cmds_ref = [$pq_parent_counter, $fam_file_path];
-
-#    my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) = run(
-#    command => $cmds_ref,
-#    #verbose => $verbose,
-#);
-
-    # Parents are present
     if ( $parent_counter > 0 ) {
 
         $command{pedigree_validation_type} = $pedigree_validation_type;
