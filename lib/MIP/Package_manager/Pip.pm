@@ -224,8 +224,8 @@ sub _build_package_check_regexp {
 
 ## Function : Build regexp for package check
 ## Returns  : $check_pip_package_regexp
-## Arguments: $package           => Pip package to check
-##          : $version           => Optional version check
+## Arguments: $package => Pip package to check
+##          : $version => Optional version check
 
     my ($arg_href) = @_;
 
