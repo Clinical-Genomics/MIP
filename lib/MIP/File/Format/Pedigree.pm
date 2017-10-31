@@ -99,23 +99,22 @@ sub gatk_pedigree_flag {
     #$parent_counter = run( $pq_parent_counter, $fam_file_path );
 
 
-    my $cmds_ref = [$pq_parent_counter, $fam_file_path];
 
-    my ($success, $error_message, $full_buf, $stdout_buf, $stderr_buf) =
-      run(
-        command => $cmds_ref,
-        verbose => 0
-      );
 
-    $parent_counter = join "", @$full_buf;
 
-    ($success, $error_message, $full_buf, $stdout_buf, $stderr_buf) =
-      run(
-        command => $cmds_ref,
-        verbose => 0
-      );
+    my $cmds = $pq_parent_counter . $SPACE . $fam_file_path;
 
-    $child_counter = join "", @$full_buf;
+    scalar run( command => $cmds,
+                   verbose => 0,
+                   buffer  => \$parent_counter,
+              );
+
+   $cmds = $pq_child_counter . $SPACE . $fam_file_path;
+
+   scalar run( command => $cmds,
+                  verbose => 0,
+                  buffer  => \$child_counter,
+             );
 
 
 
