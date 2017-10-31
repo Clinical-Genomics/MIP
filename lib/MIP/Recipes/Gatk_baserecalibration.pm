@@ -187,7 +187,7 @@ sub analysis_gatk_baserecalibration {
       qw{ gatk_baserecalibrator gatk_printreads };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_gatherbamfiles };
     use MIP::QC::Record
-      qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info };
+      qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info add_processing_metafile_to_sample_info };
     use MIP::Recipes::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
