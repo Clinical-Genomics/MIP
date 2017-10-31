@@ -427,9 +427,8 @@ sub conda_uninstall {
         push @commands, q{--name} . $SPACE . $env_name;
     }
 
+    # Do not display progress bar
     if ($quiet) {
-
-        #Do not display progress bar
         push @commands, q{--quiet};
     }
 

@@ -24,7 +24,7 @@ BEGIN {
     our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ pip_install pip_check_package};
+    our @EXPORT_OK = qw{ pip_install check_pip_package};
 }
 
 ## Constants
@@ -145,7 +145,7 @@ sub pip_check_package {
 ## Function : Check if the package has been installed via pip
 ## Returns  : $status
 ## Arguments: $package           => Pip package to check
-##          : $version           => optional version check
+##          : $version           => Optional version check
 ##          : $conda_environment => Name of conda environment
 ##          : $conda_prefix_path => Path to conda environment
 
@@ -180,10 +180,78 @@ sub pip_check_package {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my $detect_regexp;
+    my $check_pip_package_regexp = _build_package_check_regexp(
+        {
+            package => $package,
+            version => $version,
+        }
+    );
+
+    # Variable for storing pip package status
+    my $status;
+
+    # Shell command to launch
+    my $command;
+
+    # Check if the program is to be installed into a conda env
+    if ($conda_environment) {
+
+        # Check if the environemnt already exists
+        if ( -d $conda_prefix_path ) {
+
+            # Test if the program already exists in that environment
+            $command =
+qq{conda list -n $conda_environment | grep 'pip' | $check_pip_package_regexp};
+            run(
+                command => $command,
+                buffer  => \$status
+            );
+        }
+    }
+    else {
+        #Test if the program is already installed in the root env
+        $command = qq{pip list --format columns | $check_pip_package_regexp};
+        run(
+            command => $command,
+            buffer  => \$status
+        );
+    }
+
+    return $status;
+}
+
+sub _build_package_check_regexp {
+
+## Function : Build regexp for package check
+## Returns  : $check_pip_package_regexp
+## Arguments: $package           => Pip package to check
+##          : $version           => Optional version check
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $package;
+    my $version;
+
+    my $tmpl = {
+        package => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$package,
+        },
+        version => {
+            strict_type => 1,
+            store       => \$version,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $check_pip_package_regexp;
 
     if ($version) {
-        $detect_regexp =
+        $check_pip_package_regexp =
 
           # Execute perl, loop over input and split on whitespace
           q?perl -nae? . $SPACE
@@ -195,7 +263,7 @@ sub pip_check_package {
           . q?{print 1}'?;
     }
     else {
-        $detect_regexp =
+        $check_pip_package_regexp =
 
           # Execute perl, loop over input and split on whitespace
           q?perl -nae? . $SPACE
@@ -207,37 +275,8 @@ sub pip_check_package {
           . q?{print 1}' ?;
     }
 
-    my $status;
-
-    # shell command to launch
-    my $command;
-
-    # Check if the program is to be installed into a conda env
-    if ($conda_environment) {
-
-        # Check if the environemnt already exists
-        if ( -d $conda_prefix_path ) {
-
-            # Test if the program already exists in that environment
-            $command =
-qq{conda list -n $conda_environment | grep 'pip' | $detect_regexp};
-            run(
-                command => $command,
-                buffer  => \$status
-            );
-        }
-    }
-    else {
-        #Test if the program is already installed in the root env
-        $command = qq{pip list --format columns | $detect_regexp};
-        run(
-            command => $command,
-            buffer  => \$status
-        );
-
-    }
-
-    return $status;
+    return $check_pip_package_regexp;
 
 }
+
 1;
