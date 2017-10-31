@@ -107,6 +107,14 @@ sub gatk_pedigree_flag {
     );
 
 
+    $cmds_ref = [$pq_child_counter, $fam_file_path];
+
+    run (
+      command => $cmds_ref,
+      buffer => $child_counter,
+    );
+
+
 
 
 
