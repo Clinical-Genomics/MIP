@@ -269,7 +269,13 @@ sub analysis_gatk_genotypegvcfs {
       SAMPLE:
         foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
-            my $infile = $file_info_href->{$sample_id}{merged_infile};    #Alias
+            ## Add merged infile name prefix after merging all BAM files per sample_id
+            my $merged_infile_prefix = get_merged_infile_prefix(
+                {
+                    file_info_href => $file_info_href,
+                    sample_id      => $sample_id,
+                }
+            );
 
             ## Assign directories
             my $insample_directory =
@@ -279,7 +285,7 @@ sub analysis_gatk_genotypegvcfs {
             ## Assign file_tags
             my $infile_tag =
               $file_info_href->{$sample_id}{pgatk_haplotypecaller}{file_tag};
-            my $infile_prefix = $infile . $infile_tag . $UNDERSCORE . $contig;
+            my $infile_prefix = $merged_infile_prefix . $infile_tag . $UNDERSCORE . $contig;
 
             ## Collect for downstream use
             push
@@ -300,6 +306,12 @@ sub analysis_gatk_genotypegvcfs {
                 }
             );
             say {$FILEHANDLE} q{wait} . $NEWLINE;
+
+
+
+
+
+
         }
 
         ## GATK GenoTypeGVCFs
