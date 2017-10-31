@@ -101,20 +101,21 @@ sub gatk_pedigree_flag {
 
     my $cmds_ref = [$pq_parent_counter, $fam_file_path];
 
-    run (
-      command => $cmds_ref,
-      buffer => $parent_counter,
-    );
+    my ($success, $error_message, $full_buf, $stdout_buf, $stderr_buf) =
+      run(
+        command => $cmds_ref,
+        verbose => 0
+      );
 
+    $parent_counter = join "", @$full_buf;
 
-    $cmds_ref = [$pq_child_counter, $fam_file_path];
+    my ($success, $error_message, $full_buf, $stdout_buf, $stderr_buf) =
+      run(
+        command => $cmds_ref,
+        verbose => 0
+      );
 
-    run (
-      command => $cmds_ref,
-      buffer => $child_counter,
-    );
-
-
+    $child_counter = join "", @$full_buf;
 
 
 
