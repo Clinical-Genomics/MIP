@@ -96,10 +96,18 @@ sub gatk_pedigree_flag {
     my %command;
 
     # Count the number of parents
-    $parent_counter = run( $pq_parent_counter, $fam_file_path );
+    #$parent_counter = run( $pq_parent_counter, $fam_file_path );
+my $cmds_ref = [$pq_parent_counter, $fam_file_path];
 
+    my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) = run(
+    command => $cmds_ref,
+    verbose => $verbose
+);
+
+  $parent_counter = $stdout_buf;
+  
     # Count the number of children
-    $child_counter = run( $pq_child_counter, $fam_file_path );
+    #$child_counter = run( $pq_child_counter, $fam_file_path );
 
     # Parents are present
     if ( $parent_counter > 0 ) {
@@ -300,7 +308,7 @@ sub _build_parent_child_counter_regexp {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-    
+
     ## Execute perl
     my $regexp = q?perl -ne '?;
 
