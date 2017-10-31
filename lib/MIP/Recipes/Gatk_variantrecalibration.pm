@@ -32,6 +32,7 @@ BEGIN {
 
 ##Constants
 Readonly my $ASTERIX    => q{*};
+Readonly my $AMPERSAND  => q{&};
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
@@ -47,6 +48,8 @@ sub analysis_gatk_variantrecalibration_wgs {
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
+##          : $infamily_directory      => In family directory
+##          : $outfamily_directory     => Out family directory
 ##          : $program_name            => Program name
 ##          : $family_id               => Family id
 ##          : $temp_directory          => Temporary directory
@@ -62,6 +65,8 @@ sub analysis_gatk_variantrecalibration_wgs {
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
+    my $infamily_directory;
+    my $outfamily_directory;
     my $program_name;
 
     ## Default(s)
@@ -113,6 +118,18 @@ sub analysis_gatk_variantrecalibration_wgs {
             strict_type => 1,
             store       => \$job_id_href,
         },
+        infamily_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$infamily_directory,
+        },
+        outfamily_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$outfamily_directory,
+        },
         program_name => {
             required    => 1,
             defined     => 1,
@@ -141,6 +158,7 @@ sub analysis_gatk_variantrecalibration_wgs {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Delete::List qw{ delete_contig_elements };
+    use MIP::File::Format::Pedigree qw{ create_fam_file gatk_pedigree_flag };
     use MIP::Get::File qw{ get_file_suffix };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Language::Java qw{ java_core };
@@ -269,9 +287,8 @@ sub analysis_gatk_variantrecalibration_wgs {
     ## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
     my %commands = gatk_pedigree_flag(
         {
-            active_parameter_href => $active_parameter_href,
-            fam_file_path         => $fam_file_path,
-            program_name          => $program_name,
+            fam_file_path => $fam_file_path,
+            program_name  => $program_name,
         }
     );
 
@@ -432,10 +449,8 @@ sub analysis_gatk_variantrecalibration_wgs {
 
         say {$FILEHANDLE} q{## GATK CalculateGenotypePosteriors};
 
-        my $outfile_path => $outfile_path_prefix
-          . $UNDESCORE
-          . q{refined}
-          . $outfile_suffix;
+        my $outfile_path =
+          $outfile_path_prefix . $UNDERSCORE . q{refined} . $outfile_suffix;
         gatk_calculategenotypeposteriors(
             {
                 memory_allocation => q{Xmx6g},
@@ -496,7 +511,7 @@ sub analysis_gatk_variantrecalibration_wgs {
     say {$FILEHANDLE} q{## Copy file from temporary directory};
     my @outfiles = (
         $outfile_path_prefix . $outfile_suffix . $ASTERIX,
-        $recal_file_path . $DOT . q{tranches.pdf},
+        $file_path_prefix . $DOT . q{intervals} . $DOT . q{tranches.pdf},
     );
 
   FILE:
@@ -561,6 +576,8 @@ sub analysis_gatk_variantrecalibration_wes {
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
+##          : $infamily_directory      => In family directory
+##          : $outfamily_directory     => Out family directory
 ##          : $program_name            => Program name
 ##          : $family_id               => Family id
 ##          : $temp_directory          => Temporary directory
@@ -576,6 +593,8 @@ sub analysis_gatk_variantrecalibration_wes {
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
+    my $infamily_directory;
+    my $outfamily_directory;
     my $program_name;
 
     ## Default(s)
@@ -626,6 +645,18 @@ sub analysis_gatk_variantrecalibration_wes {
             default     => {},
             strict_type => 1,
             store       => \$job_id_href,
+        },
+        infamily_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$infamily_directory,
+        },
+        outfamily_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$outfamily_directory,
         },
         program_name => {
             required    => 1,
@@ -782,9 +813,8 @@ sub analysis_gatk_variantrecalibration_wes {
     ## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
     my %commands = gatk_pedigree_flag(
         {
-            active_parameter_href => $active_parameter_href,
-            fam_file_path         => $fam_file_path,
-            program_name          => $program_name,
+            fam_file_path => $fam_file_path,
+            program_name  => $program_name,
         }
     );
 
@@ -836,7 +866,7 @@ sub analysis_gatk_variantrecalibration_wes {
             { resources_href => $resource_indel_href, } );
 
         # Create distinct set i.e. no duplicates.
-        @resources = uniq( @indel_resources, @snv_resources );
+        my @resources = uniq( @indel_resources, @snv_resources );
 
         ## Use hard filtering
         if (   $enable_snv_max_gaussians_filter
@@ -958,17 +988,15 @@ sub analysis_gatk_variantrecalibration_wes {
             FILEHANDLE          => $FILEHANDLE,
         }
     );
-    print {$FILEHANDLE} $SPACE . $AMPERSAND;
+    say {$FILEHANDLE} $NEWLINE;
 
     ## GenotypeRefinement
     if ( $parameter_href->{dynamic_parameter}{trio} ) {
 
         say {$FILEHANDLE} q{## GATK CalculateGenotypePosteriors};
 
-        my $outfile_path => $outfile_path_prefix
-          . $UNDESCORE
-          . q{refined}
-          . $outfile_suffix;
+        my $outfile_path =
+          $outfile_path_prefix . $UNDERSCORE . q{refined} . $outfile_suffix;
         gatk_calculategenotypeposteriors(
             {
                 memory_allocation => q{Xmx6g},
@@ -1033,7 +1061,7 @@ sub analysis_gatk_variantrecalibration_wes {
     say {$FILEHANDLE} q{## Copy file from temporary directory};
     my @outfiles = (
         $outfile_path_prefix . $outfile_suffix . $ASTERIX,
-        $recal_file_path . $DOT . q{tranches.pdf},
+        $file_path_prefix . $DOT . q{intervals} . $DOT . q{tranches.pdf},
     );
 
   FILE:

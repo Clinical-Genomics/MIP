@@ -22,7 +22,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ create_fam_file gatk_pedigree_flag };
@@ -43,8 +43,7 @@ sub gatk_pedigree_flag {
 
 ## Function : Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
 ## Returns  : "%command"
-## Arguments: $active_parameter_href    => Active parameters for this analysis hash {REF}
-##          : $fam_file_path            => The family file path
+## Arguments: $fam_file_path            => The family file path
 ##          : $program_name             => The program to use the pedigree file
 ##          : $pedigree_validation_type => The pedigree validation strictness level
 
@@ -54,7 +53,6 @@ sub gatk_pedigree_flag {
     my $pedigree_validation_type;
 
     ## Flatten argument(s)
-    my $active_parameter_href;
     my $fam_file_path;
     my $program_name;
 
@@ -82,27 +80,28 @@ sub gatk_pedigree_flag {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my $parent_counter;
-    my $pq_parent_counter = _build_parent_child_counter_regexp( {
+    my $pq_parent_counter = _build_parent_child_counter_regexp(
+        {
 
-        family_member => q{parent},
-    });
+            family_member => q{parent},
+        }
+    );
 
     my $child_counter;
-    my $pq_child_counter = _build_parent_child_counter_regexp( {
+    my $pq_child_counter = _build_parent_child_counter_regexp(
+        {
 
-        family_member => q{child},
-    });
+            family_member => q{child},
+        }
+    );
 
     my %command;
 
-  # Count the number of parents
-  $parent_counter =
-      `$pq_parent_counter $fam_file_path`;
+    # Count the number of parents
+    $parent_counter = `$pq_parent_counter $fam_file_path`;
 
-  # ount the number of children
-  $child_counter =
-      `$pq_child_counter $fam_file_path`;
-
+    # ount the number of children
+    $child_counter = `$pq_child_counter $fam_file_path`;
 
     if ( $parent_counter > 0 ) {
 
@@ -112,7 +111,6 @@ sub gatk_pedigree_flag {
         $command{pedigree} = $fam_file_path;
     }
     return %command;
-
 }
 
 sub create_fam_file {

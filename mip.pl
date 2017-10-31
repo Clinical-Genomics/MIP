@@ -73,7 +73,8 @@ use MIP::Recipes::Gatk_genotypegvcfs qw{ analysis_gatk_genotypegvcfs };
 use MIP::Recipes::Gatk_baserecalibration qw{ analysis_gatk_baserecalibration };
 use MIP::Recipes::Gatk_haplotypecaller qw{ analysis_gatk_haplotypecaller };
 use MIP::Recipes::Gatk_realigner qw{ analysis_gatk_realigner };
-use MIP::Recipes::Gatk_variantrecalibration qw{ analysis_gatk_variantrecalibration_wgs analysis_gatk_variantrecalibration_wes };
+use MIP::Recipes::Gatk_variantrecalibration
+  qw{ analysis_gatk_variantrecalibration_wgs analysis_gatk_variantrecalibration_wes };
 use MIP::Recipes::Manta qw{ analysis_manta };
 use MIP::Recipes::Markduplicates qw{ analysis_markduplicates };
 use MIP::Recipes::Picardtools_collecthsmetrics
@@ -2134,19 +2135,18 @@ if ( $active_parameter{pgatk_haplotypecaller} > 0 ) {  #Run GATK haplotypecaller
 }
 
 #Run GATK genotypegvcfs. Done per family
-if ( $active_parameter{pgatk_genotypegvcfs} > 0 )
-{
-    $log->info( q{[GATK genotypegvcfs]} );
+if ( $active_parameter{pgatk_genotypegvcfs} > 0 ) {
+    $log->info(q{[GATK genotypegvcfs]});
     my $program_name = lc q{gatk_genotypegvcfs};
 
     my $outfamily_directory = catfile(
-        $active_parameter{outdata_dir},    $active_parameter{family_id},
+        $active_parameter{outdata_dir},
+        $active_parameter{family_id},
         $active_parameter{outaligner_dir}, q{gatk},
     );
 
-    my $outfamily_file_directory = catdir(
-        $active_parameter{outdata_dir}, $active_parameter{family_id},
-    );
+    my $outfamily_file_directory =
+      catdir( $active_parameter{outdata_dir}, $active_parameter{family_id}, );
 
     analysis_gatk_genotypegvcfs(
         {
@@ -2211,6 +2211,7 @@ if ( $active_parameter{pgatk_variantrecalibration} > 0 ) {
         );
     }
     else {
+
         ## WGS and WES/WGS
         analysis_gatk_variantrecalibration_wgs(
             {

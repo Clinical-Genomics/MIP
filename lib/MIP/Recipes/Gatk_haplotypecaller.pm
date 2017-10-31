@@ -169,7 +169,7 @@ sub analysis_gatk_haplotypecaller {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Pedigree qw{ create_fam_file };
+    use MIP::File::Format::Pedigree qw{ create_fam_file gatk_pedigree_flag };
     use MIP::File::Interval qw{ generate_contig_interval_file };
     use MIP::Get::File
       qw{ get_file_suffix get_merged_infile_prefix get_exom_target_bed_file };
@@ -405,16 +405,15 @@ sub analysis_gatk_haplotypecaller {
         ## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
         my %commands = gatk_pedigree_flag(
             {
-                active_parameter_href => $active_parameter_href,
-                fam_file_path         => $fam_file_path,
-                program_name          => $program_name,
+                fam_file_path => $fam_file_path,
+                program_name  => $program_name,
             }
         );
 
         my $infile_path =
           $file_path_prefix . $UNDERSCORE . $contig . $infile_suffix;
-        my $outfile_path => $outfile_path_prefix . $UNDERSCORE . $contig
-          . $outfile_suffix;
+        my $outfile_path =
+          $outfile_path_prefix . $UNDERSCORE . $contig . $outfile_suffix;
         my $stderrfile_path => $xargs_file_path_prefix . $DOT . $contig . $DOT
           . q{stderr.txt};
 
