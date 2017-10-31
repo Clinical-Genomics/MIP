@@ -299,8 +299,8 @@ sub _build_parent_child_counter_regexp {
         },
     };
 
-
-
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+    
     ## Execute perl
     my $regexp = q?perl -ne '?;
 
