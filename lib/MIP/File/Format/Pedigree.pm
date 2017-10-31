@@ -82,16 +82,16 @@ sub gatk_pedigree_flag {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my $parent_counter;
-    my $pq_parent_counter = _build_parent_child_counter_regexp {
+    my $pq_parent_counter = _build_parent_child_counter_regexp( {
 
         family_member => q{parent},
-    };
+    });
 
     my $child_counter;
-    my $pq_child_counter = _build_parent_child_counter_regexp {
+    my $pq_child_counter = _build_parent_child_counter_regexp( {
 
         family_member => q{child},
-    };
+    });
 
     my %command;
 
@@ -299,7 +299,7 @@ sub _build_parent_child_counter_regexp {
         },
     };
 
-    
+
 
     ## Execute perl
     my $regexp = q?perl -ne '?;

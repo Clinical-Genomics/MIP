@@ -233,7 +233,6 @@ sub analysis_gatk_genotypegvcfs {
             sample_info_href      => $sample_info_href,
             FILEHANDLE            => $FILEHANDLE,
             fam_file_path         => $fam_file_path,
-
         }
     );
 
@@ -306,11 +305,6 @@ sub analysis_gatk_genotypegvcfs {
                 }
             );
             say {$FILEHANDLE} q{wait} . $NEWLINE;
-
-
-
-
-
 
         }
 
