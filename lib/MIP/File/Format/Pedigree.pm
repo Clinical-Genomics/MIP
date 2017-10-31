@@ -35,6 +35,7 @@ Readonly my $NEWLINE      => qq{\n};
 Readonly my $QUOTE        => q{'};
 Readonly my $DOUBLE_QUOTE => q{"};
 Readonly my $UNDERSCORE   => q{_};
+Readonly my $SPACE        => q{ };
 
 # Ignore the warning from putting '#' in qw{}
 no warnings qw{ qw };
