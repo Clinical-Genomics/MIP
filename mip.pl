@@ -189,7 +189,7 @@ if ($error_msg) {
 }
 
 # Set MIP version
-our $VERSION = 'v5.0.11';
+our $VERSION = 'v5.0.12';
 
 ## Directories, files, job_ids and sample_info
 my ( %infile, %indir_path, %infile_lane_prefix, %lane,
