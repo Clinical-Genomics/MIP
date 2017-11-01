@@ -1,4 +1,4 @@
-package MIP::Recipes::Markduplicates;
+package MIP::Recipes::Analysis::Markduplicates;
 
 use strict;
 use warnings;
@@ -183,7 +183,7 @@ sub analysis_markduplicates {
     use MIP::Program::Alignment::Sambamba
       qw{ sambamba_markdup sambamba_flagstat };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_markduplicates };
-    use MIP::Recipes::Xargs qw{ xargs_command };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::QC::Record
       qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info };
@@ -625,7 +625,7 @@ sub analysis_markduplicates_rio {
     use MIP::Program::Alignment::Sambamba
       qw{ sambamba_markdup sambamba_flagstat };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_markduplicates };
-    use MIP::Recipes::Xargs qw{ xargs_command };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::QC::Record
       qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info };
 

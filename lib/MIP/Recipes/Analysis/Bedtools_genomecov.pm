@@ -1,4 +1,4 @@
-package MIP::Recipes::Bedtools_genomecov;
+package MIP::Recipes::Analysis::Bedtools_genomecov;
 
 use strict;
 use warnings;

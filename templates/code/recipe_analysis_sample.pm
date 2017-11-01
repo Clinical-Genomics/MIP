@@ -1,4 +1,4 @@
-package MIP::Recipes::RECIPE_NAME;
+package MIP::Recipes::Analysis::RECIPE_NAME;
 
 use strict;
 use warnings;

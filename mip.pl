@@ -61,40 +61,40 @@ use MIP::Update::Programs
   qw{ update_program_mode_with_dry_run_all update_program_mode update_prioritize_flag };
 
 ## Recipes
-use MIP::Recipes::Bamcalibrationblock qw{ analysis_bamcalibrationblock };
-use MIP::Recipes::Bedtools_genomecov qw{ analysis_bedtools_genomecov };
-use MIP::Recipes::Bwa_mem qw{ analysis_bwa_mem };
+use MIP::Recipes::Analysis::Bamcalibrationblock qw{ analysis_bamcalibrationblock };
+use MIP::Recipes::Analysis::Bedtools_genomecov qw{ analysis_bedtools_genomecov };
+use MIP::Recipes::Analysis::Bwa_mem qw{ analysis_bwa_mem };
 use MIP::Recipes::Build::Human_genome_prerequisites
   qw{ build_human_genome_prerequisites };
-use MIP::Recipes::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
-use MIP::Recipes::Cnvnator qw{ analysis_cnvnator };
-use MIP::Recipes::Fastqc qw{ analysis_fastqc };
-use MIP::Recipes::Gatk_concatenate_genotypegvcfs
+use MIP::Recipes::Analysis::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
+use MIP::Recipes::Analysis::Cnvnator qw{ analysis_cnvnator };
+use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
+use MIP::Recipes::Analysis::Gatk_concatenate_genotypegvcfs
   qw{ analysis_gatk_concatenate_genotypegvcfs };
-use MIP::Recipes::Gatk_genotypegvcfs qw{ analysis_gatk_genotypegvcfs };
-use MIP::Recipes::Gatk_baserecalibration qw{ analysis_gatk_baserecalibration };
-use MIP::Recipes::Gatk_haplotypecaller qw{ analysis_gatk_haplotypecaller };
-use MIP::Recipes::Gatk_realigner qw{ analysis_gatk_realigner };
-use MIP::Recipes::Gatk_variantrecalibration
+use MIP::Recipes::Analysis::Gatk_genotypegvcfs qw{ analysis_gatk_genotypegvcfs };
+use MIP::Recipes::Analysis::Gatk_baserecalibration qw{ analysis_gatk_baserecalibration };
+use MIP::Recipes::Analysis::Gatk_haplotypecaller qw{ analysis_gatk_haplotypecaller };
+use MIP::Recipes::Analysis::Gatk_realigner qw{ analysis_gatk_realigner };
+use MIP::Recipes::Analysis::Gatk_variantrecalibration
   qw{ analysis_gatk_variantrecalibration_wgs analysis_gatk_variantrecalibration_wes };
-use MIP::Recipes::Manta qw{ analysis_manta };
-use MIP::Recipes::Markduplicates qw{ analysis_markduplicates };
-use MIP::Recipes::Picardtools_collecthsmetrics
+use MIP::Recipes::Analysis::Manta qw{ analysis_manta };
+use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates };
+use MIP::Recipes::Analysis::Picardtools_collecthsmetrics
   qw{ analysis_picardtools_collecthsmetrics };
-use MIP::Recipes::Picardtools_collectmultiplemetrics
+use MIP::Recipes::Analysis::Picardtools_collectmultiplemetrics
   qw{ analysis_picardtools_collectmultiplemetrics };
-use MIP::Recipes::Picardtools_genotypeconcordance
+use MIP::Recipes::Analysis::Picardtools_genotypeconcordance
   qw{ analysis_picardtools_genotypeconcordance };
-use MIP::Recipes::Picardtools_mergesamfiles
+use MIP::Recipes::Analysis::Picardtools_mergesamfiles
   qw{ analysis_picardtools_mergesamfiles };
 use MIP::Recipes::Pipeline::Wts qw{ pipeline_wts };
-use MIP::Recipes::Rcoverageplots qw{ analysis_rcoverageplots };
-use MIP::Recipes::Sambamba_depth qw{ analysis_sambamba_depth };
-use MIP::Recipes::Split_fastq_file qw{ analysis_split_fastq_file };
-use MIP::Recipes::Tiddit qw{ analysis_tiddit };
-use MIP::Recipes::Variant_integrity qw{ analysis_variant_integrity };
-use MIP::Recipes::Vep qw{ analysis_vep analysis_vep_rio analysis_vep_sv };
-use MIP::Recipes::Vt_core qw{ analysis_vt_core analysis_vt_core_rio};
+use MIP::Recipes::Analysis::Rcoverageplots qw{ analysis_rcoverageplots };
+use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
+use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
+use MIP::Recipes::Analysis::Tiddit qw{ analysis_tiddit };
+use MIP::Recipes::Analysis::Variant_integrity qw{ analysis_variant_integrity };
+use MIP::Recipes::Analysis::Vep qw{ analysis_vep analysis_vep_rio analysis_vep_sv };
+use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core analysis_vt_core_rio};
 
 our $USAGE = build_usage( {} );
 
@@ -4516,7 +4516,7 @@ sub rankvariant {
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::IO::Files qw{ xargs_migrate_contig_files };
-    use MIP::Recipes::Xargs qw{ xargs_command };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use Program::Variantcalling::Genmod qw(annotate models score compound);
     use MIP::QC::Record
       qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
@@ -5923,7 +5923,7 @@ sub snpeff {
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
-    use MIP::Recipes::Xargs qw{ xargs_command };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use Program::Variantcalling::Snpeff qw(ann);
     use Program::Variantcalling::Snpsift qw(annotate dbnsfp);
     use Program::Variantcalling::Mip qw(vcfparser);
@@ -6521,7 +6521,7 @@ sub mvcfparser {
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
-    use MIP::Recipes::Xargs qw{ xargs_command };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use Program::Variantcalling::Mip qw(vcfparser);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
@@ -7700,7 +7700,7 @@ sub vt {
     use MIP::Cluster qw(get_core_number);
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
-    use MIP::Recipes::Xargs qw{ xargs_command };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use Program::Variantcalling::Genmod qw(annotate filter);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
@@ -8137,7 +8137,7 @@ sub rhocall {
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
-    use MIP::Recipes::Xargs qw{ xargs_command };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Program::Variantcalling::Bcftools qw(bcftools_roh);
     use Program::Variantcalling::Rhocall qw(aggregate annotate);
     use MIP::Processmanagement::Slurm_processes
@@ -8482,7 +8482,7 @@ sub prepareforvariantannotationblock {
     use MIP::IO::Files qw(migrate_files);
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
-    use MIP::Recipes::Xargs qw{ xargs_command };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use Program::Htslib qw(bgzip tabix);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
@@ -9681,7 +9681,7 @@ sub sv_rankvariant {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Delete::List qw{ delete_contig_elements delete_male_contig};
-    use MIP::Recipes::Xargs qw{ xargs_command };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use Program::Variantcalling::Genmod qw(annotate models score compound);
     use MIP::QC::Record
@@ -10334,7 +10334,7 @@ sub sv_vcfparser {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Delete::List qw{ delete_contig_elements delete_male_contig};
-    use MIP::Recipes::Xargs qw{ xargs_command };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use Program::Variantcalling::Mip qw(vcfparser);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
@@ -11660,7 +11660,7 @@ sub delly_reformat {
     use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
     use MIP::Set::File qw{set_file_suffix};
-    use MIP::Recipes::Xargs qw{ xargs_command };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use Program::Variantcalling::Delly qw(call merge filter);
     use MIP::Program::Variantcalling::Bcftools
@@ -12942,7 +12942,7 @@ sub msamtools_mpileup {
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
     use MIP::Set::File qw{set_file_suffix};
-    use MIP::Recipes::Xargs qw{ xargs_command };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Program::Alignment::Samtools qw(samtools_mpileup);
     use MIP::Program::Variantcalling::Bcftools
       qw(bcftools_call bcftools_filter bcftools_norm);
@@ -13373,7 +13373,7 @@ sub freebayes {
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
     use MIP::Set::File qw{set_file_suffix};
-    use MIP::Recipes::Xargs qw{ xargs_command };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use Program::Variantcalling::Freebayes qw(calling);
     use MIP::Program::Variantcalling::Bcftools
       qw(bcftools_filter bcftools_norm);
@@ -19079,7 +19079,7 @@ sub split_bam {
 
     use MIP::Program::Alignment::Samtools qw(samtools_view);
     use MIP::Language::Java qw{java_core};
-    use MIP::Recipes::Xargs qw{ xargs_command };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
 
     my $xargs_file_path_prefix;
 

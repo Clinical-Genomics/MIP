@@ -1,4 +1,4 @@
-package MIP::Recipes::Gatk_concatenate_genotypegvcfs;
+package MIP::Recipes::Analysis::Gatk_concatenate_genotypegvcfs;
 
 use strict;
 use warnings;

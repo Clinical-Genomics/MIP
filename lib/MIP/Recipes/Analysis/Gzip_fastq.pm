@@ -1,4 +1,4 @@
-package MIP::Recipes::Gzip_fastq;
+package MIP::Recipes::Analysis::Gzip_fastq;
 
 use strict;
 use warnings;

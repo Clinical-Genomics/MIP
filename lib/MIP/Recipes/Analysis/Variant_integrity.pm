@@ -1,4 +1,4 @@
-package MIP::Recipes::Variant_integrity;
+package MIP::Recipes::Analysis::Variant_integrity;
 
 use strict;
 use warnings;

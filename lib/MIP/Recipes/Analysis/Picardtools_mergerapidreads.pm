@@ -1,4 +1,4 @@
-package MIP::Recipes::Picardtools_mergerapidreads;
+package MIP::Recipes::Analysis::Picardtools_mergerapidreads;
 
 use strict;
 use warnings;

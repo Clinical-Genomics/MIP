@@ -1,4 +1,4 @@
-package MIP::Recipes::Gatk_variantrecalibration;
+package MIP::Recipes::Analysis::Gatk_variantrecalibration;
 
 use strict;
 use warnings;

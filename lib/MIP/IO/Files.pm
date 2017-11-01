@@ -301,7 +301,7 @@ sub xargs_migrate_contig_files {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Recipes::Xargs qw{ xargs_command };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
 
     ## Create file commands for xargs
     ( $xargs_file_counter, my $xargs_file_path_prefix ) = xargs_command(

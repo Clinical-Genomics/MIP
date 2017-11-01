@@ -1,4 +1,4 @@
-package MIP::Recipes::Chanjo_sex_check;
+package MIP::Recipes::Analysis::Chanjo_sex_check;
 
 use strict;
 use warnings;

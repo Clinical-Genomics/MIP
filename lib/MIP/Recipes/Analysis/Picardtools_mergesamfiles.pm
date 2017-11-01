@@ -1,4 +1,4 @@
-package MIP::Recipes::Picardtools_mergesamfiles;
+package MIP::Recipes::Analysis::Picardtools_mergesamfiles;
 
 use strict;
 use warnings;
@@ -201,7 +201,7 @@ sub analysis_picardtools_mergesamfiles {
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::IO::Files qw{ migrate_files xargs_migrate_contig_files };
     use MIP::Get::File qw{ get_file_suffix };
-    use MIP::Recipes::Xargs qw{ xargs_command };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Program::Alignment::Sambamba qw{ split_and_index_aligment_file };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_mergesamfiles };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
@@ -682,7 +682,7 @@ sub analysis_picardtools_mergesamfiles_rio {
     use MIP::Check::Cluster qw{ check_max_core_number };
     use MIP::IO::Files qw{ migrate_files xargs_migrate_contig_files };
     use MIP::Get::File qw{ get_file_suffix };
-    use MIP::Recipes::Xargs qw{ xargs_command };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Program::Alignment::Sambamba qw{ split_and_index_aligment_file };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_mergesamfiles };
     use MIP::Gnu::Coreutils qw{ gnu_mv };

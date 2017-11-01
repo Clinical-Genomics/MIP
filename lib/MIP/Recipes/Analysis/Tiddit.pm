@@ -1,4 +1,4 @@
-package MIP::Recipes::Tiddit;
+package MIP::Recipes::Analysis::Tiddit;
 
 use strict;
 use warnings;

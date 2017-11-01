@@ -784,7 +784,7 @@ sub split_and_index_aligment_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Recipes::Xargs qw{ xargs_command };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
 
     my $xargs_file_path_prefix;
 

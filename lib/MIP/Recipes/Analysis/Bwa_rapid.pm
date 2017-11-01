@@ -1,4 +1,4 @@
-package MIP::Recipes::Bwa_rapid;
+package MIP::Recipes::Analysis::Bwa_rapid;
 
 use strict;
 use warnings;

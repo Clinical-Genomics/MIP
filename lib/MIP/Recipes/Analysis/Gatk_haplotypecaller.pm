@@ -1,4 +1,4 @@
-package MIP::Recipes::Gatk_haplotypecaller;
+package MIP::Recipes::Analysis::Gatk_haplotypecaller;
 
 use strict;
 use warnings;
@@ -177,7 +177,7 @@ sub analysis_gatk_haplotypecaller {
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::Program::Alignment::Gatk qw{ gatk_haplotypecaller };
-    use MIP::Recipes::Xargs qw{ xargs_command };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Set::File qw{ set_file_suffix };
 

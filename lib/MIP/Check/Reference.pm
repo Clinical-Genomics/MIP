@@ -14,9 +14,6 @@ use Params::Check qw{ check allow last_error };
 use Readonly;
 use List::MoreUtils qw { uniq };
 
-##MIPs lib/
-use MIP::Recipes::Vt_core qw{ analysis_vt_core };
-
 BEGIN {
     require Exporter;
     use base qw{ Exporter };

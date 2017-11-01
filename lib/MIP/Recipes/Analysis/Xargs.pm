@@ -1,4 +1,4 @@
-package MIP::Recipes::Xargs;
+package MIP::Recipes::Analysis::Xargs;
 
 use strict;
 use warnings;

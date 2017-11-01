@@ -1,4 +1,4 @@
-package MIP::Recipes::Vt_core;
+package MIP::Recipes::Analysis::Vt_core;
 
 use strict;
 use warnings;

@@ -1,4 +1,4 @@
-package MIP::Recipes::Picardtools_genotypeconcordance;
+package MIP::Recipes::Analysis::Picardtools_genotypeconcordance;
 
 use strict;
 use warnings;

@@ -142,7 +142,7 @@ sub pipeline_wts {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Recipes::Fastqc qw{ analysis_fastqc };
+    use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
 
     # Run FastQC
     if ( $active_parameter_href->{pfastqc} > 0 ) {

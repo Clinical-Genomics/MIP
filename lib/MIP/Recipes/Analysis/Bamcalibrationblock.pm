@@ -1,4 +1,4 @@
-package MIP::Recipes::Bamcalibrationblock;
+package MIP::Recipes::Analysis::Bamcalibrationblock;
 
 use strict;
 use warnings;
@@ -142,11 +142,11 @@ sub analysis_bamcalibrationblock {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Recipes::Markduplicates qw{ analysis_markduplicates_rio };
-    use MIP::Recipes::Picardtools_mergesamfiles
+    use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates_rio };
+    use MIP::Recipes::Analysis::Picardtools_mergesamfiles
       qw{ analysis_picardtools_mergesamfiles_rio };
-    use MIP::Recipes::Gatk_realigner qw{ analysis_gatk_realigner_rio };
-    use MIP::Recipes::Gatk_baserecalibration
+    use MIP::Recipes::Analysis::Gatk_realigner qw{ analysis_gatk_realigner_rio };
+    use MIP::Recipes::Analysis::Gatk_baserecalibration
       qw{ analysis_gatk_baserecalibration_rio };
     use MIP::Script::Setup_script qw{ setup_script };
 

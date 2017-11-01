@@ -1,4 +1,4 @@
-package MIP::Recipes::Split_fastq_file;
+package MIP::Recipes::Analysis::Split_fastq_file;
 
 use strict;
 use warnings;

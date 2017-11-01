@@ -1,4 +1,4 @@
-package MIP::Recipes::Bwa_mem;
+package MIP::Recipes::Analysis::Bwa_mem;
 
 use strict;
 use warnings;

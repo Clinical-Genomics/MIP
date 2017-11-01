@@ -1,4 +1,4 @@
-package MIP::Recipes::Manta;
+package MIP::Recipes::Analysis::Manta;
 
 use strict;
 use warnings;

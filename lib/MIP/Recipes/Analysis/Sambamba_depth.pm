@@ -1,4 +1,4 @@
-package MIP::Recipes::Picardtools_collectmultiplemetrics;
+package MIP::Recipes::Analysis::Sambamba_depth;
 
 use strict;
 use warnings;
@@ -21,36 +21,34 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_picardtools_collectmultiplemetrics };
+    our @EXPORT_OK = qw{ analysis_sambamba_depth };
 
 }
 
 ##Constants
-Readonly my $ASTERIX    => q{*};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $UNDERSCORE => q{_};
+Readonly my $ASTERIX      => q{*};
+Readonly my $NEWLINE      => qq{\n};
+Readonly my $SINGLE_QUOTE => q{'};
+Readonly my $SPACE        => q{ };
 
-sub analysis_picardtools_collectmultiplemetrics {
+sub analysis_sambamba_depth {
 
-## analysis_picardtools_collectmultiplemetrics
-
-## Function : Calculates coverage and alignment metrics on BAM files.
-## Returns  :
-## Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href
-##            $job_id_href, $sample_id, $insample_directory, $outsample_directory, $program_name, family_id, $temp_directory,
-##            $outaligner_dir
+## Function : Generate coverage bed outfile for each individual.
+## Returns  : ""
+## Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id, $insample_directory, $outsample_directory, $program_name, family_id, $temp_directory, $outaligner_dir
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $sample_info_href        => Info on samples and family hash {REF}
-##          : $file_info_href          => File info hash {REF}
+##          : $file_info_href          => The file_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $sample_id               => Sample id
 ##          : $insample_directory      => In sample directory
 ##          : $outsample_directory     => Out sample directory
+##          : $outaligner_dir          => Outaligner_dir used in the analysis
 ##          : $program_name            => Program name
 ##          : $family_id               => Family id
 ##          : $temp_directory          => Temporary directory
@@ -121,6 +119,7 @@ sub analysis_picardtools_collectmultiplemetrics {
         sample_id => {
             required    => 1,
             defined     => 1,
+            default     => 1,
             strict_type => 1,
             store       => \$sample_id
         },
@@ -128,13 +127,13 @@ sub analysis_picardtools_collectmultiplemetrics {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$insample_directory,
+            store       => \$insample_directory
         },
         outsample_directory => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$outsample_directory,
+            store       => \$outsample_directory
         },
         program_name => {
             required    => 1,
@@ -161,18 +160,14 @@ sub analysis_picardtools_collectmultiplemetrics {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use List::MoreUtils qw { any };
+    use MIP::Script::Setup_script qw{ setup_script};
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
-    use MIP::IO::Files qw{ migrate_file };
-    use MIP::Language::Java qw{ java_core };
+    use MIP::IO::Files qw{ migrate_file};
+    use MIP::Program::Alignment::Sambamba qw{ sambamba_depth };
+    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_dead_end };
-    use MIP::Program::Alignment::Picardtools
-      qw{ picardtools_collectmultiplemetrics };
-    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
-    use MIP::Script::Setup_script qw{ setup_script };
-
-    ## Constants
-    Readonly my $DOT => q{.};
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -203,17 +198,17 @@ sub analysis_picardtools_collectmultiplemetrics {
     my $infile_tag =
       $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag =
-      $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
+      $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
 
     ## Files
     my $infile_prefix  = $merged_infile_prefix . $infile_tag;
     my $outfile_prefix = $merged_infile_prefix . $outfile_tag;
 
     ## Paths
-    my $file_path_prefix    = catfile( $temp_directory, $infile_prefix );
-    my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
+    my $file_path_prefix = catfile( $temp_directory, $infile_prefix );
+    my $outfile_path_prefix = $file_path_prefix . $outfile_tag;
 
-    ## Assign suffix
+    ## Get infile_suffix from baserecalibration jobid chain
     my $infile_suffix = get_file_suffix(
         {
             parameter_href => $parameter_href,
@@ -221,6 +216,17 @@ sub analysis_picardtools_collectmultiplemetrics {
             jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain},
         }
     );
+    my $outfile_suffix = get_file_suffix(
+        {
+            parameter_href => $parameter_href,
+            suffix_key     => q{outfile_suffix},
+            program_name   => $mip_program_name,
+        }
+    );
+
+    # q{.bam} -> ".b*" for getting index as well)
+    my $infile_path = catfile( $insample_directory,
+        $infile_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERIX );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_path) = setup_script(
@@ -241,33 +247,48 @@ sub analysis_picardtools_collectmultiplemetrics {
     say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
     migrate_file(
         {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => catfile(
-                $insample_directory,
-                $infile_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERIX
-            ),
-            outfile_path => $temp_directory,
+            FILEHANDLE   => $FILEHANDLE,
+            infile_path  => $infile_path,
+            outfile_path => $temp_directory
         }
     );
     say {$FILEHANDLE} q{wait}, $NEWLINE;
 
-    ## CollectMultipleMetrics
-    say {$FILEHANDLE} q{## Collecting multiple metrics on alignment};
+    ## sambamba_depth
+    say {$FILEHANDLE} q{## Annotating bed from alignment};
 
-    picardtools_collectmultiplemetrics(
+    ## Get parameters
+    my $sambamba_filter =
+        $SINGLE_QUOTE
+      . q{mapping_quality >= }
+      . $active_parameter_href->{sambamba_depth_mapping_quality}
+      . $SPACE;
+
+    #Do not include duplicates in coverage calculation
+    if ( $active_parameter_href->{sambamba_depth_noduplicates} ) {
+
+        $sambamba_filter .= q{and not duplicate };
+    }
+
+    #Do not include failed quality control reads in coverage calculation
+    if ( $active_parameter_href->{sambamba_depth_quality_control} ) {
+
+        $sambamba_filter .= q{and not failed_quality_control};
+    }
+    $sambamba_filter .= $SINGLE_QUOTE;
+
+    sambamba_depth(
         {
-            memory_allocation => q{Xmx4g},
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory => $temp_directory,
-            java_jar       => catfile(
-                $active_parameter_href->{picardtools_path},
-                q{picard.jar}
-            ),
-            infile_path  => $file_path_prefix . $infile_suffix,
-            outfile_path => $outfile_path_prefix,
-            referencefile_path =>
-              $active_parameter_href->{human_genome_reference},
+            depth_cutoffs_ref =>
+              \@{ $active_parameter_href->{sambamba_depth_cutoffs} },
+            infile_path      => $file_path_prefix . $infile_suffix,
+            outfile_path     => $outfile_path_prefix . $outfile_suffix,
+            mode             => $active_parameter_href->{sambamba_depth_mode},
+            fix_mate_overlap => 1,
+            min_base_quality =>
+              $active_parameter_href->{sambamba_depth_base_quality},
+            filter     => $sambamba_filter,
+            region     => $active_parameter_href->{sambamba_depth_bed},
             FILEHANDLE => $FILEHANDLE,
         }
     );
@@ -275,54 +296,29 @@ sub analysis_picardtools_collectmultiplemetrics {
 
     ## Copies file from temporary directory.
     say {$FILEHANDLE} q{## Copy file from temporary directory};
-    my @outfiles = (
-        $outfile_prefix . $DOT . q{alignment_summary_metrics},
-        $outfile_prefix . $DOT . q{quality} . $ASTERIX,
-        $outfile_prefix . $DOT . q{insert} . $ASTERIX,
+    migrate_file(
+        {
+            infile_path  => $outfile_path_prefix . $outfile_suffix,
+            outfile_path => $outsample_directory,
+            FILEHANDLE   => $FILEHANDLE,
+        }
     );
-
-  OUTFILE:
-    foreach my $outfile (@outfiles) {
-
-        migrate_file(
-            {
-                infile_path  => catfile( $temp_directory, $outfile ),
-                outfile_path => $outsample_directory,
-                FILEHANDLE   => $FILEHANDLE,
-            }
-        );
-    }
     say {$FILEHANDLE} q{wait}, $NEWLINE;
-
-    if ( $mip_program_mode == 1 ) {
-
-        ## Collect QC metadata info for later use
-        my $metrics_outfile_path = catfile( $outsample_directory,
-            $outfile_prefix . $DOT . q{alignment_summary_metrics} );
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                sample_id        => $sample_id,
-                program_name     => q{collectmultiplemetrics},
-                infile           => $merged_infile_prefix,
-                path             => $metrics_outfile_path,
-            }
-        );
-        my $insertsize_outfile_path = catfile( $outsample_directory,
-            $outfile_prefix . $DOT . q{insert_size_metrics} );
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                sample_id        => $sample_id,
-                program_name     => q{collectmultiplemetricsinsertsize},
-                infile           => $merged_infile_prefix,
-                path             => $insertsize_outfile_path,
-            }
-        );
-    }
     close $FILEHANDLE;
 
     if ( $mip_program_mode == 1 ) {
+
+        my $qc_sambamba_path =
+          catfile( $outsample_directory, $outfile_prefix . $outfile_suffix );
+        add_program_outfile_to_sample_info(
+            {
+                sample_info_href => $sample_info_href,
+                sample_id        => $sample_id,
+                program_name     => $program_name,
+                infile           => $merged_infile_prefix,
+                path             => $qc_sambamba_path,
+            }
+        );
 
         slurm_submit_job_sample_id_dependency_dead_end(
             {
@@ -336,6 +332,7 @@ sub analysis_picardtools_collectmultiplemetrics {
             }
         );
     }
+
     return;
 }
 

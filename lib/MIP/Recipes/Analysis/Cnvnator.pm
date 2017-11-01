@@ -1,4 +1,4 @@
-package MIP::Recipes::Cnvnator;
+package MIP::Recipes::Analysis::Cnvnator;
 
 use strict;
 use warnings;
@@ -190,7 +190,7 @@ sub analysis_cnvnator {
       qw{ cnvnator_read_extraction cnvnator_histogram cnvnator_statistics cnvnator_partition cnvnator_calling cnvnator_convert_to_vcf };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_catvariants };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
-    use MIP::Recipes::Xargs qw{ xargs_command };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Set::File qw{ set_file_suffix };
 

@@ -1,4 +1,4 @@
-package MIP::Recipes::Fastqc;
+package MIP::Recipes::Analysis::Fastqc;
 
 use strict;
 use warnings;

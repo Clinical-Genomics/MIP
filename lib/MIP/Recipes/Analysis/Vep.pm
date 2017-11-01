@@ -1,4 +1,4 @@
-package MIP::Recipes::Vep;
+package MIP::Recipes::Analysis::Vep;
 
 use strict;
 use warnings;
@@ -162,7 +162,7 @@ sub analysis_vep {
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Set::File qw{ set_file_suffix };
     use MIP::Get::File qw{ get_file_suffix };
-    use MIP::Recipes::Xargs qw{ xargs_command };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
     use MIP::QC::Record
       qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info};
@@ -615,7 +615,7 @@ sub analysis_vep_rio {
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Set::File qw{ set_file_suffix };
     use MIP::Get::File qw{ get_file_suffix };
-    use MIP::Recipes::Xargs qw{ xargs_command };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
     use MIP::QC::Record
       qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info};
@@ -1019,7 +1019,7 @@ sub analysis_vep_sv {
     use MIP::Delete::List qw{ delete_contig_elements delete_male_contig };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Get::File qw{ get_file_suffix };
-    use MIP::Recipes::Xargs qw{ xargs_command };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
     use MIP::QC::Record
