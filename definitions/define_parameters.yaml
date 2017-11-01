@@ -253,7 +253,7 @@ module_time:
     pgatk_genotypegvcfs: 10
     pgatk_variantrecalibration: 10
     pfreebayes: 20
-    psamtools_mpileup: 20
+    psamtools_mpileup: 40
     pgatk_combinevariantcallsets: 2
     pprepareforvariantannotationblock: 5
     prhocall: 5
