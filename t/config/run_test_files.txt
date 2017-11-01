@@ -62,9 +62,11 @@ gnu_cd.t
 gnu_chmod.t
 gnu_cp.t
 gnu_echo.t
+gnu_find.t
 gnu_grep.t
 gnu_less.t
 gnu_ln.t
+gnu_make.t
 gnu_mkdir.t
 gnu_mv.t
 gnu_printf.t

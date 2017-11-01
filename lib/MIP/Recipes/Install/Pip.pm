@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.0.1;
+    our $VERSION = 1.0.2;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_pip_packages };
@@ -140,7 +140,7 @@ sub install_pip_packages {
         );
         say {$FILEHANDLE} $NEWLINE;
     }
-
+    print {$FILEHANDLE} $NEWLINE;
     return;
 
 }

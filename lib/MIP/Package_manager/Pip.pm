@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pip_install check_pip_package};
@@ -140,7 +140,7 @@ sub pip_install {
     return @commands;
 }
 
-sub pip_check_package {
+sub check_pip_package {
 
 ## Function : Check if the package has been installed via pip
 ## Returns  : $status
