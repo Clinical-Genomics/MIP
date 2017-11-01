@@ -26,11 +26,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ bcftools_call bcftools_index bcftools_view bcftools_filter bcftools_norm bcftools_merge bcftools_concat bcftools_annotate bcftools_roh bcftools_stats bcftools_reheader bcftools_rename_vcf_samples };
+      qw{ bcftools_call bcftools_index bcftools_view bcftools_filter bcftools_norm bcftools_merge bcftools_concat bcftools_annotate bcftools_roh bcftools_stats bcftools_reheader bcftools_rename_vcf_samples bcftools_view_and_index_vcf};
 
 }
 
@@ -1279,6 +1279,103 @@ sub bcftools_rename_vcf_samples {
         }
     );
     say {$FILEHANDLE} $NEWLINE;
+    return;
+}
+
+sub bcftools_view_and_index_vcf {
+
+## Function : View variant calling file and index.
+## Returns  :
+## Arguments: $infile_path         => Path to infile to compress and index
+##          : $FILEHANDLE          => SBATCH script FILEHANDLE to print to
+##          : $outfile_path_prefix => Out file path no file_ending {Optional}
+##          : $output_type         => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
+##          : $index               => Generate index of reformated file
+##          : $index_type          => Type of index
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $infile_path;
+    my $FILEHANDLE;
+    my $outfile_path_prefix;
+
+    ## Default(s)
+    my $output_type;
+    my $index;
+    my $index_type;
+
+    my $tmpl = {
+        infile_path => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$infile_path
+        },
+        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE, },
+        outfile_path_prefix =>
+          { strict_type => 1, store => \$outfile_path_prefix },
+        output_type => {
+            default     => q{v},
+            allow       => [qw{ b u z v }],
+            strict_type => 1,
+            store       => \$output_type
+        },
+        index => {
+            default     => 1,
+            allow       => [ undef, 0, 1 ],
+            strict_type => 1,
+            store       => \$index
+        },
+        index_type => {
+            default     => q{csi},
+            allow       => [ undef, qw{ csi tbi } ],
+            strict_type => 1,
+            store       => \$index_type
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $outfile_path;
+    my %output_type_ending = (
+        b => q{.bcf},
+        u => q{.bcf},
+        z => q{.vcf.gz},
+        v => q{.vcf},
+    );
+
+    if ( defined $outfile_path_prefix ) {
+
+        $outfile_path =
+          $outfile_path_prefix . $output_type_ending{$output_type};
+    }
+
+    say {$FILEHANDLE} q{## Reformat variant calling file};
+
+    bcftools_view(
+        {
+            infile_path  => $infile_path,
+            outfile_path => $outfile_path,
+            output_type  => $output_type,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
+    if ($index) {
+
+        say {$FILEHANDLE} q{## Index};
+
+        bcftools_index(
+            {
+                infile_path => $outfile_path,
+                output_type => $index_type,
+                FILEHANDLE  => $FILEHANDLE,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+    }
     return;
 }
 

@@ -3,18 +3,18 @@ package MIP::Program::Variantcalling::Gatk;
 use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;    #Allow unicode characters in this script
+use utf8;
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
 use Carp;
 use English qw{ -no_match_vars };
 use Params::Check qw{ check allow last_error };
-
-use Readonly;
-
-use FindBin qw{ $Bin };    #Find directory of script
+use FindBin qw{ $Bin };
 use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
+
+## CPANM
+use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -28,16 +28,18 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ gatk_catvariants gatk_genotypegvcfs gatk_selectvariants gatk_variantrecalibrator gatk_applyrecalibration gatk_calculategenotypeposteriors gatk_combinevariants gatk_varianteval gatk_leftalignandtrimvariants };
+      qw{ gatk_catvariants gatk_genotypegvcfs gatk_selectvariants gatk_variantrecalibrator gatk_applyrecalibration gatk_calculategenotypeposteriors gatk_combinevariants gatk_varianteval gatk_leftalignandtrimvariants gatk_concatenate_variants };
 
 }
 
 ## Constants
-Readonly my $SPACE => q{ };
+Readonly my $EMPTY_STR => q{};
+Readonly my $NEWLINE   => qq{\n};
+Readonly my $SPACE     => q{ };
 
 sub gatk_genotypegvcfs {
 
@@ -1890,6 +1892,123 @@ sub gatk_leftalignandtrimvariants {
 
     return @commands;
 
+}
+
+sub gatk_concatenate_variants {
+
+## Function : Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
+## Returns  :
+## Arguments: $active_parameter_href  => Active parameters for this analysis hash {REF}
+##          : $FILEHANDLE             => SBATCH script FILEHANDLE to print to
+##          : $elements_ref           => Holding the number and part of file names to be combined
+##          : $infile_prefix          => Will be combined with the each array element
+##          : $infile_postfix         => Will be combined with the each array element
+##          : $outfile_path_prefix    => Combined outfile path prefix
+##          : $outfile_suffix         => Combined outfile suffix
+##          : $human_genome_reference => Human genome reference {REF}
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $human_genome_reference;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $elements_ref;
+    my $FILEHANDLE;
+    my $infile_prefix;
+    my $infile_postfix;
+    my $outfile_path_prefix;
+    my $outfile_suffix;
+
+    my $tmpl = {
+        active_parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$active_parameter_href,
+        },
+        elements_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => [],
+            strict_type => 1,
+            store       => \$elements_ref
+        },
+        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE, },
+        infile_prefix => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$infile_prefix
+        },
+        infile_postfix => { strict_type => 1, store => \$infile_postfix },
+        outfile_path_prefix =>
+          { strict_type => 1, store => \$outfile_path_prefix, },
+        outfile_suffix => {
+            default     => q{.vcf},
+            allow       => [qw{ .vcf }],
+            strict_type => 1,
+            store       => \$outfile_suffix,
+        },
+        human_genome_reference => {
+            default =>
+              $arg_href->{active_parameter_href}{human_genome_reference},
+            strict_type => 1,
+            store       => \$human_genome_reference
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Program::Variantcalling::Gatk qw(gatk_catvariants);
+
+    ## Outfile path be built
+    my $outfile_path;
+
+    ## No postfix
+    if ( not defined $infile_postfix ) {
+
+        $infile_postfix = $EMPTY_STR;
+    }
+
+    ## Build $outfile_path
+    if ( defined $outfile_path_prefix ) {
+
+        $outfile_path = $outfile_path_prefix . $outfile_suffix;
+    }
+    else {
+
+        $outfile_path = $infile_prefix . $outfile_suffix;
+    }
+
+    say {$FILEHANDLE} q{## GATK CatVariants};
+
+    ## Assemble infile paths
+    my @infile_paths =
+      map { $infile_prefix . $_ . $infile_postfix } @{$elements_ref};
+
+    my $gatk_jar =
+        catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} )
+      . $SPACE
+      . q{org.broadinstitute.gatk.tools.CatVariants};
+    gatk_catvariants(
+        {
+            memory_allocation => q{Xmx4g},
+            java_use_large_pages =>
+              $active_parameter_href->{java_use_large_pages},
+            temp_directory     => $active_parameter_href->{temp_directory},
+            gatk_path          => $gatk_jar,
+            infile_paths_ref   => \@infile_paths,
+            outfile_path       => $outfile_path,
+            referencefile_path => $human_genome_reference,
+            logging_level      => $active_parameter_href->{gatk_logging_level},
+            FILEHANDLE         => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+    return;
 }
 
 1;
