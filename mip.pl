@@ -106,7 +106,7 @@ eval_parameter_hash(
 );
 
 # Set MIP version
-our $VERSION = 'v5.0.11';
+our $VERSION = 'v5.0.12';
 
 ## Directories, files, job_ids and sample_info
 my ( %infile, %indir_path, %infile_lane_prefix, %lane,
@@ -34700,7 +34700,7 @@ sub detect_sample_id_gender {
 
         if ( $sample_info_href->{sample}{$sample_id}{sex} =~ /1|^male/ ) { #Male
 
-            $male_found++;                                               #Male
+            $male_found = 1;                                               #Male
         }
         elsif ( $sample_info_href->{sample}{$sample_id}{sex} =~ /2|female/ )
         {    #Female
