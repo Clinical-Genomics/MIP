@@ -45,9 +45,6 @@ sub multiqc {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $force;
-
     ## Flatten argument(s)
     my $indir_path;
     my $outdir_path;
@@ -55,6 +52,9 @@ sub multiqc {
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $FILEHANDLE;
+
+    ## Default(s)
+    my $force;
 
     my $tmpl = {
         indir_path => {
@@ -95,10 +95,7 @@ sub multiqc {
     }
 
     ## Indir
-    if ($indir_path) {
-
-        push @commands, $indir_path;
-    }
+    push @commands, $indir_path;
 
     push @commands,
       unix_standard_streams(
