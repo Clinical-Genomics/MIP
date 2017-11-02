@@ -61,19 +61,26 @@ use MIP::Update::Programs
   qw{ update_program_mode_with_dry_run_all update_program_mode update_prioritize_flag };
 
 ## Recipes
-use MIP::Recipes::Analysis::Bamcalibrationblock qw{ analysis_bamcalibrationblock };
-use MIP::Recipes::Analysis::Bedtools_genomecov qw{ analysis_bedtools_genomecov };
+use MIP::Recipes::Analysis::Bamcalibrationblock
+  qw{ analysis_bamcalibrationblock };
+use MIP::Recipes::Analysis::Bedtools_genomecov
+  qw{ analysis_bedtools_genomecov };
 use MIP::Recipes::Analysis::Bwa_mem qw{ analysis_bwa_mem };
 use MIP::Recipes::Build::Human_genome_prerequisites
   qw{ build_human_genome_prerequisites };
 use MIP::Recipes::Analysis::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
 use MIP::Recipes::Analysis::Cnvnator qw{ analysis_cnvnator };
 use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
+use MIP::Recipes::Analysis::Gatk_baserecalibration
+  qw{ analysis_gatk_baserecalibration };
+use MIP::Recipes::Analysis::Gatk_combinevariantcallsets
+  qw{ analysis_gatk_combinevariantcallsets };
 use MIP::Recipes::Analysis::Gatk_concatenate_genotypegvcfs
   qw{ analysis_gatk_concatenate_genotypegvcfs };
-use MIP::Recipes::Analysis::Gatk_genotypegvcfs qw{ analysis_gatk_genotypegvcfs };
-use MIP::Recipes::Analysis::Gatk_baserecalibration qw{ analysis_gatk_baserecalibration };
-use MIP::Recipes::Analysis::Gatk_haplotypecaller qw{ analysis_gatk_haplotypecaller };
+use MIP::Recipes::Analysis::Gatk_genotypegvcfs
+  qw{ analysis_gatk_genotypegvcfs };
+use MIP::Recipes::Analysis::Gatk_haplotypecaller
+  qw{ analysis_gatk_haplotypecaller };
 use MIP::Recipes::Analysis::Gatk_realigner qw{ analysis_gatk_realigner };
 use MIP::Recipes::Analysis::Gatk_variantrecalibration
   qw{ analysis_gatk_variantrecalibration_wgs analysis_gatk_variantrecalibration_wes };
@@ -93,7 +100,8 @@ use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
 use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
 use MIP::Recipes::Analysis::Tiddit qw{ analysis_tiddit };
 use MIP::Recipes::Analysis::Variant_integrity qw{ analysis_variant_integrity };
-use MIP::Recipes::Analysis::Vep qw{ analysis_vep analysis_vep_rio analysis_vep_sv };
+use MIP::Recipes::Analysis::Vep
+  qw{ analysis_vep analysis_vep_rio analysis_vep_sv };
 use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core analysis_vt_core_rio};
 
 our $USAGE = build_usage( {} );
@@ -2238,12 +2246,19 @@ if ( $active_parameter{pgatk_variantrecalibration} > 0 ) {
     }
 }
 
-if ( $active_parameter{pgatk_combinevariantcallsets} > 0 )
-{    #Run gatk_combinevariantcallsets. Done per family
+## Run gatk_combinevariantcallsets. Done per family
+if ( $active_parameter{pgatk_combinevariantcallsets} > 0 ) {
 
-    $log->info("[GATK combinevariantcallsets]\n");
+    $log->info(q{[GATK combinevariantcallsets]});
 
-    gatk_combinevariantcallsets(
+    my $program_name = lc q{gatk_combinevariantcallsets};
+
+    my $outfamily_directory = catfile(
+        $active_parameter{outdata_dir},
+        $active_parameter{family_id},
+        $active_parameter{outaligner_dir}
+    );
+    analysis_gatk_combinevariantcallsets(
         {
             parameter_href          => \%parameter,
             active_parameter_href   => \%active_parameter,
@@ -2251,7 +2266,8 @@ if ( $active_parameter{pgatk_combinevariantcallsets} > 0 )
             file_info_href          => \%file_info,
             infile_lane_prefix_href => \%infile_lane_prefix,
             job_id_href             => \%job_id,
-            program_name            => "gatk_combinevariantcallsets",
+            outfamily_directory     => $outfamily_directory,
+            program_name            => $program_name,
         }
     );
 }
@@ -8692,327 +8708,6 @@ sub prepareforvariantannotationblock {
         return
           $xargs_file_counter
           ; #Track the number of created xargs scripts per module for Block algorithm
-    }
-}
-
-sub gatk_combinevariantcallsets {
-
-##gatk_combinevariantcallsets
-
-##Function : GATK CombineVariants to combine all variants call from different callers.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => File info hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $program_name               => Program name
-##         : $family_id_ref              => Family id {REF}
-##         : $temp_directory_ref         => Temporary directory {REF}
-##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => Variant call type
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-    my $outaligner_dir_ref;
-    my $call_type;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $program_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href,
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href,
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href,
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href,
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name,
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref,
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref,
-        },
-        outaligner_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir_ref,
-        },
-        call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::IO::Files qw(migrate_file);
-    use MIP::Set::File qw{set_file_suffix};
-    use MIP::Get::File qw{get_file_suffix};
-    use MIP::Language::Java qw{java_core};
-    use MIP::Program::Variantcalling::Bcftools qw{bcftools_view_and_index_vcf};
-    use MIP::Program::Variantcalling::Gatk qw(gatk_combinevariants);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_sample_id_dependency_add_to_family);
-
-    my @variant_callers;    #Stores callers that have been executed
-    my @parallel_chains
-      ;    #Stores the parallel chains that jobIds should be inherited from
-    my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
-
-    ## Filehandles
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $$family_id_ref,
-            program_name          => $program_name,
-            program_directory     => catfile( lc($$outaligner_dir_ref) ),
-            call_type             => $call_type,
-            core_number => $active_parameter_href->{module_core_number}
-              { "p" . $program_name },
-            process_time =>
-              $active_parameter_href->{module_time}{ "p" . $program_name },
-            temp_directory => $$temp_directory_ref,
-        }
-    );
-
-    ## Assign directories
-    my $outfamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $$family_id_ref, $$outaligner_dir_ref );
-    $parameter_href->{ "p" . $program_name }{indirectory} =
-      $outfamily_directory;    #Used downstream
-
-    ## Assign file_tags
-    my $outfile_tag =
-      $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}
-      {file_tag};
-    my @file_tags_and_paths;
-    my $outfile_prefix = $$family_id_ref . $outfile_tag . $call_type;
-    my $outfile_path_prefix = catfile( $$temp_directory_ref, $outfile_prefix );
-
-    ### Assign suffix
-    ## Set file suffix for next module within jobid chain
-    my $outfile_suffix = set_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
-            job_id_chain   => $job_id_chain,
-            file_suffix =>
-              $parameter_href->{ "p" . $program_name }{outfile_suffix},
-        }
-    );
-
-    ## Collect file info and migrate files
-    foreach my $variant_caller (
-        @{ $parameter_href->{dynamic_parameter}{variant_callers} } )
-    {
-
-        if ( $active_parameter_href->{$variant_caller} > 0 ) {    #Expect vcf
-
-            ## Assign directories
-            my $program_outdirectory_name =
-              $parameter_href->{$variant_caller}{outdir_name};
-            my $infamily_directory =
-              catfile( $active_parameter_href->{outdata_dir},
-                $$family_id_ref, $$outaligner_dir_ref,
-                $program_outdirectory_name );
-
-            ## Assign file_tags
-            my $infile_tag =
-              $file_info_href->{$$family_id_ref}{$variant_caller}{file_tag};
-            my $infile_prefix = $$family_id_ref . $infile_tag . $call_type;
-
-            ## Assign suffix
-            my $infile_suffix = get_file_suffix(
-                {
-                    parameter_href => $parameter_href,
-                    suffix_key     => q{outfile_suffix},
-                    program_name   => $variant_caller,
-                }
-            );
-
-            push(
-                @file_tags_and_paths,
-                $program_outdirectory_name . " "
-                  . catfile(
-                    $$temp_directory_ref, $infile_prefix . $infile_suffix
-                  )
-            );    #Collect both tag and path in the same string
-
-            unshift( @variant_callers, $program_outdirectory_name )
-              ; #To prioritize downstream - 1. gatk 2. samtools determined by order_parameters order
-
-            unless ( $parameter_href->{$variant_caller}{chain} eq "MAIN" )
-            {    #Do not add MAIN chains
-
-                push( @parallel_chains,
-                    $parameter_href->{$variant_caller}{chain} );
-            }
-
-            ## Copy file(s) to temporary directory
-            say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-            migrate_file(
-                {
-                    FILEHANDLE  => $FILEHANDLE,
-                    infile_path => catfile(
-                        $infamily_directory,
-                        $infile_prefix . $infile_suffix . q{*}
-                    ),
-                    outfile_path => $$temp_directory_ref
-                }
-            );
-        }
-    }
-    say {$FILEHANDLE} q{wait}, "\n";
-
-    ## GATK CombineVariants
-    say {$FILEHANDLE} "## GATK CombineVariants";
-
-    gatk_combinevariants(
-        {
-            memory_allocation => q{Xmx2g},
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory => $$temp_directory_ref,
-            java_jar       => catfile(
-                $active_parameter_href->{gatk_path},
-                "GenomeAnalysisTK.jar"
-            ),
-            infile_paths_ref => \@file_tags_and_paths,
-            outfile_path     => $outfile_path_prefix . $outfile_suffix,
-            logging_level    => $active_parameter_href->{gatk_logging_level},
-            referencefile_path =>
-              $active_parameter_href->{human_genome_reference},
-            genotype_merge_option => $active_parameter_href
-              ->{gatk_combinevariants_genotype_merge_option},
-            prioritize_caller =>
-              $active_parameter_href->{gatk_combinevariants_prioritize_caller},
-            exclude_nonvariants => 1,
-            FILEHANDLE          => $FILEHANDLE
-        }
-    );
-    say {$FILEHANDLE} "\n";
-
-    if ( $active_parameter_href->{gatk_combinevariantcallsets_bcf_file} ) {
-
-        ## Reformat variant calling file and index
-        bcftools_view_and_index_vcf(
-            {
-                infile_path         => $outfile_path_prefix . $outfile_suffix,
-                outfile_path_prefix => $outfile_path_prefix,
-                output_type         => "b",
-                FILEHANDLE          => $FILEHANDLE,
-            }
-        );
-
-        ## Copies file from temporary directory.
-        say {$FILEHANDLE} q{## Copy file from temporary directory};
-        migrate_file(
-            {
-                infile_path  => $outfile_path_prefix . q{.bcf*},
-                outfile_path => $outfamily_directory,
-                FILEHANDLE   => $FILEHANDLE,
-            }
-        );
-    }
-
-    ## Copies file from temporary directory.
-    say {$FILEHANDLE} q{## Copy file from temporary directory};
-    migrate_file(
-        {
-            infile_path  => $outfile_path_prefix . $outfile_suffix,
-            outfile_path => $outfamily_directory,
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} q{wait}, "\n";
-
-    close $FILEHANDLE;
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        $sample_info_href->{vcf_file}{ready_vcf}{path} =
-          catfile( $outfamily_directory, $outfile_prefix . $outfile_suffix );
-
-        if ( $active_parameter_href->{gatk_combinevariantcallsets_bcf_file} ) {
-
-            $sample_info_href->{bcf_file}{path} =
-              catfile( $outfamily_directory, $outfile_prefix . ".bcf" );
-        }
-
-        slurm_submit_job_sample_id_dependency_add_to_family(
-            {
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                sample_ids_ref => \@{ $active_parameter_href->{sample_ids} },
-                parallel_chains_ref => \@parallel_chains,
-                family_id           => $$family_id_ref,
-                path                => $job_id_chain,
-                log                 => $log,
-                sbatch_file_name    => $file_path,
-            }
-        );
     }
 }
 
@@ -16604,79 +16299,6 @@ sub create_file_endings {
             }
         }
     }
-}
-
-sub gatk_pedigree_flag {
-
-##gatk_pedigree_flag
-
-##Function : Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-##Returns  : "%command"
-##Arguments: $active_parameter_href, $fam_file_path, $program_name, $pedigree_validation_type
-##         : $active_parameter_href    => Active parameters for this analysis hash {REF}
-##         : $fam_file_path            => The family file path
-##         : $program_name             => The program to use the pedigree file
-##         : $pedigree_validation_type => The pedigree validation strictness level
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $pedigree_validation_type;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $fam_file_path;
-    my $program_name;
-
-    my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        fam_file_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$fam_file_path
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name,
-        },
-        pedigree_validation_type => {
-            default     => "SILENT",
-            allow       => [ "SILENT", "STRICT" ],
-            strict_type => 1,
-            store       => \$pedigree_validation_type
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $parent_counter;
-    my $pq_parent_counter =
-q?perl -ne 'my $parent_counter=0; while (<>) { my @line = split(/\t/, $_); unless ($_=~/^#/) { if ( ($line[2] eq 0) || ($line[3] eq 0) ) { $parent_counter++} } } print $parent_counter; last;'?;
-    my $child_counter;
-    my $pq_child_counter =
-q?perl -ne 'my $child_counter=0; while (<>) { my @line = split(/\t/, $_); unless ($_=~/^#/) { if ( ($line[2] ne 0) || ($line[3] ne 0) ) { $child_counter++} } } print $child_counter; last;'?;
-    my %command;
-
-    $parent_counter =
-      `$pq_parent_counter $fam_file_path`;    #Count the number of parents
-    $child_counter =
-      `$pq_child_counter $fam_file_path`;     #Count the number of children
-
-    if ( $parent_counter > 0 ) {              #Parents present
-
-        $command{pedigree_validation_type} = $pedigree_validation_type;
-        $command{pedigree} = $fam_file_path;    #Pedigree files for samples
-    }
-    return %command;
 }
 
 sub write_cmd_mip_log {
