@@ -99,7 +99,7 @@ sub analysis_multiqc {
             store       => \$program_name,
         },
         family_id => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
+            default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
             store       => \$family_id,
         },
