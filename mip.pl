@@ -103,6 +103,7 @@ use MIP::Recipes::Analysis::Variant_integrity qw{ analysis_variant_integrity };
 use MIP::Recipes::Analysis::Vep
   qw{ analysis_vep analysis_vep_rio analysis_vep_sv };
 use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core analysis_vt_core_rio};
+use MIP::Recipes::Qc::Multiqc qw{ analysis_multiqc };
 
 our $USAGE = build_usage( {} );
 
@@ -2623,16 +2624,17 @@ if ( $active_parameter{pqccollect} > 0 ) {    #Run qccollect. Done per family
 
 if ( $active_parameter{pmultiqc} > 0 ) {
 
-    $log->info("[Multiqc]\n");
+    $log->info(q{[Multiqc]});
+    my $program_name = q{multiqc};
 
-    mmultiqc(
+    analysis_multiqc(
         {
             parameter_href          => \%parameter,
             active_parameter_href   => \%active_parameter,
             sample_info_href        => \%sample_info,
             infile_lane_prefix_href => \%infile_lane_prefix,
             job_id_href             => \%job_id,
-            program_name            => "multiqc",
+            program_name            => $program_name,
         }
     );
 }
@@ -3621,149 +3623,6 @@ sub removeredundantfiles {
         }
     );
     close $FILEHANDLE;
-}
-
-sub mmultiqc {
-
-##mmultiqc
-
-##Function : Aggregate bioinforamtics reports per case
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $family_id_ref,
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $program_name               => Program name
-##         : $family_id_ref              => Family id {REF}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $program_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href,
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href,
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href,
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name,
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::Program::Qc::Multiqc qw{ multiqc };
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_chain_job_ids_dependency_add_to_path);
-
-    my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
-
-    ## Filehandles
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $$family_id_ref,
-            program_name          => $program_name,
-            program_directory     => lc($program_name),
-            core_number => $active_parameter_href->{module_core_number}
-              { "p" . $program_name },
-            process_time =>
-              $active_parameter_href->{module_time}{ "p" . $program_name },
-        }
-    );
-
-    ## Assign directories
-    my $program_outdirectory_name =
-      $parameter_href->{ "p" . $program_name }{outdir_name};
-
-    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-        ## Assign directories
-        my $insample_directory =
-          catdir( $active_parameter_href->{outdata_dir}, $sample_id );
-        my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
-            $sample_id, $program_outdirectory_name );
-
-        multiqc(
-            {
-                indir_path  => $insample_directory,
-                outdir_path => $outsample_directory,
-                force       => 1,
-                FILEHANDLE  => $FILEHANDLE,
-            }
-        );
-        say $FILEHANDLE "\n";
-    }
-
-    close $FILEHANDLE;
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        slurm_submit_chain_job_ids_dependency_add_to_path(
-            {
-                job_id_href      => $job_id_href,
-                path             => $job_id_chain,
-                log              => $log,
-                sbatch_file_name => $file_path,
-            }
-        );
-    }
 }
 
 sub mqccollect {
