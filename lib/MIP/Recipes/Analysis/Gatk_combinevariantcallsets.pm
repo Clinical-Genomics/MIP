@@ -156,7 +156,7 @@ sub analysis_gatk_combinevariantcallsets {
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_view_and_index_vcf };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_combinevariants };
-    use MIP::QC::Record qw{ add_processing_metafile_to_sample_info };
+    use MIP::QC::Record qw{ add_program_outfile_to_sample_info add_processing_metafile_to_sample_info };
 
     ## Stores callers that have been executed
     my @variant_callers;
