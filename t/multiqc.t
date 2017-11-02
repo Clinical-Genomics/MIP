@@ -126,7 +126,7 @@ my %base_argument = (
 my %required_argument = (
     indir_path => {
         input           => catfile(qw{ path_to_in_dir infile }),
-        expected_output => q{path_to_in_dir/infile},
+        expected_output => catfile(qw{ path_to_in_dir infile }),
     },
 );
 
