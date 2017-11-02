@@ -164,7 +164,7 @@ sub analysis_recipe {
     my $mip_program_name = q{p} . $program_name;
     my $mip_program_mode = $active_parameter_href->{$mip_program_name};
 
-    ## Alias
+    ## Unpack parameters
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
     my $core_number =
       $active_parameter_href->{module_core_number}{$mip_program_name};
@@ -235,7 +235,7 @@ sub analysis_recipe {
 ###############################
 
     ## Close FILEHANDLES
-    close $FILEHANDLE;
+    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
     if ( $mip_program_mode == 1 ) {
 
