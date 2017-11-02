@@ -98,7 +98,7 @@ sub analysis_multiqc {
             strict_type => 1,
             store       => \$program_name,
         },
-        family_id_ref => {
+        family_id => {
             default     => \$arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
             store       => \$family_id,
