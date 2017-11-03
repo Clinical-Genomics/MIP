@@ -33,7 +33,7 @@ outdata_dir:
 log_file:
   associated_program:
    - mip
-  build_file: no_auto_build
+  build_file: 0
   data_type: SCALAR
   default: not_set_yet
   type: path
@@ -104,7 +104,7 @@ decompose_normalize_references:
 pedigree_file:
   associated_program:
    - mip
-  build_file: no_auto_build
+  build_file: 0
   data_type: SCALAR
   type: path
   update_path: absolute_path
@@ -139,7 +139,7 @@ infile_dirs:
 sample_info_file:
   associated_program:
    - mip
-  build_file: no_auto_build
+  build_file: 0
   data_type: SCALAR
   default: not_set_yet
   exists_check: file
@@ -161,7 +161,7 @@ dry_run_all:
 genomic_set:
   associated_program:
    - mip
-  build_file: no_auto_build
+  build_file: 0
   data_type: SCALAR
   exists_check: file
   mandatory: no
@@ -206,7 +206,7 @@ human_genome_reference:
    - pgatk_variantevalexome
    - ppicardtools_collecthsmetrics
    - ppicardtools_collectmultiplemetrics
-  build_file: yes_auto_build
+  build_file: 1
   data_type: SCALAR
   default: GRCh37_homo_sapiens_-d5-.fasta
   exists_check: file
@@ -450,7 +450,7 @@ bwa_mem_hla:
 bwa_mem_rapid_db:
   associated_program:
    - pbwa_mem
-  build_file: no_auto_build
+  build_file: 0
   data_type: SCALAR
   exists_check: file
   reference: reference_dir
@@ -476,7 +476,7 @@ bwa_sambamba_sort_memory_limit:
 bwa_build_reference:
   associated_program:
    - pbwa_mem
-  build_file: yes_auto_build
+  build_file: 1
   data_type: SCALAR
   default: not_set_yet
   exists_check: file
@@ -830,7 +830,7 @@ delly_exclude_file:
   associated_program:
    - pdelly_call
    - pdelly_reformat
-  build_file: no_auto_build
+  build_file: 0
   data_type: SCALAR
   default: hg19_human_excl_-0.7.6-.tsv
   exists_check: file
@@ -909,7 +909,7 @@ sv_svdb_query:
 sv_svdb_query_db_files:
   associated_program:
    - psv_combinevariantcallsets
-  build_file: no_auto_build
+  build_file: 0
   data_type: HASH
   exists_check: file
   reference: reference_dir
@@ -923,7 +923,7 @@ sv_vcfanno:
 sv_vcfanno_lua:
   associated_program:
    - psv_combinevariantcallsets
-  build_file: no_auto_build
+  build_file: 0
   data_type: SCALAR
   exists_check: file
   reference: reference_dir
@@ -931,7 +931,7 @@ sv_vcfanno_lua:
 sv_vcfanno_config:
   associated_program:
    - psv_combinevariantcallsets
-  build_file: no_auto_build
+  build_file: 0
   data_type: SCALAR
   exists_check: file
   reference: reference_dir
@@ -939,7 +939,7 @@ sv_vcfanno_config:
 sv_vcfanno_config_file:
   associated_program:
    - psv_combinevariantcallsets
-  build_file: no_auto_build
+  build_file: 0
   data_type: SCALAR
   default: GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz
   exists_check: file
@@ -948,7 +948,7 @@ sv_vcfanno_config_file:
 sv_vcfannotation_header_lines_file:
   associated_program:
    - psv_combinevariantcallsets
-  build_file: no_auto_build
+  build_file: 0
   data_type: SCALAR
   exists_check: file
   reference: reference_dir
@@ -962,7 +962,7 @@ sv_genmod_filter:
 sv_genmod_filter_1000g:
   associated_program:
    - psv_combinevariantcallsets
-  build_file: no_auto_build
+  build_file: 0
   data_type: SCALAR
   default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz
   exists_check: file
@@ -1107,7 +1107,7 @@ sv_genmod_models_whole_gene:
 sv_genmod_models_reduced_penetrance_file:
   associated_program:
    - psv_rankvariant
-  build_file: no_auto_build
+  build_file: 0
   data_type: SCALAR
   exists_check: file
   reference: reference_dir
@@ -1115,7 +1115,7 @@ sv_genmod_models_reduced_penetrance_file:
 sv_rank_model_file:
   associated_program:
    - psv_rankvariant
-  build_file: no_auto_build
+  build_file: 0
   data_type: SCALAR
   exists_check: file
   reference: reference_dir
@@ -1140,7 +1140,7 @@ sv_rankvariant_binary_file:
 sv_reformat_remove_genes_file:
   associated_program:
    - psv_reformat
-  build_file: no_auto_build
+  build_file: 0
   data_type: SCALAR
   exists_check: file
   mandatory: no
@@ -1274,7 +1274,7 @@ pgatk_genotypegvcfs:
 gatk_genotypegvcfs_ref_gvcf:
   associated_program:
    - pgatk_genotypegvcfs
-  build_file: no_auto_build
+  build_file: 0
   data_type: SCALAR
   exists_check: file
   reference: reference_dir
@@ -1376,7 +1376,7 @@ gatk_variantrecalibration_indel_max_gaussians:
 gatk_calculategenotypeposteriors_support_set:
   associated_program:
    - pgatk_variantrecalibration
-  build_file: no_auto_build
+  build_file: 0
   data_type: SCALAR
   default: GRCh37_1000g_sites_-phase3_v4_2013-05-02-.vcf.gz
   exists_check: file
@@ -1453,7 +1453,7 @@ prhocall:
 rhocall_frequency_file:
   associated_program:
    - prhocall
-  build_file: no_auto_build
+  build_file: 0
   data_type: SCALAR
   default: GRCh37_anon_swegen_snp_-2016-10-19-.tab.gz
   exists_check: file
@@ -1511,7 +1511,7 @@ vt_genmod_filter:
 vt_genmod_filter_1000g:
   associated_program:
    - pvt
-  build_file: no_auto_build
+  build_file: 0
   data_type: SCALAR
   default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz
   exists_check: file
@@ -1766,7 +1766,7 @@ snpeff_genome_build_version:
 snpsift_annotation_files:
   associated_program:
    - psnpeff
-  build_file: yes_auto_build
+  build_file: 1
   data_type: HASH
   default:
      GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz: AF
@@ -1779,7 +1779,7 @@ snpsift_annotation_files:
 snpsift_annotation_outinfo_key:
   associated_program:
    - psnpeff
-  build_file: yes_auto_build
+  build_file: 1
   data_type: HASH
   default:
      GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz: 1000G
@@ -1910,7 +1910,7 @@ nist_id:
 nist_high_confidence_call_set:
   associated_program:
    - pevaluation
-  build_file: no_auto_build
+  build_file: 0
   default: GRCh37_nist_hg001_-na12878_v2.19-.vcf
   data_type: SCALAR
   exists_check: file
@@ -1919,7 +1919,7 @@ nist_high_confidence_call_set:
 nist_high_confidence_call_set_bed:
   associated_program:
    - pevaluation
-  build_file: no_auto_build
+  build_file: 0
   default: GRCh37_nist_hg001_-na12878_v2.19-.bed
   data_type: SCALAR
   exists_check: file
@@ -1953,7 +1953,7 @@ genmod_annotate_cadd_files:
 genmod_annotate_spidex_file:
   associated_program:
    - prankvariant
-  build_file: no_auto_build
+  build_file: 0
   data_type: SCALAR
   exists_check: file
   reference: reference_dir
@@ -1974,7 +1974,7 @@ genmod_models_family_type:
 genmod_models_reduced_penetrance_file:
   associated_program:
    - prankvariant
-  build_file: no_auto_build
+  build_file: 0
   data_type: SCALAR
   exists_check: file
   reference: reference_dir
@@ -1982,7 +1982,7 @@ genmod_models_reduced_penetrance_file:
 rank_model_file:
   associated_program:
    - prankvariant
-  build_file: no_auto_build
+  build_file: 0
   data_type: SCALAR
   exists_check: file
   reference: reference_dir
@@ -2008,7 +2008,7 @@ rankvariant_binary_file:
 endvariantannotationblock_remove_genes_file:
   associated_program:
    - pendvariantannotationblock
-  build_file: no_auto_build
+  build_file: 0
   data_type: SCALAR
   exists_check: file
   mandatory: no
@@ -2033,7 +2033,7 @@ qccollect_sampleinfo_file:
 qccollect_regexp_file:
   associated_program:
    - pqccollect
-  build_file: no_auto_build
+  build_file: 0
   data_type: SCALAR
   default: qc_regexp_v1.13.yaml
   exists_check: file
@@ -2106,7 +2106,7 @@ exome_target_bed:
    - pgatk_realigner
    - pgatk_baserecalibration
    - pgatk_haplotypecaller
-  build_file: yes_auto_build
+  build_file: 1
   data_type: HASH
   exists_check: file
   reference: reference_dir

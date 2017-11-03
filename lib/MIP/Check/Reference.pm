@@ -23,7 +23,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ check_references_for_vt check_if_processed_by_vt check_human_genome_prerequisites check_capture_file_prerequisites };
+      qw{ check_references_for_vt check_if_processed_by_vt check_human_genome_prerequisites check_capture_file_prerequisites check_bwa_prerequisites };
 }
 
 ## Constants
@@ -261,7 +261,7 @@ sub check_if_processed_by_vt {
 
 sub check_human_genome_prerequisites {
 
-## Function : Checks if the Human genome prerequisites needs to be built and builds them if required
+## Function : Checks if the human genome prerequisites needs to be built and builds them if required
 ## Returns  :
 ## Arguments: $parameter_href          => Parameter hash {REF}
 ##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
@@ -346,39 +346,25 @@ sub check_human_genome_prerequisites {
       qw{ build_human_genome_prerequisites };
 
     ## Files assocaiated with human genome reference
-  FILE_ENDING:
-    foreach my $file_ending (
-        @{ $file_info_href->{human_genome_reference_file_endings} } )
+    if (   $parameter_href->{human_genome_reference}{build_file} == 1
+        || $file_info_href->{human_genome_compressed} eq q{compressed} )
     {
 
-        if (
-            (
-                $parameter_href->{ q{human_genome_reference} . $file_ending }
-                {build_file} == 1
-            )
-            || ( $file_info_href->{human_genome_compressed} eq q{compressed} )
-          )
-        {
-
-            ## Creates the humanGenomePreRequisites using active_parameters{human_genome_reference} as reference.
-            build_human_genome_prerequisites(
-                {
-                    parameter_href          => $parameter_href,
-                    active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    family_id      => $active_parameter_href->{family_id},
-                    outaligner_dir => $active_parameter_href->{outaligner_dir},
-                    program_name   => $program_name,
-                    log            => $log,
-                }
-            );
-
-            ## Will handle all metafiles build within sbatch script
-            last FILE_ENDING;
-        }
+        ## Creates the humanGenomePreRequisites using active_parameters{human_genome_reference} as reference.
+        build_human_genome_prerequisites(
+            {
+                parameter_href          => $parameter_href,
+                active_parameter_href   => $active_parameter_href,
+                sample_info_href        => $sample_info_href,
+                file_info_href          => $file_info_href,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                family_id               => $active_parameter_href->{family_id},
+                outaligner_dir => $active_parameter_href->{outaligner_dir},
+                program_name   => $program_name,
+                log            => $log,
+            }
+        );
     }
     return 1;
 }
@@ -507,6 +493,103 @@ sub check_capture_file_prerequisites {
 
         ## Only build once for all modules and files
         $parameter_href->{exome_target_bed}{build_file} = 0;
+    }
+    return;
+}
+
+sub check_bwa_prerequisites {
+
+## Function : Checks if the Bwa mem prerequisites needs to be built and builds them if required
+## Returns  :
+## Arguments: $parameter_href          => Parameter hash {REF}
+##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $file_info_href          => File info hash {REF}
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $job_id_href             => Job id hash {REF}
+##          : $program_name            => Program name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $active_parameter_href;
+    my $sample_info_href;
+    my $file_info_href;
+    my $infile_lane_prefix_href;
+    my $job_id_href;
+    my $program_name;
+
+    my $tmpl = {
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
+        active_parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$active_parameter_href,
+        },
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href,
+        },
+        file_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$file_info_href,
+        },
+        infile_lane_prefix_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$infile_lane_prefix_href,
+        },
+        job_id_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$job_id_href,
+        },
+        program_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$program_name,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Recipes::Build::Bwa_prerequisites qw{ build_bwa_prerequisites };
+
+    if ( $parameter_href->{bwa_build_reference}{build_file} == 1 ) {
+
+        build_bwa_prerequisites(
+            {
+                parameter_href          => $parameter_href,
+                active_parameter_href   => $active_parameter_href,
+                sample_info_href        => $sample_info_href,
+                file_info_href          => $file_info_href,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                bwa_build_reference_file_endings_ref =>
+                  \@{ $file_info_href->{bwa_build_reference_file_endings} },
+                program_name => $program_name,
+            }
+        );
     }
     return;
 }

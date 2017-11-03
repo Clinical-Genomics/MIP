@@ -26,7 +26,7 @@ email_types:
 bwa_mem_rapid_db:
   associated_program:
    - pbwa_mem
-  build_file: no_auto_build
+  build_file: 0
   data_type: SCALAR
   exists_check: file
   reference: reference_dir

@@ -22,10 +22,10 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ bwa_mem run_bwamem };
+    our @EXPORT_OK = qw{ bwa_mem run_bwamem bwa_index };
 
 }
 
@@ -34,12 +34,9 @@ Readonly my $SPACE => q{ };
 
 sub bwa_mem {
 
-## bwa_mem
-
 ## Function : Perl wrapper for writing bwa mem recipe to $FILEHANDLE. Based on bwa 0.7.15-r1140.
-## Returns  : "@commands"
-## Arguments: $infile_path, $idxbase, $second_infile_path, $stdoutfile_path, $stderrfile_path, $stderrfile_path, $stderrfile_path_append, $FILEHANDLE, $thread_number, $read_group_header, $mark_split_as_secondary, $interleaved_fastq_file
-##          : $infile_path             => Infile path (read 1 or interleaved i.e. read 1 and 2)
+## Returns  : @commands
+## Arguments: $infile_path             => Infile path (read 1 or interleaved i.e. read 1 and 2)
 ##          : $idxbase                 => Idxbase (human genome references and bwa mem idx files)
 ##          : $second_infile_path      => Second infile path (read 2)
 ##          : $stdoutfile_path         => Stdoutfile path
@@ -53,10 +50,6 @@ sub bwa_mem {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $mark_split_as_secondary;
-    my $interleaved_fastq_file;
-
     ## Flatten argument(s)
     my $infile_path;
     my $idxbase;
@@ -67,6 +60,10 @@ sub bwa_mem {
     my $FILEHANDLE;
     my $thread_number;
     my $read_group_header;
+
+    ## Default(s)
+    my $mark_split_as_secondary;
+    my $interleaved_fastq_file;
 
     my $tmpl = {
         infile_path => {
@@ -166,12 +163,9 @@ sub bwa_mem {
 
 sub run_bwamem {
 
-## run_bwamem
-
 ## Function : Perl wrapper for writing run_bwamem recipe to $FILEHANDLE. Based on bwakit 0.7.12.
-## Returns  : "@commands"
-## Arguments: $infile_path, $idxbase, $outfiles_prefix_path, $second_infile_path, $stderrfile_path, $stderrfile_path_append, $FILEHANDLE, $thread_number, $read_group_header, $hla_typing
-##          : $infile_path            => Infile path (read 1 or interleaved i.e. read 1 and 2)
+## Returns  : @commands
+## Arguments: $infile_path            => Infile path (read 1 or interleaved i.e. read 1 and 2)
 ##          : $idxbase                => Idxbase (human genome references and bwa mem idx files)
 ##          : $outfiles_prefix_path   => Prefix for output files
 ##          : $second_infile_path     => Second infile path (read 2)
@@ -184,9 +178,6 @@ sub run_bwamem {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $hla_typing;
-
     ## Flatten argument(s)
     my $infile_path;
     my $idxbase;
@@ -197,6 +188,9 @@ sub run_bwamem {
     my $FILEHANDLE;
     my $thread_number;
     my $read_group_header;
+
+    ## Default(s)
+    my $hla_typing;
 
     my $tmpl = {
         infile_path => {
@@ -290,4 +284,94 @@ sub run_bwamem {
     return @commands;
 }
 
+sub bwa_index {
+
+## Function : Perl wrapper for writing bwa mem recipe to $FILEHANDLE. Based on bwa 0.7.15-r1140.
+## Returns  : @commands
+## Arguments: $prefix                 => Prefix of the index [same as fasta name]
+##          : $construction_algorithm => BWT construction algorithm: bwtsw, is or rb2 [auto]
+##          : $reference_genome       => Reference genome [.fasta]
+##          : $stdoutfile_path        => Stdoutfile path
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $FILEHANDLE             => Filehandle to write to
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $prefix;
+    my $reference_genome;
+    my $construction_algorithm;
+    my $stdoutfile_path;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $FILEHANDLE;
+
+    ## Default(s)
+
+    my $tmpl = {
+        prefix =>
+          { required => 1, defined => 1, strict_type => 1, store => \$prefix },
+        reference_genome => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$reference_genome
+        },
+        construction_algorithm => {
+            allow       => [qw{ bwtsw rb2 }],
+            strict_type => 1,
+            store       => \$construction_algorithm
+        },
+        stdoutfile_path => {
+            strict_type => 1,
+            store       => \$stdoutfile_path,
+        },
+        stderrfile_path => {
+            strict_type => 1,
+            store       => \$stderrfile_path,
+        },
+        stderrfile_path_append => {
+            strict_type => 1,
+            store       => \$stderrfile_path_append,
+        },
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    # Stores commands depending on input parameters
+    my @commands = q{bwa index};
+
+    push @commands, q{-p} . $SPACE . $prefix;
+
+    if ($construction_algorithm) {
+
+        push @commands, q{-a} . $SPACE . $construction_algorithm;
+    }
+
+    push @commands, $reference_genome;
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stdoutfile_path        => $stdoutfile_path,
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+
+    return @commands;
+}
 1;

@@ -47,7 +47,7 @@ use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Check::Parameter
   qw{ check_parameter_hash check_allowed_temp_directory };
 use MIP::Check::Reference
-  qw{ check_references_for_vt check_human_genome_prerequisites check_capture_file_prerequisites };
+  qw{ check_references_for_vt check_human_genome_prerequisites check_capture_file_prerequisites check_bwa_prerequisites };
 use MIP::Delete::List qw{ delete_non_wes_contig delete_male_contig };
 use MIP::File::Format::Pedigree qw{ create_fam_file };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
@@ -212,7 +212,6 @@ my ( %infile, %indir_path, %infile_lane_prefix, %lane,
 #### Staging/Sanity Check Area
 
 my %file_info = (
-    bwa_build_reference => $EMPTY_STR,
     exome_target_bed =>
       [qw{ .infile_list .pad100.infile_list .pad100.interval_list }],
 
@@ -1259,7 +1258,7 @@ foreach my $program_name (
 
     next PROGRAM if ( $program_name eq q{mip} );
 
-    if ( $active_parameter{$program_name} > 0 ) {
+    if ( $active_parameter{$program_name} ) {
 
         ## Remove initial "p" from program_name
         substr( $program_name, 0, 1 ) = $EMPTY_STR;
@@ -1277,6 +1276,28 @@ foreach my $program_name (
             }
         );
         last PROGRAM if ($is_finished);
+    }
+}
+
+## Check BWA build prerequisites
+
+if ( $active_parameter{pbwa_mem} ) {
+
+    my $program_name = lc q{bwa_mem};
+
+    if ( $parameter{bwa_build_reference}{build_file} == 1 ) {
+
+        check_bwa_prerequisites(
+            {
+                parameter_href          => \%parameter,
+                active_parameter_href   => \%active_parameter,
+                sample_info_href        => \%sample_info,
+                file_info_href          => \%file_info,
+                infile_lane_prefix_href => \%infile_lane_prefix,
+                job_id_href             => \%job_id,
+                program_name            => $program_name,
+            }
+        );
     }
 }
 $log->info( $TAB . q{Reference check: Reference prerequisites checked} );
@@ -1453,28 +1474,6 @@ if ( $active_parameter{pbwa_mem} > 0 ) {
     $log->info(q{[BWA Mem]});
 
     my $program_name = lc q{bwa_mem};
-
-    if ( $active_parameter{dry_run_all} != 1 ) {
-
-        if (   ( $parameter{human_genome_reference}{build_file} eq 1 )
-            || ( $parameter{bwa_build_reference}{build_file} eq 1 ) )
-        {
-
-            build_bwa_prerequisites(
-                {
-                    parameter_href          => \%parameter,
-                    active_parameter_href   => \%active_parameter,
-                    sample_info_href        => \%sample_info,
-                    file_info_href          => \%file_info,
-                    infile_lane_prefix_href => \%infile_lane_prefix,
-                    job_id_href             => \%job_id,
-                    bwa_build_reference_file_endings_ref =>
-                      \@{ $file_info{bwa_build_reference_file_endings} },
-                    program_name => $program_name,
-                }
-            );
-        }
-    }
 
   SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
@@ -12886,224 +12885,6 @@ sub variantannotationblock {
     }
 }
 
-sub build_bwa_prerequisites {
-
-##build_bwa_prerequisites
-
-##Function : Creates the BwaPreRequisites using active_parameters{'human_genome_reference'} as reference.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $bwa_build_reference_file_endings_ref, $program_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $human_genome_reference_ref
-##         : $parameter_href                       => Parameter hash {REF}
-##         : $active_parameter_href                => Active parameters for this analysis hash {REF}
-##         : $sample_info_href                     => Info on samples and family hash {REF}
-##         : $file_info_href                       => File info hash {REF}
-##         : $infile_lane_prefix_href           => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                          => Job id hash {REF}
-##         : $bwa_build_reference_file_endings_ref => The bwa reference associated file endings {REF}
-##         : $family_id_ref                        => Family ID {REF}
-##         : $outaligner_dir_ref                   => The outaligner_dir used in the analysis
-##         : $program_name                         => Program name
-##         : $family_id_ref                        => Family id {REF}
-##         : $temp_directory_ref                   => Temporary directory {REF}
-##         : $outaligner_dir_ref                   => Outaligner_dir used in the analysis {REF}
-##         : $human_genome_reference_ref           => Human genome reference {REF}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-    my $outaligner_dir_ref;
-    my $human_genome_reference_ref;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $bwa_build_reference_file_endings_ref;
-    my $program_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href,
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href,
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href,
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href,
-        },
-        bwa_build_reference_file_endings_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$bwa_build_reference_file_endings_ref
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name,
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref,
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref,
-        },
-        outaligner_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir_ref,
-        },
-        human_genome_reference_ref => {
-            default =>
-              \$arg_href->{active_parameter_href}{human_genome_reference},
-            strict_type => 1,
-            store       => \$human_genome_reference_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Language::Shell qw{ check_exist_and_move_file };
-    use MIP::Recipes::Build::Human_genome_prerequisites
-      qw{ build_human_genome_prerequisites };
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_no_dependency_add_to_samples);
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-    my $random_integer =
-      int( rand(10000) );    #Generate a random integer between 0-10,000.
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $$family_id_ref,
-            program_name          => $program_name,
-            program_directory     => lc($$outaligner_dir_ref),
-            process_time          => 3,
-        }
-    );
-
-    build_human_genome_prerequisites(
-        {
-            parameter_href          => $parameter_href,
-            active_parameter_href   => $active_parameter_href,
-            sample_info_href        => $sample_info_href,
-            file_info_href          => $file_info_href,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            job_id_href             => $job_id_href,
-            program                 => $program_name,
-            FILEHANDLE              => $FILEHANDLE,
-            log                     => $log,
-            random_integer          => $random_integer,
-        }
-    );
-
-    if ( $parameter_href->{bwa_build_reference}{build_file} eq 1 ) {
-
-        $log->warn( "Will try to create required "
-              . $$human_genome_reference_ref
-              . " index files before executing "
-              . $program_name
-              . "\n" );
-
-        say {$FILEHANDLE} "## Building BWA index";
-        print {$FILEHANDLE} "bwa index ";   #Index sequences in the FASTA format
-        print {$FILEHANDLE} "-p "
-          . $$human_genome_reference_ref . "_"
-          . $random_integer
-          . " ";                            #Prefix of the index
-        print {$FILEHANDLE} "-a bwtsw ";    #BWT construction algorithm
-        say {$FILEHANDLE} $$human_genome_reference_ref,
-          "\n";                             #The FASTA reference sequences file
-
-        foreach my $file (@$bwa_build_reference_file_endings_ref) {
-
-            my $intended_file_path = $$human_genome_reference_ref . $file;
-            my $temporary_file_path =
-              $$human_genome_reference_ref . "_" . $random_integer . $file;
-
-            ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-            check_exist_and_move_file(
-                {
-                    FILEHANDLE          => $FILEHANDLE,
-                    intended_file_path  => $intended_file_path,
-                    temporary_file_path => $temporary_file_path,
-                }
-            );
-        }
-        $parameter_href->{bwa_build_reference}{build_file} =
-          0;    #Ensure that this subrutine is only executed once
-    }
-    close $FILEHANDLE;
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        my $slurm_path = $parameter_href->{ "p" . $program_name }{chain};
-
-        slurm_submit_job_no_dependency_add_to_samples(
-            {
-                job_id_href      => $job_id_href,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                family_id        => $$family_id_ref,
-                path             => $slurm_path,
-                sbatch_file_name => $file_path,
-                log              => $log,
-            }
-        );
-    }
-}
-
 sub read_yaml_pedigree_file {
 
 ##read_yaml_pedigree_file
@@ -14884,7 +14665,7 @@ sub check_parameter_files {
                     my $path =
                       catfile( $active_parameter_href->{$parameter_name} );
 
-                    if ( $parameter_name eq "bwa_build_reference" ) {
+                    if ( $parameter_name eq q{bwa_build_reference} ) {
 
                         ## Checks files to be built by combining filename stub with fileendings
                         check_file_endings_to_build(
@@ -14895,7 +14676,7 @@ sub check_parameter_files {
                                     $file_info_href
                                       ->{bwa_build_reference_file_endings}
                                 },
-                                parameter_name => "bwa_build_reference",
+                                parameter_name => q{bwa_build_reference},
                                 file_name      => $active_parameter_href
                                   ->{human_genome_reference},
                             }
@@ -15081,9 +14862,10 @@ sub check_parameter_files {
                             );
                         }
 
-                        if ( $parameter_name eq "human_genome_reference" ) {
+                        if ( $parameter_name eq q{human_genome_reference} ) {
 
-                            ## Check the existance of associated Human genome files
+                            ## Special case since dict is created with .fastq remoeved
+                            ## Check the existance of associated human genome files
                             check_human_genome_file_endings(
                                 {
                                     parameter_href => $parameter_href,
@@ -16021,14 +15803,13 @@ sub check_auto_build {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    if ( $parameter_href->{$$parameter_name_ref}{build_file} eq
-        "yes_auto_build" )
-    {
+    if ( $parameter_href->{$$parameter_name_ref}{build_file} == 1 ) {
 
-        return "1";    #Flag that autobuild is needed
+        ## Flag that autobuild is needed
+        return 1;
     }
-    elsif ( $parameter_href->{$$parameter_name_ref}{build_file} eq 1 )
-    {                  #1 for arrays
+    elsif ( $parameter_href->{$$parameter_name_ref}{build_file} eq 1 ) {
+        ## 1 for arrays
 
         return "1";    #Flag that autobuild is needed
     }
@@ -16163,18 +15944,37 @@ sub check_file_endings_to_build {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    foreach my $file_ending (@$file_endings_ref) {
+    ## Count the number of files that exists
+    my $existence_check_counter = 0;
 
-        check_existance(
+  FILE_ENDING:
+    foreach my $file_ending ( @{$file_endings_ref} ) {
+
+        my $exists_switch = check_existance(
             {
                 parameter_href        => $parameter_href,
                 active_parameter_href => $active_parameter_href,
                 item_name_ref         => \catfile( $file_name . $file_ending ),
                 parameter_name_ref    => \$parameter_name,
-                item_type_to_check    => "file",
+                item_type_to_check    => q{file},
             }
         );
+
+        ## Sum up the number of file that exists
+        $existence_check_counter = $existence_check_counter + $exists_switch;
     }
+
+    ## Files need to be built
+    if ( $existence_check_counter != scalar @{$file_endings_ref} ) {
+
+        $parameter_href->{$parameter_name}{build_file} = 1;
+    }
+    else {
+
+        # All file exist in this check
+        $parameter_href->{$parameter_name}{build_file} = 0;
+    }
+    return;
 }
 
 sub check_existance {
@@ -16249,24 +16049,25 @@ sub check_existance {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    if ( $item_type_to_check eq "directory" ) {
+    if ( $item_type_to_check eq q{directory} ) {
 
-        unless ( -d $$item_name_ref ) {   #Check existence of supplied directory
+        ## Check existence of supplied directory
+        if ( not -d $$item_name_ref ) {
 
             $log->fatal( $USAGE, "\n" );
             $log->fatal(
-                "Could not find intended "
+                    q{Could not find intended }
                   . $$parameter_name_ref
-                  . " directory: "
+                  . q{ directory: }
                   . $$item_name_ref,
-                "\n"
             );
             exit 1;
         }
     }
-    elsif ( $item_type_to_check eq "file" ) {
+    elsif ( $item_type_to_check eq q{file} ) {
 
-        unless ( -f $$item_name_ref ) {    #Check existence of supplied file
+        ## Check existence of supplied file
+        if ( not -f $$item_name_ref ) {
 
             ## Check auto_build or not and return value
             $parameter_href->{$$parameter_name_ref}{build_file} =
@@ -16278,37 +16079,25 @@ sub check_existance {
                 }
               );
 
-            if ( $parameter_href->{$$parameter_name_ref}{build_file} == 0 )
-            {    #No autobuild
+            if ( $parameter_href->{$$parameter_name_ref}{build_file} == 0 ) {
+                ## No autobuild
 
                 $log->fatal( $USAGE, "\n" );
                 $log->fatal(
-                    "Could not find intended "
+                        q{Could not find intended }
                       . $$parameter_name_ref
-                      . " file: "
+                      . q{ file: }
                       . $$item_name_ref,
-                    "\n"
                 );
                 exit 1;
             }
         }
         else {
-
-            if (
-                (
-                    defined(
-                        $parameter_href->{$$parameter_name_ref}{build_file}
-                    )
-                )
-                && ( $parameter_href->{$$parameter_name_ref}{build_file} ne 1 )
-              )
-            {   #If any of associated files do not exist make sure to build them
-
-                $parameter_href->{$$parameter_name_ref}{build_file} =
-                  0;    #File exist in this check
-            }
+            ## File was found
+            return 1;
         }
     }
+    return 0;
 }
 
 sub check_user_supplied_info {
@@ -17374,7 +17163,7 @@ sub check_human_genome_file_endings {
 
 ##check_human_genome_file_endings
 
-##Function : Check the existance of associated Human genome files.
+##Function : Check the existance of associated human genome files.
 ##Returns  : ""
 ##Arguments: $parameter_href, $active_parameter_href, $file_info_href, $parameter_name_ref, $human_genome_reference_name_prefix_ref, $reference_dir_ref,
 ##         : $parameter_href                            => Parameter hash {REF}
@@ -17435,17 +17224,17 @@ sub check_human_genome_file_endings {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    foreach my $file_ending (
-        @{ $file_info_href->{human_genome_reference_file_endings} } )
-    {
+    ## Count the number of files that exists
+    my $existence_check_counter = 0;
+    my @human_reference_file_endings =
+      @{ $file_info_href->{human_genome_reference_file_endings} };
 
-        my $path = catfile( $active_parameter_href->{human_genome_reference} );
+  FILE_ENDING:
+    foreach my $file_ending (@human_reference_file_endings) {
 
-        ## Enable auto_build of metafiles
-        $parameter_href->{ $$parameter_name_ref . $file_ending }{build_file} =
-          "yes_auto_build";
+        my $path = $active_parameter_href->{human_genome_reference};
 
-        if ( $file_ending eq ".dict" ) {
+        if ( $file_ending eq q{.dict} ) {
 
             ## Removes ".file_ending" in filename.FILENDING(.gz)
             my ( $file, $dir_path ) =
@@ -17454,21 +17243,33 @@ sub check_human_genome_file_endings {
             $path = catfile( $dir_path, $file );
         }
 
-        $path = $path . $file_ending;    #Add current ending
-        my $complete_parameter_name = $$parameter_name_ref . $file_ending;
+        #Add current ending
+        $path = $path . $file_ending;
 
-        check_existance(
+        my $exists_switch = check_existance(
             {
                 parameter_href        => $parameter_href,
                 active_parameter_href => $active_parameter_href,
                 item_name_ref         => \$path,
-                parameter_name_ref    => \$complete_parameter_name,
-                item_type_to_check    => "file",
+                parameter_name_ref    => \$$parameter_name_ref,
+                item_type_to_check    => q{file},
             }
         );
+
+        ## Sum up the number of file that exists
+        $existence_check_counter = $existence_check_counter + $exists_switch;
     }
-    if ( $parameter_href->{ $$parameter_name_ref . ".dict" }{build_file} eq 0 )
-    {
+    ## Files need to be built
+    if ( $existence_check_counter != scalar @human_reference_file_endings ) {
+
+        $parameter_href->{$$parameter_name_ref}{build_file} = 1;
+    }
+    else {
+
+        # All file exist in this check
+        $parameter_href->{$$parameter_name_ref}{build_file} = 0;
+    }
+    if ( $parameter_href->{$$parameter_name_ref}{build_file} eq 0 ) {
 
         ##Collect sequence contigs from human reference ".dict" file since it exists
         collect_seq_contigs(

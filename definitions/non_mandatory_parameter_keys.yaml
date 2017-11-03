@@ -1,8 +1,8 @@
 build_file:
   key_data_type: SCALAR
   values:
-    - no_auto_build
-    - yes_auto_build
+    - 0
+    - 1
 mandatory:
   key_data_type: SCALAR
   values:
