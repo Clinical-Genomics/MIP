@@ -96,11 +96,12 @@ sub install_picard {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Modules
-    use MIP::Gnu::Coreutils qw{ gnu_rm gnu_mv gnu_mkdir gnu_ln };
+    use MIP::Gnu::Coreutils qw{ gnu_rm gnu_mv gnu_ln };
     use MIP::Program::Download::Wget qw{ wget };
     use MIP::Program::Compression::Zip qw{ unzip };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
     use MIP::Check::Installation qw{ check_existing_installation };
+    use MIP::Script::Utils qw{ create_temp_dir };
 
     ## Unpack parameters
     my $picard_version = $picard_parameters_href->{version};
@@ -125,7 +126,7 @@ sub install_picard {
     my $install_check = check_existing_installation(
         {
             program_directory_path => $picard_dir_path,
-            program                => q{Picard},
+            program_name           => q{Picard},
             conda_environment      => $conda_environment,
             conda_prefix_path      => $conda_prefix_path,
             noupdate               => $noupdate,
@@ -142,13 +143,7 @@ sub install_picard {
 
     ## Creating temporary install directory
     say {$FILEHANDLE} q{## Create temporary picard install directory};
-    my $temp_dir = catdir( $pwd, q{picard_temp} . $UNDERSCORE . int rand 1000 );
-    gnu_mkdir(
-        {
-            indirectory_path => $temp_dir,
-            FILEHANDLE       => $FILEHANDLE,
-        }
-    );
+    my $temp_dir = create_temp_dir( { FILEHANDLE => $FILEHANDLE } );
     say {$FILEHANDLE} $NEWLINE;
 
     ## Download
@@ -161,7 +156,6 @@ sub install_picard {
       . $DOT . q{zip};
     my $picard_zip_path =
       catfile( $temp_dir, q{picard-tools-} . $picard_version . $DOT . q{zip} );
-
     wget(
         {
             url          => $url,

@@ -102,6 +102,7 @@ sub install_snpeff {
     use MIP::Program::Compression::Zip qw{ unzip };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
     use MIP::Program::Variantcalling::SnpEff qw{ snpeff_download };
+    use MIP::Script::Utils qw{ create_temp_dir };
 
     ## Unpack parameters
     my $snpeff_version = $snpeff_parameters_href->{version};
@@ -127,7 +128,7 @@ sub install_snpeff {
 
     # Check if snpEff.jar exists (assumes that snpSift also exists if true)
     if ( -f catfile( $snpeff_install_path, q{snpEff.jar} ) ) {
-        $log->warn(
+        $log->info(
             q{SnpEff is already installed in the specified conda environment.});
 
         if ($noupdate) {
@@ -170,13 +171,7 @@ sub install_snpeff {
 
     ## Creating temporary install directory
     say {$FILEHANDLE} q{## Create temporary SnpEff install directory};
-    my $temp_dir = catdir( $pwd, q{snpeff_temp} . $UNDERSCORE . int rand 1000 );
-    gnu_mkdir(
-        {
-            indirectory_path => $temp_dir,
-            FILEHANDLE       => $FILEHANDLE,
-        }
-    );
+    my $temp_dir = create_temp_dir( { FILEHANDLE => $FILEHANDLE } );
     say {$FILEHANDLE} $NEWLINE;
 
     ## Download
@@ -270,6 +265,7 @@ sub install_snpeff {
     }
     print {$FILEHANDLE} $NEWLINE;
 
+  GENOME_VERSION:
     foreach my $genome_version (@snpeff_genome_versions) {
         ## Check and if required add the vertebrate mitochondrial codon table to SnpEff config
         check_mt_codon_table(
@@ -283,25 +279,25 @@ sub install_snpeff {
             }
         );
 
-        if ( not -d catdir( $snpeff_install_path, q{data}, $genome_version ) ) {
-            ## Write instructions to download SnpEff database.
-            ## This is done by install script to avoid race conditin when doing first analysis run in MIP
+        next GENOME_VERSION
+          if ( -d catdir( $snpeff_install_path, q{data}, $genome_version ) );
+        ## Write instructions to download SnpEff database.
+        ## This is done by install script to avoid race conditin when doing first analysis run in MIP
 
-            say {$FILEHANDLE} q{## Downloading SnpEff database};
-            my $jar_path = catfile( $conda_prefix_path, qw{ bin snpEff.jar} );
-            my $config_file_path =
-              catfile( $conda_prefix_path, qw{bin snpEff.config} );
-            snpeff_download(
-                {
-                    FILEHANDLE              => $FILEHANDLE,
-                    genome_version_database => $genome_version,
-                    jar_path                => $jar_path,
-                    config_file_path        => $config_file_path,
-                    temp_directory          => 1,
-                }
-            );
-            say {$FILEHANDLE} $NEWLINE;
-        }
+        say {$FILEHANDLE} q{## Downloading SnpEff database};
+        my $jar_path = catfile( $conda_prefix_path, qw{ bin snpEff.jar} );
+        my $config_file_path =
+          catfile( $conda_prefix_path, qw{bin snpEff.config} );
+        snpeff_download(
+            {
+                FILEHANDLE              => $FILEHANDLE,
+                genome_version_database => $genome_version,
+                jar_path                => $jar_path,
+                config_file_path        => $config_file_path,
+                temp_directory          => 1,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
     }
 
     ## Remove the temporary install directory
@@ -313,7 +309,7 @@ sub install_snpeff {
             FILEHANDLE  => $FILEHANDLE,
         }
     );
-    say {$FILEHANDLE} $NEWLINE . $NEWLINE;
+    say {$FILEHANDLE} $NEWLINE x 2;
 
     return;
 }

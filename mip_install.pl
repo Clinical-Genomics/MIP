@@ -14,7 +14,6 @@ use Getopt::Long;
 use Cwd;
 use Cwd qw{ abs_path };
 
-#Find directory of script
 use FindBin qw{ $Bin };
 use IO::Handle;
 use File::Basename qw{ dirname basename fileparse };
@@ -196,14 +195,17 @@ GetOptions(
 
     #Display help text
     q{h|help} => sub {
-        print STDOUT $USAGE, $NEWLINE;
+        say {*STDOUT} $USAGE;
         exit;
     },
 
     #Display version number
     q{ver|version} => sub {
-        print STDOUT $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
-          "\n\n";
+        say {*STDOUT} $NEWLINE
+          . basename($PROGRAM_NAME)
+          . $SPACE
+          . $VERSION
+          . $NEWLINE;
         exit;
     },
     q{v|verbose} => \$parameter{verbose},
@@ -265,7 +267,7 @@ else {
     $parameter{conda_prefix_path} = $conda_dir_path;
 }
 
-if ( !$parameter{vep_cache_dir} ) {
+if ( not $parameter{vep_cache_dir} ) {
 
     # Cache directory
     $parameter{shell}{vep}{vep_cache_dir} =
@@ -410,7 +412,7 @@ for my $shell_program (@shell_programs_to_install) {
 }
 
 ## Download reference genome if requested
-if ( exists( $parameter{reference_dir} ) && ( $parameter{reference_dir} ) ) {
+if ( exists $parameter{reference_dir} && $parameter{reference_dir} ) {
     references(
         {
             parameter_href => \%parameter,
@@ -580,11 +582,15 @@ sub print_parameters {
                 else {
                     ## Don't print value if it is undef
                     if ( not $parameter_href->{$key}{$program} ) {
-                        say {*STDOUT} $key . q{ } . $program;
+                        say {*STDOUT} $key . $SPACE . $program;
                     }
                     else {
                         ## Print hash value
-                        say {*STDOUT} $key . q{ } . $program . q{: }
+                        say {*STDOUT} $key
+                          . $SPACE
+                          . $program
+                          . $COLON
+                          . $SPACE
                           . $parameter_href->{$key}{$program};
                     }
                 }

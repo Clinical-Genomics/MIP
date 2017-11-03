@@ -96,12 +96,13 @@ sub install_sambamba {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Modules
-    use MIP::Gnu::Coreutils qw{ gnu_rm gnu_mv gnu_mkdir gnu_ln gnu_chmod};
+    use MIP::Gnu::Coreutils qw{ gnu_rm gnu_mv  gnu_ln gnu_chmod};
     use MIP::Program::Download::Wget qw{ wget };
     use MIP::Program::Compression::Bzip2 qw{ bzip2 };
     use MIP::Program::Compression::Tar qw{ tar };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
     use MIP::Check::Installation qw{ check_existing_installation };
+    use MIP::Script::Utils qw{ create_temp_dir };
 
     ## Unpack parameters
     my $sambamba_version = $sambamba_parameters_href->{version};
@@ -125,7 +126,7 @@ sub install_sambamba {
     my $install_check = check_existing_installation(
         {
             program_directory_path => $sambamba_dir,
-            program                => q{Sambamba},
+            program_name           => q{Sambamba},
             conda_environment      => $conda_environment,
             conda_prefix_path      => $conda_prefix_path,
             noupdate               => $noupdate,
@@ -142,14 +143,7 @@ sub install_sambamba {
 
     ## Creating temporary install directory
     say {$FILEHANDLE} q{## Create temporary sambamba install directory};
-    my $temp_dir =
-      catdir( $pwd, q{sambamba_temp} . $UNDERSCORE . int rand 1000 );
-    gnu_mkdir(
-        {
-            indirectory_path => $temp_dir,
-            FILEHANDLE       => $FILEHANDLE,
-        }
-    );
+    my $temp_dir = create_temp_dir( { FILEHANDLE => $FILEHANDLE } );
     say {$FILEHANDLE} $NEWLINE;
 
     ## Download

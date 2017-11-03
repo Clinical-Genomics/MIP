@@ -136,7 +136,7 @@ sub install_mip_scripts {
             q{MIP is already installed in the specified conda environment.});
         if ($noupdate) {
             say {$FILEHANDLE}
-              q{## MIP is already installed, skippping reinstallation};
+              q{## MIP is already installed, skippping installation};
             say {$FILEHANDLE} $NEWLINE;
             return;
         }

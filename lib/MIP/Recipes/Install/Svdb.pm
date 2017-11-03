@@ -133,8 +133,7 @@ sub install_svdb {
     );
 
     # Check if installation exists and is executable
-    if (   ( -x catfile( $conda_prefix_path, qw{ bin SVDB } ) )
-        || ($svdb_status) )
+    if ( ( -x catfile( $conda_prefix_path, qw{ bin SVDB } ) ) || $svdb_status )
     {
         $log->info(
             q{SVDB is already installed in the specified conda environment.});
@@ -148,7 +147,7 @@ sub install_svdb {
 
     }
 
-    $log->info(q{Writing instructions for SVDB installation via SHELL.});
+    $log->info(q{Writing instructions for SVDB installation via SHELL});
 
     ## Only activate conda environment if supplied by user
     if ($conda_environment) {

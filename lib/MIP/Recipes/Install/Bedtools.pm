@@ -31,11 +31,12 @@ Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
 Readonly my $UNDERSCORE => q{_};
+Readonly my $ASTERIX    => q{*};
 
 sub install_bedtools {
 
 ## Function : Install bedtools
-## Returns  : ""
+## Returns  :
 ## Arguments: $program_parameters_href => Hash with bedtools specific parameters {REF}
 ##          : $conda_prefix_path       => Conda prefix path
 ##          : $conda_environment       => Conda environment
@@ -96,12 +97,13 @@ sub install_bedtools {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Modules
-    use MIP::Gnu::Coreutils qw{ gnu_rm gnu_mv gnu_mkdir gnu_ln};
+    use MIP::Gnu::Coreutils qw{ gnu_ln gnu_mkdir gnu_mv gnu_rm };
     use MIP::Program::Download::Wget qw{ wget };
     use MIP::Program::Compression::Tar qw{ tar };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
     use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
     use MIP::Check::Installation qw{ check_existing_installation };
+    use MIP::Script::Utils qw{ create_temp_dir };
 
     ## Unpack parameters
     my $bedtools_version = $bedtools_parameters_href->{version};
@@ -127,7 +129,7 @@ sub install_bedtools {
     my $install_check = check_existing_installation(
         {
             program_directory_path => $bedtools_dir,
-            program                => q{Bedtools},
+            program_name           => q{Bedtools},
             conda_environment      => $conda_environment,
             conda_prefix_path      => $conda_prefix_path,
             noupdate               => $noupdate,
@@ -144,14 +146,7 @@ sub install_bedtools {
 
     ## Creating temporary install directory
     say {$FILEHANDLE} q{## Create temporary bedtools install directory};
-    my $temp_dir =
-      catdir( $pwd, q{bedtools_temp} . $UNDERSCORE . int rand 1000 );
-    gnu_mkdir(
-        {
-            indirectory_path => $temp_dir,
-            FILEHANDLE       => $FILEHANDLE,
-        }
-    );
+    my $temp_dir = create_temp_dir( { FILEHANDLE => $FILEHANDLE } );
     say {$FILEHANDLE} $NEWLINE;
 
     ## Download
@@ -218,10 +213,10 @@ sub install_bedtools {
     gnu_ln(
         {
             link_path   => catfile( $conda_prefix_path, q{bin} ),
-            target_path => catfile( $bedtools_dir,      qw{ bin * } ),
-            symbolic    => 1,
-            force       => 1,
-            FILEHANDLE  => $FILEHANDLE,
+            target_path => catfile( $bedtools_dir,      q{bin}, $ASTERIX ),
+            symbolic   => 1,
+            force      => 1,
+            FILEHANDLE => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -235,7 +230,7 @@ sub install_bedtools {
             FILEHANDLE  => $FILEHANDLE,
         }
     );
-    say {$FILEHANDLE} $NEWLINE . $NEWLINE;
+    say {$FILEHANDLE} $NEWLINE x 2;
 
     return;
 }

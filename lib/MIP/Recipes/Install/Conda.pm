@@ -454,46 +454,46 @@ sub finish_bioconda_package_install {
 
             my $snpeff_genome_dir =
               catdir( $share_dir, q{data}, $genome_version );
-            if ( not -d $snpeff_genome_dir ) {
-                ## Only activate conda environment if supplied by user
-                if ($conda_env) {
-                    ## Activate conda environment
-                    say {$FILEHANDLE} q{## Activate conda environment};
-                    conda_source_activate(
-                        {
-                            FILEHANDLE => $FILEHANDLE,
-                            env_name   => $conda_env,
-                        }
-                    );
-                    say {$FILEHANDLE} $NEWLINE;
-                }
+            next SNPEFF_GENOME_VERSION if ( -d $snpeff_genome_dir );
 
-                ## Write instructions to download snpeff database.
-                ## This is done by install script to avoid race conditin when doing first analysis run in MIP
-                say {$FILEHANDLE} q{## Downloading snpeff database};
-                my $jar_path = catfile( $conda_env_path, qw{ bin snpEff.jar} );
-                my $config_file_path =
-                  catfile( $conda_env_path, qw{bin snpEff.config} );
-                snpeff_download(
+            ## Only activate conda environment if supplied by user
+            if ($conda_env) {
+                ## Activate conda environment
+                say {$FILEHANDLE} q{## Activate conda environment};
+                conda_source_activate(
                     {
-                        FILEHANDLE              => $FILEHANDLE,
-                        genome_version_database => $genome_version,
-                        jar_path                => $jar_path,
-                        config_file_path        => $config_file_path,
-                        temp_directory          => 1,
+                        FILEHANDLE => $FILEHANDLE,
+                        env_name   => $conda_env,
                     }
                 );
                 say {$FILEHANDLE} $NEWLINE;
-                ## Deactivate conda environment if conda_environment exists
-                if ($conda_env) {
-                    say {$FILEHANDLE} q{## Deactivate conda environment};
-                    conda_source_deactivate(
-                        {
-                            FILEHANDLE => $FILEHANDLE,
-                        }
-                    );
-                    say {$FILEHANDLE} $NEWLINE;
+            }
+
+            ## Write instructions to download snpeff database.
+            ## This is done by install script to avoid race conditin when doing first analysis run in MIP
+            say {$FILEHANDLE} q{## Downloading snpeff database};
+            my $jar_path = catfile( $conda_env_path, qw{ bin snpEff.jar} );
+            my $config_file_path =
+              catfile( $conda_env_path, qw{bin snpEff.config} );
+            snpeff_download(
+                {
+                    FILEHANDLE              => $FILEHANDLE,
+                    genome_version_database => $genome_version,
+                    jar_path                => $jar_path,
+                    config_file_path        => $config_file_path,
+                    temp_directory          => 1,
                 }
+            );
+            say {$FILEHANDLE} $NEWLINE;
+            ## Deactivate conda environment if conda_environment exists
+            if ($conda_env) {
+                say {$FILEHANDLE} q{## Deactivate conda environment};
+                conda_source_deactivate(
+                    {
+                        FILEHANDLE => $FILEHANDLE,
+                    }
+                );
+                say {$FILEHANDLE} $NEWLINE;
             }
         }
     }
@@ -657,27 +657,24 @@ sub _create_target_link_paths {
                 );
             }
             else {
-                # check if the program has been set to be installed vi shell and
-                # thus has been removed from the bioconda_packages hash
-                if ( $bioconda_packages_href->{$program} ) {
-                    $target_path = catfile(
-                        $conda_env_path,
-                        q{share},
-                        $program . q{-}
-                          . $bioconda_packages_href->{$program}
-                          . $bioconda_patches_href->{
-                                q{bioconda}
-                              . $UNDERSCORE
-                              . $program
-                              . $UNDERSCORE
-                              . q{patch}
-                          },
-                        $binary
-                    );
-                }
-                else {
-                    next BINARY;
-                }
+               # Check if the program has been set to be installed via shell and
+               # thus has been removed from the bioconda_packages hash
+                next BINARY if ( not $bioconda_packages_href->{$program} );
+
+                $target_path = catfile(
+                    $conda_env_path,
+                    q{share},
+                    $program . q{-}
+                      . $bioconda_packages_href->{$program}
+                      . $bioconda_patches_href->{
+                            q{bioconda}
+                          . $UNDERSCORE
+                          . $program
+                          . $UNDERSCORE
+                          . q{patch}
+                      },
+                    $binary
+                );
             }
             ## Construct link_path
             my $link_path = catfile( $conda_env_path, q{bin}, $binary );

@@ -27,17 +27,16 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $COLON => q{:};
+Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => q{ };
 
 sub check_existing_installation {
 
 ## Function : Checks if the program has already been installed and optionally removes the current installation.
 ##          : Returns "1" if the program is found and a noupdate flag has been provided
-## Returns  : "$install_check"
-## Arguments: $program_directory_path => Path to program 
-##          : $program                => Program name
+## Returns  : $install_check
+## Arguments: $program_directory_path => Path to program directory
+##          : $program_name                => Program name
 ##          : $conda_environment      => Conda environment
 ##          : $conda_prefix_path      => Path to conda environment
 ##          : $noupdate               => Do not update
@@ -48,7 +47,7 @@ sub check_existing_installation {
 
     ## Flatten argument(s)
     my $program_directory_path;
-    my $program;
+    my $program_name;
     my $conda_environment;
     my $conda_prefix_path;
     my $noupdate;
@@ -61,11 +60,11 @@ sub check_existing_installation {
             strict_type => 1,
             store       => \$program_directory_path
         },
-        program => {
+        program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$program
+            store       => \$program_name
         },
         conda_prefix_path => {
             required    => 1,
@@ -78,6 +77,7 @@ sub check_existing_installation {
             store       => \$conda_environment
         },
         noupdate => {
+            allow       => [ undef, 0, 1 ],
             strict_type => 1,
             store       => \$noupdate
         },
@@ -86,10 +86,10 @@ sub check_existing_installation {
             defined  => 1,
             store    => \$FILEHANDLE
         },
-        log => { 
+        log => {
             required => 1,
-            defined => 1,
-            store => \$log
+            defined  => 1,
+            store    => \$log
         },
     };
 
@@ -100,60 +100,59 @@ sub check_existing_installation {
     use MIP::Gnu::Findutils qw{ gnu_find };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
 
-    ## Unpack parameters
-    my $installation_check;
-
     ## Set default for conda environment if undef
-    if (not $conda_environment) {
+    if ( not $conda_environment ) {
         $conda_environment = q{root};
     }
 
     ## Check if installation directory exists
     if ( -d $program_directory_path ) {
-        $log->info(
-            $program . $SPACE . q{is already installed in conda environment} . $COLON 
-            . $SPACE . $conda_environment );
+        $log->info( $program_name
+              . $SPACE
+              . q{is already installed in conda environment: }
+              . $conda_environment );
 
         if ($noupdate) {
-            $log->info(
-                q{Skipping writting installation instructions for} . $SPACE . $program);
+            $log->info( q{Skipping writting installation instructions for }
+                  . $program_name );
             say {$FILEHANDLE}
-              q{## Skipping writting installation instructions for} . $SPACE . $program;
+              q{## Skipping writting installation instructions for }
+              . $program_name;
             say {$FILEHANDLE} $NEWLINE;
 
-            return $installation_check = 1;
+            return 1;
         }
 
-        $log->warn(q{This will overwrite the current} . $SPACE . $program . $SPACE . q{installation} );
-        
-        say {$FILEHANDLE} q{## Removing old} . $SPACE . $program . $SPACE . q{directory};
+        $log->warn(
+            qq{This will overwrite the current $program_name installation});
+
+        say {$FILEHANDLE} qq{## Removing old $program_name directory};
         gnu_rm(
             {
                 infile_path => $program_directory_path,
                 recursive   => 1,
-                force => 1,
+                force       => 1,
                 FILEHANDLE  => $FILEHANDLE,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
-        
-        say {$FILEHANDLE} q{## Removing old} . $SPACE . $program . $SPACE . q{links};
+
+        say {$FILEHANDLE} qq{## Removing old $program_name links};
         gnu_find(
             {
-                search_path => catdir( $conda_prefix_path, q{bin} ),
+                search_path   => catdir( $conda_prefix_path, q{bin} ),
                 test_criteria => q{-xtype l},
-                action => q{-delete},
-                FILEHANDLE => $FILEHANDLE,
+                action        => q{-delete},
+                FILEHANDLE    => $FILEHANDLE,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
     }
 
     $log->info(
-q{Writing instructions for} . $SPACE . $program . $SPACE . q{installation via SHELL.}
-    );
+        qq{Writing instructions for $program_name installation via SHELL});
 
-    return $installation_check;
+    return 0;
 }
 
 1;

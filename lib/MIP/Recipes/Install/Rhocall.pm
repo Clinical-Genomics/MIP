@@ -122,13 +122,13 @@ sub install_rhocall {
     ## Store original working directory
     my $pwd = cwd();
 
-    say {$FILEHANDLE} q{### Install rhocall};
+    say {$FILEHANDLE} q{### Install Rhocall};
 
     ## Check if installation exists and remove directory unless a noupdate flag is provided
     my $install_check = check_existing_installation(
         {
             program_directory_path => $rhocall_path,
-            program                => q{Rhocall},
+            program_name           => q{Rhocall},
             conda_environment      => $conda_environment,
             conda_prefix_path      => $conda_prefix_path,
             noupdate               => $noupdate,

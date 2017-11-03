@@ -140,20 +140,26 @@ sub install_vep {
     ## Check for existing vep installation
     if ( -d $miniconda_bin_dir ) {
 
-        $log->info( q{Found varianteffectpredictor in miniconda directory: }
+        $log->info(
+q{Varianteffectpredictor is already installed in conda environment: }
               . $miniconda_bin_dir );
 
         if ($noupdate) {
 
             $log->info(
-q{Skipping writting installation process for varianteffectpredictor}
+q{Skipping writting installation isntructions for varianteffectpredictor}
             );
             return;
         }
         else {
 
+            $log->warn(
+q{This will overwrite the current varianteffectpredictor installation}
+            );
+
             ## Removing varianteffectpredictor
-            say {$FILEHANDLE} q{### Removing varianteffectpredictor};
+            say {$FILEHANDLE}
+              q{## Removing old varianteffectpredictor directory};
             gnu_rm(
                 {
                     infile_path => $miniconda_bin_dir,
@@ -372,7 +378,7 @@ q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/LoFtool_scores.tx
                 FILEHANDLE => $FILEHANDLE,
             }
         );
-        say {$FILEHANDLE} $NEWLINE . $NEWLINE;
+        say {$FILEHANDLE} $NEWLINE x 2;
     }
     return;
 }

@@ -101,6 +101,7 @@ sub install_vt {
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
     use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
     use MIP::Check::Installation qw{ check_existing_installation };
+    use MIP::Script::Utils qw{ create_temp_dir };
 
     ## Unpack parameters
     my $vt_version = $vt_parameters_href->{version};
@@ -124,7 +125,7 @@ sub install_vt {
     my $install_check = check_existing_installation(
         {
             program_directory_path => $vt_dir,
-            program                => q{VT},
+            program_name           => q{VT},
             conda_environment      => $conda_environment,
             conda_prefix_path      => $conda_prefix_path,
             noupdate               => $noupdate,
@@ -141,13 +142,7 @@ sub install_vt {
 
     ## Creating temporary install directory
     say {$FILEHANDLE} q{## Create temporary VT install directory};
-    my $temp_dir = catdir( $pwd, q{vt_temp} . $UNDERSCORE . int rand 1000 );
-    gnu_mkdir(
-        {
-            indirectory_path => $temp_dir,
-            FILEHANDLE       => $FILEHANDLE,
-        }
-    );
+    my $temp_dir = create_temp_dir( { FILEHANDLE => $FILEHANDLE } );
     say {$FILEHANDLE} $NEWLINE;
 
     ## Download

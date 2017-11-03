@@ -96,11 +96,12 @@ sub install_plink2 {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Modules
-    use MIP::Gnu::Coreutils qw{ gnu_rm gnu_mv gnu_mkdir gnu_ln };
+    use MIP::Gnu::Coreutils qw{ gnu_rm gnu_mv gnu_ln };
     use MIP::Program::Download::Wget qw{ wget };
     use MIP::Program::Compression::Zip qw{ unzip };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
     use MIP::Check::Installation qw{ check_existing_installation };
+    use MIP::Script::Utils qw{ create_temp_dir };
 
     ## Unpack parameters
     my $plink2_version = $plink2_parameters_href->{version};
@@ -124,7 +125,7 @@ sub install_plink2 {
     my $install_check = check_existing_installation(
         {
             program_directory_path => $plink2_dir,
-            program                => q{Plink2},
+            program_name           => q{Plink2},
             conda_environment      => $conda_environment,
             conda_prefix_path      => $conda_prefix_path,
             noupdate               => $noupdate,
@@ -141,13 +142,7 @@ sub install_plink2 {
 
     ## Creating temporary install directory
     say {$FILEHANDLE} q{## Create temporary Plink2 install directory};
-    my $temp_dir = catdir( $pwd, q{plink2_temp} . $UNDERSCORE . int rand 1000 );
-    gnu_mkdir(
-        {
-            indirectory_path => $temp_dir,
-            FILEHANDLE       => $FILEHANDLE,
-        }
-    );
+    my $temp_dir = create_temp_dir( { FILEHANDLE => $FILEHANDLE } );
     say {$FILEHANDLE} $NEWLINE;
 
     ## Download

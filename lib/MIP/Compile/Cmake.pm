@@ -1,4 +1,4 @@
-package MIP::Gnu::Software::Gnu_make;
+package MIP::Compile::Cmake;
 
 use strict;
 use warnings;
@@ -25,22 +25,21 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ gnu_make };
+    our @EXPORT_OK = qw{ cmake };
 }
 
 ## Constants
 Readonly my $SPACE => q{ };
 
-sub gnu_make {
+sub cmake {
 
-## Function : Perl wrapper for writing make commands. Based on gnu make version 3.81
+## Function : Perl wrapper for writing cmake commands. Based on gnu make version 3.3.1
 ## Returns  : @commands
 ## Arguments: makefile_dir            => Path to dir with make file
 ##          : $stdoutfile_path        => Stdoutfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $FILEHANDLE             => Filehandle to write to
-##          : $test                   => Run test
 
     my ($arg_href) = @_;
 
@@ -50,7 +49,6 @@ sub gnu_make {
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $FILEHANDLE;
-    my $test;
 
     ## Default(s)
 
@@ -74,25 +72,15 @@ sub gnu_make {
         FILEHANDLE => {
             store => \$FILEHANDLE,
         },
-        test => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$test,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Stores commands depending on input parameters
-    my @commands = q{make};
+    my @commands = q{cmake};
 
     if ($makefile_dir) {
-        push @commands, q{--directory=} . $makefile_dir;
-    }
-
-    if ($test) {
-        push @commands, q{test};
+        push @commands, $makefile_dir;
     }
 
     push @commands,

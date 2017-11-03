@@ -35,7 +35,7 @@ Readonly my $UNDERSCORE => q{_};
 sub install_cnvnator {
 
 ## Function : Install CNVnator
-## Returns  : ""
+## Returns  :
 ## Arguments: $program_parameters_href => Hash with CNVnator specific parameters {REF}
 ##          : $conda_prefix_path       => Conda prefix path
 ##          : $conda_environment       => Conda environment
@@ -96,7 +96,7 @@ sub install_cnvnator {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Modules
-    use MIP::Gnu::Coreutils qw{ gnu_rm gnu_mkdir gnu_mv gnu_ln};
+    use MIP::Gnu::Coreutils qw{ gnu_ln gnu_mv gnu_rm};
     use MIP::Gnu::Bash qw{ gnu_cd };
     use MIP::Program::Download::Wget qw{ wget };
     use MIP::Program::Compression::Tar qw{ tar };
@@ -106,6 +106,9 @@ sub install_cnvnator {
       qw{ conda_source_activate conda_source_deactivate };
     use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
     use MIP::Check::Installation qw{ check_existing_installation };
+    use MIP::Recipes::Install::Root qw{ install_root };
+    use MIP::Script::Utils qw{ create_temp_dir };
+    use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
     ## Unpack parameters
     my $cnvnator_version = $cnvnator_parameters_href->{version};
@@ -126,14 +129,13 @@ sub install_cnvnator {
 
     say {$FILEHANDLE} q{### Install CNVnator/ROOT};
 
-    ## ROOT installation (prerequisite for CNVnator)
-
-    ## Check if installation exists and remove directory unless a noupdate flag is provided
+    ## Check if ROOT (CNVnator requirement) installation exists
+    ## and remove directory unless a noupdate flag is provided
     my $root_bin_dir = catdir( $conda_prefix_path, q{root} );
     my $root_install_check = check_existing_installation(
         {
             program_directory_path => $root_bin_dir,
-            program                => q{ROOT (CNVnator prequisite)},
+            program_name           => q{ROOT (CNVnator prequisite)},
             conda_environment      => $conda_environment,
             conda_prefix_path      => $conda_prefix_path,
             noupdate               => $noupdate,
@@ -142,93 +144,27 @@ sub install_cnvnator {
         }
     );
 
-    # Return if the directory is found and a noupdate flag has been provided
-    if ($root_install_check) {
-        goto CNVNATOR;
+    ## Install Root if the directory is missing
+    if ( not $root_install_check ) {
+        install_root(
+            {
+                root_binary       => $cnvnator_root_binary,
+                conda_prefix_path => $conda_prefix_path,
+                quiet             => $quiet,
+                verbose           => $verbose,
+                FILEHANDLE        => $FILEHANDLE,
+            }
+        );
     }
 
-    ## Move to miniconda environment
-    gnu_cd(
-        {
-            directory_path => $conda_prefix_path,
-            FILEHANDLE     => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE $NEWLINE;
+    say {$FILEHANDLE} q{## Install CNVnator};
 
-    ## Download ROOT
-    say {$FILEHANDLE} q{## Download ROOT};
-    my $root_url = q{https://root.cern.ch/download/} . $cnvnator_root_binary;
-    wget(
-        {
-            url          => $root_url,
-            FILEHANDLE   => $FILEHANDLE,
-            quiet        => $quiet,
-            verbose      => $verbose,
-            outfile_path => $cnvnator_root_binary,
-        }
-    );
-
-    say {$FILEHANDLE} $NEWLINE;
-
-    ## Extract
-    say {$FILEHANDLE} q{## Extract};
-    tar(
-        {
-            file_path  => $cnvnator_root_binary,
-            extract    => 1,
-            FILEHANDLE => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-    my $binary_regexp = catdir( $conda_prefix_path, qw{ root bin } );
-    if ( not $ENV{PATH} =~ m{$binary_regexp}xms ) {
-
-        ## Export path
-        say {$FILEHANDLE} q{## Export path};
-        say {$FILEHANDLE}
-          q{echo '# Added by mip_installer ' "$(date)" >> ~/.bashrc};
-        say {$FILEHANDLE} q{echo 'source}
-          . $SPACE
-          . catfile( $conda_prefix_path, qw{ root bin thisroot.sh } )
-          . q{' >> ~/.bashrc}
-          . $NEWLINE;
-
-        ## Use newly installed root
-        say {$FILEHANDLE} q{source}
-          . $SPACE
-          . catfile( $conda_prefix_path, qw{ root bin thisroot.sh } )
-          . $NEWLINE;
-    }
-
-    ## Remove ROOT archive
-    say {$FILEHANDLE} q{## Removing ROOT archive};
-    gnu_rm(
-        {
-            infile_path => $cnvnator_root_binary,
-            FILEHANDLE  => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-    say {$FILEHANDLE} q{## Moving back to original working directory};
-    gnu_cd(
-        {
-            directory_path => $pwd,
-            FILEHANDLE     => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-  CNVNATOR:
-
-    ## Check if installation exists and remove directory unless a noupdate flag is provided
+    ## Check if CNVnator installation exists and remove directory unless a noupdate flag is provided
     my $cnvnator_bin_dir = catdir( $conda_prefix_path, q{CVNnator} );
     my $cnvnator_install_check = check_existing_installation(
         {
             program_directory_path => $cnvnator_bin_dir,
-            program                => q{CNVnator},
+            program_name           => q{CNVnator},
             conda_environment      => $conda_environment,
             conda_prefix_path      => $conda_prefix_path,
             noupdate               => $noupdate,
@@ -258,14 +194,7 @@ sub install_cnvnator {
 
     ## Creating temporary install directory
     say {$FILEHANDLE} q{## Create temporary CNVnator install directory};
-    my $temp_dir =
-      catdir( $pwd, q{cnvnator_temp} . $UNDERSCORE . int rand 1000 );
-    gnu_mkdir(
-        {
-            indirectory_path => $temp_dir,
-            FILEHANDLE       => $FILEHANDLE,
-        }
-    );
+    my $temp_dir_path = create_temp_dir( { FILEHANDLE => $FILEHANDLE } );
     say {$FILEHANDLE} $NEWLINE;
 
     ## Download
@@ -277,7 +206,8 @@ sub install_cnvnator {
       . $cnvnator_version
       . $DOT . q{zip};
     my $cnvnator_zip_path =
-      catfile( $temp_dir, q{CNVnator_v} . $cnvnator_version . $DOT . q{zip} );
+      catfile( $temp_dir_path,
+        q{CNVnator_v} . $cnvnator_version . $DOT . q{zip} );
     wget(
         {
             url          => $cnvnator_url,
@@ -294,7 +224,7 @@ sub install_cnvnator {
     unzip(
         {
             infile_path => $cnvnator_zip_path,
-            outdir_path => $temp_dir,
+            outdir_path => $temp_dir_path,
             quiet       => $quiet,
             verbose     => $verbose,
             FILEHANDLE  => $FILEHANDLE,
@@ -304,9 +234,11 @@ sub install_cnvnator {
 
     ## Move to CNVnator directory
     say {$FILEHANDLE} q{## Move to CNVnator directory};
-    my $cnvnator_configure_path =
-      catdir( $temp_dir, q{CNVnator_v} . $cnvnator_version,
-        qw{ src samtools } );
+    my $cnvnator_configure_path = catdir(
+        $temp_dir_path,
+        q{CNVnator_v} . $cnvnator_version,
+        qw{ src samtools }
+    );
     gnu_cd(
         {
             directory_path => $cnvnator_configure_path,
@@ -316,7 +248,7 @@ sub install_cnvnator {
     say {$FILEHANDLE} $NEWLINE;
 
     ## Configure
-    say {$FILEHANDLE} q{## Configure CNVnator samTools specific version};
+    say {$FILEHANDLE} q{## Configure CNVnator samtools specific version};
     say {$FILEHANDLE} q{./configure --without-curses} . $NEWLINE;
 
     ## Compile
@@ -337,18 +269,23 @@ sub install_cnvnator {
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    gnu_make(
+    ## Get make command
+    my @make_commands = gnu_make( {} );
+    ## Add no parallel support argument to make command
+    push @make_commands, q{OMP=no};
+    unix_write_to_file(
         {
-            FILEHANDLE => $FILEHANDLE,
+            commands_ref => \@make_commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
         }
     );
-
-    # Add no parallel support argument to make command
-    say {$FILEHANDLE} q{OMP=no} . $NEWLINE;
+    say {$FILEHANDLE} $NEWLINE;
 
     ## Make available from conda environment
     say {$FILEHANDLE} q{## Move to conda environment};
-    my $cnvnator_path = catdir( $temp_dir, q{CNVnator_v} . $cnvnator_version );
+    my $cnvnator_path =
+      catdir( $temp_dir_path, q{CNVnator_v} . $cnvnator_version );
     gnu_mv(
         {
             infile_path  => $cnvnator_path,
@@ -360,25 +297,23 @@ sub install_cnvnator {
 
     ## Link binaries to conda bin directory
     say {$FILEHANDLE} q{## Link binaries to conda bin directory};
-    gnu_ln(
-        {
-            link_path   => catfile( $conda_prefix_path, q{bin} ),
-            target_path => catfile( $cnvnator_bin_dir,  qw{ src cnvnator } ),
-            symbolic    => 1,
-            force       => 1,
-            FILEHANDLE  => $FILEHANDLE,
-        }
+    my @executable_paths = (
+        catfile( $cnvnator_bin_dir, qw{ src cnvnator } ),
+        catfile( $cnvnator_bin_dir, q{cnvnator2VCF.pl} )
     );
-    print {$FILEHANDLE} $NEWLINE;
-    gnu_ln(
-        {
-            link_path   => catfile( $conda_prefix_path, q{bin} ),
-            target_path => catfile( $cnvnator_bin_dir,  q{cnvnator2VCF.pl} ),
-            symbolic    => 1,
-            force       => 1,
-            FILEHANDLE  => $FILEHANDLE,
-        }
-    );
+  EXECUTABLE_PATH:
+    foreach my $executable_path (@executable_paths) {
+        gnu_ln(
+            {
+                link_path   => catfile( $conda_prefix_path, q{bin} ),
+                target_path => $executable_path,
+                symbolic    => 1,
+                force       => 1,
+                FILEHANDLE  => $FILEHANDLE,
+            }
+        );
+        print {$FILEHANDLE} $NEWLINE;
+    }
     say {$FILEHANDLE} $NEWLINE;
 
     ## Go back to starting directory
@@ -394,7 +329,7 @@ sub install_cnvnator {
     ## Remove the temporary install directory
     gnu_rm(
         {
-            infile_path => $temp_dir,
+            infile_path => $temp_dir_path,
             FILEHANDLE  => $FILEHANDLE,
             recursive   => 1,
         }

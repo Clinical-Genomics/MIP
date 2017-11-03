@@ -105,6 +105,7 @@ sub install_tiddit {
       qw{ conda_source_activate conda_source_deactivate };
     use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
     use MIP::Check::Installation qw{ check_existing_installation };
+    use MIP::Compile::Cmake qw{ cmake };
 
     ## Unpack parameters
     my $tiddit_version = $tiddit_parameters_href->{version};
@@ -124,11 +125,11 @@ sub install_tiddit {
     say {$FILEHANDLE} q{### Install TIDDIT};
 
     ## Check if installation exists and remove directory unless a noupdate flag is provided
-    my $tiddit_dir    = catdir( q{TIDDIT-} . $tiddit_version );
+    my $tiddit_dir = catdir( $conda_prefix_path, q{TIDDIT-} . $tiddit_version );
     my $install_check = check_existing_installation(
         {
             program_directory_path => $tiddit_dir,
-            program                => q{TIDDIT},
+            program_name           => q{TIDDIT},
             conda_environment      => $conda_environment,
             conda_prefix_path      => $conda_prefix_path,
             noupdate               => $noupdate,
@@ -226,7 +227,13 @@ sub install_tiddit {
 
     ## Configure
     say {$FILEHANDLE} q{## Configure TIDDIT};
-    say {$FILEHANDLE} q{cmake ..} . $NEWLINE;
+    cmake(
+        {
+            makefile_dir => q{..},
+            FILEHANDLE   => $FILEHANDLE
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
     ## Compile
     say {$FILEHANDLE} q{## Compile};
