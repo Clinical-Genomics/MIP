@@ -3,7 +3,7 @@
 use Modern::Perl qw{ 2014 };
 use warnings qw{ FATAL utf8 };
 use autodie;
-use 5.018;    #Require at least perl 5.18
+use 5.018;
 use utf8;
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
@@ -11,7 +11,7 @@ use Carp;
 use English qw{ -no_match_vars };
 use Params::Check qw{ check allow last_error };
 
-use FindBin qw{ $Bin };    #Find directory of script
+use FindBin qw{ $Bin };
 use File::Basename qw{ dirname basename };
 use File::Spec::Functions qw{ catdir };
 use Getopt::Long;
@@ -25,7 +25,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.0;
+our $VERSION = 1.0.1;
 
 ## Constants
 Readonly my $SPACE   => q{ };
@@ -86,7 +86,7 @@ BEGIN {
 use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test bcftools_view from Bcftools v}
+diag(   q{Test bcftools_view from Bcftools.pm v}
       . $MIP::Program::Variantcalling::Bcftools::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -125,6 +125,18 @@ my %specific_argument = (
     exclude_types_ref => {
         inputs_ref      => [qw{ type1 type2 }],
         expected_output => q{--exclude-types type1,type2},
+    },
+    exclude => {
+        input           => q{%QUAL<10 || (RPB<0.1 && %QUAL<15)},
+        expected_output => q{--exclude %QUAL<10 || (RPB<0.1 && %QUAL<15)},
+    },
+    include => {
+        input           => q{INFO/CSQ[*]~":p[.]"},
+        expected_output => q{--include INFO/CSQ[*]~":p[.]"},
+    },
+    sample => {
+        input           => q{sample_1,sample_2},
+        expected_output => q{--samples sample_1,sample_2},
     },
     outfile_path => {
         input           => q{outfile.txt},
