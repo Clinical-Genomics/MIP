@@ -41,7 +41,7 @@ sub analysis_multiqc {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $program_name            => Program name
-##          : $family_id               => Family id {REF}
+##          : $family_id               => Family id
 
     my ($arg_href) = @_;
 
@@ -137,7 +137,7 @@ sub analysis_multiqc {
             FILEHANDLE            => $FILEHANDLE,
             directory_id          => $family_id,
             program_name          => $program_name,
-            program_directory     => lc($program_name),
+            program_directory     => $program_name,
             core_number           => $core_number,
             process_time          => $time,
         }
