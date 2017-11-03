@@ -163,17 +163,14 @@ sub analysis_gatk_variantevalexome {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
-    use MIP::Gnu::Coreutils qw(gnu_cat gnu_sort);
-    use MIP::IO::Files qw(migrate_file);
-    use MIP::Language::Java qw{java_core};
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::Set::File qw{set_file_suffix };
-    use Program::Variantcalling::Bedtools qw(intersectbed);
+    use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
+    use MIP::IO::Files qw{ migrate_file };
+    use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Set::File qw{ set_file_suffix };
+    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_family_dead_end);
-    use MIP::Program::Variantcalling::Gatk
-      qw(gatk_varianteval gatk_selectvariants);
+    use MIP::Program::Variantcalling::Gatk qw{ gatk_varianteval };
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     ## Retrieve logger object
@@ -220,20 +217,6 @@ sub analysis_gatk_variantevalexome {
         }
     );
 
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$family_id}{pgatk_combinevariantcallsets}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$family_id}{pgatk_combinevariantcallsets}{file_tag};
-
-    ## Files
-    my $infile_prefix  = $family_id . $infile_tag . $call_type;
-    my $outfile_prefix = $merged_infile_prefix . $outfile_tag;
-
-    ## Paths
-    my $file_path_prefix    = catfile( $temp_directory, $infile_prefix );
-    my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
-
     ### Assign suffix
     ## Return the current infile vcf compression suffix for this jobid chain
     my $infile_suffix = get_file_suffix(
@@ -253,290 +236,69 @@ sub analysis_gatk_variantevalexome {
         }
     );
 
-    #### DEVELOP use BCFTOOLS instead
-    my $extract_exonic_regexp =
-      q?perl -ne ' if ( ($_=~/exonic/) || ($_=~/splicing/) ) {print $_;}' ?;
+    ## Assign file_tags
+    my $infile_tag  = $file_info_href->{$family_id}{prankvariant}{file_tag};
+    my $outfile_tag = $file_info_href->{$family_id}{prankvariant}{file_tag};
+
+    ## Files
+    my $infile_prefix  = $family_id . $infile_tag . $call_type;
+    my $outfile_prefix = $merged_infile_prefix . $outfile_tag;
+
+    ## Paths
+    my $infile_path = catfile( $infamily_directory,
+        $infile_prefix . $infile_suffix . $ASTERIX );
+    my $file_path_prefix    = catfile( $temp_directory, $infile_prefix );
+    my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
+    my $outfile_path =
+        $outfile_path_prefix
+      . $call_type
+      . $UNDERSCORE
+      . q{exome}
+      . $outfile_suffix;
 
     ## Copy file(s) to temporary directory
     say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
     migrate_file(
         {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . $ASTERIX
-            ),
-            outfile_path => $temp_directory
-        }
-    );
-
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
-
-    ## Select sample id from family id vcf file
-
-    ## GATK SelectVariants
-    say {$FILEHANDLE} q{## GATK SelectVariants};
-
-    gatk_selectvariants(
-        {
-            memory_allocation => q{Xmx2g},
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory     => $temp_directory,
-            java_jar           => $gatk_jar,
-            sample_names_ref   => [$sample_id],
-            logging_level      => $active_parameter_href->{gatk_logging_level},
-            referencefile_path => $referencefile_path,
-            infile_path        => $file_path_prefix . $infile_suffix,
-            outfile_path       => $outfile_path_prefix
-              . $call_type
-              . $UNDERSCORE . q{temp}
-              . $infile_suffix,
-            FILEHANDLE => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-    ## Update file_tags
-    $infile_tag       = $file_info_href->{$family_id}{prankvariant}{file_tag};
-    $infile_prefix    = $family_id . $infile_tag . $call_type;
-    $file_path_prefix = catfile( $temp_directory, $infile_prefix );
-
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . $ASTERIX
-            ),
+            FILEHANDLE   => $FILEHANDLE,
+            infile_path  => $infile_path,
             outfile_path => $temp_directory
         }
     );
     say {$FILEHANDLE} q{wait}, $NEWLINE;
 
-    ## Extract exonic variants
-    say   {$FILEHANDLE} q{## Extract exonic variants};
-    print {$FILEHANDLE} $extract_exonic_regexp;
-
-    ## InFile
-    print {$FILEHANDLE} $file_path_prefix . $infile_suffix . $SPACE;
-    ## OutFile
-    say {$FILEHANDLE} q{>}
-      . $SPACE
-      . catfile(
-        $temp_directory,
-        $sample_id
+    say {$FILEHANDLE} q{## Extract exonic variants};
+    ## Get parameters
+    # Collect variants from sample_id with HGVS amino acid chain from CSQ field
+    my $sample_exonic_file_path = catfile( $temp_directory,
+            $sample_id
           . $infile_tag
           . $call_type
           . $UNDERSCORE
           . q{exonic_variants}
-          . $infile_suffix
-      ),
-      $NEWLINE;
-
-    ## Include potential select file variants
-    if ( $active_parameter_href->{vcfparser_outfile_count} == 2 ) {
-
-        ## SelectFile variants
-        my $vcfparser_analysis_type = $DOT . q{selected};
-
-        ## Copy file(s) to temporary directory
-        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-        migrate_file(
-            {
-                FILEHANDLE  => $FILEHANDLE,
-                infile_path => catfile(
-                    $infamily_directory,
-                    $infile_prefix
-                      . $vcfparser_analysis_type
-                      . $infile_suffix
-                      . $ASTERIX
-                ),
-                outfile_path => $temp_directory
-            }
-        );
-        say {$FILEHANDLE} q{wait}, $NEWLINE;
-
-        ## Extract exonic variants
-        say   {$FILEHANDLE} q{## Extract exonic variants};
-        print {$FILEHANDLE} $extract_exonic_regexp;
-
-        ## InFile
-        print {$FILEHANDLE} $file_path_prefix
-          . $vcfparser_analysis_type
-          . $infile_suffix
-          . $SPACE;
-
-        ## OutFile
-        say {$FILEHANDLE} q{>}
-          . $SPACE
-          . catfile(
-            $temp_directory,
-            $sample_id
-              . $infile_tag
-              . $call_type
-              . $UNDERSCORE
-              . q{exonic_variants}
-              . $vcfparser_analysis_type
-              . $infile_suffix
-          ),
-          $NEWLINE;
-
-        ## Merge orphans and selectfiles
-        say {$FILEHANDLE} q{## Merge orphans and selectfile(s)};
-        gnu_cat(
-            {
-                infile_paths_ref => [
-                    catfile(
-                        $temp_directory,
-                        $sample_id
-                          . $infile_tag
-                          . $call_type
-                          . $UNDERSCORE
-                          . q{exonic_variants}
-                          . $infile_suffix
-                    ),
-                    catfile(
-                        $temp_directory,
-                        $sample_id
-                          . $infile_tag
-                          . $call_type
-                          . $UNDERSCORE
-                          . q{exonic_variants}
-                          . $vcfparser_analysis_type
-                          . $infile_suffix
-                    )
-                ],
-                outfile_path => catfile(
-                    $temp_directory,
-                    $sample_id
-                      . $infile_tag
-                      . $call_type
-                      . $UNDERSCORE
-                      . q{exonic_variants_combined}
-                      . $infile_suffix
-                ),
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-
-        ## Sort combined file
-        say {$FILEHANDLE} q{## Sort combined file};
-        gnu_sort(
-            {
-                keys_ref    => [ q{1,1}, q{2,2n} ],
-                infile_path => catfile(
-                    $temp_directory,
-                    $sample_id
-                      . $infile_tag
-                      . $call_type
-                      . $UNDERSCORE
-                      . q{exonic_variants_combined}
-                      . $infile_suffix
-                ),
-                outfile_path => catfile(
-                    $temp_directory,
-                    $sample_id
-                      . $infile_tag
-                      . $call_type
-                      . $UNDERSCORE
-                      . q{exonic_variants}
-                      . $infile_suffix
-                ),
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
-
-    print {$FILEHANDLE} q?perl -ne ' if ($_=~/^#/) {print $_;}' ?;
-
-    ## InFile
-    print {$FILEHANDLE} $file_path_prefix . $infile_suffix . $SPACE;
-
-    ## Pipe
-    print {$FILEHANDLE} $PIPE . $SPACE;
-
-    gnu_cat(
+          . $infile_suffix );
+    bcftools_view(
         {
-            infile_paths_ref => [
-                q{-},
-                catfile(
-                    $temp_directory,
-                    $sample_id
-                      . $infile_tag
-                      . $call_type
-                      . $UNDERSCORE
-                      . q{exonic_variants}
-                      . $infile_suffix
-                )
-            ],
-            outfile_path => catfile(
-                $temp_directory,
-                $sample_id
-                  . $infile_tag
-                  . $call_type
-                  . $UNDERSCORE
-                  . q{exonic_variants_head}
-                  . $infile_suffix
-            ),
-            FILEHANDLE => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-    ## Intersect exonic variants from created sample_id vcf file (required for gatk_varianteval for exonic variants)
-    say {$FILEHANDLE}
-      q{## Intersect exonic variants from created sample_id vcf file};
-    intersectbed(
-        {
-            with_header => 1,
-            infile_path => $outfile_path_prefix
-              . $call_type
-              . $UNDERSCORE . q{temp}
-              . $infile_suffix,
-            intersectfile_path => catfile(
-                $temp_directory,
-                $sample_id
-                  . $infile_tag
-                  . $call_type
-                  . $UNDERSCORE
-                  . q{exonic_variants_head}
-                  . $infile_suffix
-            ),
-            outfile_path => $outfile_path_prefix
-              . $call_type
-              . $UNDERSCORE
-              . q{exome}
-              . $infile_suffix,
-            FILEHANDLE => $FILEHANDLE,
+            include         => q{'INFO/CSQ[*]~":p[.]"'},
+            sample          => $sample_id,
+            infile_path     => $file_path_prefix . $infile_suffix,
+            stdoutfile_path => $sample_exonic_file_path,
+            FILEHANDLE      => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
 
     ## VariantEval
     say {$FILEHANDLE} q{## GATK varianteval};
-
     gatk_varianteval(
         {
             memory_allocation => q{Xmx2g},
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
-            temp_directory   => $temp_directory,
-            java_jar         => $gatk_jar,
-            infile_paths_ref => [
-                    $outfile_path_prefix
-                  . $call_type
-                  . $UNDERSCORE
-                  . q{exome}
-                  . $infile_suffix
-            ],
-            outfile_path => $outfile_path_prefix
-              . $call_type
-              . $UNDERSCORE
-              . q{exome}
-              . $outfile_suffix,
+            temp_directory     => $temp_directory,
+            java_jar           => $gatk_jar,
+            infile_paths_ref   => [$sample_exonic_file_path],
+            outfile_path       => $outfile_path,
             logging_level      => $active_parameter_href->{gatk_logging_level},
             referencefile_path => $referencefile_path,
             dbsnp_file_path => $active_parameter_href->{gatk_varianteval_dbsnp},
@@ -551,11 +313,7 @@ sub analysis_gatk_variantevalexome {
     say {$FILEHANDLE} q{## Copy file from temporary directory};
     migrate_file(
         {
-            infile_path => $outfile_path_prefix
-              . $call_type
-              . $UNDERSCORE
-              . q{exome}
-              . $outfile_suffix,
+            infile_path  => $outfile_path,
             outfile_path => $outsample_directory,
             FILEHANDLE   => $FILEHANDLE,
         }
