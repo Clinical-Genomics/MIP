@@ -47,7 +47,7 @@ use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Check::Parameter
   qw{ check_parameter_hash check_allowed_temp_directory };
 use MIP::Check::Reference
-  qw{ check_references_for_vt check_human_genome_prerequisites check_capture_file_prerequisites };
+  qw{ check_references_for_vt check_human_genome_prerequisites check_capture_file_prerequisites check_bwa_prerequisites };
 use MIP::Delete::List qw{ delete_non_wes_contig delete_male_contig };
 use MIP::File::Format::Pedigree qw{ create_fam_file };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
@@ -84,6 +84,8 @@ use MIP::Recipes::Analysis::Gatk_haplotypecaller
 use MIP::Recipes::Analysis::Gatk_realigner qw{ analysis_gatk_realigner };
 use MIP::Recipes::Analysis::Gatk_variantevalall
   qw{ analysis_gatk_variantevalall };
+use MIP::Recipes::Analysis::Gatk_variantevalexome
+  qw{ analysis_gatk_variantevalexome };
 use MIP::Recipes::Analysis::Gatk_variantrecalibration
   qw{ analysis_gatk_variantrecalibration_wgs analysis_gatk_variantrecalibration_wes };
 use MIP::Recipes::Analysis::Manta qw{ analysis_manta };
@@ -211,7 +213,6 @@ my ( %infile, %indir_path, %infile_lane_prefix, %lane,
 #### Staging/Sanity Check Area
 
 my %file_info = (
-    bwa_build_reference => $EMPTY_STR,
     exome_target_bed =>
       [qw{ .infile_list .pad100.infile_list .pad100.interval_list }],
 
@@ -1258,7 +1259,7 @@ foreach my $program_name (
 
     next PROGRAM if ( $program_name eq q{mip} );
 
-    if ( $active_parameter{$program_name} > 0 ) {
+    if ( $active_parameter{$program_name} ) {
 
         ## Remove initial "p" from program_name
         substr( $program_name, 0, 1 ) = $EMPTY_STR;
@@ -1276,6 +1277,28 @@ foreach my $program_name (
             }
         );
         last PROGRAM if ($is_finished);
+    }
+}
+
+## Check BWA build prerequisites
+
+if ( $active_parameter{pbwa_mem} ) {
+
+    my $program_name = lc q{bwa_mem};
+
+    if ( $parameter{bwa_build_reference}{build_file} == 1 ) {
+
+        check_bwa_prerequisites(
+            {
+                parameter_href          => \%parameter,
+                active_parameter_href   => \%active_parameter,
+                sample_info_href        => \%sample_info,
+                file_info_href          => \%file_info,
+                infile_lane_prefix_href => \%infile_lane_prefix,
+                job_id_href             => \%job_id,
+                program_name            => $program_name,
+            }
+        );
     }
 }
 $log->info( $TAB . q{Reference check: Reference prerequisites checked} );
@@ -1452,28 +1475,6 @@ if ( $active_parameter{pbwa_mem} > 0 ) {
     $log->info(q{[BWA Mem]});
 
     my $program_name = lc q{bwa_mem};
-
-    if ( $active_parameter{dry_run_all} != 1 ) {
-
-        if (   ( $parameter{human_genome_reference}{build_file} eq 1 )
-            || ( $parameter{bwa_build_reference}{build_file} eq 1 ) )
-        {
-
-            build_bwa_prerequisites(
-                {
-                    parameter_href          => \%parameter,
-                    active_parameter_href   => \%active_parameter,
-                    sample_info_href        => \%sample_info,
-                    file_info_href          => \%file_info,
-                    infile_lane_prefix_href => \%infile_lane_prefix,
-                    job_id_href             => \%job_id,
-                    bwa_build_reference_file_endings_ref =>
-                      \@{ $file_info{bwa_build_reference_file_endings} },
-                    program_name => $program_name,
-                }
-            );
-        }
-    }
 
   SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
@@ -2600,14 +2601,30 @@ else {
     }
 }
 
-if ( $active_parameter{pgatk_variantevalexome} > 0 )
-{    #Run GATK varianteval for exome variants. Done per sample_id
+## Run GATK varianteval for exome variants. Done per sample_id
+if ( $active_parameter{pgatk_variantevalexome} > 0 ) {
 
-    $log->info("[GATK variantevalexome]\n");
+    $log->info(q{[GATK variantevalexome]});
 
+    my $program_name = lc q{gatk_variantevalexome};
+
+    ## Assign directories
+    my $infamily_directory = catdir(
+        $active_parameter{outdata_dir},
+        $active_parameter{family_id},
+        $active_parameter{outaligner_dir}
+    );
+
+  SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
-        gatk_variantevalexome(
+        ## Assign directories
+        my $outsample_directory = catdir(
+            $active_parameter{outdata_dir},    $sample_id,
+            $active_parameter{outaligner_dir}, $program_name
+        );
+
+        analysis_gatk_variantevalexome(
             {
                 parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
@@ -2615,8 +2632,10 @@ if ( $active_parameter{pgatk_variantevalexome} > 0 )
                 file_info_href          => \%file_info,
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
-                sample_id_ref           => \$sample_id,
-                program_name            => "gatk_variantevalexome",
+                sample_id               => $sample_id,
+                infamily_directory      => $infamily_directory,
+                outsample_directory     => $outsample_directory,
+                program_name            => $program_name,
             }
         );
     }
@@ -4864,518 +4883,6 @@ sub rankvariant {
         return
           $xargs_file_counter
           ; #Track the number of created xargs scripts per module for Block algorithm
-    }
-}
-
-sub gatk_variantevalexome {
-
-##gatk_variantevalexome
-
-##Function : GATK varianteval for exome variants.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type,
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => File info hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $sample_id_ref              => Sample id {REF}
-##         : $program_name               => Program name {REF}
-##         : $family_id_ref              => Family id {REF}
-##         : $temp_directory_ref         => Temporary directory {REF}
-##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => Variant call type
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-    my $outaligner_dir_ref;
-    my $call_type;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $sample_id_ref;
-    my $program_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href,
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href,
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href,
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href,
-        },
-        sample_id_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$sample_id_ref
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name,
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref,
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref,
-        },
-        outaligner_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir_ref,
-        },
-        call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::IO::Files qw(migrate_file);
-    use MIP::Language::Java qw{java_core};
-    use MIP::Set::File qw{set_file_suffix };
-    use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
-    use MIP::Gnu::Coreutils qw(gnu_cat gnu_sort);
-    use Program::Variantcalling::Bedtools qw(intersectbed);
-    use MIP::Program::Variantcalling::Gatk
-      qw(gatk_varianteval gatk_selectvariants);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_sample_id_dependency_family_dead_end);
-
-    my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
-
-    ## Filehandles
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $$sample_id_ref,
-            program_name          => $program_name,
-            program_directory =>
-              catfile( lc($$outaligner_dir_ref), lc($program_name) ),
-            call_type   => $call_type,
-            core_number => $active_parameter_href->{module_core_number}
-              { "p" . $program_name },
-            process_time =>
-              $active_parameter_href->{module_time}{ "p" . $program_name },
-            temp_directory => $$temp_directory_ref
-        }
-    );
-
-    ## Assign directories
-    my $outsample_directory = catfile( $active_parameter_href->{outdata_dir},
-        $$sample_id_ref, $$outaligner_dir_ref, lc($program_name) );
-    my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $$family_id_ref, $$outaligner_dir_ref );
-
-    ## Add merged infile name prefix after merging all BAM files per sample_id
-    my $merged_infile_prefix = get_merged_infile_prefix(
-        {
-            file_info_href => $file_info_href,
-            sample_id      => $$sample_id_ref,
-        }
-    );
-
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}
-      {file_tag};
-    my $outfile_tag =
-      $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}
-      {file_tag};
-    my $infile_prefix       = $$family_id_ref . $infile_tag . $call_type;
-    my $file_path_prefix    = catfile( $$temp_directory_ref, $infile_prefix );
-    my $outfile_prefix      = $merged_infile_prefix . $outfile_tag;
-    my $outfile_path_prefix = catfile( $$temp_directory_ref, $outfile_prefix );
-
-    ### Assign suffix
-    ## Return the current infile vcf compression suffix for this jobid chain
-    my $infile_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
-            jobid_chain =>
-              $parameter_href->{pgatk_combinevariantcallsets}{chain},
-        }
-    );
-    my $outfile_suffix = set_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => "variant_eval_file_suffix",
-            job_id_chain   => $job_id_chain,
-            file_suffix =>
-              $parameter_href->{ "p" . $program_name }{outfile_suffix},
-        }
-    );
-
-    my $extract_exonic_regexp =
-      q?perl -ne ' if ( ($_=~/exonic/) || ($_=~/splicing/) ) {print $_;}' ?;
-
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . q{*}
-            ),
-            outfile_path => $$temp_directory_ref
-        }
-    );
-
-    say {$FILEHANDLE} q{wait}, "\n";
-
-    ## Select sample id from family id vcf file
-
-    ## GATK SelectVariants
-    say {$FILEHANDLE} "## GATK SelectVariants";
-
-    gatk_selectvariants(
-        {
-            memory_allocation => q{Xmx2g},
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory => $$temp_directory_ref,
-            java_jar       => catfile(
-                $active_parameter_href->{gatk_path},
-                "GenomeAnalysisTK.jar"
-            ),
-            sample_names_ref => [$$sample_id_ref],
-            logging_level    => $active_parameter_href->{gatk_logging_level},
-            referencefile_path =>
-              $active_parameter_href->{human_genome_reference},
-            infile_path  => $file_path_prefix . $infile_suffix,
-            outfile_path => $outfile_path_prefix
-              . $call_type . "_temp"
-              . $infile_suffix,
-            FILEHANDLE => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} "\n";
-
-    ## Update file_tags
-    $infile_tag    = $file_info_href->{$$family_id_ref}{prankvariant}{file_tag};
-    $infile_prefix = $$family_id_ref . $infile_tag . $call_type;
-    $file_path_prefix = catfile( $$temp_directory_ref, $infile_prefix );
-
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . q{*}
-            ),
-            outfile_path => $$temp_directory_ref
-        }
-    );
-    say {$FILEHANDLE} q{wait}, "\n";
-
-    ## Extract exonic variants
-    say   {$FILEHANDLE} "## Extract exonic variants";
-    print {$FILEHANDLE} $extract_exonic_regexp;
-    print {$FILEHANDLE} $file_path_prefix . $infile_suffix . " ";    #InFile
-    say   {$FILEHANDLE} "> "
-      . catfile(
-        $$temp_directory_ref,
-        $$sample_id_ref
-          . $infile_tag
-          . $call_type
-          . "_exonic_variants"
-          . $infile_suffix
-      ),
-      "\n";                                                          #OutFile
-
-    ## Include potential select file variants
-    if ( $active_parameter_href->{vcfparser_outfile_count} == 2 ) {
-
-        my $vcfparser_analysis_type = ".selected";    #SelectFile variants
-
-        ## Copy file(s) to temporary directory
-        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-        migrate_file(
-            {
-                FILEHANDLE  => $FILEHANDLE,
-                infile_path => catfile(
-                    $infamily_directory,
-                    $infile_prefix
-                      . $vcfparser_analysis_type
-                      . $infile_suffix . q{*}
-                ),
-                outfile_path => $$temp_directory_ref
-            }
-        );
-        say {$FILEHANDLE} q{wait}, "\n";
-
-        ## Extract exonic variants
-        say   {$FILEHANDLE} "## Extract exonic variants";
-        print {$FILEHANDLE} $extract_exonic_regexp;
-        print {$FILEHANDLE} $file_path_prefix
-          . $vcfparser_analysis_type
-          . $infile_suffix
-          . " ";    #InFile
-        say {$FILEHANDLE} "> "
-          . catfile(
-            $$temp_directory_ref,
-            $$sample_id_ref
-              . $infile_tag
-              . $call_type
-              . "_exonic_variants"
-              . $vcfparser_analysis_type
-              . $infile_suffix
-          ),
-          "\n";     #OutFile
-
-        ## Merge orphans and selectfiles
-        say {$FILEHANDLE} "## Merge orphans and selectfile(s)";
-        gnu_cat(
-            {
-                infile_paths_ref => [
-                    catfile(
-                        $$temp_directory_ref,
-                        $$sample_id_ref
-                          . $infile_tag
-                          . $call_type
-                          . "_exonic_variants"
-                          . $infile_suffix
-                    ),
-                    catfile(
-                        $$temp_directory_ref,
-                        $$sample_id_ref
-                          . $infile_tag
-                          . $call_type
-                          . "_exonic_variants"
-                          . $vcfparser_analysis_type
-                          . $infile_suffix
-                    )
-                ],
-                outfile_path => catfile(
-                    $$temp_directory_ref,
-                    $$sample_id_ref
-                      . $infile_tag
-                      . $call_type
-                      . "_exonic_variants_combined"
-                      . $infile_suffix
-                ),
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} "\n";
-
-        ## Sort combined file
-        say {$FILEHANDLE} "## Sort combined file";
-        gnu_sort(
-            {
-                keys_ref    => [ "1,1", "2,2n" ],
-                infile_path => catfile(
-                    $$temp_directory_ref,
-                    $$sample_id_ref
-                      . $infile_tag
-                      . $call_type
-                      . "_exonic_variants_combined"
-                      . $infile_suffix
-                ),
-                outfile_path => catfile(
-                    $$temp_directory_ref,
-                    $$sample_id_ref
-                      . $infile_tag
-                      . $call_type
-                      . "_exonic_variants"
-                      . $infile_suffix
-                ),
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} "\n";
-    }
-
-    print {$FILEHANDLE} q?perl -ne ' if ($_=~/^#/) {print $_;}' ?;
-    print {$FILEHANDLE} $file_path_prefix . $infile_suffix . " ";    #InFile
-    print {$FILEHANDLE} "| ";                                        #Pipe
-    gnu_cat(
-        {
-            infile_paths_ref => [
-                "-",
-                catfile(
-                    $$temp_directory_ref,
-                    $$sample_id_ref
-                      . $infile_tag
-                      . $call_type
-                      . "_exonic_variants"
-                      . $infile_suffix
-                )
-            ],
-            outfile_path => catfile(
-                $$temp_directory_ref,
-                $$sample_id_ref
-                  . $infile_tag
-                  . $call_type
-                  . "_exonic_variants_head"
-                  . $infile_suffix
-            ),
-            FILEHANDLE => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} "\n";
-
-    ## Intersect exonic variants from created sample_id vcf file (required for gatk_varianteval for exonic variants)
-    say {$FILEHANDLE}
-      "## Intersect exonic variants from created sample_id vcf file";
-    intersectbed(
-        {
-            with_header => 1,
-            infile_path => $outfile_path_prefix
-              . $call_type . "_temp"
-              . $infile_suffix,
-            intersectfile_path => catfile(
-                $$temp_directory_ref,
-                $$sample_id_ref
-                  . $infile_tag
-                  . $call_type
-                  . "_exonic_variants_head"
-                  . $infile_suffix
-            ),
-            outfile_path => $outfile_path_prefix
-              . $call_type
-              . "_exome"
-              . $infile_suffix,
-            FILEHANDLE => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} "\n";
-
-    ## VariantEval
-    say {$FILEHANDLE} "## GATK varianteval";
-
-    gatk_varianteval(
-        {
-            memory_allocation => q{Xmx2g},
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory => $$temp_directory_ref,
-            java_jar       => catfile(
-                $active_parameter_href->{gatk_path},
-                "GenomeAnalysisTK.jar"
-            ),
-            infile_paths_ref =>
-              [ $outfile_path_prefix . $call_type . "_exome" . $infile_suffix ],
-            outfile_path => $outfile_path_prefix
-              . $call_type
-              . "_exome"
-              . $outfile_suffix,
-            logging_level => $active_parameter_href->{gatk_logging_level},
-            referencefile_path =>
-              $active_parameter_href->{human_genome_reference},
-            dbsnp_file_path => $active_parameter_href->{gatk_varianteval_dbsnp},
-            indel_gold_standard_file_path =>
-              $active_parameter_href->{gatk_varianteval_gold},
-            FILEHANDLE => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} "\n";
-
-    ## Copies file from temporary directory.
-    say {$FILEHANDLE} q{## Copy file from temporary directory};
-    migrate_file(
-        {
-            infile_path => $outfile_path_prefix
-              . $call_type
-              . q{_exome}
-              . $outfile_suffix,
-            outfile_path => $outsample_directory,
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} q{wait}, "\n";
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        ## Collect QC metadata info for later use
-        my $qc_exome_outfile =
-          $outfile_prefix . $call_type . q{_exome} . $outfile_suffix;
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                sample_id        => $$sample_id_ref,
-                program_name     => 'variantevalexome',
-                infile           => $merged_infile_prefix,
-                outdirectory     => $outsample_directory,
-                outfile          => $qc_exome_outfile,
-            }
-        );
-    }
-    close $FILEHANDLE;
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        slurm_submit_job_sample_id_dependency_family_dead_end(
-            {
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                family_id        => $$family_id_ref,
-                path             => $job_id_chain,
-                log              => $log,
-                sbatch_file_name => $file_path,
-            }
-        );
     }
 }
 
@@ -13237,224 +12744,6 @@ sub variantannotationblock {
     }
 }
 
-sub build_bwa_prerequisites {
-
-##build_bwa_prerequisites
-
-##Function : Creates the BwaPreRequisites using active_parameters{'human_genome_reference'} as reference.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $bwa_build_reference_file_endings_ref, $program_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $human_genome_reference_ref
-##         : $parameter_href                       => Parameter hash {REF}
-##         : $active_parameter_href                => Active parameters for this analysis hash {REF}
-##         : $sample_info_href                     => Info on samples and family hash {REF}
-##         : $file_info_href                       => File info hash {REF}
-##         : $infile_lane_prefix_href           => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                          => Job id hash {REF}
-##         : $bwa_build_reference_file_endings_ref => The bwa reference associated file endings {REF}
-##         : $family_id_ref                        => Family ID {REF}
-##         : $outaligner_dir_ref                   => The outaligner_dir used in the analysis
-##         : $program_name                         => Program name
-##         : $family_id_ref                        => Family id {REF}
-##         : $temp_directory_ref                   => Temporary directory {REF}
-##         : $outaligner_dir_ref                   => Outaligner_dir used in the analysis {REF}
-##         : $human_genome_reference_ref           => Human genome reference {REF}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-    my $outaligner_dir_ref;
-    my $human_genome_reference_ref;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $bwa_build_reference_file_endings_ref;
-    my $program_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href,
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href,
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href,
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href,
-        },
-        bwa_build_reference_file_endings_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$bwa_build_reference_file_endings_ref
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name,
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref,
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref,
-        },
-        outaligner_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir_ref,
-        },
-        human_genome_reference_ref => {
-            default =>
-              \$arg_href->{active_parameter_href}{human_genome_reference},
-            strict_type => 1,
-            store       => \$human_genome_reference_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Language::Shell qw{ check_exist_and_move_file };
-    use MIP::Recipes::Build::Human_genome_prerequisites
-      qw{ build_human_genome_prerequisites };
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_no_dependency_add_to_samples);
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-    my $random_integer =
-      int( rand(10000) );    #Generate a random integer between 0-10,000.
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $$family_id_ref,
-            program_name          => $program_name,
-            program_directory     => lc($$outaligner_dir_ref),
-            process_time          => 3,
-        }
-    );
-
-    build_human_genome_prerequisites(
-        {
-            parameter_href          => $parameter_href,
-            active_parameter_href   => $active_parameter_href,
-            sample_info_href        => $sample_info_href,
-            file_info_href          => $file_info_href,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            job_id_href             => $job_id_href,
-            program                 => $program_name,
-            FILEHANDLE              => $FILEHANDLE,
-            log                     => $log,
-            random_integer          => $random_integer,
-        }
-    );
-
-    if ( $parameter_href->{bwa_build_reference}{build_file} eq 1 ) {
-
-        $log->warn( "Will try to create required "
-              . $$human_genome_reference_ref
-              . " index files before executing "
-              . $program_name
-              . "\n" );
-
-        say {$FILEHANDLE} "## Building BWA index";
-        print {$FILEHANDLE} "bwa index ";   #Index sequences in the FASTA format
-        print {$FILEHANDLE} "-p "
-          . $$human_genome_reference_ref . "_"
-          . $random_integer
-          . " ";                            #Prefix of the index
-        print {$FILEHANDLE} "-a bwtsw ";    #BWT construction algorithm
-        say {$FILEHANDLE} $$human_genome_reference_ref,
-          "\n";                             #The FASTA reference sequences file
-
-        foreach my $file (@$bwa_build_reference_file_endings_ref) {
-
-            my $intended_file_path = $$human_genome_reference_ref . $file;
-            my $temporary_file_path =
-              $$human_genome_reference_ref . "_" . $random_integer . $file;
-
-            ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-            check_exist_and_move_file(
-                {
-                    FILEHANDLE          => $FILEHANDLE,
-                    intended_file_path  => $intended_file_path,
-                    temporary_file_path => $temporary_file_path,
-                }
-            );
-        }
-        $parameter_href->{bwa_build_reference}{build_file} =
-          0;    #Ensure that this subrutine is only executed once
-    }
-    close $FILEHANDLE;
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        my $slurm_path = $parameter_href->{ "p" . $program_name }{chain};
-
-        slurm_submit_job_no_dependency_add_to_samples(
-            {
-                job_id_href      => $job_id_href,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                family_id        => $$family_id_ref,
-                path             => $slurm_path,
-                sbatch_file_name => $file_path,
-                log              => $log,
-            }
-        );
-    }
-}
-
 sub read_yaml_pedigree_file {
 
 ##read_yaml_pedigree_file
@@ -15235,7 +14524,7 @@ sub check_parameter_files {
                     my $path =
                       catfile( $active_parameter_href->{$parameter_name} );
 
-                    if ( $parameter_name eq "bwa_build_reference" ) {
+                    if ( $parameter_name eq q{bwa_build_reference} ) {
 
                         ## Checks files to be built by combining filename stub with fileendings
                         check_file_endings_to_build(
@@ -15246,7 +14535,7 @@ sub check_parameter_files {
                                     $file_info_href
                                       ->{bwa_build_reference_file_endings}
                                 },
-                                parameter_name => "bwa_build_reference",
+                                parameter_name => q{bwa_build_reference},
                                 file_name      => $active_parameter_href
                                   ->{human_genome_reference},
                             }
@@ -15432,9 +14721,10 @@ sub check_parameter_files {
                             );
                         }
 
-                        if ( $parameter_name eq "human_genome_reference" ) {
+                        if ( $parameter_name eq q{human_genome_reference} ) {
 
-                            ## Check the existance of associated Human genome files
+                            ## Special case since dict is created with .fastq remoeved
+                            ## Check the existance of associated human genome files
                             check_human_genome_file_endings(
                                 {
                                     parameter_href => $parameter_href,
@@ -16372,14 +15662,13 @@ sub check_auto_build {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    if ( $parameter_href->{$$parameter_name_ref}{build_file} eq
-        "yes_auto_build" )
-    {
+    if ( $parameter_href->{$$parameter_name_ref}{build_file} == 1 ) {
 
-        return "1";    #Flag that autobuild is needed
+        ## Flag that autobuild is needed
+        return 1;
     }
-    elsif ( $parameter_href->{$$parameter_name_ref}{build_file} eq 1 )
-    {                  #1 for arrays
+    elsif ( $parameter_href->{$$parameter_name_ref}{build_file} eq 1 ) {
+        ## 1 for arrays
 
         return "1";    #Flag that autobuild is needed
     }
@@ -16514,18 +15803,37 @@ sub check_file_endings_to_build {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    foreach my $file_ending (@$file_endings_ref) {
+    ## Count the number of files that exists
+    my $existence_check_counter = 0;
 
-        check_existance(
+  FILE_ENDING:
+    foreach my $file_ending ( @{$file_endings_ref} ) {
+
+        my $exists_switch = check_existance(
             {
                 parameter_href        => $parameter_href,
                 active_parameter_href => $active_parameter_href,
                 item_name_ref         => \catfile( $file_name . $file_ending ),
                 parameter_name_ref    => \$parameter_name,
-                item_type_to_check    => "file",
+                item_type_to_check    => q{file},
             }
         );
+
+        ## Sum up the number of file that exists
+        $existence_check_counter = $existence_check_counter + $exists_switch;
     }
+
+    ## Files need to be built
+    if ( $existence_check_counter != scalar @{$file_endings_ref} ) {
+
+        $parameter_href->{$parameter_name}{build_file} = 1;
+    }
+    else {
+
+        # All file exist in this check
+        $parameter_href->{$parameter_name}{build_file} = 0;
+    }
+    return;
 }
 
 sub check_existance {
@@ -16600,24 +15908,25 @@ sub check_existance {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    if ( $item_type_to_check eq "directory" ) {
+    if ( $item_type_to_check eq q{directory} ) {
 
-        unless ( -d $$item_name_ref ) {   #Check existence of supplied directory
+        ## Check existence of supplied directory
+        if ( not -d $$item_name_ref ) {
 
             $log->fatal( $USAGE, "\n" );
             $log->fatal(
-                "Could not find intended "
+                    q{Could not find intended }
                   . $$parameter_name_ref
-                  . " directory: "
+                  . q{ directory: }
                   . $$item_name_ref,
-                "\n"
             );
             exit 1;
         }
     }
-    elsif ( $item_type_to_check eq "file" ) {
+    elsif ( $item_type_to_check eq q{file} ) {
 
-        unless ( -f $$item_name_ref ) {    #Check existence of supplied file
+        ## Check existence of supplied file
+        if ( not -f $$item_name_ref ) {
 
             ## Check auto_build or not and return value
             $parameter_href->{$$parameter_name_ref}{build_file} =
@@ -16629,37 +15938,25 @@ sub check_existance {
                 }
               );
 
-            if ( $parameter_href->{$$parameter_name_ref}{build_file} == 0 )
-            {    #No autobuild
+            if ( $parameter_href->{$$parameter_name_ref}{build_file} == 0 ) {
+                ## No autobuild
 
                 $log->fatal( $USAGE, "\n" );
                 $log->fatal(
-                    "Could not find intended "
+                        q{Could not find intended }
                       . $$parameter_name_ref
-                      . " file: "
+                      . q{ file: }
                       . $$item_name_ref,
-                    "\n"
                 );
                 exit 1;
             }
         }
         else {
-
-            if (
-                (
-                    defined(
-                        $parameter_href->{$$parameter_name_ref}{build_file}
-                    )
-                )
-                && ( $parameter_href->{$$parameter_name_ref}{build_file} ne 1 )
-              )
-            {   #If any of associated files do not exist make sure to build them
-
-                $parameter_href->{$$parameter_name_ref}{build_file} =
-                  0;    #File exist in this check
-            }
+            ## File was found
+            return 1;
         }
     }
+    return 0;
 }
 
 sub check_user_supplied_info {
@@ -17725,7 +17022,7 @@ sub check_human_genome_file_endings {
 
 ##check_human_genome_file_endings
 
-##Function : Check the existance of associated Human genome files.
+##Function : Check the existance of associated human genome files.
 ##Returns  : ""
 ##Arguments: $parameter_href, $active_parameter_href, $file_info_href, $parameter_name_ref, $human_genome_reference_name_prefix_ref, $reference_dir_ref,
 ##         : $parameter_href                            => Parameter hash {REF}
@@ -17786,17 +17083,17 @@ sub check_human_genome_file_endings {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    foreach my $file_ending (
-        @{ $file_info_href->{human_genome_reference_file_endings} } )
-    {
+    ## Count the number of files that exists
+    my $existence_check_counter = 0;
+    my @human_reference_file_endings =
+      @{ $file_info_href->{human_genome_reference_file_endings} };
 
-        my $path = catfile( $active_parameter_href->{human_genome_reference} );
+  FILE_ENDING:
+    foreach my $file_ending (@human_reference_file_endings) {
 
-        ## Enable auto_build of metafiles
-        $parameter_href->{ $$parameter_name_ref . $file_ending }{build_file} =
-          "yes_auto_build";
+        my $path = $active_parameter_href->{human_genome_reference};
 
-        if ( $file_ending eq ".dict" ) {
+        if ( $file_ending eq q{.dict} ) {
 
             ## Removes ".file_ending" in filename.FILENDING(.gz)
             my ( $file, $dir_path ) =
@@ -17805,21 +17102,33 @@ sub check_human_genome_file_endings {
             $path = catfile( $dir_path, $file );
         }
 
-        $path = $path . $file_ending;    #Add current ending
-        my $complete_parameter_name = $$parameter_name_ref . $file_ending;
+        #Add current ending
+        $path = $path . $file_ending;
 
-        check_existance(
+        my $exists_switch = check_existance(
             {
                 parameter_href        => $parameter_href,
                 active_parameter_href => $active_parameter_href,
                 item_name_ref         => \$path,
-                parameter_name_ref    => \$complete_parameter_name,
-                item_type_to_check    => "file",
+                parameter_name_ref    => \$$parameter_name_ref,
+                item_type_to_check    => q{file},
             }
         );
+
+        ## Sum up the number of file that exists
+        $existence_check_counter = $existence_check_counter + $exists_switch;
     }
-    if ( $parameter_href->{ $$parameter_name_ref . ".dict" }{build_file} eq 0 )
-    {
+    ## Files need to be built
+    if ( $existence_check_counter != scalar @human_reference_file_endings ) {
+
+        $parameter_href->{$$parameter_name_ref}{build_file} = 1;
+    }
+    else {
+
+        # All file exist in this check
+        $parameter_href->{$$parameter_name_ref}{build_file} = 0;
+    }
+    if ( $parameter_href->{$$parameter_name_ref}{build_file} eq 0 ) {
 
         ##Collect sequence contigs from human reference ".dict" file since it exists
         collect_seq_contigs(

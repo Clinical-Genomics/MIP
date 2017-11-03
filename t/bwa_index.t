@@ -25,20 +25,24 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.1;
+our $VERSION = 1.0.0;
 
 ## Constants
 Readonly my $SPACE   => q{ };
 Readonly my $NEWLINE => qq{\n};
 Readonly my $COMMA   => q{,};
 
-###User Options
+### User Options
 GetOptions(
+
+    # Display help text
     q{h|help} => sub {
         done_testing();
         say {*STDOUT} $USAGE;
         exit;
-    },    #Display help text
+    },
+
+    # Display version number
     q{v|version} => sub {
         done_testing();
         say {*STDOUT} $NEWLINE
@@ -47,7 +51,7 @@ GetOptions(
           . $VERSION
           . $NEWLINE;
         exit;
-    },    #Display version number
+    },
     q{vb|verbose} => $VERBOSE,
   )
   or (
@@ -75,7 +79,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Program::Variantcalling::Bcftools});
+    my @modules = (q{MIP::Program::Alignment::Bwa});
 
   MODULE:
     for my $module (@modules) {
@@ -83,11 +87,11 @@ BEGIN {
     }
 }
 
-use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
+use MIP::Program::Alignment::Bwa qw{ bwa_index };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test bcftools_view from Bcftools.pm v}
-      . $MIP::Program::Variantcalling::Bcftools::VERSION
+diag(   q{Test bwa_index from MODULE_NAME.pm v}
+      . $MIP::Program::Alignment::Bwa::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -96,9 +100,13 @@ diag(   q{Test bcftools_view from Bcftools.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{bcftools};
+my $function_base_command = q{bwa index};
 
 my %base_argument = (
+    stdoutfile_path => {
+        input           => q{stdoutfile.test},
+        expected_output => q{1> stdoutfile.test},
+    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
@@ -115,46 +123,34 @@ my %base_argument = (
 
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
-my %required_argument = ();
+my %required_argument = (
+    prefix => {
+        input           => q{test_file_prefix},
+        expected_output => q{test_file_prefix},
+    },
+    reference_genome => {
+        input           => q{test_file.fasta},
+        expected_output => q{test_file.fasta},
+    },
+);
 
 my %specific_argument = (
-    apply_filters_ref => {
-        inputs_ref      => [qw{ filter1 filter2 }],
-        expected_output => q{--apply-filters filter1,filter2},
+    prefix => {
+        input           => q{test_file},
+        expected_output => q{-p test_file},
     },
-    exclude_types_ref => {
-        inputs_ref      => [qw{ type1 type2 }],
-        expected_output => q{--exclude-types type1,type2},
+    reference_genome => {
+        input           => q{test_file.fasta},
+        expected_output => q{test_file.fasta},
     },
-    exclude => {
-        input           => q{%QUAL<10 || (RPB<0.1 && %QUAL<15)},
-        expected_output => q{--exclude %QUAL<10 || (RPB<0.1 && %QUAL<15)},
+    construction_algorithm => {
+        input           => q{bwtsw},
+        expected_output => q{-a bwtsw},
     },
-    include => {
-        input           => q{INFO/CSQ[*]~":p[.]"},
-        expected_output => q{--include INFO/CSQ[*]~":p[.]"},
-    },
-    sample => {
-        input           => q{sample_1,sample_2},
-        expected_output => q{--samples sample_1,sample_2},
-    },
-    outfile_path => {
-        input           => q{outfile.txt},
-        expected_output => q{--output-file outfile.txt},
-    },
-    infile_path => {
-        input           => q{infile.test},
-        expected_output => q{infile.test},
-    },
-    output_type => {
-        input           => q{v},
-        expected_output => q{--output-type v},
-    },
-
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&bcftools_view;
+my $module_function_cref = \&bwa_index;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
@@ -180,12 +176,9 @@ done_testing();
 
 sub build_usage {
 
-## build_usage
-
 ## Function  : Build the USAGE instructions
-## Returns   : ""
-## Arguments : $program_name
-##           : $program_name => Name of the script
+## Returns   :
+## Arguments : $program_name => Name of the script
 
     my ($arg_href) = @_;
 

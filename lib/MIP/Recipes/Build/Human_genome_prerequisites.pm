@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_human_genome_prerequisites };
@@ -121,10 +121,10 @@ sub build_human_genome_prerequisites {
             strict_type => 1,
             store       => \$program_name,
         },
-        FILEHANDLE     => { strict_type => 1, store => \$FILEHANDLE, },
+        FILEHANDLE     => { store       => \$FILEHANDLE, },
         log            => { store       => \$log },
         random_integer => { strict_type => 1, store => \$random_integer, },
-        family_id      => {
+        family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
             store       => \$family_id,
@@ -238,13 +238,11 @@ sub build_human_genome_prerequisites {
         }
     );
 
-  FILE_ENDING:
-    foreach my $file_ending (
-        @{ $file_info_href->{human_genome_reference_file_endings} } )
-    {
+    if ( $parameter_href->{q{human_genome_reference}}{build_file} == 1 ) {
 
-        if ( $parameter_href->{ q{human_genome_reference} . $file_ending }
-            {build_file} == 1 )
+      FILE_ENDING:
+        foreach my $file_ending (
+            @{ $file_info_href->{human_genome_reference_file_endings} } )
         {
 
             if ( $file_ending eq $DOT . q{dict} ) {
@@ -353,11 +351,10 @@ sub build_human_genome_prerequisites {
                 );
                 say {$FILEHANDLE} $NEWLINE;
             }
-
-            ## Only create once
-            $parameter_href->{ q{human_genome_reference} . $file_ending }
-              {build_file} = 0;
         }
+
+        ## Only create once
+        $parameter_href->{human_genome_reference}{build_file} = 0;
     }
 
     ## Unless FILEHANDLE was supplied close it and submit

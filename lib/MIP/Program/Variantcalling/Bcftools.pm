@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -264,10 +264,13 @@ sub bcftools_index {
 
 sub bcftools_view {
 
-## Function : Perl wrapper for writing bcftools view recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
+## Function : Perl wrapper for writing bcftools view recipe to $FILEHANDLE or return commands array. Based on bcftools 1.4.1.
 ## Returns  : @commands
 ## Arguments: $apply_filters_ref      => Require at least one of the listed FILTER strings
 ##          : $exclude_types_ref      => Exclude comma-separated list of variant types: snps,indels,mnps,other
+##          : $exclude                => Exclude sites for which the expression is true
+##          : $include                => Include only sites for which the expression is true
+##          : $sample                 => Comma separated list of samples to include (or exclude with "^" prefix)
 ##          : $infile_path            => Infile path to read from
 ##          : $outfile_path           => Outfile path to write to
 ##          : $stderrfile_path        => Stderr file path to write to
@@ -284,6 +287,9 @@ sub bcftools_view {
     ## Flatten argument(s)
     my $apply_filters_ref;
     my $exclude_types_ref;
+    my $exclude;
+    my $include;
+    my $sample;
     my $infile_path;
     my $outfile_path;
     my $stderrfile_path;
@@ -296,6 +302,9 @@ sub bcftools_view {
           { default => [], strict_type => 1, store => \$apply_filters_ref },
         exclude_types_ref =>
           { default => [], strict_type => 1, store => \$exclude_types_ref },
+        exclude         => { strict_type => 1, store => \$exclude },
+        include         => { strict_type => 1, store => \$include },
+        sample          => { strict_type => 1, store => \$sample },
         infile_path     => { strict_type => 1, store => \$infile_path },
         outfile_path    => { strict_type => 1, store => \$outfile_path },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
@@ -329,6 +338,20 @@ sub bcftools_view {
           @{$exclude_types_ref};
     }
 
+    if ($exclude) {
+
+        push @commands, q{--exclude} . $SPACE . $exclude;
+    }
+
+    if ($include) {
+
+        push @commands, q{--include} . $SPACE . $include;
+    }
+
+    if ($sample) {
+
+        push @commands, q{--samples} . $SPACE . $sample;
+    }
     if ($output_type) {
 
         #Specify output type
@@ -370,14 +393,15 @@ sub bcftools_view {
 
 sub bcftools_filter {
 
-## Function : Perl wrapper for writing bcftools filter recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
+## Function : Perl wrapper for writing bcftools filter recipe to $FILEHANDLE or return commands array. Based on bcftools 1.4.1.
 ## Returns  : @commands
 ## Arguments: $infile_path            => Infile paths
-##          : $outfile_path           => Outfile path
+##          : $stdoutfile_path        => Stdoutfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $FILEHANDLE             => Filehandle to write to
 ##          : $exclude                => Exclude sites for which the expression is true
+##          : $include                => Include only sites for which the expression is true
 ##          : $soft_filter            => Annotate FILTER column with <string> or unique filter name
 ##          : $snp_gap                => Filter SNPs within <int> base pairs of an indel
 ##          : $indel_gap              => Filter clusters of indels separated by <int> or fewer base pairs allowing only one to pass
@@ -386,23 +410,25 @@ sub bcftools_filter {
 
     ## Flatten argument(s)
     my $infile_path;
-    my $outfile_path;
+    my $stdoutfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $FILEHANDLE;
     my $exclude;
+    my $include;
     my $soft_filter;
     my $snp_gap;
     my $indel_gap;
 
     my $tmpl = {
         infile_path     => { strict_type => 1, store => \$infile_path },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
+        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
         stderrfile_path_append =>
           { strict_type => 1, store => \$stderrfile_path_append },
         FILEHANDLE  => { store       => \$FILEHANDLE },
         exclude     => { strict_type => 1, store => \$exclude },
+        include     => { strict_type => 1, store => \$include },
         soft_filter => { strict_type => 1, store => \$soft_filter },
         snp_gap => {
             allow       => qr/ ^\d+$ /sxm,
@@ -426,7 +452,10 @@ sub bcftools_filter {
 
         push @commands, q{--exclude} . $SPACE . $exclude;
     }
+    if ($include) {
 
+        push @commands, q{--include} . $SPACE . $include;
+    }
     if ($soft_filter) {
 
         push @commands, q{--soft-filter} . $SPACE . $soft_filter;
@@ -448,15 +477,10 @@ sub bcftools_filter {
         push @commands, $infile_path;
     }
 
-    if ($outfile_path) {
-
-        #Specify output filename
-        push @commands, q{>} . $SPACE . $outfile_path;
-    }
-
     push @commands,
       unix_standard_streams(
         {
+            stdoutfile_path        => $stdoutfile_path,
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
         }
@@ -682,22 +706,19 @@ sub bcftools_merge {
 
 sub bcftools_concat {
 
-## Function : Perl wrapper for writing bcftools concat recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
+## Function : Perl wrapper for writing bcftools concat recipe to $FILEHANDLE or return commands array. Based on bcftools 1.4.1.
 ## Returns  : @commands
-## Arguments: $infile_paths_ref, $outfile_path, $stderrfile_path, $stderrfile_path_append, $stdoutfile_path, $FILEHANDLE, $allow_overlaps, $output_type
-##          : $infile_paths_ref       => Infile path to read from
+## Arguments: $infile_paths_ref       => Infile path to read from
 ##          : $outfile_path           => Outfile path to write to
 ##          : $stderrfile_path        => Stderr file path to write to
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile file path to write to
 ##          : $FILEHANDLE             => Filehandle to write to
 ##          : $allow_overlaps         => First coordinate of the next file can precede last record of the current file
+##          : $remove_duplicates      => Output duplicate records present in multiple files only once: <snps|indels|both|all|none>
     ##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
 
     my ($arg_href) = @_;
-
-    ## Default(s)
-    my $output_type;
 
     ## Flatten argument(s)
     my $infile_paths_ref;
@@ -706,7 +727,11 @@ sub bcftools_concat {
     my $stderrfile_path_append;
     my $stdoutfile_path;
     my $FILEHANDLE;
+
+    ## Default(s)
     my $allow_overlaps;
+    my $remove_duplicates;
+    my $output_type;
 
     my $tmpl = {
         infile_paths_ref =>
@@ -716,7 +741,13 @@ sub bcftools_concat {
         stderrfile_path_append =>
           { strict_type => 1, store => \$stderrfile_path_append },
         stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
-        FILEHANDLE     => { store => \$FILEHANDLE },
+        FILEHANDLE        => { store => \$FILEHANDLE },
+        remove_duplicates => {
+            default     => q{all},
+            allow       => [qw{ snps indels both all none }],
+            strict_type => 1,
+            store       => \$remove_duplicates
+        },
         allow_overlaps => {
             default     => 0,
             allow       => [ 0, 1 ],
@@ -740,6 +771,11 @@ sub bcftools_concat {
     if ($allow_overlaps) {
 
         push @commands, q{--allow-overlaps};
+    }
+
+    if ($remove_duplicates) {
+
+        push @commands, q{--remove-duplicates} . $SPACE . $remove_duplicates;
     }
 
     if ($output_type) {
