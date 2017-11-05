@@ -96,10 +96,10 @@ sub install_mip_scripts {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Modules
-    use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_cp gnu_ln gnu_chmod };
-    use MIP::Log::MIP_log4perl qw{ retrieve_log };
     use File::Basename qw{ fileparse };
     use FindBin qw{ $Bin };
+    use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_cp gnu_ln gnu_chmod };
+    use MIP::Log::MIP_log4perl qw{ retrieve_log };
 
     ## Unpack parameters
     my $mip_scripts_version = $mip_scripts_parameters_href->{version};

@@ -96,15 +96,15 @@ sub install_rhocall {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Modules
-    use MIP::Gnu::Coreutils qw{ gnu_rm gnu_mkdir };
+    use MIP::Check::Installation qw{ check_existing_installation };
     use MIP::Gnu::Bash qw{ gnu_cd };
-    use MIP::Program::Download::Wget qw{ wget };
-    use MIP::Program::Compression::Zip qw{ unzip };
+    use MIP::Gnu::Coreutils qw{ gnu_rm gnu_mkdir };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
     use MIP::Package_manager::Conda
       qw{ conda_source_activate conda_source_deactivate };
     use MIP::Package_manager::Pip qw{ pip_install };
-    use MIP::Check::Installation qw{ check_existing_installation };
+    use MIP::Program::Compression::Zip qw{ unzip };
+    use MIP::Program::Download::Wget qw{ wget };
 
     ## Unpack parameters
     my $rhocall_version = $rhocall_parameters_href->{version};

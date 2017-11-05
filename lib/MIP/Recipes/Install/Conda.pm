@@ -638,23 +638,21 @@ sub _create_target_link_paths {
 
       BINARY:
         foreach my $binary ( @{ $binaries{$program} } ) {
-            my $target_path;
+            ## Concatenate the name of the program directory
+            ## in steps for easier interpretation.
+            my $program_version = $bioconda_packages_href->{$program};
+            my $program_patch = $bioconda_patches_href->{
+              q{bioconda} . $UNDERSCORE . $program . $UNDERSCORE . q{patch} }; 
+            my $program_directory = 
+              $program . q{-} . $program_version . $program_patch;
+            
             ## Construct target path
+            my $target_path;
             if ( $program eq q{manta} ) {
+                
                 $target_path = catfile(
-                    $conda_env_path,
-                    q{share},
-                    $program . q{-}
-                      . $bioconda_packages_href->{$program}
-                      . $bioconda_patches_href->{
-                            q{bioconda}
-                          . $UNDERSCORE
-                          . $program
-                          . $UNDERSCORE
-                          . q{patch}
-                      },
-                    q{bin}, $binary
-                );
+                  $conda_env_path, q{share}, $program_directory, 
+                  q{bin}, $binary );
             }
             else {
                # Check if the program has been set to be installed via shell and
@@ -662,19 +660,7 @@ sub _create_target_link_paths {
                 next BINARY if ( not $bioconda_packages_href->{$program} );
 
                 $target_path = catfile(
-                    $conda_env_path,
-                    q{share},
-                    $program . q{-}
-                      . $bioconda_packages_href->{$program}
-                      . $bioconda_patches_href->{
-                            q{bioconda}
-                          . $UNDERSCORE
-                          . $program
-                          . $UNDERSCORE
-                          . q{patch}
-                      },
-                    $binary
-                );
+                  $conda_env_path, q{share}, $program_directory, $binary );
             }
             ## Construct link_path
             my $link_path = catfile( $conda_env_path, q{bin}, $binary );

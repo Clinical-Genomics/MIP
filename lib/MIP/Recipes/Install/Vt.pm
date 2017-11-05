@@ -96,12 +96,12 @@ sub install_vt {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Modules
-    use MIP::Gnu::Coreutils qw{ gnu_rm gnu_mv gnu_mkdir gnu_ln };
-    use MIP::Versionmanager::Git qw{ git_clone };
-    use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
     use MIP::Check::Installation qw{ check_existing_installation };
+    use MIP::Gnu::Coreutils qw{ gnu_ln gnu_mkdir gnu_mv gnu_rm };
+    use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
+    use MIP::Log::MIP_log4perl qw{ retrieve_log };
     use MIP::Script::Utils qw{ create_temp_dir };
+    use MIP::Versionmanager::Git qw{ git_clone };
 
     ## Unpack parameters
     my $vt_version = $vt_parameters_href->{version};

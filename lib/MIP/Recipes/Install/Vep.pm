@@ -97,15 +97,16 @@ sub install_vep {
 
     ## Modules
     use MIP::Gnu::Bash qw(gnu_cd);
-    use MIP::Gnu::Coreutils qw{ gnu_rm gnu_mv gnu_mkdir };
+    use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_mv gnu_rm };
+    use MIP::Log::MIP_log4perl qw{ retrieve_log };
     use MIP::Package_manager::Conda
       qw{ conda_source_activate conda_source_deactivate };
-    use MIP::Program::Download::Wget qw{ wget };
     use MIP::Program::Compression::Tar qw{ tar };
+    use MIP::Program::Download::Wget qw{ wget };
+
     use MIP::Program::Variantcalling::Vep
       qw{ variant_effect_predictor_install };
-    use MIP::Versionmanager::Git qw{ git_clone git_checkout };
-    use MIP::Log::MIP_log4perl qw{ retrieve_log };
+    use MIP::Versionmanager::Git qw{ git_checkout git_clone };
 
     ## Unpack parameters
     # Plugins
@@ -147,7 +148,7 @@ q{Varianteffectpredictor is already installed in conda environment: }
         if ($noupdate) {
 
             $log->info(
-q{Skipping writting installation isntructions for varianteffectpredictor}
+q{Skipping writting installation instructions for varianteffectpredictor}
             );
             return;
         }

@@ -96,16 +96,23 @@ sub install_tiddit {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Modules
-    use MIP::Gnu::Coreutils qw{ gnu_rm gnu_mkdir gnu_ln gnu_chmod };
-    use MIP::Gnu::Bash qw{ gnu_cd };
-    use MIP::Program::Download::Wget qw{ wget };
-    use MIP::Program::Compression::Zip qw{ unzip };
-    use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Package_manager::Conda
-      qw{ conda_source_activate conda_source_deactivate };
-    use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
     use MIP::Check::Installation qw{ check_existing_installation };
     use MIP::Compile::Cmake qw{ cmake };
+    use MIP::Gnu::Bash qw{ gnu_cd };
+    use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_ln gnu_mkdir gnu_rm };
+    use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
+    use MIP::Log::MIP_log4perl qw{ retrieve_log };
+
+    use MIP::Package_manager::Conda
+      qw{ conda_source_activate conda_source_deactivate };
+    use MIP::Program::Compression::Zip qw{ unzip };
+    use MIP::Program::Download::Wget qw{ wget };
+
+
+
+
+
+
 
     ## Unpack parameters
     my $tiddit_version = $tiddit_parameters_href->{version};

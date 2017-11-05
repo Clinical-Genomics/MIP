@@ -96,11 +96,11 @@ sub install_snpeff {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Modules
-    use MIP::Gnu::Coreutils qw{ gnu_rm gnu_mkdir gnu_ln };
+    use MIP::Gnu::Coreutils qw{ gnu_ln gnu_mkdir gnu_rm };
     use MIP::Gnu::Findutils qw{ gnu_find };
-    use MIP::Program::Download::Wget qw{ wget };
-    use MIP::Program::Compression::Zip qw{ unzip };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
+    use MIP::Program::Compression::Zip qw{ unzip };
+    use MIP::Program::Download::Wget qw{ wget };
     use MIP::Program::Variantcalling::SnpEff qw{ snpeff_download };
     use MIP::Script::Utils qw{ create_temp_dir };
 
@@ -279,8 +279,10 @@ sub install_snpeff {
             }
         );
 
-        next GENOME_VERSION
-          if ( -d catdir( $snpeff_install_path, q{data}, $genome_version ) );
+        my $genome_version_directory_path = 
+          catdir( $snpeff_install_path, q{data}, $genome_version );
+        
+        next GENOME_VERSION if ( -d $genome_version_directory_path );
         ## Write instructions to download SnpEff database.
         ## This is done by install script to avoid race conditin when doing first analysis run in MIP
 

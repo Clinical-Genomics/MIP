@@ -96,12 +96,12 @@ sub install_sambamba {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Modules
+    use MIP::Check::Installation qw{ check_existing_installation };
     use MIP::Gnu::Coreutils qw{ gnu_rm gnu_mv  gnu_ln gnu_chmod};
-    use MIP::Program::Download::Wget qw{ wget };
+    use MIP::Log::MIP_log4perl qw{ retrieve_log };
     use MIP::Program::Compression::Bzip2 qw{ bzip2 };
     use MIP::Program::Compression::Tar qw{ tar };
-    use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Check::Installation qw{ check_existing_installation };
+    use MIP::Program::Download::Wget qw{ wget };
     use MIP::Script::Utils qw{ create_temp_dir };
 
     ## Unpack parameters

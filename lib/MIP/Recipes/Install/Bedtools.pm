@@ -98,11 +98,11 @@ sub install_bedtools {
 
     ## Modules
     use MIP::Gnu::Coreutils qw{ gnu_ln gnu_mkdir gnu_mv gnu_rm };
-    use MIP::Program::Download::Wget qw{ wget };
-    use MIP::Program::Compression::Tar qw{ tar };
-    use MIP::Log::MIP_log4perl qw{ retrieve_log };
     use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
     use MIP::Check::Installation qw{ check_existing_installation };
+    use MIP::Log::MIP_log4perl qw{ retrieve_log };
+    use MIP::Program::Download::Wget qw{ wget };
+    use MIP::Program::Compression::Tar qw{ tar };
     use MIP::Script::Utils qw{ create_temp_dir };
 
     ## Unpack parameters

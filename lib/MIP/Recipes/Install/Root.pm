@@ -93,10 +93,10 @@ sub install_root {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Modules
-    use MIP::Gnu::Coreutils qw{ gnu_rm };
     use MIP::Gnu::Bash qw{ gnu_cd };
-    use MIP::Program::Download::Wget qw{ wget };
+    use MIP::Gnu::Coreutils qw{ gnu_rm };
     use MIP::Program::Compression::Tar qw{ tar };
+    use MIP::Program::Download::Wget qw{ wget };
 
     ## Store original working directory
     my $pwd = cwd();

@@ -96,16 +96,16 @@ sub install_cnvnator {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Modules
-    use MIP::Gnu::Coreutils qw{ gnu_ln gnu_mv gnu_rm};
+    use MIP::Check::Installation qw{ check_existing_installation };
     use MIP::Gnu::Bash qw{ gnu_cd };
-    use MIP::Program::Download::Wget qw{ wget };
-    use MIP::Program::Compression::Tar qw{ tar };
-    use MIP::Program::Compression::Zip qw{ unzip };
+    use MIP::Gnu::Coreutils qw{ gnu_ln gnu_mv gnu_rm};
+    use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
     use MIP::Package_manager::Conda
       qw{ conda_source_activate conda_source_deactivate };
-    use MIP::Gnu::Software::Gnu_make qw{ gnu_make };
-    use MIP::Check::Installation qw{ check_existing_installation };
+    use MIP::Program::Compression::Tar qw{ tar };
+    use MIP::Program::Compression::Zip qw{ unzip };
+    use MIP::Program::Download::Wget qw{ wget };
     use MIP::Recipes::Install::Root qw{ install_root };
     use MIP::Script::Utils qw{ create_temp_dir };
     use MIP::Unix::Write_to_file qw{ unix_write_to_file };
@@ -270,7 +270,7 @@ sub install_cnvnator {
     say {$FILEHANDLE} $NEWLINE;
 
     ## Get make command
-    my @make_commands = gnu_make( {} );
+    my @make_commands = gnu_make({});
     ## Add no parallel support argument to make command
     push @make_commands, q{OMP=no};
     unix_write_to_file(

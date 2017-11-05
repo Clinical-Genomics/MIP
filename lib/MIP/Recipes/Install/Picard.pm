@@ -96,11 +96,11 @@ sub install_picard {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Modules
-    use MIP::Gnu::Coreutils qw{ gnu_rm gnu_mv gnu_ln };
-    use MIP::Program::Download::Wget qw{ wget };
-    use MIP::Program::Compression::Zip qw{ unzip };
-    use MIP::Log::MIP_log4perl qw{ retrieve_log };
     use MIP::Check::Installation qw{ check_existing_installation };
+    use MIP::Gnu::Coreutils qw{ gnu_ln gnu_mv gnu_rm };
+    use MIP::Log::MIP_log4perl qw{ retrieve_log };
+    use MIP::Program::Compression::Zip qw{ unzip };
+    use MIP::Program::Download::Wget qw{ wget };
     use MIP::Script::Utils qw{ create_temp_dir };
 
     ## Unpack parameters

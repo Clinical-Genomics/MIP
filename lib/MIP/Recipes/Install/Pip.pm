@@ -76,10 +76,10 @@ sub install_pip_packages {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Local modules
+    use MIP::Log::MIP_log4perl qw{ retrieve_log };
     use MIP::Package_manager::Pip qw{ pip_install };
     use MIP::Package_manager::Conda
       qw{ conda_source_activate conda_source_deactivate };
-    use MIP::Log::MIP_log4perl qw{ retrieve_log };
 
     ## Retrieve logger object
     my $log = retrieve_log(

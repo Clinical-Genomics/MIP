@@ -96,15 +96,15 @@ sub install_svdb {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Modules
-    use MIP::Gnu::Coreutils qw{ gnu_rm };
     use MIP::Gnu::Bash qw{ gnu_cd };
-    use MIP::Program::Download::Wget qw{ wget };
-    use MIP::Program::Compression::Zip qw{ unzip };
+    use MIP::Gnu::Coreutils qw{ gnu_rm };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
     use MIP::Package_manager::Conda
       qw{ conda_source_activate conda_source_deactivate };
-    use MIP::Package_manager::Pip qw{ pip_install check_pip_package };
-
+    use MIP::Package_manager::Pip qw{ check_pip_package pip_install };
+    use MIP::Program::Download::Wget qw{ wget };
+    use MIP::Program::Compression::Zip qw{ unzip };
+    
     ## Unpack parameters
     my $svdb_version = $svdb_parameters_href->{version};
 
@@ -133,8 +133,7 @@ sub install_svdb {
     );
 
     # Check if installation exists and is executable
-    if ( ( -x catfile( $conda_prefix_path, qw{ bin SVDB } ) ) || $svdb_status )
-    {
+    if ( -x catfile( $conda_prefix_path, qw{ bin SVDB } ) || $svdb_status ) {
         $log->info(
             q{SVDB is already installed in the specified conda environment.});
         if ($noupdate) {
