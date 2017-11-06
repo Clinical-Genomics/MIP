@@ -14626,13 +14626,15 @@ sub check_parameter_files {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Check::Path qw{ check_filesystem_objects_existance };
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
 
-    foreach my $associated_program (@$associated_programs_ref)
+    foreach my $associated_program ( @{$associated_programs_ref} )
     {    #Check all programs that use parameter
 
         my $parameter_set_switch = 0;
@@ -14764,18 +14766,20 @@ sub check_parameter_files {
                         }
                         else { #To enable addition of select_file to sample_info
 
-                            check_existance(
+                            my ( $does_exist, $error_msg ) =
+                              check_filesystem_objects_existance(
                                 {
                                     parameter_href => $parameter_href,
-                                    active_parameter_href =>
-                                      $active_parameter_href,
-                                    item_name_ref => \$active_parameter_href
-                                      ->{$parameter_name},
-                                    parameter_name_ref => \$parameter_name,
-                                    item_type_to_check =>
-                                      $parameter_exists_check,
+                                    object_name =>
+                                      $active_parameter_href->{$parameter_name},
+                                    parameter_name => $parameter_name,
+                                    object_type    => $parameter_exists_check,
                                 }
-                            );
+                              );
+                            if ( not $does_exist ) {
+                                $log->fatal($error_msg);
+                                exit 1;
+                            }
 
                             ## Collects sequences contigs used in select file
                             collect_select_file_contigs(
@@ -14821,45 +14825,53 @@ sub check_parameter_files {
                         else
                         { #To enable addition of rankModel file and version to sample_info
 
-                            check_existance(
+                            my ( $does_exist, $error_msg ) =
+                              check_filesystem_objects_existance(
                                 {
                                     parameter_href => $parameter_href,
-                                    active_parameter_href =>
-                                      $active_parameter_href,
-                                    item_name_ref      => \$path,
-                                    parameter_name_ref => \$parameter_name,
-                                    item_type_to_check =>
-                                      $parameter_exists_check,
+                                    object_name    => $path,
+                                    parameter_name => $parameter_name,
+                                    object_type    => $parameter_exists_check,
                                 }
-                            );
+                              );
+                            if ( not $does_exist ) {
+                                $log->fatal($error_msg);
+                                exit 1;
+                            }
                         }
                     }
                     else {
 
-                        check_existance(
+                        my ( $does_exist, $error_msg ) =
+                          check_filesystem_objects_existance(
                             {
-                                parameter_href        => $parameter_href,
-                                active_parameter_href => $active_parameter_href,
-                                item_name_ref         => \$path,
-                                parameter_name_ref    => \$parameter_name,
-                                item_type_to_check => $parameter_exists_check,
+                                parameter_href => $parameter_href,
+                                object_name    => $path,
+                                parameter_name => $parameter_name,
+                                object_type    => $parameter_exists_check,
                             }
-                        );
+                          );
+                        if ( not $does_exist ) {
+                            $log->fatal($error_msg);
+                            exit 1;
+                        }
 
                         if ( $path =~ /\.gz$/ ) { #Check for tabix index as well
 
                             $path .= ".tbi";
-                            check_existance(
+                            my ( $does_exist, $error_msg ) =
+                              check_filesystem_objects_existance(
                                 {
                                     parameter_href => $parameter_href,
-                                    active_parameter_href =>
-                                      $active_parameter_href,
-                                    item_name_ref      => \$path,
-                                    parameter_name_ref => \$parameter_name,
-                                    item_type_to_check =>
-                                      $parameter_exists_check,
+                                    object_name    => $path,
+                                    parameter_name => $parameter_name,
+                                    object_type    => $parameter_exists_check,
                                 }
-                            );
+                              );
+                            if ( not $does_exist ) {
+                                $log->fatal($error_msg);
+                                exit 1;
+                            }
                         }
 
                         if ( $parameter_name eq q{human_genome_reference} ) {
@@ -14885,31 +14897,37 @@ sub check_parameter_files {
                         @{ $active_parameter_href->{$parameter_name} } )
                     {
 
-                        check_existance(
+                        my ( $does_exist, $error_msg ) =
+                          check_filesystem_objects_existance(
                             {
-                                parameter_href        => $parameter_href,
-                                active_parameter_href => $active_parameter_href,
-                                item_name_ref         => \$path,
-                                parameter_name_ref    => \$parameter_name,
-                                item_type_to_check => $parameter_exists_check,
+                                parameter_href => $parameter_href,
+                                object_name    => $path,
+                                parameter_name => $parameter_name,
+                                object_type    => $parameter_exists_check,
                             }
-                        );
+                          );
+                        if ( not $does_exist ) {
+                            $log->fatal($error_msg);
+                            exit 1;
+                        }
 
                         if ( $path =~ /\.gz$/ ) { #Check for tabix index as well
 
                             my $path_index = $path . ".tbi";
 
-                            check_existance(
+                            my ( $does_exist, $error_msg ) =
+                              check_filesystem_objects_existance(
                                 {
                                     parameter_href => $parameter_href,
-                                    active_parameter_href =>
-                                      $active_parameter_href,
-                                    item_name_ref      => \$path_index,
-                                    parameter_name_ref => \$path_index,
-                                    item_type_to_check =>
-                                      $parameter_exists_check,
+                                    object_name    => $path_index,
+                                    parameter_name => $path_index,
+                                    object_type    => $parameter_exists_check,
                                 }
-                            );
+                              );
+                            if ( not $does_exist ) {
+                                $log->fatal($error_msg);
+                                exit 1;
+                            }
                         }
                     }
                 }
@@ -14944,40 +14962,47 @@ sub check_parameter_files {
                                 }
                             );
                         }
-                        check_existance(
+                        my ( $does_exist, $error_msg ) =
+                          check_filesystem_objects_existance(
                             {
-                                parameter_href        => $parameter_href,
-                                active_parameter_href => $active_parameter_href,
-                                item_name_ref         => \$path,
-                                parameter_name_ref    => \$path,
-                                item_type_to_check => $parameter_exists_check,
+                                parameter_href => $parameter_href,
+                                object_name    => $path,
+                                parameter_name => $path,
+                                object_type    => $parameter_exists_check,
                             }
-                        );
+                          );
+                        if ( not $does_exist ) {
+                            $log->fatal($error_msg);
+                            exit 1;
+                        }
 
                         if ( $path =~ /\.gz$/ ) { #Check for tabix index as well
 
                             my $path_index = $path . ".tbi";
-                            check_existance(
+                            my ( $does_exist, $error_msg ) =
+                              check_filesystem_objects_existance(
                                 {
                                     parameter_href => $parameter_href,
-                                    active_parameter_href =>
-                                      $active_parameter_href,
-                                    item_name_ref      => \$path,
-                                    parameter_name_ref => \$path_index,
-                                    item_type_to_check =>
-                                      $parameter_exists_check,
+                                    object_name    => $path,
+                                    parameter_name => $path_index,
+                                    object_type    => $parameter_exists_check,
                                 }
-                            );
+                              );
+                            if ( not $does_exist ) {
+                                $log->fatal($error_msg);
+                                exit 1;
+                            }
                         }
                     }
                 }
             }
         }
-        if ( $parameter_set_switch eq 1 )
-        {    #No need to set parameter more than once
+        ## No need to set parameter more than once
+        if ( $parameter_set_switch eq 1 ) {
             last;
         }
     }
+    return;
 }
 
 sub create_file_endings {
@@ -15750,75 +15775,6 @@ s/analysis_constant_path!/$active_parameter_href->{analysis_constant_path}/gi
     }
 }
 
-sub check_auto_build {
-
-##check_auto_build
-
-##Function : Checks if autobuild is on and returns "1" if enabled or "0" if not
-##Returns  : "0|1"
-##Arguments: $parameter_href, $active_parameter_href, $parameter_name_ref, $sample_id_ref
-##         : $parameter_href        => Parameter hash {REF}
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $parameter_name_ref    => MIP parameter name {REF}
-##         : $sample_id_ref         => SampleId {REF}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $parameter_name_ref;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        parameter_name_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$parameter_name_ref
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    if ( $parameter_href->{$$parameter_name_ref}{build_file} == 1 ) {
-
-        ## Flag that autobuild is needed
-        return 1;
-    }
-    elsif ( $parameter_href->{$$parameter_name_ref}{build_file} eq 1 ) {
-        ## 1 for arrays
-
-        return "1";    #Flag that autobuild is needed
-    }
-    else {
-
-        return "0";    #No autobuild is needed
-    }
-}
-
 sub parse_human_genome_reference {
 
 ##parse_human_genome_reference
@@ -15871,10 +15827,11 @@ sub parse_human_genome_reference {
     }
     else {
 
-        $log->warn(
-"MIP cannot detect what kind of human_genome_reference you have supplied. If you want to automatically set the capture kits used please supply the reference on this format: [source]_[species]_[version].",
+        $log->fatal(
+q{MIP cannot detect what version of human_genome_reference you have supplied. Please supply the reference on this format: [sourceversion]_[species] e.g. 'GRCh37_homo_sapiens' or 'hg19_homo_sapiens'},
             "\n"
         );
+        exit 1;
     }
 
     ## Removes ".file_ending" in filename.FILENDING(.gz)
@@ -15944,24 +15901,25 @@ sub check_file_endings_to_build {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Check::Path qw{ check_filesystem_objects_existance };
+
     ## Count the number of files that exists
     my $existence_check_counter = 0;
 
   FILE_ENDING:
     foreach my $file_ending ( @{$file_endings_ref} ) {
 
-        my $exists_switch = check_existance(
+        my ($does_exist) = check_filesystem_objects_existance(
             {
-                parameter_href        => $parameter_href,
-                active_parameter_href => $active_parameter_href,
-                item_name_ref         => \catfile( $file_name . $file_ending ),
-                parameter_name_ref    => \$parameter_name,
-                item_type_to_check    => q{file},
+                parameter_href => $parameter_href,
+                object_name    => catfile( $file_name . $file_ending ),
+                parameter_name => $parameter_name,
+                object_type    => q{file},
             }
         );
 
         ## Sum up the number of file that exists
-        $existence_check_counter = $existence_check_counter + $exists_switch;
+        $existence_check_counter = $existence_check_counter + $does_exist;
     }
 
     ## Files need to be built
@@ -15975,129 +15933,6 @@ sub check_file_endings_to_build {
         $parameter_href->{$parameter_name}{build_file} = 0;
     }
     return;
-}
-
-sub check_existance {
-
-##check_existance
-
-##Function : Checks if a file/directory exists and if auto_build is on or not. If file/directory does not extis and there is no autobuild, croaks and exists.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $item_name_ref, $parameter_name_ref, $item_type_to_check, $temp_directory_ref
-##         : $parameter_href        => The parameters hash
-##         : $active_parameter_href => The active parameter for this analysis hash
-##         : $item_name_ref         => Item to check for existance {REF}
-##         : $parameter_name_ref    => MIP parameter name {REF}
-##         : $item_type_to_check    => The type of item to check
-##         : $temp_directory_ref    => Temporary directory
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $temp_directory_ref;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $item_name_ref;
-    my $parameter_name_ref;
-    my $item_type_to_check;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        item_name_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$item_name_ref
-        },
-        parameter_name_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$parameter_name_ref
-        },
-        item_type_to_check => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$item_type_to_check
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    if ( $item_type_to_check eq q{directory} ) {
-
-        ## Check existence of supplied directory
-        if ( not -d $$item_name_ref ) {
-
-            $log->fatal( $USAGE, "\n" );
-            $log->fatal(
-                    q{Could not find intended }
-                  . $$parameter_name_ref
-                  . q{ directory: }
-                  . $$item_name_ref,
-            );
-            exit 1;
-        }
-    }
-    elsif ( $item_type_to_check eq q{file} ) {
-
-        ## Check existence of supplied file
-        if ( not -f $$item_name_ref ) {
-
-            ## Check auto_build or not and return value
-            $parameter_href->{$$parameter_name_ref}{build_file} =
-              check_auto_build(
-                {
-                    parameter_href        => $parameter_href,
-                    active_parameter_href => $active_parameter_href,
-                    parameter_name_ref    => $parameter_name_ref,
-                }
-              );
-
-            if ( $parameter_href->{$$parameter_name_ref}{build_file} == 0 ) {
-                ## No autobuild
-
-                $log->fatal( $USAGE, "\n" );
-                $log->fatal(
-                        q{Could not find intended }
-                      . $$parameter_name_ref
-                      . q{ file: }
-                      . $$item_name_ref,
-                );
-                exit 1;
-            }
-        }
-        else {
-            ## File was found
-            return 1;
-        }
-    }
-    return 0;
 }
 
 sub check_user_supplied_info {
@@ -17224,6 +17059,8 @@ sub check_human_genome_file_endings {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Check::Path qw{ check_filesystem_objects_existance };
+
     ## Count the number of files that exists
     my $existence_check_counter = 0;
     my @human_reference_file_endings =
@@ -17246,18 +17083,17 @@ sub check_human_genome_file_endings {
         #Add current ending
         $path = $path . $file_ending;
 
-        my $exists_switch = check_existance(
+        my ($does_exist) = check_filesystem_objects_existance(
             {
-                parameter_href        => $parameter_href,
-                active_parameter_href => $active_parameter_href,
-                item_name_ref         => \$path,
-                parameter_name_ref    => \$$parameter_name_ref,
-                item_type_to_check    => q{file},
+                parameter_href => $parameter_href,
+                object_name    => $path,
+                parameter_name => $$parameter_name_ref,
+                object_type    => q{file},
             }
         );
 
         ## Sum up the number of file that exists
-        $existence_check_counter = $existence_check_counter + $exists_switch;
+        $existence_check_counter = $existence_check_counter + $does_exist;
     }
     ## Files need to be built
     if ( $existence_check_counter != scalar @human_reference_file_endings ) {
@@ -19611,25 +19447,29 @@ sub update_exome_target_bed {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    foreach my $exome_target_bed_file ( keys %$exome_target_bed_file_href ) {
+    if ( defined $$human_genome_reference_source_ref ) {
 
-        my $original_file_name = $exome_target_bed_file;
+      EXOME_FILE:
+        foreach
+          my $exome_target_bed_file ( keys %{$exome_target_bed_file_href} )
+        {
 
-        if (
-            (
-                $exome_target_bed_file =~
+            my $original_file_name = $exome_target_bed_file;
+
+            ## Replace with actual version
+            if ( $exome_target_bed_file =~
                 s/genome_reference_source/$$human_genome_reference_source_ref/
-            )
-            && ( $exome_target_bed_file =~
+                && $exome_target_bed_file =~
                 s/_version/$$human_genome_reference_version_ref/ )
-          )
-        {    #Replace with actual version
+            {
 
-            $exome_target_bed_file_href->{$exome_target_bed_file} =
-              delete( $exome_target_bed_file_href->{$original_file_name} )
-              ; #The delete operator returns the value being deleted i.e. updating hash key while preserving original info
+                ## The delete operator returns the value being deleted i.e. updating hash key while preserving original info
+                $exome_target_bed_file_href->{$exome_target_bed_file} =
+                  delete $exome_target_bed_file_href->{$original_file_name};
+            }
         }
     }
+    return;
 }
 
 sub check_sample_id_in_parameter_path {

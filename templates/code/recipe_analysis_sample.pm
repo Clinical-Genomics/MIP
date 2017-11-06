@@ -28,7 +28,7 @@ BEGIN {
 
 }
 
-##Constants
+## Constants
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $UNDERSCORE => q{_};
 

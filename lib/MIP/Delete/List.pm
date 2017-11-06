@@ -210,7 +210,9 @@ sub delete_contig_elements {
     my @cleansed_contigs  = @{$elements_ref};
     my @contigs_to_remove = @{$remove_contigs_ref};
 
-    if ( $elements_ref->[0] =~ / ^chr /xsm ) {
+    if ( defined $elements_ref->[0]
+        && $elements_ref->[0] =~ / ^chr /xsm )
+    {
 
         # Make sure that contig is removed independent of genome source
         @contigs_to_remove = map { q{chr} . $_ } @contigs_to_remove;

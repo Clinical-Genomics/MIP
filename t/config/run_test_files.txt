@@ -16,6 +16,7 @@ bedtools_genomecov.t
 bwa_mem.t
 bwa_index.t
 bzip2.t
+check_filesystem_objects_existance.t
 check_parameter_hash.t
 check_if_processed_by_vt.t
 chanjo_sex.t

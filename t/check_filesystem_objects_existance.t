@@ -9,18 +9,17 @@ use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
 use Carp;
 use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error};
-use Cwd;
+use Params::Check qw{ check allow last_error };
 
-# Find directory of script
 use FindBin qw{ $Bin };
 use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catfile catdir devnull };
-use File::Path qw{ make_path remove_tree };
+use File::Spec::Functions qw{ catdir };
 use Getopt::Long;
 use Test::More;
+use File::Temp qw{ tempdir tempfile };
+
+## CPANM
 use Readonly;
-use IPC::Cmd qw{ can_run run };
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -28,22 +27,25 @@ use MIP::Script::Utils qw{ help };
 
 our $USAGE = build_usage( {} );
 
-my $VERBOSE = 0;
+my $VERBOSE = 1;
 our $VERSION = '1.0.0';
 
 ## Constants
-Readonly my $COMMA   => q{,};
-Readonly my $DOT     => q{.};
-Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
+Readonly my $NEWLINE => qq{\n};
+Readonly my $COMMA   => q{,};
 
-###User Options
+### User Options
 GetOptions(
+
+    # Display help text
     q{h|help} => sub {
         done_testing();
         say {*STDOUT} $USAGE;
         exit;
-    },    #Display help text
+    },
+
+    # Display version number
     q{v|version} => sub {
         done_testing();
         say {*STDOUT} $NEWLINE
@@ -52,7 +54,7 @@ GetOptions(
           . $VERSION
           . $NEWLINE;
         exit;
-    },    #Display version number
+    },
     q{vb|verbose} => $VERBOSE,
   )
   or (
@@ -73,24 +75,24 @@ BEGIN {
 
     $perl_module{q{MIP::Script::Utils}} = [qw{ help }];
 
-  PERL_MODULES:
+  PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
         use_ok( $module, @{$module_import} )
           or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 
-    ## Modules
+## Modules
     my @modules = (q{MIP::Check::Path});
 
-  MODULES:
+  MODULE:
     for my $module (@modules) {
         require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 }
 
-use MIP::Check::Path qw{ check_file_version_exist };
+use MIP::Check::Path qw{ check_filesystem_objects_existance };
 
-diag(   q{Test check_file_version_exist from Path.pm v}
+diag(   q{Test check_filesystem_objects_existance from MODULE_NAME.pm v}
       . $MIP::Check::Path::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -99,58 +101,63 @@ diag(   q{Test check_file_version_exist from Path.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-# Create anonymous filehandle
-my $FILEHANDLE = IO::Handle->new();
+## Create a temp dir
+my $dir = tempdir( CLEANUP => 1 );
 
-# File path prefix
-my $file_prefix = q{test_check_file_version_exist} . $DOT;
+## Create a temp file using newly created temp dir
+my ( $fh, $file_name ) = tempfile( DIR => $dir );
 
-# File path suffix
-my $file_suffix = $DOT . q{sh};
+my %parameter = (
+    dir       => $dir,
+    file_name => { build_file => 1 },
+);
 
-# File counter
-my $file_counter = 0;
-
-# Temporary directory
-my $temp_dir = catdir( cwd(), qw{ test_dir .test_check_file_version_exist } );
-
-# Create path
-make_path($temp_dir);
-
-my $test_file_path =
-  catfile( $temp_dir, $file_prefix . $file_counter . $file_suffix );
-
-# Open filehandle
-open $FILEHANDLE, q{>}, $test_file_path
-  or croak(
-    q{Cannot write to '} . $test_file_path . q{' :} . $OS_ERROR . $NEWLINE );
-
-# Create file
-print {$FILEHANDLE} q{Test};
-
-close $FILEHANDLE;
-
-## Testing write to file
-ok( -e $test_file_path, q{Create test file} );
-
-my ( $file_name, $file_name_tracker ) = check_file_version_exist(
+### TEST
+## Dirs
+my ($does_exist) = check_filesystem_objects_existance(
     {
-        file_path_prefix => catfile( $temp_dir, $file_prefix ),
-        file_path_suffix => $file_suffix,
+        parameter_href => \%parameter,
+        parameter_name => q{dir},
+        object_name    => $dir,
+        object_type    => q{directory},
     }
 );
 
-## Test
-is( $file_name_tracker, 1, q{File version} );
+is( $does_exist, 1, q{Found directory} );
 
-my $expected_file_counter = 1;
+($does_exist) = check_filesystem_objects_existance(
+    {
+        parameter_href => \%parameter,
+        parameter_name => q{dir},
+        object_name    => q{does_not_exist},
+        object_type    => q{directory},
+    }
+);
 
-my $expected_filename =
-  catfile( $temp_dir, $file_prefix . $expected_file_counter . $file_suffix );
-is( $file_name, $expected_filename, q{File name} );
+is( $does_exist, 0, q{No directory} );
 
-# Clean-up after test
-remove_tree( dirname($temp_dir) );
+## Files
+($does_exist) = check_filesystem_objects_existance(
+    {
+        parameter_href => \%parameter,
+        parameter_name => q{file_name},
+        object_name    => $file_name,
+        object_type    => q{file},
+    }
+);
+
+is( $does_exist, 1, q{Found file} );
+
+($does_exist) = check_filesystem_objects_existance(
+    {
+        parameter_href => \%parameter,
+        parameter_name => q{file_name},
+        object_name    => q{does_not_exist},
+        object_type    => q{file},
+    }
+);
+
+is( $does_exist, 0, q{No file} );
 
 done_testing();
 
@@ -160,12 +167,9 @@ done_testing();
 
 sub build_usage {
 
-##build_usage
-
-##Function : Build the USAGE instructions
-##Returns  : ""
-##Arguments: $program_name
-##         : $program_name => Name of the script
+## Function  : Build the USAGE instructions
+## Returns   :
+## Arguments : $program_name => Name of the script
 
     my ($arg_href) = @_;
 
@@ -180,7 +184,7 @@ sub build_usage {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     return <<"END_USAGE";
  $program_name [options]
