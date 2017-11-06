@@ -121,7 +121,7 @@ sub install_mip_scripts {
       qw{ perl_install.pl mip_install.pl download_reference.pl mip.pl vcfparser.pl qccollect.pl };
 
     my %mip_sub_script = (
-			  utility_scripts => [qw{ calculate_af.pl covplots_exome.R covplots_genome.R max_af.pl }]
+			  utility_scripts => [qw{ calculate_af.pl covplots_exome.R covplots_genome.R max_af.pl }],
         t         => [qw{ mip_install.t mip.t run_tests.t mip_analysis.t }],
         templates => [qw{ mip_config.yaml }],
     );
