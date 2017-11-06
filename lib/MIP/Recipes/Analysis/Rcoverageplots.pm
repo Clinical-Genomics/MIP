@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_rcoverageplots };
@@ -35,12 +35,9 @@ Readonly my $UNDERSCORE => q{_};
 
 sub analysis_rcoverageplots {
 
-## analysis_rcoverageplots
-
 ## Function : Generates sbatch scripts for R scripts: 1. covplots_genome.R 2. covplots_exome.R; on files generated from bedtools genomecov.
 ## Returns  :
-## Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $lane_href, $infile_lane_prefix_href, $job_id_href, $sample_id, $insample_directory, $outsample_directory, $program_name, $family_id, $temp_directory, $outaligner_dir,
-##          : $parameter_href          => Parameter hash {REF}
+## Arguments: $parameter_href          => Parameter hash {REF}
 ##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $file_info_href          => File info hash {REF}
@@ -57,11 +54,6 @@ sub analysis_rcoverageplots {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $family_id;
-    my $temp_directory;
-    my $outaligner_dir;
-
     ## Flatten argument(s)
     my $parameter_href;
     my $active_parameter_href;
@@ -74,6 +66,11 @@ sub analysis_rcoverageplots {
     my $insample_directory;
     my $outsample_directory;
     my $program_name;
+
+    ## Default(s)
+    my $family_id;
+    my $temp_directory;
+    my $outaligner_dir;
 
     my $tmpl = {
         parameter_href => {

@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_mip_scripts };
@@ -35,7 +35,7 @@ Readonly my $UNDERSCORE => q{_};
 sub install_mip_scripts {
 
 ## Function : Install mip_scripts
-## Returns  : ""
+## Returns  :
 ## Arguments: $program_parameters_href => Hash with mip_scripts specific parameters {REF}
 ##          : $conda_prefix_path       => Conda prefix path
 ##          : $conda_environment       => Conda environment
@@ -118,9 +118,10 @@ sub install_mip_scripts {
 
     ## Define MIP scripts and yaml files
     my @mip_scripts =
-      qw{ perl_install.pl mip_install.pl download_reference.pl mip.pl vcfparser.pl qccollect.pl covplots_genome.R };
+      qw{ perl_install.pl mip_install.pl download_reference.pl mip.pl vcfparser.pl qccollect.pl };
 
     my %mip_sub_script = (
+			  scripts => [qw{ calculate_af.pl covplots_exome.R covplots_genome.R max_af.pl }]
         t         => [qw{ mip_install.t mip.t run_tests.t mip_analysis.t }],
         templates => [qw{ mip_config.yaml }],
     );
@@ -149,6 +150,7 @@ sub install_mip_scripts {
     say {$FILEHANDLE} q{## Create directories};
   DIRECTORY:
     foreach my $directory ( keys %mip_sub_script ) {
+
         my $indirectory_path = catdir( $conda_prefix_path, q{bin}, $directory );
         gnu_mkdir(
             {
