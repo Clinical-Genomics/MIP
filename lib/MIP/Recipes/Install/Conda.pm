@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.0.2;
+    our $VERSION = 1.0.3;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -148,6 +148,9 @@ sub setup_conda_env {
         ## Check for existing conda environment
         if ( not -d $conda_env_path ) {
             ## Create conda environment and install packages
+            $log->info(
+                q{Writing installtion instructions for environment: }
+                  . $conda_env );
             say {$FILEHANDLE} q{## Creating conda environment: }
               . $conda_env
               . q{ and install packages};
@@ -167,6 +170,9 @@ sub setup_conda_env {
                   . q{already exists} );
             $log->warn(
                 q{Will try to install packages into existing environment});
+            $log->info(
+q{Writing installtion instructions for conda packages to environment: }
+                  . $conda_env );
             say {$FILEHANDLE}
               q{## Installing conda packages into existing environment};
             conda_install(
@@ -180,6 +186,9 @@ sub setup_conda_env {
         }
     }
     else {
+        $log->info(
+q{Writing instructions for installing and/or updating packages in conda root}
+        );
         say {$FILEHANDLE}
           q{## Installing and/or updating python and packages in conda root};
         conda_install(
@@ -202,6 +211,8 @@ sub install_bioconda_packages {
 ##           : $conda_env              => Name of conda environment
 ##           : $conda_env_path         => Path to conda environment (default: conda root)
 ##           : $FILEHANDLE             => Filehandle to write to
+##           : $quiet                  => Log only warnings and above
+##           : $verbose                => Log debug messages
 
     my ($arg_href) = @_;
 
@@ -211,6 +222,8 @@ sub install_bioconda_packages {
     my $conda_env;
     my $conda_env_path;
     my $FILEHANDLE;
+    my $quiet;
+    my $verbose;
 
     my $tmpl = {
         bioconda_packages_href => {
@@ -241,12 +254,30 @@ sub install_bioconda_packages {
             required => 1,
             store    => \$FILEHANDLE,
         },
+        quiet => {
+            allow => [ undef, 0, 1 ],
+            store => \$quiet,
+        },
+        verbose => {
+            allow => [ undef, 0, 1 ],
+            store => \$verbose,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments};
 
     use MIP::Package_manager::Conda qw{ conda_install };
     use MIP::Gnu::Coreutils qw{ gnu_ln };
+    use MIP::Log::MIP_log4perl qw{ retrieve_log };
+
+    ## Retrieve logger object
+    my $log = retrieve_log(
+        {
+            log_name => q{mip_install::install_bioconda_packages},
+            quiet    => $quiet,
+            verbose  => $verbose,
+        }
+    );
 
     ## Create an array for bioconda packages that are to be installed from provided hash
     my @packages = _create_package_array(
@@ -257,6 +288,7 @@ sub install_bioconda_packages {
     );
 
     ## Install bioconda packages
+    $log->info(q{Writing installation instructions for Bioconda packages});
     say {$FILEHANDLE} q{## Installing bioconda modules in conda environment};
     conda_install(
         {
@@ -373,6 +405,7 @@ sub finish_bioconda_package_install {
     use MIP::Package_manager::Conda
       qw{ conda_source_activate conda_source_deactivate };
     use MIP::Program::Variantcalling::SnpEff qw{ snpeff_download };
+    use MIP::Recipes::Install::SnpEff qw{ check_mt_codon_table };
 
     ## Custom BWA
     say {$FILEHANDLE} q{## Custom BWA solutions};
@@ -396,28 +429,33 @@ sub finish_bioconda_package_install {
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    ## Custom snpeff - Download necessary databases
-    ## Check and if required add the vertebrate mitochondrial codon table to snpeff config
-    say {$FILEHANDLE} q{## Custom SnpEff solutions};
-  SNPEFF_GENOME_VERSIONS:
-    foreach my $genome_version ( @{$snpeff_genome_versions_ref} ) {
-        my $share_dir = catdir( $conda_env_path, q{share},
-                q{snpeff-}
-              . $bioconda_packages_href->{snpeff}
-              . $bioconda_patches_href->{bioconda_snpeff_patch} );
-        _check_mt_codon_table(
-            {
-                FILEHANDLE     => $FILEHANDLE,
-                share_dir      => $share_dir,
-                config_file    => q{snpEff.config},
-                genome_version => $genome_version,
-                verbose        => $verbose,
-                quiet          => $quiet
-            }
-        );
+    ## Check if snpeff has been set to be installed via shell
+    if ( $bioconda_packages_href->{snpeff} ) {
+        ## Custom snpeff - Download necessary databases
+        ## Check and if required add the vertebrate mitochondrial codon table to snpeff config
 
-        my $snpeff_genome_dir = catdir( $share_dir, q{data}, $genome_version );
-        if ( not -d $snpeff_genome_dir ) {
+        say {$FILEHANDLE} q{## Custom SnpEff solutions};
+      SNPEFF_GENOME_VERSION:
+        foreach my $genome_version ( @{$snpeff_genome_versions_ref} ) {
+            my $share_dir = catdir( $conda_env_path, q{share},
+                    q{snpeff-}
+                  . $bioconda_packages_href->{snpeff}
+                  . $bioconda_patches_href->{bioconda_snpeff_patch} );
+            check_mt_codon_table(
+                {
+                    FILEHANDLE     => $FILEHANDLE,
+                    share_dir      => $share_dir,
+                    config_file    => q{snpEff.config},
+                    genome_version => $genome_version,
+                    verbose        => $verbose,
+                    quiet          => $quiet
+                }
+            );
+
+            my $snpeff_genome_dir =
+              catdir( $share_dir, q{data}, $genome_version );
+            next SNPEFF_GENOME_VERSION if ( -d $snpeff_genome_dir );
+
             ## Only activate conda environment if supplied by user
             if ($conda_env) {
                 ## Activate conda environment
@@ -595,44 +633,34 @@ sub _create_target_link_paths {
         picard  => [qw{ picard.jar }],
     );
 
-  PROGRAMS:
+  PROGRAM:
     foreach my $program ( keys %binaries ) {
 
-      BINARIES:
+      BINARY:
         foreach my $binary ( @{ $binaries{$program} } ) {
-            my $target_path;
+            ## Concatenate the name of the program directory
+            ## in steps for easier interpretation.
+            my $program_version = $bioconda_packages_href->{$program};
+            my $program_patch = $bioconda_patches_href->{
+              q{bioconda} . $UNDERSCORE . $program . $UNDERSCORE . q{patch} }; 
+            my $program_directory = 
+              $program . q{-} . $program_version . $program_patch;
+            
             ## Construct target path
+            my $target_path;
             if ( $program eq q{manta} ) {
+                
                 $target_path = catfile(
-                    $conda_env_path,
-                    q{share},
-                    $program . q{-}
-                      . $bioconda_packages_href->{$program}
-                      . $bioconda_patches_href->{
-                            q{bioconda}
-                          . $UNDERSCORE
-                          . $program
-                          . $UNDERSCORE
-                          . q{patch}
-                      },
-                    q{bin}, $binary
-                );
+                  $conda_env_path, q{share}, $program_directory, 
+                  q{bin}, $binary );
             }
             else {
+               # Check if the program has been set to be installed via shell and
+               # thus has been removed from the bioconda_packages hash
+                next BINARY if ( not $bioconda_packages_href->{$program} );
+
                 $target_path = catfile(
-                    $conda_env_path,
-                    q{share},
-                    $program . q{-}
-                      . $bioconda_packages_href->{$program}
-                      . $bioconda_patches_href->{
-                            q{bioconda}
-                          . $UNDERSCORE
-                          . $program
-                          . $UNDERSCORE
-                          . q{patch}
-                      },
-                    $binary
-                );
+                  $conda_env_path, q{share}, $program_directory, $binary );
             }
             ## Construct link_path
             my $link_path = catfile( $conda_env_path, q{bin}, $binary );
@@ -641,148 +669,6 @@ sub _create_target_link_paths {
         }
     }
     return %target_link_paths;
-}
-
-sub _check_mt_codon_table {
-
-##Function : Check and if required add the vertebrate mitochondrial codon table to snpeff config
-##Returns  : ""
-##Arguments: $FILEHANDLE     => FILEHANDLE to write to
-##         : $share_dir      => The conda env shared directory
-##         : $config_file    => The config config_file
-##         : $genome_version => snpeff genome version
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $FILEHANDLE;
-    my $share_dir;
-    my $config_file;
-    my $genome_version;
-    my $verbose;
-    my $quiet;
-
-    my $tmpl = {
-        FILEHANDLE => {
-            required => 1,
-            defined  => 1,
-            store    => \$FILEHANDLE
-        },
-        share_dir => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$share_dir
-        },
-        config_file => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$config_file
-        },
-        genome_version => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$genome_version
-        },
-        verbose => {
-            allow => [ undef, 0, 1 ],
-            store => \$verbose,
-        },
-        quiet => {
-            allow => [ undef, 0, 1 ],
-            store => \$quiet,
-        }
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use File::Spec::Functions qw{ catfile };
-    use IPC::Cmd qw{ can_run run };
-    use MIP::Gnu::Coreutils qw{ gnu_mv };
-
-    ## Get logger
-    my $log = retrieve_log(
-        {
-            log_name => q{mip_install::finish_bioconda_package_install},
-            verbose  => $verbose,
-            quiet    => $quiet,
-        }
-    );
-
-    my $detect_regexp =
-
-      # Execute perl, loop over input and split on whitespace
-      q?perl -nae? . $SPACE
-
-      # Check for a MT codon table with matching genome version
-      . q?'if($_=~/? . $genome_version . q?.MT.codonTable/)?
-
-      # Print 1 in case of match
-      . q?{print 1}' ?;
-
-    my $add_regexp =
-
-      # Execute perl, loop over input and split on whitespace
-      q?perl -nae? . $SPACE
-
-      # Search for  genome version .reference match
-      . q?'if($_=~/? . $genome_version . q?.reference/) {?
-
-      # Print matching element
-      . q?print $_;? . $SPACE
-
-      # Print MT codon table that is being downloaded
-      . q?print "?
-      . $genome_version
-      . q?.MT.codonTable : Vertebrate_Mitochondrial\n"}?
-      . $SPACE
-
-      # If no match: print line
-      . q?else {print $_;}' ?;
-
-    ## Test if config file contains the desired MT codon table
-    my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf );
-    if ( -f catfile( $share_dir, $config_file ) ) {
-        ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) = run(
-            command => $detect_regexp . catfile( $share_dir, $config_file ) );
-    }
-
-    #No MT.codonTable in config
-    if ( not $success ) {
-        say {$FILEHANDLE} q{## Adding }
-          . $genome_version
-          . q{.MT.codonTable : Vertebrate_Mitochondrial to }
-          . $share_dir
-          . $config_file;
-
-        ## Add MT.codon Table to config
-        say {$FILEHANDLE} $add_regexp
-          . $SPACE
-          . catfile( $share_dir, $config_file ) . q{ > }
-          . catfile( $share_dir, $config_file . $DOT . q{tmp} );
-
-        my $infile_path = catfile( $share_dir, $config_file . $DOT . q{tmp} );
-        gnu_mv(
-            {
-                infile_path  => $infile_path,
-                outfile_path => catfile( $share_dir, $config_file ),
-                FILEHANDLE   => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-
-    }
-    else {
-        $log->info( q{Found MT.codonTable in}
-              . $SPACE
-              . catfile( $share_dir, q{snpEff.config} )
-              . $DOT
-              . $SPACE
-              . q{Skipping addition to snpEff config} );
-    }
-    return;
 }
 
 1;
