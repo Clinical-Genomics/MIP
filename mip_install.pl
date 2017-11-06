@@ -35,7 +35,7 @@ use MIP::Log::MIP_log4perl qw{ initiate_logger };
 
 ## Recipes
 use MIP::Recipes::Install::Conda
-  qw{ setup_conda_env install_bioconda_packages finish_bioconda_package_install };
+  qw{ setup_conda_env install_bioconda_packages };
 use MIP::Recipes::Install::Vep qw{ install_vep };
 use MIP::Recipes::Install::Pip qw{ install_pip_packages };
 use MIP::Recipes::Install::Picard qw{ install_picard };
@@ -144,7 +144,7 @@ $parameter{shell}{snpeff}{snpeff_genome_versions} =
   [qw{ GRCh37.75 GRCh38.86 }];
 $parameter{reference_genome_versions} = [qw{ GRCh37 hg38 }];
 
-my $VERSION = q{1.2.14};
+my $VERSION = q{1.2.15};
 
 GetOptions(
     q{see|bash_set_errexit}    => \$parameter{bash_set_errexit},
@@ -346,25 +346,11 @@ install_bioconda_packages(
         bioconda_patches_href  => $parameter{bioconda_patches},
         conda_env              => $parameter{conda_environment},
         conda_env_path         => $parameter{conda_prefix_path},
+        snpeff_genome_versions_ref =>
+          $parameter{shell}{snpeff}{snpeff_genome_versions},
         FILEHANDLE             => $FILEHANDLE,
         quiet                  => $parameter{quiet},
         verbose                => $parameter{verbose},
-    }
-);
-
-## Custom solutions for BWA, SnpEff and Manta
-## Copying files, downloading necessary databases and make files executable
-finish_bioconda_package_install(
-    {
-        bioconda_packages_href => $parameter{bioconda},
-        bioconda_patches_href  => $parameter{bioconda_patches},
-        conda_env              => $parameter{conda_environment},
-        conda_env_path         => $parameter{conda_prefix_path},
-        FILEHANDLE             => $FILEHANDLE,
-        snpeff_genome_versions_ref =>
-          $parameter{shell}{snpeff}{snpeff_genome_versions},
-        verbose => $parameter{verbose},
-        quiet   => $parameter{quiet},
     }
 );
 
