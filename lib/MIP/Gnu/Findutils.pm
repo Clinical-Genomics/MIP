@@ -26,10 +26,10 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ xargs };
+    our @EXPORT_OK = qw{ xargs gnu_find };
 }
 
 ## Constants
@@ -38,18 +38,15 @@ Readonly my $SPACE        => q{ };
 
 sub xargs {
 
-##xargs
-
-##Function : Perl wrapper for writing xargs recipe to already open $FILEHANDLE or return command line string. Based on xargs 4.4.2
-##Returns  : "@commands"
-##Arguments: $shell_commands_ref, $FILEHANDLE, $replace_str, $verbose, $max_args, $max_procs, $placeholder_symbol
-##         : $shell_commands_ref => The string following this command will be interpreted as a shell command {REF}
-##         : $FILEHANDLE         => Filehandle to write to
-##         : $replace_str        => Replace string.  Enables us to tell xargs where to put the command file lines
-##         : $verbose            => Print the command line on the standard error output before executing it
-##         : $max_args           => Use at most max-args arguments per command line
-##         : $max_procs          => Run up to max-procs processes at a time
-##         : $placeholder_symbol => Set placeholder symbol
+## Function : Perl wrapper for writing xargs recipe to already open $FILEHANDLE or return command line string. Based on xargs 4.4.2
+## Returns  : "@commands"
+## Arguments: $shell_commands_ref => The string following this command will be interpreted as a shell command {REF}
+##          : $FILEHANDLE         => Filehandle to write to
+##          : $replace_str        => Replace string.  Enables us to tell xargs where to put the command file lines
+##          : $verbose            => Print the command line on the standard error output before executing it
+##          : $max_args           => Use at most max-args arguments per command line
+##          : $max_procs          => Run up to max-procs processes at a time
+##          : $placeholder_symbol => Set placeholder symbol
 
     my ($arg_href) = @_;
 
@@ -150,6 +147,68 @@ sub xargs {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
+    return @commands;
+}
+
+sub gnu_find {
+
+## Function : Perl wrapper for writing find recipe to already open $FILEHANDLE or return command line string. Based on find 4.4.2
+## Returns  : "@commands"
+## Arguments: $search_path   => Where to perform the search
+##          : $test_criteria => Evaluation criteria
+##          : $action        => Action when evaluation is true
+##          : $FILEHANDLE    => Filehandle to write to
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $search_path;
+    my $test_criteria;
+    my $action;
+    my $FILEHANDLE;
+
+    my $tmpl = {
+        search_path => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$search_path
+        },
+        test_criteria => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$test_criteria
+        },
+        action => {
+            store => \$action
+        },
+        FILEHANDLE => {
+            store => \$FILEHANDLE
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    # Stores commands depending on input parameters
+    my @commands = q{find};
+
+    push @commands, $search_path;
+
+    push @commands, $test_criteria;
+
+    if ($action) {
+        push @commands, $action;
+    }
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+
     return @commands;
 }
 
