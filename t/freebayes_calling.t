@@ -111,6 +111,10 @@ my %base_argument = (
         input           => undef,
         expected_output => $function_base_command,
     },
+    stdoutfile_path => {
+        input           => q{stdoutfile_path.test},
+        expected_output => q{1> stdoutfile_path.test},
+    },
 );
 
 ## Can be duplicated with %base_argument and/or %specific_argument
@@ -129,10 +133,6 @@ my %required_argument = (
 );
 
 my %specific_argument = (
-    outfile_path => {
-        input           => catfile(qw{ dir outfile.vcf }),
-        expected_output => q{>} . $SPACE . catfile(qw{ dir outfile.vcf }),
-    },
     apply_standard_filter => {
         input           => 1,
         expected_output => q{--standard-filters},

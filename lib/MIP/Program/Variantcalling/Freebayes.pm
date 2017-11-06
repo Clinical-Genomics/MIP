@@ -38,7 +38,7 @@ sub freebayes_calling {
 
 ## Arguments: $infile_paths_ref           => Infile paths {REF}
 ##          : $referencefile_path         => Reference sequence file
-##          : $outfile_path               => Outfile path
+##          : $stdoutfile_path            => Stdoutfile path
 ##          : $stderrfile_path            => Stderrfile path
 ##          : $FILEHANDLE                 => Filehandle to write to
 ##          : $apply_standard_filter      => Use stringent input base and mapping quality filters. Equivalent to -m 30 -q 20 -R 0 -S 0
@@ -49,7 +49,7 @@ sub freebayes_calling {
     ## Flatten argument(s)
     my $infile_paths_ref;
     my $referencefile_path;
-    my $outfile_path;
+    my $stdoutfile_path;
     my $stderrfile_path;
     my $FILEHANDLE;
     my $apply_standard_filter;
@@ -69,7 +69,7 @@ sub freebayes_calling {
             strict_type => 1,
             store       => \$referencefile_path
         },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
+        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
         FILEHANDLE            => { store => \$FILEHANDLE },
         apply_standard_filter => {
@@ -112,18 +112,13 @@ sub freebayes_calling {
     ## Infile
     push @commands, join $SPACE, @{$infile_paths_ref};
 
-    #Specify output filename
-    if ($outfile_path) {
-
-        push @commands, q{>} . $SPACE . $outfile_path;
-    }
-
-    push @commands, unix_standard_streams(
+    push @commands,
+      unix_standard_streams(
         {
-
+            stdoutfile_path => $stdoutfile_path,
             stderrfile_path => $stderrfile_path,
         }
-    );
+      );
 
     unix_write_to_file(
         {
