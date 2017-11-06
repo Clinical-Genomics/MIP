@@ -12283,7 +12283,7 @@ sub freebayes {
           map { $file_path_prefix{$_} . "_" . $contig . $infile_suffix }
           @{ $active_parameter_href->{sample_ids} };
 
-        calling(
+        freebayes_calling(
             {
                 infile_paths_ref => \@file_paths,
                 referencefile_path =>
