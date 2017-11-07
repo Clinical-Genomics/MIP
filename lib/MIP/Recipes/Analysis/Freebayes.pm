@@ -228,7 +228,7 @@ sub analysis_frebayes_calling {
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
             job_id_chain   => $job_id_chain,
-            file_suffix    => $parameter_href->{$family_id}{outfile_suffix},
+            file_suffix    => $parameter_href->{$mip_program_name}{outfile_suffix},
         }
     );
 
