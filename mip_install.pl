@@ -144,7 +144,7 @@ $parameter{shell}{snpeff}{snpeff_genome_versions} =
   [qw{ GRCh37.75 GRCh38.86 }];
 $parameter{reference_genome_versions} = [qw{ GRCh37 hg38 }];
 
-my $VERSION = q{1.2.15};
+my $VERSION = q{1.2.16};
 
 GetOptions(
     q{see|bash_set_errexit}    => \$parameter{bash_set_errexit},
@@ -348,9 +348,9 @@ install_bioconda_packages(
         conda_env_path         => $parameter{conda_prefix_path},
         snpeff_genome_versions_ref =>
           $parameter{shell}{snpeff}{snpeff_genome_versions},
-        FILEHANDLE             => $FILEHANDLE,
-        quiet                  => $parameter{quiet},
-        verbose                => $parameter{verbose},
+        FILEHANDLE => $FILEHANDLE,
+        quiet      => $parameter{quiet},
+        verbose    => $parameter{verbose},
     }
 );
 
@@ -716,6 +716,8 @@ sub references {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Program::Download::Download_reference qw{ download_reference };
+
     my $pwd = cwd();
 
     ## Only activate conda environment if supplied by user
@@ -733,18 +735,14 @@ sub references {
 
     $log->info(q{Writting install instructions for references});
 
-    print {$FILEHANDLE} q{download_reference} . $SPACE;
-    print {$FILEHANDLE} q{--reference_dir}
-      . $SPACE
-      . $parameter_href->{reference_dir}
-      . $SPACE;
-
-    print {$FILEHANDLE} q{--reference_genome_versions}
-      . $SPACE
-      . join $SPACE
-      . q{--reference_genome_versions}
-      . $SPACE,
-      @{ $parameter_href->{reference_genome_versions} } . $SPACE;
+    download_reference(
+        {
+            reference_genome_versions_ref =>
+              $parameter_href->{reference_genome_versions},
+            reference_dir_path => $parameter_href->{reference_dir},
+            FILEHANDLE         => $FILEHANDLE,
+        }
+    );
     say {$FILEHANDLE} $NEWLINE;
 
     ## Launch bash
