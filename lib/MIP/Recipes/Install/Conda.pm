@@ -656,6 +656,9 @@ sub _create_target_link_paths {
 
   PROGRAM:
     foreach my $program ( keys %binaries ) {
+        # Check if the program has been set to be installed via shell and
+        # thus has been removed from the bioconda_packages hash
+        next PROGRAM if ( not $bioconda_packages_href->{$program} );
 
       BINARY:
         foreach my $binary ( @{ $binaries{$program} } ) {
@@ -674,19 +677,12 @@ sub _create_target_link_paths {
             ## Construct target path
             my $target_path;
             if ( $program eq q{manta} ) {
-
-                $target_path =
-                  catfile( $conda_env_path, q{share}, $program_directory,
-                    q{bin}, $binary );
+                $target_path = catfile( 
+                  $conda_env_path, q{share}, $program_directory, q{bin}, $binary );
             }
             else {
-               # Check if the program has been set to be installed via shell and
-               # thus has been removed from the bioconda_packages hash
-                next BINARY if ( not $bioconda_packages_href->{$program} );
-
-                $target_path =
-                  catfile( $conda_env_path, q{share}, $program_directory,
-                    $binary );
+                $target_path = catfile( 
+                  $conda_env_path, q{share}, $program_directory, $binary );
             }
             ## Construct link_path
             my $link_path = catfile( $conda_env_path, q{bin}, $binary );
