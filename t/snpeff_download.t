@@ -25,7 +25,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.0;
+our $VERSION = 1.0.1;
 
 ## Constants
 Readonly my $SPACE   => q{ };
@@ -148,7 +148,7 @@ my %required_argument = (
 my %specific_argument = (
     config_file_path => {
         input           => catfile(qw{ path to config }),
-        expected_output => q{-c path/to/config},
+        expected_output => q{-c} . $SPACE . catfile( qw { path to config }),
     },
     verbose => {
         input           => 1,
