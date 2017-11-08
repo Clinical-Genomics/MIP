@@ -31,8 +31,8 @@ Readonly my $NEWLINE => qq{\n};
 sub download_genome_references {
 
 ## Function : Recipe for writing instructions to download genome references
-## Returns  : ""
-## Arguments: $reference_genome_versions_ref => Array with genome versions to downlaod {REF}
+## Returns  : 
+## Arguments: $reference_genome_versions_ref => Array with genome versions to download {REF}
 ##          : $reference_dir_path            => Path to reference directory
 ##          : $conda_prefix_path             => Conda prefix path
 ##          : $conda_environment             => Conda environment
@@ -104,13 +104,13 @@ sub download_genome_references {
     ## Retrieve logger object
     my $log = retrieve_log(
         {
-            log_name => q{mip_install::download_genome_refrences},
+            log_name => q{mip_install::download_genome_references},
             quiet    => $quiet,
             verbose  => $verbose,
         }
     );
 
-    say {$FILEHANDLE} q{### Download genome refrences};
+    say {$FILEHANDLE} q{### Download genome references};
     $log->info(q{Writting download instructions for references});
 
     ## Only activate conda environment if supplied by user
@@ -126,7 +126,7 @@ sub download_genome_references {
         say $FILEHANDLE $NEWLINE;
     }
 
-    say {$FILEHANDLE} q{## Generate shell script for refrence download};
+    say {$FILEHANDLE} q{## Generate shell script for reference download};
     download_reference(
         {
             reference_genome_versions_ref => $reference_genome_versions_ref,
@@ -137,7 +137,7 @@ sub download_genome_references {
     say {$FILEHANDLE} $NEWLINE;
 
     ## Launch bash
-    say {$FILEHANDLE} q{## Download refrences};
+    say {$FILEHANDLE} q{## Download references};
     say {$FILEHANDLE} q{bash download_reference.sh} . $NEWLINE;
 
     ## Cleanup
