@@ -11,7 +11,7 @@ use Carp;
 use English qw{ -no_match_vars };
 use Params::Check qw{ check allow last_error };
 use File::Basename qw{ fileparse };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catdir catfile splitpath };
 use POSIX;
 
 ## CPANM
@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vep analysis_vep_rio analysis_vep_sv };
@@ -39,34 +39,24 @@ Readonly my $UNDERSCORE => q{_};
 
 sub analysis_vep {
 
-##analysis_vep
-
-##Function : Varianteffectpredictor performs effect predictions and annotation of variants.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_path, family_id, $temp_directory, $outaligner_dir, $call_type, $xargs_file_counter
-##         : $parameter_href          => Parameter hash {REF}
-##         : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##         : $sample_info_href        => Info on samples and family hash {REF}
-##         : $file_info_href          => File_info hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href             => Job id hash {REF}
-##         : $program_name            => Program name
-##         : $program_info_path       => Program info path
-##         : $file_path               => File path
-##         : $family_id               => Family id
-##         : $temp_directory          => Temporary directory
-##         : $outaligner_dir          => Outaligner_dir used in the analysis
-##         : $call_type               => The variant call type
-##         : $xargs_file_counter      => The xargs file counter
+## Function : Varianteffectpredictor performs effect predictions and annotation of variants.
+## Returns  :
+## Arguments: $parameter_href          => Parameter hash {REF}
+##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $file_info_href          => File_info hash {REF}
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $job_id_href             => Job id hash {REF}
+##          : $program_name            => Program name
+##          : $program_info_path       => Program info path
+##          : $file_path               => File path
+##          : $family_id               => Family id
+##          : $temp_directory          => Temporary directory
+##          : $outaligner_dir          => Outaligner_dir used in the analysis
+##          : $call_type               => The variant call type
+##          : $xargs_file_counter      => The xargs file counter
 
     my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id;
-    my $temp_directory;
-    my $outaligner_dir;
-    my $call_type;
-    my $xargs_file_counter;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -78,6 +68,13 @@ sub analysis_vep {
     my $program_name;
     my $program_info_path;
     my $file_path;
+
+    ## Default(s)
+    my $family_id;
+    my $temp_directory;
+    my $outaligner_dir;
+    my $call_type;
+    my $xargs_file_counter;
 
     my $tmpl = {
         parameter_href => {
@@ -158,18 +155,18 @@ sub analysis_vep {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_core_number };
-    use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
-    use MIP::Set::File qw{ set_file_suffix };
     use MIP::Get::File qw{ get_file_suffix };
-    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
-    use MIP::QC::Record
-      qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info};
+    use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
+    use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
+    use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Set::File qw{ set_file_suffix };
+    use MIP::QC::Record
+      qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info};
 
-    ##Constants
+    ## Constants
     Readonly my $VEP_FORK_NUMBER => 4;
 
     ## Retrieve logger object
@@ -220,8 +217,7 @@ sub analysis_vep {
     my $stderr_path = $program_info_path . $DOT . q{stderr.txt};
 
     # Split to enable submission to &sample_info_qc later
-    my ( $volume, $directory, $stderr_file ) =
-      File::Spec->splitpath($stderr_path);
+    my ( $volume, $directory, $stderr_file ) = splitpath($stderr_path);
 
     ## Assign directories
     my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
@@ -481,36 +477,26 @@ sub analysis_vep {
 
 sub analysis_vep_rio {
 
-##analysis_vep_rio
-
-##Function : Varianteffectpredictor performs effect predictions and annotation of variants.
-##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_path, $stderr_path, $FILEHANDLE, family_id, $temp_directory, $outaligner_dir, $call_type, $xargs_file_counter
-##         : $parameter_href          => Parameter hash {REF}
-##         : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##         : $sample_info_href        => Info on samples and family hash {REF}
-##         : $file_info_href          => The file_info hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href             => Job id hash {REF}
-##         : $program_name            => Program name
-##         : $program_info_path       => The program info path
-##         : $file_path               => File path
-##         : $stderr_path             => Stderr path of the block script
-##         : $FILEHANDLE              => Filehandle to write to
-##         : $family_id               => Family id
-##         : $temp_directory          => Temporary directory
-##         : $outaligner_dir          => Outaligner_dir used in the analysis
-##         : $call_type               => The variant call type
-##         : $xargs_file_counter      => The xargs file counter
+## Function : Varianteffectpredictor performs effect predictions and annotation of variants.
+## Returns  : undef | $xargs_file_counter
+## Arguments: $parameter_href          => Parameter hash {REF}
+##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $file_info_href          => The file_info hash {REF}
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $job_id_href             => Job id hash {REF}
+##          : $program_name            => Program name
+##          : $program_info_path       => The program info path
+##          : $file_path               => File path
+##          : $stderr_path             => Stderr path of the block script
+##          : $FILEHANDLE              => Filehandle to write to
+##          : $family_id               => Family id
+##          : $temp_directory          => Temporary directory
+##          : $outaligner_dir          => Outaligner_dir used in the analysis
+##          : $call_type               => The variant call type
+##          : $xargs_file_counter      => The xargs file counter
 
     my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id;
-    my $temp_directory;
-    my $outaligner_dir;
-    my $call_type;
-    my $xargs_file_counter;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -524,6 +510,13 @@ sub analysis_vep_rio {
     my $file_path;
     my $stderr_path;
     my $FILEHANDLE;
+
+    ## Default(s)
+    my $family_id;
+    my $temp_directory;
+    my $outaligner_dir;
+    my $call_type;
+    my $xargs_file_counter;
 
     my $tmpl = {
         parameter_href => {
@@ -611,18 +604,18 @@ sub analysis_vep_rio {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_core_number };
-    use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
-    use MIP::Set::File qw{ set_file_suffix };
     use MIP::Get::File qw{ get_file_suffix };
-    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
-    use MIP::QC::Record
-      qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info};
+    use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
+    use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
+    use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Set::File qw{ set_file_suffix };
+    use MIP::QC::Record
+      qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info};
 
-    ##Constants
+    ## Constants
     Readonly my $VEP_FORK_NUMBER => 4;
 
     ## Retrieve logger object
@@ -656,8 +649,7 @@ sub analysis_vep_rio {
     $core_number = floor( $core_number / $VEP_FORK_NUMBER );
 
     # Split to enable submission to &sample_info_qc later
-    my ( $volume, $directory, $stderr_file ) =
-      File::Spec->splitpath($stderr_path);
+    my ( $volume, $directory, $stderr_file ) = splitpath($stderr_path);
 
     ## Assign directories
     my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
@@ -888,35 +880,25 @@ sub analysis_vep_rio {
 
 sub analysis_vep_sv {
 
-##analysis_vep_sv
-
-##Function : Varianteffectpredictor performs annotation of SV variants.
-##Returns  :
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $contigs_ref, $program_name, $program_info_path, $FILEHANDLE, family_id, $temp_directory, $outaligner_dir, $call_type, $xargs_file_counter
-##         : $parameter_href          => Parameter hash {REF}
-##         : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##         : $sample_info_href        => Info on samples and family hash {REF}
-##         : $file_info_href          => The file_info hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href             => Job id hash {REF}
-##         : $contigs_ref             => Contigs to analyse
-##         : $program_name            => Program name
-##         : $program_info_path       => The program info path
-##         : $FILEHANDLE              => Filehandle to write to
-##         : $family_id               => Family id
-##         : $temp_directory          => Temporary directory
-##         : $outaligner_dir          => Outaligner_dir used in the analysis
-##         : $call_type               => The variant call type
-##         : $xargs_file_counter      => The xargs file counter
+## Function : Varianteffectpredictor performs annotation of SV variants.
+## Returns  :
+## Arguments: $parameter_href          => Parameter hash {REF}
+##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $file_info_href          => The file_info hash {REF}
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $job_id_href             => Job id hash {REF}
+##          : $contigs_ref             => Contigs to analyse
+##          : $program_name            => Program name
+##          : $program_info_path       => The program info path
+##          : $FILEHANDLE              => Filehandle to write to
+##          : $family_id               => Family id
+##          : $temp_directory          => Temporary directory
+##          : $outaligner_dir          => Outaligner_dir used in the analysis
+##          : $call_type               => The variant call type
+##          : $xargs_file_counter      => The xargs file counter
 
     my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id;
-    my $temp_directory;
-    my $outaligner_dir;
-    my $call_type;
-    my $xargs_file_counter;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -927,6 +909,13 @@ sub analysis_vep_sv {
     my $job_id_href;
     my $contigs_ref;
     my $program_name;
+
+    ## Default(s)
+    my $family_id;
+    my $temp_directory;
+    my $outaligner_dir;
+    my $call_type;
+    my $xargs_file_counter;
 
     my $tmpl = {
         parameter_href => {
@@ -1017,17 +1006,17 @@ sub analysis_vep_sv {
 
     use MIP::Cluster qw{ get_core_number };
     use MIP::Delete::List qw{ delete_contig_elements delete_male_contig };
-    use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Get::File qw{ get_file_suffix };
-    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::IO::Files qw{ migrate_file };
-    use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
-    use MIP::QC::Record
-      qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
+    use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
+    use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::QC::Record
+      qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info };
 
-    ##Constants
+    ## Constants
     Readonly my $VEP_FORK_NUMBER => 4;
 
     ## Retrieve logger object
@@ -1080,8 +1069,7 @@ sub analysis_vep_sv {
     my $stderr_path = $program_info_path . $DOT . q{stderr.txt};
 
     # Split to enable submission to &sample_info_qc later
-    my ( $volume, $directory, $stderr_file ) =
-      File::Spec->splitpath($stderr_path);
+    my ( $volume, $directory, $stderr_file ) = splitpath($stderr_path);
 
     ## Assign directories
     my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
@@ -1348,12 +1336,9 @@ sub analysis_vep_sv {
 
 sub _get_assembly_name {
 
-##_get_assembly_name
-
-##Function : Get genome source and version to be compatible with VEP
-##Returns  : $assembly_version
-##Arguments: $assembly_version
-##         : $assembly_version => The genome source and version to be checked
+## Function : Get genome source and version to be compatible with VEP
+## Returns  : $assembly_version
+## Arguments: $assembly_version => The genome source and version to be checked
 
     my ($arg_href) = @_;
 
@@ -1387,14 +1372,11 @@ sub _get_assembly_name {
 
 sub _reformat_sv_with_no_length {
 
-##_reformat_sv_with_no_length
-
-##Function : Reformat SV with no length as these will fail in the annotation with VEP
-##Returns  :
-##Arguments: $infile_path_prefix, file_suffix, $FILEHANDLE
-##         : $infile_path_prefix => Infile path prefix
-##         : $file_suffix        => File suffix
-##         : $FILEHANDLE         => Filehandle to write to
+## Function : Reformat SV with no length as these will fail in the annotation with VEP
+## Returns  :
+## Arguments: $infile_path_prefix => Infile path prefix
+##          : $file_suffix        => File suffix
+##          : $FILEHANDLE         => Filehandle to write to
 
     my ($arg_href) = @_;
 

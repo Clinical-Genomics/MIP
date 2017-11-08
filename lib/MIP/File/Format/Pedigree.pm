@@ -3,7 +3,7 @@ package MIP::File::Format::Pedigree;
 use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;    #Allow unicode characters in this script
+use utf8;
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
 use Carp;
@@ -13,8 +13,6 @@ use Readonly;
 use English qw{ -no_match_vars };
 
 ## MIPs lib/
-use MIP::Unix::Standard_streams qw{ unix_standard_streams };
-use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 use MIP::Gnu::Coreutils qw{ gnu_echo };
 
 BEGIN {
@@ -22,96 +20,20 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ create_fam_file gatk_pedigree_flag };
+    our @EXPORT_OK =
+      qw{ create_fam_file gatk_pedigree_flag reload_previous_pedigree_info };
 }
 
 ## Constants
-Readonly my $TAB          => qq{\t};
+Readonly my $DOUBLE_QUOTE => q{"};
 Readonly my $NEWLINE      => qq{\n};
 Readonly my $QUOTE        => q{'};
-Readonly my $DOUBLE_QUOTE => q{"};
-Readonly my $UNDERSCORE   => q{_};
 Readonly my $SPACE        => q{ };
-
-# Ignore the warning from putting '#' in qw{}
-no warnings qw{ qw };
-
-sub gatk_pedigree_flag {
-
-## Function : Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-## Returns  : "%command"
-## Arguments: $fam_file_path            => The family file path
-##          : $program_name             => The program to use the pedigree file
-##          : $pedigree_validation_type => The pedigree validation strictness level
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $pedigree_validation_type;
-
-    ## Flatten argument(s)
-    my $fam_file_path;
-    my $program_name;
-
-    my $tmpl = {
-        fam_file_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$fam_file_path
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name,
-        },
-        pedigree_validation_type => {
-            default     => q{SILENT},
-            allow       => [qw{ SILENT STRICT }],
-            strict_type => 1,
-            store       => \$pedigree_validation_type
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $parent_counter;
-    my $pq_parent_counter = _build_parent_child_counter_regexp(
-        {
-
-            family_member => q{parent},
-        }
-    );
-
-    my $child_counter;
-    my $pq_child_counter = _build_parent_child_counter_regexp(
-        {
-
-            family_member => q{child},
-        }
-    );
-
-    my %command;
-
-    # Count the number of parents
-    $parent_counter = `$pq_parent_counter $fam_file_path`;
-
-    # ount the number of children
-    $child_counter = `$pq_child_counter $fam_file_path`;
-
-    if ( $parent_counter > 0 ) {
-
-        $command{pedigree_validation_type} = $pedigree_validation_type;
-
-        #Pedigree files for samples
-        $command{pedigree} = $fam_file_path;
-    }
-    return %command;
-}
+Readonly my $TAB          => qq{\t};
+Readonly my $UNDERSCORE   => q{_};
 
 sub create_fam_file {
 
@@ -128,17 +50,17 @@ sub create_fam_file {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $family_id_ref;
-    my $execution_mode;
-    my $include_header;
-
     ## Flatten argument(s)
     my $parameter_href;
     my $active_parameter_href;
     my $sample_info_href;
     my $fam_file_path;
     my $FILEHANDLE;
+
+    ## Default(s)
+    my $family_id_ref;
+    my $execution_mode;
+    my $include_header;
 
     my $tmpl = {
         parameter_href => {
@@ -188,23 +110,26 @@ sub create_fam_file {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger('MIP');
+    my $log = Log::Log4perl->get_logger(q{MIP});
 
-    my @fam_headers = qw{ #family_id sample_id father mother sex phenotype };
+    my @fam_headers =
+      ( q{#family_id}, qw{ sample_id father mother sex phenotype } );
 
     my @pedigree_lines;
     my $header;
 
-    # Add @fam_headers
+    ## Add @fam_headers
     if ($include_header) {
+
         push @pedigree_lines, join $TAB, @fam_headers;
     }
 
   SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
         my $sample_line = ${$family_id_ref};
 
       HEADER:
@@ -214,12 +139,14 @@ sub create_fam_file {
                 defined $parameter_href->{dynamic_parameter}{$sample_id}
                 { q{plink_} . $header } )
             {
+
                 $sample_line .=
                     $TAB
                   . $parameter_href->{dynamic_parameter}{$sample_id}
                   { q{plink_} . $header };
             }
             elsif ( defined $sample_info_href->{sample}{$sample_id}{$header} ) {
+
                 $sample_line .=
                   $TAB . $sample_info_href->{sample}{$sample_id}{$header};
             }
@@ -227,17 +154,19 @@ sub create_fam_file {
         push @pedigree_lines, $sample_line;
     }
 
-    # Execute directly
+    ## Execute directly
     if ( $execution_mode eq q{system} ) {
 
         # Create anonymous filehandle
         my $FILEHANDLE_SYS = IO::Handle->new();
+
         open $FILEHANDLE_SYS, q{>}, $fam_file_path
           or $log->logdie(qq{Can't open $fam_file_path: $ERRNO });
 
-      # Adds the information from the samples in pedigree_lines, separated by \n
+        ## Adds the information from the samples in pedigree_lines, separated by \n
       LINE:
         foreach my $line (@pedigree_lines) {
+
             say {$FILEHANDLE_SYS} $line;
         }
         $log->info( q{Wrote: } . $fam_file_path, $NEWLINE );
@@ -246,10 +175,11 @@ sub create_fam_file {
 
     if ( $execution_mode eq q{sbatch} ) {
 
-        # Check to see if file already exists
-        if ( !-f $fam_file_path ) {
+        ## Check to see if file already exists
+        if ( not -f $fam_file_path ) {
 
             if ($FILEHANDLE) {
+
                 say {$FILEHANDLE} q{#Generating '.fam' file};
 
                 ## Get parameters
@@ -266,6 +196,7 @@ sub create_fam_file {
                 say {$FILEHANDLE} $NEWLINE;
             }
             else {
+
                 $log->fatal(
 q{Create fam file[subroutine]:Using 'execution_mode=sbatch' requires a }
                       . q{filehandle to write to. Please supply filehandle to subroutine call}
@@ -281,10 +212,153 @@ q{Create fam file[subroutine]:Using 'execution_mode=sbatch' requires a }
     return;
 }
 
+sub gatk_pedigree_flag {
+
+## Function : Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
+## Returns  : %command
+## Arguments: $fam_file_path            => The family file path
+##          : $program_name             => The program to use the pedigree file
+##          : $pedigree_validation_type => The pedigree validation strictness level
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $fam_file_path;
+    my $program_name;
+
+    ## Default(s)
+    my $pedigree_validation_type;
+
+    my $tmpl = {
+        fam_file_path => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$fam_file_path
+        },
+        program_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$program_name,
+        },
+        pedigree_validation_type => {
+            default     => q{SILENT},
+            allow       => [qw{ SILENT STRICT }],
+            strict_type => 1,
+            store       => \$pedigree_validation_type
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $parent_counter;
+    my $pq_parent_counter = _build_parent_child_counter_regexp(
+        {
+            family_member => q{parent},
+        }
+    );
+
+    my $child_counter;
+    my $pq_child_counter = _build_parent_child_counter_regexp(
+        {
+            family_member => q{child},
+        }
+    );
+
+    my %command;
+
+    ## Count the number of parents
+    $parent_counter = `$pq_parent_counter $fam_file_path`;
+
+    ## Count the number of children
+    $child_counter = `$pq_child_counter $fam_file_path`;
+
+    if ( $parent_counter > 0 ) {
+
+        $command{pedigree_validation_type} = $pedigree_validation_type;
+
+        ## Pedigree files for samples
+        $command{pedigree} = $fam_file_path;
+    }
+    return %command;
+}
+
+sub reload_previous_pedigree_info {
+
+## Function : Updates sample_info hash with previous run pedigree info
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis
+##          : $sample_info_href      => Info on samples and family hash {REF}
+##          : $sample_info_file_path => Previuos sample info file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $sample_info_href;
+    my $sample_info_file_path;
+
+    my $tmpl = {
+        active_parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$active_parameter_href,
+        },
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href,
+        },
+        sample_info_file_path => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$sample_info_file_path
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::File::Format::Yaml qw{ load_yaml };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger(q{MIP});
+
+    if ( -f $active_parameter_href->{sample_info_file} ) {
+
+        $log->info( q{Loaded: } . $active_parameter_href->{sample_info_file},
+            $NEWLINE );
+
+        ## Loads a YAML file into an arbitrary hash and returns it.
+        # Load parameters from previous run from sample_info_file
+        my %previous_sample_info = load_yaml(
+            {
+                yaml_file => $active_parameter_href->{sample_info_file},
+            }
+        );
+
+        ## Update sample_info with pedigree information from previous run
+        ## Should be only pedigree keys in %allowed_entries
+        %{$sample_info_href} = _update_sample_info_hash(
+            {
+                sample_info_href          => $sample_info_href,
+                previous_sample_info_href => \%previous_sample_info,
+            }
+        );
+    }
+    return;
+}
+
 sub _build_parent_child_counter_regexp {
 
 ## Function : Create regexp to count the number of parents / children
-##          : $family_member => Parent or child
+## Returns  : $regexp
+## Arguments: $family_member => Parent or child
 
     my ($arg_href) = @_;
 
@@ -319,6 +393,71 @@ q?while (<>) { my @line = split(/\t/, $_); unless ($_=~/^#/) { if ( ($line[2] eq
       . q?; last;'?;
 
     return $regexp;
+}
+
+sub _update_sample_info_hash {
+
+## Function : Update sample_info with information from pedigree from previous run. Required e.g. if only updating single sample analysis chains from trio.
+## Returns  : %{$previous_sample_info_href}
+## Arguments: $previous_sample_info_href => Allowed parameters from pedigre file hash {REF}
+##          : $sample_info_href          => Info on samples and family hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $sample_info_href;
+    my $previous_sample_info_href;
+
+    my $tmpl = {
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href,
+        },
+        previous_sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$previous_sample_info_href
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  SAMPLE_ID:
+    foreach my $sample_id ( keys %{ $sample_info_href->{sample} } ) {
+
+        ## Alias
+        my $sample_href = \%{ $sample_info_href->{sample}{$sample_id} };
+        my $previous_sample_href =
+          \%{ $previous_sample_info_href->{sample}{$sample_id} };
+
+      PEDIGREE_KEY:
+        foreach my $pedigree_key ( keys %{$sample_href} ) {
+
+            ## Previous run information, which should be updated using pedigree from current analysis
+            if ( exists $previous_sample_href->{$pedigree_key} ) {
+
+                ## Required to update keys downstream
+                my $previous_pedigree_value =
+                  delete $sample_href->{$pedigree_key};
+
+                ## Update previous sample info key
+                $previous_sample_href->{$pedigree_key} =
+                  $previous_pedigree_value;
+            }
+            else {
+
+                ## New sample_id or key
+                $previous_sample_href->{$pedigree_key} =
+                  $sample_href->{$pedigree_key};
+            }
+        }
+    }
+    return %{$previous_sample_info_href};
 }
 
 1;

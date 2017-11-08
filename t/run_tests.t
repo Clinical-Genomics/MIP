@@ -268,7 +268,7 @@ sub test_modules {
     my $log = initiate_logger(
         {
             categories_ref => [qw{ TRACE ScreenApp }],
-            file_path  => $log_file,
+            file_path      => $log_file,
             log_name       => q{Run_tests},
         }
     );
@@ -313,15 +313,12 @@ sub test_modules {
 
 sub mip_scripts {
 
-##mip_scripts
+## Function : Test MIP kit completion
+## Returns  :
+## Arguments:
 
-##Function : Test MIP kit completion
-##Returns  : ""
-##Arguments:
-##         :
-
-    my @mip_scripts = qw{ calculate_af.pl download_reference.pl
-      mip_install.pl max_af.pl mip.pl qccollect.pl
+    my @mip_scripts = qw{ download_reference.pl
+      mip_install.pl mip.pl qccollect.pl
       vcfparser.pl perl_install.pl };
 
   SCRIPT:
@@ -331,16 +328,18 @@ sub mip_scripts {
             1, q{Found MIP file: } . $script );
     }
 
-    my %mip_sub_scripts;
-    $mip_sub_scripts{definitions} =
-      [qw{ define_download_references.yaml define_parameters.yaml }];
-    $mip_sub_scripts{t} =
-      [qw{ mip_install.t mip.t run_tests.t mip_analysis.t }];
-    $mip_sub_scripts{templates} = [
-        qw{ mip_config.yaml mip_travis_config.yaml
-          643594-miptest_pedigree.yaml
-          mip_log.yaml }
-    ];
+    my %mip_sub_scripts = (
+        utility_scripts =>
+          [qw{ calculate_af.pl covplots_exome.R covplots_genome.R max_af.pl }],
+        definitions =>
+          [qw{ define_download_references.yaml define_parameters.yaml }],
+        t         => [qw{ mip_install.t mip.t run_tests.t mip_analysis.t }],
+        templates => [
+            qw{ mip_config.yaml mip_travis_config.yaml
+              643594-miptest_pedigree.yaml
+              mip_log.yaml }
+        ],
+    );
 
     my @mip_directories =
       ( qw{ definitions templates lib }, catdir(qw{ t data }), );

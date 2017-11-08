@@ -3,26 +3,21 @@ package MIP::IO::Files;
 use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
-
-# Allow unicode characters in this script
 use utf8;
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
 use Carp;
 use autodie;
 use Params::Check qw{ check allow last_error };
-use File::Spec::Functions qw{ catfile };
-
-# Find directory of script
+use File::Spec::Functions qw{ catdir catfile splitpath };
 use FindBin qw{ $Bin };
 use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir };
 
 ##CPANM
 use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), q{lib} );
+use lib catdir( dirname($Bin), q{ lib } );
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -31,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -40,6 +35,7 @@ BEGIN {
 }
 
 ##Constants
+Readonly my $AMPERSAND  => q{&};
 Readonly my $ASTERIX    => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $EMPTY_STR  => q{};
@@ -49,22 +45,16 @@ Readonly my $UNDERSCORE => q{_};
 
 sub migrate_files {
 
-##migrate_files
-
-##Function : Copies files from source to destination.
-##Returns  : ""
-##Arguments: $infiles_ref, $outfile_path, $FILEHANDLE, $indirectory, $core_number, $file_ending
-##         : $infiles_ref  => Array of files to copy {REF}
-##         : $outfile_path => Outfile path
-##         : $FILEHANDLE   => Filehandle to write to
-##         : $indirectory  => The directory for the files to be copied
-##         : $core_number  => The number of cores that can be used
-##         : $file_ending  => File ending for infiles. {Optional}
+## Function : Copies files from source to destination.
+## Returns  :
+## Arguments: $infiles_ref  => Array of files to copy {REF}
+##          : $outfile_path => Outfile path
+##          : $FILEHANDLE   => Filehandle to write to
+##          : $indirectory  => The directory for the files to be copied
+##          : $core_number  => The number of cores that can be used
+##          : $file_ending  => File ending for infiles
 
     my ($arg_href) = @_;
-
-    ## Default(s)
-    my $file_ending;
 
     ## Flatten argument(s)
     my $infiles_ref;
@@ -72,6 +62,9 @@ sub migrate_files {
     my $FILEHANDLE;
     my $indirectory;
     my $core_number;
+
+    ## Default(s)
+    my $file_ending;
 
     my $tmpl = {
         infiles_ref => {
@@ -143,16 +136,13 @@ sub migrate_files {
 
 sub migrate_file {
 
-##migrate_file
-
-##Function : Copy file to from source ($infile_path) to destination ($outfile_path).
-##Returns  : "$infile_path_file_name"
-##Arguments: $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $xargs
-##         : $FILEHANDLE      => Filehandle to write to
-##         : $infile_path     => Infile path
-##         : $outfile_path    => Outfile path
-##         : $stderrfile_path => Stderrfile path
-##         : $xargs           => Use xargs if defined {Optional}
+## Function : Copy file to from source ($infile_path) to destination ($outfile_path).
+## Returns  : $infile_path_file_name
+## Arguments: $FILEHANDLE      => Filehandle to write to
+##          : $infile_path     => Infile path
+##          : $outfile_path    => Outfile path
+##          : $stderrfile_path => Stderrfile path
+##          : $xargs           => Use xargs if defined {Optional}
 
     my ($arg_href) = @_;
 
@@ -187,7 +177,7 @@ sub migrate_file {
 
     ## Split relative infile_path to file(s)
     my ( $infile_path_volume, $infile_path_directory, $infile_path_file_name )
-      = File::Spec->splitpath($infile_path);
+      = splitpath($infile_path);
 
     gnu_cp(
         {
@@ -202,7 +192,7 @@ sub migrate_file {
     # For print wait statement downstream
     if ( not defined $xargs ) {
 
-        say {$FILEHANDLE} q{&} . $SPACE;
+        say {$FILEHANDLE} $AMPERSAND . $SPACE;
     }
     print {$FILEHANDLE} $NEWLINE;
 
@@ -211,32 +201,24 @@ sub migrate_file {
 
 sub xargs_migrate_contig_files {
 
-##xargs_migrate_contig_files
-
-##Function : Migrates file(s) to or from temporary directory (depending on supplied arguments) using xargs.
-##Returns  : $xargs_file_counter
-##Arguments: $contigs_ref, $FILEHANDLE, $XARGSFILEHANDLE, $file_path, $temp_directory, $program_info_path, $infile, $indirectory, $outfile, $outdirectory, $core_number, $first_command, $xargs_file_counter, $file_ending
-##         : $contigs_ref        => Contigs to iterate over {REF}
-##         : $FILEHANDLE         => Sbatch filehandle to write to
-##         : $XARGSFILEHANDLE    => XARGS filehandle to write to
-##         : $file_path          => File name
-##         : $temp_directory     => Temporary directory
-##         : $program_info_path  => The program info path
-##         : $infile             => Infile name without ending attached
-##         : $indirectory        => In directory
-##         : $outfile            => OutFile name without ending attached
-##         : $outdirectory       => Out directory
-##         : $core_number        => The number of cores to use
-##         : $first_command      => The inital command
-##         : $xargs_file_counter => The xargs file counter
-##         : $file_ending        => File ending
+## Function : Migrates file(s) to or from temporary directory (depending on supplied arguments) using xargs.
+## Returns  : $xargs_file_counter
+## Arguments: $contigs_ref        => Contigs to iterate over {REF}
+##          : $FILEHANDLE         => Sbatch filehandle to write to
+##          : $XARGSFILEHANDLE    => XARGS filehandle to write to
+##          : $file_path          => File name
+##          : $temp_directory     => Temporary directory
+##          : $program_info_path  => The program info path
+##          : $infile             => Infile name without ending attached
+##          : $indirectory        => In directory
+##          : $outfile            => OutFile name without ending attached
+##          : $outdirectory       => Out directory
+##          : $core_number        => The number of cores to use
+##          : $first_command      => The inital command
+##          : $xargs_file_counter => The xargs file counter
+##          : $file_ending        => File ending
 
     my ($arg_href) = @_;
-
-    ## Default(s)
-    my $file_ending;
-    my $xargs_file_counter;
-    my $core_number;
 
     ## Flatten argument(s)
     my $contigs_ref;
@@ -250,6 +232,11 @@ sub xargs_migrate_contig_files {
     my $outfile;
     my $outdirectory;
     my $first_command;
+
+    ## Default(s)
+    my $file_ending;
+    my $xargs_file_counter;
+    my $core_number;
 
     my $tmpl = {
         contigs_ref => {
@@ -327,6 +314,7 @@ sub xargs_migrate_contig_files {
             ## Get parameters
             my $infile_path = catfile( $indirectory,
                 $infile . $UNDERSCORE . $contig . $file_ending );
+
             ## Copy file(s) to temporary directory.
             migrate_file(
                 {
@@ -338,7 +326,7 @@ sub xargs_migrate_contig_files {
                 }
             );
         }
-        if ( ( defined $outfile ) && ( defined $outdirectory ) ) {
+        if ( defined $outfile && defined $outdirectory ) {
 
             ## Get parameters
             my $infile_path = catfile( $temp_directory,

@@ -23,20 +23,23 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ check_filesystem_objects_existance check_file_version_exist check_dir_path_exist };
+      qw{ check_filesystem_objects_existance check_filesystem_objects_and_index_existance check_file_version_exist check_dir_path_exist check_target_bed_file_exist check_parameter_files };
 }
 
 ## Constants
+Readonly my $DOT     => q{.};
 Readonly my $NEWLINE => qq{\n};
 
-sub check_filesystem_objects_existance {
+sub check_filesystem_objects_and_index_existance {
 
-## Function : Checks if a file or directory file exists
-## Returns  : (0 | 1, $error_msg)
-## Arguments: $parameter_href => The parameters hash
+## Function : Checks if a file or directory file exists as well as index file. Croak if object or index file does not exist.
+## Returns  :
+## Arguments: $parameter_href => Parameters hash
 ##          : $object_name    => Object to check for existance
 ##          : $parameter_name => MIP parameter name {REF}
-##          : $object_type    => The type of item to check
+##          : $object_type    => Type of item to check
+##          : $path           => Path to check
+##          : $index_suffix   => Index file ending
 
     my ($arg_href) = @_;
 
@@ -45,6 +48,8 @@ sub check_filesystem_objects_existance {
     my $object_name;
     my $parameter_name;
     my $object_type;
+    my $path;
+    my $index_suffix;
 
     my $tmpl = {
         parameter_href => {
@@ -58,20 +63,111 @@ sub check_filesystem_objects_existance {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$object_name
+            store       => \$object_name,
         },
         parameter_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$parameter_name
+            store       => \$parameter_name,
         },
         object_type => {
             required    => 1,
             defined     => 1,
             allow       => [qw{ directory file }],
             strict_type => 1,
-            store       => \$object_type
+            store       => \$object_type,
+        },
+        path => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$path,
+        },
+        index_suffix => {
+            default     => q{gz},
+            allow       => [qw{ .gz }],
+            strict_type => 1,
+            store       => \$index_suffix
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger(q{MIP});
+
+    ## Special for file with "build_file" in config
+    ## These are handled downstream
+    return if ( defined $parameter_href->{$parameter_name}{build_file} );
+
+    my ( $exist, $error_msg ) = check_filesystem_objects_existance(
+        {
+            object_name    => $path,
+            parameter_name => $parameter_name,
+            object_type    => $object_type,
+        }
+    );
+    if ( not $exist ) {
+        $log->fatal($error_msg);
+        exit 1;
+    }
+
+    ## Check for tabix index as well
+    if ( $path =~ m{ $index_suffix$ }xsm ) {
+
+        my $path_index = $path . $DOT . q{tbi};
+
+        my ( $index_exist, $index_error_msg ) =
+          check_filesystem_objects_existance(
+            {
+                object_name    => $path_index,
+                parameter_name => $path_index,
+                object_type    => $object_type,
+            }
+          );
+        if ( not $index_exist ) {
+            $log->fatal($index_error_msg);
+            exit 1;
+        }
+    }
+    return;
+}
+
+sub check_filesystem_objects_existance {
+
+## Function : Checks if a file or directory file exists
+## Returns  : (0 | 1, $error_msg)
+## Arguments: $object_name    => Object to check for existance
+##          : $parameter_name => MIP parameter name {REF}
+##          : $object_type    => Type of item to check
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $object_name;
+    my $parameter_name;
+    my $object_type;
+
+    my $tmpl = {
+        object_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$object_name,
+        },
+        parameter_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$parameter_name,
+        },
+        object_type => {
+            required    => 1,
+            defined     => 1,
+            allow       => [qw{ directory file }],
+            strict_type => 1,
+            store       => \$object_type,
         },
     };
 
@@ -100,25 +196,20 @@ sub check_filesystem_objects_existance {
         ## Check existence of supplied file
         if ( not -f $object_name ) {
 
-            ## No autobuild
-            if ( defined $parameter_href->{$parameter_name}{build_file}
-                && $parameter_href->{$parameter_name}{build_file} == 0 )
-            {
+            $error_msg =
+                q{Could not find intended }
+              . $parameter_name
+              . q{ file: }
+              . $object_name;
 
-                $error_msg =
-                    q{Could not find intended }
-                  . $parameter_name
-                  . q{ file: }
-                  . $object_name;
-                return ( 0, $error_msg );
-            }
+            return 0, $error_msg;
         }
         else {
             ## File was found
             return 1;
         }
     }
-    return 0;
+    return;
 }
 
 sub check_file_version_exist {
@@ -139,13 +230,13 @@ sub check_file_version_exist {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$file_path_prefix
+            store       => \$file_path_prefix,
         },
         file_path_suffix => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$file_path_suffix
+            store       => \$file_path_suffix,
         },
     };
 
@@ -195,6 +286,204 @@ sub check_dir_path_exist {
     @existing_dir_paths = grep { -d } @{$dir_paths_ref};
 
     return @existing_dir_paths;
+}
+
+sub check_target_bed_file_exist {
+
+## Function : Check that supplied target file ends with ".bed" and otherwise exists.
+## Returns  :
+## Arguments: $parameter_name => MIP parameter name
+##            $path           => Path to check for ".bed" file ending
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_name;
+    my $path;
+
+    my $tmpl = {
+        parameter_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$parameter_name,
+        },
+        path =>
+          { required => 1, defined => 1, strict_type => 1, store => \$path },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger(q{MIP});
+
+    if ( $path !~ m{[.]bed$}xsm ) {
+
+        $log->fatal(
+            q{Could not find intendended '.bed file ending' for target file: }
+              . $path
+              . q{ in parameter '-}
+              . $parameter_name . q{'},
+            $NEWLINE
+        );
+        exit 1;
+    }
+}
+
+sub check_parameter_files {
+
+## Function : Checks that files/directories files exists
+## Returns  :
+## Arguments: $parameter_href          => Holds all parameters
+##          : $active_parameter_href   => Holds all set parameter for analysis
+##          : $associated_programs_ref => The parameters program(s) {REF}
+##          : $family_id               => The family_id
+##          : $parameter_name          => Parameter name
+##          : $parameter_exists_check  => Check if intendent file exists in reference directory
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $active_parameter_href;
+    my $associated_programs_ref;
+    my $parameter_name;
+    my $parameter_exists_check;
+
+    ## Default(s)
+    my $family_id;
+
+    my $tmpl = {
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
+        active_parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$active_parameter_href,
+        },
+        associated_programs_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => [],
+            strict_type => 1,
+            store       => \$associated_programs_ref
+        },
+        parameter_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$parameter_name,
+        },
+        parameter_exists_check => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$parameter_exists_check
+        },
+        family_id => {
+            default     => $arg_href->{active_parameter_href}{family_id},
+            strict_type => 1,
+            store       => \$family_id,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Check::Path
+      qw{ check_filesystem_objects_existance check_filesystem_objects_and_index_existance };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger(q{MIP});
+
+    my %only_wgs = ( gatk_genotypegvcfs_ref_gvcf => 1, );
+
+    ## Unpack parameters
+    my $consensus_analysis_type =
+      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
+
+    ## Do nothing since parameter is not required unless exome mode is enabled
+    return
+      if ( exists $only_wgs{$parameter_name}
+        && $consensus_analysis_type =~ / wgs /xsm );
+
+    ## Check all programs that use parameter
+  ASSOCIATED_PROGRAM:
+    foreach my $associated_program ( @{$associated_programs_ref} ) {
+
+        ## Active associated program
+        my $associated_program_name =
+          $active_parameter_href->{$associated_program};
+
+        ## Active parameter
+        my $active_parameter = $active_parameter_href->{$parameter_name};
+
+        ## Only check active associated programs parameters
+        next ASSOCIATED_PROGRAM if ( not $associated_program_name );
+
+        ## Only check active parameters
+        next ASSOCIATED_PROGRAM if ( not defined $active_parameter );
+
+        if ( ref $active_parameter eq q{ARRAY} ) {
+
+            ## Get path for array elements
+          PATH:
+            foreach my $path ( @{ $active_parameter_href->{$parameter_name} } )
+            {
+
+                check_filesystem_objects_and_index_existance(
+                    {
+                        parameter_href => $parameter_href,
+                        object_name    => $path,
+                        parameter_name => $parameter_name,
+                        object_type    => $parameter_exists_check,
+                        path           => $path,
+                    }
+                );
+            }
+            return;
+        }
+        elsif ( ref $active_parameter eq q{HASH} ) {
+
+            ## Get path for hash keys
+          PATH:
+            for my $path ( keys %{ $active_parameter_href->{$parameter_name} } )
+            {
+
+                check_filesystem_objects_and_index_existance(
+                    {
+                        parameter_href => $parameter_href,
+                        object_name    => $path,
+                        parameter_name => $parameter_name,
+                        object_type    => $parameter_exists_check,
+                        path           => $path,
+                    }
+                );
+            }
+            return;
+        }
+
+        ## File
+        my $path = $active_parameter_href->{$parameter_name};
+
+        check_filesystem_objects_and_index_existance(
+            {
+                parameter_href => $parameter_href,
+                object_name    => $path,
+                parameter_name => $parameter_name,
+                object_type    => $parameter_exists_check,
+                path           => $path,
+            }
+        );
+        return;
+    }
+    return;
 }
 
 1;

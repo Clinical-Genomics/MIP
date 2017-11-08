@@ -35,7 +35,6 @@ sub name_of_subroutine {
 
 ## Function : Perl wrapper for generic commands module.
 ## Returns  : @commands
-
 ## Arguments: $stdoutfile_path        => Stdoutfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path

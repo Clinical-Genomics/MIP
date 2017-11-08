@@ -10,7 +10,7 @@ use charnames qw{ :full :short };
 use Carp;
 use English qw{ -no_match_vars };
 use Params::Check qw{ check allow last_error };
-use File::Spec::Functions qw{ catdir catfile devnull };
+use File::Spec::Functions qw{ catdir catfile devnull splitpath };
 
 ## CPANM
 use Readonly;
@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_variant_integrity };
@@ -29,20 +29,17 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
-Readonly my $DOT => q{.};
+Readonly my $SPACE      => q{ };
+Readonly my $NEWLINE    => qq{\n};
+Readonly my $DOT        => q{.};
 Readonly my $UNDERSCORE => q{_};
-Readonly my $ASTERISK => q{*};
+Readonly my $ASTERISK   => q{*};
 
 sub analysis_variant_integrity {
 
-## analysis_variant_integrity
-
 ## Function : Tests sample for correct relatives (only performed for samples with relatives defined in pedigree file) performed on sequence data.
-## Returns  : ""
-## Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, family_id, $temp_directory, $outaligner_dir, $call_type, $infamily_directory, $outfamily_directory
-##          : $parameter_href          => Parameter hash {REF}
+## Returns  :
+## Arguments: $parameter_href          => Parameter hash {REF}
 ##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $file_info_href          => The file_info hash {REF}
@@ -58,12 +55,6 @@ sub analysis_variant_integrity {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $family_id;
-    my $temp_directory;
-    my $outaligner_dir;
-    my $call_type;
-
     ## Flatten argument(s)
     my $parameter_href;
     my $active_parameter_href;
@@ -74,6 +65,12 @@ sub analysis_variant_integrity {
     my $program_name;
     my $infamily_directory;
     my $outfamily_directory;
+
+    ## Default(s)
+    my $family_id;
+    my $temp_directory;
+    my $outaligner_dir;
+    my $call_type;
 
     my $tmpl = {
         parameter_href => {
@@ -141,31 +138,31 @@ sub analysis_variant_integrity {
         },
         call_type =>
           { default => q{BOTH}, strict_type => 1, store => \$call_type },
-          infamily_directory => {
+        infamily_directory => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$infamily_directory
-          },
+        },
         outfamily_directory => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$outfamily_directory
-          },
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_file_suffix };
     use MIP::IO::Files qw{ migrate_file };
-    use MIP::File::Format::Pedigree qw{ create_fam_file };
-    use MIP::Program::Variantcalling::Variant_integrity
-      qw{ variant_integrity_mendel variant_integrity_father };
-    use MIP::QC::Record qw{ add_program_outfile_to_sample_info};
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_family_dead_end };
+    use MIP::Program::Variantcalling::Variant_integrity
+      qw{ variant_integrity_mendel variant_integrity_father };
+    use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::QC::Record qw{ add_program_outfile_to_sample_info};
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -202,8 +199,7 @@ sub analysis_variant_integrity {
 
     # Split to enable submission to &sample_info_qc later
     my ( $volume, $directory, $program_info_file ) =
-      File::Spec->splitpath($program_info_path)
-      ;
+      splitpath($program_info_path);
 
     # To enable submission to &sample_info_qc later
     my $stderr_file = $program_info_file . $DOT . q{stderr.txt};
@@ -233,7 +229,8 @@ sub analysis_variant_integrity {
     );
 
     my $infile_path =
-      catfile( $infamily_directory, $infile_prefix . $infile_suffix . $ASTERISK );
+      catfile( $infamily_directory,
+        $infile_prefix . $infile_suffix . $ASTERISK );
 
     my $family_file =
       catfile( $outfamily_file_directory, $family_id . $DOT . q{fam} );
@@ -260,7 +257,7 @@ sub analysis_variant_integrity {
     say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     ## Variant_integrity
-    if ( scalar @{ $active_parameter_href->{sample_ids} }  > 1 )
+    if ( scalar @{ $active_parameter_href->{sample_ids} } > 1 )
     {    #Only perform if more than 1 sample
 
         if ( $parameter_href->{dynamic_parameter}{trio} ) {
@@ -269,7 +266,8 @@ sub analysis_variant_integrity {
                 {
                     infile_path  => $file_path_prefix . $infile_suffix,
                     outfile_path => catfile(
-                        $outfamily_directory, $family_id . $UNDERSCORE . q{mendel.txt}
+                        $outfamily_directory,
+                        $family_id . $UNDERSCORE . q{mendel.txt}
                     ),
                     family_file => $family_file,
                     family_type =>
@@ -287,7 +285,7 @@ sub analysis_variant_integrity {
                         sample_info_href => $sample_info_href,
                         program_name     => q{variant_integrity_mendel},
                         outdirectory     => $outfamily_directory,
-                        outfile          => $family_id . $UNDERSCORE . q{mendel.txt},
+                        outfile => $family_id . $UNDERSCORE . q{mendel.txt},
                     }
                 );
             }
@@ -295,7 +293,7 @@ sub analysis_variant_integrity {
 
     }
 
-    SAMPLE_ID:
+  SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
         # Alias
@@ -303,13 +301,14 @@ sub analysis_variant_integrity {
           $sample_info_href->{sample}{$sample_id}{father};
 
         # Father is included in analysis
-        if ( $father_info ) {
+        if ($father_info) {
 
             variant_integrity_father(
                 {
                     infile_path  => $file_path_prefix . $infile_suffix,
                     outfile_path => catfile(
-                        $outfamily_directory, $family_id . $UNDERSCORE . q{father.txt}
+                        $outfamily_directory,
+                        $family_id . $UNDERSCORE . q{father.txt}
                     ),
                     family_file => $family_file,
                     family_type =>
@@ -327,7 +326,7 @@ sub analysis_variant_integrity {
                         sample_info_href => $sample_info_href,
                         program_name     => q{variant_integrity_father},
                         outdirectory     => $outfamily_directory,
-                        outfile          => $family_id . $UNDERSCORE . q{father.txt},
+                        outfile => $family_id . $UNDERSCORE . q{father.txt},
                     }
                 );
             }
@@ -350,8 +349,7 @@ sub analysis_variant_integrity {
             }
         );
     }
-
     return;
-
 }
+
 1;
