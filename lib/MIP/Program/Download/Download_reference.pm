@@ -34,7 +34,8 @@ Readonly my $SPACE => q{ };
 
 sub download_reference {
 
-## Function : Perl wrapper for writing download_reference command to filehandle
+## Function : Perl wrapper for writing download_reference command to filehandle. 
+##          : Based on download_reference version 0.0.3
 ## Returns  : @commands
 ## Arguments: $reference_genome_versions_ref => Array with genome versions to downlaod {REF}
 ##          : $reference_dir_path            => Reference directory
