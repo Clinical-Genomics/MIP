@@ -11717,7 +11717,6 @@ sub msamtools_mpileup {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Replace_iupac qw{ replace_iupac };
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
@@ -11726,6 +11725,7 @@ sub msamtools_mpileup {
     use MIP::Program::Alignment::Samtools qw(samtools_mpileup);
     use MIP::Program::Variantcalling::Bcftools
       qw(bcftools_call bcftools_filter bcftools_norm);
+    use MIP::Program::Variantcalling::Perl qw{ replace_iupac };
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);

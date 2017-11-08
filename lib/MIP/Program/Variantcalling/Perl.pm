@@ -1,4 +1,4 @@
-package MIP::File::Format::Replace_iupac;
+package MIP::Program::Variantcalling::Perl;
 
 use strict;
 use warnings;
