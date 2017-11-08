@@ -67,8 +67,6 @@ sub replace_iupac {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands;
-
     ## Compose $regexp
     # Don't apply to comments
     my $regexp = q{if($_=~/^#/) {print $_;}} . $SPACE;
@@ -92,20 +90,13 @@ sub replace_iupac {
     # Add Pipe in front of regexp
     $regexp = $PIPE . $SPACE . $regexp;
 
-    push @commands, $regexp;
+    print {$FILEHANDLE} $regexp;
 
-    push @commands,
-      unix_standard_streams(
+    unix_standard_streams(
         {
             stderrfile_path => $stderrfile_path,
-        }
-      );
+            FILEHANDLE      => $FILEHANDLE,
 
-    unix_write_to_file(
-        {
-            commands_ref => \@commands,
-            separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
         }
     );
     return;
