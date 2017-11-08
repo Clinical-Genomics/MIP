@@ -42,6 +42,7 @@ use MIP::Recipes::Install::Mip_scripts qw{ install_mip_scripts };
 use MIP::Recipes::Install::Picard qw{ install_picard };
 use MIP::Recipes::Install::Pip qw{ install_pip_packages };
 use MIP::Recipes::Install::Plink2 qw{ install_plink2 };
+use MIP::Recipes::Install::Reference qw{ download_genome_references };
 use MIP::Recipes::Install::Rhocall qw{ install_rhocall };
 use MIP::Recipes::Install::Sambamba qw{ install_sambamba };
 use MIP::Recipes::Install::SnpEff qw{ install_snpeff };
@@ -144,7 +145,7 @@ $parameter{shell}{snpeff}{snpeff_genome_versions} =
   [qw{ GRCh37.75 GRCh38.86 }];
 $parameter{reference_genome_versions} = [qw{ GRCh37 hg38 }];
 
-my $VERSION = q{1.2.16};
+my $VERSION = q{1.2.17};
 
 GetOptions(
     q{see|bash_set_errexit}    => \$parameter{bash_set_errexit},
@@ -396,11 +397,17 @@ for my $shell_program (@shell_programs_to_install) {
 }
 
 ## Download reference genome if requested
-if ( exists $parameter{reference_dir} && $parameter{reference_dir} ) {
-    references(
+if ( $parameter{reference_dir} ) {
+    download_genome_references(
         {
-            parameter_href => \%parameter,
-            FILEHANDLE     => $FILEHANDLE,
+            reference_genome_versions_ref =>
+              $parameter{reference_genome_versions},
+            reference_dir_path => $parameter{reference_dir},
+            conda_prefix_path  => $parameter{conda_prefix_path},
+            conda_environment  => $parameter{conda_environment},
+            quiet              => $parameter{quiet},
+            verbose            => $parameter{verbose},
+            FILEHANDLE         => $FILEHANDLE,
         }
     );
 }
@@ -682,89 +689,3 @@ sub get_programs_for_shell_installation {
 
     return @shell_programs;
 }
-
-sub references {
-
-##Function : Install references
-##Returns  : ""
-##Arguments: $parameter_href => Holds all parameters
-##         : $FILEHANDLE     => Filehandle to write to
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
-        FILEHANDLE => {
-            required => 1,
-            defined  => 1,
-            store    => \$FILEHANDLE
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Program::Download::Download_reference qw{ download_reference };
-
-    my $pwd = cwd();
-
-    ## Only activate conda environment if supplied by user
-    if ( $parameter_href->{conda_environment} ) {
-        ## Activate conda environment
-        say $FILEHANDLE q{## Activate conda environment};
-        conda_source_activate(
-            {
-                FILEHANDLE => $FILEHANDLE,
-                env_name   => $parameter_href->{conda_environment},
-            }
-        );
-        say $FILEHANDLE $NEWLINE;
-    }
-
-    $log->info(q{Writting install instructions for references});
-
-    download_reference(
-        {
-            reference_genome_versions_ref =>
-              $parameter_href->{reference_genome_versions},
-            reference_dir_path => $parameter_href->{reference_dir},
-            FILEHANDLE         => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-    ## Launch bash
-    say {$FILEHANDLE} q{bash download_reference.sh} . $NEWLINE;
-
-    ## Cleanup
-    gnu_rm(
-        {
-            infile_path => q{download_reference.sh},
-            FILEHANDLE  => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-    ## Deactivate conda environment if conda_environment exists
-    if ( $parameter_href->{conda_environment} ) {
-        say $FILEHANDLE q{## Deactivate conda environment};
-        conda_source_deactivate(
-            {
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say $FILEHANDLE $NEWLINE;
-    }
-
-    return;
-}
-
