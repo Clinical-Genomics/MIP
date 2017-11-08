@@ -71,7 +71,7 @@ use MIP::Recipes::Build::Human_genome_prerequisites
 use MIP::Recipes::Analysis::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
 use MIP::Recipes::Analysis::Cnvnator qw{ analysis_cnvnator };
 use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
-use MIP::Recipes::Analysis::Freebayes qw { analysis_frebayes_calling };
+use MIP::Recipes::Analysis::Freebayes qw { analysis_freebayes_calling };
 use MIP::Recipes::Analysis::Gatk_baserecalibration
   qw{ analysis_gatk_baserecalibration };
 use MIP::Recipes::Analysis::Gatk_combinevariantcallsets
@@ -2100,13 +2100,20 @@ if ( $active_parameter{psamtools_mpileup} > 0 ) {    #Run samtools mpileup
     );
 }
 
-#Run Freebayes
+# Run Freebayes
 if ( $active_parameter{pfreebayes} > 0 ) {
 
     $log->info( q{[Freebayes]} );
     my $program_name = q{freebayes};
 
-    analysis_frebayes_calling(
+    my $program_outdirectory_name =
+      $parameter{pfreebayes}{outdir_name};
+
+    my $outfamily_directory =
+      catfile( $active_parameter{outdata_dir},
+        $active_parameter{family_id}, $active_parameter{outaligner_dir}, $program_outdirectory_name );
+
+    analysis_freebayes_calling(
         {
             parameter_href          => \%parameter,
             active_parameter_href   => \%active_parameter,
@@ -2115,6 +2122,7 @@ if ( $active_parameter{pfreebayes} > 0 ) {
             infile_lane_prefix_href => \%infile_lane_prefix,
             job_id_href             => \%job_id,
             program_name            => $program_name,
+            outfamily_directory     => $outfamily_directory,
         }
     );
 }
@@ -11709,6 +11717,7 @@ sub msamtools_mpileup {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File::Format::Replace_iupac qw{ replace_iupac };
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
@@ -11929,7 +11938,7 @@ q?\'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %M
             ## Replace the IUPAC code in alternative allels with N for input stream and writes to stream
             replace_iupac(
                 {
-                    stderr_path => $xargs_file_path_prefix . "."
+                    stderrfile_path => $xargs_file_path_prefix . "."
                       . $contig
                       . "_replace_iupac.stderr.txt",
                     FILEHANDLE => $XARGSFILEHANDLE
@@ -19153,67 +19162,6 @@ sub check_sample_id_in_parameter {
                 }
             }
         }
-    }
-}
-
-sub replace_iupac {
-
-##replace_iupac
-
-##Function : Replace the IUPAC code in alternative allels with N for input stream and writes to stream.
-##Returns  : ""
-##Arguments: $FILEHANDLE, $stderr_path, $xargs
-##         : $FILEHANDLE  => Sbatch filehandle to write to
-##         : $stderr_path => Stderr path to errors write to
-##         : $xargs       => Write on xargs format
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $xargs;
-
-    ## Flatten argument(s)
-    my $FILEHANDLE;
-    my $stderr_path;
-
-    my $tmpl = {
-        FILEHANDLE => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$FILEHANDLE
-        },
-        stderr_path => { strict_type => 1, store => \$stderr_path },
-        xargs       => {
-            default     => 1,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$xargs
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    print {$FILEHANDLE} "| ";           #Pipe
-    print {$FILEHANDLE} "perl -nae ";
-
-    if ($xargs) {                       #Add escape char
-
-        print {$FILEHANDLE}
-q?\'if($_=~/^#/) {print $_;} else { @F[4] =~ s/W|K|Y|R|S|M/N/g; print join(\"\\\t\", @F), \"\\\n\"; }\' ?
-          ; #substitute IUPAC code with N to not break vcf specifications (GRCh38)
-    }
-    else {
-
-        print {$FILEHANDLE}
-q?'if($_=~/^#/) {print $_;} else { @F[4] =~ s/W|K|Y|R|S|M/N/g; print join("\t", @F), "\n"; }' ?
-          ; #substitute IUPAC code with N to not break vcf specifications (GRCh38)
-    }
-    if ($stderr_path) {
-
-        print {$FILEHANDLE} "2>> "
-          . $stderr_path
-          . " ";    #Redirect output to program specific stderr file
     }
 }
 

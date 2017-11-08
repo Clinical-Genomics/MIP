@@ -24,7 +24,7 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_frebayes_calling };
+    our @EXPORT_OK = qw{ analysis_freebayes_calling };
 
 }
 
@@ -36,9 +36,9 @@ Readonly my $PIPE       => q{|};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
 
-sub analysis_frebayes_calling {
+sub analysis_freebayes_calling {
 
-## Function : DESCRIPTION OF RECIPE
+## Function : Call snv/small indels using freebayes
 ## Returns  :
 ## Arguments: $parameter_href          => Parameter hash {REF}
 ##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
@@ -48,6 +48,8 @@ sub analysis_frebayes_calling {
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $call_type               => Call type
 ##          : $xargs_file_counter      => Xargs file counter
+##          : $program_name            => Program name
+##          : $outfamily_directory     => Out family directory
 ##          : $family_id               => Family id
 ##          : $temp_directory          => Temp directory
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
@@ -69,6 +71,7 @@ sub analysis_frebayes_calling {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
+    my $outfamily_directory;
 
     my $tmpl = {
         parameter_href => {
@@ -119,6 +122,12 @@ sub analysis_frebayes_calling {
             strict_type => 1,
             store       => \$program_name,
         },
+        outfamily_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$outfamily_directory,
+        },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
@@ -147,6 +156,7 @@ sub analysis_frebayes_calling {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File::Format::Replace_iupac qw{ replace_iupac };
     use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Processmanagement::Slurm_processes
@@ -192,7 +202,7 @@ sub analysis_frebayes_calling {
             directory_id          => $family_id,
             program_name          => $program_name,
             program_directory =>
-              catfile( lc($outaligner_dir), $program_outdirectory_name ),
+              catfile( $outaligner_dir, $program_outdirectory_name ),
             core_number    => $core_number,
             process_time   => $time,
             temp_directory => $temp_directory,
@@ -200,17 +210,16 @@ sub analysis_frebayes_calling {
     );
 
     ## Assign directories
-    my $outfamily_file_directory =
-      catfile( $active_parameter_href->{outdata_dir},
-        $family_id, $outaligner_dir, $program_outdirectory_name );
-    my $outfamily_directory = catfile( $active_parameter_href->{outdata_dir},
-        $family_id, $outaligner_dir, $program_outdirectory_name );
     $parameter_href->{$mip_program_name}{indirectory} = $outfamily_directory;
 
     ## Assign file_tags
     my $outfile_tag =
       $file_info_href->{$family_id}{$mip_program_name}{file_tag};
+
+    ## Files
     my $outfile_prefix = $family_id . $outfile_tag . $call_type;
+
+    ## Paths
     my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
 
     ## Assign suffix from baserecalibration jobid chain
@@ -228,7 +237,7 @@ sub analysis_frebayes_calling {
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
             job_id_chain   => $job_id_chain,
-            file_suffix    => $parameter_href->{$mip_program_name}{outfile_suffix},
+            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
         }
     );
 
@@ -252,8 +261,11 @@ sub analysis_frebayes_calling {
         ## Assign file_tags
         my $infile_tag =
           $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
+
+        ## Files
         my $infile_prefix = $merged_infile_prefix . $infile_tag;
 
+        ## Paths
         $file_path_prefix{$sample_id} =
           catfile( $temp_directory, $infile_prefix );
 
@@ -270,8 +282,7 @@ sub analysis_frebayes_calling {
                 xargs_file_counter => $xargs_file_counter,
                 infile             => $infile_prefix,
                 indirectory        => $insample_directory,
-                file_ending        => substr( $infile_suffix, 0, 2 )
-                  . $ASTERISK,    #q{.bam} -> ".b*" for getting index as well
+                file_ending    => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
                 temp_directory => $temp_directory,
             }
         );
@@ -296,6 +307,8 @@ sub analysis_frebayes_calling {
   CONTIG:
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
+        my $stderrfile_path = $xargs_file_path_prefix . $DOT . $contig;
+
         ## Assemble file paths by adding file ending
         my @file_paths =
           map { $file_path_prefix{$_} . $UNDERSCORE . $contig . $infile_suffix }
@@ -306,11 +319,7 @@ sub analysis_frebayes_calling {
                 infile_paths_ref => \@file_paths,
                 referencefile_path =>
                   $active_parameter_href->{human_genome_reference},
-                stderrfile_path => $xargs_file_path_prefix
-                  . $DOT
-                  . $contig
-                  . $DOT
-                  . q{stderr.txt},
+                stderrfile_path => $stderrfile_path . $DOT . q{stderr.txt},
                 apply_standard_filter      => 1,
                 calculate_genotype_quality => 1,
                 FILEHANDLE                 => $XARGSFILEHANDLE,
@@ -320,9 +329,7 @@ sub analysis_frebayes_calling {
 
         bcftools_filter(
             {
-                stderrfile_path => $xargs_file_path_prefix
-                  . $DOT
-                  . $contig
+                stderrfile_path => $stderrfile_path
                   . $UNDERSCORE
                   . q{filter.stderr.txt},
                 soft_filter => q{LowQual},
@@ -338,9 +345,7 @@ sub analysis_frebayes_calling {
             ## Replace the IUPAC code in alternative allels with N for input stream and writes to stream
             replace_iupac(
                 {
-                    stderr_path => $xargs_file_path_prefix
-                      . $DOT
-                      . $contig
+                    stderrfile_path => $stderrfile_path
                       . $UNDERSCORE
                       . q{filter.stderr.txt},
                     FILEHANDLE => $XARGSFILEHANDLE
@@ -361,13 +366,9 @@ sub analysis_frebayes_calling {
                   . $contig
                   . $outfile_suffix,
                 multiallelic    => q{-},
-                stderrfile_path => catfile(
-                        $xargs_file_path_prefix
-                      . $DOT
-                      . $contig
-                      . $UNDERSCORE
-                      . q{norm.stderr.txt}
-                ),
+                stderrfile_path => $stderrfile_path
+                  . $UNDERSCORE
+                  . q{norm.stderr.txt},
             }
         );
         say {$XARGSFILEHANDLE} $NEWLINE;
@@ -396,8 +397,9 @@ sub analysis_frebayes_calling {
     );
     say {$FILEHANDLE} q{wait} . $NEWLINE;
 
-    close $FILEHANDLE;
-    close $XARGSFILEHANDLE;
+    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $XARGSFILEHANDLE
+      or $log->logcroak(q{Could not close XARGSFILEHANDLE});
 
     if ( $mip_program_mode == 1 ) {
 
@@ -405,16 +407,9 @@ sub analysis_frebayes_calling {
             {
                 sample_info_href => $sample_info_href,
                 program_name     => q{freebayes},
-                outdirectory     => $outfamily_directory,
-                outfile          => $outfile_prefix . $outfile_suffix,
-            }
-        );
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                program_name     => q{bcftools},
-                outdirectory     => $outfamily_directory,
-                outfile          => $outfile_prefix . $outfile_suffix,
+                path             => catfile(
+                    $outfamily_directory, $outfile_prefix . $outfile_suffix
+                ),
             }
         );
 
