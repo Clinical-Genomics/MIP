@@ -14,10 +14,11 @@ use Cwd;
 use File::Spec::Functions qw{ catdir };
 
 ## MIPs lib/
-use MIP::Unix::Write_to_file qw{ unix_write_to_file };
-use MIP::Unix::Standard_streams qw{ unix_standard_streams };
-use MIP::Language::Java qw{ java_core };
 use MIP::Gnu::Coreutils qw{ gnu_rm };
+use MIP::Language::Java qw{ java_core };
+use MIP::Script::Utils qw{ create_temp_dir };
+use MIP::Unix::Standard_streams qw{ unix_standard_streams };
+use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 ## Constants
 Readonly my $SPACE      => q{ };
@@ -30,7 +31,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.0.1;
+    our $VERSION = 1.0.2;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ snpeff_download };
@@ -43,9 +44,7 @@ sub snpeff_download {
 
 ## Function : Write instructions to download snpeff database
 ## Returns  : @commands
-## Arguments: $FILEHANDLE, $memory_allocation, $config_file_path, $genome_version_database, $jar_path, $verbose
-##          : $stderrfile_path, stderrfile_path_append, $stdoutfile_path
-##          : $FILEHANDLE              => FILEHANDLE to write to
+## Arguments: $FILEHANDLE              => FILEHANDLE to write to
 ##          : $memory_allocation       => Java memory allocation
 ##          : $config_file_path        => Path to snpeff config file
 ##          : $genome_version_database => Database to be downloaded
@@ -126,8 +125,8 @@ sub snpeff_download {
 
     ## Create optional temporary directory
     if ($temp_directory) {
-        $temp_directory =
-          catdir( cwd, q{snpeff_temp} . $UNDERSCORE . int rand 1000 );
+        $temp_directory = create_temp_dir( { FILEHANDLE => $FILEHANDLE } );
+        say {$FILEHANDLE} $NEWLINE;
     }
 
     ## Build base command
@@ -173,6 +172,7 @@ sub snpeff_download {
     );
 
     if ($temp_directory) {
+        say {$FILEHANDLE} $NEWLINE;
         gnu_rm(
             {
                 infile_path => $temp_directory,
