@@ -482,9 +482,9 @@ sub check_human_genome_file_endings {
         get_seq_dict_contigs(
             {
                 contigs_ref   => \@{ $file_info_href->{contigs} },
-                reference_dir => \$reference_dir,
+                reference_dir => $reference_dir,
                 human_genome_reference_name_prefix =>
-                  \$human_genome_reference_name_prefix,
+                  $human_genome_reference_name_prefix,
             }
         );
     }

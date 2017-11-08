@@ -9,6 +9,7 @@ use charnames qw{ :full :short };
 use Carp;
 use English qw{ -no_match_vars };
 use Params::Check qw{ check allow last_error };
+use File::Spec::Functions qw{ catfile };
 
 ## CPANM
 use Readonly;
