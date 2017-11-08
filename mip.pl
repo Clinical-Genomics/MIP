@@ -12211,7 +12211,7 @@ sub freebayes {
     use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use Program::Variantcalling::Freebayes qw(calling);
+    use MIP::Program::Variantcalling::Freebayes qw(freebayes_calling);
     use MIP::Program::Variantcalling::Bcftools
       qw(bcftools_filter bcftools_norm);
     use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
@@ -12352,7 +12352,7 @@ sub freebayes {
           map { $file_path_prefix{$_} . "_" . $contig . $infile_suffix }
           @{ $active_parameter_href->{sample_ids} };
 
-        calling(
+        freebayes_calling(
             {
                 infile_paths_ref => \@file_paths,
                 referencefile_path =>

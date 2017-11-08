@@ -25,30 +25,30 @@ use List::Util qw{ any };
 ## MIPs lib/
 #Add MIPs internal lib
 use lib catdir( $Bin, q{lib} );
-use MIP::Language::Shell qw{ create_bash_file };
+use MIP::Check::Path qw{ check_dir_path_exist };
 use MIP::Gnu::Coreutils qw{ gnu_rm };
+use MIP::Language::Shell qw{ create_bash_file };
+use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Package_manager::Conda
   qw{ conda_source_activate conda_source_deactivate };
 use MIP::Script::Utils qw{ help };
-use MIP::Check::Path qw{ check_dir_path_exist };
-use MIP::Log::MIP_log4perl qw{ initiate_logger };
 
 ## Recipes
-use MIP::Recipes::Install::Conda
-  qw{ setup_conda_env install_bioconda_packages finish_bioconda_package_install };
-use MIP::Recipes::Install::Vep qw{ install_vep };
-use MIP::Recipes::Install::Pip qw{ install_pip_packages };
-use MIP::Recipes::Install::Picard qw{ install_picard };
-use MIP::Recipes::Install::Sambamba qw{ install_sambamba };
 use MIP::Recipes::Install::Bedtools qw{ install_bedtools };
-use MIP::Recipes::Install::Vt qw{ install_vt };
-use MIP::Recipes::Install::Plink2 qw{ install_plink2 };
-use MIP::Recipes::Install::SnpEff qw{ install_snpeff };
-use MIP::Recipes::Install::Rhocall qw{ install_rhocall };
 use MIP::Recipes::Install::Cnvnator qw{ install_cnvnator };
-use MIP::Recipes::Install::Tiddit qw{ install_tiddit };
-use MIP::Recipes::Install::Svdb qw{ install_svdb };
+use MIP::Recipes::Install::Conda
+  qw{ setup_conda_env install_bioconda_packages };
 use MIP::Recipes::Install::Mip_scripts qw{ install_mip_scripts };
+use MIP::Recipes::Install::Picard qw{ install_picard };
+use MIP::Recipes::Install::Pip qw{ install_pip_packages };
+use MIP::Recipes::Install::Plink2 qw{ install_plink2 };
+use MIP::Recipes::Install::Rhocall qw{ install_rhocall };
+use MIP::Recipes::Install::Sambamba qw{ install_sambamba };
+use MIP::Recipes::Install::SnpEff qw{ install_snpeff };
+use MIP::Recipes::Install::Svdb qw{ install_svdb };
+use MIP::Recipes::Install::Tiddit qw{ install_tiddit };
+use MIP::Recipes::Install::Vep qw{ install_vep };
+use MIP::Recipes::Install::Vt qw{ install_vt };
 
 our $USAGE = build_usage( {} );
 
@@ -144,7 +144,7 @@ $parameter{shell}{snpeff}{snpeff_genome_versions} =
   [qw{ GRCh37.75 GRCh38.86 }];
 $parameter{reference_genome_versions} = [qw{ GRCh37 hg38 }];
 
-my $VERSION = q{1.2.14};
+my $VERSION = q{1.2.16};
 
 GetOptions(
     q{see|bash_set_errexit}    => \$parameter{bash_set_errexit},
@@ -155,15 +155,19 @@ GetOptions(
     q{bcv|bioconda=s}          => \%{ $parameter{bioconda} },
     q{pip|pip=s}               => \%{ $parameter{pip} },
     q{pyv|python_version=s}    => \$parameter{python_version},
-    q{pic|picard:s}            => \$parameter{shell}{picard}{version},
-    q{sbb|sambamba:s}          => \$parameter{shell}{sambamba}{version},
-    q{bet|bedtools:s}          => \$parameter{shell}{bedtools}{version},
-    q{vt|vt:s}                 => \$parameter{shell}{vt}{version},
-    q{plk|plink2:s}            => \$parameter{shell}{plink2}{version},
+
+    # SHELL
+    q{psh|prefer_shell}     => \$parameter{prefer_shell},
+    q{sp|select_programs:s} => \@{ $parameter{select_programs} },
+    q{pic|picard:s}         => \$parameter{shell}{picard}{version},
+    q{sbb|sambamba:s}       => \$parameter{shell}{sambamba}{version},
+    q{bet|bedtools:s}       => \$parameter{shell}{bedtools}{version},
+    q{vt|vt:s}              => \$parameter{shell}{vt}{version},
+    q{plk|plink2:s}         => \$parameter{shell}{plink2}{version},
     q{snpg|snpeff_genome_versions:s} =>
       \@{ $parameter{shell}{snpeff}{snpeff_genome_versions} },
     q{vep|varianteffectpredictor:s} => \$parameter{shell}{vep}{version},
-    q{vepai|vep_auto_flag:s}        => \$parameter{shell}{vep}{vep_auto_flag},
+    q{vepa|vep_auto_flag:s}         => \$parameter{shell}{vep}{vep_auto_flag},
     q{vepc|vep_cache_dir:s}         => \$parameter{shell}{vep}{vep_cache_dir},
     q{vepa|vep_assemblies:s} => \@{ $parameter{shell}{vep}{vep_assemblies} },
     q{vepp|vep_plugins:s}    => \@{ $parameter{shell}{vep}{vep_plugins} },
@@ -172,11 +176,13 @@ GetOptions(
     q{cnv|cnvnator:s}        => \$parameter{shell}{cnvnator}{version},
     q{cnvnr|cnvnator_root_binary:s} =>
       \$parameter{shell}{cnvnator}{cnvnator_root_binary},
-    q{tid|tiddit:s}     => \$parameter{shell}{tiddit}{version},
-    q{svdb|svdb:s}      => \$parameter{shell}{svdb}{version},
-    q{psh|prefer_shell} => \$parameter{prefer_shell},
+    q{tid|tiddit:s} => \$parameter{shell}{tiddit}{version},
+    q{svdb|svdb:s}  => \$parameter{shell}{svdb}{version},
 
-    # Display parameter defaults
+    # Utility
+    q{rd|reference_dir:s} => \$parameter{reference_dir},
+    q{rg|reference_genome_versions:s} =>
+      \@{ $parameter{reference_genome_versions} },
     q{ppd|print_parameters_default} => sub {
         print_parameters(
             {
@@ -185,21 +191,13 @@ GetOptions(
         );
         exit;
     },
-    q{nup|noupdate}         => \$parameter{noupdate},
-    q{sp|select_programs:s} => \@{ $parameter{select_programs} },
-    q{rd|reference_dir:s}   => \$parameter{reference_dir},
-    q{l|log:s}              => \$parameter{log_file},
-    q{rg|reference_genome_versions:s} =>
-      \@{ $parameter{reference_genome_versions} },
-    q{q|quiet} => \$parameter{quiet},
-
-    #Display help text
-    q{h|help} => sub {
+    q{nup|noupdate} => \$parameter{noupdate},
+    q{l|log:s}      => \$parameter{log_file},
+    q{q|quiet}      => \$parameter{quiet},
+    q{h|help}       => sub {
         say {*STDOUT} $USAGE;
         exit;
     },
-
-    #Display version number
     q{ver|version} => sub {
         say {*STDOUT} $NEWLINE
           . basename($PROGRAM_NAME)
@@ -346,25 +344,11 @@ install_bioconda_packages(
         bioconda_patches_href  => $parameter{bioconda_patches},
         conda_env              => $parameter{conda_environment},
         conda_env_path         => $parameter{conda_prefix_path},
-        FILEHANDLE             => $FILEHANDLE,
-        quiet                  => $parameter{quiet},
-        verbose                => $parameter{verbose},
-    }
-);
-
-## Custom solutions for BWA, SnpEff and Manta
-## Copying files, downloading necessary databases and make files executable
-finish_bioconda_package_install(
-    {
-        bioconda_packages_href => $parameter{bioconda},
-        bioconda_patches_href  => $parameter{bioconda_patches},
-        conda_env              => $parameter{conda_environment},
-        conda_env_path         => $parameter{conda_prefix_path},
-        FILEHANDLE             => $FILEHANDLE,
         snpeff_genome_versions_ref =>
           $parameter{shell}{snpeff}{snpeff_genome_versions},
-        verbose => $parameter{verbose},
-        quiet   => $parameter{quiet},
+        FILEHANDLE => $FILEHANDLE,
+        quiet      => $parameter{quiet},
+        verbose    => $parameter{verbose},
     }
 );
 
@@ -462,9 +446,10 @@ sub build_usage {
     -pyv/--python_version           Set the env python version (Default: "2.7")
 
     ## SHELL
-    -pic/--picard              Set the picard version (Default: "2.5.9"),
-    -sbb/--sambamba                 Set sthe
-    sambamba version (Default: "0.6.6")
+    -psh/--prefer_shell             Shell will be used for overlapping shell and biconda installations (Supply flag to enable)
+    -sp/--select_programs           Install supplied programs via shell e.g. -sp bedtools -sp picard (Default: "")
+    -pic/--picard                   Set the picard version (Default: "2.5.9"),
+    -sbb/--sambamba                 Set the sambamba version (Default: "0.6.6")
     -bet/--bedtools                 Set the bedtools version (Default: "2.26.0")
     -vt/--vt                        Set the vt version (Default: "0.57")
     -plk/--plink                    Set the plink version (Default: "160224")
@@ -483,12 +468,10 @@ sub build_usage {
     -svdb/--svdb                    Set the svdb version (Default: "1.0.6")
     
     ## Utility
-    -psh/--prefer_shell             Shell will be used for overlapping shell and biconda installations (Supply flag to enable)
-    -ppd/--print_parameters_default Print the parameter defaults
-    -nup/--noupdate                 Do not update already installed programs (Supply flag to enable)
-    -sp/--select_programs           Install supplied programs e.g. -sp perl -sp bedtools (Default: "")
     -rd/--reference_dir             Reference(s) directory (Default: "")
     -rd/--reference_genome_versions Reference versions to download ((Default: ["GRCh37", "hg38"]))
+    -ppd/--print_parameters_default Print the parameter defaults
+    -nup/--noupdate                 Do not update already installed programs (Supply flag to enable)
     -l/--log                        File for writing log messages (Default: "mip_install_TIMESTAMP.log")
     -q/--quiet                      Quiet (Supply flag to enable; no output from individual program that has a quiet flag)
     -h/--help                       Display this help message
@@ -730,6 +713,8 @@ sub references {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Program::Download::Download_reference qw{ download_reference };
+
     my $pwd = cwd();
 
     ## Only activate conda environment if supplied by user
@@ -747,18 +732,14 @@ sub references {
 
     $log->info(q{Writting install instructions for references});
 
-    print {$FILEHANDLE} q{download_reference} . $SPACE;
-    print {$FILEHANDLE} q{--reference_dir}
-      . $SPACE
-      . $parameter_href->{reference_dir}
-      . $SPACE;
-
-    print {$FILEHANDLE} q{--reference_genome_versions}
-      . $SPACE
-      . join $SPACE
-      . q{--reference_genome_versions}
-      . $SPACE,
-      @{ $parameter_href->{reference_genome_versions} } . $SPACE;
+    download_reference(
+        {
+            reference_genome_versions_ref =>
+              $parameter_href->{reference_genome_versions},
+            reference_dir_path => $parameter_href->{reference_dir},
+            FILEHANDLE         => $FILEHANDLE,
+        }
+    );
     say {$FILEHANDLE} $NEWLINE;
 
     ## Launch bash
