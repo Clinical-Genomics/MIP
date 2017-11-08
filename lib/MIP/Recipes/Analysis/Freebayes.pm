@@ -182,6 +182,7 @@ sub analysis_freebayes_calling {
     my $core_number =
       $active_parameter_href->{module_core_number}{$mip_program_name};
     my $time = $active_parameter_href->{module_time}{$mip_program_name};
+    my $referencefile_path = $active_parameter_href->{human_genome_reference};
 
     ## Alias
     my $program_outdirectory_name =
@@ -317,8 +318,7 @@ sub analysis_freebayes_calling {
         freebayes_calling(
             {
                 infile_paths_ref => \@file_paths,
-                referencefile_path =>
-                  $active_parameter_href->{human_genome_reference},
+                referencefile_path => $referencefile_path,
                 stderrfile_path => $stderrfile_path . $DOT . q{stderr.txt},
                 apply_standard_filter      => 1,
                 calculate_genotype_quality => 1,
@@ -358,8 +358,7 @@ sub analysis_freebayes_calling {
         bcftools_norm(
             {
                 FILEHANDLE => $XARGSFILEHANDLE,
-                reference_path =>
-                  $active_parameter_href->{human_genome_reference},
+                reference_path => $referencefile_path,
                 output_type  => q{v},
                 outfile_path => $outfile_path_prefix
                   . $UNDERSCORE

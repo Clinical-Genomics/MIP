@@ -34,8 +34,6 @@ Readonly my $PIPE  => q{|};
 
 sub replace_iupac {
 
-## replace_iupac
-
 ## Function : Replace the IUPAC code in alternative allels with N for input stream and writes to stream.
 ## Returns  :
 ## Arguments: $FILEHANDLE      => Sbatch filehandle to write to
@@ -69,32 +67,47 @@ sub replace_iupac {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Pipe
-    print {$FILEHANDLE} $PIPE . $SPACE;
+    my @commands;
 
-    ## Execute perl
-    print {$FILEHANDLE} q{perl -nae} . $SPACE;
+    ## Compose $regexp
+    # Don't apply to comments
+    my $regexp = q{if($_=~/^#/) {print $_;}} . $SPACE;
 
-    #Add escape char
+    # Substitute IUPAC code with N to not break vcf specifications (GRCh38)
+    $regexp .= q?else { @F[4] =~ s/W|K|Y|R|S|M/N/g;? . $SPACE;
+
     if ($xargs) {
 
-        #substitute IUPAC code with N to not break vcf specifications (GRCh38)
-        print {$FILEHANDLE}
-q?\'if($_=~/^#/) {print $_;} else { @F[4] =~ s/W|K|Y|R|S|M/N/g; print join(\"\\\t\", @F), \"\\\n\"; }\' ?;
+        # Escape chars are needed in front of separators
+        $regexp = q?\'? . $regexp . q?print join(\"\\\t\", @F), \"\\\n\"; }\' ?;
     }
     else {
 
-        #substitute IUPAC code with N to not break vcf specifications (GRCh38)
-        print {$FILEHANDLE}
-q?'if($_=~/^#/) {print $_;} else { @F[4] =~ s/W|K|Y|R|S|M/N/g; print join("\t", @F), "\n"; }' ?;
+        $regexp = q?'? . $regexp . q?print join("\t", @F), "\n"; }' ?;
     }
 
-    #Redirect output to program specific stderr file
-    if ($stderrfile_path) {
+    # Execute perl over expression
+    $regexp = q{perl -nae} . $SPACE . $regexp;
 
-        print {$FILEHANDLE} q{2>>} . $SPACE . $stderrfile_path . $SPACE;
-    }
+    # Add Pipe in front of regexp
+    $regexp = $PIPE . $SPACE . $regexp;
 
+    push @commands, $regexp;
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path => $stderrfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
     return;
 }
 
