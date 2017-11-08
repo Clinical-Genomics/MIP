@@ -13,10 +13,9 @@ use Params::Check qw{ check allow last_error };
 
 use FindBin qw{ $Bin };
 use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use Getopt::Long;
 use Test::More;
-use File::Temp qw{ tempdir tempfile };
 
 ## CPANM
 use Readonly;
@@ -82,7 +81,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Check::Path});
+    my @modules = (q{MIP::Set::Parameter});
 
   MODULE:
     for my $module (@modules) {
@@ -90,10 +89,10 @@ BEGIN {
     }
 }
 
-use MIP::Check::Path qw{ check_filesystem_objects_existance };
+use MIP::Set::Parameter qw{ set_parameter_reference_dir_path };
 
-diag(   q{Test check_filesystem_objects_existance from Path.pm v}
-      . $MIP::Check::Path::VERSION
+diag(   q{Test set_parameter_reference_dir_path from Parameter.pm v}
+      . $MIP::Set::Parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -101,59 +100,55 @@ diag(   q{Test check_filesystem_objects_existance from Path.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Create a temp dir
-my $dir = tempdir( CLEANUP => 1 );
-
-## Create a temp file using newly created temp dir
-my ( $fh, $file_name ) = tempfile( DIR => $dir );
+my $reference_dir = catdir(qw{ test ref_dir });
 
 my %parameter = (
-    dir       => $dir,
-    file_name => { build_file => 1 },
+    file  => q{test},
+    array => q{test},
+    hash  => q{test},
 );
 
-### TEST
-## Dirs
-my ($exist) = check_filesystem_objects_existance(
-    {
-        parameter_name => q{dir},
-        object_name    => $dir,
-        object_type    => q{directory},
-    }
+my %active_parameter = (
+    reference_dir => $reference_dir,
+    file          => q{file_0},
+    array         => [qw{ file_1 file_2 }],
+    hash          => { file_3 => q{info_key_1} },
 );
 
-is( $exist, 1, q{Found directory} );
+PARAMETER:
+foreach my $parameter_name ( keys %parameter ) {
 
-($exist) = check_filesystem_objects_existance(
-    {
-        parameter_name => q{dir},
-        object_name    => q{does_not_exist},
-        object_type    => q{directory},
-    }
+    set_parameter_reference_dir_path(
+        {
+            active_parameter_href => \%active_parameter,
+            parameter_name        => $parameter_name,
+        }
+    );
+}
+
+## File
+is(
+    $active_parameter{file},
+    catfile( $reference_dir, q{file_0} ),
+    q{Set file reference path}
 );
 
-is( $exist, 0, q{No directory} );
-
-## Files
-($exist) = check_filesystem_objects_existance(
-    {
-        parameter_name => q{file_name},
-        object_name    => $file_name,
-        object_type    => q{file},
-    }
+is(
+    $active_parameter{array}[0],
+    catfile( $reference_dir, q{file_1} ),
+    q{Set array reference path}
 );
 
-is( $exist, 1, q{Found file} );
+UPDATED_FILE:
+foreach my $updated_file ( keys %{ $active_parameter{hash} } ) {
 
-($exist) = check_filesystem_objects_existance(
-    {
-        parameter_name => q{file_name},
-        object_name    => q{does_not_exist},
-        object_type    => q{file},
-    }
-);
+    is(
+        $updated_file,
+        catfile( $reference_dir, q{file_3} ),
+        q{Set hash reference path}
+    );
 
-is( $exist, 0, q{No file} );
+}
 
 done_testing();
 

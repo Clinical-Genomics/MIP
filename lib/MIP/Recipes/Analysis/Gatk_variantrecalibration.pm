@@ -10,7 +10,7 @@ use charnames qw{ :full :short };
 use Carp;
 use English qw{ -no_match_vars };
 use Params::Check qw{ check allow last_error };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catdir catfile splitpath };
 
 ## CPANM
 use Readonly;
@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -269,7 +269,7 @@ sub analysis_gatk_variantrecalibration_wgs {
 
     ## Split to enable submission to &sample_info_qc later
     my ( $volume, $directory, $stderr_file ) =
-      File::Spec->splitpath( $program_info_path . $DOT . q{stderr.txt} );
+      splitpath( $program_info_path . $DOT . q{stderr.txt} );
 
     ## Create .fam file to be used in variant calling analyses
     my $fam_file_path =
@@ -795,7 +795,7 @@ sub analysis_gatk_variantrecalibration_wes {
 
     ## Split to enable submission to &sample_info_qc later
     my ( $volume, $directory, $stderr_file ) =
-      File::Spec->splitpath( $program_info_path . $DOT . q{stderr.txt} );
+      splitpath( $program_info_path . $DOT . q{stderr.txt} );
 
     ## Create .fam file to be used in variant calling analyses
     my $fam_file_path =

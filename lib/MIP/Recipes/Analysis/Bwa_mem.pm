@@ -2,16 +2,16 @@ package MIP::Recipes::Analysis::Bwa_mem;
 
 use strict;
 use warnings;
-use warnings qw{FATAL utf8};
+use warnings qw{ FATAL utf8 };
 use utf8;
-use open qw{:encoding(UTF-8) :std};
-use autodie qw{:all};
-use charnames qw{:full :short};
+use open qw{ :encoding(UTF-8) :std };
+use autodie qw{ :all };
+use charnames qw{ :full :short };
 use Carp;
-use English qw{-no_match_vars};
-use Params::Check qw{check allow last_error};
-use File::Basename qw(dirname fileparse);
-use File::Spec::Functions qw(catdir catfile devnull);
+use English qw{ -no_match_vars };
+use Params::Check qw{ check allow last_error };
+use File::Basename qw{ dirname fileparse };
+use File::Spec::Functions qw{ catdir catfile devnull splitpath };
 
 ## CPANM
 use Readonly;
@@ -19,13 +19,13 @@ use Readonly;
 BEGIN {
 
     require Exporter;
-    use base qw{Exporter};
+    use base qw{ Exporter };
 
     # Set the version for version checking
     our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{analysis_bwa_mem};
+    our @EXPORT_OK = qw{ analysis_bwa_mem };
 
 }
 
@@ -41,32 +41,24 @@ Readonly my $UNDERSCORE   => q{_};
 
 sub analysis_bwa_mem {
 
-##analysis_bwa_mem
-
-##Function : Performs alignment of single and paired-end as well as interleaved fastq(.gz) files.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infiles_ref, $infile_lane_prefix_href, $job_id_href, $insample_directory, $outsample_directory, $sample_id, $program_name, $family_id, $outaligner_dir, $temp_directory
-##         : $parameter_href          => Parameter hash {REF}
-##         : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##         : $sample_info_href        => Info on samples and family hash {REF}
-##         : $file_info_href          => File info hash {REF}
-##         : $infiles_ref             => Infiles hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href             => Job id hash {REF}
-##         : $insample_directory      => In sample directory
-##         : $outsample_directory     => Out sample directory
-##         : $sample_id               => Sample id
-##         : $program_name            => Program name
-##         : $family_id               => Family id
-##         : $outaligner_dir          => Outaligner_dir used in the analysis
-##         : $temp_directory          => Temporary directory
+## Function : Performs alignment of single and paired-end as well as interleaved fastq(.gz) files.
+## Returns  :
+## Arguments: $parameter_href          => Parameter hash {REF}
+##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $file_info_href          => File info hash {REF}
+##          : $infiles_ref             => Infiles hash {REF}
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $job_id_href             => Job id hash {REF}
+##          : $insample_directory      => In sample directory
+##          : $outsample_directory     => Out sample directory
+##          : $sample_id               => Sample id
+##          : $program_name            => Program name
+##          : $family_id               => Family id
+##          : $outaligner_dir          => Outaligner_dir used in the analysis
+##          : $temp_directory          => Temporary directory
 
     my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id;
-    my $outaligner_dir;
-    my $temp_directory;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -80,6 +72,11 @@ sub analysis_bwa_mem {
     my $outsample_directory;
     my $sample_id;
     my $program_name;
+
+    ## Default(s)
+    my $family_id;
+    my $outaligner_dir;
+    my $temp_directory;
 
     my $tmpl = {
         parameter_href => {
@@ -174,17 +171,17 @@ sub analysis_bwa_mem {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Script::Setup_script qw{setup_script};
-    use MIP::IO::Files qw{migrate_file};
-    use MIP::Set::File qw{set_file_suffix};
-    use MIP::Program::Alignment::Samtools qw{samtools_view samtools_stats};
-    use MIP::Program::Alignment::Bwa qw{bwa_mem run_bwamem};
-    use Program::Variantcalling::Bedtools qw{intersectbed};
-    use MIP::Program::Alignment::Sambamba qw{sambamba_sort};
-    use MIP::QC::Record
-      qw{add_program_outfile_to_sample_info add_program_metafile_to_sample_info add_processing_metafile_to_sample_info};
+    use MIP::IO::Files qw{ migrate_file };
+    use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Set::File qw{ set_file_suffix };
     use MIP::Processmanagement::Slurm_processes
-      qw{slurm_submit_job_sample_id_dependency_step_in_parallel};
+      qw{ slurm_submit_job_sample_id_dependency_step_in_parallel };
+    use MIP::Program::Alignment::Bwa qw{ bwa_mem run_bwamem };
+    use MIP::Program::Alignment::Samtools qw{ samtools_view samtools_stats };
+    use MIP::Program::Alignment::Sambamba qw{ sambamba_sort };
+    use Program::Variantcalling::Bedtools qw{ intersectbed };
+    use MIP::QC::Record
+      qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info add_processing_metafile_to_sample_info };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -274,7 +271,7 @@ sub analysis_bwa_mem {
 
         # Split to enable submission to %sample_info_qc later
         my ( $volume, $directory, $stderr_file ) =
-          File::Spec->splitpath( $program_info_path . $DOT . q{stderr.txt} );
+          splitpath( $program_info_path . $DOT . q{stderr.txt} );
 
         ## Copies file to temporary directory.
         say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
@@ -627,13 +624,10 @@ sub analysis_bwa_mem {
 
 sub _select_bwamem_binary {
 
-##_select_bwamem_binary
-
-##Function : Detect version and source of the human_genome_reference: Source (hg19 or GRCh) and return the correct bwa_mem binary
-##Returns  : ""
-##Arguments: $human_genome_reference_source, $human_genome_reference_version
-##         : $human_genome_reference_source  => Human genome reference source
-##         : $human_genome_reference_version => Human genome reference version
+## Function : Detect version and source of the human_genome_reference: Source (hg19 or GRCh) and return the correct bwa_mem binary
+## Returns  :
+## Arguments: $human_genome_reference_source  => Human genome reference source
+##          : $human_genome_reference_version => Human genome reference version
 
     my ($arg_href) = @_;
 
@@ -695,13 +689,10 @@ sub _select_bwamem_binary {
 
 sub _add_percentage_mapped_reads_from_samtools {
 
-##_add_percentage_mapped_reads_from_samtools
-
-##Function : Collect raw total sequences and reads mapped from samtools stats and calculate the percentage. Write it to stdout.
-##Returns  : ""
-##Arguments: $outfile_path, $FILEHANDLE
-##         : $outfile_path => Outfile path
-##         : $FILEHANDLE   => Filehandle to write to
+## Function : Collect raw total sequences and reads mapped from samtools stats and calculate the percentage. Write it to stdout.
+## Returns  :
+## Arguments: $outfile_path => Outfile path
+##          : $FILEHANDLE   => Filehandle to write to
 
     my ($arg_href) = @_;
 

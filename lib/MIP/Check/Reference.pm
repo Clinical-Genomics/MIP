@@ -9,6 +9,8 @@ use charnames qw{ :full :short };
 use Carp;
 use English qw{ -no_match_vars };
 use Params::Check qw{ check allow last_error };
+use File::Basename qw{ fileparse };
+use File::Spec::Functions qw{ catfile };
 
 ## CPANM
 use Readonly;
@@ -19,11 +21,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ check_references_for_vt check_if_processed_by_vt check_human_genome_prerequisites check_capture_file_prerequisites check_bwa_prerequisites };
+      qw{ check_bwa_prerequisites check_capture_file_prerequisites check_file_endings_to_build check_human_genome_file_endings check_human_genome_prerequisites check_if_processed_by_vt check_parameter_metafiles check_references_for_vt };
 }
 
 ## Constants
@@ -78,6 +80,7 @@ sub check_references_for_vt {
 
     ## Checked references
     my @checked_references;
+
     ## Store references to process later
     my @to_process_references;
 
@@ -168,13 +171,11 @@ sub check_references_for_vt {
 
 sub check_if_processed_by_vt {
 
-##check_if_processed_by_vt
+## Function : Check if vt has processed references using regexp
+## Returns  : @process_references
+## Arguments: $reference_file_path => The reference file path
+##          : $log                 => Log object
 
-##Function : Check if vt has processed references using regexp
-##Returns  : @process_references
-##Arguments: $reference_file_path, $log
-##         : $reference_file_path => The reference file path
-##         : $log                 => Log object
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
@@ -369,6 +370,127 @@ sub check_human_genome_prerequisites {
     return 1;
 }
 
+sub check_human_genome_file_endings {
+
+## Function : Check the existance of associated human genome files.
+## Returns  :
+## Arguments: $parameter_href                     => Parameter hash {REF}
+##          : $active_parameter_href              => Holds all set parameter for analysis {REF}
+##          : $file_info_href                     => File info hash {REF}
+##          : $parameter_name                     => The parameter under evaluation
+##          : $human_genome_reference_name_prefix => The associated human genome file without file ending {REF}
+##          : $reference_dir                      => MIP reference directory {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $active_parameter_href;
+    my $file_info_href;
+    my $parameter_name;
+
+    ## Default(s)
+    my $reference_dir;
+    my $human_genome_reference_name_prefix;
+
+    my $tmpl = {
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
+        active_parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$active_parameter_href,
+        },
+        file_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$file_info_href,
+        },
+        parameter_name => { strict_type => 1, store => \$parameter_name },
+        reference_dir  => {
+            default     => $arg_href->{active_parameter_href}{reference_dir},
+            strict_type => 1,
+            store       => \$reference_dir,
+        },
+        human_genome_reference_name_prefix => {
+            default =>
+              $arg_href->{file_info_href}{human_genome_reference_name_prefix},
+            strict_type => 1,
+            store       => \$human_genome_reference_name_prefix
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Check::Path qw{ check_filesystem_objects_existance };
+    use MIP::Get::File qw{ get_seq_dict_contigs };
+
+    ## Count the number of files that exists
+    my $existence_check_counter = 0;
+
+    ## Unpack
+    my @human_reference_file_endings =
+      @{ $file_info_href->{human_genome_reference_file_endings} };
+
+  FILE_ENDING:
+    foreach my $file_ending (@human_reference_file_endings) {
+
+        my $path = $active_parameter_href->{human_genome_reference};
+
+        if ( $file_ending eq q{.dict} ) {
+
+            ## Removes ".file_ending" in filename.FILENDING(.gz)
+            my ( $file, $dir_path ) =
+              fileparse( $path, qr/ [.]fasta | [.]fasta[.]gz /sxm );
+            $path = catfile( $dir_path, $file );
+        }
+
+        #Add current ending
+        $path = $path . $file_ending;
+
+        my ($does_exist) = check_filesystem_objects_existance(
+            {
+                object_name    => $path,
+                parameter_name => $parameter_name,
+                object_type    => q{file},
+            }
+        );
+
+        ## Sum up the number of file that exists
+        $existence_check_counter = $existence_check_counter + $does_exist;
+    }
+    ## Files need to be built
+    if ( $existence_check_counter != scalar @human_reference_file_endings ) {
+
+        $parameter_href->{$parameter_name}{build_file} = 1;
+    }
+    else {
+
+        # All file exist in this check
+        $parameter_href->{$parameter_name}{build_file} = 0;
+
+        ## Get sequence contigs from human reference ".dict" file since it exists
+        get_seq_dict_contigs(
+            {
+                contigs_ref   => \@{ $file_info_href->{contigs} },
+                reference_dir => $reference_dir,
+                human_genome_reference_name_prefix =>
+                  $human_genome_reference_name_prefix,
+            }
+        );
+    }
+    return;
+}
+
 sub check_capture_file_prerequisites {
 
 ## Function : Check if capture file prerequisites needs to be built and initate process to build them if required
@@ -508,6 +630,7 @@ sub check_bwa_prerequisites {
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $program_name            => Program name
+##          : $parameter_build_name          => File info build key parameter name
 
     my ($arg_href) = @_;
 
@@ -519,6 +642,7 @@ sub check_bwa_prerequisites {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
+    my $parameter_build_name;
 
     my $tmpl = {
         parameter_href => {
@@ -569,6 +693,12 @@ sub check_bwa_prerequisites {
             strict_type => 1,
             store       => \$program_name,
         },
+        parameter_build_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$parameter_build_name,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -586,10 +716,200 @@ sub check_bwa_prerequisites {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 bwa_build_reference_file_endings_ref =>
-                  \@{ $file_info_href->{bwa_build_reference_file_endings} },
+                  \@{ $file_info_href->{$parameter_build_name} },
                 program_name => $program_name,
             }
         );
+    }
+    return;
+}
+
+sub check_file_endings_to_build {
+
+## Function : Checks files to be built by combining filename stub with fileendings.
+## Returns  :
+## Arguments: $parameter_href        => Parameter hash {REF}
+##          : $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $file_endings_ref      => Reference to the file_endings to be added to the filename stub {REF}
+##          : $parameter_name        => MIP parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $active_parameter_href;
+    my $file_endings_ref;
+    my $parameter_name;
+    my $file_name;
+
+    my $tmpl = {
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
+        active_parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$active_parameter_href,
+        },
+        file_endings_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => [],
+            strict_type => 1,
+            store       => \$file_endings_ref
+        },
+        parameter_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$parameter_name,
+        },
+        file_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$file_name
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Check::Path qw{ check_filesystem_objects_existance };
+
+    ## Count the number of files that exists
+    my $existence_check_counter = 0;
+
+  FILE_ENDING:
+    foreach my $file_ending ( @{$file_endings_ref} ) {
+
+        my ($exist) = check_filesystem_objects_existance(
+            {
+                object_name    => catfile( $file_name . $file_ending ),
+                parameter_name => $parameter_name,
+                object_type    => q{file},
+            }
+        );
+
+        ## Sum up the number of file that exists
+        $existence_check_counter = $existence_check_counter + $exist;
+    }
+
+    ## Files need to be built
+    if ( $existence_check_counter != scalar @{$file_endings_ref} ) {
+
+        $parameter_href->{$parameter_name}{build_file} = 1;
+    }
+    else {
+
+        # All file exist in this check
+        $parameter_href->{$parameter_name}{build_file} = 0;
+    }
+    return;
+}
+
+sub check_parameter_metafiles {
+
+## Function : Checks parameter metafile exists
+## Returns  :
+## Arguments: $parameter_href        => Holds all parameters
+##          : $active_parameter_href => Holds all set parameter for analysis
+##          : $file_info_href        => File info hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $active_parameter_href;
+    my $file_info_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
+        active_parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$active_parameter_href,
+        },
+        file_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$file_info_href,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  PARAMETER:
+    foreach my $parameter_name ( %{$file_info_href} ) {
+
+        ## Active parameter
+        my $parameter = $active_parameter_href->{$parameter_name};
+
+        next PARAMETER if ( not $parameter );
+
+      ASSOCIATED_PROGRAM:
+        foreach my $associated_program (
+            @{ $parameter_href->{$parameter_name}{associated_program} } )
+        {
+
+            ## Active associated program
+            my $active_associated_program =
+              $active_parameter_href->{$associated_program};
+
+            ## Only check active parmeters
+            next ASSOCIATED_PROGRAM
+              if ( not defined $active_associated_program );
+
+            if ( ref $parameter eq q{HASH} ) {
+
+              PATH:
+                for my $path ( keys %{$parameter} ) {
+
+                    ## Checks files to be built by combining filename stub with fileendings
+                    check_file_endings_to_build(
+                        {
+                            parameter_href        => $parameter_href,
+                            active_parameter_href => $active_parameter_href,
+                            file_endings_ref =>
+                              \@{ $file_info_href->{$parameter_name} },
+                            parameter_name => $parameter_name,
+                            file_name      => $path,
+                        }
+                    );
+                }
+            }
+            else {
+
+                ## Checks files to be built by combining filename stub with fileendings
+                check_file_endings_to_build(
+                    {
+                        parameter_href        => $parameter_href,
+                        active_parameter_href => $active_parameter_href,
+                        file_endings_ref =>
+                          \@{ $file_info_href->{$parameter_name} },
+                        parameter_name => $parameter_name,
+                        file_name =>
+                          $active_parameter_href->{human_genome_reference},
+                    }
+                );
+            }
+        }
     }
     return;
 }

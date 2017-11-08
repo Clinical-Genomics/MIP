@@ -27,7 +27,7 @@ $Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 use Cwd;
 use Cwd qw{ abs_path };
 use File::Basename qw{ dirname basename fileparse };
-use File::Spec::Functions qw{ catdir catfile devnull };
+use File::Spec::Functions qw{ catdir catfile devnull splitpath };
 use File::Path qw{ make_path };
 use File::Copy qw{ copy };
 use FindBin qw{ $Bin };
@@ -46,17 +46,23 @@ use MIP::Check::Cluster qw{ check_max_core_number };
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Check::Parameter
   qw{ check_parameter_hash check_allowed_temp_directory };
+use MIP::Check::Path qw{ check_target_bed_file_exist check_parameter_files };
 use MIP::Check::Reference
-  qw{ check_references_for_vt check_human_genome_prerequisites check_capture_file_prerequisites check_bwa_prerequisites };
+  qw{ check_bwa_prerequisites check_capture_file_prerequisites check_file_endings_to_build check_human_genome_file_endings check_human_genome_prerequisites check_parameter_metafiles check_references_for_vt };
 use MIP::Delete::List qw{ delete_non_wes_contig delete_male_contig };
-use MIP::File::Format::Pedigree qw{ create_fam_file };
+use MIP::File::Format::Pedigree
+  qw{ create_fam_file reload_previous_pedigree_info };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
 use MIP::Get::Analysis qw{ get_overall_analysis_type print_program };
+use MIP::Get::File qw{ get_select_file_contigs };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
 use MIP::Set::Contigs qw{ set_contigs };
-use MIP::Set::Parameter qw{ set_dynamic_parameter };
+use MIP::Set::Parameter
+  qw{ set_dynamic_parameter set_parameter_reference_dir_path };
 use MIP::Update::Contigs qw{ update_contigs_for_run };
+use MIP::Update::Parameters
+  qw{ update_reference_parameters update_vcfparser_outfile_counter };
 use MIP::Update::Programs
   qw{ update_program_mode_with_dry_run_all update_program_mode update_prioritize_flag };
 
@@ -217,7 +223,7 @@ my %file_info = (
       [qw{ .infile_list .pad100.infile_list .pad100.interval_list }],
 
     # BWA human genome reference file endings
-    bwa_build_reference_file_endings => [qw{ .amb .ann .bwt .pac .sa }],
+    bwa_build_reference => [qw{ .amb .ann .bwt .pac .sa }],
 
     # Human genome meta files
     human_genome_reference_file_endings => [qw{ .dict .fai }],
@@ -308,7 +314,6 @@ GetOptions(
     q{pfqc|pfastqc=n}            => \$parameter{pfastqc}{value},
     q{pmem|pbwa_mem=n}           => \$parameter{pbwa_mem}{value},
     q{memhla|bwa_mem_hla=n}      => \$parameter{bwa_mem_hla}{value},
-    q{memrdb|bwa_mem_rapid_db:s} => \$parameter{bwa_mem_rapid_db}{value},
     q{memcrm|bwa_mem_cram=n}     => \$parameter{bwa_mem_cram}{value},
     q{memsts|bwa_mem_bamstats=n} => \$parameter{bwa_mem_bamstats}{value},
     q{memssm|bwa_sambamba_sort_memory_limit:s} =>
@@ -617,10 +622,6 @@ if ( defined $parameter{config_file}{value} ) {
     ## Special case: Enable/activate MIP. Cannot be changed from cmd or config
     $active_parameter{mip} = $parameter{mip}{default};
 
-    ## Special case: Required when turning of vcfParser to know how many files should be analysed (.select.vcf or just .vcf)
-    $active_parameter{vcfparser_outfile_count} =
-      $parameter{vcfparser_outfile_count}{default};
-
     ## Compare keys from config and definitions file
     check_config_vs_definition_file(
         {
@@ -762,20 +763,36 @@ foreach my $order_parameter_element (@order_parameters) {
 ## Retrieve logger object now that log_file has been set
 my $log = Log::Log4perl->get_logger(q{MIP});
 
-###Checks
-
-## Check Existance of files and directories
+## Reference in MIP reference directory
+PARAMETER:
 foreach my $parameter_name ( keys %parameter ) {
 
-    if ( exists( $parameter{$parameter_name}{exists_check} ) ) {
+    ## Expect file to be in reference directory
+    if ( exists $parameter{$parameter_name}{reference} ) {
+
+        update_reference_parameters(
+            {
+                active_parameter_href => \%active_parameter,
+                associated_programs_ref =>
+                  \@{ $parameter{$parameter_name}{associated_program} },
+                parameter_name => $parameter_name,
+            }
+        );
+    }
+}
+
+### Checks
+
+## Check existance of files and directories
+PARAMETER:
+foreach my $parameter_name ( keys %parameter ) {
+
+    if ( exists $parameter{$parameter_name}{exists_check} ) {
 
         check_parameter_files(
             {
                 parameter_href        => \%parameter,
                 active_parameter_href => \%active_parameter,
-                sample_info_href      => \%sample_info,
-                file_info_href        => \%file_info,
-                broadcasts_ref        => \@broadcasts,
                 associated_programs_ref =>
                   \@{ $parameter{$parameter_name}{associated_program} },
                 parameter_name => $parameter_name,
@@ -784,6 +801,64 @@ foreach my $parameter_name ( keys %parameter ) {
             }
         );
     }
+}
+
+## Updates sample_info hash with previous run pedigree info
+reload_previous_pedigree_info(
+    {
+        active_parameter_href => \%active_parameter,
+        sample_info_href      => \%sample_info,
+        sample_info_file_path => $active_parameter{sample_info_file},
+    }
+);
+
+## Special case since dict is created with .fastq removed
+## Check the existance of associated human genome files
+check_human_genome_file_endings(
+    {
+        parameter_href        => \%parameter,
+        active_parameter_href => \%active_parameter,
+        file_info_href        => \%file_info,
+        parameter_name        => q{human_genome_reference},
+    }
+);
+
+## Check that supplied target file ends with ".bed" and otherwise croaks
+TARGET_FILE:
+foreach my $target_bed_file ( keys %{ $active_parameter{exome_target_bed} } ) {
+
+    check_target_bed_file_exist(
+        {
+            parameter_name => q{exome_target_bed},
+            path           => $target_bed_file,
+        }
+    );
+}
+
+## Checks parameter metafile exists
+check_parameter_metafiles(
+    {
+        parameter_href        => \%parameter,
+        active_parameter_href => \%active_parameter,
+        file_info_href        => \%file_info,
+    }
+);
+
+## Update the expected number of outfile after vcfparser
+update_vcfparser_outfile_counter(
+    { active_parameter_href => \%active_parameter, } );
+
+## Collect select file contigs to loop over downstream
+if ( $active_parameter{vcfparser_select_file} ) {
+
+## Collects sequences contigs used in select file
+    get_select_file_contigs(
+        {
+            contigs_ref => \@{ $file_info{select_file_contigs} },
+            select_file_path =>
+              catfile( $active_parameter{vcfparser_select_file} ),
+        }
+    );
 }
 
 ## Detect family constellation based on pedigree file
@@ -1286,20 +1361,18 @@ if ( $active_parameter{pbwa_mem} ) {
 
     my $program_name = lc q{bwa_mem};
 
-    if ( $parameter{bwa_build_reference}{build_file} == 1 ) {
-
-        check_bwa_prerequisites(
-            {
-                parameter_href          => \%parameter,
-                active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
-                file_info_href          => \%file_info,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                program_name            => $program_name,
-            }
-        );
-    }
+    check_bwa_prerequisites(
+        {
+            parameter_href          => \%parameter,
+            active_parameter_href   => \%active_parameter,
+            sample_info_href        => \%sample_info,
+            file_info_href          => \%file_info,
+            infile_lane_prefix_href => \%infile_lane_prefix,
+            job_id_href             => \%job_id,
+            program_name            => $program_name,
+            parameter_build_name    => q{bwa_build_reference},
+        }
+    );
 }
 $log->info( $TAB . q{Reference check: Reference prerequisites checked} );
 
@@ -2831,7 +2904,6 @@ sub build_usage {
     ##BWA
     -pmem/--pbwa_mem Align reads using Bwa Mem (defaults to "0" (=no))
       -memhla/--bwa_mem_hla Apply HLA typing (defaults to "1" (=yes))
-      -memrdb/--bwa_mem_rapid_db Selection of relevant regions post alignment (defaults to "")
       -memcrm/--bwa_mem_cram Use CRAM-format for additional output file (defaults to "1" (=yes))
       -memsts/--bwa_mem_bamstats Collect statistics from BAM files (defaults to "1" (=yes))
       -memssm/--bwa_sambamba_sort_memory_limit Set the memory limit for Sambamba sort after bwa alignment (defaults to "32G")
@@ -6086,7 +6158,7 @@ sub mpeddy {
     );
 
     my ( $volume, $directory, $program_info_file ) =
-      File::Spec->splitpath($program_info_path)
+      splitpath($program_info_path)
       ;    #Split to enable submission to &sample_info_qc later
     my $stderr_file = $program_info_file
       . ".stderr.txt";    #To enable submission to &sample_info_qc later
@@ -6357,7 +6429,7 @@ sub mplink {
     );
 
     my ( $volume, $directory, $program_info_file ) =
-      File::Spec->splitpath($program_info_path)
+      splitpath($program_info_path)
       ;    #Split to enable submission to &sample_info_qc later
     my $stderr_file = $program_info_file
       . ".stderr.txt";    #To enable submission to &sample_info_qc later
@@ -6843,8 +6915,7 @@ sub vt {
         );
         $stderr_path = $program_info_path . ".stderr.txt";
     }
-    my ( $volume, $directory, $stderr_file ) =
-      File::Spec->splitpath($stderr_path)
+    my ( $volume, $directory, $stderr_file ) = splitpath($stderr_path)
       ;    #Split to enable submission to &sample_info_qc later
 
     ## Assign directories
@@ -6954,7 +7025,7 @@ sub vt {
         {
 
             my ( $volume, $directory, $stderr_file ) =
-              File::Spec->splitpath($xargs_file_path_prefix)
+              splitpath($xargs_file_path_prefix)
               ;    #Split to enable submission to &SampleInfoQC later
 
             ## Collect QC metadata info for later use
@@ -7275,8 +7346,7 @@ sub rhocall {
         );
         $stderr_path = $program_info_path . ".stderr.txt";
     }
-    my ( $volume, $directory, $stderr_file ) =
-      File::Spec->splitpath($stderr_path)
+    my ( $volume, $directory, $stderr_file ) = splitpath($stderr_path)
       ;    #Split to enable submission to &sample_info_qc later
 
     ## Assign directories
@@ -7620,8 +7690,7 @@ sub prepareforvariantannotationblock {
         );
         $stderr_path = $program_info_path . ".stderr.txt";
     }
-    my ( $volume, $directory, $stderr_file ) =
-      File::Spec->splitpath($stderr_path)
+    my ( $volume, $directory, $stderr_file ) = splitpath($stderr_path)
       ;    #Split to enable submission to &sample_info_qc later
 
     ## Assign directories
@@ -8010,7 +8079,7 @@ sub sv_reformat {
     for (
         my $vcfparser_outfile_counter = 0 ;
         $vcfparser_outfile_counter <
-        $active_parameter_href->{vcfparser_outfile_count} ;
+        $active_parameter_href->{sv_vcfparser_outfile_count} ;
         $vcfparser_outfile_counter++
       )
     {
@@ -8570,7 +8639,7 @@ sub sv_rankvariant {
     for (
         my $vcfparser_outfile_counter = 0 ;
         $vcfparser_outfile_counter <
-        $active_parameter_href->{vcfparser_outfile_count} ;
+        $active_parameter_href->{sv_vcfparser_outfile_count} ;
         $vcfparser_outfile_counter++
       )
     {
@@ -9417,7 +9486,7 @@ sub sv_vcfparser {
     for (
         my $vcfparser_outfile_counter = 0 ;
         $vcfparser_outfile_counter <
-        $active_parameter_href->{vcfparser_outfile_count} ;
+        $active_parameter_href->{sv_vcfparser_outfile_count} ;
         $vcfparser_outfile_counter++
       )
     {
@@ -9663,7 +9732,7 @@ sub sv_combinevariantcallsets {
         }
     );
     my ( $volume, $directory, $stderr_file ) =
-      File::Spec->splitpath( $program_info_path . ".stderr.txt" )
+      splitpath( $program_info_path . ".stderr.txt" )
       ;    #Split to enable submission to &sample_info_qc later
 
     ## Assign directories
@@ -13118,8 +13187,7 @@ sub collect_infiles {
 
         while ( my $file = $it->() ) {    #Iterate over directory
 
-            my ( $volume, $directory, $fastq_file ) =
-              File::Spec->splitpath($file);
+            my ( $volume, $directory, $fastq_file ) = splitpath($file);
             push( @infiles, $fastq_file );
         }
         chomp(@infiles);    #Remove newline from every entry in array
@@ -14025,7 +14093,7 @@ sub add_to_active_parameter {
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
 
-    foreach my $associated_program (@$associated_programs_ref)
+    foreach my $associated_program ( @{$associated_programs_ref} )
     {    #Check all programs that use parameter
 
         my $parameter_set_switch = 0;
@@ -14155,11 +14223,7 @@ sub add_to_active_parameter {
                     else {
 
                         ## Special cases where the requirement is depending on other variabels
-                        if (   ( $parameter_name eq "bwa_mem_rapid_db" )
-                            && ( $consensus_analysis_type ne "rapid" ) )
-                        { #Do nothing since file is not required unless rapid mode is enabled
-                        }
-                        elsif (
+                        if (
                             (
                                 $parameter_name eq "gatk_genotypegvcfs_ref_gvcf"
                             )
@@ -14196,17 +14260,7 @@ sub add_to_active_parameter {
                             && ( $active_parameter_href->{vcfparser_select_file}
                                 eq "nouser_info" )
                           )
-                        {    #Do nothing since no SelectFile was given
-                        }
-                        elsif (
-                            ( $parameter_name eq "rank_model_file" )
-                            && (
-                                !defined(
-                                    $active_parameter_href->{rank_model_file}
-                                )
-                            )
-                          )
-                        { #Do nothing since no rank model was given i.e. use rank scripts deafult supplied with distribution
+                        {    #Do nothing since no Select file was given
                         }
                         elsif (
                             (
@@ -14299,12 +14353,11 @@ sub add_to_active_parameter {
     if ( $parameter_name eq "human_genome_reference" ) {
 
         ## Update path for supplied reference(s) associated with parameter that should reside in the mip reference directory to full path
-        update_mip_reference_path(
+        # Special case to make sure that complete path is supplied
+        set_parameter_reference_dir_path(
             {
-                parameter_href        => $parameter_href,
                 active_parameter_href => $active_parameter_href,
-                parameter_name        => "human_genome_reference"
-                ,    #Special case to make sure that complete path is supplied
+                parameter_name        => q{human_genome_reference},
             }
         );
 
@@ -14368,7 +14421,7 @@ sub add_to_active_parameter {
               . $parameter_name . " to: "
               . join( $$element_separator_ref,
                 @{ $active_parameter_href->{$parameter_name} } );
-            push( @$broadcasts_ref, $info );    #Add info to broadcasts
+            push( @{$broadcasts_ref}, $info );    #Add info to broadcasts
         }
         elsif ( ref( $active_parameter_href->{$parameter_name} ) eq "HASH" ) {
 
@@ -14377,491 +14430,16 @@ sub add_to_active_parameter {
               . join( ",",
                 map { "$_=$active_parameter_href->{$parameter_name}{$_}" }
                   ( keys %{ $active_parameter_href->{$parameter_name} } ) );
-            push( @$broadcasts_ref, $info );    #Add info to broadcasts
+            push( @{$broadcasts_ref}, $info );    #Add info to broadcasts
         }
         else {
 
             $info = "Set "
               . $parameter_name . " to: "
               . $active_parameter_href->{$parameter_name};
-            push( @$broadcasts_ref, $info );    #Add info to broadcasts
+            push( @{$broadcasts_ref}, $info );    #Add info to broadcasts
         }
     }
-}
-
-sub check_parameter_files {
-
-##check_parameter_files
-
-##Function : Checks that files/directories exists and if file_endings need to be built also updates SampleInfoHash information with information from pedigree
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $broadcasts_ref, $associated_programs_ref, $family_id_ref, $parameter_name $parameter_exists_check
-##         : $parameter_href                    => Holds all parameters
-##         : $active_parameter_href             => Holds all set parameter for analysis
-##         : $sample_info_href                  => Info on samples and family hash {REF}
-##         : $file_info_href                    => File info hash {REF}
-##         : $broadcasts_ref                    => Holds the parameters info for broadcasting later {REF}
-##         : $associated_programs_ref           => The parameters program(s) {REF}
-##         : $family_id_ref                     => The family_id_ref {REF}
-##         : $parameter_name                    => Parameter name
-##         : $parameter_exists_check            => Check if intendent file exists in reference directory
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $broadcasts_ref;
-    my $associated_programs_ref;
-    my $parameter_name;
-    my $parameter_exists_check;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href,
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href,
-        },
-        broadcasts_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$broadcasts_ref
-        },
-        associated_programs_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$associated_programs_ref
-        },
-        parameter_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$parameter_name,
-        },
-        parameter_exists_check => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$parameter_exists_check
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Check::Path qw{ check_filesystem_objects_existance };
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    my $consensus_analysis_type =
-      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-
-    foreach my $associated_program ( @{$associated_programs_ref} )
-    {    #Check all programs that use parameter
-
-        my $parameter_set_switch = 0;
-
-        if ( defined( $active_parameter_href->{$associated_program} )
-            && ( $active_parameter_href->{$associated_program} > 0 ) )
-        {    #Only add active programs parameters
-
-            $parameter_set_switch = 1;
-
-            if ( exists( $parameter_href->{$parameter_name}{reference} ) )
-            {    #Expect file to be in reference directory
-
-                ## Update path for supplied reference(s) associated with parameter that should reside in the mip reference directory to full path
-                update_mip_reference_path(
-                    {
-                        parameter_href        => $parameter_href,
-                        active_parameter_href => $active_parameter_href,
-                        parameter_name        => $parameter_name,
-                    }
-                );
-            }
-
-            if ( defined( $active_parameter_href->{$parameter_name} ) )
-            {    #Check parameter existence
-
-                if ( $parameter_href->{$parameter_name}{data_type} eq "SCALAR" )
-                {
-
-                    my $path =
-                      catfile( $active_parameter_href->{$parameter_name} );
-
-                    if ( $parameter_name eq q{bwa_build_reference} ) {
-
-                        ## Checks files to be built by combining filename stub with fileendings
-                        check_file_endings_to_build(
-                            {
-                                parameter_href        => $parameter_href,
-                                active_parameter_href => $active_parameter_href,
-                                file_endings_ref      => \@{
-                                    $file_info_href
-                                      ->{bwa_build_reference_file_endings}
-                                },
-                                parameter_name => q{bwa_build_reference},
-                                file_name      => $active_parameter_href
-                                  ->{human_genome_reference},
-                            }
-                        );
-                    }
-                    elsif ( $parameter_name eq "sample_info_file" ) {
-
-                        if (
-                            defined(
-                                $active_parameter_href->{sample_info_file}
-                            )
-                          )
-                        {
-
-                            if ( -f $active_parameter_href->{sample_info_file} )
-                            {
-
-                                if (
-                                    defined(
-                                        $active_parameter_href->{log_file}
-                                    )
-                                  )
-                                {
-
-                                    $log->info(
-                                        "Loaded: "
-                                          . $active_parameter_href
-                                          ->{sample_info_file},
-                                        "\n"
-                                    );
-                                }
-
-                                ##Loads a YAML file into an arbitrary hash and returns it. Load parameters from previous run from sample_info_file
-                                my %temp = load_yaml(
-                                    {
-                                        yaml_file => $active_parameter_href
-                                          ->{sample_info_file},
-                                    }
-                                );
-
-                                ## Update sample_info with information from pedigree
-                                update_sample_info_hash(
-                                    {
-                                        sample_info_href => $sample_info_href,
-                                        temp_href        => \%temp,
-                                        family_id_ref    => $family_id_ref,
-                                    }
-                                );
-                            }
-                        }
-                    }
-                    elsif (
-                        ( $parameter_name eq "genomic_set" )
-                        && ( $active_parameter_href->{genomic_set} eq
-                            "nouser_info" )
-                      )
-                    {    #Do nothing since this is not a required feature
-                    }
-                    elsif (( $parameter_name eq "bwa_mem_rapid_db" )
-                        && ( $consensus_analysis_type ne "rapid" ) )
-                    { #Do nothing since file is not required unless rapid mode is enabled
-                    }
-                    elsif (( $parameter_name eq "gatk_genotypegvcfs_ref_gvcf" )
-                        && ( $consensus_analysis_type =~ /wgs/ ) )
-                    { #Do nothing since file is not required unless exome mode is enabled
-                    }
-                    elsif (
-                        ( $parameter_name eq "vcfparser_range_feature_file" )
-                        && ( $active_parameter_href
-                            ->{vcfparser_range_feature_file} eq "nouser_info" )
-                      )
-                    {    #Do nothing since no RangeFile was given
-                    }
-                    elsif ($parameter_name eq "vcfparser_select_file"
-                        || $parameter_name eq "sv_vcfparser_select_file" )
-                    {
-
-                        if ( $active_parameter_href->{vcfparser_select_file} eq
-                            "nouser_info" )
-                        {    #No select_file was given
-
-                            $active_parameter_href->{vcfparser_outfile_count} =
-                              1
-                              ; #To track if vcfparser was used with a vcfparser_select_file (=2) or not (=1)
-                        }
-                        else { #To enable addition of select_file to sample_info
-
-                            my ( $does_exist, $error_msg ) =
-                              check_filesystem_objects_existance(
-                                {
-                                    parameter_href => $parameter_href,
-                                    object_name =>
-                                      $active_parameter_href->{$parameter_name},
-                                    parameter_name => $parameter_name,
-                                    object_type    => $parameter_exists_check,
-                                }
-                              );
-                            if ( not $does_exist ) {
-                                $log->fatal($error_msg);
-                                exit 1;
-                            }
-
-                            ## Collects sequences contigs used in select file
-                            collect_select_file_contigs(
-                                {
-                                    contigs_ref => \@{
-                                        $file_info_href->{select_file_contigs}
-                                    },
-                                    select_file_path => catfile(
-                                        $active_parameter_href
-                                          ->{vcfparser_select_file}
-                                    ),
-                                }
-                            );
-
-                            $active_parameter_href->{vcfparser_outfile_count} =
-                              2
-                              ; #To track if vcfparser was used with a vcfparser_select_file (=2) or not (=1)
-                        }
-                    }
-                    elsif (
-                        (
-                            $parameter_name eq
-                            "genmod_models_reduced_penetrance_file"
-                        )
-                        && (
-                            !defined(
-                                $active_parameter_href
-                                  ->{genmod_models_reduced_penetrance_file}
-                            )
-                        )
-                      )
-                    { #Do nothing since no reduced penetrance should be performed
-                    }
-                    elsif ( $parameter_name eq "rank_model_file" ) {
-
-                        if (
-                            !defined(
-                                $active_parameter_href->{rank_model_file}
-                            )
-                          )
-                        { #Do nothing since no rank model config file was given. Use default supplied by ranking script
-                        }
-                        else
-                        { #To enable addition of rankModel file and version to sample_info
-
-                            my ( $does_exist, $error_msg ) =
-                              check_filesystem_objects_existance(
-                                {
-                                    parameter_href => $parameter_href,
-                                    object_name    => $path,
-                                    parameter_name => $parameter_name,
-                                    object_type    => $parameter_exists_check,
-                                }
-                              );
-                            if ( not $does_exist ) {
-                                $log->fatal($error_msg);
-                                exit 1;
-                            }
-                        }
-                    }
-                    else {
-
-                        my ( $does_exist, $error_msg ) =
-                          check_filesystem_objects_existance(
-                            {
-                                parameter_href => $parameter_href,
-                                object_name    => $path,
-                                parameter_name => $parameter_name,
-                                object_type    => $parameter_exists_check,
-                            }
-                          );
-                        if ( not $does_exist ) {
-                            $log->fatal($error_msg);
-                            exit 1;
-                        }
-
-                        if ( $path =~ /\.gz$/ ) { #Check for tabix index as well
-
-                            $path .= ".tbi";
-                            my ( $does_exist, $error_msg ) =
-                              check_filesystem_objects_existance(
-                                {
-                                    parameter_href => $parameter_href,
-                                    object_name    => $path,
-                                    parameter_name => $parameter_name,
-                                    object_type    => $parameter_exists_check,
-                                }
-                              );
-                            if ( not $does_exist ) {
-                                $log->fatal($error_msg);
-                                exit 1;
-                            }
-                        }
-
-                        if ( $parameter_name eq q{human_genome_reference} ) {
-
-                            ## Special case since dict is created with .fastq remoeved
-                            ## Check the existance of associated human genome files
-                            check_human_genome_file_endings(
-                                {
-                                    parameter_href => $parameter_href,
-                                    active_parameter_href =>
-                                      $active_parameter_href,
-                                    file_info_href     => $file_info_href,
-                                    parameter_name_ref => \$parameter_name
-                                }
-                            );
-                        }
-                    }
-                }
-                if ( $parameter_href->{$parameter_name}{data_type} eq "ARRAY" )
-                {
-
-                    foreach my $path (
-                        @{ $active_parameter_href->{$parameter_name} } )
-                    {
-
-                        my ( $does_exist, $error_msg ) =
-                          check_filesystem_objects_existance(
-                            {
-                                parameter_href => $parameter_href,
-                                object_name    => $path,
-                                parameter_name => $parameter_name,
-                                object_type    => $parameter_exists_check,
-                            }
-                          );
-                        if ( not $does_exist ) {
-                            $log->fatal($error_msg);
-                            exit 1;
-                        }
-
-                        if ( $path =~ /\.gz$/ ) { #Check for tabix index as well
-
-                            my $path_index = $path . ".tbi";
-
-                            my ( $does_exist, $error_msg ) =
-                              check_filesystem_objects_existance(
-                                {
-                                    parameter_href => $parameter_href,
-                                    object_name    => $path_index,
-                                    parameter_name => $path_index,
-                                    object_type    => $parameter_exists_check,
-                                }
-                              );
-                            if ( not $does_exist ) {
-                                $log->fatal($error_msg);
-                                exit 1;
-                            }
-                        }
-                    }
-                }
-                if ( $parameter_href->{$parameter_name}{data_type} eq "HASH" ) {
-
-                    for my $path (
-                        keys %{ $active_parameter_href->{$parameter_name} } )
-                    {
-
-                        if ( $parameter_name eq "exome_target_bed" ) {
-
-                            ## Check that supplied target file ends with ".bed" and otherwise exists
-                            check_target_bed_file_exist(
-                                {
-                                    active_parameter_href =>
-                                      $active_parameter_href,
-                                    file           => $path,
-                                    parameter_name => $parameter_name,
-                                }
-                            );
-
-                            ## Checks files to be built by combining filename stub with fileendings
-                            check_file_endings_to_build(
-                                {
-                                    parameter_href => $parameter_href,
-                                    active_parameter_href =>
-                                      $active_parameter_href,
-                                    file_endings_ref =>
-                                      \@{ $file_info_href->{exome_target_bed} },
-                                    parameter_name => "exome_target_bed",
-                                    file_name      => $path,
-                                }
-                            );
-                        }
-                        my ( $does_exist, $error_msg ) =
-                          check_filesystem_objects_existance(
-                            {
-                                parameter_href => $parameter_href,
-                                object_name    => $path,
-                                parameter_name => $path,
-                                object_type    => $parameter_exists_check,
-                            }
-                          );
-                        if ( not $does_exist ) {
-                            $log->fatal($error_msg);
-                            exit 1;
-                        }
-
-                        if ( $path =~ /\.gz$/ ) { #Check for tabix index as well
-
-                            my $path_index = $path . ".tbi";
-                            my ( $does_exist, $error_msg ) =
-                              check_filesystem_objects_existance(
-                                {
-                                    parameter_href => $parameter_href,
-                                    object_name    => $path,
-                                    parameter_name => $path_index,
-                                    object_type    => $parameter_exists_check,
-                                }
-                              );
-                            if ( not $does_exist ) {
-                                $log->fatal($error_msg);
-                                exit 1;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        ## No need to set parameter more than once
-        if ( $parameter_set_switch eq 1 ) {
-            last;
-        }
-    }
-    return;
 }
 
 sub create_file_endings {
@@ -15701,99 +15279,6 @@ q{MIP cannot detect what version of human_genome_reference you have supplied. Pl
       check_gzipped( { file_name_ref => $human_genome_reference_ref, } );
 }
 
-sub check_file_endings_to_build {
-
-##check_file_endings_to_build
-
-##Function : Checks files to be built by combining filename stub with fileendings.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, file_endings_ref, $parameter_name
-##         : $parameter_href        => Parameter hash {REF}
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $file_endings_ref      => Reference to the file_endings to be added to the filename stub {REF}
-##         : $parameter_name        => MIP parameter name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $file_endings_ref;
-    my $parameter_name;
-    my $file_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        file_endings_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$file_endings_ref
-        },
-        parameter_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$parameter_name,
-        },
-        file_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$file_name
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Check::Path qw{ check_filesystem_objects_existance };
-
-    ## Count the number of files that exists
-    my $existence_check_counter = 0;
-
-  FILE_ENDING:
-    foreach my $file_ending ( @{$file_endings_ref} ) {
-
-        my ($does_exist) = check_filesystem_objects_existance(
-            {
-                parameter_href => $parameter_href,
-                object_name    => catfile( $file_name . $file_ending ),
-                parameter_name => $parameter_name,
-                object_type    => q{file},
-            }
-        );
-
-        ## Sum up the number of file that exists
-        $existence_check_counter = $existence_check_counter + $does_exist;
-    }
-
-    ## Files need to be built
-    if ( $existence_check_counter != scalar @{$file_endings_ref} ) {
-
-        $parameter_href->{$parameter_name}{build_file} = 1;
-    }
-    else {
-
-        # All file exist in this check
-        $parameter_href->{$parameter_name}{build_file} = 0;
-    }
-    return;
-}
-
 sub check_user_supplied_info {
 
 ##check_user_supplied_info
@@ -15910,61 +15395,6 @@ sub check_gzipped {
     return $file_compression_status;
 }
 
-sub check_target_bed_file_exist {
-
-##check_target_bed_file_exist
-
-##Function : Check that supplied target file ends with ".bed" and otherwise exists.
-##Returns  : ""
-##Arguments: $active_parameter_href, $file, $parameter_name
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $file                  => File to check for existance and file ending
-##         : $parameter_name        => MIP parameter name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $file;
-    my $parameter_name;
-
-    my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        file =>
-          { required => 1, defined => 1, strict_type => 1, store => \$file },
-        parameter_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$parameter_name,
-        },
-
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    if ( $file !~ /.bed$/ ) {
-
-        $log->fatal(
-            "Could not find intendended '.bed file ending' for target file: "
-              . $file
-              . " in parameter '-"
-              . $parameter_name . "'",
-            "\n"
-        );
-        exit 1;
-    }
-}
-
 sub compare_array_elements {
 
 ##compare_array_elements
@@ -16031,112 +15461,6 @@ sub compare_array_elements {
               . "). Please specify a equal number of elements for both parameters",
             "\n"
         );
-        exit 1;
-    }
-}
-
-sub collect_seq_contigs {
-
-##collect_seq_contigs
-
-##Function : Collects sequences contigs used in analysis from human genome sequence dictionnary associated with $human_genome_reference
-##Returns  : ""
-##Arguments: $contigs_ref, $reference_dir_ref, $human_genome_reference_name_prefix_ref
-##         : $contigs_ref                               => Contig array {REF}
-##         : $reference_dir_ref                         => The MIP reference directory {REF}
-##         : $human_genome_reference_name_prefix_ref => The associated human genome file without file ending
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $contigs_ref;
-    my $reference_dir_ref;
-    my $human_genome_reference_name_prefix_ref;
-
-    my $tmpl = {
-        contigs_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$contigs_ref
-        },
-        reference_dir_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$reference_dir_ref,
-        },
-        human_genome_reference_name_prefix_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$human_genome_reference_name_prefix_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $pqSeqDict =
-q?perl -nae 'if($F[0]=~/^\@SQ/) { if($F[1]=~/SN\:(\S+)/) {print $1, ",";} }' ?;
-    my $SeqDictLocation = catfile( $$reference_dir_ref,
-        $$human_genome_reference_name_prefix_ref . ".dict" );
-    @$contigs_ref = `$pqSeqDict $SeqDictLocation `
-      ;    #Returns a comma seperated string of sequence contigs from dict file
-    @$contigs_ref = split( /,/, join( ',', @$contigs_ref ) );
-}
-
-sub collect_select_file_contigs {
-
-##collect_select_file_contigs
-
-##Function : Collects sequences contigs used in select file
-##Returns  : ""
-##Arguments: $contigs_ref, $select_file_path
-##         : $contigs_ref      => Contig array {REF}
-##         : $select_file_path => The select file path
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $contigs_ref;
-    my $select_file_path;
-
-    my $tmpl = {
-        contigs_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$contigs_ref
-        },
-        select_file_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$select_file_path
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    my $pquery_seq_dict =
-q?perl -nae 'if ($_=~/contig\=(\w+)/) {print $1, ",";} if($_=~/#CHROM/) {last;}' ?;
-    @$contigs_ref = `$pquery_seq_dict $select_file_path `
-      ;    #Returns a comma seperated string of sequence contigs from file
-    @$contigs_ref = split( /,/, join( ',', @$contigs_ref ) );
-
-    if ( !@$contigs_ref ) {
-
-        $log->fatal(
-"Could not detect any '##contig' in meta data header in select file: "
-              . $select_file_path
-              . "\n" );
         exit 1;
     }
 }
@@ -16850,131 +16174,6 @@ sub deafult_log4perl_file {
             $$script_ref . "_" . $$date_time_stamp_ref . ".log" )
           ;    #concatenates log filename
         return $log_file;
-    }
-}
-
-sub check_human_genome_file_endings {
-
-##check_human_genome_file_endings
-
-##Function : Check the existance of associated human genome files.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $file_info_href, $parameter_name_ref, $human_genome_reference_name_prefix_ref, $reference_dir_ref,
-##         : $parameter_href                            => Parameter hash {REF}
-##         : $active_parameter_href                     => Holds all set parameter for analysis {REF}
-##         : $file_info_href                            => File info hash {REF}
-##         : $parameter_name_ref                        => The parameter under evaluation {REF}
-##         : $human_genome_reference_name_prefix_ref => The associated human genome file without file ending {REF}
-##         : $reference_dir_ref                         => MIP reference directory {REF}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $reference_dir_ref;
-    my $human_genome_reference_name_prefix_ref;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $file_info_href;
-    my $parameter_name_ref;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href,
-        },
-        parameter_name_ref =>
-          { default => \$$, strict_type => 1, store => \$parameter_name_ref },
-        reference_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{reference_dir},
-            strict_type => 1,
-            store       => \$reference_dir_ref,
-        },
-        human_genome_reference_name_prefix_ref => {
-            default =>
-              \$arg_href->{file_info_href}{human_genome_reference_name_prefix},
-            strict_type => 1,
-            store       => \$human_genome_reference_name_prefix_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Check::Path qw{ check_filesystem_objects_existance };
-
-    ## Count the number of files that exists
-    my $existence_check_counter = 0;
-    my @human_reference_file_endings =
-      @{ $file_info_href->{human_genome_reference_file_endings} };
-
-  FILE_ENDING:
-    foreach my $file_ending (@human_reference_file_endings) {
-
-        my $path = $active_parameter_href->{human_genome_reference};
-
-        if ( $file_ending eq q{.dict} ) {
-
-            ## Removes ".file_ending" in filename.FILENDING(.gz)
-            my ( $file, $dir_path ) =
-              fileparse( $active_parameter_href->{human_genome_reference},
-                qr/\.fasta|\.fasta\.gz/ );
-            $path = catfile( $dir_path, $file );
-        }
-
-        #Add current ending
-        $path = $path . $file_ending;
-
-        my ($does_exist) = check_filesystem_objects_existance(
-            {
-                parameter_href => $parameter_href,
-                object_name    => $path,
-                parameter_name => $$parameter_name_ref,
-                object_type    => q{file},
-            }
-        );
-
-        ## Sum up the number of file that exists
-        $existence_check_counter = $existence_check_counter + $does_exist;
-    }
-    ## Files need to be built
-    if ( $existence_check_counter != scalar @human_reference_file_endings ) {
-
-        $parameter_href->{$$parameter_name_ref}{build_file} = 1;
-    }
-    else {
-
-        # All file exist in this check
-        $parameter_href->{$$parameter_name_ref}{build_file} = 0;
-    }
-    if ( $parameter_href->{$$parameter_name_ref}{build_file} eq 0 ) {
-
-        ##Collect sequence contigs from human reference ".dict" file since it exists
-        collect_seq_contigs(
-            {
-                contigs_ref       => \@{ $file_info_href->{contigs} },
-                reference_dir_ref => $reference_dir_ref,
-                human_genome_reference_name_prefix_ref =>
-                  $human_genome_reference_name_prefix_ref,
-            }
-        );
     }
 }
 
@@ -17796,72 +16995,6 @@ sub check_command_in_path {
             }
         }
     }
-}
-
-sub update_sample_info_hash {
-
-##update_sample_info_hash
-
-##Function : Update sample_info with information from pedigree
-##Returns  : ""
-##Arguments: $sample_info_href, $temp_href, $family_id_ref
-##         : $temp_href        => Allowed parameters from pedigre file hash {REF}
-##         : $sample_info_href => Info on samples and family hash {REF}
-##         : $family_id_ref    => The family ID {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $sample_info_href;
-    my $temp_href;
-    my $family_id_ref;
-
-    my $tmpl = {
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href,
-        },
-        temp_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$temp_href
-        },
-        family_id_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$family_id_ref,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    foreach my $sample_id ( keys %{ $sample_info_href->{sample} } ) {
-
-        foreach my $key ( keys %{ $sample_info_href->{sample}{$sample_id} } ) {
-
-            if ( exists( $temp_href->{sample}{$sample_id}{$key} ) )
-            { #Previous run information, which should be updated using pedigree from current analysis
-
-                $temp_href->{sample}{$sample_id}{$key} =
-                  delete( $sample_info_href->{sample}{$sample_id}{$key} )
-                  ;    #Required to update info
-            }
-            else {
-
-                $temp_href->{sample}{$sample_id}{$key} =
-                  $sample_info_href->{sample}{$sample_id}{$key};
-            }
-        }
-    }
-    %{$sample_info_href} = %$temp_href
-      ; #Copy hash with updated keys from what was in sample_info (should be only pedigree %allowed_entries)
 }
 
 sub update_to_absolute_path {
@@ -19992,89 +19125,6 @@ sub check_founder_id {
                     exit 1;
                 }
             }
-        }
-    }
-}
-
-sub update_mip_reference_path {
-
-##update_mip_reference_path
-
-##Function : Update path for supplied reference(s) associated with parameter that should reside in the mip reference directory to full path.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $parameter_name
-##         : $parameter_href        => Parameter hash {REF}
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $parameter_name        => Parameter to update
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $parameter_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        parameter_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$parameter_name,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $reference_dir_ref = \$active_parameter_href->{reference_dir};
-
-    if ( $parameter_href->{$parameter_name}{data_type} eq "SCALAR"
-        && defined( $active_parameter_href->{$parameter_name} ) )
-    {
-
-        my ( $volume, $directory, $file_name ) =
-          File::Spec->splitpath( $active_parameter_href->{$parameter_name} )
-          ;    #Split to restate
-        $active_parameter_href->{$parameter_name} = $file_name
-          ;  #Restate to allow for changing mip reference directory between runs
-        $active_parameter_href->{$parameter_name} =
-          catfile( $$reference_dir_ref,
-            $active_parameter_href->{$parameter_name} );  #Update original value
-    }
-    elsif ( $parameter_href->{$parameter_name}{data_type} eq "ARRAY" ) {
-
-        foreach my $file ( @{ $active_parameter_href->{$parameter_name} } ) {
-
-            my ( $volume, $directory, $file_name ) =
-              File::Spec->splitpath($file);               #Split to restate
-            $file = catfile( $$reference_dir_ref, $file_name )
-              ;    #Update original element
-        }
-    }
-    elsif ( $parameter_href->{$parameter_name}{data_type} eq "HASH" ) {
-
-        foreach my $file ( keys %{ $active_parameter_href->{$parameter_name} } )
-        {
-
-            my ( $volume, $directory, $file_name ) =
-              File::Spec->splitpath($file);    #Split to restate
-            $active_parameter_href->{$parameter_name}
-              { catfile( $$reference_dir_ref, $file_name ) } =
-              delete( $active_parameter_href->{$parameter_name}{$file} )
-              ;                                #Update original value
         }
     }
 }
