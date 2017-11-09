@@ -47,7 +47,6 @@ sub analysis_samtools_mpileup {
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $sample_id               => Sample id
 ##          : $program_name            => Program name
 ##          : $family_id               => Family id
 ##          : $temp_directory          => Temporary directory
@@ -71,7 +70,6 @@ sub analysis_samtools_mpileup {
   my $file_info_href;
   my $infile_lane_prefix_href;
   my $job_id_href;
-  my $sample_id;
   my $program_name;
 
   my $tmpl = {
@@ -116,12 +114,6 @@ sub analysis_samtools_mpileup {
           default     => {},
           strict_type => 1,
           store       => \$job_id_href,
-      },
-      sample_id => {
-          required    => 1,
-          defined     => 1,
-          strict_type => 1,
-          store       => \$sample_id,
       },
       program_name => {
           required    => 1,
