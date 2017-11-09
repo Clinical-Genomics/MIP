@@ -6407,7 +6407,7 @@ sub mplink {
     use MIP::Program::Variantcalling::Bcftools
       qw(bcftools_view bcftools_annotate);
     use Program::Variantcalling::Vt qw(vt_uniq);
-    use Program::Variantcalling::Plink qw(plink);
+    use MIP::Program::Variantcalling::Plink qw(plink);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_family_dead_end);
@@ -6664,7 +6664,7 @@ sub mplink {
     plink(
         {
             check_sex       => 1,
-            sex_check_min_F => $sex_check_min_F,
+            sex_check_min_f => $sex_check_min_F,
             extract_file    => $extract_file,
             read_freqfile_path =>
               catfile( $$temp_directory_ref, $$family_id_ref . "_data.frqx" ),
@@ -7088,7 +7088,6 @@ sub vt {
                     stderrfile_path => $xargs_file_path_prefix . "."
                       . $contig
                       . ".stderr.txt",
-                    append_stderr_info  => 1,
                     verbosity           => "v",
                     temp_directory_path => $$temp_directory_ref,
                     thousand_g_file_path =>
