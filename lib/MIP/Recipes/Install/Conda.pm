@@ -9,6 +9,9 @@ use charnames qw{ :full :short };
 use Carp;
 use English qw{ -no_match_vars };
 use Params::Check qw{ check allow last_error };
+use File::Basename qw{ dirname };
+
+## CPANM
 use Readonly;
 
 ## Constants
@@ -23,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.0.4;
+    our $VERSION = 1.0.5;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ setup_conda_env install_bioconda_packages };
@@ -422,11 +425,25 @@ sub finish_bioconda_package_install {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use File::Spec::Functions qw{ catdir catfile };
-    use MIP::Gnu::Coreutils qw{ gnu_cp gnu_chmod };
+    use MIP::Gnu::Coreutils qw{ gnu_cp gnu_chmod gnu_rm };
     use MIP::Package_manager::Conda
       qw{ conda_source_activate conda_source_deactivate };
     use MIP::Program::Variantcalling::SnpEff qw{ snpeff_download };
+    use MIP::Recipes::Install::Gatk qw{ gatk_download };
     use MIP::Recipes::Install::SnpEff qw{ check_mt_codon_table };
+
+    ## Only activate conda environment if supplied by user
+    if ($conda_env) {
+        ## Activate conda environment
+        say {$FILEHANDLE} q{## Activate conda environment};
+        conda_source_activate(
+            {
+                FILEHANDLE => $FILEHANDLE,
+                env_name   => $conda_env,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+    }
 
     ## Custom BWA
     say {$FILEHANDLE} q{## Custom BWA solutions};
@@ -469,26 +486,13 @@ sub finish_bioconda_package_install {
                     config_file    => q{snpEff.config},
                     genome_version => $genome_version,
                     verbose        => $verbose,
-                    quiet          => $quiet
+                    quiet          => $quiet,
                 }
             );
 
             my $snpeff_genome_dir =
               catdir( $share_dir, q{data}, $genome_version );
             next SNPEFF_GENOME_VERSION if ( -d $snpeff_genome_dir );
-
-            ## Only activate conda environment if supplied by user
-            if ($conda_env) {
-                ## Activate conda environment
-                say {$FILEHANDLE} q{## Activate conda environment};
-                conda_source_activate(
-                    {
-                        FILEHANDLE => $FILEHANDLE,
-                        env_name   => $conda_env,
-                    }
-                );
-                say {$FILEHANDLE} $NEWLINE;
-            }
 
             ## Write instructions to download snpeff database.
             ## This is done by install script to avoid race conditin when doing first analysis run in MIP
@@ -506,16 +510,6 @@ sub finish_bioconda_package_install {
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
-            ## Deactivate conda environment if conda_environment exists
-            if ($conda_env) {
-                say {$FILEHANDLE} q{## Deactivate conda environment};
-                conda_source_deactivate(
-                    {
-                        FILEHANDLE => $FILEHANDLE,
-                    }
-                );
-                say {$FILEHANDLE} $NEWLINE;
-            }
         }
     }
 
@@ -530,8 +524,45 @@ sub finish_bioconda_package_install {
             FILEHANDLE => $FILEHANDLE,
         }
     );
+    say {$FILEHANDLE} $NEWLINE;
+
+    ## Custom GATK
+    say {$FILEHANDLE} q{## Custom GATK solutions};
+
+    ## Download gatk .zip
+    my $gatk_tar_path = gatk_download(
+        {
+            gatk_version => $bioconda_packages_href->{gatk},
+            verbose      => $verbose,
+            quiet        => $quiet,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+
+    ## Hard coding here since GATK 4.0 will be open source.
+    ## Then this step will be unnecessary
+    say {$FILEHANDLE} q{gatk-register} . $SPACE . $gatk_tar_path . $NEWLINE;
+
+    gnu_rm(
+        {
+            infile_path => dirname($gatk_tar_path),
+            force       => 1,
+            recursive   => 1,
+            FILEHANDLE  => $FILEHANDLE,
+        }
+    );
     say {$FILEHANDLE} $NEWLINE x 2;
 
+    ## Deactivate conda environment if conda_environment exists
+    if ($conda_env) {
+        say {$FILEHANDLE} q{## Deactivate conda environment};
+        conda_source_deactivate(
+            {
+                FILEHANDLE => $FILEHANDLE,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+    }
     return;
 }
 
@@ -656,6 +687,7 @@ sub _create_target_link_paths {
 
   PROGRAM:
     foreach my $program ( keys %binaries ) {
+
         # Check if the program has been set to be installed via shell and
         # thus has been removed from the bioconda_packages hash
         next PROGRAM if ( not $bioconda_packages_href->{$program} );
@@ -677,12 +709,14 @@ sub _create_target_link_paths {
             ## Construct target path
             my $target_path;
             if ( $program eq q{manta} ) {
-                $target_path = catfile( 
-                  $conda_env_path, q{share}, $program_directory, q{bin}, $binary );
+                $target_path =
+                  catfile( $conda_env_path, q{share}, $program_directory,
+                    q{bin}, $binary );
             }
             else {
-                $target_path = catfile( 
-                  $conda_env_path, q{share}, $program_directory, $binary );
+                $target_path =
+                  catfile( $conda_env_path, q{share}, $program_directory,
+                    $binary );
             }
             ## Construct link_path
             my $link_path = catfile( $conda_env_path, q{bin}, $binary );

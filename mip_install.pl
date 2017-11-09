@@ -99,6 +99,7 @@ $parameter{bioconda}{peddy}        = q{0.2.9};
 $parameter{bioconda}{plink2}       = q{1.90b3.35};
 $parameter{bioconda}{vcfanno}      = q{0.1.0};
 $parameter{bioconda}{q{rtg-tools}} = q{3.8.4};
+$parameter{bioconda}{q{gatk}}      = q{3.8};
 
 # Required for CNVnator
 $parameter{bioconda}{gcc}   = q{4.8.5};
@@ -145,7 +146,7 @@ $parameter{shell}{snpeff}{snpeff_genome_versions} =
   [qw{ GRCh37.75 GRCh38.86 }];
 $parameter{reference_genome_versions} = [qw{ GRCh37 hg38 }];
 
-my $VERSION = q{1.2.17};
+our $VERSION = q{1.2.18};
 
 GetOptions(
     q{see|bash_set_errexit}    => \$parameter{bash_set_errexit},
@@ -414,7 +415,7 @@ if ( $parameter{reference_dir} ) {
 
 $log->info(q{Finished writing installation instructions for MIP});
 
-close($FILEHANDLE) or $log->logcroak(q{Could not close FILEHANDLE});
+close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
 #################
 ###SubRoutines###
