@@ -50,12 +50,6 @@ sub analysis_gatk_concatenate_genotypegvcfs {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $family_id;
-    my $temp_directory;
-    my $outaligner_dir;
-    my $call_type;
-
     ## Flatten argument(s)
     my $parameter_href;
     my $active_parameter_href;
@@ -66,6 +60,12 @@ sub analysis_gatk_concatenate_genotypegvcfs {
     my $infamily_directory;
     my $outfamily_directory;
     my $program_name;
+
+    ## Default(s)
+    my $family_id;
+    my $temp_directory;
+    my $outaligner_dir;
+    my $call_type;
 
     my $tmpl = {
         parameter_href => {
@@ -154,14 +154,15 @@ sub analysis_gatk_concatenate_genotypegvcfs {
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Language::Java qw{ java_core };
     use MIP::Processmanagement::Processes qw{ print_wait };
-    use MIP::Set::File qw{ set_file_suffix };
-    use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
     use MIP::Program::Variantcalling::Bcftools qw{bcftools_view_and_index_vcf};
     use MIP::Program::Variantcalling::Gatk
       qw{ gatk_selectvariants gatk_concatenate_variants };
-    use MIP::QC::Record qw{ add_processing_metafile_to_sample_info };
+    use MIP::Set::File qw{ set_file_suffix };
+    use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::QC::Record
+      qw{ add_processing_metafile_to_sample_info add_program_outfile_to_sample_info };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
