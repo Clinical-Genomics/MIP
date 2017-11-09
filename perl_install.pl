@@ -33,7 +33,7 @@ my %array_parameter;
 
 ## Perl defaults
 $parameter{perl_install_dir} = $ENV{HOME};
-$parameter{perl_version}     = q{5.18.2};
+$parameter{perl_version}     = q{5.26.0};
 
 ## Module defaults
 $array_parameter{perl_modules} = [
