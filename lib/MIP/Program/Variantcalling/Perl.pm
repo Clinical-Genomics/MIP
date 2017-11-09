@@ -67,28 +67,30 @@ sub replace_iupac {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+
+    print {$FILEHANDLE} $PIPE . $SPACE;
+
     ## Compose $regexp
-    # Don't apply to comments
-    my $regexp = q{if($_=~/^#/) {print $_;}} . $SPACE;
+    # Execute perl
+    my $regexp = q{perl -nae} . $SPACE;
 
-    # Substitute IUPAC code with N to not break vcf specifications (GRCh38)
-    $regexp .= q?else { @F[4] =~ s/W|K|Y|R|S|M/N/g;? . $SPACE;
-
+    ## Substitute IUPAC code with N to not break vcf specifications (GRCh38)
     if ($xargs) {
 
+        # Print comment lines as they are but add escape char at the beginning of the expression
+        $regexp .= q{\'if($_=~/^#/) {print $_;}} . $SPACE;
+
         # Escape chars are needed in front of separators
-        $regexp = q?\'? . $regexp . q?print join(\"\\\t\", @F), \"\\\n\"; }\' ?;
+        $regexp .= q?else { @F[4] =~ s/W|K|Y|R|S|M/N/g; print join(\"\\\t\", @F), \"\\\n\"; }\'? . $SPACE;
     }
     else {
 
-        $regexp = q?'? . $regexp . q?print join("\t", @F), "\n"; }' ?;
+        # Print comment lines as they are
+        $regexp .= q{'if($_=~/^#/) {print $_;}} . $SPACE;
+
+        # Escape chars are NOT needed in front of separators
+        $regexp .= q?else { @F[4] =~ s/W|K|Y|R|S|M/N/g; print join("\t", @F), "\n"; }'? . $SPACE;
     }
-
-    # Execute perl over expression
-    $regexp = q{perl -nae} . $SPACE . $regexp;
-
-    # Add Pipe in front of regexp
-    $regexp = $PIPE . $SPACE . $regexp;
 
     print {$FILEHANDLE} $regexp;
 
