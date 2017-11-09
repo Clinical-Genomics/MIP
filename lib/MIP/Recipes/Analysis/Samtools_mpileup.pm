@@ -126,6 +126,11 @@ sub analysis_samtools_mpileup {
           strict_type => 1,
           store       => \$family_id,
       },
+      temp_directory_ref => {
+            default     => $arg_href->{active_parameter_href}{temp_directory},
+            strict_type => 1,
+            store       => \$temp_directory_ref,
+        },
       outaligner_dir => {
           default     => $arg_href->{active_parameter_href}{outaligner_dir},
           strict_type => 1,
