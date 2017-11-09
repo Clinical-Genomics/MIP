@@ -18,21 +18,21 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Unix::Standard_streams qw{ unix_standard_streams };
-use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 use MIP::Language::Java qw{ java_core };
 use MIP::Program::Base::Gatk qw{ gatk_base };
+use MIP::Unix::Standard_streams qw{ unix_standard_streams };
+use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ gatk_catvariants gatk_genotypegvcfs gatk_selectvariants gatk_variantrecalibrator gatk_applyrecalibration gatk_calculategenotypeposteriors gatk_combinevariants gatk_varianteval gatk_leftalignandtrimvariants gatk_concatenate_variants };
+      qw{ gatk_applyrecalibration gatk_calculategenotypeposteriors gatk_catvariants gatk_combinevariants gatk_concatenate_variants gatk_genotypegvcfs gatk_leftalignandtrimvariants gatk_selectvariants gatk_varianteval gatk_variantrecalibrator };
 
 }
 
@@ -65,12 +65,6 @@ sub gatk_genotypegvcfs {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $gatk_disable_auto_index_and_file_lock;
-    my $logging_level;
-    my $pedigree_validation_type;
-    my $include_nonvariant_sites;
-
     ## Flatten argument(s)
     my $memory_allocation;
     my $java_use_large_pages;
@@ -85,6 +79,12 @@ sub gatk_genotypegvcfs {
     my $pedigree;
     my $dbsnp_file_path;
     my $downsample_to_coverage;
+
+    ## Default(s)
+    my $gatk_disable_auto_index_and_file_lock;
+    my $logging_level;
+    my $pedigree_validation_type;
+    my $include_nonvariant_sites;
 
     my $tmpl = {
         memory_allocation => { strict_type => 1, store => \$memory_allocation },
@@ -253,12 +253,6 @@ sub gatk_selectvariants {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $gatk_disable_auto_index_and_file_lock;
-    my $logging_level;
-    my $pedigree_validation_type;
-    my $exclude_nonvariants;
-
     ## Flatten argument(s)
     my $memory_allocation;
     my $java_use_large_pages;
@@ -273,6 +267,12 @@ sub gatk_selectvariants {
     my $FILEHANDLE;
     my $pedigree;
     my $downsample_to_coverage;
+
+    ## Default(s)
+    my $gatk_disable_auto_index_and_file_lock;
+    my $logging_level;
+    my $pedigree_validation_type;
+    my $exclude_nonvariants;
 
     my $tmpl = {
         memory_allocation => { strict_type => 1, store => \$memory_allocation },
@@ -442,11 +442,6 @@ sub gatk_catvariants {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $gatk_disable_auto_index_and_file_lock;
-    my $logging_level;
-    my $assume_sorted;
-
     ## Flatten argument(s)
     my $memory_allocation;
     my $java_use_large_pages;
@@ -459,6 +454,11 @@ sub gatk_catvariants {
     my $stderrfile_path;
     my $FILEHANDLE;
     my $downsample_to_coverage;
+
+    ## Default(s)
+    my $gatk_disable_auto_index_and_file_lock;
+    my $logging_level;
+    my $assume_sorted;
 
     my $tmpl = {
         memory_allocation => { strict_type => 1, store => \$memory_allocation },
@@ -644,12 +644,6 @@ sub gatk_variantrecalibrator {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $gatk_disable_auto_index_and_file_lock;
-    my $disable_indel_qual;
-    my $logging_level;
-    my $pedigree_validation_type;
-
     ## Flatten argument(s)
     my $memory_allocation;
     my $java_use_large_pages;
@@ -673,6 +667,12 @@ sub gatk_variantrecalibrator {
     my $num_cpu_threads_per_data_thread;
     my $downsample_to_coverage;
     my $max_gaussian_level;
+
+    ## Default(s)
+    my $gatk_disable_auto_index_and_file_lock;
+    my $disable_indel_qual;
+    my $logging_level;
+    my $pedigree_validation_type;
 
     my $tmpl = {
         memory_allocation => { strict_type => 1, store => \$memory_allocation },
@@ -938,12 +938,6 @@ sub gatk_applyrecalibration {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $gatk_disable_auto_index_and_file_lock;
-    my $disable_indel_qual;
-    my $logging_level;
-    my $pedigree_validation_type;
-
     ## Flatten argument(s)
     my $memory_allocation;
     my $java_use_large_pages;
@@ -965,6 +959,12 @@ sub gatk_applyrecalibration {
     my $num_cpu_threads_per_data_thread;
     my $downsample_to_coverage;
     my $ts_filter_level;
+
+    ## Default(s)
+    my $gatk_disable_auto_index_and_file_lock;
+    my $disable_indel_qual;
+    my $logging_level;
+    my $pedigree_validation_type;
 
     my $tmpl = {
         memory_allocation => { strict_type => 1, store => \$memory_allocation },
@@ -1186,11 +1186,6 @@ sub gatk_calculategenotypeposteriors {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $gatk_disable_auto_index_and_file_lock;
-    my $logging_level;
-    my $pedigree_validation_type;
-
     ## Flatten argument(s)
     my $memory_allocation;
     my $java_use_large_pages;
@@ -1205,6 +1200,11 @@ sub gatk_calculategenotypeposteriors {
     my $pedigree;
     my $supporting_callset_file_path;
     my $downsample_to_coverage;
+
+    ## Default(s)
+    my $gatk_disable_auto_index_and_file_lock;
+    my $logging_level;
+    my $pedigree_validation_type;
 
     my $tmpl = {
         memory_allocation => { strict_type => 1, store => \$memory_allocation },
@@ -1360,12 +1360,6 @@ sub gatk_combinevariants {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $gatk_disable_auto_index_and_file_lock;
-    my $logging_level;
-    my $pedigree_validation_type;
-    my $exclude_nonvariants;
-
     ## Flatten argument(s)
     my $memory_allocation;
     my $java_use_large_pages;
@@ -1381,6 +1375,12 @@ sub gatk_combinevariants {
     my $prioritize_caller;
     my $genotype_merge_option;
     my $downsample_to_coverage;
+
+    ## Default(s)
+    my $gatk_disable_auto_index_and_file_lock;
+    my $logging_level;
+    my $pedigree_validation_type;
+    my $exclude_nonvariants;
 
     my $tmpl = {
         memory_allocation => { strict_type => 1, store => \$memory_allocation },
@@ -1561,11 +1561,6 @@ sub gatk_varianteval {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $gatk_disable_auto_index_and_file_lock;
-    my $logging_level;
-    my $pedigree_validation_type;
-
     ## Flatten argument(s)
     my $memory_allocation;
     my $java_use_large_pages;
@@ -1581,6 +1576,11 @@ sub gatk_varianteval {
     my $dbsnp_file_path;
     my $indel_gold_standard_file_path;
     my $downsample_to_coverage;
+
+    ## Default(s)
+    my $gatk_disable_auto_index_and_file_lock;
+    my $logging_level;
+    my $pedigree_validation_type;
 
     my $tmpl = {
         memory_allocation => { strict_type => 1, store => \$memory_allocation },
@@ -1741,12 +1741,6 @@ sub gatk_leftalignandtrimvariants {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $gatk_disable_auto_index_and_file_lock;
-    my $logging_level;
-    my $pedigree_validation_type;
-    my $split_multiallelics;
-
     ## Flatten argument(s)
     my $memory_allocation;
     my $java_use_large_pages;
@@ -1760,6 +1754,12 @@ sub gatk_leftalignandtrimvariants {
     my $FILEHANDLE;
     my $pedigree;
     my $downsample_to_coverage;
+
+    ## Default(s)
+    my $gatk_disable_auto_index_and_file_lock;
+    my $logging_level;
+    my $pedigree_validation_type;
+    my $split_multiallelics;
 
     my $tmpl = {
         memory_allocation => { strict_type => 1, store => \$memory_allocation },
@@ -1909,9 +1909,6 @@ sub gatk_concatenate_variants {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $human_genome_reference;
-
     ## Flatten argument(s)
     my $active_parameter_href;
     my $elements_ref;
@@ -1920,6 +1917,9 @@ sub gatk_concatenate_variants {
     my $infile_postfix;
     my $outfile_path_prefix;
     my $outfile_suffix;
+
+    ## Default(s)
+    my $human_genome_reference;
 
     my $tmpl = {
         active_parameter_href => {

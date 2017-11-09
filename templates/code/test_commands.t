@@ -1,23 +1,22 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{ 2014 };
-use warnings qw{ FATAL utf8 };
-use autodie;
-use 5.018;
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
 use Carp;
+use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-
-use FindBin qw{ $Bin };
 use File::Basename qw{ dirname basename };
 use File::Spec::Functions qw{ catdir };
+use FindBin qw{ $Bin };
 use Getopt::Long;
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
+use 5.018;
 
 ## CPANM
+use Modern::Perl qw{ 2014 };
+use autodie;
 use Readonly;
 
 ## MIPs lib/
@@ -30,9 +29,9 @@ my $VERBOSE = 1;
 our $VERSION = 1.0.0;
 
 ## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
 Readonly my $COMMA   => q{,};
+Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => q{ };
 
 ### User Options
 GetOptions(

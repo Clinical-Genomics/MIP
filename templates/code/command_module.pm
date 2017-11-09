@@ -1,14 +1,14 @@
 package MIP::PATH::TO::MODULE;
 
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
 use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
 
 ## CPANM
 use Readonly;
@@ -35,22 +35,25 @@ sub name_of_subroutine {
 
 ## Function : Perl wrapper for generic commands module.
 ## Returns  : @commands
-## Arguments: $stdoutfile_path        => Stdoutfile path
+## Arguments: $FILEHANDLE             => Filehandle to write to
+##          : $stdoutfile_path        => Stdoutfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
-##          : $FILEHANDLE             => Filehandle to write to
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $FILEHANDLE;
     my $stdoutfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
-    my $FILEHANDLE;
 
     ## Default(s)
 
     my $tmpl = {
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
         stdoutfile_path => {
             strict_type => 1,
             store       => \$stdoutfile_path,
@@ -63,15 +66,11 @@ sub name_of_subroutine {
             strict_type => 1,
             store       => \$stderrfile_path_append,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
-        },
-
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
+    ## Stores commands depending on input parameters
     my @commands = q{BASE COMMAND};
 
     ############################################
@@ -94,7 +93,6 @@ sub name_of_subroutine {
             FILEHANDLE   => $FILEHANDLE,
         }
     );
-
     return @commands;
 }
 
