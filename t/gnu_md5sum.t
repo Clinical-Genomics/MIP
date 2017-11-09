@@ -4,20 +4,20 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use Getopt::Long;
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use Test::More;
-use warnings qw{ FATAL utf8 };
 use utf8;
+use warnings qw{ FATAL utf8 };
 use 5.018;
 
 ## CPANM
+use Modern::Perl qw{ 2014 };
 use autodie;
 use Readonly;
-use Modern::Perl qw{ 2014 };
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -26,22 +26,24 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.1';
+our $VERSION = 1.0.0;
 
 ## Constants
 Readonly my $COMMA   => q{,};
 Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
 
-###User Options
+### User Options
 GetOptions(
-    ## Display help text
+
+    # Display help text
     q{h|help} => sub {
         done_testing();
         say {*STDOUT} $USAGE;
         exit;
     },
-    ## Display version number
+
+    # Display version number
     q{v|version} => sub {
         done_testing();
         say {*STDOUT} $NEWLINE
@@ -78,7 +80,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Program::Compression::Gzip});
+    my @modules = (q{MIP::Gnu::Coreutils});
 
   MODULE:
     for my $module (@modules) {
@@ -86,11 +88,11 @@ BEGIN {
     }
 }
 
-use MIP::Program::Compression::Gzip qw{ gzip };
+use MIP::Gnu::Coreutils qw{ gnu_md5sum };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test gzip from Gzip.pm v}
-      . $MIP::Program::Compression::Gzip::VERSION
+diag(   q{Test gnu_md5sum from Coreutils.pm v}
+      . $MIP::Gnu::Coreutils::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -99,16 +101,20 @@ diag(   q{Test gzip from Gzip.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{gzip};
+my $function_base_command = q{md5sum};
 
 my %base_argument = (
+    stdoutfile_path => {
+        input           => q{stdoutfile.test},
+        expected_output => q{1> stdoutfile.test},
+    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
     },
     stderrfile_path_append => {
-        input           => q{stderrfile_path_append},
-        expected_output => q{2>> stderrfile_path_append},
+        input           => q{stderrfile.test},
+        expected_output => q{2>> stderrfile.test},
     },
     FILEHANDLE => {
         input           => undef,
@@ -118,51 +124,26 @@ my %base_argument = (
 
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
-my %required_argument = (
-    infile_path => {
-        input           => q{infile_path},
-        expected_output => q{infile_path},
-    },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
-    },
-);
+my %required_argument;
 
 my %specific_argument = (
-    stdout => {
-        input           => q{stdout},
-        expected_output => q{--stdout},
-    },
-    decompress => {
+    check => {
         input           => q{1},
-        expected_output => q{--decompress},
+        expected_output => q{--check},
     },
-    force => {
-        input           => q{1},
-        expected_output => q{--force},
-    },
-    outfile_path => {
-        input           => q{outfile_path},
-        expected_output => q{> outfile_path},
-    },
-    quiet => {
-        input           => q{1},
-        expected_output => q{--quiet},
-    },
-    verbose => {
-        input           => q{1},
-        expected_output => q{--verbose},
+    infile_path => {
+        input           => catfile(qw{dir file}),
+        expected_output => catfile(qw{dir file}),
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&gzip;
+my $module_function_cref = \&gnu_md5sum;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
 
-HASHES_OF_ARGUMENTS:
+ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
@@ -183,12 +164,9 @@ done_testing();
 
 sub build_usage {
 
-##build_usage
-
-##Function : Build the USAGE instructions
-##Returns  : ""
-##Arguments: $program_name
-##         : $program_name => Name of the script
+## Function  : Build the USAGE instructions
+## Returns   :
+## Arguments : $program_name => Name of the script
 
     my ($arg_href) = @_;
 

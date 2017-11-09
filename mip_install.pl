@@ -9,18 +9,18 @@ use charnames qw{ :full :short };
 use Carp;
 use English qw{ -no_match_vars };
 use Params::Check qw{ check allow last_error };
-
 use Getopt::Long;
 use Cwd;
 use Cwd qw{ abs_path };
-
 use FindBin qw{ $Bin };
 use IO::Handle;
 use File::Basename qw{ dirname basename fileparse };
 use File::Spec::Functions qw{ catfile catdir devnull };
-use Readonly;
 use Time::Piece;
 use List::Util qw{ any };
+
+## CPANM
+use Readonly;
 
 ## MIPs lib/
 #Add MIPs internal lib
@@ -424,7 +424,7 @@ close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 sub build_usage {
 
 ##Function : Build the USAGE instructions
-##Returns  : ""
+##Returns  :
 ##Arguments: $script_name => Name of the script
 
     my ($arg_href) = @_;

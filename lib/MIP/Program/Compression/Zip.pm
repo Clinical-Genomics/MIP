@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ unzip };
@@ -32,7 +32,7 @@ Readonly my $SPACE => q{ };
 sub unzip {
 
 ## Function : Perl wrapper for writing unzip recipe to $FILEHANDLE or return commands array. Based on unzip v6.0
-## Returns  : "@commands"
+## Returns  : @commands
 ##          : $infile_path            => Infile path
 ##          : $outdir_path            => Path to output directory
 ##          : $stdout                 => Write on standard output
@@ -63,51 +63,51 @@ sub unzip {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$infile_path
+            store       => \$infile_path,
         },
         outdir_path => {
             strict_type => 1,
-            store       => \$outdir_path
+            store       => \$outdir_path,
         },
         stdout => {
             strict_type => 1,
-            store       => \$stdout
+            store       => \$stdout,
         },
         FILEHANDLE => {
-            store => \$FILEHANDLE
+            store => \$FILEHANDLE,
         },
         stderrfile_path => {
             strict_type => 1,
-            store       => \$stderrfile_path
+            store       => \$stderrfile_path,
         },
         stderrfile_path_append => {
             strict_type => 1,
-            store       => \$stderrfile_path_append
+            store       => \$stderrfile_path_append,
         },
         quiet => {
             default     => 0,
             allow       => [ undef, 0, 1 ],
             strict_type => 1,
-            store       => \$quiet
+            store       => \$quiet,
         },
         verbose => {
             default     => 0,
             allow       => [ undef, 0, 1 ],
             strict_type => 1,
-            store       => \$verbose
+            store       => \$verbose,
         },
         force => {
             default     => 0,
             allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$force
+            store       => \$force,
         },
 
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
+    ## Stores commands depending on input parameters
     my @commands = q{unzip};
 
     ## Options
