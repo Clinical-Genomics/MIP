@@ -6537,9 +6537,9 @@ sub mplink {
     );
     say {$FILEHANDLE} "\n";
 
-    ### Plink
+    ### Plink variant pruning and creation of unique Ids
     say {$FILEHANDLE} "## Create pruning set and uniq IDs";
-    plink(
+    plink_variant_pruning(
         {
             vcffile_path => $file_path_prefix
               . "_no_indels_ann_uniq"
