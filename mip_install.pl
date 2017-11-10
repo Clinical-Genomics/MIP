@@ -288,12 +288,6 @@ if ( not $parameter{vep_cache_dir} ) {
 ###MAIN###
 ##########
 
-say STDERR q{This is vep_autoflag: } . $parameter{shell}{vep}{vep_auto_flag};
-say STDERR q{This is vep assemblies: } . join $SPACE,
-  @{ $parameter{shell}{vep}{vep_assemblies} };
-say STDERR q{This is vep plugins: } . join $SPACE,
-  @{ $parameter{shell}{vep}{vep_plugins} };
-
 # Create anonymous filehandle
 my $FILEHANDLE = IO::Handle->new();
 
