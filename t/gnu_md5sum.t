@@ -3,20 +3,20 @@
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use open qw{ :encoding(UTF-8) :std };
 use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use Getopt::Long;
+use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use Test::More;
-use warnings qw{ FATAL utf8 };
 use utf8;
+use warnings qw{ FATAL utf8 };
 use 5.018;
 
 ## CPANM
-use autodie;
 use Modern::Perl qw{ 2014 };
+use autodie;
 use Readonly;
 
 ## MIPs lib/
@@ -26,14 +26,14 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.1;
+our $VERSION = 1.0.0;
 
 ## Constants
-Readonly my $NEWLINE => qq{\n};
 Readonly my $COMMA   => q{,};
+Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
 
-###User Options
+### User Options
 GetOptions(
 
     # Display help text
@@ -80,7 +80,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Program::Variantcalling::Bcftools});
+    my @modules = (q{MIP::Gnu::Coreutils});
 
   MODULE:
     for my $module (@modules) {
@@ -88,11 +88,11 @@ BEGIN {
     }
 }
 
-use MIP::Program::Variantcalling::Bcftools qw{ bcftools_concat };
+use MIP::Gnu::Coreutils qw{ gnu_md5sum };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test bcftools_concat from Bcftools.pm v}
-      . $MIP::Program::Variantcalling::Bcftools::VERSION
+diag(   q{Test gnu_md5sum from Coreutils.pm v}
+      . $MIP::Gnu::Coreutils::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -101,7 +101,7 @@ diag(   q{Test bcftools_concat from Bcftools.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{bcftools};
+my $function_base_command = q{md5sum};
 
 my %base_argument = (
     stdoutfile_path => {
@@ -127,32 +127,18 @@ my %base_argument = (
 my %required_argument;
 
 my %specific_argument = (
-    infile_paths_ref => {
-        inputs_ref =>
-          [qw{ infile_path_ref1 infile_path_ref2 infile_path_ref3 }],
-        expected_output =>
-          q{infile_path_ref1 infile_path_ref2 infile_path_ref3},
-    },
-    outfile_path => {
-        input           => q{outfile.txt},
-        expected_output => q{--output outfile.txt},
-    },
-    output_type => {
-        input           => q{v},
-        expected_output => q{--output-type v},
-    },
-    allow_overlaps => {
+    check => {
         input           => q{1},
-        expected_output => q{--allow-overlaps},
+        expected_output => q{--check},
     },
-    rm_dups => {
-        input           => q{all},
-        expected_output => q{--rm-dups} . $SPACE . q{all},
+    infile_path => {
+        input           => catfile(qw{dir file}),
+        expected_output => catfile(qw{dir file}),
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&bcftools_concat;
+my $module_function_cref = \&gnu_md5sum;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
@@ -178,12 +164,9 @@ done_testing();
 
 sub build_usage {
 
-## build_usage
-
 ## Function  : Build the USAGE instructions
-## Returns   : ""
-## Arguments : $program_name
-##           : $program_name => Name of the script
+## Returns   :
+## Arguments : $program_name => Name of the script
 
     my ($arg_href) = @_;
 

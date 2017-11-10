@@ -1,17 +1,17 @@
 package MIP::Program::Variantcalling::Bcftools;
 
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use FindBin qw{ $Bin };
+use File::Basename qw{ dirname };
+use File::Spec::Functions qw{ catdir catfile };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
 use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-use FindBin qw{ $Bin };
-use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir catfile };
 
 ## CPANM
 use Readonly;
@@ -26,11 +26,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ bcftools_call bcftools_index bcftools_view bcftools_filter bcftools_norm bcftools_merge bcftools_concat bcftools_annotate bcftools_roh bcftools_stats bcftools_reheader bcftools_rename_vcf_samples bcftools_view_and_index_vcf};
+      qw{ bcftools_annotate bcftools_call bcftools_concat bcftools_filter bcftools_index bcftools_merge bcftools_norm bcftools_reheader bcftools_rename_vcf_samples bcftools_roh bcftools_stats bcftools_view bcftools_view_and_index_vcf};
 
 }
 
@@ -59,11 +59,6 @@ sub bcftools_call {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $multiallelic_caller;
-    my $output_type;
-    my $variants_only;
-
     ## Flatten argument(s)
     my $form_fields_ref;
     my $outfile_path;
@@ -74,43 +69,48 @@ sub bcftools_call {
     my $samples_file;
     my $constrain;
 
+    ## Default(s)
+    my $multiallelic_caller;
+    my $output_type;
+    my $variants_only;
+
     my $tmpl = {
         form_fields_ref => {
             required    => 1,
             defined     => 1,
             default     => [],
             strict_type => 1,
-            store       => \$form_fields_ref
+            store       => \$form_fields_ref,
         },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
-        infile_path     => { strict_type => 1, store => \$infile_path },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+        outfile_path    => { strict_type => 1, store => \$outfile_path, },
+        infile_path     => { strict_type => 1, store => \$infile_path, },
+        stderrfile_path => { strict_type => 1, store => \$stderrfile_path, },
         stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        FILEHANDLE   => { store       => \$FILEHANDLE },
-        samples_file => { strict_type => 1, store => \$samples_file },
+          { strict_type => 1, store => \$stderrfile_path_append, },
+        FILEHANDLE   => { store       => \$FILEHANDLE, },
+        samples_file => { strict_type => 1, store => \$samples_file, },
         constrain => {
             allow       => [ undef, qw{ alleles trio } ],
             strict_type => 1,
-            store       => \$constrain
+            store       => \$constrain,
         },
         multiallelic_caller => {
             default     => 1,
             allow       => [ undef, 0, 1 ],
             strict_type => 1,
-            store       => \$multiallelic_caller
+            store       => \$multiallelic_caller,
         },
         output_type => {
             default     => q{v},
             allow       => [qw{ b u z v }],
             strict_type => 1,
-            store       => \$output_type
+            store       => \$output_type,
         },
         variants_only => {
             default     => 1,
             allow       => [ undef, 0, 1 ],
             strict_type => 1,
-            store       => \$variants_only
+            store       => \$variants_only,
         },
     };
 
@@ -196,31 +196,31 @@ sub bcftools_index {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $output_type;
-
     ## Flatten argument(s)
     my $infile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $FILEHANDLE;
 
+    ## Default(s)
+    my $output_type;
+
     my $tmpl = {
         infile_path => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$infile_path
+            store       => \$infile_path,
         },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+        stderrfile_path => { strict_type => 1, store => \$stderrfile_path, },
         stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        FILEHANDLE  => { store => \$FILEHANDLE },
+          { strict_type => 1, store => \$stderrfile_path_append, },
+        FILEHANDLE  => { store => \$FILEHANDLE, },
         output_type => {
             default     => q{csi},
             allow       => [qw{ csi tbi }],
             strict_type => 1,
-            store       => \$output_type
+            store       => \$output_type,
         },
     };
 
@@ -281,9 +281,6 @@ sub bcftools_view {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $output_type;
-
     ## Flatten argument(s)
     my $apply_filters_ref;
     my $exclude_types_ref;
@@ -297,26 +294,29 @@ sub bcftools_view {
     my $stdoutfile_path;
     my $FILEHANDLE;
 
+    ## Default(s)
+    my $output_type;
+
     my $tmpl = {
         apply_filters_ref =>
-          { default => [], strict_type => 1, store => \$apply_filters_ref },
+          { default => [], strict_type => 1, store => \$apply_filters_ref, },
         exclude_types_ref =>
-          { default => [], strict_type => 1, store => \$exclude_types_ref },
-        exclude         => { strict_type => 1, store => \$exclude },
-        include         => { strict_type => 1, store => \$include },
-        sample          => { strict_type => 1, store => \$sample },
-        infile_path     => { strict_type => 1, store => \$infile_path },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+          { default => [], strict_type => 1, store => \$exclude_types_ref, },
+        exclude         => { strict_type => 1, store => \$exclude, },
+        include         => { strict_type => 1, store => \$include, },
+        sample          => { strict_type => 1, store => \$sample, },
+        infile_path     => { strict_type => 1, store => \$infile_path, },
+        outfile_path    => { strict_type => 1, store => \$outfile_path, },
+        stderrfile_path => { strict_type => 1, store => \$stderrfile_path, },
         stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
-        FILEHANDLE  => { store => \$FILEHANDLE },
+          { strict_type => 1, store => \$stderrfile_path_append, },
+        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path, },
+        FILEHANDLE  => { store => \$FILEHANDLE, },
         output_type => {
             default     => q{v},
             allow       => [qw{ b u z v }],
             strict_type => 1,
-            store       => \$output_type
+            store       => \$output_type,
         },
     };
 
@@ -421,24 +421,24 @@ sub bcftools_filter {
     my $indel_gap;
 
     my $tmpl = {
-        infile_path     => { strict_type => 1, store => \$infile_path },
-        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+        infile_path     => { strict_type => 1, store => \$infile_path, },
+        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path, },
+        stderrfile_path => { strict_type => 1, store => \$stderrfile_path, },
         stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        FILEHANDLE  => { store       => \$FILEHANDLE },
-        exclude     => { strict_type => 1, store => \$exclude },
-        include     => { strict_type => 1, store => \$include },
-        soft_filter => { strict_type => 1, store => \$soft_filter },
+          { strict_type => 1, store => \$stderrfile_path_append, },
+        FILEHANDLE  => { store       => \$FILEHANDLE, },
+        exclude     => { strict_type => 1, store => \$exclude, },
+        include     => { strict_type => 1, store => \$include, },
+        soft_filter => { strict_type => 1, store => \$soft_filter, },
         snp_gap => {
             allow       => qr/ ^\d+$ /sxm,
             strict_type => 1,
-            store       => \$snp_gap
+            store       => \$snp_gap,
         },
         indel_gap => {
             allow       => qr/ ^\d+$ /sxm,
             strict_type => 1,
-            store       => \$indel_gap
+            store       => \$indel_gap,
         },
     };
 
@@ -514,10 +514,6 @@ sub bcftools_norm {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $output_type;
-    my $multiallelic_type;
-
     ## Flatten argument(s)
     my $outfile_path;
     my $reference_path;
@@ -527,40 +523,44 @@ sub bcftools_norm {
     my $FILEHANDLE;
     my $multiallelic;
 
+    ## Default(s)
+    my $output_type;
+    my $multiallelic_type;
+
     my $tmpl = {
         outfile_path => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$outfile_path
+            store       => \$outfile_path,
         },
         reference_path => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$reference_path
+            store       => \$reference_path,
         },
-        infile_path     => { strict_type => 1, store => \$infile_path },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+        infile_path     => { strict_type => 1, store => \$infile_path, },
+        stderrfile_path => { strict_type => 1, store => \$stderrfile_path, },
         stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        FILEHANDLE   => { store => \$FILEHANDLE },
+          { strict_type => 1, store => \$stderrfile_path_append, },
+        FILEHANDLE   => { store => \$FILEHANDLE, },
         multiallelic => {
             allow       => [qw{ + - }],
             strict_type => 1,
-            store       => \$multiallelic
+            store       => \$multiallelic,
         },
         output_type => {
             default     => q{v},
             allow       => [qw{ b u z v }],
             strict_type => 1,
-            store       => \$output_type
+            store       => \$output_type,
         },
         multiallelic_type => {
             default     => q{both},
             allow       => [qw{ snps indels both any }],
             strict_type => 1,
-            store       => \$multiallelic_type
+            store       => \$multiallelic_type,
         },
     };
 
@@ -633,9 +633,6 @@ sub bcftools_merge {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $output_type;
-
     ## Flatten argument(s)
     my $infile_paths_ref;
     my $outfile_path;
@@ -644,20 +641,23 @@ sub bcftools_merge {
     my $stdoutfile_path;
     my $FILEHANDLE;
 
+    ## Default(s)
+    my $output_type;
+
     my $tmpl = {
         infile_paths_ref =>
-          { default => [], strict_type => 1, store => \$infile_paths_ref },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+          { default => [], strict_type => 1, store => \$infile_paths_ref, },
+        outfile_path    => { strict_type => 1, store => \$outfile_path, },
+        stderrfile_path => { strict_type => 1, store => \$stderrfile_path, },
         stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
-        FILEHANDLE  => { store => \$FILEHANDLE },
+          { strict_type => 1, store => \$stderrfile_path_append, },
+        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path, },
+        FILEHANDLE  => { store => \$FILEHANDLE, },
         output_type => {
             default     => q{v},
             allow       => [qw{ b u z v}],
             strict_type => 1,
-            store       => \$output_type
+            store       => \$output_type,
         },
     };
 
@@ -715,7 +715,7 @@ sub bcftools_concat {
 ##          : $stdoutfile_path        => Stdoutfile file path to write to
 ##          : $FILEHANDLE             => Filehandle to write to
 ##          : $allow_overlaps         => First coordinate of the next file can precede last record of the current file
-##          : $remove_duplicates      => Output duplicate records present in multiple files only once: <snps|indels|both|all|none>
+##          : $rm_dups      => Output duplicate records present in multiple files only once: <snps|indels|both|all|none>
     ##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
 
     my ($arg_href) = @_;
@@ -730,35 +730,35 @@ sub bcftools_concat {
 
     ## Default(s)
     my $allow_overlaps;
-    my $remove_duplicates;
+    my $rm_dups;
     my $output_type;
 
     my $tmpl = {
         infile_paths_ref =>
-          { default => [], strict_type => 1, store => \$infile_paths_ref },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+          { default => [], strict_type => 1, store => \$infile_paths_ref, },
+        outfile_path    => { strict_type => 1, store => \$outfile_path, },
+        stderrfile_path => { strict_type => 1, store => \$stderrfile_path, },
         stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
-        FILEHANDLE        => { store => \$FILEHANDLE },
-        remove_duplicates => {
+          { strict_type => 1, store => \$stderrfile_path_append, },
+        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path, },
+        FILEHANDLE => { store => \$FILEHANDLE, },
+        rm_dups    => {
             default     => q{all},
             allow       => [qw{ snps indels both all none }],
             strict_type => 1,
-            store       => \$remove_duplicates
+            store       => \$rm_dups,
         },
         allow_overlaps => {
             default     => 0,
             allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$allow_overlaps
+            store       => \$allow_overlaps,
         },
         output_type => {
             default     => q{v},
             allow       => [qw{ b u z v }],
             strict_type => 1,
-            store       => \$output_type
+            store       => \$output_type,
         },
     };
 
@@ -773,9 +773,9 @@ sub bcftools_concat {
         push @commands, q{--allow-overlaps};
     }
 
-    if ($remove_duplicates) {
+    if ($rm_dups) {
 
-        push @commands, q{--remove-duplicates} . $SPACE . $remove_duplicates;
+        push @commands, q{--rm-dups} . $SPACE . $rm_dups;
     }
 
     if ($output_type) {
@@ -833,9 +833,6 @@ sub bcftools_annotate {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $output_type;
-
     ## Flatten argument(s)
     my $remove_ids_ref;
     my $infile_path;
@@ -847,27 +844,30 @@ sub bcftools_annotate {
     my $headerfile_path;
     my $set_id;
 
+    ## Default(s)
+    my $output_type;
+
     my $tmpl = {
         remove_ids_ref => {
             defined     => 1,
             default     => [],
             strict_type => 1,
-            store       => \$remove_ids_ref
+            store       => \$remove_ids_ref,
         },
-        infile_path     => { strict_type => 1, store => \$infile_path },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+        infile_path     => { strict_type => 1, store => \$infile_path, },
+        outfile_path    => { strict_type => 1, store => \$outfile_path, },
+        stderrfile_path => { strict_type => 1, store => \$stderrfile_path, },
         stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        FILEHANDLE      => { store       => \$FILEHANDLE },
-        samples_file    => { strict_type => 1, store => \$samples_file },
-        headerfile_path => { strict_type => 1, store => \$headerfile_path },
-        set_id          => { strict_type => 1, store => \$set_id },
+          { strict_type => 1, store => \$stderrfile_path_append, },
+        FILEHANDLE      => { store       => \$FILEHANDLE, },
+        samples_file    => { strict_type => 1, store => \$samples_file, },
+        headerfile_path => { strict_type => 1, store => \$headerfile_path, },
+        set_id          => { strict_type => 1, store => \$set_id, },
         output_type => {
             default     => q{v},
             allow       => [qw{ b u z v}],
             strict_type => 1,
-            store       => \$output_type
+            store       => \$output_type,
         },
     };
 
@@ -950,9 +950,6 @@ sub bcftools_roh {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $skip_indels;
-
     ## Flatten argument(s)
     my $sample_ids_ref;
     my $infile_path;
@@ -963,6 +960,9 @@ sub bcftools_roh {
     my $FILEHANDLE;
     my $af_file_path;
 
+    ## Default(s)
+    my $skip_indels;
+
     my $tmpl = {
         sample_ids_ref =>
           { default => [], strict_type => 1, store => \$sample_ids_ref },
@@ -970,20 +970,20 @@ sub bcftools_roh {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$infile_path
+            store       => \$infile_path,
         },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+        outfile_path    => { strict_type => 1, store => \$outfile_path, },
+        stderrfile_path => { strict_type => 1, store => \$stderrfile_path, },
         stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
-        FILEHANDLE   => { store       => \$FILEHANDLE },
-        af_file_path => { strict_type => 1, store => \$af_file_path },
+          { strict_type => 1, store => \$stderrfile_path_append, },
+        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path, },
+        FILEHANDLE   => { store       => \$FILEHANDLE, },
+        af_file_path => { strict_type => 1, store => \$af_file_path, },
         skip_indels => {
             default     => 0,
             allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$skip_indels
+            store       => \$skip_indels,
         },
     };
 
@@ -1055,9 +1055,6 @@ sub bcftools_stats {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $append_stderr_info;
-
     ## Flatten argument(s)
     my $infile_path;
     my $outfile_path;
@@ -1066,19 +1063,22 @@ sub bcftools_stats {
     my $stdoutfile_path;
     my $FILEHANDLE;
 
+    ## Default(s)
+    my $append_stderr_info;
+
     my $tmpl = {
-        infile_path     => { strict_type => 1, store => \$infile_path },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+        infile_path     => { strict_type => 1, store => \$infile_path, },
+        outfile_path    => { strict_type => 1, store => \$outfile_path, },
+        stderrfile_path => { strict_type => 1, store => \$stderrfile_path, },
         stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
-        FILEHANDLE         => { store => \$FILEHANDLE },
+          { strict_type => 1, store => \$stderrfile_path_append, },
+        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path, },
+        FILEHANDLE         => { store => \$FILEHANDLE, },
         append_stderr_info => {
             default     => 0,
             allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$append_stderr_info
+            store       => \$append_stderr_info,
         },
     };
 
@@ -1140,9 +1140,6 @@ sub bcftools_reheader {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $append_stderr_info;
-
     ## Flatten argument(s)
     my $infile_path;
     my $outfile_path;
@@ -1152,20 +1149,24 @@ sub bcftools_reheader {
     my $samples_file_path;
     my $FILEHANDLE;
 
+    ## Default(s)
+    my $append_stderr_info;
+
     my $tmpl = {
-        infile_path     => { strict_type => 1, store => \$infile_path },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+        infile_path     => { strict_type => 1, store => \$infile_path, },
+        outfile_path    => { strict_type => 1, store => \$outfile_path, },
+        stderrfile_path => { strict_type => 1, store => \$stderrfile_path, },
         stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        stdoutfile_path   => { strict_type => 1, store => \$stdoutfile_path },
-        samples_file_path => { strict_type => 1, store => \$samples_file_path },
-        FILEHANDLE         => { store => \$FILEHANDLE },
+          { strict_type => 1, store => \$stderrfile_path_append, },
+        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path, },
+        samples_file_path =>
+          { strict_type => 1, store => \$samples_file_path, },
+        FILEHANDLE         => { store => \$FILEHANDLE, },
         append_stderr_info => {
             default     => 0,
             allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$append_stderr_info
+            store       => \$append_stderr_info,
         },
     };
 
@@ -1174,7 +1175,7 @@ sub bcftools_reheader {
     # Stores commands depending on input parameters
     my @commands = qw{ bcftools reheader };
 
-## Options
+    ## Options
     if ($samples_file_path) {
 
         push @commands, q{--samples} . $SPACE . $samples_file_path;
@@ -1231,15 +1232,15 @@ sub bcftools_rename_vcf_samples {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $output_type;
-
     ## Flatten argument(s)
     my $sample_ids_ref;
     my $temp_directory;
     my $infile;
     my $outfile;
     my $FILEHANDLE;
+
+    ## Default(s)
+    my $output_type;
 
     my $tmpl = {
         sample_ids_ref => {
@@ -1281,6 +1282,7 @@ sub bcftools_rename_vcf_samples {
 
     ## Get parameters
     my $format_string = $DOUBLE_QUOTE;
+  SAMPLE_ID:
     foreach my $sample_id ( @{$sample_ids_ref} ) {
 
         $format_string .= $sample_id . q{\n};
@@ -1346,28 +1348,28 @@ sub bcftools_view_and_index_vcf {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$infile_path
+            store       => \$infile_path,
         },
         FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE, },
         outfile_path_prefix =>
-          { strict_type => 1, store => \$outfile_path_prefix },
+          { strict_type => 1, store => \$outfile_path_prefix, },
         output_type => {
             default     => q{v},
             allow       => [qw{ b u z v }],
             strict_type => 1,
-            store       => \$output_type
+            store       => \$output_type,
         },
         index => {
             default     => 1,
             allow       => [ undef, 0, 1 ],
             strict_type => 1,
-            store       => \$index
+            store       => \$index,
         },
         index_type => {
             default     => q{csi},
             allow       => [ undef, qw{ csi tbi } ],
             strict_type => 1,
-            store       => \$index_type
+            store       => \$index_type,
         },
     };
 

@@ -62,7 +62,7 @@ BEGIN {
 my ($infile, $select_feature_file, $select_feature_matching_column, $range_feature_file, $select_outfile);
 
 ##Scalar parameters with defaults
-my ($write_software_tag, $padding, $log_file) = (1, 5000, 0, catfile( cwd(), q{vcfparser.log}) );
+my ($write_software_tag, $padding, $log_file) = (1, 5000, catfile( cwd(), q{vcfparser.log}) );
 
 ##Boolean
 my ($parse_vep, $per_gene);
@@ -70,7 +70,7 @@ my ($parse_vep, $per_gene);
 my (@range_feature_annotation_columns, @select_feature_annotation_columns);
 my (%consequence_severity, %range_data, %select_data, %snpeff_cmd, %tree, %meta_data);
 
-my $vcfparser_version = q{1.2.11};
+my $vcfparser_version = q{1.2.12};
 
 ## Enables cmd "vcfparser.pl" to print usage help
 if(!@ARGV) {
