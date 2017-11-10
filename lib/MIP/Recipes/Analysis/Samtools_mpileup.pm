@@ -1,19 +1,17 @@
 package MIP::Recipes::Analysis::Samtools_mpileup;
 
+use autodie qw{ :all };
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catdir catfile };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
+use Readonly;
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use autodie qw{ :all };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-use File::Spec::Functions qw{ catdir catfile };
-
-## CPANM
-use Readonly;
 
 BEGIN {
 
@@ -29,13 +27,17 @@ BEGIN {
 }
 
 ## Constants
+Readonly my $ADJUST_MQ  => 50;
 Readonly my $ASTERISK   => q{*};
-Readonly my $UNDERSCORE => q{_};
-Readonly my $DOT        => q{.};
-Readonly my $SPACE      => q{ };
-Readonly my $PIPE       => q{|};
 Readonly my $DASH       => q{-};
+Readonly my $DOT        => q{.};
+Readonly my $FILTER_SEPARATOR => q{ || };
+Readonly my $INDEL_GAP  => 10;
 Readonly my $NEWLINE    => qq{\n};
+Readonly my $PIPE       => q{|};
+Readonly my $SNP_GAP    => 3;
+Readonly my $SPACE      => q{ };
+Readonly my $UNDERSCORE => q{_};
 
 sub analysis_samtools_mpileup {
 
@@ -49,19 +51,13 @@ sub analysis_samtools_mpileup {
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $program_name            => Program name
 ##          : $family_id               => Family id
+##          : $outfamily_directory     => Out family directory
 ##          : $temp_directory          => Temporary directory
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
 ##          : $call_type               => Variant call type
 ##          : $xargs_file_counter      => The xargs file counter
 
     my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id;
-    my $outaligner_dir;
-    my $temp_directory;
-    my $call_type;
-    my $xargs_file_counter;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -71,6 +67,14 @@ sub analysis_samtools_mpileup {
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $program_name;
+    my $outfamily_directory;
+
+    ## Default(s)
+    my $family_id;
+    my $outaligner_dir;
+    my $temp_directory;
+    my $call_type;
+    my $xargs_file_counter;
 
     my $tmpl = {
         parameter_href => {
@@ -120,6 +124,12 @@ sub analysis_samtools_mpileup {
             defined     => 1,
             strict_type => 1,
             store       => \$program_name,
+        },
+        outfamily_directory => {
+          required    => 1,
+          defined     => 1,
+          strict_type => 1,
+          store       => \$outfamily_directory,
         },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
@@ -182,6 +192,7 @@ sub analysis_samtools_mpileup {
     my $program_directory =
       catfile( $outaligner_dir, $program_outdirectory_name );
     my $xargs_file_path_prefix;
+    my $reference_path = $active_parameter_href->{human_genome_reference};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -208,16 +219,15 @@ sub analysis_samtools_mpileup {
       catfile( $active_parameter_href->{outdata_dir},
         $family_id, $outaligner_dir, $program_outdirectory_name );
 
-    my $outfamily_directory = catfile( $active_parameter_href->{outdata_dir},
-        $family_id, $outaligner_dir, $program_outdirectory_name );
-
     #Used downstream
     $parameter_href->{$mip_program_name}{indirectory} = $outfamily_directory;
 
-    ## Assign file_tags
+    ## Files
     my $outfile_tag =
       $file_info_href->{$family_id}{$mip_program_name}{file_tag};
     my $outfile_prefix = $family_id . $outfile_tag . $call_type;
+
+    ## Paths
     my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
 
     ## Assign suffix
@@ -240,9 +250,9 @@ sub analysis_samtools_mpileup {
         }
     );
 
+    ## Create .fam file to be used in variant calling analyses
     my $fam_file_path =
       catfile( $outfamily_file_directory, $family_id . q{.fam} );
-    ## Create .fam file to be used in variant calling analyses
     create_fam_file(
         {
             parameter_href        => $parameter_href,
@@ -270,11 +280,12 @@ sub analysis_samtools_mpileup {
             }
         );
 
-        ## Assign file_tags
+        ## Files
         my $infile_tag =
           $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
         my $infile_prefix = $merged_infile_prefix . $infile_tag;
 
+        ## Paths
         $file_path_prefix{$sample_id} =
           catfile( $temp_directory, $infile_prefix );
 
@@ -299,7 +310,7 @@ sub analysis_samtools_mpileup {
 
     }
 
-    ## SamTools mpileup
+    ## Samtools mpileup
     say {$FILEHANDLE} q{## SamTools mpileup};
 
     ## Create file commands for xargs
@@ -323,18 +334,16 @@ sub analysis_samtools_mpileup {
           map { $file_path_prefix{$_} . $UNDERSCORE . $contig . $infile_suffix }
           @{ $active_parameter_href->{sample_ids} };
 
+        my $stderrfile_path_prefix = $xargs_file_path_prefix . $DOT . $contig;
+
         samtools_mpileup(
             {
                 infile_paths_ref => \@file_paths,
                 output_tags_ref  => [qw{ DV AD }],
-                referencefile_path =>
-                  $active_parameter_href->{human_genome_reference},
-                stderrfile_path => $xargs_file_path_prefix
-                  . $DOT
-                  . $contig
-                  . q{.stderr.txt},
+                referencefile_path => $reference_path,
+                stderrfile_path => $stderrfile_path_prefix . $DOT . q{stderr.txt},
                 output_bcf                       => 1,
-                adjust_mq                        => 50,
+                adjust_mq                        => $ADJUST_MQ,
                 per_sample_increased_sensitivity => 1,
                 FILEHANDLE                       => $XARGSFILEHANDLE,
             }
@@ -349,10 +358,12 @@ sub analysis_samtools_mpileup {
         if ( $parameter_href->{dynamic_parameter}{trio} ) {
 
             $samples_file =
-              catfile( $outfamily_file_directory, $family_id . q{.fam} )
+              catfile( $outfamily_file_directory, $family_id . $DOT . q{fam} )
               . $SPACE;
             $constrain = q{trio};
         }
+
+
         bcftools_call(
             {
                 form_fields_ref     => [qw{ GQ }],
@@ -360,11 +371,7 @@ sub analysis_samtools_mpileup {
                 multiallelic_caller => 1,
                 samples_file        => $samples_file,
                 constrain           => $constrain,
-                stderrfile_path     => $xargs_file_path_prefix
-                  . $DOT
-                  . $contig
-                  . $UNDERSCORE
-                  . q{call.stderr.txt},
+                stderrfile_path     => $stderrfile_path_prefix . $UNDERSCORE . q{call.stderr.txt},
                 FILEHANDLE => $XARGSFILEHANDLE,
             }
         );
@@ -374,16 +381,11 @@ sub analysis_samtools_mpileup {
 
         bcftools_filter(
             {
-                stderrfile_path => $xargs_file_path_prefix
-                  . $DOT
-                  . $contig
-                  . $UNDERSCORE
-                  . q{filter.stderr.txt},
+                stderrfile_path => $stderrfile_path_prefix . $UNDERSCORE . q{filter.stderr.txt},
                 soft_filter => q{LowQual},
-                snp_gap     => 3,
-                indel_gap   => 10,
-                exclude =>
-q?\'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %MAX(DV)/%MAX(DP)<=0.25\'?,
+                snp_gap     => $SNP_GAP,
+                indel_gap   => $INDEL_GAP,
+                exclude => _build_bcftools_filter_expr(),
                 FILEHANDLE => $XARGSFILEHANDLE,
             }
         );
@@ -393,11 +395,7 @@ q?\'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %M
             ## Replace the IUPAC code in alternative allels with N for input stream and writes to stream
             replace_iupac(
                 {
-                    stderrfile_path => $xargs_file_path_prefix
-                      . $DOT
-                      . $contig
-                      . $UNDERSCORE
-                      . q{replace_iupac.stderr.txt},
+                    stderrfile_path => $stderrfile_path_prefix . $UNDERSCORE . q{replace_iupac.stderr.txt},
                     FILEHANDLE => $XARGSFILEHANDLE
                 }
             );
@@ -410,21 +408,14 @@ q?\'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %M
         bcftools_norm(
             {
                 FILEHANDLE => $XARGSFILEHANDLE,
-                reference_path =>
-                  $active_parameter_href->{human_genome_reference},
+                reference_path => $reference_path,
                 output_type  => q{v},
                 outfile_path => $outfile_path_prefix
                   . $UNDERSCORE
                   . $contig
                   . $outfile_suffix,
                 multiallelic    => $DASH,
-                stderrfile_path => catfile(
-                        $xargs_file_path_prefix
-                      . $DOT
-                      . $contig
-                      . $UNDERSCORE
-                      . q{norm.stderr.txt}
-                ),
+                stderrfile_path => $stderrfile_path_prefix . $UNDERSCORE . q{norm.stderr.txt},
             }
         );
         say {$XARGSFILEHANDLE} $NEWLINE;
@@ -455,18 +446,19 @@ q?\'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %M
     );
     say {$FILEHANDLE} q{wait}, $NEWLINE;
 
-    close $FILEHANDLE;
-    close $XARGSFILEHANDLE;
+    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $XARGSFILEHANDLE or $log->logcroak(q{Could not close XARGSFILEHANDLE});
 
     if ( $active_parameter_href->{$mip_program_name} == 1 ) {
+
+        my $path => catfile($outfamily_directory, $outfile_prefix . $outfile_suffix);
 
         ## Collect samtools version in qccollect
         add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => q{samtools},
-                outdirectory     => $outfamily_directory,
-                outfile          => $outfile_prefix . $outfile_suffix,
+                path             => $path,
             }
         );
         ## Locating samtools_mpileup file
@@ -474,16 +466,14 @@ q?\'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %M
             {
                 sample_info_href => $sample_info_href,
                 program_name     => q{samtools_mpileup},
-                outdirectory     => $outfamily_directory,
-                outfile          => $outfile_prefix . $outfile_suffix,
+                path             => $path,
             }
         );
         add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => q{bcftools},
-                outdirectory     => $outfamily_directory,
-                outfile          => $outfile_prefix . $outfile_suffix,
+                path             => $path,
             }
         );
 
@@ -500,6 +490,29 @@ q?\'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %M
         );
     }
     return;
+}
+
+sub _build_bcftools_filter_expr {
+
+## Function : Create filter expression for bcftools
+## Returns  : $regexp
+
+  # Add minimum value for QUAL field
+  my $expr = q?\'%QUAL<10? ;
+
+  # Add read position bias threshold
+  $expr .= $FILTER_SEPARATOR . q{(RPB<0.1 && %QUAL<15)};
+
+  # Add allele count expression
+  $expr .= $FILTER_SEPARATOR . q{(AC<2 && %QUAL<15)};
+
+  # Add number of high-qual non-reference bases
+  $expr .= $FILTER_SEPARATOR . q{%MAX(DV)<=3};
+
+  # Add high-qual non-reference bases / high-qual bases
+  $expr .= $FILTER_SEPARATOR . q?%MAX(DV)/%MAX(DP)<=0.25\'?;
+
+  return $expr;
 }
 
 1;

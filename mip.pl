@@ -2162,6 +2162,14 @@ if ( $active_parameter{psamtools_mpileup} > 0 ) {    #Run samtools mpileup
     $log->info( q{[Samtools mpileup]} );
     my $program_name = q{samtools_mpileup};
 
+    my $program_outdirectory_name =
+      $parameter{psamtools_mpileup}{outdir_name};
+
+    my $outfamily_directory = catfile(
+        $active_parameter{outdata_dir},    $active_parameter{family_id},
+        $active_parameter{outaligner_dir}, $program_outdirectory_name,
+    );
+
     analysis_samtools_mpileup(
         {
             parameter_href          => \%parameter,
@@ -2171,6 +2179,7 @@ if ( $active_parameter{psamtools_mpileup} > 0 ) {    #Run samtools mpileup
             infile_lane_prefix_href => \%infile_lane_prefix,
             job_id_href             => \%job_id,
             program_name            => $program_name,
+            outfamily_directory     => $outfamily_directory,
         }
     );
 }
