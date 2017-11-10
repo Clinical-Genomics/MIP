@@ -1,44 +1,47 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{2014};
-use warnings qw{FATAL utf8};
-use autodie;
-use 5.018;    #Require at least perl 5.18
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
 use Carp;
-use English qw{-no_match_vars};
-use Params::Check qw{check allow last_error};
-
-use FindBin qw{$Bin};    #Find directory of script
-use File::Basename qw{dirname basename};
-use File::Spec::Functions qw{catdir};
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Basename qw{ dirname basename };
+use File::Spec::Functions qw{ catdir };
+use FindBin qw{ $Bin };
 use Getopt::Long;
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use Test::More;
+use warnings qw{ FATAL utf8 };
+use utf8;
+use 5.018;
+
+## CPANM
+use autodie;
 use Readonly;
+use Modern::Perl qw{ 2014 };
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Script::Utils qw{help};
+use MIP::Script::Utils qw{ help };
 
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 ## Constants
-Readonly my $SPACE   => q{ };
 Readonly my $COMMA   => q{,};
 Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => q{ };
 
 ###User Options
 GetOptions(
+    ## Display help text
     q{h|help} => sub {
         done_testing();
         say {*STDOUT} $USAGE;
         exit;
-    },    #Display help text
+    },
+    ## Display version number
     q{v|version} => sub {
         done_testing();
         say {*STDOUT} $NEWLINE
@@ -47,7 +50,7 @@ GetOptions(
           . $VERSION
           . $NEWLINE;
         exit;
-    },    #Display version number
+    },
     q{vb|verbose} => $VERBOSE,
   )
   or (
@@ -63,30 +66,30 @@ GetOptions(
 BEGIN {
 
 ### Check all internal dependency modules and imports
-##Modules with import
+## Modules with import
     my %perl_module;
 
-    $perl_module{q{MIP::Script::Utils}} = [qw{help}];
+    $perl_module{q{MIP::Script::Utils}} = [qw{ help }];
 
-  PERL_MODULES:
+  PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
         use_ok( $module, @{$module_import} )
           or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 
-##Modules
+## Modules
     my @modules = (q{MIP::Program::Compression::Gzip});
 
-  MODULES:
+  MODULE:
     for my $module (@modules) {
         require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 }
 
-use MIP::Program::Compression::Gzip qw{gzip};
-use MIP::Test::Commands qw{test_function};
+use MIP::Program::Compression::Gzip qw{ gzip };
+use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test gzip from Gzip v}
+diag(   q{Test gzip from Gzip.pm v}
       . $MIP::Program::Compression::Gzip::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -99,6 +102,14 @@ diag(   q{Test gzip from Gzip v}
 my $function_base_command = q{gzip};
 
 my %base_argument = (
+    stderrfile_path => {
+        input           => q{stderrfile.test},
+        expected_output => q{2> stderrfile.test},
+    },
+    stderrfile_path_append => {
+        input           => q{stderrfile_path_append},
+        expected_output => q{2>> stderrfile_path_append},
+    },
     FILEHANDLE => {
         input           => undef,
         expected_output => $function_base_command,
@@ -119,21 +130,17 @@ my %required_argument = (
 );
 
 my %specific_argument = (
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
-    },
-    stderrfile_path_append => {
-        input           => q{stderrfile_path_append},
-        expected_output => q{2>> stderrfile_path_append},
-    },
     stdout => {
         input           => q{stdout},
         expected_output => q{--stdout},
     },
     decompress => {
-        input           => q{decompress},
+        input           => q{1},
         expected_output => q{--decompress},
+    },
+    force => {
+        input           => q{1},
+        expected_output => q{--force},
     },
     outfile_path => {
         input           => q{outfile_path},
@@ -153,7 +160,7 @@ my %specific_argument = (
 my $module_function_cref = \&gzip;
 
 ## Test both base and function specific arguments
-my @arguments = ( \%required_argument, \%specific_argument );
+my @arguments = ( \%base_argument, \%specific_argument );
 
 HASHES_OF_ARGUMENTS:
 foreach my $argument_href (@arguments) {

@@ -1,14 +1,14 @@
 package MIP::PATH::TO::MODULE;
 
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
 use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
 
 ## CPANM
 use Readonly;

@@ -529,7 +529,7 @@ sub finish_bioconda_package_install {
     ## Custom GATK
     say {$FILEHANDLE} q{## Custom GATK solutions};
 
-    ## Download gatk .zip
+    ## Download gatk .tar.bz2
     my $gatk_tar_path = gatk_download(
         {
             gatk_version => $bioconda_packages_href->{gatk},

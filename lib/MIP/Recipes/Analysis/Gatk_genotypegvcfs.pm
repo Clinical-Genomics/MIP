@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_genotypegvcfs };
@@ -29,10 +29,10 @@ BEGIN {
 }
 
 ## Constants
+Readonly my $ASTERISK   => q{*};
+Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $UNDERSCORE => q{_};
-Readonly my $DOT        => q{.};
-Readonly my $ASTERISK   => q{*};
 
 sub analysis_gatk_genotypegvcfs {
 
@@ -54,12 +54,6 @@ sub analysis_gatk_genotypegvcfs {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $family_id;
-    my $temp_directory;
-    my $outaligner_dir;
-    my $call_type;
-
     ## Flatten argument(s)
     my $parameter_href;
     my $active_parameter_href;
@@ -70,6 +64,12 @@ sub analysis_gatk_genotypegvcfs {
     my $outfamily_directory;
     my $outfamily_file_directory;
     my $program_name;
+
+    ## Default(s)
+    my $family_id;
+    my $temp_directory;
+    my $outaligner_dir;
+    my $call_type;
 
     my $tmpl = {
         parameter_href => {
@@ -162,6 +162,7 @@ sub analysis_gatk_genotypegvcfs {
     use MIP::Program::Variantcalling::Gatk qw{ gatk_genotypegvcfs };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Set::File qw{ set_file_suffix };
+    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -284,7 +285,8 @@ sub analysis_gatk_genotypegvcfs {
             ## Assign file_tags
             my $infile_tag =
               $file_info_href->{$sample_id}{pgatk_haplotypecaller}{file_tag};
-            my $infile_prefix = $merged_infile_prefix . $infile_tag . $UNDERSCORE . $contig;
+            my $infile_prefix =
+              $merged_infile_prefix . $infile_tag . $UNDERSCORE . $contig;
 
             ## Collect for downstream use
             push
@@ -315,7 +317,7 @@ sub analysis_gatk_genotypegvcfs {
         ## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
         my %commands = gatk_pedigree_flag(
             {
-                fam_file_path         => catfile(
+                fam_file_path => catfile(
                     $outfamily_file_directory, $family_id . $DOT . q{fam}
                 ),
                 program_name => $program_name,
