@@ -1,17 +1,19 @@
 package MIP::Recipes::Analysis::Samtools_mpileup;
 
-use autodie qw{ :all };
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use Readonly;
 use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
+
+## CPANM
+use autodie qw{ :all };
+use Readonly;
 
 BEGIN {
 
