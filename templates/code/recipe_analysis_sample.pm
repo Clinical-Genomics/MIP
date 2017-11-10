@@ -1,18 +1,18 @@
 package MIP::Recipes::Analysis::RECIPE_NAME;
 
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catdir catfile };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
 use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use autodie qw{ :all };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-use File::Spec::Functions qw{ catdir catfile };
 
 ## CPANM
+use autodie qw{ :all };
 use Readonly;
 
 BEGIN {
@@ -51,10 +51,6 @@ sub analysis_recipe {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $family_id;
-    my $outaligner_dir;
-
     ## Flatten argument(s)
     my $parameter_href;
     my $active_parameter_href;
@@ -66,6 +62,10 @@ sub analysis_recipe {
     my $insample_directory;
     my $outsample_directory;
     my $program_name;
+
+    ## Default(s)
+    my $family_id;
+    my $outaligner_dir;
 
     my $tmpl = {
         parameter_href => {

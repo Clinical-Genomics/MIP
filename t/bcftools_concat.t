@@ -1,21 +1,22 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{ 2014 };
-use warnings qw{ FATAL utf8 };
-use autodie;
-use 5.018;    #Require at least perl 5.18
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
 use Carp;
+use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-
-use FindBin qw{ $Bin };    #Find directory of script
+use open qw{ :encoding(UTF-8) :std };
 use File::Basename qw{ dirname basename };
 use File::Spec::Functions qw{ catdir };
+use FindBin qw{ $Bin };
 use Getopt::Long;
+use Params::Check qw{ check allow last_error };
 use Test::More;
+use warnings qw{ FATAL utf8 };
+use utf8;
+use 5.018;
+
+## CPANM
+use autodie;
+use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ## MIPs lib/
@@ -25,20 +26,24 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.0;
+our $VERSION = 1.0.1;
 
 ## Constants
-Readonly my $SPACE   => q{ };
 Readonly my $NEWLINE => qq{\n};
 Readonly my $COMMA   => q{,};
+Readonly my $SPACE   => q{ };
 
 ###User Options
 GetOptions(
+
+    # Display help text
     q{h|help} => sub {
         done_testing();
         say {*STDOUT} $USAGE;
         exit;
-    },    #Display help text
+    },
+
+    # Display version number
     q{v|version} => sub {
         done_testing();
         say {*STDOUT} $NEWLINE
@@ -47,7 +52,7 @@ GetOptions(
           . $VERSION
           . $NEWLINE;
         exit;
-    },    #Display version number
+    },
     q{vb|verbose} => $VERBOSE,
   )
   or (
@@ -86,7 +91,7 @@ BEGIN {
 use MIP::Program::Variantcalling::Bcftools qw{ bcftools_concat };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test bcftools_concat from Bcftools v}
+diag(   q{Test bcftools_concat from Bcftools.pm v}
       . $MIP::Program::Variantcalling::Bcftools::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -99,23 +104,27 @@ diag(   q{Test bcftools_concat from Bcftools v}
 my $function_base_command = q{bcftools};
 
 my %base_argument = (
+    stdoutfile_path => {
+        input           => q{stdoutfile.test},
+        expected_output => q{1> stdoutfile.test},
+    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
+    },
+    stderrfile_path_append => {
+        input           => q{stderrfile.test},
+        expected_output => q{2>> stderrfile.test},
     },
     FILEHANDLE => {
         input           => undef,
         expected_output => $function_base_command,
     },
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
-    },
 );
 
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
-my %required_argument = ();
+my %required_argument;
 
 my %specific_argument = (
     infile_paths_ref => {
@@ -135,6 +144,10 @@ my %specific_argument = (
     allow_overlaps => {
         input           => q{1},
         expected_output => q{--allow-overlaps},
+    },
+    rm_dups => {
+        input           => q{all},
+        expected_output => q{--rm-dups} . $SPACE . q{all},
     },
 );
 
