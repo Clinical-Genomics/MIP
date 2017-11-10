@@ -853,13 +853,19 @@ update_vcfparser_outfile_counter(
 if ( $active_parameter{vcfparser_select_file} ) {
 
 ## Collects sequences contigs used in select file
-    get_select_file_contigs(
+    ( my $error_msg, @{ $file_info{select_file_contigs} } ) =
+      get_select_file_contigs(
         {
-            contigs_ref => \@{ $file_info{select_file_contigs} },
             select_file_path =>
               catfile( $active_parameter{vcfparser_select_file} ),
+            log => $log,
         }
-    );
+      );
+    if ($error_msg) {
+
+        $log->fatal($error_msg);
+        exit 1;
+    }
 }
 
 ## Detect family constellation based on pedigree file
