@@ -2176,15 +2176,15 @@ if ( $active_parameter{psamtools_mpileup} > 0 ) {    #Run samtools mpileup
 # Run Freebayes
 if ( $active_parameter{pfreebayes} > 0 ) {
 
-    $log->info( q{[Freebayes]} );
+    $log->info(q{[Freebayes]});
     my $program_name = q{freebayes};
 
-    my $program_outdirectory_name =
-      $parameter{pfreebayes}{outdir_name};
+    my $program_outdirectory_name = $parameter{pfreebayes}{outdir_name};
 
-    my $outfamily_directory =
-      catfile( $active_parameter{outdata_dir},
-        $active_parameter{family_id}, $active_parameter{outaligner_dir}, $program_outdirectory_name );
+    my $outfamily_directory = catfile(
+        $active_parameter{outdata_dir},    $active_parameter{family_id},
+        $active_parameter{outaligner_dir}, $program_outdirectory_name
+    );
 
     analysis_freebayes_calling(
         {
@@ -11081,6 +11081,7 @@ sub delly_reformat {
                       . $sv_type
                       . "_concat.stderr.txt",
                     allow_overlaps => 1,
+                    rm_dups        => q{all},
                     FILEHANDLE     => $FILEHANDLE,
                 }
             );
@@ -11231,6 +11232,7 @@ sub delly_reformat {
             output_type  => "v",
             stderrfile_path => $program_info_path . "_concat.stderr.txt",
             allow_overlaps  => 1,
+            rm_dups         => q{all},
             FILEHANDLE      => $FILEHANDLE,
         }
     );
