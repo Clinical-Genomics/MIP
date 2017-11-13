@@ -29,9 +29,9 @@ my $VERBOSE = 1;
 our $VERSION = '1.0.0';
 
 ## Constants
-Readonly my $SPACE               => q{ };
-Readonly my $NEWLINE             => qq{\n};
-Readonly my $COMMA               => q{,};
+Readonly my $SPACE   => q{ };
+Readonly my $NEWLINE => qq{\n};
+Readonly my $COMMA   => q{,};
 
 ### User Options
 GetOptions(
@@ -90,7 +90,7 @@ use MIP::Program::Variantcalling::Plink qw{ plink_calculate_inbreeding };
 use MIP::Test::Commands qw{ test_function };
 
 diag(
-q{Test plink_calculate_inbreeding from MIP::Program::Variantcalling::Plink v}
+q{Test plink_calculate_inbreeding from Plink v}
       . $MIP::Program::Variantcalling::Plink::VERSION
       . $COMMA
       . $SPACE . q{Perl}

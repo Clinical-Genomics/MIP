@@ -6424,7 +6424,7 @@ sub mplink {
     use MIP::Program::Variantcalling::Bcftools
       qw(bcftools_view bcftools_annotate);
     use Program::Variantcalling::Vt qw(vt_uniq);
-    use MIP::Program::Variantcalling::Plink qw{ plink_variant_pruning plink_fix_fam_ped_map_freq plink_calculate_inbreeding plink_create_mibs plink_check_sex_chroms plink_sex_check };
+    use MIP::Program::Variantcalling::Plink qw{ plink_calculate_inbreeding plink_check_sex_chroms plink_create_mibs plink_fix_fam_ped_map_freq plink_sex_check plink_variant_pruning };
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_family_dead_end);

@@ -89,7 +89,7 @@ BEGIN {
 use MIP::Program::Variantcalling::Plink qw{ plink_create_mibs };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test plink_create_mibs from MIP::Program::Variantcalling::Plink v}
+diag(   q{Test plink_create_mibs from Plink v}
       . $MIP::Program::Variantcalling::Plink::VERSION
       . $COMMA
       . $SPACE . q{Perl}

@@ -25,7 +25,7 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ plink_variant_pruning plink_fix_fam_ped_map_freq plink_calculate_inbreeding plink_create_mibs plink_check_sex_chroms plink_sex_check };
+    our @EXPORT_OK = qw{ plink_calculate_inbreeding plink_check_sex_chroms plink_create_mibs plink_fix_fam_ped_map_freq plink_sex_check plink_variant_pruning };
 }
 
 ## Constants
@@ -488,14 +488,14 @@ sub plink_check_sex_chroms {
 
 ## Function : Perl wrapper for writing Plink recipe to check sex chromosomes. Based on Plink 1.90p 64-bit (25 Mar 2016).
 ## Returns  : @commands
-## Arguments: $regions_ref   => The regions to process {REF}
-##          : $split_x       => Changes the chromosome codes of all variants in the region to XY
-##          : $no_fail                 => Do not fail when no variants would be affected by split_x
-##          : $make_bed                => Save data in plink binary format
-##          : $binary_fileset_prefix   => Specify .bed + .bim + .fam prefix
-##          : $outfile_prefix          => Outfile prefix
-##          : $FILEHANDLE              => Filehandle to write to
-##          : $stderrfile_path         => Stderrfile path
+## Arguments: $regions_ref           => The regions to process {REF}
+##          : $split_x               => Changes the chromosome codes of all variants in the region to XY
+##          : $no_fail               => Do not fail when no variants would be affected by split_x
+##          : $make_bed              => Save data in plink binary format
+##          : $binary_fileset_prefix => Specify .bed + .bim + .fam prefix
+##          : $outfile_prefix        => Outfile prefix
+##          : $FILEHANDLE            => Filehandle to write to
+##          : $stderrfile_path       => Stderrfile path
 
     my ($arg_href) = @_;
 
@@ -580,13 +580,13 @@ sub plink_sex_check {
 
 ## Function : Perl wrapper for writing Plink recipe to do sex check. Based on Plink 1.90p 64-bit (25 Mar 2016).
 ## Returns  : @commands
-## Arguments: $sex_check_min_f   => Sex check minimum F [female male]
-##          : $extract_file            => Exclude all variants not named in the file
-##          : $read_freqfile_path      => Read from frequency file path
-##          : $binary_fileset_prefix   => Specify .bed + .bim + .fam prefix
-##          : $outfile_prefix          => Outfile prefix
-##          : $FILEHANDLE              => Filehandle to write to
-##          : $stderrfile_path         => Stderrfile path
+## Arguments: $sex_check_min_f       => Sex check minimum F [female male]
+##          : $extract_file          => Exclude all variants not named in the file
+##          : $read_freqfile_path    => Read from frequency file path
+##          : $binary_fileset_prefix => Specify .bed + .bim + .fam prefix
+##          : $outfile_prefix        => Outfile prefix
+##          : $FILEHANDLE            => Filehandle to write to
+##          : $stderrfile_path       => Stderrfile path
 
     my ($arg_href) = @_;
 

@@ -128,8 +128,8 @@ my %required_argument = (
           . catfile(qw{ temp_directory $family_id _data }),
     },
     sex_check_min_f => {
-        input           => q{family_id},
-        expected_output => q{family_id},
+        input           => q{0.2 0.75},
+        expected_output => q{0.2 0.75},
     },
     extract_file => {
         input => catfile(qw{ temp_directory family_id _data.prune.in }),
@@ -145,7 +145,7 @@ my %required_argument = (
     },
 );
 
-my %specific_argument = ();
+my %specific_argument;
 
 # Coderef - enables generalized use of generate call
 my $module_function_cref = \&plink_sex_check;
