@@ -6663,7 +6663,6 @@ sub mplink {
     }
     plink_sex_check(
         {
-            check_sex       => 1,
             sex_check_min_f => $sex_check_min_F,
             extract_file    => $extract_file,
             read_freqfile_path =>
