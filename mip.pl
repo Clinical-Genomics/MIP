@@ -6407,7 +6407,7 @@ sub mplink {
     use MIP::Program::Variantcalling::Bcftools
       qw(bcftools_view bcftools_annotate);
     use Program::Variantcalling::Vt qw(vt_uniq);
-    use MIP::Program::Variantcalling::Plink qw(plink);
+    use MIP::Program::Variantcalling::Plink qw{ plink_variant_pruning plink_fix_fam_ped_map_freq plink_calculate_inbreeding plink_create_mibs plink_check_sex_chroms plink_sex_check };
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_family_dead_end);
@@ -6564,7 +6564,7 @@ sub mplink {
 
     say {$FILEHANDLE}
       "## Update Plink fam. Create ped and map file and frequency report";
-    plink(
+    plink_fix_fam_ped_map_freq(
         {
             binary_fileset_prefix =>
               catfile( $$temp_directory_ref, $$family_id_ref . "_data" ),
@@ -6583,7 +6583,7 @@ sub mplink {
     if ( scalar( @{ $active_parameter_href->{sample_ids} } ) > 1 ) {
 
         say {$FILEHANDLE} "## Calculate inbreeding coefficients per family";
-        plink(
+        plink_calculate_inbreeding(
             {
                 binary_fileset_prefix =>
                   catfile( $$temp_directory_ref, $$family_id_ref . "_data" ),
@@ -6601,7 +6601,7 @@ sub mplink {
         say {$FILEHANDLE} "\n";
 
         say {$FILEHANDLE} "## Create Plink .mibs per family";
-        plink(
+        plink_create_mibs(
             {
                 ped_file_path => catfile(
                     $$temp_directory_ref, $$family_id_ref . "_data.ped"
@@ -6631,7 +6631,7 @@ sub mplink {
         $genome_build =
           "hg" . $file_info_href->{human_genome_reference_version};
     }
-    plink(
+    plink_check_sex_chroms(
         {
             regions_ref => [ 23, 24 ],
             split_x     => $genome_build,
@@ -6661,7 +6661,7 @@ sub mplink {
         $extract_file =
           catfile( $$temp_directory_ref, $$family_id_ref . '_data.prune.in' );
     }
-    plink(
+    plink_sex_check(
         {
             check_sex       => 1,
             sex_check_min_f => $sex_check_min_F,
