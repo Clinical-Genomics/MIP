@@ -69,9 +69,7 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module;
-
-    $perl_module{q{MIP::Script::Utils}} = [qw{ help }];
+    my %perl_module = ( q{MIP::Script::Utils} => [qw{ help }], );
 
   PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {

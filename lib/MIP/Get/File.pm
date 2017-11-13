@@ -1,15 +1,15 @@
 package MIP::Get::File;
 
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catfile };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
 use utf8;
-use open qw{ :encoding(UTF-8) :std};
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-use File::Spec::Functions qw{ catfile };
 
 ## CPANM
 use Readonly;
@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -232,35 +232,26 @@ sub get_select_file_contigs {
 
 ## Function : Collects sequences contigs used in select file
 ## Returns  :
-## Arguments: $contigs_ref      => Contig array {REF}
-##          : $select_file_path => Select file path
+## Arguments: $select_file_path => Select file path
+##          : $log              => Log object
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $contigs_ref;
     my $select_file_path;
+    my $log;
 
     my $tmpl = {
-        contigs_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$contigs_ref
-        },
         select_file_path => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$select_file_path
         },
+        log => { store => \$log },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Execute perl
     my $find_contig_name = q?perl -nae ?;
@@ -268,68 +259,54 @@ sub get_select_file_contigs {
     ## Get contig name
     $find_contig_name .= q?'if ($_=~/ contig=(\w+) /xsm) { ?;
 
-    ## Write contig name and comma
-    $find_contig_name .= q?print $1, q{,};} ?;
+    ## Alias capture
+    $find_contig_name .= q?my $contig_name = $1; ?;
 
-    ## Quit if #CHROM in line
+    ## Write contig name and comma
+    $find_contig_name .= q?print $contig_name, q{,};} ?;
+
+    ## Quit if #CHROM found in line
     $find_contig_name .= q?if($_=~/ [#]CHROM /xsm) {last;}' ?;
 
     ## Returns a comma seperated string of sequence contigs from file
-    @{$contigs_ref} = `$find_contig_name $select_file_path `;
+    my @contigs = `$find_contig_name $select_file_path `;
 
-    @{$contigs_ref} = split $COMMA, join $COMMA, @{$contigs_ref};
+    @contigs = split $COMMA, join $COMMA, @contigs;
 
-    if ( not @{$contigs_ref} ) {
+    my $error_msg;
 
-        $log->fatal(
+    if ( not @contigs ) {
+
+        $error_msg =
 q{Could not detect any '##contig' in meta data header in select file: }
-              . $select_file_path );
-        exit 1;
+          . $select_file_path;
+
+        return $error_msg;
     }
-    return;
+    return $error_msg, @contigs;
 }
 
 sub get_seq_dict_contigs {
 
 ## Function : Collects sequences contigs used in analysis from human genome sequence dictionnary associated with $human_genome_reference
 ## Returns  :
-## Arguments: $contigs_ref                        => Contig array {REF}
-##          : $reference_dir                      => The MIP reference directory {REF}
-##          : $human_genome_reference_name_prefix => The associated human genome file without file ending
+## Arguments: $dict_file_path => Dict file path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $contigs_ref;
-    my $reference_dir;
-    my $human_genome_reference_name_prefix;
+    my $dict_file_path;
 
     my $tmpl = {
-        contigs_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$contigs_ref
-        },
-        reference_dir => {
+        dict_file_path => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$reference_dir,
-        },
-        human_genome_reference_name_prefix => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$human_genome_reference_name_prefix
+            store       => \$dict_file_path,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
 
     ### Build regexp to find contig names
     ## Execute perl
@@ -341,26 +318,27 @@ sub get_seq_dict_contigs {
     ## Collect contig name
     $find_contig_name .= q? if($F[1]=~/SN\:(\S+)/) { ?;
 
-    ## Write to STDOUT
-    $find_contig_name .= q?print $1, ",";} }' ?;
+    ## Alias capture
+    $find_contig_name .= q?my $contig_name = $1; ?;
 
-    my $dict_file_path = catfile( $reference_dir,
-        $human_genome_reference_name_prefix . $DOT . q{dict} );
+    ## Write to STDOUT
+    $find_contig_name .= q?print $contig_name, q{,};} }' ?;
 
     ## Returns a comma seperated string of sequence contigs from dict file
-    @{$contigs_ref} = `$find_contig_name $dict_file_path `;
+    my @contigs = `$find_contig_name $dict_file_path `;
 
     ## Save contigs
-    @{$contigs_ref} = split $COMMA, join $COMMA, @{$contigs_ref};
+    @contigs = split $COMMA, join $COMMA, @contigs;
 
-    if ( not @{$contigs_ref} ) {
+    my $error_msg;
 
-        $log->fatal(
-            q{Could not detect any 'SN:contig_names' in dict file: }
-              . $dict_file_path );
-        exit 1;
+    if ( not @contigs ) {
+
+        $error_msg = q{Could not detect any 'SN:contig_names' in dict file: }
+          . $dict_file_path;
+        return $error_msg;
     }
-    return;
+    return $error_msg, @contigs;
 }
 
 1;

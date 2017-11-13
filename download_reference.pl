@@ -15,7 +15,7 @@ use warnings qw{ FATAL utf8 };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use utf8;
-use v5.18;
+use 5.018;
 
 ## CPANM
 use List::Util qw{ any };

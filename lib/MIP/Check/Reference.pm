@@ -29,6 +29,7 @@ BEGIN {
 }
 
 ## Constants
+Readonly my $DOT     => q{.};
 Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
 Readonly my $TAB     => qq{\t};
@@ -434,6 +435,9 @@ sub check_human_genome_file_endings {
     use MIP::Check::Path qw{ check_filesystem_objects_existance };
     use MIP::Get::File qw{ get_seq_dict_contigs };
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger(q{MIP});
+
     ## Count the number of files that exists
     my $existence_check_counter = 0;
 
@@ -479,14 +483,19 @@ sub check_human_genome_file_endings {
         $parameter_href->{$parameter_name}{build_file} = 0;
 
         ## Get sequence contigs from human reference ".dict" file since it exists
-        get_seq_dict_contigs(
+        my $dict_file_path = catfile( $reference_dir,
+            $human_genome_reference_name_prefix . $DOT . q{dict} );
+        ( my $error_msg, @{ $file_info_href->{contigs} } ) =
+          get_seq_dict_contigs(
             {
-                contigs_ref   => \@{ $file_info_href->{contigs} },
-                reference_dir => $reference_dir,
-                human_genome_reference_name_prefix =>
-                  $human_genome_reference_name_prefix,
+                dict_file_path => $dict_file_path,
             }
-        );
+          );
+        if ($error_msg) {
+
+            $log->fatal($error_msg);
+            exit 1;
+        }
     }
     return;
 }

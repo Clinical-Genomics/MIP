@@ -1,24 +1,23 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{ 2014 };
-use warnings qw{ FATAL utf8 };
-use autodie;
-use 5.018;
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
 use Carp;
+use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-
-use FindBin qw{ $Bin };
+use open qw{ :encoding(UTF-8) :std };
 use File::Basename qw{ dirname basename };
 use File::Spec::Functions qw{ catdir catfile };
-use Getopt::Long;
-use Test::More;
 use File::Temp;
+use FindBin qw{ $Bin };
+use Getopt::Long;
+use Params::Check qw{ check allow last_error };
+use Test::More;
+use warnings qw{ FATAL utf8 };
+use utf8;
+use 5.018;
 
 ## CPANM
+use autodie;
+use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ## MIPs lib/
@@ -32,9 +31,9 @@ my $VERBOSE = 1;
 our $VERSION = '1.0.0';
 
 ## Constants
-Readonly my $COMMA   => q{,};
-Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
+Readonly my $NEWLINE => qq{\n};
+Readonly my $COMMA   => q{,};
 
 ### User Options
 GetOptions(
@@ -84,7 +83,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Check::Reference});
+    my @modules = (q{MIP::Get::File});
 
   MODULE:
     for my $module (@modules) {
@@ -92,16 +91,19 @@ BEGIN {
     }
 }
 
-use MIP::Check::Reference qw{ check_if_processed_by_vt };
+use MIP::Get::File qw{ get_seq_dict_contigs };
 
-diag(   q{Test check_if_processed_by_vt from Reference.pm v}
-      . $MIP::Check::Reference::VERSION
+diag(   q{Test get_seq_dict_contigs from File.pm v}
+      . $MIP::Get::File::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
       . $PERL_VERSION
       . $SPACE
       . $EXECUTABLE_NAME );
+
+## Constants
+Readonly my $NUMBER_OF_CONTIGS => 86;
 
 ## Create temp logger
 my $test_dir      = File::Temp->newdir();
@@ -113,31 +115,33 @@ my $log           = initiate_logger(
     }
 );
 
-my $reference_file_path_vt =
-  catfile( $Bin, qw{ data references GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz } );
+my %file_info;
+my $dict_file_path =
+  catfile( $Bin, qw{ data references GRCh37_homo_sapiens_-d5-.dict } );
+my $wrong_file =
+  catfile( $Bin, qw{ data 643594-miptest 643594-miptest_pedigree.yaml } );
 
-my $reference_file_path_no_vt = catfile( $Bin,
-    qw{ data references GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz } );
-
-## Check if vt has processed references using regexp
-my @checked_references = check_if_processed_by_vt(
+( my $error_msg, @{ $file_info{contigs} } ) = get_seq_dict_contigs(
     {
-        reference_file_path => $reference_file_path_no_vt,
-        log                 => $log,
+        dict_file_path => $dict_file_path,
     }
 );
 
-is( 1, scalar @checked_references, q{Detected VT processing is needed} );
+is( scalar @{ $file_info{contigs} },
+    $NUMBER_OF_CONTIGS, q{Got dict file contigs} );
 
-## Check if vt has processed references using regexp
-@checked_references = check_if_processed_by_vt(
+is( $error_msg, undef, q{No error message} );
+
+## Should fail
+( $error_msg, @{ $file_info{contigs} } ) = get_seq_dict_contigs(
     {
-        reference_file_path => $reference_file_path_vt,
-        log                 => $log,
+        dict_file_path => $wrong_file,
     }
 );
 
-is( 0, scalar @checked_references, q{Detected VT processing} );
+is( scalar @{ $file_info{contigs} }, 0, q{Did not get dict file contigs} );
+
+isnt( $error_msg, undef, q{Generated error message} );
 
 done_testing();
 
@@ -147,12 +151,9 @@ done_testing();
 
 sub build_usage {
 
-## build_usage
-
 ## Function  : Build the USAGE instructions
-## Returns   : ""
-## Arguments : $program_name
-##          : $program_name => Name of the script
+## Returns   :
+## Arguments : $program_name => Name of the script
 
     my ($arg_href) = @_;
 

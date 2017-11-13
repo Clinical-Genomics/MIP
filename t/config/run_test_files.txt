@@ -57,8 +57,10 @@ gatk_realignertargetcreator.t
 gatk_selectvariants.t
 gatk_varianteval.t
 gatk_variantrecalibrator.t
-get_merged_infile_prefix.t
 get_exom_target_bed_file.t
+get_merged_infile_prefix.t
+get_select_file_contigs.t
+get_seq_dict_contigs.t
 git_clone.t
 git_checkout.t
 gnu_cat.t
