@@ -25,7 +25,7 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ plink plink_variant_pruning plink_fix_fam_ped_map_freq plink_calculate_inbreeding plink_create_mibs plink_check_sex_chroms plink_sex_check };
+    our @EXPORT_OK = qw{ plink_variant_pruning plink_fix_fam_ped_map_freq plink_calculate_inbreeding plink_create_mibs plink_check_sex_chroms plink_sex_check };
 }
 
 ## Constants
