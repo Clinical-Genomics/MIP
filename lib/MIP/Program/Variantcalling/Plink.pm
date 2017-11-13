@@ -128,7 +128,10 @@ sub plink_variant_pruning {
     # Stores commands depending on input parameters
     my @commands = q{plink2};
 
-    push @commands, q{--vcf} . $SPACE . $vcffile_path;
+    if ($make_bed) {
+
+        push @commands, q{--make-bed};
+    }
 
     if ($vcf_require_gt) {
 
@@ -142,17 +145,14 @@ sub plink_variant_pruning {
 
     push @commands, q{--set-missing-var-ids} . $SPACE . $set_missing_var_ids;
 
-    push @commands, q{--const-fid} . $SPACE . $const_fid;
-
-    if ($make_bed) {
-
-        push @commands, q{--make-bed};
-    }
-
     push @commands, q{--indep};
     push @commands, $indep_window_size;
     push @commands, $indep_step_size;
     push @commands, $indep_vif_threshold;
+
+    push @commands, q{--vcf} . $SPACE . $vcffile_path;
+
+    push @commands, q{--const-fid} . $SPACE . $const_fid;
 
     ## Outfile
     push @commands, q{--out} . $SPACE . $outfile_prefix;
@@ -247,12 +247,12 @@ sub plink_fix_fam_ped_map_freq {
 
     push @commands, q{--bfile} . $SPACE . $binary_fileset_prefix;
 
-    push @commands, q{--fam} . $SPACE . $fam_file_path;
-
     if ($make_just_fam) {
 
         push @commands, q{--make-just-fam};
     }
+
+    push @commands, q{--fam} . $SPACE . $fam_file_path;
 
     if ($recode) {
 
@@ -539,7 +539,7 @@ sub plink_check_sex_chroms {
     # Stores commands depending on input parameters
     my @commands = q{plink2};
 
-    push @commands, q{--chr} . $SPACE . join $COMMA, @{$regions_ref};
+    push @commands, q{--bfile} . $SPACE . $binary_fileset_prefix;
 
     push @commands, q{--split-x} . $SPACE . $split_x;
 
@@ -553,7 +553,7 @@ sub plink_check_sex_chroms {
         push @commands, q{--make-bed};
     }
 
-    push @commands, q{--bfile} . $SPACE . $binary_fileset_prefix;
+    push @commands, q{--chr} . $SPACE . join $COMMA, @{$regions_ref};
 
     push @commands, q{--out} . $SPACE . $outfile_prefix;
 
@@ -618,15 +618,17 @@ sub plink_sex_check {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Stores commands depending on input parameters
-    my @commands = q{plink2 --check-sex};
+    my @commands = q{plink2};
+
+    push @commands, q{--bfile} . $SPACE . $binary_fileset_prefix;
+
+    push @commands, q{--check-sex};
 
     push @commands, $sex_check_min_f;
 
-    push @commands, q{--extract} . $SPACE . $extract_file;
-
     push @commands, q{--read-freq} . $SPACE . $read_freqfile_path;
 
-    push @commands, q{--bfile} . $SPACE . $binary_fileset_prefix;
+    push @commands, q{--extract} . $SPACE . $extract_file;
 
     push @commands, q{--out} . $SPACE . $outfile_prefix;
 
