@@ -233,7 +233,7 @@ sub analysis_plink {
     my $infile_suffix = get_file_suffix(
         {
             parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
+            suffix_key     => q{variant_file_suffix},
             jobid_chain =>
               $parameter_href->{pgatk_combinevariantcallsets}{chain},
         }
