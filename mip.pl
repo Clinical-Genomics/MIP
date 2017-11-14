@@ -13435,8 +13435,6 @@ sub set_default_to_active_parameter {
   ASSOCIATED_PROGRAM:
     foreach my $associated_program ( @{$associated_programs_ref} ) {
 
-        my $parameter_set_switch = 0;
-
         ## Only add active programs parameters
         next ASSOCIATED_PROGRAM
           if ( not defined $active_parameter_href->{$associated_program} );
