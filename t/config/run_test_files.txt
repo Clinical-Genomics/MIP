@@ -96,6 +96,7 @@ multiqc.t
 order_parameter_names.t
 parameter_check_allowed_temp_directory.t
 path_check_file_version_exist.t
+peddy.t
 picardtools_base.t
 picardtools_collecthsmetrics.t
 picardtools_collectmultiplemetrics.t

@@ -6202,7 +6202,7 @@ sub mpeddy {
     use MIP::Script::Setup_script qw(setup_script);
     use MIP::IO::Files qw(migrate_file);
     use MIP::Program::Variantcalling::Bcftools qw{bcftools_view_and_index_vcf};
-    use Program::Variantcalling::Peddy qw(peddy);
+    use MIP::Program::Variantcalling::Peddy qw(peddy);
     use MIP::QC::Record qw(add_program_metafile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_family_dead_end);
