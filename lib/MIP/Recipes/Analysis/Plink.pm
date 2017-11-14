@@ -162,6 +162,7 @@ sub analysis_plink {
     ### SET IMPORT IN ALPHABETIC ORDER
     use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
+    use MIP::IO::Files qw{ migrate_file };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::Program::Variantcalling::Bcftools
