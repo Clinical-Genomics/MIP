@@ -90,7 +90,7 @@ BEGIN {
 use MIP::Program::Alignment::Bwa qw{ bwa_index };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test bwa_index from MODULE_NAME.pm v}
+diag(   q{Test bwa_index from Bwa.pm v}
       . $MIP::Program::Alignment::Bwa::VERSION
       . $COMMA
       . $SPACE . q{Perl}

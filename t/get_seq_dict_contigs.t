@@ -23,12 +23,11 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Script::Utils qw{ help };
-use MIP::Log::MIP_log4perl qw{ initiate_logger };
 
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 ## Constants
 Readonly my $SPACE   => q{ };
@@ -73,7 +72,6 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Script::Utils}     => [qw{ help }],
-        q{MIP::Log::MIP_log4perl} => [qw{ initiate_logger }],
     );
 
   PERL_MODULE:
@@ -104,16 +102,6 @@ diag(   q{Test get_seq_dict_contigs from File.pm v}
 
 ## Constants
 Readonly my $NUMBER_OF_CONTIGS => 86;
-
-## Create temp logger
-my $test_dir      = File::Temp->newdir();
-my $test_log_path = catfile( $test_dir, q{test.log} );
-my $log           = initiate_logger(
-    {
-        file_path => $test_log_path,
-        log_name  => q{MIP},
-    }
-);
 
 my %file_info;
 my $dict_file_path =

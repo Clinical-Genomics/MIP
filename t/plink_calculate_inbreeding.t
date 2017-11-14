@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 ## Constants
 Readonly my $SPACE   => q{ };
@@ -90,7 +90,7 @@ use MIP::Program::Variantcalling::Plink qw{ plink_calculate_inbreeding };
 use MIP::Test::Commands qw{ test_function };
 
 diag(
-q{Test plink_calculate_inbreeding from Plink v}
+q{Test plink_calculate_inbreeding from Plink.pm v}
       . $MIP::Program::Variantcalling::Plink::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -117,22 +117,22 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     outfile_prefix => {
-        input           => catfile(qw{ temp_directory $family_id _data }),
+        input           => catfile(qw{ temp_directory family_id _data }),
         expected_output => q{--out}
           . $SPACE
-          . catfile(qw{ temp_directory $family_id _data }),
+          . catfile(qw{ temp_directory family_id _data }),
     },
     binary_fileset_prefix => {
-        input           => catfile(qw{ temp_directory $family_id _data }),
+        input           => catfile(qw{ temp_directory family_id _data }),
         expected_output => q{--bfile}
           . $SPACE
-          . catfile(qw{ temp_directory $family_id _data }),
+          . catfile(qw{ temp_directory family_id _data }),
     },
     extract_file => {
-        input => catfile(qw{ temp_directory, family_id _data.prune.in }),
+        input => catfile(qw{ temp_directory family_id _data.prune.in }),
         expected_output => q{--extract}
           . $SPACE
-          . catfile(qw{ temp_directory, family_id _data.prune.in }),
+          . catfile(qw{ temp_directory family_id _data.prune.in }),
     },
 );
 

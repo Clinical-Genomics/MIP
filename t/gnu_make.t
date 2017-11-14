@@ -90,7 +90,7 @@ BEGIN {
 use MIP::Gnu::Software::Gnu_make qw{gnu_make };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
+diag(   q{Test gnu_make from Software.pm v}
       . $MIP::Gnu::Software::Gnu_make::VERSION
       . $COMMA
       . $SPACE . q{Perl}

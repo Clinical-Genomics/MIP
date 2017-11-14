@@ -23,12 +23,11 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Script::Utils qw{ help };
-use MIP::Log::MIP_log4perl qw{ initiate_logger };
 
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 ## Constants
 Readonly my $SPACE   => q{ };
@@ -105,16 +104,6 @@ diag(   q{Test get_select_file_contigs from File.pm v}
 ## Constants
 Readonly my $NUMBER_OF_CONTIGS => 25;
 
-## Create temp logger
-my $test_dir      = File::Temp->newdir();
-my $test_log_path = catfile( $test_dir, q{test.log} );
-my $log           = initiate_logger(
-    {
-        file_path => $test_log_path,
-        log_name  => q{MIP},
-    }
-);
-
 my %file_info;
 my $select_file_path =
   catfile( $Bin, qw{ data 643594-miptest aggregated_gene_panel_test.txt } );
@@ -125,7 +114,6 @@ my $wrong_file =
   get_select_file_contigs(
     {
         select_file_path => $select_file_path,
-        log              => $log,
     }
   );
 
@@ -138,7 +126,6 @@ is( $error_msg, undef, q{No error message} );
 ( $error_msg, @{ $file_info{select_file_contigs} } ) = get_select_file_contigs(
     {
         select_file_path => $wrong_file,
-        log              => $log,
     }
 );
 
