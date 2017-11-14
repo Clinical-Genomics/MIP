@@ -160,6 +160,7 @@ sub analysis_plink {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ### SET IMPORT IN ALPHABETIC ORDER
+    use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
