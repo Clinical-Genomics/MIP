@@ -108,6 +108,12 @@ picardtools_mergesamfiles.t
 picardtools_sortvcf.t
 pigz.t
 pip_install.t
+plink_calculate_inbreeding.t
+plink_create_mibs.t
+plink_check_sex_chroms.t
+plink_fix_fam_ped_map_freq.t
+plink_sex_check.t
+plink_variant_pruning.t
 processes_print_wait.t
 processes_add_job_id_dependency_tree.t
 processes_add_pan_job_id_to_sample_id_dependency_tree.t

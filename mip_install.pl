@@ -146,17 +146,19 @@ $parameter{shell}{snpeff}{snpeff_genome_versions} =
   [qw{ GRCh37.75 GRCh38.86 }];
 $parameter{reference_genome_versions} = [qw{ GRCh37 hg38 }];
 
-our $VERSION = q{1.2.18};
+our $VERSION = q{1.2.19};
 
 GetOptions(
     q{see|bash_set_errexit}    => \$parameter{bash_set_errexit},
     q{snu|bash_set_nounset}    => \$parameter{bash_set_nounset},
     q{env|conda_environment:s} => \$parameter{conda_environment},
-    q{cdp|conda_dir_path:s}    => \@{ $parameter{conda_dir_path} },
-    q{cdu|conda_update}        => \$parameter{conda_update},
-    q{bcv|bioconda=s}          => \%{ $parameter{bioconda} },
-    q{pip|pip=s}               => \%{ $parameter{pip} },
-    q{pyv|python_version=s}    => \$parameter{python_version},
+    q{cdp|conda_dir_path:s{,}} => sub {
+        @{ $parameter{conda_dir_path} } = split /,/xms, $ARG[1];
+    },
+    q{cdu|conda_update}     => \$parameter{conda_update},
+    q{bcv|bioconda=s}       => \%{ $parameter{bioconda} },
+    q{pip|pip=s}            => \%{ $parameter{pip} },
+    q{pyv|python_version=s} => \$parameter{python_version},
 
     # SHELL
     q{psh|prefer_shell}     => \$parameter{prefer_shell},
@@ -166,25 +168,32 @@ GetOptions(
     q{bet|bedtools:s}       => \$parameter{shell}{bedtools}{version},
     q{vt|vt:s}              => \$parameter{shell}{vt}{version},
     q{plk|plink2:s}         => \$parameter{shell}{plink2}{version},
-    q{snpg|snpeff_genome_versions:s} =>
-      \@{ $parameter{shell}{snpeff}{snpeff_genome_versions} },
-    q{vep|varianteffectpredictor:s} => \$parameter{shell}{vep}{version},
-    q{vepa|vep_auto_flag:s}         => \$parameter{shell}{vep}{vep_auto_flag},
+    q{snpg|snpeff_genome_versions:s{,}} => sub {
+        @{ $parameter{shell}{snpeff}{snpeff_genome_versions} } = 
+          split /,/xms, $ARG[1];
+    },
+    q{vep|varianteffectpredictor:i} => \$parameter{shell}{vep}{version},
+    q{vepf|vep_auto_flag:s}         => \$parameter{shell}{vep}{vep_auto_flag},
     q{vepc|vep_cache_dir:s}         => \$parameter{shell}{vep}{vep_cache_dir},
-    q{vepa|vep_assemblies:s} => \@{ $parameter{shell}{vep}{vep_assemblies} },
-    q{vepp|vep_plugins:s}    => \@{ $parameter{shell}{vep}{vep_plugins} },
-    q{rhc|rhocall:s}         => \$parameter{shell}{rhocall}{version},
-    q{rhcp|rhocall_path:s}   => \$parameter{shell}{rhocall}{path},
-    q{cnv|cnvnator:s}        => \$parameter{shell}{cnvnator}{version},
+    q{vepa|vep_assemblies:s{,}}     => sub {
+        @{ $parameter{shell}{vep}{vep_assemblies} } = split /,/xms, $ARG[1];
+    },
+    q{vepp|vep_plugins:s{,}} => sub {
+        @{ $parameter{shell}{vep}{vep_plugins} } = split /,/xms, $ARG[1];
+    },
+    q{rhc|rhocall:s}       => \$parameter{shell}{rhocall}{version},
+    q{rhcp|rhocall_path:s} => \$parameter{shell}{rhocall}{path},
+    q{cnv|cnvnator:s}      => \$parameter{shell}{cnvnator}{version},
     q{cnvnr|cnvnator_root_binary:s} =>
       \$parameter{shell}{cnvnator}{cnvnator_root_binary},
     q{tid|tiddit:s} => \$parameter{shell}{tiddit}{version},
     q{svdb|svdb:s}  => \$parameter{shell}{svdb}{version},
 
     # Utility
-    q{rd|reference_dir:s} => \$parameter{reference_dir},
-    q{rg|reference_genome_versions:s} =>
-      \@{ $parameter{reference_genome_versions} },
+    q{rd|reference_dir:s}                => \$parameter{reference_dir},
+    q{rg|reference_genome_versions:s{,}} => sub {
+        @{ $parameter{reference_genome_versions} } = split /,/xms, $ARG[1];
+    },
     q{ppd|print_parameters_default} => sub {
         print_parameters(
             {
@@ -463,7 +472,7 @@ sub build_usage {
     -plk/--plink                    Set the plink version (Default: "160224")
     -snpg/--snpeff_genome_versions  Set the snpEff genome version (Default: ["GRCh37.75", "GRCh38.82"])
     -vep/--varianteffectpredictor   Set the VEP version (Default: "90")
-    -vepa/--vep_auto_flag           Set the VEP auto installer flags
+    -vepf/--vep_auto_flag           Set the VEP auto installer flags
     -vepc/--vep_cache_dir           Specify the cache directory to use (whole path;
                                         defaults to "[--conda_dir_path]/ensembl-tools-release-varianteffectpredictorVersion/cache")
     -vepa/--vep_assemblies          Select the assembly version (Default: ["GRCh37", "GRCh38"])

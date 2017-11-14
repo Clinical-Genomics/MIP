@@ -108,6 +108,7 @@ use MIP::Recipes::Analysis::Picardtools_mergesamfiles
 use MIP::Recipes::Pipeline::Wts qw{ pipeline_wts };
 use MIP::Recipes::Analysis::Rcoverageplots qw{ analysis_rcoverageplots };
 use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
+use MIP::Recipes::Analysis::Samtools_mpileup qw { analysis_samtools_mpileup };
 use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
 use MIP::Recipes::Analysis::Tiddit qw{ analysis_tiddit };
 use MIP::Recipes::Analysis::Variant_integrity qw{ analysis_variant_integrity };
@@ -2212,9 +2213,18 @@ if ( $active_parameter{psv_reformat} > 0 ) {   #Run sv_reformat. Done per family
 
 if ( $active_parameter{psamtools_mpileup} > 0 ) {    #Run samtools mpileup
 
-    $log->info("[Samtools mpileup]\n");
+    $log->info( q{[Samtools mpileup]} );
+    my $program_name = q{samtools_mpileup};
 
-    msamtools_mpileup(
+    my $program_outdirectory_name =
+      $parameter{psamtools_mpileup}{outdir_name};
+
+    my $outfamily_directory = catfile(
+        $active_parameter{outdata_dir},    $active_parameter{family_id},
+        $active_parameter{outaligner_dir}, $program_outdirectory_name,
+    );
+
+    analysis_samtools_mpileup(
         {
             parameter_href          => \%parameter,
             active_parameter_href   => \%active_parameter,
@@ -2222,7 +2232,8 @@ if ( $active_parameter{psamtools_mpileup} > 0 ) {    #Run samtools mpileup
             file_info_href          => \%file_info,
             infile_lane_prefix_href => \%infile_lane_prefix,
             job_id_href             => \%job_id,
-            program_name            => "samtools_mpileup",
+            program_name            => $program_name,
+            outfamily_directory     => $outfamily_directory,
         }
     );
 }
@@ -6461,7 +6472,7 @@ sub mplink {
     use MIP::Program::Variantcalling::Bcftools
       qw(bcftools_view bcftools_annotate);
     use Program::Variantcalling::Vt qw(vt_uniq);
-    use Program::Variantcalling::Plink qw(plink);
+    use MIP::Program::Variantcalling::Plink qw{ plink_calculate_inbreeding plink_check_sex_chroms plink_create_mibs plink_fix_fam_ped_map_freq plink_sex_check plink_variant_pruning };
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_family_dead_end);
@@ -6591,9 +6602,9 @@ sub mplink {
     );
     say {$FILEHANDLE} "\n";
 
-    ### Plink
+    ### Plink variant pruning and creation of unique Ids
     say {$FILEHANDLE} "## Create pruning set and uniq IDs";
-    plink(
+    plink_variant_pruning(
         {
             vcffile_path => $file_path_prefix
               . "_no_indels_ann_uniq"
@@ -6618,7 +6629,7 @@ sub mplink {
 
     say {$FILEHANDLE}
       "## Update Plink fam. Create ped and map file and frequency report";
-    plink(
+    plink_fix_fam_ped_map_freq(
         {
             binary_fileset_prefix =>
               catfile( $$temp_directory_ref, $$family_id_ref . "_data" ),
@@ -6637,7 +6648,7 @@ sub mplink {
     if ( scalar( @{ $active_parameter_href->{sample_ids} } ) > 1 ) {
 
         say {$FILEHANDLE} "## Calculate inbreeding coefficients per family";
-        plink(
+        plink_calculate_inbreeding(
             {
                 binary_fileset_prefix =>
                   catfile( $$temp_directory_ref, $$family_id_ref . "_data" ),
@@ -6655,7 +6666,7 @@ sub mplink {
         say {$FILEHANDLE} "\n";
 
         say {$FILEHANDLE} "## Create Plink .mibs per family";
-        plink(
+        plink_create_mibs(
             {
                 ped_file_path => catfile(
                     $$temp_directory_ref, $$family_id_ref . "_data.ped"
@@ -6685,7 +6696,7 @@ sub mplink {
         $genome_build =
           "hg" . $file_info_href->{human_genome_reference_version};
     }
-    plink(
+    plink_check_sex_chroms(
         {
             regions_ref => [ 23, 24 ],
             split_x     => $genome_build,
@@ -6715,10 +6726,9 @@ sub mplink {
         $extract_file =
           catfile( $$temp_directory_ref, $$family_id_ref . '_data.prune.in' );
     }
-    plink(
+    plink_sex_check(
         {
-            check_sex       => 1,
-            sex_check_min_F => $sex_check_min_F,
+            sex_check_min_f => $sex_check_min_F,
             extract_file    => $extract_file,
             read_freqfile_path =>
               catfile( $$temp_directory_ref, $$family_id_ref . "_data.frqx" ),
@@ -7142,7 +7152,6 @@ sub vt {
                     stderrfile_path => $xargs_file_path_prefix . "."
                       . $contig
                       . ".stderr.txt",
-                    append_stderr_info  => 1,
                     verbosity           => "v",
                     temp_directory_path => $$temp_directory_ref,
                     thousand_g_file_path =>
@@ -11721,443 +11730,6 @@ sub delly_call {
                 path                    => $job_id_chain,
                 log                     => $log,
                 sbatch_file_name        => $file_path
-            }
-        );
-    }
-}
-
-sub msamtools_mpileup {
-
-## msamtools_mpileup
-
-##Function : samtools_mpileup
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => File info hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $sample_id_ref              => Sample id {REF}
-##         : $program_name               => Program name
-##         : $family_id_ref              => Family id {REF}
-##         : $temp_directory_ref         => Temporary directory {REF}
-##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => Variant call type
-##         : $xargs_file_counter          => The xargs file counter
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-    my $outaligner_dir_ref;
-    my $call_type;
-    my $xargs_file_counter;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $sample_id_ref;
-    my $program_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href,
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href,
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href,
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href,
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name,
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref,
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref,
-        },
-        outaligner_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir_ref,
-        },
-        call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
-        xargs_file_counter => {
-            default     => 0,
-            allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
-            store       => \$xargs_file_counter,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
-    use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
-    use MIP::Set::File qw{set_file_suffix};
-    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use MIP::Program::Alignment::Samtools qw(samtools_mpileup);
-    use MIP::Program::Variantcalling::Bcftools
-      qw(bcftools_call bcftools_filter bcftools_norm);
-    use MIP::Program::Variantcalling::Perl qw{ replace_iupac };
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_sample_id_dependency_add_to_family);
-    use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
-
-    my $core_number =
-      $active_parameter_href->{module_core_number}{ "p" . $program_name };
-    my $program_outdirectory_name =
-      $parameter_href->{ "p" . $program_name }{outdir_name};
-    my $xargs_file_path_prefix;
-    my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
-
-    ## Filehandles
-    my $FILEHANDLE      = IO::Handle->new();    #Create anonymous filehandle
-    my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $$family_id_ref,
-            program_name          => $program_name,
-            program_directory =>
-              catfile( lc($$outaligner_dir_ref), $program_outdirectory_name ),
-            core_number => $core_number,
-            process_time =>
-              $active_parameter_href->{module_time}{ "p" . $program_name },
-            temp_directory => $$temp_directory_ref
-        }
-    );
-
-    ## Assign directories
-    my $outfamily_file_directory =
-      catfile( $active_parameter_href->{outdata_dir},
-        $$family_id_ref, $$outaligner_dir_ref, $program_outdirectory_name )
-      ;    #For ".fam" file
-    my $outfamily_directory = catfile( $active_parameter_href->{outdata_dir},
-        $$family_id_ref, $$outaligner_dir_ref, $program_outdirectory_name );
-    $parameter_href->{ "p" . $program_name }{indirectory} =
-      $outfamily_directory;    #Used downstream
-
-    ## Assign file_tags
-    my $outfile_tag =
-      $file_info_href->{$$family_id_ref}{ "p" . $program_name }{file_tag};
-    my $outfile_prefix = $$family_id_ref . $outfile_tag . $call_type;
-    my $outfile_path_prefix = catfile( $$temp_directory_ref, $outfile_prefix );
-
-    ## Assign suffix
-    my $infile_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
-            jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain}
-            ,    #Get infile_suffix from baserecalibration jobid chain
-        }
-    );
-
-    ## Set file suffix for next module within jobid chain
-    my $outfile_suffix = set_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
-            job_id_chain   => $job_id_chain,
-            file_suffix =>
-              $parameter_href->{ "p" . $program_name }{outfile_suffix},
-        }
-    );
-
-    ## Create .fam file to be used in variant calling analyses
-    create_fam_file(
-        {
-            parameter_href        => $parameter_href,
-            active_parameter_href => $active_parameter_href,
-            sample_info_href      => $sample_info_href,
-            FILEHANDLE            => $FILEHANDLE,
-            fam_file_path =>
-              catfile( $outfamily_file_directory, $$family_id_ref . ".fam" ),
-            include_header => 0,
-        }
-    );
-
-    my %file_path_prefix;
-
-    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
-    {    #Collect infiles for all sample_ids
-
-        ## Assign directories
-        my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
-            $sample_id, $$outaligner_dir_ref );
-
-        ## Add merged infile name prefix after merging all BAM files per sample_id
-        my $merged_infile_prefix = get_merged_infile_prefix(
-            {
-                file_info_href => $file_info_href,
-                sample_id      => $sample_id,
-            }
-        );
-
-        ## Assign file_tags
-        my $infile_tag =
-          $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
-        my $infile_prefix = $merged_infile_prefix . $infile_tag;
-
-        $file_path_prefix{$sample_id} =
-          catfile( $$temp_directory_ref, $infile_prefix );
-
-        ## Copy file(s) to temporary directory
-        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-        ($xargs_file_counter) = xargs_migrate_contig_files(
-            {
-                FILEHANDLE      => $FILEHANDLE,
-                XARGSFILEHANDLE => $XARGSFILEHANDLE,
-                contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
-                file_path   => $file_path,
-                program_info_path  => $program_info_path,
-                core_number        => $core_number,
-                xargs_file_counter => $xargs_file_counter,
-                infile             => $infile_prefix,
-                indirectory        => $insample_directory,
-                file_ending        => substr( $infile_suffix, 0, 2 )
-                  . "*",    #q{.bam} -> ".b*" for getting index as well
-                temp_directory => $$temp_directory_ref,
-            }
-        );
-    }
-
-    ## SamTools mpileup
-    say {$FILEHANDLE} "## SamTools mpileup";
-
-    ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
-        {
-            FILEHANDLE         => $FILEHANDLE,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_path          => $file_path,
-            program_info_path  => $program_info_path,
-            core_number        => $core_number,
-            xargs_file_counter => $xargs_file_counter,
-        }
-    );
-
-    ## Split per contig
-    foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
-
-        ## Assemble file paths by adding file ending
-        my @file_paths =
-          map { $file_path_prefix{$_} . "_" . $contig . $infile_suffix }
-          @{ $active_parameter_href->{sample_ids} };
-
-        samtools_mpileup(
-            {
-                infile_paths_ref => \@file_paths,
-                output_tags_ref  => [ "DV", "AD" ],
-                referencefile_path =>
-                  $active_parameter_href->{human_genome_reference},
-                stderrfile_path => $xargs_file_path_prefix . "."
-                  . $contig
-                  . ".stderr.txt",
-                output_bcf                       => 1,
-                adjust_mq                        => 50,
-                per_sample_increased_sensitivity => 1,
-                FILEHANDLE                       => $XARGSFILEHANDLE,
-            }
-        );
-        print $XARGSFILEHANDLE "| ";    #Pipe
-
-        ## Get parameter
-        my $samples_file;
-        my $constrain;
-        if ( $parameter_href->{dynamic_parameter}{trio} ) {
-
-            $samples_file =
-              catfile( $outfamily_file_directory, $$family_id_ref . ".fam" )
-              . " ";
-            $constrain = "trio";
-        }
-        bcftools_call(
-            {
-                form_fields_ref     => ["GQ"],
-                variants_only       => 1,
-                multiallelic_caller => 1,
-                samples_file        => $samples_file,
-                constrain           => $constrain,
-                stderrfile_path     => $xargs_file_path_prefix . "."
-                  . $contig
-                  . "_call.stderr.txt",
-                FILEHANDLE => $XARGSFILEHANDLE,
-            }
-        );
-        print $XARGSFILEHANDLE "| ";    #Pipe
-
-        bcftools_filter(
-            {
-                stderrfile_path => $xargs_file_path_prefix . "."
-                  . $contig
-                  . "_filter.stderr.txt",
-                soft_filter => "LowQual",
-                snp_gap     => 3,
-                indel_gap   => 10,
-                exclude =>
-q?\'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %MAX(DV)/%MAX(DP)<=0.25\'?,
-                FILEHANDLE => $XARGSFILEHANDLE,
-            }
-        );
-
-        if ( $active_parameter_href->{replace_iupac} ) {
-
-            ## Replace the IUPAC code in alternative allels with N for input stream and writes to stream
-            replace_iupac(
-                {
-                    stderrfile_path => $xargs_file_path_prefix . "."
-                      . $contig
-                      . "_replace_iupac.stderr.txt",
-                    FILEHANDLE => $XARGSFILEHANDLE
-                }
-            );
-        }
-
-        print $XARGSFILEHANDLE "| ";    #Pipe
-
-        ## BcfTools norm, Left-align and normalize indels, split multiallelics
-        bcftools_norm(
-            {
-                FILEHANDLE => $XARGSFILEHANDLE,
-                reference_path =>
-                  $active_parameter_href->{human_genome_reference},
-                output_type  => "v",
-                outfile_path => $outfile_path_prefix . "_"
-                  . $contig
-                  . $outfile_suffix,
-                multiallelic    => "-",
-                stderrfile_path => catfile(
-                        $xargs_file_path_prefix . "."
-                      . $contig
-                      . "_norm.stderr.txt"
-                ),
-            }
-        );
-        say {$XARGSFILEHANDLE} "\n";
-    }
-
-    ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
-    gatk_concatenate_variants(
-        {
-            active_parameter_href => $active_parameter_href,
-            FILEHANDLE            => $FILEHANDLE,
-            elements_ref          => \@{ $file_info_href->{contigs} },
-            infile_prefix         => $outfile_path_prefix . "_",
-            infile_postfix        => $outfile_suffix,
-            outfile_path_prefix   => $outfile_path_prefix,
-            outfile_suffix        => $outfile_suffix,
-        }
-    );
-
-    ## Copies file from temporary directory.
-    say {$FILEHANDLE} q{## Copy file from temporary directory};
-    migrate_file(
-        {
-            infile_path  => $outfile_path_prefix . $outfile_suffix . q{*},
-            outfile_path => $outfamily_directory,
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} q{wait}, "\n";
-
-    close $FILEHANDLE;
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        ## Collect samtools version in qccollect
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                program_name     => 'samtools',
-                outdirectory     => $outfamily_directory,
-                outfile          => $outfile_prefix . $outfile_suffix,
-            }
-        );
-        ## Locating samtools_mpileup file
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                program_name     => 'samtools_mpileup',
-                outdirectory     => $outfamily_directory,
-                outfile          => $outfile_prefix . $outfile_suffix,
-            }
-        );
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                program_name     => 'bcftools',
-                outdirectory     => $outfamily_directory,
-                outfile          => $outfile_prefix . $outfile_suffix,
-            }
-        );
-
-        slurm_submit_job_sample_id_dependency_add_to_family(
-            {
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                family_id        => $$family_id_ref,
-                path             => $job_id_chain,
-                log              => $log,
-                sbatch_file_name => $file_path,
             }
         );
     }
