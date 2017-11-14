@@ -124,8 +124,7 @@ sub analysis_plink {
             store       => \$program_name,
         },
         temp_directory => {
-            required    => $arg_href->{active_parameter_href}{temp_directory},
-            defined     => 1,
+            default     => $arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
             store       => \$temp_directory,
         },
