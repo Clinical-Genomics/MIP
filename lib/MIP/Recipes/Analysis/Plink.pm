@@ -394,8 +394,6 @@ sub analysis_plink {
           q{hg} . $file_info_href->{human_genome_reference_version};
     }
 
-
-
     plink_check_sex_chroms(
         {
             regions_ref => [ 23, 24 ],
@@ -403,7 +401,7 @@ sub analysis_plink {
             no_fail     => 1,
             make_bed    => 1,
             binary_fileset_prefix => $binary_fileset_prefix,
-            outfile_prefix => $outfile_prefix . $UNDERSCORE . q{unsplit},
+            outfile_prefix => $outfile_prefix . $UNDERSCORE . q{data_unsplit},
             FILEHANDLE => $FILEHANDLE,
         }
     );
