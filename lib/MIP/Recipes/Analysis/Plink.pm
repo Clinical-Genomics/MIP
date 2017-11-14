@@ -423,7 +423,7 @@ sub analysis_plink {
         $extract_file = $binary_fileset_prefix . $DOT . q{prune.in};
     }
 
-    $outfile_prefix = catfile( $temp_directory, $family_id);
+    $outfile_prefix = catfile( $outfamily_directory, $family_id);
 
     plink_sex_check(
         {
