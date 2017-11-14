@@ -59,7 +59,7 @@ use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter
-  qw{ set_dynamic_parameter set_parameter_reference_dir_path };
+  qw{ set_config_to_active_parameters set_dynamic_parameter set_parameter_reference_dir_path set_parameter_to_broadcast };
 use MIP::Update::Contigs qw{ update_contigs_for_run };
 use MIP::Update::Parameters
   qw{ update_reference_parameters update_vcfparser_outfile_counter };
@@ -147,12 +147,6 @@ Readonly my $TAB       => qq{\t};
 
 #### Script parameters
 
-# Holds all active parameters after the value has been set
-my %active_parameter;
-
-# Holds all set parameters info after add_to_active_parameter
-my @broadcasts;
-
 ## Add date_time_stamp for later use in log and qc_metrics yaml file
 my $date_time       = localtime;
 my $date_time_stamp = $date_time->datetime;
@@ -166,7 +160,7 @@ chomp( $date_time_stamp, $date, $script );
 
 #### Set program parameters
 
-### %parameter holds all parameters for MIP
+### %parameter holds all defined parameters for MIP
 ## Loads a YAML file into an arbitrary hash and returns it.
 my %parameter = load_yaml( { yaml_file => $definitions_file, } );
 
@@ -213,11 +207,12 @@ if ($error_msg) {
 # Set MIP version
 our $VERSION = 'v5.0.12';
 
+# Holds all active parameters
+my %active_parameter;
+
 ## Directories, files, job_ids and sample_info
 my ( %infile, %indir_path, %infile_lane_prefix, %lane,
     %infile_both_strands_prefix, %job_id, %sample_info );
-
-#### Staging/Sanity Check Area
 
 my %file_info = (
     exome_target_bed =>
@@ -230,7 +225,10 @@ my %file_info = (
     human_genome_reference_file_endings => [qw{ .dict .fai }],
 );
 
-## Enables cmd "mip" to print usage help
+#### Staging Area
+### Get and/or set input parameters
+
+## Pprint usage help if no arguments
 if ( not @ARGV ) {
 
     help(
@@ -241,51 +239,51 @@ if ( not @ARGV ) {
     );
 }
 
-###User Options
+### User Options
 GetOptions(
-    q{ifd|infile_dirs:s}   => \%{ $parameter{infile_dirs}{value} },
-    q{rd|reference_dir:s}  => \$parameter{reference_dir}{value},
-    q{p|project_id:s}      => \$parameter{project_id}{value},
-    q{s|sample_ids:s}      => \@{ $parameter{sample_ids}{value} },
-    q{odd|outdata_dir:s}   => \$parameter{outdata_dir}{value},
-    q{osd|outscript_dir:s} => \$parameter{outscript_dir}{value},
-    q{f|family_id:s}       => \$parameter{family_id}{value},
+    q{ifd|infile_dirs:s}   => \%{ $active_parameter{infile_dirs} },
+    q{rd|reference_dir:s}  => \$active_parameter{reference_dir},
+    q{p|project_id:s}      => \$active_parameter{project_id},
+    q{s|sample_ids:s}      => \@{ $active_parameter{sample_ids} },
+    q{odd|outdata_dir:s}   => \$active_parameter{outdata_dir},
+    q{osd|outscript_dir:s} => \$active_parameter{outscript_dir},
+    q{f|family_id:s}       => \$active_parameter{family_id},
     q{sck|supported_capture_kit:s} =>
-      \%{ $parameter{supported_capture_kit}{value} },
+      \%{ $active_parameter{supported_capture_kit} },
     q{dnr|decompose_normalize_references:s} =>
-      \@{ $parameter{decompose_normalize_references}{value} },
-    q{ped|pedigree_file:s} => \$parameter{pedigree_file}{value},
+      \@{ $active_parameter{decompose_normalize_references} },
+    q{ped|pedigree_file:s} => \$active_parameter{pedigree_file},
     q{hgr|human_genome_reference:s} =>
-      \$parameter{human_genome_reference}{value},
-    q{al|outaligner_dir:s}    => \$parameter{outaligner_dir}{value},
-    q{at|analysis_type:s}     => \%{ $parameter{analysis_type}{value} },
-    q{pl|platform:s}          => \$parameter{platform}{value},
-    q{ec|expected_coverage:s} => \%{ $parameter{expected_coverage}{value} },
-    q{c|config_file:s}        => \$parameter{config_file}{value},
-    q{ccp|cluster_constant_path:s} => \$parameter{cluster_constant_path}{value},
+      \$active_parameter{human_genome_reference},
+    q{al|outaligner_dir:s}    => \$active_parameter{outaligner_dir},
+    q{at|analysis_type:s}     => \%{ $active_parameter{analysis_type} },
+    q{pl|platform:s}          => \$active_parameter{platform},
+    q{ec|expected_coverage:s} => \%{ $active_parameter{expected_coverage} },
+    q{c|config_file:s}        => \$active_parameter{config_file},
+    q{ccp|cluster_constant_path:s} => \$active_parameter{cluster_constant_path},
     q{acp|analysis_constant_path:s} =>
-      \$parameter{analysis_constant_path}{value},
-    q{cfa|config_file_analysis:s} => \$parameter{config_file_analysis}{value},
-    q{sif|sample_info_file:s}     => \$parameter{sample_info_file}{value},
-    q{dra|dry_run_all=i}          => \$parameter{dry_run_all}{value},
-    q{jul|java_use_large_pages=n} => \$parameter{java_use_large_pages}{value},
-    q{ges|genomic_set:s}          => \$parameter{genomic_set}{value},
-    q{rio|reduce_io=n}            => \$parameter{reduce_io}{value},
-    q{riu|replace_iupac=n}        => \$parameter{replace_iupac}{value},
-    q{ppm|print_program_mode=n}   => \$parameter{print_program_mode}{value},
+      \$active_parameter{analysis_constant_path},
+    q{cfa|config_file_analysis:s} => \$active_parameter{config_file_analysis},
+    q{sif|sample_info_file:s}     => \$active_parameter{sample_info_file},
+    q{dra|dry_run_all=i}          => \$active_parameter{dry_run_all},
+    q{jul|java_use_large_pages=n} => \$active_parameter{java_use_large_pages},
+    q{ges|genomic_set:s}          => \$active_parameter{genomic_set},
+    q{rio|reduce_io=n}            => \$active_parameter{reduce_io},
+    q{riu|replace_iupac=n}        => \$active_parameter{replace_iupac},
+    q{ppm|print_program_mode=n}   => \$active_parameter{print_program_mode},
     q{pp|print_program}           => sub {
         GetOptions( q{ppm|print_program_mode=n} =>
-              \$parameter{print_program_mode}{value} )
+              \$active_parameter{print_program_mode} )
           ;    #Force ppm to be read before function call
         print_program(
             {
                 parameter_href     => \%parameter,
-                print_program_mode => $parameter{print_program_mode}{value},
+                print_program_mode => $active_parameter{print_program_mode},
             }
         );
         exit;
     },
-    q{l|log_file:s} => \$parameter{log_file}{value},
+    q{l|log_file:s} => \$active_parameter{log_file},
     q{h|help}       => sub { say STDOUT $USAGE; exit; },
     q{v|version}    => sub {
         say STDOUT $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
@@ -294,310 +292,310 @@ GetOptions(
     },
 
     #### Bash
-    q{bse|bash_set_errexit:s}   => \$parameter{bash_set_errexit}{value},
-    q{bsu|bash_set_nounset:s}   => \$parameter{bash_set_nounset}{value},
-    q{bsp|bash_set_pipefail:s}  => \$parameter{bash_set_pipefail}{value},
-    q{em|email:s}               => \$parameter{email}{value},
-    q{emt|email_types:s}        => \@{ $parameter{email_types}{value} },
-    q{mcn|module_core_number:s} => \%{ $parameter{module_core_number}{value} },
-    q{mot|module_time:s}        => \%{ $parameter{module_time}{value} },
-    q{mcn|max_cores_per_node=n} => \$parameter{max_cores_per_node}{value},
-    q{nrm|node_ram_memory=n}    => \$parameter{node_ram_memory}{value},
-    q{tmd|temp_directory:s}     => \$parameter{temp_directory}{value},
+    q{bse|bash_set_errexit:s}   => \$active_parameter{bash_set_errexit},
+    q{bsu|bash_set_nounset:s}   => \$active_parameter{bash_set_nounset},
+    q{bsp|bash_set_pipefail:s}  => \$active_parameter{bash_set_pipefail},
+    q{em|email:s}               => \$active_parameter{email},
+    q{emt|email_types:s}        => \@{ $active_parameter{email_types} },
+    q{mcn|module_core_number:s} => \%{ $active_parameter{module_core_number} },
+    q{mot|module_time:s}        => \%{ $active_parameter{module_time} },
+    q{mcn|max_cores_per_node=n} => \$active_parameter{max_cores_per_node},
+    q{nrm|node_ram_memory=n}    => \$active_parameter{node_ram_memory},
+    q{tmd|temp_directory:s}     => \$active_parameter{temp_directory},
     q{qos|slurm_quality_of_service=s} =>
-      \$parameter{slurm_quality_of_service}{value},
+      \$active_parameter{slurm_quality_of_service},
     q{sen|source_environment_commands=s{,}} =>
-      \@{ $parameter{source_environment_commands}{value} },
-    q{psfq|psplit_fastq_file=n} => \$parameter{psplit_fastq_file}{value},
+      \@{ $active_parameter{source_environment_commands} },
+    q{psfq|psplit_fastq_file=n} => \$active_parameter{psplit_fastq_file},
     q{sfqrdb|split_fastq_file_read_batch=n} =>
-      \$parameter{split_fastq_file_read_batch}{value},
-    q{pgz|pgzip_fastq=n}         => \$parameter{pgzip_fastq}{value},
-    q{pfqc|pfastqc=n}            => \$parameter{pfastqc}{value},
-    q{pmem|pbwa_mem=n}           => \$parameter{pbwa_mem}{value},
-    q{memhla|bwa_mem_hla=n}      => \$parameter{bwa_mem_hla}{value},
-    q{memcrm|bwa_mem_cram=n}     => \$parameter{bwa_mem_cram}{value},
-    q{memsts|bwa_mem_bamstats=n} => \$parameter{bwa_mem_bamstats}{value},
+      \$active_parameter{split_fastq_file_read_batch},
+    q{pgz|pgzip_fastq=n}         => \$active_parameter{pgzip_fastq},
+    q{pfqc|pfastqc=n}            => \$active_parameter{pfastqc},
+    q{pmem|pbwa_mem=n}           => \$active_parameter{pbwa_mem},
+    q{memhla|bwa_mem_hla=n}      => \$active_parameter{bwa_mem_hla},
+    q{memcrm|bwa_mem_cram=n}     => \$active_parameter{bwa_mem_cram},
+    q{memsts|bwa_mem_bamstats=n} => \$active_parameter{bwa_mem_bamstats},
     q{memssm|bwa_sambamba_sort_memory_limit:s} =>
-      \$parameter{bwa_sambamba_sort_memory_limit}{value},
-    q{ptp|picardtools_path:s} => \$parameter{picardtools_path}{value},
+      \$active_parameter{bwa_sambamba_sort_memory_limit},
+    q{ptp|picardtools_path:s} => \$active_parameter{picardtools_path},
     q{pptm|ppicardtools_mergesamfiles=n} =>
-      \$parameter{ppicardtools_mergesamfiles}{value},
-    q{pmd|pmarkduplicates=n} => \$parameter{pmarkduplicates}{value},
+      \$active_parameter{ppicardtools_mergesamfiles},
+    q{pmd|pmarkduplicates=n} => \$active_parameter{pmarkduplicates},
     q{mdpmd|markduplicates_picardtools_markduplicates=n} =>
-      \$parameter{markduplicates_picardtools_markduplicates}{value},
+      \$active_parameter{markduplicates_picardtools_markduplicates},
     q{mdsmd|markduplicates_sambamba_markdup=n} =>
-      \$parameter{markduplicates_sambamba_markdup}{value},
+      \$active_parameter{markduplicates_sambamba_markdup},
     q{mdshts|markduplicates_sambamba_markdup_hash_table_size=n} =>
-      \$parameter{markduplicates_sambamba_markdup_hash_table_size}{value},
+      \$active_parameter{markduplicates_sambamba_markdup_hash_table_size},
     q{mdsols|markduplicates_sambamba_markdup_overflow_list_size=n} =>
-      \$parameter{markduplicates_sambamba_markdup_overflow_list_size}{value},
+      \$active_parameter{markduplicates_sambamba_markdup_overflow_list_size},
     q{mdsibs|markduplicates_sambamba_markdup_io_buffer_size=n} =>
-      \$parameter{markduplicates_sambamba_markdup_io_buffer_size}{value},
-    q{pchs|pchanjo_sexcheck=n} => \$parameter{pchanjo_sexcheck}{value},
+      \$active_parameter{markduplicates_sambamba_markdup_io_buffer_size},
+    q{pchs|pchanjo_sexcheck=n} => \$active_parameter{pchanjo_sexcheck},
     q{chslle|chanjo_sexcheck_log_level:s} =>
-      \$parameter{chanjo_sexcheck_log_level}{value},
-    q{psdt|psambamba_depth=n}       => \$parameter{psambamba_depth}{value},
-    q{sdtmod|sambamba_depth_mode:s} => \$parameter{sambamba_depth_mode}{value},
+      \$active_parameter{chanjo_sexcheck_log_level},
+    q{psdt|psambamba_depth=n}       => \$active_parameter{psambamba_depth},
+    q{sdtmod|sambamba_depth_mode:s} => \$active_parameter{sambamba_depth_mode},
     q{sdtcut|sambamba_depth_cutoffs:s} =>
-      \@{ $parameter{sambamba_depth_cutoffs}{value} },
-    q{sdtbed|sambamba_depth_bed:s} => \$parameter{sambamba_depth_bed}{value},
+      \@{ $active_parameter{sambamba_depth_cutoffs} },
+    q{sdtbed|sambamba_depth_bed:s} => \$active_parameter{sambamba_depth_bed},
     q{sdtbaq|sambamba_depth_base_quality=n} =>
-      \$parameter{sambamba_depth_base_quality}{value},
+      \$active_parameter{sambamba_depth_base_quality},
     q{sdtmaq|sambamba_depth_mapping_quality=n} =>
-      \$parameter{sambamba_depth_mapping_quality}{value},
+      \$active_parameter{sambamba_depth_mapping_quality},
     q{sdtndu|sambamba_depth_noduplicates=n} =>
-      \$parameter{sambamba_depth_noduplicates}{value},
+      \$active_parameter{sambamba_depth_noduplicates},
     q{sdtfqc|sambamba_depth_quality_control=n} =>
-      \$parameter{sambamba_depth_quality_control}{value},
-    q{pbgc|pbedtools_genomecov=n} => \$parameter{pbedtools_genomecov}{value},
+      \$active_parameter{sambamba_depth_quality_control},
+    q{pbgc|pbedtools_genomecov=n} => \$active_parameter{pbedtools_genomecov},
     q{bgcmc|bedtools_genomecov_max_coverage=n} =>
-      \$parameter{bedtools_genomecov_max_coverage}{value},
+      \$active_parameter{bedtools_genomecov_max_coverage},
     q{pptcmm|ppicardtools_collectmultiplemetrics=n} =>
-      \$parameter{ppicardtools_collectmultiplemetrics}{value},
+      \$active_parameter{ppicardtools_collectmultiplemetrics},
     q{pptchs|ppicardtools_collecthsmetrics=n} =>
-      \$parameter{ppicardtools_collecthsmetrics}{value},
-    q{extb|exome_target_bed=s}     => \%{ $parameter{exome_target_bed}{value} },
-    q{prcp|prcovplots=n}           => \$parameter{prcovplots}{value},
-    q{pcnv|pcnvnator=n}            => \$parameter{pcnvnator}{value},
-    q{cnvhbs|cnv_bin_size=n}       => \$parameter{cnv_bin_size}{value},
-    q{cnvrld|cnv_root_ld_lib=s}    => \$parameter{cnv_root_ld_lib}{value},
-    q{pdelc|pdelly_call=n}         => \$parameter{pdelly_call}{value},
-    q{pdel|pdelly_reformat=n}      => \$parameter{pdelly_reformat}{value},
-    q{deltyp|delly_types:s}        => \@{ $parameter{delly_types}{value} },
-    q{delexc|delly_exclude_file:s} => \$parameter{delly_exclude_file}{value},
-    q{pmna|pmanta=n}               => \$parameter{pmanta}{value},
-    q{ptid|ptiddit=n}              => \$parameter{ptiddit}{value},
+      \$active_parameter{ppicardtools_collecthsmetrics},
+    q{extb|exome_target_bed=s}     => \%{ $active_parameter{exome_target_bed} },
+    q{prcp|prcovplots=n}           => \$active_parameter{prcovplots},
+    q{pcnv|pcnvnator=n}            => \$active_parameter{pcnvnator},
+    q{cnvhbs|cnv_bin_size=n}       => \$active_parameter{cnv_bin_size},
+    q{cnvrld|cnv_root_ld_lib=s}    => \$active_parameter{cnv_root_ld_lib},
+    q{pdelc|pdelly_call=n}         => \$active_parameter{pdelly_call},
+    q{pdel|pdelly_reformat=n}      => \$active_parameter{pdelly_reformat},
+    q{deltyp|delly_types:s}        => \@{ $active_parameter{delly_types} },
+    q{delexc|delly_exclude_file:s} => \$active_parameter{delly_exclude_file},
+    q{pmna|pmanta=n}               => \$active_parameter{pmanta},
+    q{ptid|ptiddit=n}              => \$active_parameter{ptiddit},
     q{tidmsp|tiddit_minimum_number_supporting_pairs=n} =>
-      \$parameter{tiddit_minimum_number_supporting_pairs}{value},
+      \$active_parameter{tiddit_minimum_number_supporting_pairs},
     q{psvc|psv_combinevariantcallsets=n} =>
-      \$parameter{psv_combinevariantcallsets}{value},
-    q{svcvtd|sv_vt_decompose=n} => \$parameter{sv_vt_decompose}{value},
+      \$active_parameter{psv_combinevariantcallsets},
+    q{svcvtd|sv_vt_decompose=n} => \$active_parameter{sv_vt_decompose},
     q{svsvdbmp|sv_svdb_merge_prioritize:s} =>
-      \$parameter{sv_svdb_merge_prioritize}{value},
+      \$active_parameter{sv_svdb_merge_prioritize},
     q{svcbtv|sv_bcftools_view_filter=n} =>
-      \$parameter{sv_bcftools_view_filter}{value},
-    q{svcdbq|sv_svdb_query=n} => \$parameter{sv_svdb_query}{value},
+      \$active_parameter{sv_bcftools_view_filter},
+    q{svcdbq|sv_svdb_query=n} => \$active_parameter{sv_svdb_query},
     q{svcdbqd|sv_svdb_query_db_files:s} =>
-      \%{ $parameter{sv_svdb_query_db_files}{value} },
-    q{svcvan|sv_vcfanno=n}        => \$parameter{sv_vcfanno}{value},
-    q{svcval|sv_vcfanno_lua:s}    => \$parameter{sv_vcfanno_lua}{value},
-    q{svcvac|sv_vcfanno_config:s} => \$parameter{sv_vcfanno_config}{value},
+      \%{ $active_parameter{sv_svdb_query_db_files} },
+    q{svcvan|sv_vcfanno=n}        => \$active_parameter{sv_vcfanno},
+    q{svcval|sv_vcfanno_lua:s}    => \$active_parameter{sv_vcfanno_lua},
+    q{svcvac|sv_vcfanno_config:s} => \$active_parameter{sv_vcfanno_config},
     q{svcvacf|sv_vcfanno_config_file:s} =>
-      \$parameter{sv_vcfanno_config_file}{value},
+      \$active_parameter{sv_vcfanno_config_file},
     q{svcvah|sv_vcfannotation_header_lines_file:s} =>
-      \$parameter{sv_vcfannotation_header_lines_file}{value},
-    q{svcgmf|sv_genmod_filter=n} => \$parameter{sv_genmod_filter}{value},
+      \$active_parameter{sv_vcfannotation_header_lines_file},
+    q{svcgmf|sv_genmod_filter=n} => \$active_parameter{sv_genmod_filter},
     q{svcgfr|sv_genmod_filter_1000g:s} =>
-      \$parameter{sv_genmod_filter_1000g}{value},
+      \$active_parameter{sv_genmod_filter_1000g},
     q{svcgft|sv_genmod_filter_threshold:s} =>
-      \$parameter{sv_genmod_filter_threshold}{value},
+      \$active_parameter{sv_genmod_filter_threshold},
     q{svcbcf|sv_combinevariantcallsets_bcf_file=n} =>
-      \$parameter{sv_combinevariantcallsets_bcf_file}{value},
+      \$active_parameter{sv_combinevariantcallsets_bcf_file},
     q{psvv|psv_varianteffectpredictor=n} =>
-      \$parameter{psv_varianteffectpredictor}{value},
-    q{svvepf|sv_vep_features:s} => \@{ $parameter{sv_vep_features}{value} },
-    q{svvepl|sv_vep_plugins:s}  => \@{ $parameter{sv_vep_plugins}{value} },
-    q{psvvcp|psv_vcfparser=n}   => \$parameter{psv_vcfparser}{value},
+      \$active_parameter{psv_varianteffectpredictor},
+    q{svvepf|sv_vep_features:s} => \@{ $active_parameter{sv_vep_features} },
+    q{svvepl|sv_vep_plugins:s}  => \@{ $active_parameter{sv_vep_plugins} },
+    q{psvvcp|psv_vcfparser=n}   => \$active_parameter{psv_vcfparser},
     q{svvcpvt|sv_vcfparser_vep_transcripts=n} =>
-      \$parameter{sv_vcfparser_vep_transcripts}{value},
+      \$active_parameter{sv_vcfparser_vep_transcripts},
     q{svvcppg|sv_vcfparser_per_gene=n} =>
-      \$parameter{sv_vcfparser_per_gene}{value},
+      \$active_parameter{sv_vcfparser_per_gene},
     q{svvcprff|sv_vcfparser_range_feature_file:s} =>
-      \$parameter{sv_vcfparser_range_feature_file}{value},
+      \$active_parameter{sv_vcfparser_range_feature_file},
     q{svvcprfa|sv_vcfparser_range_feature_annotation_columns:s} =>
-      \@{ $parameter{sv_vcfparser_range_feature_annotation_columns}{value} },
+      \@{ $active_parameter{sv_vcfparser_range_feature_annotation_columns} },
     q{svvcpsf|sv_vcfparser_select_file:s} =>
-      \$parameter{sv_vcfparser_select_file}{value},
+      \$active_parameter{sv_vcfparser_select_file},
     q{svvcpsfm|sv_vcfparser_select_file_matching_column=n} =>
-      \$parameter{sv_vcfparser_select_file_matching_column}{value},
+      \$active_parameter{sv_vcfparser_select_file_matching_column},
     q{svvcpsfa|sv_vcfparser_select_feature_annotation_columns:s} =>
-      \@{ $parameter{sv_vcfparser_select_feature_annotation_columns}{value} },
-    q{psvr|psv_rankvariant=n} => \$parameter{psv_rankvariant}{value},
+      \@{ $active_parameter{sv_vcfparser_select_feature_annotation_columns} },
+    q{psvr|psv_rankvariant=n} => \$active_parameter{psv_rankvariant},
     q{svravanr|sv_genmod_annotate_regions:n} =>
-      \$parameter{sv_genmod_annotate_regions}{value},
+      \$active_parameter{sv_genmod_annotate_regions},
     q{svravgft|sv_genmod_models_family_type:s} =>
-      \$parameter{sv_genmod_models_family_type}{value},
+      \$active_parameter{sv_genmod_models_family_type},
     q{svravrpf|sv_genmod_models_reduced_penetrance_file:s} =>
-      \$parameter{sv_genmod_models_reduced_penetrance_file}{value},
+      \$active_parameter{sv_genmod_models_reduced_penetrance_file},
     q{svravwg|sv_genmod_models_whole_gene=n} =>
-      \$parameter{sv_genmod_models_whole_gene}{value},
-    q{svravrm|sv_rank_model_file:s} => \$parameter{sv_rank_model_file}{value},
-    q{psvre|psv_reformat=n}         => \$parameter{psv_reformat}{value},
+      \$active_parameter{sv_genmod_models_whole_gene},
+    q{svravrm|sv_rank_model_file:s} => \$active_parameter{sv_rank_model_file},
+    q{psvre|psv_reformat=n}         => \$active_parameter{psv_reformat},
     q{svrevbf|sv_rankvariant_binary_file=n} =>
-      \$parameter{sv_rankvariant_binary_file}{value},
+      \$active_parameter{sv_rankvariant_binary_file},
     q{svrergf|sv_reformat_remove_genes_file:s} =>
-      \$parameter{sv_reformat_remove_genes_file}{value},
-    q{psmp|psamtools_mpileup=n} => \$parameter{psamtools_mpileup}{value},
-    q{pfrb|pfreebayes=n}        => \$parameter{pfreebayes}{value},
-    q{gtp|gatk_path:s}          => \$parameter{gatk_path}{value},
-    q{gll|gatk_logging_level:s} => \$parameter{gatk_logging_level}{value},
+      \$active_parameter{sv_reformat_remove_genes_file},
+    q{psmp|psamtools_mpileup=n} => \$active_parameter{psamtools_mpileup},
+    q{pfrb|pfreebayes=n}        => \$active_parameter{pfreebayes},
+    q{gtp|gatk_path:s}          => \$active_parameter{gatk_path},
+    q{gll|gatk_logging_level:s} => \$active_parameter{gatk_logging_level},
     q{gbdv|gatk_bundle_download_version:s} =>
-      \$parameter{gatk_bundle_download_version}{value},
+      \$active_parameter{gatk_bundle_download_version},
     q{gdco|gatk_downsample_to_coverage=n} =>
-      \$parameter{gatk_downsample_to_coverage}{value},
+      \$active_parameter{gatk_downsample_to_coverage},
     q{gdai|gatk_disable_auto_index_and_file_lock=n} =>
-      \$parameter{gatk_disable_auto_index_and_file_lock}{value},
-    q{pgra|pgatk_realigner=n} => \$parameter{pgatk_realigner}{value},
+      \$active_parameter{gatk_disable_auto_index_and_file_lock},
+    q{pgra|pgatk_realigner=n} => \$active_parameter{pgatk_realigner},
     q{graks|gatk_realigner_indel_known_sites:s} =>
-      \@{ $parameter{gatk_realigner_indel_known_sites}{value} },
+      \@{ $active_parameter{gatk_realigner_indel_known_sites} },
     q{pgbr|pgatk_baserecalibration=n} =>
-      \$parameter{pgatk_baserecalibration}{value},
+      \$active_parameter{pgatk_baserecalibration},
     q{gbrcov|gatk_baserecalibration_covariates:s} =>
-      \@{ $parameter{gatk_baserecalibration_covariates}{value} },
+      \@{ $active_parameter{gatk_baserecalibration_covariates} },
     q{gbrkst|gatk_baserecalibration_known_sites:s} =>
-      \@{ $parameter{gatk_baserecalibration_known_sites}{value} },
+      \@{ $active_parameter{gatk_baserecalibration_known_sites} },
     q{gbrrf|gatk_baserecalibration_read_filters=s} =>
-      \@{ $parameter{gatk_baserecalibration_read_filters}{value} },
+      \@{ $active_parameter{gatk_baserecalibration_read_filters} },
     q{gbrdiq|gatk_baserecalibration_disable_indel_qual=n} =>
-      \$parameter{gatk_baserecalibration_disable_indel_qual}{value},
+      \$active_parameter{gatk_baserecalibration_disable_indel_qual},
     q{gbrsqq|gatk_baserecalibration_static_quantized_quals:s} =>
-      \@{ $parameter{gatk_baserecalibration_static_quantized_quals}{value} },
+      \@{ $active_parameter{gatk_baserecalibration_static_quantized_quals} },
     q{pghc|pgatk_haplotypecaller=n} =>
-      \$parameter{pgatk_haplotypecaller}{value},
+      \$active_parameter{pgatk_haplotypecaller},
     q{ghcann|gatk_haplotypecaller_annotation:s} =>
-      \@{ $parameter{gatk_haplotypecaller_annotation}{value} },
+      \@{ $active_parameter{gatk_haplotypecaller_annotation} },
     q{ghckse|gatk_haplotypecaller_snp_known_set:s} =>
-      \$parameter{gatk_haplotypecaller_snp_known_set}{value},
+      \$active_parameter{gatk_haplotypecaller_snp_known_set},
     q{ghcscb|gatk_haplotypecaller_no_soft_clipped_bases=n} =>
-      \$parameter{gatk_haplotypecaller_no_soft_clipped_bases}{value},
+      \$active_parameter{gatk_haplotypecaller_no_soft_clipped_bases},
     q{ghcpim|gatk_haplotypecaller_pcr_indel_model:s} =>
-      \$parameter{gatk_haplotypecaller_pcr_indel_model}{value},
-    q{pggt|pgatk_genotypegvcfs=n} => \$parameter{pgatk_genotypegvcfs}{value},
+      \$active_parameter{gatk_haplotypecaller_pcr_indel_model},
+    q{pggt|pgatk_genotypegvcfs=n} => \$active_parameter{pgatk_genotypegvcfs},
     q{ggtgrl|gatk_genotypegvcfs_ref_gvcf:s} =>
-      \$parameter{gatk_genotypegvcfs_ref_gvcf}{value},
+      \$active_parameter{gatk_genotypegvcfs_ref_gvcf},
     q{ggtals|gatk_genotypegvcfs_all_sites=n} =>
-      \$parameter{gatk_genotypegvcfs_all_sites}{value},
+      \$active_parameter{gatk_genotypegvcfs_all_sites},
     q{ggbcf|gatk_concatenate_genotypegvcfs_bcf_file=n} =>
-      \$parameter{gatk_concatenate_genotypegvcfs_bcf_file}{value},
+      \$active_parameter{gatk_concatenate_genotypegvcfs_bcf_file},
     q{pgvr|pgatk_variantrecalibration=n} =>
-      \$parameter{pgatk_variantrecalibration}{value},
+      \$active_parameter{pgatk_variantrecalibration},
     q{gvrann|gatk_variantrecalibration_annotations:s} =>
-      \@{ $parameter{gatk_variantrecalibration_annotations}{value} },
+      \@{ $active_parameter{gatk_variantrecalibration_annotations} },
     q{gvrres|gatk_variantrecalibration_resource_snv=s} =>
-      \%{ $parameter{gatk_variantrecalibration_resource_snv}{value} },
+      \%{ $active_parameter{gatk_variantrecalibration_resource_snv} },
     q{gvrrei|gatk_variantrecalibration_resource_indel=s} =>
-      \%{ $parameter{gatk_variantrecalibration_resource_indel}{value} },
+      \%{ $active_parameter{gatk_variantrecalibration_resource_indel} },
     q{gvrstf|gatk_variantrecalibration_snv_tsfilter_level:s} =>
-      \$parameter{gatk_variantrecalibration_snv_tsfilter_level}{value},
+      \$active_parameter{gatk_variantrecalibration_snv_tsfilter_level},
     q{gvritf|gatk_variantrecalibration_indel_tsfilter_level:s} =>
-      \$parameter{gatk_variantrecalibration_indel_tsfilter_level}{value},
+      \$active_parameter{gatk_variantrecalibration_indel_tsfilter_level},
     q{gvrdpa|gatk_variantrecalibration_dp_annotation=n} =>
-      \$parameter{gatk_variantrecalibration_dp_annotation}{value},
+      \$active_parameter{gatk_variantrecalibration_dp_annotation},
     q{gvrsmg|gatk_variantrecalibration_snv_max_gaussians=n} =>
-      \$parameter{gatk_variantrecalibration_snv_max_gaussians}{value},
+      \$active_parameter{gatk_variantrecalibration_snv_max_gaussians},
     q{gvrimg|gatk_variantrecalibration_indel_max_gaussians=n} =>
-      \$parameter{gatk_variantrecalibration_indel_max_gaussians}{value},
+      \$active_parameter{gatk_variantrecalibration_indel_max_gaussians},
     q{gcgpss|gatk_calculategenotypeposteriors_support_set:s} =>
-      \$parameter{gatk_calculategenotypeposteriors_support_set}{value},
+      \$active_parameter{gatk_calculategenotypeposteriors_support_set},
     q{pgcv|pgatk_combinevariantcallsets=n} =>
-      \$parameter{pgatk_combinevariantcallsets}{value},
+      \$active_parameter{pgatk_combinevariantcallsets},
     q{gcvgmo|gatk_combinevariants_genotype_merge_option:s} =>
-      \$parameter{gatk_combinevariants_genotype_merge_option}{value},
+      \$active_parameter{gatk_combinevariants_genotype_merge_option},
     q{gcvpc|gatk_combinevariants_prioritize_caller:s} =>
-      \$parameter{gatk_combinevariants_prioritize_caller}{value},
+      \$active_parameter{gatk_combinevariants_prioritize_caller},
     q{gcvbcf|gatk_combinevariantcallsets_bcf_file=n} =>
-      \$parameter{gatk_combinevariantcallsets_bcf_file}{value},
-    q{pgvea|pgatk_variantevalall=n} => \$parameter{pgatk_variantevalall}{value},
+      \$active_parameter{gatk_combinevariantcallsets_bcf_file},
+    q{pgvea|pgatk_variantevalall=n} => \$active_parameter{pgatk_variantevalall},
     q{pgvee|pgatk_variantevalexome=n} =>
-      \$parameter{pgatk_variantevalexome}{value},
+      \$active_parameter{pgatk_variantevalexome},
     q{gveedbs|gatk_varianteval_dbsnp:s} =>
-      \$parameter{gatk_varianteval_dbsnp}{value},
+      \$active_parameter{gatk_varianteval_dbsnp},
     q{gveedbg|gatk_varianteval_gold:s} =>
-      \$parameter{gatk_varianteval_gold}{value},
+      \$active_parameter{gatk_varianteval_gold},
     q{ppvab|pprepareforvariantannotationblock=n} =>
-      \$parameter{pprepareforvariantannotationblock}{value},
-    q{prhc|prhocall=n} => \$parameter{prhocall}{value},
+      \$active_parameter{pprepareforvariantannotationblock},
+    q{prhc|prhocall=n} => \$active_parameter{prhocall},
     q{rhcf|rhocall_frequency_file:s} =>
-      \$parameter{rhocall_frequency_file}{value},
-    q{pvt|pvt=n}             => \$parameter{pvt}{value},
-    q{vtddec|vt_decompose=n} => \$parameter{vt_decompose}{value},
-    q{vtdnor|vt_normalize=n} => \$parameter{vt_normalize}{value},
-    q{vtunq|vt_uniq=n}       => \$parameter{vt_uniq}{value},
+      \$active_parameter{rhocall_frequency_file},
+    q{pvt|pvt=n}             => \$active_parameter{pvt},
+    q{vtddec|vt_decompose=n} => \$active_parameter{vt_decompose},
+    q{vtdnor|vt_normalize=n} => \$active_parameter{vt_normalize},
+    q{vtunq|vt_uniq=n}       => \$active_parameter{vt_uniq},
     q{vtmaa|vt_missing_alt_allele=n} =>
-      \$parameter{vt_missing_alt_allele}{value},
-    q{vtgmf|vt_genmod_filter=n} => \$parameter{vt_genmod_filter}{value},
+      \$active_parameter{vt_missing_alt_allele},
+    q{vtgmf|vt_genmod_filter=n} => \$active_parameter{vt_genmod_filter},
     q{vtgfr|vt_genmod_filter_1000g:s} =>
-      \$parameter{vt_genmod_filter_1000g}{value},
+      \$active_parameter{vt_genmod_filter_1000g},
     q{vtmaf|vt_genmod_filter_max_af=n} =>
-      \$parameter{vt_genmod_filter_max_af}{value},
+      \$active_parameter{vt_genmod_filter_max_af},
     q{vtgft|vt_genmod_filter_threshold:s} =>
-      \$parameter{vt_genmod_filter_threshold}{value},
+      \$active_parameter{vt_genmod_filter_threshold},
     q{pvep|pvarianteffectpredictor=n} =>
-      \$parameter{pvarianteffectpredictor}{value},
-    q{vepp|vep_directory_path:s}  => \$parameter{vep_directory_path}{value},
-    q{vepc|vep_directory_cache:s} => \$parameter{vep_directory_cache}{value},
-    q{vepr|vep_reference:n}       => \$parameter{vep_reference}{value},
-    q{vepf|vep_features:s}        => \@{ $parameter{vep_features}{value} },
-    q{veppl|vep_plugins:s}        => \@{ $parameter{vep_plugins}{value} },
-    q{pvcp|pvcfparser=n}          => \$parameter{pvcfparser}{value},
+      \$active_parameter{pvarianteffectpredictor},
+    q{vepp|vep_directory_path:s}  => \$active_parameter{vep_directory_path},
+    q{vepc|vep_directory_cache:s} => \$active_parameter{vep_directory_cache},
+    q{vepr|vep_reference:n}       => \$active_parameter{vep_reference},
+    q{vepf|vep_features:s}        => \@{ $active_parameter{vep_features} },
+    q{veppl|vep_plugins:s}        => \@{ $active_parameter{vep_plugins} },
+    q{pvcp|pvcfparser=n}          => \$active_parameter{pvcfparser},
     q{vcpvt|vcfparser_vep_transcripts=n} =>
-      \$parameter{vcfparser_vep_transcripts}{value},
+      \$active_parameter{vcfparser_vep_transcripts},
     q{vcprff|vcfparser_range_feature_file:s} =>
-      \$parameter{vcfparser_range_feature_file}{value},
+      \$active_parameter{vcfparser_range_feature_file},
     q{vcprfa|vcfparser_range_feature_annotation_columns:s} =>
-      \@{ $parameter{vcfparser_range_feature_annotation_columns}{value} },
+      \@{ $active_parameter{vcfparser_range_feature_annotation_columns} },
     q{vcpsf|vcfparser_select_file:s} =>
-      \$parameter{vcfparser_select_file}{value},
+      \$active_parameter{vcfparser_select_file},
     q{vcpsfm|vcfparser_select_file_matching_column=n} =>
-      \$parameter{vcfparser_select_file_matching_column}{value},
+      \$active_parameter{vcfparser_select_file_matching_column},
     q{vcpsfa|vcfparser_select_feature_annotation_columns:s} =>
-      \@{ $parameter{vcfparser_select_feature_annotation_columns}{value} },
-    q{psne|psnpeff=n}      => \$parameter{psnpeff}{value},
-    q{snep|snpeff_path:s}  => \$parameter{snpeff_path}{value},
-    q{sneann|snpeff_ann=n} => \$parameter{snpeff_ann}{value},
+      \@{ $active_parameter{vcfparser_select_feature_annotation_columns} },
+    q{psne|psnpeff=n}      => \$active_parameter{psnpeff},
+    q{snep|snpeff_path:s}  => \$active_parameter{snpeff_path},
+    q{sneann|snpeff_ann=n} => \$active_parameter{snpeff_ann},
     q{snegbv|snpeff_genome_build_version:s} =>
-      \$parameter{snpeff_genome_build_version}{value},
+      \$active_parameter{snpeff_genome_build_version},
     q{snesaf|snpsift_annotation_files=s} =>
-      \%{ $parameter{snpsift_annotation_files}{value} },
+      \%{ $active_parameter{snpsift_annotation_files} },
     q{snesaoi|snpsift_annotation_outinfo_key=s} =>
-      \%{ $parameter{snpsift_annotation_outinfo_key}{value} },
+      \%{ $active_parameter{snpsift_annotation_outinfo_key} },
     q{snesdbnsfp|snpsift_dbnsfp_file:s} =>
-      \$parameter{snpsift_dbnsfp_file}{value},
+      \$active_parameter{snpsift_dbnsfp_file},
     q{snesdbnsfpa|snpsift_dbnsfp_annotations:s} =>
-      \@{ $parameter{snpsift_dbnsfp_annotations}{value} },
-    q{prav|prankvariant=n} => \$parameter{prankvariant}{value},
+      \@{ $active_parameter{snpsift_dbnsfp_annotations} },
+    q{prav|prankvariant=n} => \$active_parameter{prankvariant},
     q{ravgft|genmod_models_family_type:s} =>
-      \$parameter{genmod_models_family_type}{value},
+      \$active_parameter{genmod_models_family_type},
     q{ravanr|genmod_annotate_regions:n} =>
-      \$parameter{genmod_annotate_regions}{value},
+      \$active_parameter{genmod_annotate_regions},
     q{ravcad|genmod_annotate_cadd_files:s} =>
-      \@{ $parameter{genmod_annotate_cadd_files}{value} },
+      \@{ $active_parameter{genmod_annotate_cadd_files} },
     q{ravspi|genmod_annotate_spidex_file:s} =>
-      \$parameter{genmod_annotate_spidex_file}{value},
+      \$active_parameter{genmod_annotate_spidex_file},
     q{ravwg|genmod_models_whole_gene=n} =>
-      \$parameter{genmod_models_whole_gene}{value},
+      \$active_parameter{genmod_models_whole_gene},
     q{ravrpf|genmod_models_reduced_penetrance_file:s} =>
-      \$parameter{genmod_models_reduced_penetrance_file}{value},
-    q{ravrm|rank_model_file:s} => \$parameter{rank_model_file}{value},
+      \$active_parameter{genmod_models_reduced_penetrance_file},
+    q{ravrm|rank_model_file:s} => \$active_parameter{rank_model_file},
     q{pevab|pendvariantannotationblock=n} =>
-      \$parameter{pendvariantannotationblock}{value},
+      \$active_parameter{pendvariantannotationblock},
     q{evabrgf|endvariantannotationblock_remove_genes_file:s} =>
-      \$parameter{endvariantannotationblock_remove_genes_file}{value},
+      \$active_parameter{endvariantannotationblock_remove_genes_file},
     q{ravbf|rankvariant_binary_file=n} =>
-      \$parameter{rankvariant_binary_file}{value},
-    q{pped|ppeddy=n}             => \$parameter{ppeddy}{value},
-    q{pplink|pplink=n}           => \$parameter{pplink}{value},
-    q{pvai|pvariant_integrity=n} => \$parameter{pvariant_integrity}{value},
-    q{pevl|pevaluation=n}        => \$parameter{pevaluation}{value},
-    q{evlnid|nist_id:s}          => \$parameter{nist_id}{value},
+      \$active_parameter{rankvariant_binary_file},
+    q{pped|ppeddy=n}             => \$active_parameter{ppeddy},
+    q{pplink|pplink=n}           => \$active_parameter{pplink},
+    q{pvai|pvariant_integrity=n} => \$active_parameter{pvariant_integrity},
+    q{pevl|pevaluation=n}        => \$active_parameter{pevaluation},
+    q{evlnid|nist_id:s}          => \$active_parameter{nist_id},
     q{evlnhc|nist_high_confidence_call_set:s} =>
-      \$parameter{nist_high_confidence_call_set}{value},
+      \$active_parameter{nist_high_confidence_call_set},
     q{evlnil|nist_high_confidence_call_set_bed:s} =>
-      \$parameter{nist_high_confidence_call_set_bed}{value},
-    q{pqcc|pqccollect=n} => \$parameter{pqccollect}{value},
+      \$active_parameter{nist_high_confidence_call_set_bed},
+    q{pqcc|pqccollect=n} => \$active_parameter{pqccollect},
     q{qccsi|qccollect_sampleinfo_file:s} =>
-      \$parameter{qccollect_sampleinfo_file}{value},
+      \$active_parameter{qccollect_sampleinfo_file},
     q{qccref|qccollect_regexp_file:s} =>
-      \$parameter{qccollect_regexp_file}{value},
+      \$active_parameter{qccollect_regexp_file},
     q{qccske|qccollect_skip_evaluation} =>
-      \$parameter{qccollect_skip_evaluation}{value},
-    q{pmqc|pmultiqc=n} => \$parameter{pmultiqc}{value},
+      \$active_parameter{qccollect_skip_evaluation},
+    q{pmqc|pmultiqc=n} => \$active_parameter{pmultiqc},
     q{prem|premoveredundantfiles=n} =>
-      \$parameter{premoveredundantfiles}{value},
-    q{pars|panalysisrunstatus=n} => \$parameter{panalysisrunstatus}{value},
-    q{psac|psacct=n}             => \$parameter{psacct}{value},
+      \$active_parameter{premoveredundantfiles},
+    q{pars|panalysisrunstatus=n} => \$active_parameter{panalysisrunstatus},
+    q{psac|psacct=n}             => \$active_parameter{psacct},
     q{sacfrf|sacct_format_fields:s} =>
-      \@{ $parameter{sacct_format_fields}{value} },
+      \@{ $active_parameter{sacct_format_fields} },
   )
   or help(
     {
@@ -606,33 +604,56 @@ GetOptions(
     }
   );
 
-## Change relative path to absolute path for certain parameters
-update_to_absolute_path( { parameter_href => \%parameter, } );
-
 ##Special case:Enable/activate MIP. Cannot be changed from cmd or config
 $active_parameter{mip} = $parameter{mip}{default};
 
+## Change relative path to absolute path for parameter with "update_path: absolute_path" in config
+update_to_absolute_path(
+    {
+        parameter_href        => \%parameter,
+        active_parameter_href => \%active_parameter,
+    }
+);
+
 ### Config file
-## Input from cmd
-if ( defined $parameter{config_file}{value} ) {
+## If config from cmd
+if ( exists $active_parameter{config_file} && $active_parameter{config_file} ) {
 
     ## Loads a YAML file into an arbitrary hash and returns it.
-    %active_parameter =
-      load_yaml( { yaml_file => $parameter{config_file}{value}, } );
+    my %config_parameter =
+      load_yaml( { yaml_file => $active_parameter{config_file}, } );
 
-    ## Special case: Enable/activate MIP. Cannot be changed from cmd or config
-    $active_parameter{mip} = $parameter{mip}{default};
+    ## Remove previous analysis specific info not relevant for current run e.g. log file, which is read from pedigree or cmd
+    my @remove_keys = (qw{ log_file });
 
-    ## Compare keys from config and definitions file
-    check_config_vs_definition_file(
+  KEY:
+    foreach my $key (@remove_keys) {
+
+        delete $config_parameter{$key};
+    }
+
+## Set config parameters into %active_parameter unless $parameter
+## has been supplied on the command line
+    set_config_to_active_parameters(
         {
-            reference_href  => \%active_parameter,
-            comparison_href => \%parameter,
+            config_parameter_href => \%config_parameter,
+            active_parameter_href => \%active_parameter,
         }
     );
 
-    my @config_dynamic_parameters =
-      (qw(cluster_constant_path analysis_constant_path outaligner_dir));
+    ## Compare keys from config and cmd (%active_parameter) with definitions file (%parameter)
+    my $error_msg = check_cmd_config_vs_definition_file(
+        {
+            active_parameter_href => \%active_parameter,
+            parameter_href        => \%parameter,
+        }
+    );
+    if ($error_msg) {
+
+        croak($error_msg);
+    }
+
+    my @config_dynamic_parameters = qw{ analysis_constant_path outaligner_dir };
 
     ## Replace config parameter with cmd info for config dynamic parameter
     replace_config_parameters_with_cmd_info(
@@ -645,124 +666,151 @@ if ( defined $parameter{config_file}{value} ) {
 
     ## Loop through all parameters and update info
   PARAMETER:
-    foreach my $order_parameter_element (@order_parameters) {
+    foreach my $parameter_name (@order_parameters) {
 
-        ## Updates the config file to particular user/cluster for entries following specifications. Leaves other entries untouched.
-        update_config_file(
+        ## Updates the active parameters to particular user/cluster for dynamic config parameters following specifications. Leaves other entries untouched.
+        update_dynamic_config_parameters(
             {
                 active_parameter_href => \%active_parameter,
-                parameter_name_ref    => \$order_parameter_element,
-                family_id_ref         => \$parameter{family_id}{value},
+                parameter_name        => $parameter_name,
             }
         );
     }
-
-    ## Remove previous analysis specific info not relevant for current run e.g. log file, sample_ids which are read from pedigree or cmd
-    my @remove_keys = (qw{ log_file sample_ids });
-
-  KEY:
-    foreach my $key (@remove_keys) {
-
-        delete $active_parameter{$key};
-    }
 }
 
-###Populate active_parameters{parameter_name} => 'Value'
-foreach my $order_parameter_element (@order_parameters) {
+## Set the default Log4perl file using supplied dynamic parameters.
+$active_parameter{log_file} = deafult_log4perl_file(
+    {
+        active_parameter_href => \%active_parameter,
+        cmd_input             => $active_parameter{log_file},
+        script                => $script,
+        date                  => $date,
+        date_time_stamp       => $date_time_stamp,
+    }
+);
 
-    ## Type of variables: mip, path or program/program_parameters each is handled in the add_to_active_parameter subroutine.
-    ## Checks and sets user input or default values to active_parameters
-    add_to_active_parameter(
+## Creates log object
+my $log = initiate_logger(
+    {
+        file_path => $active_parameter{log_file},
+        log_name  => q{MIP},
+    }
+);
+
+## Detect if all samples has the same sequencing type and return consensus if reached
+$parameter{dynamic_parameter}{consensus_analysis_type} =
+  get_overall_analysis_type(
+    { analysis_type_href => \%{ $active_parameter{analysis_type} }, } );
+
+## Parse pedigree file
+## Reads family_id_pedigree file in PLINK|YAML format. Checks for pedigree data for allowed entries and correct format. Add data to sample_info depending on user info.
+# Meta data in YAML format
+if ( $active_parameter{pedigree_file} =~ /[.]yaml$/ ) {
+
+    ## Loads a YAML file into an arbitrary hash and returns it. Load parameters from previous run from sample_info_file
+    my %pedigree =
+      load_yaml( { yaml_file => $active_parameter{pedigree_file}, } );
+    $log->info( q{Loaded: } . $active_parameter{pedigree_file} );
+
+    read_yaml_pedigree_file(
         {
             parameter_href        => \%parameter,
             active_parameter_href => \%active_parameter,
             sample_info_href      => \%sample_info,
             file_info_href        => \%file_info,
-            broadcasts_ref        => \@broadcasts,
-            associated_programs_ref =>
-              \@{ $parameter{$order_parameter_element}{associated_program} },
-            parameter_name => $order_parameter_element,
+            file_path             => $active_parameter{pedigree_file},
+            pedigree_href         => \%pedigree,
         }
     );
-
-    ## Special case for parameters that are dependent on other parameters values
-    if ( $order_parameter_element eq 'outdata_dir' )
-    { #Set defaults depending on $active_parameter{outdata_dir} value that now has been set
-
-        $parameter{sample_info_file}{default} = catfile(
-            $active_parameter{outdata_dir},
-            $active_parameter{family_id},
-            $active_parameter{family_id} . '_qc_sample_info.yaml'
-        );
-
-        ## Set the default Log4perl file using supplied dynamic parameters.
-        $parameter{log_file}{default} = deafult_log4perl_file(
-            {
-                active_parameter_href => \%active_parameter,
-                cmd_input_ref         => \$parameter{log_file}{value},
-                script_ref            => \$script,
-                date_ref              => \$date,
-                date_time_stamp_ref   => \$date_time_stamp,
-            }
-        );
-
-        $parameter{qccollect_sampleinfo_file}{default} =
-          $parameter{sample_info_file}{default};
-    }
-    if ( $order_parameter_element eq q{log_file} ) {
-
-        ## Creates log object
-        my $log = initiate_logger(
-            {
-                file_path => $active_parameter{log_file},
-                log_name  => q{MIP},
-            }
-        );
-    }
-    if ( $order_parameter_element eq 'pedigree_file' )
-    {    #Write QC for only pedigree data used in analysis
-
-        if ( defined( $active_parameter{pedigree_file} ) ) {
-
-            ## Retrieve logger object now that log_file has been set
-            my $log = Log::Log4perl->get_logger(q{MIP});
-
-            make_path(
-                catdir(
-                    $active_parameter{outdata_dir},
-                    $active_parameter{family_id}
-                )
-            );    #Create family directory
-            my $yaml_file = catfile(
-                $active_parameter{outdata_dir},
-                $active_parameter{family_id},
-                'qc_pedigree.yaml'
-            );
-
-            ## Writes a YAML hash to file
-            write_yaml(
-                {
-                    yaml_href      => \%sample_info,
-                    yaml_file_path => $yaml_file,
-                }
-            );
-            $log->info( 'Wrote: ' . $yaml_file, "\n" );
-
-            ## Removes all elements at hash third level except keys in allowed_entries
-            remove_pedigree_elements( { hash_ref => \%sample_info, } );
-        }
-    }
-    if ( $order_parameter_element eq q{analysis_type} ) {
-
-        ## Detect if all samples has the same sequencing type and return consensus if reached
-        $parameter{dynamic_parameter}{consensus_analysis_type} =
-          get_overall_analysis_type(
-            { analysis_type_href => \%{ $active_parameter{analysis_type} }, } );
-    }
 }
 
-## Retrieve logger object now that log_file has been set
-my $log = Log::Log4perl->get_logger(q{MIP});
+### Populate uninitilized active_parameters{parameter_name} with default from parameter
+PARAMETER:
+foreach my $parameter_name (@order_parameters) {
+
+    ## If hash and set - skip
+    next PARAMETER
+      if ( ref $active_parameter{$parameter_name} eq qw{HASH}
+        && keys %{ $active_parameter{$parameter_name} } );
+
+    ## If array and set - skip
+    next PARAMETER
+      if ( ref $active_parameter{$parameter_name} eq qw{ARRAY}
+        && @{ $active_parameter{$parameter_name} } );
+
+    ## If scalar and set - skip
+    next PARAMETER
+      if ( $active_parameter{$parameter_name}
+        && ref( $active_parameter{$parameter_name} ) !~ / HASH | ARRAY /sxm );
+
+    ### Special case for parameters that are dependent on other parameters values
+    my @custom_default_parameters =
+      qw{ exome_target_bed bwa_build_reference analysis_type infile_dirs sample_info_file };
+
+    if ( any { $_ eq $parameter_name } @custom_default_parameters ) {
+
+        set_custom_default_to_active_parameter(
+            {
+                parameter_href        => \%parameter,
+                active_parameter_href => \%active_parameter,
+                file_info_href        => \%file_info,
+                parameter_name        => $parameter_name,
+            }
+        );
+        next PARAMETER;
+    }
+
+    ## Checks and sets user input or default values to active_parameters
+    set_default_to_active_parameter(
+        {
+            parameter_href        => \%parameter,
+            active_parameter_href => \%active_parameter,
+            associated_programs_ref =>
+              \@{ $parameter{$parameter_name}{associated_program} },
+            parameter_name => $parameter_name,
+        }
+    );
+}
+
+## Update path for supplied reference(s) associated with parameter that should reside in the mip reference directory to full path
+set_parameter_reference_dir_path(
+    {
+        active_parameter_href => \%active_parameter,
+        parameter_name        => q{human_genome_reference},
+    }
+);
+
+## Detect version and source of the human_genome_reference: Source (hg19 or GRCh).
+parse_human_genome_reference(
+    {
+        file_info_href => \%file_info,
+        human_genome_reference_ref =>
+          \basename( $active_parameter{human_genome_reference} ),
+    }
+);
+
+## Update exome_target_bed files with human_genome_reference_source_ref and human_genome_reference_version_ref
+update_exome_target_bed(
+    {
+        exome_target_bed_file_href => $active_parameter{exome_target_bed},
+        human_genome_reference_source_ref =>
+          \$file_info{human_genome_reference_source},
+        human_genome_reference_version_ref =>
+          \$file_info{human_genome_reference_version},
+    }
+);
+
+# Holds all active parameters values for broadcasting
+my @broadcasts;
+
+set_parameter_to_broadcast(
+    {
+        parameter_href        => \%parameter,
+        active_parameter_href => \%active_parameter,
+        order_parameters_ref  => \@order_parameters,
+        broadcasts_ref        => \@broadcasts,
+    }
+);
 
 ## Reference in MIP reference directory
 PARAMETER:
@@ -12456,23 +12504,16 @@ sub variantannotationblock {
 
 sub read_yaml_pedigree_file {
 
-##read_yaml_pedigree_file
-
-##Function : Reads family_id_pedigree file in YAML format. Checks for pedigree data for allowed entries and correct format. Add data to sample_info depending on user info.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $pedigree_href, $file_path, $family_id_ref
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The associated reference file endings {REF}
-##         : $pedigree_href              => Pedigree hash {REF}
-##         : $file_path                  => Pedigree file path
-##         : $family_id_ref              => Family_id {RF}
+## Function : Reads family_id_pedigree file in YAML format. Checks for pedigree data for allowed entries and correct format. Add data to sample_info depending on user info.
+## Returns  :
+## Arguments: $parameter_href        => Parameter hash {REF}
+##          : $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $sample_info_href      => Info on samples and family hash {REF}
+##          : $file_info_href        => The associated reference file endings {REF}
+##          : $pedigree_href         => Pedigree hash {REF}
+##          : $file_path             => Pedigree file path
 
     my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -12516,18 +12557,13 @@ sub read_yaml_pedigree_file {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$pedigree_href
+            store       => \$pedigree_href,
         },
         file_path => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$file_path
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref,
+            store       => \$file_path,
         },
     };
 
@@ -12538,17 +12574,16 @@ sub read_yaml_pedigree_file {
 
     ## Defines which values are allowed
     my %allowed_values = (
-        sex       => [ "male",     "female",     "unknown" ],
-        phenotype => [ "affected", "unaffected", "unknown" ],
+        sex       => [qw{ male female unknown }],
+        phenotype => [qw{ affected unaffected unknown }],
     );
 
-    my %exom_target_bed_test_file_tracker
-      ;    #Use to collect which sample_ids have used a certain capture_kit
+    ## Use to collect which sample_ids have used a certain capture_kit
+    my %exom_target_bed_test_file_tracker;
     my @pedigree_sample_ids;
-    my $family_id = $pedigree_href->{family};
-    my @mandatory_family_keys = ( "family", "samples" );
-    my @mandatory_sample_keys =
-      ( "sample_id", "father", "mother", "sex", "phenotype" );
+    my $family_id             = $pedigree_href->{family};
+    my @mandatory_family_keys = qw{ family samples };
+    my @mandatory_sample_keys = qw{ sample_id father mother sex phenotype };
     my @user_input_sample_ids;
 
     ### Check input
@@ -12560,27 +12595,23 @@ sub read_yaml_pedigree_file {
         }
     );
 
-    if ( $user_supply_switch{sample_ids} != 0 ) {
+    if ( not $user_supply_switch{sample_ids} ) {
 
-        ## Prepare CLI supplied sample_ids if comma sep
-        my $values_ref = \@{ $parameter_href->{sample_ids}{value} };
-        my $element_separator_ref =
-          \$parameter_href->{sample_ids}{element_separator};
-        @user_input_sample_ids =
-          split( $$element_separator_ref,
-            join( $$element_separator_ref, @$values_ref ) );
+        ## Set cmd supplied sample_ids
+        @user_input_sample_ids = @{ $active_parameter_href->{sample_ids} };
     }
 
     ## Check that we find mandatory family keys
+  MANDATORY_KEY:
     foreach my $key (@mandatory_family_keys) {
 
         if ( !$pedigree_href->{$key} ) {
 
-            $log->fatal( "File: "
+            $log->fatal( q{File: }
                   . $file_path
-                  . " cannot find mandatory key: "
+                  . q{ cannot find mandatory key: }
                   . $key
-                  . " in file\n" );
+                  . q{ in file} );
             exit 1;
         }
     }
@@ -12588,52 +12619,54 @@ sub read_yaml_pedigree_file {
     ## Check that supplied cmd and YAML pedigree family_id match
     if ( $pedigree_href->{family} ne $active_parameter_href->{family_id} ) {
 
-        $log->fatal( "File: "
+        $log->fatal( q{File: }
               . $file_path
-              . " for  pedigree family_id: '"
+              . q{ for  pedigree family_id: '}
               . $pedigree_href->{family}
-              . "' and supplied family: '"
+              . q{' and supplied family: '}
               . $active_parameter_href->{family_id}
-              . "' does not match\n" );
+              . q{' does not match} );
         exit 1;
     }
 
     ## Check sample keys and values
+  SAMPLE_KEY:
     foreach my $pedigree_sample_href ( @{ $pedigree_href->{samples} } ) {
 
         ## Check that we find mandatory family keys
+      MANDATORY_KEY:
         foreach my $key (@mandatory_sample_keys) {
 
-            if ( !defined( $pedigree_sample_href->{$key} ) ) {
+            if ( not defined( $pedigree_sample_href->{$key} ) ) {
 
-                $log->fatal( "File: "
+                $log->fatal( q{File: }
                       . $file_path
-                      . " cannot find mandatory key: "
+                      . q{ cannot find mandatory key: }
                       . $key
-                      . " in file\n" );
+                      . q{ in file} );
                 exit 1;
             }
-            elsif ( $allowed_values{$key} ) {    #Check allowed values
+            elsif ( $allowed_values{$key} ) {
+                ## Check allowed values
 
                 if (
-                    !(
-                        any { $_ eq $pedigree_sample_href->{$key} }
-                        @{ $allowed_values{$key} }
-                    )
+                    not any { $_ eq $pedigree_sample_href->{$key} }
+                    @{ $allowed_values{$key} }
                   )
-                {    #If element is not part of array
+                {
+                    ## If element is not part of array
 
                     $log->fatal(
-                        "File: "
+                        q{File: }
                           . $file_path
-                          . " found illegal value: "
+                          . q{ found illegal value: }
                           . $pedigree_sample_href->{$key}
-                          . " allowed values are '"
-                          . join( "' '", @{ $allowed_values{$key} } ),
-                        "'\n"
+                          . q{ allowed values are '}
+                          . join q{' '},
+                        @{ $allowed_values{$key} }
                     );
-                    $log->fatal("Please correct the entry before analysis.\n");
-                    $log->fatal("\nMIP: Aborting run.\n\n");
+                    $log->fatal(q{Please correct the entry before analysis.});
+                    $log->fatal(q{MIP: Aborting run.});
                     exit 1;
                 }
             }
@@ -12641,25 +12674,29 @@ sub read_yaml_pedigree_file {
     }
 
     ### Add values family level info
-    foreach my $key ( keys %$pedigree_href ) {
+    foreach my $key ( keys %{$pedigree_href} ) {
 
-        unless ( $key eq "samples" ) {
+        if ( not $key eq q{samples} ) {
 
             $sample_info_href->{$key} = $pedigree_href->{$key};
         }
     }
 
     ### Add values sample level info
+  SAMPLE_KEY:
     foreach my $pedigree_sample_href ( @{ $pedigree_href->{samples} } ) {
 
         ## Sample_id
-        my $sample_id = $pedigree_sample_href->{sample_id};    #Alias
-        push( @pedigree_sample_ids, $sample_id );  #Save pedigree sample_id info
+        # Alias
+        my $sample_id = $pedigree_sample_href->{sample_id};
 
-        if ( $user_supply_switch{sample_ids} == 0 ) {
+        ## Save pedigree sample_id info
+        push @pedigree_sample_ids, $sample_id;
 
-            push( @{ $active_parameter_href->{sample_ids} }, $sample_id )
-              ;                                    #Save sample_id info
+        if ( not $user_supply_switch{sample_ids} ) {
+
+            ## Save sample_id info
+            push @{ $active_parameter_href->{sample_ids} }, $sample_id;
 
             ## Reformat pedigree keys to plink format and collect sample info to various hashes
             get_pedigree_sample_info(
@@ -12676,14 +12713,11 @@ sub read_yaml_pedigree_file {
                 }
             );
         }
-        else
-        { #Save sample_ids in pedigree to check that user supplied info and sample_id in pedigree match
+        else {
+            ## Save sample_ids in pedigree to check that user supplied info and sample_id in pedigree match
 
-            if ( any { $_ eq $sample_id } @user_input_sample_ids )
-            {    #Update sample_id info
-
-                push( @{ $active_parameter_href->{sample_ids} }, $sample_id )
-                  ;    #Save sample_id info
+            ## Update sample_id info
+            if ( any { $_ eq $sample_id } @user_input_sample_ids ) {
 
                 ## Reformat pedigree keys to plink format and collect sample info to various hashes
                 get_pedigree_sample_info(
@@ -12703,7 +12737,7 @@ sub read_yaml_pedigree_file {
         }
     }
 
-    ##Check that founder_ids are included in the pedigree info and the analysis run
+    ## Check that founder_ids are included in the pedigree info and the analysis run
     check_founder_id(
         {
             pedigree_href => $pedigree_href,
@@ -12712,48 +12746,42 @@ sub read_yaml_pedigree_file {
         }
     );
 
-    if ( !$user_supply_switch{sample_ids} ) {
+    if ( not $user_supply_switch{sample_ids} ) {
 
+        ## Lexiographical sort to determine the correct order of ids indata
         @{ $active_parameter_href->{sample_ids} } =
-          sort( @{ $active_parameter_href->{sample_ids} } )
-          ;    #Lexiographical sort to determine the correct order of ids indata
+          sort @{ $active_parameter_href->{sample_ids} };
     }
-    else {     #Check that CLI supplied sample_id exists in pedigree
+    else {
+        ## Check that CLI supplied sample_id exists in pedigree
 
         foreach my $sample_id (@user_input_sample_ids) {
 
-            if ( !( any { $_ eq $sample_id } @pedigree_sample_ids ) )
-            {    #If element is not part of array
+            if ( not any { $_ eq $sample_id } @pedigree_sample_ids ) {
+                ## If element is not part of array
 
-                $log->fatal(
-                    "File: "
+                $log->fatal( q{File: }
                       . $file_path
-                      . " provided sample_id: "
+                      . q{ provided sample_id: }
                       . $sample_id
-                      . " is not present in file",
-                    "\n"
-                );
+                      . q{ is not present in file} );
                 exit 1;
             }
         }
-
     }
-    if (%exom_target_bed_test_file_tracker)
-    { #We have read capture kits from pedigree and need to transfer to active_parameters
+    if (%exom_target_bed_test_file_tracker) {
+        ## We have read capture kits from pedigree and need to transfer to active_parameters
 
         foreach
           my $exome_target_bed_file ( keys %exom_target_bed_test_file_tracker )
         {
 
             $active_parameter_href->{exome_target_bed}{$exome_target_bed_file}
-              = join(
-                ",",
-                @{
-                    $exom_target_bed_test_file_tracker{$exome_target_bed_file}
-                }
-              );
+              = join q{,},
+              @{ $exom_target_bed_test_file_tracker{$exome_target_bed_file} };
         }
     }
+    return;
 }
 
 sub collect_infiles {
@@ -13643,33 +13671,21 @@ q?perl -nae 'chomp($_); if( ($_=~/^@\w+-\w+:\w+:\w+:\w+:\w+:\w+:\w+\/(\w+)/) && 
     return;
 }
 
-sub add_to_active_parameter {
+sub set_custom_default_to_active_parameter {
 
-##add_to_active_parameter
-
-##Function : Checks and sets user input or default values to active_parameters.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $broadcasts_ref, $parameter_name, $associated_programs
-##         : $parameter_href        => Holds all parameters
-##         : $active_parameter_href => Holds all set parameter for analysis
-##         : $sample_info_href      => Info on samples and family hash {REF}
-##         : $file_info_href        => File info hash {REF}
-##         : $broadcasts_ref        => Holds the parameters info for broadcasting later {REF}
-##         : $parameter_name        => Parameter name
-##         : $associated_programs   => The parameters program(s) {array, REF}
+    ## Function : Checks and sets user input or default values to active_parameters.
+## Returns  :
+## Arguments: $parameter_href        => Holds all parameters {REF}
+##          : $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $file_info_href         => File info hash {REF}
+##          : $parameter_name        => Parameter name
 
     my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
     my $file_info_href;
-    my $broadcasts_ref;
-    my $associated_programs_ref;
     my $parameter_name;
 
     my $tmpl = {
@@ -13687,13 +13703,6 @@ sub add_to_active_parameter {
             strict_type => 1,
             store       => \$active_parameter_href,
         },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href,
-        },
         file_info_href => {
             required    => 1,
             defined     => 1,
@@ -13701,26 +13710,136 @@ sub add_to_active_parameter {
             strict_type => 1,
             store       => \$file_info_href,
         },
-        broadcasts_ref => {
+        parameter_name =>
+          { required => 1, defined => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger(q{MIP});
+
+    ## If capture kit is not set after cmd, config and reading pedigree
+    if ( $parameter_name eq q{exome_target_bed} ) {
+
+        ## Return a default capture kit as user supplied no info
+        my $capture_kit = add_capture_kit(
+            {
+                file_info_href => $file_info_href,
+                supported_capture_kit_href =>
+                  $parameter_href->{supported_capture_kit},
+                capture_kit => q{latest},
+            }
+        );
+
+        ## Set default
+        $active_parameter_href->{exome_target_bed}
+          {$capture_kit} = join q{,},
+          @{ $active_parameter_href->{sample_ids} };
+
+        $log->warn(
+q{Could not detect a supplied capture kit. Will Try to use 'latest' capture kit: }
+              . $capture_kit );
+        return;
+    }
+    if ( $parameter_name eq q{bwa_build_reference} ) {
+
+        ## Now we now what human genome reference to build from
+        $active_parameter_href->{$parameter_name} =
+          $active_parameter_href->{human_genome_reference};
+
+        return;
+    }
+    ## Build default for analysis_type
+    if ( $parameter_name eq q{analysis_type} ) {
+
+      SAMPLE_ID:
+        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+            $active_parameter_href->{$parameter_name}{$sample_id} = q{wgs};
+        }
+        return;
+    }
+    if ( $parameter_name eq q{infile_dirs} ) {
+        ## Build default for infile_dirs
+
+      SAMPLE_ID:
+        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+            my $path = catfile(
+                $active_parameter_href->{cluster_constant_path},
+                $active_parameter_href->{family_id},
+                $active_parameter_href->{analysis_type}{$sample_id},
+                $sample_id,
+                q{fastq}
+            );
+
+            $active_parameter_href->{$parameter_name}{$path} = $sample_id;
+        }
+        return;
+    }
+    if ( $parameter_name eq q{sample_info_file} ) {
+
+        $parameter_href->{sample_info_file}{default} = catfile(
+            $active_parameter_href->{outdata_dir},
+            $active_parameter_href->{family_id},
+            $active_parameter_href->{family_id} . q{_qc_sample_info.yaml}
+        );
+
+        $parameter_href->{qccollect_sampleinfo_file}{default} =
+          $parameter_href->{sample_info_file}{default};
+        return;
+    }
+    return;
+}
+
+sub set_default_to_active_parameter {
+
+## Function : Checks and sets user input or default values to active_parameters.
+## Returns  :
+## Arguments: $parameter_href        => Holds all parameters
+##          : $active_parameter_href => Holds all set parameter for analysis
+##          : $parameter_name        => Parameter name
+##          : $associated_programs   => The parameters program(s) {array, REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $active_parameter_href;
+    my $associated_programs_ref;
+    my $parameter_name;
+
+    ## Default(s)
+    my $family_id;
+
+    my $tmpl = {
+        parameter_href => {
             required    => 1,
             defined     => 1,
-            default     => [],
+            default     => {},
             strict_type => 1,
-            store       => \$broadcasts_ref
+            store       => \$parameter_href,
+        },
+        active_parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$active_parameter_href,
         },
         associated_programs_ref => {
             required    => 1,
             defined     => 1,
             default     => [],
             strict_type => 1,
-            store       => \$associated_programs_ref
+            store       => \$associated_programs_ref,
         },
         parameter_name =>
-          { required => 1, defined => 1, store => \$parameter_name },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
+          { required => 1, defined => 1, store => \$parameter_name, },
+        family_id => {
+            default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$family_id_ref,
+            store       => \$family_id,
         },
     };
 
@@ -13729,358 +13848,73 @@ sub add_to_active_parameter {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    my $element_separator_ref =
-      \$parameter_href->{$parameter_name}{element_separator};
+    my %only_wgs = ( gatk_genotypegvcfs_ref_gvcf => 1, );
+
+    ## Alias
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
 
-    foreach my $associated_program ( @{$associated_programs_ref} )
-    {    #Check all programs that use parameter
+    ## Do nothing since parameter is not required unless exome mode is enabled
+    return
+      if ( exists $only_wgs{$parameter_name}
+        && $consensus_analysis_type =~ / wgs /xsm );
+
+    ## Check all programs that use parameter
+  ASSOCIATED_PROGRAM:
+    foreach my $associated_program ( @{$associated_programs_ref} ) {
 
         my $parameter_set_switch = 0;
 
-        if ( defined( $active_parameter_href->{$associated_program} )
-            && ( $active_parameter_href->{$associated_program} > 0 ) )
-        {    #Only add active programs parameters
+        ## Only add active programs parameters
+        next ASSOCIATED_PROGRAM
+          if ( not defined $active_parameter_href->{$associated_program} );
 
-            $parameter_set_switch = 1;
+        next ASSOCIATED_PROGRAM
+          if ( not $active_parameter_href->{$associated_program} );
 
-            ## Input from cmd
-            if (   ( $parameter_href->{$parameter_name}{data_type} eq "ARRAY" )
-                && ( defined( $parameter_href->{$parameter_name}{value}[0] ) ) )
-            {    #Array reference
+        if ( exists $parameter_href->{$parameter_name}{default} ) {
+            ## Default exists
 
-                my $values_ref =
-                  \@{ $parameter_href->{$parameter_name}{value} };
-                @{ $active_parameter_href->{$parameter_name} } =
-                  split( $$element_separator_ref,
-                    join( $$element_separator_ref, @$values_ref ) );
+            ## Array reference
+            if ( $parameter_href->{$parameter_name}{data_type} eq q{ARRAY} ) {
+
+                push
+                  @{ $active_parameter_href->{$parameter_name} },
+                  @{ $parameter_href->{$parameter_name}{default} };
             }
-            elsif (( $parameter_href->{$parameter_name}{data_type} eq "HASH" )
-                && ( keys %{ $parameter_href->{$parameter_name}{value} } ) )
-            {    #Hash reference
+            elsif ( $parameter_href->{$parameter_name}{data_type} eq q{HASH} ) {
+                ## Hash reference
 
                 $active_parameter_href->{$parameter_name} =
-                  $parameter_href->{$parameter_name}{value};
-            }
-            elsif (
-                defined( $parameter_href->{$parameter_name}{value} )
-                && (
-                    ref( $parameter_href->{$parameter_name}{value} ) !~
-                    /ARRAY|HASH/ )
-              )
-            {    #Scalar input from cmd
-
-                $active_parameter_href->{$parameter_name} =
-                  $parameter_href->{$parameter_name}{value};
+                  $parameter_href->{$parameter_name}{default};
             }
             else {
+                ## Scalar
 
-                if ( defined( $active_parameter_href->{$parameter_name} ) )
-                {    #Input from config file
-
-                }
-                elsif ( exists( $parameter_href->{$parameter_name}{default} ) )
-                {    #Default exists
-
-                    if ( $parameter_href->{$parameter_name}{data_type} eq
-                        "ARRAY" )
-                    {    #Array reference
-
-                        push(
-                            @{ $active_parameter_href->{$parameter_name} },
-                            @{ $parameter_href->{$parameter_name}{default} }
-                        );
-                    }
-                    elsif ( $parameter_href->{$parameter_name}{data_type} eq
-                        "HASH" )
-                    {
-
-                        ## Build default for analysis_type
-                        if ( $parameter_name eq "analysis_type" ) {
-
-                            foreach my $sample_id (
-                                @{ $active_parameter_href->{sample_ids} } )
-                            {
-
-                                $active_parameter_href->{$parameter_name}
-                                  {$sample_id} = "wgs";
-                            }
-                        }
-                        ## Build default for infile_dirs
-                        elsif ( $parameter_name eq "infile_dirs" ) {
-
-                            foreach my $sample_id (
-                                @{ $active_parameter_href->{sample_ids} } )
-                            {
-
-                                my $path = catfile(
-                                    $active_parameter_href
-                                      ->{cluster_constant_path},
-                                    $$family_id_ref,
-                                    $active_parameter_href->{analysis_type}
-                                      {$sample_id},
-                                    $sample_id,
-                                    "fastq"
-                                );
-                                $active_parameter_href->{$parameter_name}{$path}
-                                  = $sample_id;
-                            }
-                        }
-                        else {
-
-                            $active_parameter_href->{$parameter_name} =
-                              $parameter_href->{$parameter_name}{default};
-                        }
-                    }
-                    else {    #Scalar
-
-                        if ( $parameter_name eq "bwa_build_reference" ) {
-
-                            $active_parameter_href->{$parameter_name} =
-                              $active_parameter_href->{human_genome_reference}
-                              ; #Now we now what human genome refrence to build from
-                        }
-                        else {
-
-                            $active_parameter_href->{$parameter_name} =
-                              $parameter_href->{$parameter_name}{default};
-                        }
-                    }
-                }
-                else {          ## No default
-
-                    if (
-                        (
-                            exists(
-                                $parameter_href->{$parameter_name}{mandatory}
-                            )
-                        )
-                        && ( $parameter_href->{$parameter_name}{mandatory} eq
-                            "no" )
-                      )
-                    {           #Not mandatory
-                    }
-                    else {
-
-                        ## Special cases where the requirement is depending on other variabels
-                        if (
-                            (
-                                $parameter_name eq "gatk_genotypegvcfs_ref_gvcf"
-                            )
-                            && ( $consensus_analysis_type =~ /wgs/ )
-                          )
-                        { #Do nothing since file is not required unless exome or rapid mode is enabled
-                        }
-                        elsif (
-                            (
-                                $parameter_name eq
-                                "vcfparser_range_feature_annotation_columns"
-                            )
-                            && ( $active_parameter_href
-                                ->{vcfparser_range_feature_file} eq
-                                "nouser_info" )
-                          )
-                        {    #Do nothing since no SelectFile was given
-                        }
-                        elsif (
-                            (
-                                $parameter_name eq
-                                "vcfparser_select_feature_annotation_columns"
-                            )
-                            && ( $active_parameter_href->{vcfparser_select_file}
-                                eq "nouser_info" )
-                          )
-                        {    #Do nothing since no SelectFile was given
-                        }
-                        elsif (
-                            (
-                                $parameter_name eq
-                                "vcfparser_select_file_matching_column"
-                            )
-                            && ( $active_parameter_href->{vcfparser_select_file}
-                                eq "nouser_info" )
-                          )
-                        {    #Do nothing since no Select file was given
-                        }
-                        elsif (
-                            (
-                                $parameter_name eq
-                                "genmod_models_reduced_penetrance_file"
-                            )
-                            && (
-                                !defined(
-                                    $active_parameter_href
-                                      ->{genmod_models_reduced_penetrance_file}
-                                )
-                            )
-                          )
-                        { #Do nothing since no reduced penetrance should be performed
-                        }
-                        elsif ( $parameter_name eq "exome_target_bed" ) {
-
-                            ## Return a default capture kit as user supplied no info
-                            my $capture_kit = add_capture_kit(
-                                {
-                                    file_info_href => $file_info_href,
-                                    supported_capture_kit_href =>
-                                      $active_parameter_href
-                                      ->{supported_capture_kit},
-                                    capture_kit => "latest",
-                                }
-                            );
-                            $active_parameter_href->{$parameter_name}
-                              {$capture_kit} = join( ",",
-                                @{ $active_parameter_href->{sample_ids} } );
-
-                            ## Update exome_target_bed files with human_genome_reference_source_ref and human_genome_reference_version_ref
-                            update_exome_target_bed(
-                                {
-                                    exome_target_bed_file_href =>
-                                      $active_parameter_href
-                                      ->{exome_target_bed},
-                                    human_genome_reference_source_ref =>
-                                      \$file_info_href
-                                      ->{human_genome_reference_source},
-                                    human_genome_reference_version_ref =>
-                                      \$file_info_href
-                                      ->{human_genome_reference_version},
-                                }
-                            );
-                            $log->warn(
-"Could not detect a supplied capture kit. Will Try to use 'latest' capture kit: "
-                                  . $capture_kit,
-                                "\n"
-                            );
-                        }
-                        else {
-
-                            if ( defined($log) )
-                            {    #We have a logg object and somewhere to write
-
-                                $log->fatal( $USAGE, "\n" );
-                                $log->fatal(
-                                    "Supply '-"
-                                      . $parameter_name
-                                      . "' if you want to run "
-                                      . $associated_program,
-                                    "\n"
-                                );
-                            }
-                            else {
-
-                                warn( $USAGE, "\n" );
-                                warn(
-                                    "Supply '-"
-                                      . $parameter_name
-                                      . "' if you want to run "
-                                      . $associated_program,
-                                    "\n"
-                                );
-                            }
-                            exit 1;
-                        }
-                    }
-                }
+                $active_parameter_href->{$parameter_name} =
+                  $parameter_href->{$parameter_name}{default};
             }
-        }
-        if ( $parameter_set_switch eq 1 )
-        {    #No need to set parameter more than once
-            last;
-        }
-    }
-
-    ## Parse Human Genome Reference
-    if ( $parameter_name eq "human_genome_reference" ) {
-
-        ## Update path for supplied reference(s) associated with parameter that should reside in the mip reference directory to full path
-        # Special case to make sure that complete path is supplied
-        set_parameter_reference_dir_path(
-            {
-                active_parameter_href => $active_parameter_href,
-                parameter_name        => q{human_genome_reference},
-            }
-        );
-
-        ## Detect version and source of the human_genome_reference: Source (hg19 or GRCh).
-        parse_human_genome_reference(
-            {
-                file_info_href => $file_info_href,
-                human_genome_reference_ref =>
-                  \basename( $active_parameter_href->{human_genome_reference} ),
-            }
-        );
-
-        ## Update exome_target_bed files with human_genome_reference_source_ref and human_genome_reference_version_ref
-        update_exome_target_bed(
-            {
-                exome_target_bed_file_href =>
-                  $active_parameter_href->{exome_target_bed},
-                human_genome_reference_source_ref =>
-                  \$file_info_href->{human_genome_reference_source},
-                human_genome_reference_version_ref =>
-                  \$file_info_href->{human_genome_reference_version},
-            }
-        );
-    }
-
-    ## Parse pedigree file
-    if ( $parameter_name eq "pedigree_file" ) {
-
-        ## Reads family_id_pedigree file in PLINK|YAML format. Checks for pedigree data for allowed entries and correct format. Add data to sample_info depending on user info.
-        if ( $active_parameter_href->{pedigree_file} =~ /\.yaml$/ )
-        {    #Meta data in YAML format
-
-            ##Loads a YAML file into an arbitrary hash and returns it. Load parameters from previous run from sample_info_file
-            my %pedigree = load_yaml(
-                { yaml_file => $active_parameter_href->{pedigree_file}, } );
-            $log->info( "Loaded: " . $active_parameter_href->{pedigree_file},
-                "\n" );
-
-            read_yaml_pedigree_file(
-                {
-                    parameter_href        => $parameter_href,
-                    active_parameter_href => $active_parameter_href,
-                    sample_info_href      => $sample_info_href,
-                    file_info_href        => $file_info_href,
-                    file_path     => $active_parameter_href->{pedigree_file},
-                    pedigree_href => \%pedigree,
-                }
-            );
-        }
-    }
-
-    ## Parameter set
-    if ( defined( $active_parameter_href->{$parameter_name} ) ) {
-
-        my $info = "";    #Hold parameters info
-
-        if ( ref( $active_parameter_href->{$parameter_name} ) eq "ARRAY" )
-        {                 #Array reference
-
-            $info = "Set "
-              . $parameter_name . " to: "
-              . join( $$element_separator_ref,
-                @{ $active_parameter_href->{$parameter_name} } );
-            push( @{$broadcasts_ref}, $info );    #Add info to broadcasts
-        }
-        elsif ( ref( $active_parameter_href->{$parameter_name} ) eq "HASH" ) {
-
-            $info = "Set "
-              . $parameter_name . " to: "
-              . join( ",",
-                map { "$_=$active_parameter_href->{$parameter_name}{$_}" }
-                  ( keys %{ $active_parameter_href->{$parameter_name} } ) );
-            push( @{$broadcasts_ref}, $info );    #Add info to broadcasts
+            ## Set default - no use in continuing
+            return;
         }
         else {
+            ## No default
 
-            $info = "Set "
-              . $parameter_name . " to: "
-              . $active_parameter_href->{$parameter_name};
-            push( @{$broadcasts_ref}, $info );    #Add info to broadcasts
+            ## Not mandatory - skip
+            return
+              if ( exists $parameter_href->{$parameter_name}{mandatory}
+                && $parameter_href->{$parameter_name}{mandatory} eq q{no} );
+
+            ## We have a logg object and somewhere to write
+            $log->fatal($USAGE);
+            $log->fatal( q{Supply '-}
+                  . $parameter_name
+                  . q{' if you want to run }
+                  . $associated_program );
+            exit 1;
         }
     }
+    return;
 }
 
 sub create_file_endings {
@@ -14496,7 +14330,7 @@ sub write_cmd_mip_log {
             else {
 
                 ## If element is part of array - do nothing
-                if ( ( any { $_ eq $order_parameter_element } @nowrite ) ) {
+                if ( any { $_ eq $order_parameter_element } @nowrite ) {
                 }
                 elsif (
                     ## Array reference
@@ -14747,7 +14581,7 @@ sub check_unique_ids {
         exit 1;
     }
 
-    foreach my $sample_id (@$sample_ids_ref) {
+    foreach my $sample_id ( @{$sample_ids_ref} ) {
 
         $seen{$sample_id}++;    #Increment instance to check duplicates later
 
@@ -14779,23 +14613,18 @@ sub check_unique_ids {
     }
 }
 
-sub update_config_file {
+sub update_dynamic_config_parameters {
 
-##update_config_file
-
-##Function : Updates the config file to particular user/cluster for entries following specifications. Leaves other entries untouched.
-##Returns  : ""
-##Arguments: $active_parameter_href, $parameter_name_ref, $family_id_ref
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $parameter_name_ref    => MIP Parameter to update {REF}
-##         : $family_id_ref         => Sets the family_id {REF}
+## Function : Updates the config file to particular user/cluster for dynamic config parameters following specifications. Leaves other entries untouched.
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $parameter_name        => MIP Parameter to update
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $parameter_name_ref;
-    my $family_id_ref;
+    my $parameter_name;
 
     my $tmpl = {
         active_parameter_href => {
@@ -14805,52 +14634,29 @@ sub update_config_file {
             strict_type => 1,
             store       => \$active_parameter_href,
         },
-        parameter_name_ref => {
+        parameter_name => {
             required    => 1,
             defined     => 1,
-            default     => \$$,
             strict_type => 1,
-            store       => \$parameter_name_ref
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref,
+            store       => \$parameter_name
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    if ( $active_parameter_href->{$$parameter_name_ref} ) {    #Active parameter
+    return if ( not defined $active_parameter_href->{$parameter_name} );
 
-        if ( defined( $active_parameter_href->{cluster_constant_path} ) )
-        {    #Set the project specific path for this cluster
+    my @dynamic_parameters =
+      qw{ cluster_constant_path analysis_constant_path family_id outaligner_dir };
 
-            $active_parameter_href->{$$parameter_name_ref} =~
-s/cluster_constant_path!/$active_parameter_href->{cluster_constant_path}/gi
-              ;    #Exchange cluster_constant_path! for current cluster path
-        }
-        if ( defined( $active_parameter_href->{analysis_constant_path} ) )
-        {          #Set the project specific path for this cluster
+  DYNAMIC_PARAMETER:
+    foreach my $dynamic_parameter (@dynamic_parameters) {
 
-            $active_parameter_href->{$$parameter_name_ref} =~
-s/analysis_constant_path!/$active_parameter_href->{analysis_constant_path}/gi
-              ;  #Exchange analysis_constant_path! for the current analysis path
-        }
-        if ( defined($$family_id_ref) ) {    #Set the family_id
-
-            $active_parameter_href->{$$parameter_name_ref} =~
-              s/family_id!/$$family_id_ref/gi
-              ;    #Exchange FND! for the current family_id
-        }
-        if ( defined( $active_parameter_href->{outaligner_dir} ) )
-        {          #Set the outaligner_dir used
-
-            $active_parameter_href->{$$parameter_name_ref} =~
-              s/aligner_outdir!/$active_parameter_href->{outaligner_dir}/gi
-              ;    #Exchange aligner_outdir! for the current outaligner_dir
-        }
+        ## Replace dynamic config parameters with actual value that is now set from cmd or config
+        $active_parameter_href->{$parameter_name} =~
+          s/$dynamic_parameter!/$active_parameter_href->{$dynamic_parameter}/gi;
     }
+    return;
 }
 
 sub parse_human_genome_reference {
@@ -14967,7 +14773,7 @@ sub check_user_supplied_info {
             else {    #No sample_ids info in config file
 
                 $user_supplied_info_switch = 0
-                  ; #No user supplied cmd info, not defined in config file, ADD it from pedigree file
+                  ; #No user supplied cmd info, not defined in config file, ADD vit from pedigree file
             }
         }
         else {
@@ -15216,14 +15022,11 @@ sub size_sort_select_file_contigs {
 
 sub replace_config_parameters_with_cmd_info {
 
-##replace_config_parameters_with_cmd_info
-
-##Function : Replace config parameter with cmd info for config dynamic parameter
-##Returns  :
-##Arguments: $parameter_href, $active_parameter_href, $parameter_names_ref
-##         : $parameter_href        => Parameter hash {REF}
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $parameter_names_ref   => MIP activate parameter names {REF}
+## Function : Replace config parameter with cmd info for config dynamic parameter
+## Returns  :
+## Arguments: $parameter_href        => Parameter hash {REF}
+##          : $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $parameter_names_ref   => MIP activate parameter names {REF}
 
     my ($arg_href) = @_;
 
@@ -15258,24 +15061,18 @@ sub replace_config_parameters_with_cmd_info {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    foreach my $parameter_name (@$parameter_names_ref) {
+    foreach my $parameter_name ( @{$parameter_names_ref} ) {
 
-        if ( defined( $parameter_href->{$parameter_name}{value} ) )
-        {    #Replace config parameter with cmd info for parameter
-
-            $active_parameter_href->{$parameter_name} =
-              $parameter_href->{$parameter_name}{value}
-              ;    #Transfer to active parameter
-        }
-        elsif (( exists( $parameter_href->{$parameter_name}{default} ) )
-            && ( !defined( $active_parameter_href->{$parameter_name} ) ) )
+        if ( exists $parameter_href->{$parameter_name}{default}
+            && not defined $active_parameter_href->{$parameter_name} )
         {
 
+            ## Transfer to active parameter
             $active_parameter_href->{$parameter_name} =
-              $parameter_href->{$parameter_name}{default}
-              ;    #Transfer to active parameter
+              $parameter_href->{$parameter_name}{default};
         }
     }
+    return;
 }
 
 sub check_entry_hash_of_array {
@@ -15736,31 +15533,28 @@ sub remove_pedigree_elements {
 
 sub deafult_log4perl_file {
 
-##deafult_log4perl_file
-
-##Function : Set the default Log4perl file using supplied dynamic parameters.
-##Returns  : "$log_file"
-##Arguments: $active_parameter_href, $cmd_input_ref, $script_ref, $date_ref, $date_time_stamp_ref, $family_id_ref, $outdata_dir_ref
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $cmd_input_ref         => User supplied info on cmd for log_file option {REF}
-##         : $script_ref            => The script that is executed {REF}
-##         : $date_ref              => The date {REF}
-##         : $date_time_stamp_ref   => The date and time {REF}
-##         : $family_id_ref         => Family id {REF}
-##         : $outdata_dir_ref       => Outdata directory {REF}
+## Function : Set the default Log4perl file using supplied dynamic parameters.
+## Returns  : $log_file
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $cmd_input         => User supplied info on cmd for log_file option {REF}
+##          : $script            => The script that is executed {REF}
+##          : $date              => The date {REF}
+##          : $date_time_stamp   => The date and time {REF}
+##          : $family_id_ref         => Family id {REF}
+##          : $outdata_dir       => Outdata directory {REF}
 
     my ($arg_href) = @_;
 
     ## Default(s)
     my $family_id_ref;
-    my $outdata_dir_ref;
+    my $outdata_dir;
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $cmd_input_ref;
-    my $script_ref;
-    my $date_ref;
-    my $date_time_stamp_ref;
+    my $cmd_input;
+    my $script;
+    my $date;
+    my $date_time_stamp;
 
     my $tmpl = {
         active_parameter_href => {
@@ -15770,52 +15564,54 @@ sub deafult_log4perl_file {
             strict_type => 1,
             store       => \$active_parameter_href,
         },
-        cmd_input_ref =>
-          { default => \$$, strict_type => 1, store => \$cmd_input_ref },
-        script_ref => {
+        cmd_input => { strict_type => 1, store => \$cmd_input },
+        script    => {
             required    => 1,
             defined     => 1,
-            default     => \$$,
             strict_type => 1,
-            store       => \$script_ref
+            store       => \$script
         },
-        date_ref => {
+        date => {
             required    => 1,
             defined     => 1,
-            default     => \$$,
             strict_type => 1,
-            store       => \$date_ref
+            store       => \$date
         },
-        date_time_stamp_ref => {
+        date_time_stamp => {
             required    => 1,
             defined     => 1,
-            default     => \$$,
             strict_type => 1,
-            store       => \$date_time_stamp_ref
+            store       => \$date_time_stamp
         },
         family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
+            default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
             store       => \$family_id_ref,
         },
-        outdata_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{outdata_dir},
+        outdata_dir => {
+            default     => $arg_href->{active_parameter_href}{outdata_dir},
             strict_type => 1,
-            store       => \$outdata_dir_ref
+            store       => \$outdata_dir
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    unless ( defined($$cmd_input_ref) )
-    {   #No input from cmd i.e. create default logging directory and set default
+    ## No input from cmd i.e. create default logging directory and set default
+    if ( not defined $cmd_input ) {
 
-        make_path( catfile( $$outdata_dir_ref, "mip_log", $$date_ref ) );
-        my $log_file = catfile( $$outdata_dir_ref, "mip_log", $$date_ref,
-            $$script_ref . "_" . $$date_time_stamp_ref . ".log" )
-          ;    #concatenates log filename
+        make_path( catfile( $outdata_dir, q{mip_log}, $date ) );
+
+        ## Build log filename
+        my $log_file = catfile( $outdata_dir, q{mip_log}, $date,
+            $script . q{_} . $date_time_stamp . q{.log} );
+
+        ## Return default log file
         return $log_file;
     }
+
+    ## Return cmd input log file
+    return $cmd_input;
 }
 
 sub collect_path_entries {
@@ -16135,10 +15931,10 @@ sub add_capture_kit {
     unless ( defined($user_supplied_parameter_switch) )
     {    #No detected supplied capture kit
 
-        if ( defined( $supported_capture_kit_href->{$capture_kit} ) )
+        if ( defined( $supported_capture_kit_href->{default}{$capture_kit} ) )
         {    #Supported capture kit alias
 
-            return $supported_capture_kit_href->{$capture_kit};
+            return $supported_capture_kit_href->{default}{$capture_kit};
         }
         else {    #Return unchanged capture_kit string
 
@@ -16149,10 +15945,10 @@ sub add_capture_kit {
         && ( !$user_supplied_parameter_switch ) )
     {             #Only add if user supplied no info on parameter
 
-        if ( defined( $supported_capture_kit_href->{$capture_kit} ) )
+        if ( defined( $supported_capture_kit_href->{default}{$capture_kit} ) )
         {         #Supported capture kit alias
 
-            return $supported_capture_kit_href->{$capture_kit};
+            return $supported_capture_kit_href->{default}{$capture_kit};
         }
         else {    #Return unchanged capture_kit string
 
@@ -16640,17 +16436,16 @@ sub check_command_in_path {
 
 sub update_to_absolute_path {
 
-##update_to_absolute_path
-
-##Function : Change relative path to absolute path for certain parameter_names
-##Returns  : ""
-##Arguments: $parameter_href
-##         : $parameter_href => Parameter hash {REF}
+## Function : Change relative path to absolute path for parameters with update_path: aboslute path in definitions file
+## Returns  :
+## Arguments: $parameter_href        => Parameter hash {REF}
+##          : $active_parameter_href => Active parameters for this analysis hash {REF}
 
     my ($arg_href) = @_;
 
     ##Flatten argument(s)
     my $parameter_href;
+    my $active_parameter_href;
 
     my $tmpl = {
         parameter_href => {
@@ -16659,6 +16454,13 @@ sub update_to_absolute_path {
             default     => {},
             strict_type => 1,
             store       => \$parameter_href,
+        },
+        active_parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$active_parameter_href,
         },
     };
 
@@ -16675,58 +16477,36 @@ sub update_to_absolute_path {
         }
     );
 
+  DYNAMIC_PARAMETER:
     foreach my $parameter_name (
         @{ $parameter_href->{dynamic_parameter}{absolute_path} } )
     {
 
-        my $parameter_type =
-          $parameter_href->{$parameter_name}{data_type};    #Alias
-
-        if ( $parameter_type eq "ARRAY" ) {                 #Array reference
+        ## If array
+        if ( ref $active_parameter_href->{$parameter_name} eq q{ARRAY} ) {
 
             foreach my $parameter_value (
-                @{ $parameter_href->{$parameter_name}{value} } )
+                @{ $active_parameter_href->{$parameter_name} } )
             {
 
-                if ( $parameter_value ne "nocmd_input" ) {
-
-                    my $element_separator_ref =
-                      \$parameter_href->{$parameter_name}{element_separator}
-                      ;    #Alias - Find what seperates array
-                    my @seperate_elements =
-                      split( $$element_separator_ref, $parameter_value )
-                      ; #Split into seperate elements if written in 1 string on cmd
-                    my @absolute_path_elements;
-
-                    foreach my $element (@seperate_elements) {
-
-                        ## Find aboslute path for supplied path or croaks and exists if path does not exists
-                        push(
-                            @absolute_path_elements,
-                            set_absolute_path(
-                                {
-                                    path           => $element,
-                                    parameter_name => $parameter_name,
-                                }
-                            )
-                        );
+                $parameter_value = set_absolute_path(
+                    {
+                        path           => $parameter_value,
+                        parameter_name => $parameter_name,
                     }
-                    $parameter_value = join( ",", @absolute_path_elements )
-                      ;    #Replace original input with abolute path entries
-                }
+                );
             }
         }
-        elsif ( $parameter_type eq "HASH" ) {    #Hash reference
+        elsif ( ref $active_parameter_href->{$parameter_name} eq q{HASH} ) {
+            ## Hash
 
-            my $parameter_value_ref =
-              $parameter_href->{$parameter_name}{value};    #Alias
+            ## Alias
+            my $parameter_value_ref = $active_parameter_href->{$parameter_name};
 
-            foreach my $key ( keys %$parameter_value_ref )
-            {    #Cannot use each since we are updating key
+            ## Cannot use each since we are updating key
+            foreach my $key ( keys %{$parameter_value_ref} ) {
 
-                if (   ( defined($parameter_value_ref) )
-                    && ( $parameter_value_ref->{$key} ne "nocmd_input" ) )
-                {
+                if ( defined $parameter_value_ref ) {
 
                     ## Find aboslute path for supplied path or croaks and exists if path does not exists
                     my $updated_key = set_absolute_path(
@@ -16740,25 +16520,20 @@ sub update_to_absolute_path {
                 }
             }
         }
-        elsif ( $parameter_type eq "SCALAR" ) {    #Scalar - not a reference
+        elsif ( exists $active_parameter_href->{$parameter_name}
+            && defined $active_parameter_href->{$parameter_name} )
+        {
+            ## Scalar
 
-            my $parameter_value =
-              $parameter_href->{$parameter_name}{value};    #Alias
-
-            if (   ( defined($parameter_value) )
-                && ( $parameter_value ne "nocmd_input" ) )
-            {                                               #Scalar
-
-                $parameter_value = set_absolute_path(
-                    {
-                        path           => $parameter_value,
-                        parameter_name => $parameter_name,
-                    }
-                );
-                $parameter_href->{$parameter_name}{value} = $parameter_value;
-            }
+            $active_parameter_href->{$parameter_name} = set_absolute_path(
+                {
+                    path           => $active_parameter_href->{$parameter_name},
+                    parameter_name => $parameter_name,
+                }
+            );
         }
     }
+    return;
 }
 
 sub add_to_sample_info {
@@ -16961,64 +16736,64 @@ sub add_to_sample_info {
     }
 }
 
-sub check_config_vs_definition_file {
+sub check_cmd_config_vs_definition_file {
 
-##check_config_vs_definition_file
-
-##Function : Compare keys from config and definitions file
-##Returns  : ""
-##Arguments: $reference_href, $comparison_href
-##         : $reference_href  => Reference hash {REF}
-##         : $comparison_href => Hash to be compared to reference {REF}
-
+## Function : Compare keys from config and cmd with definitions file
+## Returns  :
+## Arguments: $parameter_href       => Parameter hash {REF}
+##         : $active_parameter_href => Active parameters for this analysis hash {REF}
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $reference_href;
-    my $comparison_href;
+    my $active_parameter_href;
+    my $parameter_href;
 
     my $tmpl = {
-        reference_href => {
+        active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$reference_href
+            store       => \$active_parameter_href,
         },
-        comparison_href => {
+        parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$comparison_href
+            store       => \$parameter_href,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my @allowed_unique_keys =
-      ( "vcfparser_outfile_count", $reference_href->{family_id} );
+      ( q{vcfparser_outfile_count}, $active_parameter_href->{family_id} );
     my @unique;
 
-    foreach my $key ( keys %$reference_href ) {
+  ACTIVE_PARAMETER:
+    foreach my $key ( keys %{$active_parameter_href} ) {
 
-        unless ( exists( $comparison_href->{$key} ) ) {
+        ## Parameters from definitions file
+        if ( not exists $parameter_href->{$key} ) {
 
-            push( @unique, $key );
+            push @unique, $key;
         }
     }
-    foreach my $element (@unique) {
+  UNIQUE_KEYS:
+    foreach my $unique_key (@unique) {
 
-        if ( !( any { $_ eq $element } @allowed_unique_keys ) )
-        { #Do not print if allowed_unique_keys that have been created dynamically from previous runs
+        ## Do not print if allowed_unique_keys that have been created dynamically from previous runs
+        if ( not any { $_ eq $unique_key } @allowed_unique_keys ) {
 
-            warn(   "Found illegal key: "
-                  . $element
-                  . " in config file that is not defined in definitions.yaml\n"
-            );
-            exit 1;
+            my $error_msg =
+                q{Found illegal key: }
+              . $unique_key
+              . q{ in config file or command line that is not defined in define_parameters.yaml};
+            return $error_msg;
         }
     }
+    return;
 }
 
 sub check_vep_directories {
@@ -17905,7 +17680,7 @@ sub check_aligner {
             $parameter_href->{active_aligner} =
               $aligner;    #Save the active aligner for downstream use
 
-            if ( $$outaligner_dir_ref eq "not_set_yet" ) {
+            if ( not defined $$outaligner_dir_ref ) {
 
                 $$outaligner_dir_ref = $parameter_href->{$aligner}{outdir_name}
                   ;    #Set outaligner_dir parameter depending on active aligner
@@ -18360,13 +18135,10 @@ sub get_matching_values_key {
 
 sub get_user_supplied_info {
 
-##get_user_supplied_info
-
-##Function : Detect if user supplied info on parameters otherwise collected from pedigree
-##Returns  : "user_supply_switchHash where 1=user input and 0=no user input"
-##Arguments: $parameter_href, active_parameter_href
-##         : $parameter_href        => Holds all parameters {REF}
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
+## Function : Detect if user supplied info on parameters otherwise collected from pedigree
+## Returns  : "user_supply_switchHash where 1=user input and 0=no user input"
+## Arguments: $parameter_href        => Holds all parameters {REF}
+##          : $active_parameter_href => Active parameters for this analysis hash {REF}
 
     my ($arg_href) = @_;
 
@@ -18402,37 +18174,34 @@ sub get_user_supplied_info {
     );
 
     ## Detect user supplied info
+  USER_PARAMETER:
     foreach my $parameter ( keys %user_supply_switch ) {
 
-        if ( ref( $parameter_href->{$parameter}{value} ) eq "HASH" ) {
+        ## If hash and supplied
+        if ( ref $active_parameter_href->{$parameter} eq q{HASH}
+            && keys %{ $active_parameter_href->{$parameter} } )
+        {
 
-            $user_supply_switch{$parameter} = check_user_supplied_info(
-                {
-                    active_parameter_href => $active_parameter_href,
-                    data_ref => \%{ $parameter_href->{$parameter}{value} },
-                    parameter_name => $parameter,
-                }
-            );
+            $user_supply_switch{$parameter} = 1;
         }
-        if ( ref( $parameter_href->{$parameter}{value} ) eq "ARRAY" ) {
+        elsif ( ref $active_parameter_href->{$parameter} eq q{ARRAY}
+            && @{ $active_parameter_href->{$parameter} } )
+        {
+            ## If array and supplied
 
-            $user_supply_switch{$parameter} = check_user_supplied_info(
-                {
-                    active_parameter_href => $active_parameter_href,
-                    data_ref => \@{ $parameter_href->{$parameter}{value} },
-                    parameter_name => $parameter,
-                }
-            );
+            $user_supply_switch{$parameter} = 1;
+        }
+        elsif ( defined $active_parameter_href->{$parameter}
+            && ref $active_parameter_href->{$parameter} !~ / HASH | ARRAY /xsm )
+        {
+            ## If scalar and supplied
+
+            $user_supply_switch{$parameter} = 1;
         }
         else {
 
-            $user_supply_switch{$parameter} = check_user_supplied_info(
-                {
-                    active_parameter_href => $active_parameter_href,
-                    data_ref       => $parameter_href->{$parameter}{value},
-                    parameter_name => $parameter,
-                }
-            );
+            ## No user defined input for parameter
+            $user_supply_switch{$parameter} = 0;
         }
     }
     return %user_supply_switch;
@@ -18440,19 +18209,16 @@ sub get_user_supplied_info {
 
 sub get_pedigree_sample_info {
 
-##get_pedigree_sample_info
-
-##Function : Reformat pedigree keys to plink format and collect sample info to various hashes
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $exom_target_bed_test_file_tracker_href, $pedigree_sample_href, $reformatHashRef, $user_supply_switch_href, $sample_id
-##         : $parameter_href                         => Parameter hash {REF}
-##         : $active_parameter_href                  => Active parameters for this analysis hash {REF}
-##         : $sample_info_href                       => Info on samples and family hash {REF}
-##         : $file_info_href                         => The associated reference file endings {REF}
-##         : $exom_target_bed_test_file_tracker_href => Collect which sample_ids have used a certain capture_kit
-##         : $pedigree_sample_href                   => YAML sample info hash {REF}
-##         : $user_supply_switch_href                => The user supplied info switch {REF}
-##         : $sample_id                              => Sample ID
+## Function : Reformat pedigree keys to plink format and collect sample info to various hashes
+## Returns  :
+## Arguments: $parameter_href                         => Parameter hash {REF}
+##          : $active_parameter_href                  => Active parameters for this analysis hash {REF}
+##          : $sample_info_href                       => Info on samples and family hash {REF}
+##          : $file_info_href                         => The associated reference file endings {REF}
+##          : $exom_target_bed_test_file_tracker_href => Collect which sample_ids have used a certain capture_kit
+##          : $pedigree_sample_href                   => YAML sample info hash {REF}
+##          : $user_supply_switch_href                => The user supplied info switch {REF}
+##          : $sample_id                              => Sample ID
 
     my ($arg_href) = @_;
 
@@ -18527,56 +18293,48 @@ sub get_pedigree_sample_info {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Add input to sample_info hash for at sample level
-    foreach my $key ( keys %$pedigree_sample_href ) {
+    foreach my $key ( keys %{$pedigree_sample_href} ) {
 
         $sample_info_href->{sample}{$sample_id}{$key} =
           $pedigree_sample_href->{$key};
 
         ## Add sex to dynamic parameters
-        if ( $key eq "sex" ) {
+        if ( $key eq q{sex} ) {
 
-            push(
-                @{
-                    $parameter_href->{dynamic_parameter}
-                      { $pedigree_sample_href->{$key} }
-                },
-                $sample_id
-            );
+            push @{ $parameter_href->{dynamic_parameter}
+                  { $pedigree_sample_href->{$key} } },
+              $sample_id;
 
             ## Reformat to plink format
-            if ( $pedigree_sample_href->{$key} eq "male" ) {
+            if ( $pedigree_sample_href->{$key} eq q{male} ) {
 
                 $parameter_href->{dynamic_parameter}{$sample_id}{plink_sex} = 1;
             }
-            elsif ( $pedigree_sample_href->{$key} eq "female" ) {
+            elsif ( $pedigree_sample_href->{$key} eq q{female} ) {
 
                 $parameter_href->{dynamic_parameter}{$sample_id}{plink_sex} = 2;
             }
             else {
 
                 $parameter_href->{dynamic_parameter}{$sample_id}{plink_sex} =
-                  "other";
+                  q{other};
             }
         }
 
         ## Add phenotype to dynamic parameters
-        if ( $key eq "phenotype" ) {
+        if ( $key eq q{phenotype} ) {
 
-            push(
-                @{
-                    $parameter_href->{dynamic_parameter}
-                      { $pedigree_sample_href->{$key} }
-                },
-                $sample_id
-            );
+            push @{ $parameter_href->{dynamic_parameter}
+                  { $pedigree_sample_href->{$key} } },
+              $sample_id;
 
             ## Reformat to plink format
-            if ( $pedigree_sample_href->{$key} eq "unaffected" ) {
+            if ( $pedigree_sample_href->{$key} eq q{unaffected} ) {
 
                 $parameter_href->{dynamic_parameter}{$sample_id}
                   {plink_phenotype} = 1;
             }
-            elsif ( $pedigree_sample_href->{$key} eq "affected" ) {
+            elsif ( $pedigree_sample_href->{$key} eq q{affected} ) {
 
                 $parameter_href->{dynamic_parameter}{$sample_id}
                   {plink_phenotype} = 2;
@@ -18590,43 +18348,44 @@ sub get_pedigree_sample_info {
     }
 
     ## Add analysis_type for each individual
-    if ( $sample_info_href->{sample}{$sample_id}{analysis_type} )
-    {    #Add analysis_type
+    if ( $sample_info_href->{sample}{$sample_id}{analysis_type} ) {
 
-        if ( !$user_supply_switch_href->{analysis_type} ) {
+        if ( not $user_supply_switch_href->{analysis_type} ) {
 
+            ## Alias
             my $analysis_type =
-              $sample_info_href->{sample}{$sample_id}{analysis_type};    #Alias
+              $sample_info_href->{sample}{$sample_id}{analysis_type};
             $active_parameter_href->{analysis_type}{$sample_id} =
               $analysis_type;
         }
     }
 
     ## Add expected_coverage for each individual
-    if ( $sample_info_href->{sample}{$sample_id}{expected_coverage} )
-    {    #Add expected_coverage
+    if ( $sample_info_href->{sample}{$sample_id}{expected_coverage} ) {
 
-        if ( !$user_supply_switch_href->{expected_coverage} ) {
+        if ( not $user_supply_switch_href->{expected_coverage} ) {
 
+            ## Alias
             my $expected_coverage =
-              $sample_info_href->{sample}{$sample_id}{expected_coverage}; #Alias
+              $sample_info_href->{sample}{$sample_id}{expected_coverage};
             $active_parameter_href->{expected_coverage}{$sample_id} =
               $expected_coverage;
         }
     }
 
     ## Add capture kit for each individual
-    if ( ( $sample_info_href->{sample}{$sample_id}{capture_kit} ) ) {
+    if ( $sample_info_href->{sample}{$sample_id}{capture_kit} ) {
 
+        ## Alias
         my $capture_kit =
-          $sample_info_href->{sample}{$sample_id}{capture_kit};           #Alias
+          $sample_info_href->{sample}{$sample_id}{capture_kit};
 
         ## Return a capture kit depending on user info
         my $exome_target_bed_file = add_capture_kit(
             {
                 file_info_href => $file_info_href,
                 supported_capture_kit_href =>
-                  $active_parameter_href->{supported_capture_kit},
+                  $parameter_href->{supported_capture_kit},
                 capture_kit => $capture_kit,
                 user_supplied_parameter_switch =>
                   $user_supply_switch_href->{exome_target_bed},
@@ -18635,16 +18394,12 @@ sub get_pedigree_sample_info {
 
         if ($exome_target_bed_file) {
 
-            push(
-                @{
-                    $exom_target_bed_test_file_tracker_href
-                      ->{$exome_target_bed_file}
-                },
-                $sample_id
-            );
-
+            push @{ $exom_target_bed_test_file_tracker_href
+                  ->{$exome_target_bed_file} },
+              $sample_id;
         }
     }
+    return;
 }
 
 sub check_founder_id {

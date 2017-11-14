@@ -10,8 +10,8 @@ use FindBin qw{ $Bin };
 use Getopt::Long;
 use Params::Check qw{ check allow last_error };
 use Test::More;
-use warnings qw{ FATAL utf8 };
 use utf8;
+use warnings qw{ FATAL utf8 };
 use 5.018;
 
 ## CPANM

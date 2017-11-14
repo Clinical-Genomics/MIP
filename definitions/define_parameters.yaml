@@ -34,7 +34,6 @@ log_file:
   associated_program:
    - mip
   data_type: SCALAR
-  default: not_set_yet
   type: path
   update_path: absolute_path
 project_id:
@@ -116,8 +115,6 @@ analysis_type:
   associated_program:
    - mip
   data_type: HASH
-  default:
-   - wgs
   type: mip
 expected_coverage:
   associated_program:
@@ -130,15 +127,12 @@ infile_dirs:
    - mip
   exists_check: directory
   data_type: HASH
-  default:
-   - not_set_yet
   type: path
   update_path: absolute_path
 sample_info_file:
   associated_program:
    - mip
   data_type: SCALAR
-  default: not_set_yet
   type: path
   update_path: absolute_path
 reference_dir:
@@ -465,7 +459,6 @@ bwa_build_reference:
    - pbwa_mem
   build_file: 1
   data_type: SCALAR
-  default: not_set_yet
   exists_check: file
   reference: reference_dir
   type: path
@@ -474,7 +467,7 @@ outaligner_dir:
   associated_program:
    - mip
   data_type: SCALAR
-  default: not_set_yet
+  mandatory: no
   type: mip
 ## BAMCalibrationBlock
 pbamcalibrationblock:
@@ -2000,7 +1993,6 @@ qccollect_sampleinfo_file:
   associated_program:
    - pqccollect
   data_type: SCALAR
-  default: not_set_yet
   type: program_argument
   update_path: absolute_path
 qccollect_regexp_file:

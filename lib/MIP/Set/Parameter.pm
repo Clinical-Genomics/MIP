@@ -1,15 +1,15 @@
 package MIP::Set::Parameter;
 
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catfile splitpath };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-use File::Spec::Functions qw{ catfile splitpath };
 
 ## CPANM
 use Readonly;
@@ -23,13 +23,72 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ set_dynamic_parameter set_parameter_reference_dir_path };
+      qw{ set_config_to_active_parameters set_dynamic_parameter set_parameter_reference_dir_path set_parameter_to_broadcast };
 }
 
 ## Constants
 Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
 Readonly my $TAB     => qq{\t};
+
+sub set_config_to_active_parameters {
+
+## Function : Add contig parameters to active_parameters if not already initilized from command line
+## Returns  :
+## Arguments: $config_parameter_href => Config parameters hash
+##         : $active_parameter_href  => Active parameters for this analysis hash {REF}
+
+    my ($arg_href) = @_;
+
+## Flatten argument(s)
+    my $config_parameter_href;
+    my $active_parameter_href;
+
+    my $tmpl = {
+        config_parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$config_parameter_href,
+        },
+        active_parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$active_parameter_href,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  PARAMETER:
+    foreach my $parmeter_name ( keys %{$config_parameter_href} ) {
+
+        ## Cmd initilized HASH
+        next PARAMETER
+          if ( ref $active_parameter_href->{$parmeter_name} eq qw{HASH}
+            && keys %{ $active_parameter_href->{$parmeter_name} } );
+
+        ## Cmd initilized ARRAY
+        next PARAMETER
+          if ( ref $active_parameter_href->{$parmeter_name} eq qw{ARRAY}
+            && @{ $active_parameter_href->{$parmeter_name} } );
+
+        ## Cmd initilized scalar
+        next PARAMETER
+          if ( $active_parameter_href->{$parmeter_name}
+            && ref( $active_parameter_href->{$parmeter_name} ) !~
+            / HASH | ARRAY /sxm );
+
+        ### No input from cmd
+        ## Add to active_parameter
+        $active_parameter_href->{$parmeter_name} =
+          $config_parameter_href->{$parmeter_name};
+    }
+    return;
+}
 
 sub set_dynamic_parameter {
 
@@ -182,6 +241,98 @@ sub set_parameter_reference_dir_path {
         my $path =
           catfile( $reference_dir, $active_parameter_href->{$parameter_name} );
         $active_parameter_href->{$parameter_name} = $path;
+
+    }
+    return;
+}
+
+sub set_parameter_to_broadcast {
+
+## Function : Set parameters to broadcast message
+## Returns  :
+## Arguments: $parameter_href        => Holds all parameters
+##          : $active_parameter_href => Active parameters for this analysis hash {REF}
+    ##          : $order_parameters_ref  => Order of parameters (for structured output) {REF}
+##          : $broadcasts_ref        => Holds the parameters info for broadcasting later {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $active_parameter_href;
+    my $order_parameters_ref;
+    my $broadcasts_ref;
+
+    my $tmpl = {
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
+        active_parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$active_parameter_href,
+        },
+        order_parameters_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => [],
+            strict_type => 1,
+            store       => \$order_parameters_ref,
+        },
+        broadcasts_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => [],
+            strict_type => 1,
+            store       => \$broadcasts_ref,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  PARAMETER:
+    foreach my $parameter_name ( @{$order_parameters_ref} ) {
+
+        next PARAMETER
+          if ( not defined $active_parameter_href->{$parameter_name} );
+
+        ## Hold parameters info
+        my $info = q{Set } . $parameter_name . q{ to: };
+
+        if ( ref $active_parameter_href->{$parameter_name} eq q{ARRAY} ) {
+
+            ## Alias
+            my $element_separator =
+              $parameter_href->{$parameter_name}{element_separator};
+
+            $info .= join $element_separator,
+              @{ $active_parameter_href->{$parameter_name} };
+
+            ## Add info to broadcasts
+            push @{$broadcasts_ref}, $info;
+        }
+        elsif ( ref $active_parameter_href->{$parameter_name} eq q{HASH} ) {
+
+            $info .= join q{,},
+              map { qq{$_=$active_parameter_href->{$parameter_name}{$_}} }
+              ( keys %{ $active_parameter_href->{$parameter_name} } );
+
+            ## Add info to broadcasts
+            push @{$broadcasts_ref}, $info;
+        }
+        else {
+
+            $info .= $active_parameter_href->{$parameter_name};
+
+            ## Add info to broadcasts
+            push @{$broadcasts_ref}, $info;
+        }
     }
     return;
 }
