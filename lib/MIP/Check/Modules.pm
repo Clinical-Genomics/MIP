@@ -1,21 +1,21 @@
 package MIP::Check::Modules;
 
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_perl_modules };
@@ -58,7 +58,7 @@ sub check_perl_modules {
     foreach my $module ( @{$modules_ref} ) {
 
         ## Replace "::" with "/" since the automatic replacement magic only occurs for barewords.
-        $module =~ s/::/\//sxmg;
+        $module =~ s{::}{/}sxmg;
 
         ## Add perl module ending for the same reason
         $module .= q{.} . q{pm};
@@ -67,14 +67,11 @@ sub check_perl_modules {
             require $module;
         }
         catch {
-            carp(   q{NOTE: }
+            croak(  q{NOTE: }
                   . $module
                   . q{ not installed - Please install to run }
                   . $program_name . qq{\n}
-                  . q{NOTE: Aborting!}
-                  . qq{\n} );
-            say {*STDERR} $ARG;
-            exit 1;
+                  . q{NOTE: Aborting!} );
         };
     }
     return;

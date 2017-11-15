@@ -1,14 +1,14 @@
 package MIP::File::Format::Yaml;
 
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
 
 ## CPANM
 use Readonly;
@@ -27,6 +27,7 @@ BEGIN {
 }
 
 ## Constants
+Readonly my $COLON        => q{:};
 Readonly my $DOT          => q{.};
 Readonly my $DOUBLE_QUOTE => q{"};
 Readonly my $SINGLE_QUOTE => q{'};
@@ -64,7 +65,7 @@ sub load_yaml {
     my %yaml;
 
     open my $YAML, q{<}, $yaml_file
-      or croak q{cannot open} . $SPACE . $yaml_file . q{:} . $OS_ERROR,
+      or croak q{cannot open} . $SPACE . $yaml_file . $COLON . $OS_ERROR,
       $NEWLINE;
 
     ## Load hashreference as hash
@@ -113,7 +114,8 @@ sub write_yaml {
       . $DOUBLE_QUOTE
       . $yaml_file_path
       . $DOUBLE_QUOTE
-      . $SINGLE_QUOTE . q{:}
+      . $SINGLE_QUOTE
+      . $COLON
       . $OS_ERROR
       . $NEWLINE;
 
@@ -152,7 +154,8 @@ sub order_parameter_names {
           . $DOT
           . $SINGLE_QUOTE
           . $file_path
-          . $SINGLE_QUOTE . q{:}
+          . $SINGLE_QUOTE
+          . $COLON
           . $SPACE
           . $OS_ERROR
           . $NEWLINE );
