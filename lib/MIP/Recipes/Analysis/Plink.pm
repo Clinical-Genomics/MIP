@@ -7,9 +7,9 @@ use File::Spec::Functions qw{ catdir catfile splitpath};
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
 
 ## CPANM
 use autodie qw{ :all };
@@ -39,7 +39,7 @@ Readonly my $UNDERSCORE => q{_};
 
 sub analysis_plink {
 
-## Function : ests sample for correct relatives (only performed for samples with relatives defined in pedigree file) performed on sequence data.
+## Function : Tests sample for correct relatives (only performed for samples with relatives defined in pedigree file) performed on sequence data.
 ## Returns  :
 ## Arguments: $parameter_href          => Parameter hash {REF}
 ##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
@@ -151,7 +151,7 @@ sub analysis_plink {
             store       => \$outaligner_dir,
         },
         call_type => {
-            default    => q{BOTH},
+            default     => q{BOTH},
             strict_type => 1,
             store       => \$call_type,
         },
@@ -159,7 +159,6 @@ sub analysis_plink {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ### SET IMPORT IN ALPHABETIC ORDER
     use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::IO::Files qw{ migrate_file };
@@ -167,11 +166,12 @@ sub analysis_plink {
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::Program::Variantcalling::Bcftools
       qw(bcftools_view bcftools_annotate);
-    use MIP::Program::Variantcalling::Plink qw{ plink_calculate_inbreeding plink_check_sex_chroms plink_create_mibs plink_fix_fam_ped_map_freq plink_sex_check plink_variant_pruning };
-    use Program::Variantcalling::Vt qw(vt_uniq);
+    use MIP::Program::Variantcalling::Plink
+      qw{ plink_calculate_inbreeding plink_check_sex_chroms plink_create_mibs plink_fix_fam_ped_map_freq plink_sex_check plink_variant_pruning };
     use MIP::QC::Record
       qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
+    use Program::Variantcalling::Vt qw(vt_uniq);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -187,12 +187,17 @@ sub analysis_plink {
     my $core_number =
       $active_parameter_href->{module_core_number}{$mip_program_name};
     my $time = $active_parameter_href->{module_time}{$mip_program_name};
+    my $human_genome_reference_version =
+      $file_info_href->{human_genome_reference_version};
+    my $human_genome_reference_source =
+      $file_info_href->{human_genome_reference_source};
 
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    my $program_directory = catfile(lc($outaligner_dir), q{casecheck}, $program_name );
+    my $program_directory =
+      catfile( $outaligner_dir, q{casecheck}, $program_name );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ( $file_path, $program_info_path ) = setup_script(
@@ -203,30 +208,32 @@ sub analysis_plink {
             directory_id          => $family_id,
             program_name          => $program_name,
             program_directory     => $program_directory,
-            call_type   => $call_type,
-            core_number => $core_number,
-            process_time => $time,
+            call_type             => $call_type,
+            core_number           => $core_number,
+            process_time          => $time,
         }
     );
 
-    #Split to enable submission to &sample_info_qc later
-    my ( $volume, $directory, $program_info_file ) = splitpath($program_info_path);
+    # Split to enable submission to &sample_info_qc later
+    my ( $volume, $directory, $program_info_file ) =
+      splitpath($program_info_path);
 
-    #To enable submission to &sample_info_qc later
+    # To enable submission to &sample_info_qc later
     my $stderr_file = $program_info_file . q{.stderr.txt};
 
-    #To enable submission to &sample_info_qc later
+    # To enable submission to &sample_info_qc later
     my $stdout_file = $program_info_file . q{.stdout.txt};
 
     ## Paths
     my $outfamily_file_directory =
       catfile( $active_parameter_href->{outdata_dir}, $family_id );
 
-    ## Assign file_tags
+    ## Files
     my $infile_tag =
-      $file_info_href->{$family_id}{pgatk_combinevariantcallsets}
-      {file_tag};
+      $file_info_href->{$family_id}{pgatk_combinevariantcallsets}{file_tag};
     my $infile_prefix = $family_id . $infile_tag . $call_type;
+
+    ## Paths
     my $file_path_prefix = catfile( $temp_directory, $infile_prefix );
 
     ## Get infile_suffix from baserecalibration jobid chain
@@ -240,7 +247,7 @@ sub analysis_plink {
     );
 
     my $family_file =
-      catfile( $outfamily_file_directory, $family_id . q{.fam} );
+      catfile( $outfamily_file_directory, $family_id . $DOT . q{fam} );
 
     ## Create .fam file to be used in variant calling analyses
     create_fam_file(
@@ -259,7 +266,8 @@ sub analysis_plink {
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . $ASTERISK
+                $infamily_directory,
+                $infile_prefix . $infile_suffix . $ASTERISK
             ),
             outfile_path => $temp_directory
         }
@@ -271,8 +279,11 @@ sub analysis_plink {
     bcftools_view(
         {
             infile_path  => $file_path_prefix . $infile_suffix,
-            outfile_path => $file_path_prefix . $UNDERSCORE . q{no_indels} . $infile_suffix,
-            output_type  => q{v},
+            outfile_path => $file_path_prefix
+              . $UNDERSCORE
+              . q{no_indels}
+              . $infile_suffix,
+            output_type       => q{v},
             exclude_types_ref => [q{indels}],
             FILEHANDLE        => $FILEHANDLE,
         }
@@ -284,47 +295,58 @@ sub analysis_plink {
         {
             remove_ids_ref => [q{ID}],
             set_id         => q?+'%CHROM:%POS:%REF:%ALT'?,
-            infile_path    => $file_path_prefix . $UNDERSCORE . q{no_indels} . $infile_suffix,
-            output_type    => q{v},
-            FILEHANDLE     => $FILEHANDLE,
+            infile_path    => $file_path_prefix
+              . $UNDERSCORE
+              . q{no_indels}
+              . $infile_suffix,
+            output_type => q{v},
+            FILEHANDLE  => $FILEHANDLE,
         }
     );
 
-    print {$FILEHANDLE} $PIPE . $SPACE ;
+    print {$FILEHANDLE} $PIPE . $SPACE;
 
     ## Drops duplicate variants that appear later in the the VCF file
     vt_uniq(
         {
             infile_path  => $DASH,
             outfile_path => $file_path_prefix
-              . $UNDERSCORE . q{no_indels_ann_uniq}
+              . $UNDERSCORE
+              . q{no_indels_ann_uniq}
               . $infile_suffix,
             FILEHANDLE => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    my $outfile_prefix = catfile( $temp_directory, $family_id . $UNDERSCORE . q{data} );
+    my $outfile_prefix =
+      catfile( $temp_directory, $family_id . $UNDERSCORE . q{data} );
 
     ### Plink variant pruning and creation of unique Ids
+
+    Readonly my $INDEP_WINDOW_SIZE   = 50;
+    Readonly my $INDEP_STEP_SIZE     = 5;
+    Readonly my $INDEP_VIF_THRESHOLD = 2;
+
     say {$FILEHANDLE} q{## Create pruning set and uniq IDs};
     plink_variant_pruning(
         {
             vcffile_path => $file_path_prefix
-              . $UNDERSCORE . q{no_indels_ann_uniq}
+              . $UNDERSCORE
+              . q{no_indels_ann_uniq}
               . $infile_suffix,
-            outfile_prefix => $outfile_prefix,
+            outfile_prefix      => $outfile_prefix,
             vcf_require_gt      => 1,
             vcf_half_call       => q{haploid},
             set_missing_var_ids => q?@:#[?
-              . $file_info_href->{human_genome_reference_version}
+              . $human_genome_reference_version
               . q?]\$1,\$2?,
             const_fid           => $family_id,
             make_bed            => 1,
             indep               => 1,
-            indep_window_size   => 50,
-            indep_step_size     => 5,
-            indep_vif_threshold => 2,
+            indep_window_size   => $INDEP_WINDOW_SIZE,
+            indep_step_size     => $INDEP_STEP_SIZE,
+            indep_vif_threshold => $INDEP_VIF_THRESHOLD,
             FILEHANDLE          => $FILEHANDLE,
         }
     );
@@ -333,17 +355,18 @@ sub analysis_plink {
     say {$FILEHANDLE}
       q{## Update Plink fam. Create ped and map file and frequency report};
 
-    my $binary_fileset_prefix =  catfile( $temp_directory, $family_id . $UNDERSCORE . q{data} );
+    my $binary_fileset_prefix =
+      catfile( $temp_directory, $family_id . $UNDERSCORE . q{data} );
 
     plink_fix_fam_ped_map_freq(
         {
-            binary_fileset_prefix => $binary_fileset_prefix ,
-            fam_file_path => $family_file,
-            make_just_fam => 1,
-            recode        => 1,
-            freqx         => 1,
-            outfile_prefix => $outfile_prefix,
-            FILEHANDLE => $FILEHANDLE,
+            binary_fileset_prefix => $binary_fileset_prefix,
+            fam_file_path         => $family_file,
+            make_just_fam         => 1,
+            recode                => 1,
+            freqx                 => 1,
+            outfile_prefix        => $outfile_prefix,
+            FILEHANDLE            => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -351,18 +374,18 @@ sub analysis_plink {
     $outfile_prefix = catfile( $outfamily_directory, $family_id );
 
     # Only perform if more than 1 sample
-    if ( scalar( @{ $active_parameter_href->{sample_ids} } ) > 1 ) {
+    if ( scalar @{ $active_parameter_href->{sample_ids} } > 1 ) {
 
-        say {$FILEHANDLE} "## Calculate inbreeding coefficients per family";
+        say {$FILEHANDLE} q{## Calculate inbreeding coefficients per family};
         plink_calculate_inbreeding(
             {
-                binary_fileset_prefix => $binary_fileset_prefix,
-                outfile_prefix => $outfile_prefix,
+                binary_fileset_prefix   => $binary_fileset_prefix,
+                outfile_prefix          => $outfile_prefix,
                 het                     => 1,
                 small_sample            => 1,
                 inbreeding_coefficients => 1,
-                extract_file            => $binary_fileset_prefix . $DOT . q{prune.in},
-                FILEHANDLE => $FILEHANDLE,
+                extract_file => $binary_fileset_prefix . $DOT . q{prune.in},
+                FILEHANDLE   => $FILEHANDLE,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -370,12 +393,12 @@ sub analysis_plink {
         say {$FILEHANDLE} q{## Create Plink .mibs per family};
         plink_create_mibs(
             {
-                ped_file_path => $binary_fileset_prefix . $DOT . q{ped},
-                map_file_path => $binary_fileset_prefix . $DOT . q{map},
-                cluster => 1,
-                matrix  => 1,
+                ped_file_path  => $binary_fileset_prefix . $DOT . q{ped},
+                map_file_path  => $binary_fileset_prefix . $DOT . q{map},
+                cluster        => 1,
+                matrix         => 1,
                 outfile_prefix => $outfile_prefix,
-                FILEHANDLE => $FILEHANDLE,
+                FILEHANDLE     => $FILEHANDLE,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -384,53 +407,59 @@ sub analysis_plink {
     ### Plink sex-check
     ## Get parameters
     my $genome_build;
-    if ( $file_info_href->{human_genome_reference_source} eq q{GRCh} ) {
 
-        $genome_build = q{b} . $file_info_href->{human_genome_reference_version};
+    if ( $human_genome_reference_source eq q{GRCh} ) {
+
+        $genome_build = q{b} . $human_genome_reference_version;
     }
     else {
 
-        $genome_build =
-          q{hg} . $file_info_href->{human_genome_reference_version};
+        $genome_build = q{hg} . $human_genome_reference_version;
     }
 
-    $outfile_prefix = catfile( $temp_directory, $family_id . $UNDERSCORE . q{data} );
+    $outfile_prefix =
+      catfile( $temp_directory, $family_id . $UNDERSCORE . q{data} );
+    Readonly my $CHR_X_NUMBER = 23;
+    Readonly my $CHR_Y_NUMBER = 24;
 
     plink_check_sex_chroms(
         {
-            regions_ref => [ 23, 24 ],
-            split_x     => $genome_build,
-            no_fail     => 1,
-            make_bed    => 1,
+            regions_ref           => [ $CHR_X_NUMBER, $CHR_Y_NUMBER ],
+            split_x               => $genome_build,
+            no_fail               => 1,
+            make_bed              => 1,
             binary_fileset_prefix => $binary_fileset_prefix,
             outfile_prefix => $outfile_prefix . $UNDERSCORE . q{unsplit},
-            FILEHANDLE => $FILEHANDLE,
+            FILEHANDLE     => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
 
+    Readonly my $FEMALE_MAX_F = 0.2;
+    Readonly my $MALE_MIN_F   = 0.75;
+
     ## Get parameters
-    # Exome/rapid analysis use combined reference for more power
-    my $sex_check_min_F;
-    if (   ( $consensus_analysis_type eq q{wes} ) || ( $consensus_analysis_type eq q{rapid} ) )
-    {
-        $sex_check_min_F = q{0.2 0.75};
+    my $sex_check_min_f;
+    if ( $consensus_analysis_type eq q{wes} ) {
+        $sex_check_min_f = $FEMALE_MAX_F . $SPACE . $MALE_MIN_F;
     }
     my $extract_file;
 
-    if ( scalar( @{ $active_parameter_href->{sample_ids} } ) > 1 ) {
+    if ( scalar @{ $active_parameter_href->{sample_ids} } > 1 ) {
 
         $extract_file = $binary_fileset_prefix . $DOT . q{prune.in};
     }
 
-    $outfile_prefix = catfile( $outfamily_directory, $family_id);
+    $outfile_prefix = catfile( $outfamily_directory, $family_id );
 
     plink_sex_check(
         {
-            sex_check_min_f => $sex_check_min_F,
-            extract_file    => $extract_file,
-            read_freqfile_path => $binary_fileset_prefix . $DOT . q{frqx},
-            binary_fileset_prefix => $binary_fileset_prefix . $UNDERSCORE . q{unsplit},
+            sex_check_min_f       => $sex_check_min_f,
+            extract_file          => $extract_file,
+            read_freqfile_path    => $binary_fileset_prefix . $DOT . q{frqx},
+            binary_fileset_prefix => $binary_fileset_prefix
+              . $UNDERSCORE
+              . q{unsplit},
             outfile_prefix => $outfile_prefix,
             FILEHANDLE     => $FILEHANDLE,
         }
@@ -439,16 +468,16 @@ sub analysis_plink {
 
     if ( $mip_program_mode == 1 ) {
 
-        if ( scalar( @{ $active_parameter_href->{sample_ids} } ) > 1 )
-        {    #Only perform if more than 1 sample
-
+        # Only perform if more than 1 sample
+        if ( scalar @{ $active_parameter_href->{sample_ids} } > 1 ) {
             ## Collect QC metadata info for later use
             add_program_outfile_to_sample_info(
                 {
                     sample_info_href => $sample_info_href,
                     program_name     => q{inbreeding_factor},
-                    outdirectory     => $outfamily_directory,
-                    outfile          => $family_id . $DOT . q{het},
+                    path             => catfile(
+                        $outfamily_directory, $family_id . $DOT . q{het}
+                    ),
                 }
             );
 
@@ -457,8 +486,9 @@ sub analysis_plink {
                 {
                     sample_info_href => $sample_info_href,
                     program_name     => q{relation_check},
-                    outdirectory     => $outfamily_directory,
-                    outfile          => $family_id . $DOT . q{mibs},
+                    path             => catfile(
+                        $outfamily_directory, $family_id . $DOT . q{mibs}
+                    ),
                 }
             );
         }
@@ -468,8 +498,9 @@ sub analysis_plink {
             {
                 sample_info_href => $sample_info_href,
                 program_name     => q{plink_sexcheck},
-                outdirectory     => $outfamily_directory,
-                outfile          => $family_id . $DOT . q{sexcheck},
+                path             => catfile(
+                    $outfamily_directory, $family_id . $DOT . q{sexcheck}
+                ),
             }
         );
 
@@ -478,8 +509,7 @@ sub analysis_plink {
             {
                 sample_info_href => $sample_info_href,
                 program_name     => q{plink2},
-                outdirectory     => $directory,
-                outfile          => $stdout_file,
+                path             => catfile( $directory, $stdout_file )
             }
         );
 
@@ -497,7 +527,7 @@ sub analysis_plink {
 
     }
 
-    close $FILEHANDLE;
+    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
     return;
 }
 
