@@ -63,6 +63,7 @@ use MIP::Set::Parameter
 use MIP::Update::Contigs qw{ update_contigs_for_run };
 use MIP::Update::Parameters
   qw{ update_reference_parameters update_vcfparser_outfile_counter };
+use MIP::Update::Path qw{ update_to_absolute_path };
 use MIP::Update::Programs
   qw{ update_program_mode_with_dry_run_all update_program_mode update_prioritize_flag };
 
@@ -200,15 +201,12 @@ my $error_msg = check_parameter_hash(
     }
 );
 ## Broadcast error in parameter key or values
-if ($error_msg) {
+croak($error_msg) if ($error_msg);
 
-    croak($error_msg);
-}
-
-# Set MIP version
+## Set MIP version
 our $VERSION = 'v5.0.12';
 
-# Holds all active parameters
+## Holds all active parameters
 my %active_parameter;
 
 ## Directories, files, job_ids and sample_info
@@ -609,16 +607,19 @@ GetOptions(
 $active_parameter{mip} = $parameter{mip}{default};
 
 ## Change relative path to absolute path for parameter with "update_path: absolute_path" in config
-update_to_absolute_path(
+$error_msg = update_to_absolute_path(
     {
         parameter_href        => \%parameter,
         active_parameter_href => \%active_parameter,
     }
 );
+croak($error_msg) if ($error_msg);
 
 ### Config file
 ## If config from cmd
-if ( exists $active_parameter{config_file} && $active_parameter{config_file} ) {
+if ( exists $active_parameter{config_file}
+    && defined $active_parameter{config_file} )
+{
 
     ## Loads a YAML file into an arbitrary hash and returns it.
     my %config_parameter =
@@ -649,10 +650,7 @@ if ( exists $active_parameter{config_file} && $active_parameter{config_file} ) {
             parameter_href        => \%parameter,
         }
     );
-    if ($error_msg) {
-
-        croak($error_msg);
-    }
+    croak($error_msg) if ($error_msg);
 
     my @config_dynamic_parameters = qw{ analysis_constant_path outaligner_dir };
 
@@ -2213,11 +2211,10 @@ if ( $active_parameter{psv_reformat} > 0 ) {   #Run sv_reformat. Done per family
 
 if ( $active_parameter{psamtools_mpileup} > 0 ) {    #Run samtools mpileup
 
-    $log->info( q{[Samtools mpileup]} );
+    $log->info(q{[Samtools mpileup]});
     my $program_name = q{samtools_mpileup};
 
-    my $program_outdirectory_name =
-      $parameter{psamtools_mpileup}{outdir_name};
+    my $program_outdirectory_name = $parameter{psamtools_mpileup}{outdir_name};
 
     my $outfamily_directory = catfile(
         $active_parameter{outdata_dir},    $active_parameter{family_id},
@@ -6472,7 +6469,8 @@ sub mplink {
     use MIP::Program::Variantcalling::Bcftools
       qw(bcftools_view bcftools_annotate);
     use Program::Variantcalling::Vt qw(vt_uniq);
-    use MIP::Program::Variantcalling::Plink qw{ plink_calculate_inbreeding plink_check_sex_chroms plink_create_mibs plink_fix_fam_ped_map_freq plink_sex_check plink_variant_pruning };
+    use MIP::Program::Variantcalling::Plink
+      qw{ plink_calculate_inbreeding plink_check_sex_chroms plink_create_mibs plink_fix_fam_ped_map_freq plink_sex_check plink_variant_pruning };
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_family_dead_end);
@@ -16002,108 +16000,6 @@ sub check_command_in_path {
             }
         }
     }
-}
-
-sub update_to_absolute_path {
-
-## Function : Change relative path to absolute path for parameters with update_path: aboslute path in definitions file
-## Returns  :
-## Arguments: $parameter_href        => Parameter hash {REF}
-##          : $active_parameter_href => Active parameters for this analysis hash {REF}
-
-    my ($arg_href) = @_;
-
-    ##Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Set::File qw(set_absolute_path);
-
-    ## Adds dynamic aggregate information from definitions to parameter hash
-    # Collect all path that should be made absolute
-    set_dynamic_parameter(
-        {
-            parameter_href => \%parameter,
-            aggregates_ref => [q{update_path:absolute_path}],
-        }
-    );
-
-  DYNAMIC_PARAMETER:
-    foreach my $parameter_name (
-        @{ $parameter_href->{dynamic_parameter}{absolute_path} } )
-    {
-
-        ## If array
-        if ( ref $active_parameter_href->{$parameter_name} eq q{ARRAY} ) {
-
-            foreach my $parameter_value (
-                @{ $active_parameter_href->{$parameter_name} } )
-            {
-
-                $parameter_value = set_absolute_path(
-                    {
-                        path           => $parameter_value,
-                        parameter_name => $parameter_name,
-                    }
-                );
-            }
-        }
-        elsif ( ref $active_parameter_href->{$parameter_name} eq q{HASH} ) {
-            ## Hash
-
-            ## Alias
-            my $parameter_value_ref = $active_parameter_href->{$parameter_name};
-
-            ## Cannot use each since we are updating key
-            foreach my $key ( keys %{$parameter_value_ref} ) {
-
-                if ( defined $parameter_value_ref ) {
-
-                    ## Find aboslute path for supplied path or croaks and exists if path does not exists
-                    my $updated_key = set_absolute_path(
-                        {
-                            path           => $key,
-                            parameter_name => $parameter_name,
-                        }
-                    );
-                    $parameter_value_ref->{$updated_key} =
-                      delete( $parameter_value_ref->{$key} );
-                }
-            }
-        }
-        elsif ( exists $active_parameter_href->{$parameter_name}
-            && defined $active_parameter_href->{$parameter_name} )
-        {
-            ## Scalar
-
-            $active_parameter_href->{$parameter_name} = set_absolute_path(
-                {
-                    path           => $active_parameter_href->{$parameter_name},
-                    parameter_name => $parameter_name,
-                }
-            );
-        }
-    }
-    return;
 }
 
 sub add_to_sample_info {

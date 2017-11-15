@@ -36,11 +36,11 @@ sub set_config_to_active_parameters {
 ## Function : Add contig parameters to active_parameters if not already initilized from command line
 ## Returns  :
 ## Arguments: $config_parameter_href => Config parameters hash
-##         : $active_parameter_href  => Active parameters for this analysis hash {REF}
+##          : $active_parameter_href  => Active parameters for this analysis hash {REF}
 
     my ($arg_href) = @_;
 
-## Flatten argument(s)
+    ## Flatten argument(s)
     my $config_parameter_href;
     my $active_parameter_href;
 

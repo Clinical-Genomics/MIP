@@ -32,12 +32,9 @@ Readonly my $NEWLINE => qq{\n};
 
 sub set_file_suffix {
 
-## set_file_suffix
-
 ## Function : Set the current file suffix for this job id chain
-## Returns  : "$file_suffix"
-## Arguments: $parameter_href, $suffix_key, $job_id_chain, $file_suffix
-##          : $parameter_href => Holds all parameters
+## Returns  : $file_suffix
+## Arguments: $parameter_href => Holds all parameters
 ##          : $suffix_key     => Suffix key
 ##          : $job_id_chain   => Job id chain for program
 ##          : $file_suffix    => File suffix
@@ -56,25 +53,25 @@ sub set_file_suffix {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$parameter_href,
         },
         suffix_key => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$suffix_key
+            store       => \$suffix_key,
         },
         job_id_chain => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$job_id_chain
+            store       => \$job_id_chain,
         },
         file_suffix => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$file_suffix
+            store       => \$file_suffix,
         },
     };
 
@@ -87,12 +84,9 @@ sub set_file_suffix {
 
 sub set_merged_infile_prefix {
 
-## set_merged_infile_prefix
-
 ## Function : Set the merged infile prefix for sample id
 ## Returns  :
-## Arguments: $file_info_href, $sample_id, $merged_infile_prefix
-##          : $file_info_href       => File info hash {REF}
+## Arguments: $file_info_href       => File info hash {REF}
 ##          : $sample_id            => Sample id
 ##          : $merged_infile_prefix => Merged infile prefix
 
@@ -109,19 +103,19 @@ sub set_merged_infile_prefix {
             defined     => 1,
             default     => {},
             strict_type => 1,
-            store       => \$file_info_href
+            store       => \$file_info_href,
         },
         sample_id => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$sample_id
+            store       => \$sample_id,
         },
         merged_infile_prefix => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$merged_infile_prefix
+            store       => \$merged_infile_prefix,
         },
     };
 
@@ -134,12 +128,9 @@ sub set_merged_infile_prefix {
 
 sub set_absolute_path {
 
-## set_absolute_path
-
 ## Function : Find aboslute path for supplied path or croaks and exists if path does not exists
-## Returns  : "$path - absolute path"
-## Arguments: $path, $parameter_name
-##          : $path           => Supplied path to be updated/evaluated
+## Returns  : $path (absolute path)
+## Arguments: $path           => Supplied path to be updated/evaluated
 ##          : $parameter_name => Parameter to be evaluated
 ##          : $log            => Log object to write to if supplied
 
@@ -156,7 +147,7 @@ sub set_absolute_path {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$parameter_name
+            store       => \$parameter_name,
         },
         log => { store => \$log },
     };
@@ -166,29 +157,18 @@ sub set_absolute_path {
     ## For broadcasting later
     my $original_path = $path;
 
-    ## Reformat to aboslute path
+    ## Reformat to absolute path
     $path = abs_path($path);
 
     ## Something went wrong
     if ( not defined $path ) {
 
-        if ( defined $log && $log ) {
-
-            $log->fatal( q{Could not find absolute path for }
-                  . $parameter_name . q{: }
-                  . $original_path
-                  . q{. Please check the supplied path!}
-                  . $NEWLINE );
-            exit 1;
-        }
-        else {
-
-            croak(  q{Could not find absolute path for }
-                  . $parameter_name . q{: }
-                  . $original_path
-                  . q{. Please check the supplied path!}
-                  . $NEWLINE );
-        }
+        my $error_msg =
+            q{Could not find absolute path for }
+          . $parameter_name . q{: }
+          . $original_path
+          . q{. Please check the supplied path!};
+        return $original_path, $error_msg;
     }
     return $path;
 }
