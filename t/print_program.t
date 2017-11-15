@@ -1,23 +1,22 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{ 2014 };
-use warnings qw{ FATAL utf8 };
-use autodie;
-use 5.018;
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
 use Carp;
+use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-
-use FindBin qw{ $Bin };
+use open qw{ :encoding(UTF-8) :std };
 use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
+use FindBin qw{ $Bin };
 use Getopt::Long;
+use Params::Check qw{ check allow last_error };
 use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
+use 5.018;
 
 ## CPANM
+use autodie;
+use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ## MIPs lib/
@@ -70,9 +69,7 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module;
-
-    $perl_module{q{MIP::Script::Utils}} = [qw{ help }];
+    my %perl_module = ( q{MIP::Script::Utils} => [qw{ help }], );
 
   PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
@@ -81,7 +78,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Set::Parameter});
+    my @modules = (q{MIP::Get::Analysis});
 
   MODULE:
     for my $module (@modules) {
@@ -89,10 +86,10 @@ BEGIN {
     }
 }
 
-use MIP::Set::Parameter qw{ set_dynamic_parameter };
+use MIP::Get::Analysis qw{ print_program };
 
-diag(   q{Test set_dynamic_parameter from Set::Parameter.pm v}
-      . $MIP::Set::Parameter::VERSION
+diag(   q{Test print_program from Analysis.pm v}
+      . $MIP::Get::Analysis::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -100,24 +97,25 @@ diag(   q{Test set_dynamic_parameter from Set::Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my %parameter = (
-    test_dynamic => { update_path => q{absolute_path}, },
-    test         => { not_dynamic => q{not_dynamic} },
+my %parameter = ( pbwa_mem => { type => q{program} } );
 
-);
-
-set_dynamic_parameter(
+my @printed_programs = print_program(
     {
-        parameter_href => \%parameter,
-        aggregates_ref => [q{update_path:absolute_path}],
+        parameter_href     => \%parameter,
+        print_program_mode => 1,
+        define_parameters_file =>
+          catfile( $Bin, qw{ data test_data define_parameters.yaml } )
     }
 );
-my ($added_dynamic_parameter) =
-  @{ $parameter{dynamic_parameter}{absolute_path} };
-my $expected_added_parameter = q{test_dynamic};
 
-is( $added_dynamic_parameter, $expected_added_parameter,
-    q{Added dynamic parameter to hash} );
+is( scalar @printed_programs,
+    1, q{Did not print rio block: pbamcalibrationblock} );
+
+my @program_mode = split $SPACE, $printed_programs[0];
+
+is( $program_mode[1], 1, q{Printed correct program mode} );
+
+is( $printed_programs[0], q{pbwa_mem 1}, q{Printed program} );
 
 done_testing();
 

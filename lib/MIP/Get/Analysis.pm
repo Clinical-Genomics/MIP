@@ -80,8 +80,9 @@ sub print_program {
 
 ## Function : Print all supported programs in '-ppm' mode
 ## Returns  :
-## Arguments: $parameter_href     => Parameter hash {REF}
-##          : $print_program_mode => Mode to run modules in
+## Arguments: $parameter_href         => Parameter hash {REF}
+##          : $print_program_mode     => Mode to run modules in
+##          : $define_parameters_file => MIPs define parameters file
 
     my ($arg_href) = @_;
 
@@ -90,6 +91,7 @@ sub print_program {
 
     ## Default(s)
     my $print_program_mode;
+    my $define_parameters_file;
 
     my $tmpl = {
         parameter_href => {
@@ -105,12 +107,20 @@ sub print_program {
             strict_type => 1,
             store       => \$print_program_mode
         },
+        define_parameters_file => {
+            default =>
+              catfile( $Bin, qw{ definitions define_parameters.yaml } ),
+            strict_type => 1,
+            store       => \$define_parameters_file
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::File::Format::Yaml qw{ order_parameter_names };
     use MIP::Set::Parameter qw{ set_dynamic_parameter };
+
+    my @printed_programs;
 
     set_dynamic_parameter(
         {
@@ -122,8 +132,7 @@ sub print_program {
     ## Adds the order of first level keys from yaml file to array
     my @order_parameters = order_parameter_names(
         {
-            file_path =>
-              catfile( $Bin, qw{ definitions define_parameters.yaml } ),
+            file_path => $define_parameters_file,
         }
     );
 
@@ -147,11 +156,14 @@ sub print_program {
                   . $SPACE
                   . $print_program_mode
                   . $SPACE;
+
+                push @printed_programs,
+                  $parameter . $SPACE . $print_program_mode;
             }
         }
     }
     print {*STDOUT} $NEWLINE;
-    return;
+    return @printed_programs;
 }
 
 1;

@@ -18,6 +18,7 @@ bwa_index.t
 bzip2.t
 check_filesystem_objects_existance.t
 check_parameter_hash.t
+check_perl_modules.t
 check_if_processed_by_vt.t
 chanjo_sex.t
 cnvnator_calling.t
@@ -114,6 +115,7 @@ plink_check_sex_chroms.t
 plink_fix_fam_ped_map_freq.t
 plink_sex_check.t
 plink_variant_pruning.t
+print_program.t
 processes_print_wait.t
 processes_add_job_id_dependency_tree.t
 processes_add_pan_job_id_to_sample_id_dependency_tree.t

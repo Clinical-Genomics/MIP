@@ -271,9 +271,9 @@ GetOptions(
     q{riu|replace_iupac=n}        => \$active_parameter{replace_iupac},
     q{ppm|print_program_mode=n}   => \$active_parameter{print_program_mode},
     q{pp|print_program}           => sub {
+        ## Force ppm to be read before function call
         GetOptions( q{ppm|print_program_mode=n} =>
-              \$active_parameter{print_program_mode} )
-          ;    #Force ppm to be read before function call
+              \$active_parameter{print_program_mode} );
         print_program(
             {
                 parameter_href     => \%parameter,
