@@ -324,9 +324,9 @@ sub analysis_plink {
 
     ### Plink variant pruning and creation of unique Ids
 
-    Readonly my $INDEP_WINDOW_SIZE   = 50;
-    Readonly my $INDEP_STEP_SIZE     = 5;
-    Readonly my $INDEP_VIF_THRESHOLD = 2;
+    Readonly my $INDEP_WINDOW_SIZE   => 50;
+    Readonly my $INDEP_STEP_SIZE     => 5;
+    Readonly my $INDEP_VIF_THRESHOLD => 2;
 
     say {$FILEHANDLE} q{## Create pruning set and uniq IDs};
     plink_variant_pruning(
@@ -419,8 +419,8 @@ sub analysis_plink {
 
     $outfile_prefix =
       catfile( $temp_directory, $family_id . $UNDERSCORE . q{data} );
-    Readonly my $CHR_X_NUMBER = 23;
-    Readonly my $CHR_Y_NUMBER = 24;
+    Readonly my $CHR_X_NUMBER => 23;
+    Readonly my $CHR_Y_NUMBER => 24;
 
     plink_check_sex_chroms(
         {
@@ -435,8 +435,8 @@ sub analysis_plink {
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    Readonly my $FEMALE_MAX_F = 0.2;
-    Readonly my $MALE_MIN_F   = 0.75;
+    Readonly my $FEMALE_MAX_F => 0.2;
+    Readonly my $MALE_MIN_F   => 0.75;
 
     ## Get parameters
     my $sex_check_min_f;
