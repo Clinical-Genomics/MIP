@@ -23,6 +23,7 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Script::Utils qw{ help };
 
+use constant N_PROCESSORS => 4;
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
@@ -89,7 +90,7 @@ BEGIN {
 use MIP::Program::Variantcalling::Peddy qw{ peddy };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test peddy from Peddy v}
+diag(   q{Test peddy from Peddy.pm v}
       . $MIP::Program::Variantcalling::Peddy::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -143,7 +144,7 @@ my %required_argument = (
 
 my %specific_argument = (
     processor_number => {
-        input           => 4,
+        input           => N_PROCESSORS,
         expected_output => q{--procs 4},
     },
     plot => {

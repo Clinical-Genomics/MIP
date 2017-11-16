@@ -96,7 +96,7 @@ sub peddy {
         },
         processor_number => {
             default     => 4,
-            allow       => qr/^\d+$/,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
             store       => \$processor_number
         },
