@@ -342,15 +342,20 @@ sub install_bioconda_packages {
 
     ## Unset variables
     say {$FILEHANDLE} q{## Unset variables};
-    my @program_path_aliases = qw{
-      BWAKIT_PATH     SNPEFF_PATH
-      SNPSIFT_PATH    MANTA_PATH
-      PICARD_PATH
-    };
-  PROGRAM_PATH_ALIAS:
+    my %program_path_aliases = (
+        bwakit  => q{BWAKIT_PATH},
+        snpeff  => q{SNPEFF_PATH},
+        snpsift => q{SNPSIFT_PATH},
+        manta   => q{MANTA_PATH},
+        picard  => q{PICARD_PATH},
+    );
 
-    foreach my $program_path_alias (@program_path_aliases) {
-        say {$FILEHANDLE} q{unset} . $SPACE . $program_path_alias;
+  PROGRAM:
+    foreach my $program ( keys %program_path_aliases ) {
+        # Check if the program has been set to be installed via shell and
+        # thus has been removed from the bioconda_packages hash
+        next PROGRAM if ( not $bioconda_packages_href->{$program} );
+        say {$FILEHANDLE} q{unset} . $SPACE . $program_path_aliases{$program};
     }
     say {$FILEHANDLE} $NEWLINE;
 
