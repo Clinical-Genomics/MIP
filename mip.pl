@@ -59,7 +59,7 @@ use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter
-  qw{ set_config_to_active_parameters set_dynamic_parameter set_parameter_reference_dir_path set_parameter_to_broadcast };
+  qw{ set_config_to_active_parameters set_default_config_dynamic_parameters set_dynamic_parameter set_parameter_reference_dir_path set_parameter_to_broadcast };
 use MIP::Update::Contigs qw{ update_contigs_for_run };
 use MIP::Update::Parameters
   qw{ update_reference_parameters update_vcfparser_outfile_counter };
@@ -655,7 +655,7 @@ if ( exists $active_parameter{config_file}
     my @config_dynamic_parameters = qw{ analysis_constant_path outaligner_dir };
 
     ## Replace config parameter with cmd info for config dynamic parameter
-    replace_config_parameters_with_cmd_info(
+    set_default_config_dynamic_parameters(
         {
             parameter_href        => \%parameter,
             active_parameter_href => \%active_parameter,
@@ -14586,61 +14586,6 @@ sub size_sort_select_file_contigs {
         }
     }
     return @sorted_contigs;
-}
-
-sub replace_config_parameters_with_cmd_info {
-
-## Function : Replace config parameter with cmd info for config dynamic parameter
-## Returns  :
-## Arguments: $parameter_href        => Parameter hash {REF}
-##          : $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $parameter_names_ref   => MIP activate parameter names {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $parameter_names_ref;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        parameter_names_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$parameter_names_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    foreach my $parameter_name ( @{$parameter_names_ref} ) {
-
-        if ( exists $parameter_href->{$parameter_name}{default}
-            && not defined $active_parameter_href->{$parameter_name} )
-        {
-
-            ## Transfer to active parameter
-            $active_parameter_href->{$parameter_name} =
-              $parameter_href->{$parameter_name}{default};
-        }
-    }
-    return;
 }
 
 sub check_entry_hash_of_array {

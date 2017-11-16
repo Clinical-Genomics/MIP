@@ -153,6 +153,7 @@ samtools_mpileup.t
 samtools_stats.t
 samtools_view.t
 set_config_to_active_parameters.t
+set_default_config_dynamic_parameters.t
 set_file_suffix.t
 set_dynamic_parameter.t
 shell_build_shebang.t

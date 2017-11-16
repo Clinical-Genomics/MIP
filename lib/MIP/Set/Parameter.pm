@@ -23,7 +23,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ set_config_to_active_parameters set_dynamic_parameter set_parameter_reference_dir_path set_parameter_to_broadcast };
+      qw{ set_config_to_active_parameters set_default_config_dynamic_parameters set_dynamic_parameter set_parameter_reference_dir_path set_parameter_to_broadcast };
 }
 
 ## Constants
@@ -86,6 +86,61 @@ sub set_config_to_active_parameters {
         ## Add to active_parameter
         $active_parameter_href->{$parmeter_name} =
           $config_parameter_href->{$parmeter_name};
+    }
+    return;
+}
+
+sub set_default_config_dynamic_parameters {
+
+## Function : Set default for config dynamic parameter using default definitions
+## Returns  :
+## Arguments: $parameter_href        => Parameter hash {REF}
+##          : $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $parameter_names_ref   => MIP activate parameter names {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $active_parameter_href;
+    my $parameter_names_ref;
+
+    my $tmpl = {
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
+        active_parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$active_parameter_href,
+        },
+        parameter_names_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => [],
+            strict_type => 1,
+            store       => \$parameter_names_ref
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    foreach my $parameter_name ( @{$parameter_names_ref} ) {
+
+        if ( exists $parameter_href->{$parameter_name}{default}
+            and not defined $active_parameter_href->{$parameter_name} )
+        {
+
+            ## Transfer to active parameter
+            $active_parameter_href->{$parameter_name} =
+              $parameter_href->{$parameter_name}{default};
+        }
     }
     return;
 }
