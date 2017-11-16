@@ -1,16 +1,20 @@
 package MIP::File::Format::Pedigree;
 
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Basename qw{ dirname };
+use File::Path qw{ make_path };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error};
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
-use Carp;
+
+## CPANM
 use autodie;
-use Params::Check qw{ check allow last_error};
 use Readonly;
-use English qw{ -no_match_vars };
 
 ## MIPs lib/
 use MIP::Gnu::Coreutils qw{ gnu_echo };
@@ -159,6 +163,9 @@ sub create_fam_file {
 
         # Create anonymous filehandle
         my $FILEHANDLE_SYS = IO::Handle->new();
+
+        ## Create dir if it does not exists
+        make_path( dirname($fam_file_path) );
 
         open $FILEHANDLE_SYS, q{>}, $fam_file_path
           or $log->logdie(qq{Can't open $fam_file_path: $ERRNO });

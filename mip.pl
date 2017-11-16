@@ -704,7 +704,9 @@ $parameter{dynamic_parameter}{consensus_analysis_type} =
 ## Parse pedigree file
 ## Reads family_id_pedigree file in PLINK|YAML format. Checks for pedigree data for allowed entries and correct format. Add data to sample_info depending on user info.
 # Meta data in YAML format
-if ( $active_parameter{pedigree_file} =~ /[.]yaml$/ ) {
+if ( defined $active_parameter{pedigree_file}
+    && $active_parameter{pedigree_file} =~ /[.]yaml$/ )
+{
 
     ## Loads a YAML file into an arbitrary hash and returns it. Load parameters from previous run from sample_info_file
     my %pedigree =
@@ -932,7 +934,7 @@ detect_founders(
 );
 
 ## Check email adress format
-if ( exists( $active_parameter{email} ) ) {    #Allow no malformed email adress
+if ( defined $active_parameter{email} ) {    #Allow no malformed email adress
 
     check_email_address( { email_ref => \$active_parameter{email}, } );
 }
@@ -16077,7 +16079,7 @@ sub add_to_sample_info {
       ( "pbwa_mem", "psambamba_depth", "markduplicates_sambamba_markdup" );
     foreach my $program (@sambamba_programs) {
 
-        if (   ( exists $active_parameter_href->{$program} )
+        if (   ( defined $active_parameter_href->{$program} )
             && ( $active_parameter_href->{$program} == 1 ) )
         {
 

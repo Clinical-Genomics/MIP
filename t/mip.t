@@ -30,16 +30,17 @@ use MIP::Script::Utils qw(help);
 our $USAGE = build_usage( {} );
 
 my $verbose = 1;
-my $VERSION = '0.0.1';
+our $VERSION = '0.0.1';
 
 my $config_file = catfile( dirname($Bin), qw(templates mip_config.yaml) );
 
 ###User Options
 GetOptions(
     'c|config_file:s' => \$config_file,
-    'h|help'    => sub { print STDOUT $USAGE, "\n"; exit; },  #Display help text
+    'h|help' => sub { print {*STDOUT} $USAGE, "\n"; exit; },  #Display help text
     'v|version' => sub {
-        print STDOUT "\n" . basename($PROGRAM_NAME) . q{ } . $VERSION, "\n\n";
+        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{ } . $VERSION,
+          "\n\n";
         exit;
     },    #Display version number
     'vb|verbose' => $verbose,
@@ -66,19 +67,19 @@ my $cmds_ref = [
     catfile(qw(data 643594-miptest test_data ADM1059A2 fastq=ADM1059A2)),
     '-ifd',
     catfile(qw(data 643594-miptest test_data ADM1059A3 fastq=ADM1059A3)),
-    qw(-rio 1),
-    qw(-dra 2),
-    qw(-pvep 0),
-    qw(-psvv 0),
+    qw(--rio 1),
+    qw(--dra 2),
+    qw(--psvv 0),
 ];
 
 my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
   run( command => $cmds_ref, verbose => $verbose );
 ok( $success, 'Executed mip' );
 
-my $qc_pedigree = catfile( getcwd(),
-    qw(data 643594-miptest analysis 643594-miptest qc_pedigree.yaml) );
-ok( -f $qc_pedigree, 'Checking for qc_pedigree.yaml' );
+my $qc_sample_info_file = catfile( getcwd(),
+    qw{ data 643594-miptest analysis 643594-miptest_qc_sample_info.yaml} );
+ok( -f $qc_sample_info_file,
+    q{Checking for 643594-miptest_qc_sample_info.yaml} );
 
 ##Clean-up
 remove_tree( catfile( getcwd(), qw(data 643594-miptest analysis) ) );
