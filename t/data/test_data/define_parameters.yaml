@@ -7,17 +7,17 @@ mip:
   data_type: SCALAR
   default: 1
   type: mip
-family_id:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  type: mip
 # This is the root path on the cluster
 cluster_constant_path:
   associated_program:
    - mip
   data_type: SCALAR
   type: path
+family_id:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  type: mip
 ### Project specific
 email_types:
   associated_program:
