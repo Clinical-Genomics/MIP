@@ -105,14 +105,6 @@ $parameter{bioconda}{gatk}         = q{3.8};
 $parameter{bioconda}{gcc}   = q{4.8.5};
 $parameter{bioconda}{cmake} = q{3.3.1};
 
-## Bioconda pathes
-# For correct softlinking in share and bin in conda env
-$parameter{bioconda_patches}{bioconda_bwakit_patch}  = q{-0};
-$parameter{bioconda_patches}{bioconda_snpeff_patch}  = q{r-0};
-$parameter{bioconda_patches}{bioconda_snpsift_patch} = q{r-0};
-$parameter{bioconda_patches}{bioconda_picard_patch}  = q{-1};
-$parameter{bioconda_patches}{bioconda_manta_patch}   = q{-0};
-
 ## PIP
 $parameter{pip}{genmod}            = q{3.7.2};
 $parameter{pip}{variant_integrity} = q{0.0.4};
@@ -146,7 +138,7 @@ $parameter{shell}{snpeff}{snpeff_genome_versions} =
   [qw{ GRCh37.75 GRCh38.86 }];
 $parameter{reference_genome_versions} = [qw{ GRCh37 hg38 }];
 
-our $VERSION = q{1.2.21};
+our $VERSION = q{1.2.22};
 
 GetOptions(
     q{see|bash_set_errexit}    => \$parameter{bash_set_errexit},
@@ -169,7 +161,7 @@ GetOptions(
     q{vt|vt:s}              => \$parameter{shell}{vt}{version},
     q{plk|plink2:s}         => \$parameter{shell}{plink2}{version},
     q{snpg|snpeff_genome_versions:s{,}} => sub {
-        @{ $parameter{shell}{snpeff}{snpeff_genome_versions} } = 
+        @{ $parameter{shell}{snpeff}{snpeff_genome_versions} } =
           split /,/xms, $ARG[1];
     },
     q{vep|varianteffectpredictor:i} => \$parameter{shell}{vep}{version},
@@ -362,7 +354,6 @@ setup_conda_env(
 install_bioconda_packages(
     {
         bioconda_packages_href => $parameter{bioconda},
-        bioconda_patches_href  => $parameter{bioconda_patches},
         conda_env              => $parameter{conda_environment},
         conda_env_path         => $parameter{conda_prefix_path},
         snpeff_genome_versions_ref =>
