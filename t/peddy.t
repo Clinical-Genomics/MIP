@@ -23,7 +23,7 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Script::Utils qw{ help };
 
-use constant N_PROCESSORS => 4;
+
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
@@ -33,6 +33,7 @@ our $VERSION = '1.0.0';
 Readonly my $SPACE   => q{ };
 Readonly my $NEWLINE => qq{\n};
 Readonly my $COMMA   => q{,};
+Readonly my $N_PROCESSORS => 4;
 
 ### User Options
 GetOptions(
@@ -144,8 +145,8 @@ my %required_argument = (
 
 my %specific_argument = (
     processor_number => {
-        input           => N_PROCESSORS,
-        expected_output => q{--procs 4},
+        input           => $N_PROCESSORS,
+        expected_output => q{--procs} . $N_PROCESSORS,
     },
     plot => {
         input           => 1,
