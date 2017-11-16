@@ -149,6 +149,7 @@ samtools_index.t
 samtools_mpileup.t
 samtools_stats.t
 samtools_view.t
+set_config_to_active_parameters.t
 set_file_suffix.t
 set_dynamic_parameter.t
 shell_build_shebang.t
@@ -161,6 +162,7 @@ slurm_reformat_sacct_output.t
 tar.t
 tiddit.t
 unzip.t
+update_to_absolute_path.t
 update_prioritize_flag.t
 update_program_mode.t
 variant_effect_predictor.t
