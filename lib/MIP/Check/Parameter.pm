@@ -1,20 +1,18 @@
 package MIP::Check::Parameter;
 
+use Carp;
+use charnames qw{ :full :short };
+use File::Spec::Functions qw{ catfile };
+use FindBin qw{ $Bin };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
-# Allow unicode characters in this script
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
-use Carp;
-use autodie;
-use Params::Check qw{ check allow last_error };
-use File::Spec::Functions qw{ catfile };
-use FindBin qw{ $Bin };
-
 ## CPANM
+use autodie;
 use Readonly;
 use List::MoreUtils qw { any };
 
@@ -28,12 +26,163 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ check_parameter_hash check_allowed_array_values check_allowed_temp_directory};
+      qw{ check_allowed_array_values check_allowed_temp_directory check_cmd_config_vs_definition_file check_parameter_hash };
 }
 
 ##Constants
 Readonly my $SINGLE_QUOTE => q{'};
-Readonly my $NEWLINE => qq{\n};
+Readonly my $NEWLINE      => qq{\n};
+
+sub check_allowed_array_values {
+
+## Function : Check that the array values are allowed
+## Returns  :
+## Arguments: $allowed_values_ref, $values_ref
+##          : $allowed_values_ref => Allowed values for parameter {REF}
+##          : $values_ref         => Values for parameter {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $allowed_values_ref;
+    my $values_ref;
+
+    my $tmpl = {
+        allowed_values_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => [],
+            strict_type => 1,
+            store       => \$allowed_values_ref
+        },
+        values_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => [],
+            strict_type => 1,
+            store       => \$values_ref
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %is_allowed;
+
+    # Remake allowed values into keys in is_allowed hash
+    map { $is_allowed{$_} = undef } @{$allowed_values_ref};
+
+  VALUES:
+    foreach my $value ( @{$values_ref} ) {
+
+        # Test if value is allowed
+        if ( not exists $is_allowed{$value} ) {
+
+            return 0;
+        }
+    }
+
+    # All ok
+    return 1;
+}
+
+sub check_allowed_temp_directory {
+
+## Function : Check that the temp directory value is allowed
+## Returns  :
+## Arguments: $temp_directory
+##          : $temp_directory => Temp directory
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $temp_directory;
+
+    my $tmpl = {
+        temp_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$temp_directory
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %is_not_allowed = (
+        q{/scratch}  => undef,
+        q{/scratch/} => undef,
+    );
+
+    # Test if value is allowed
+    if ( exists $is_not_allowed{$temp_directory} ) {
+
+        return 0;
+    }
+
+    # All ok
+    return 1;
+}
+
+sub check_cmd_config_vs_definition_file {
+
+## Function : Compare keys from config and cmd with definitions file
+## Returns  :
+## Arguments: $parameter_href       => Parameter hash {REF}
+##          : $active_parameter_href => Active parameters for this analysis hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$active_parameter_href,
+        },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @allowed_unique_keys =
+      ( q{vcfparser_outfile_count}, $active_parameter_href->{family_id} );
+    my @unique;
+
+  ACTIVE_PARAMETER:
+    foreach my $key ( keys %{$active_parameter_href} ) {
+
+        ## Parameters from definitions file
+        if ( not exists $parameter_href->{$key} ) {
+
+            push @unique, $key;
+        }
+    }
+  UNIQUE_KEYS:
+    foreach my $unique_key (@unique) {
+
+        ## Do not print if allowed_unique_keys that have been created dynamically from previous runs
+        if ( not any { $_ eq $unique_key } @allowed_unique_keys ) {
+
+            my $error_msg =
+                q{Found illegal key: }
+              . $unique_key
+              . q{ in config file or command line that is not defined in define_parameters.yaml};
+            return $error_msg;
+        }
+    }
+    return;
+}
 
 sub check_parameter_hash {
 
@@ -169,7 +318,9 @@ sub _check_parameter_mandatory_keys_exits {
                   . q{' for parameter: '}
                   . $parameter
                   . q{' in file: '}
-                  . $file_path . $SINGLE_QUOTE . $NEWLINE;
+                  . $file_path
+                  . $SINGLE_QUOTE
+                  . $NEWLINE;
                 return $error_msg;
             }
         }
@@ -325,9 +476,13 @@ sub _check_parameter_values {
               . q{' in key: '}
               . $key
               . q{' in file: '}
-              . $file_path . $SINGLE_QUOTE . $NEWLINE
+              . $file_path
+              . $SINGLE_QUOTE
+              . $NEWLINE
               . q{Allowed entries: '}
-              . join( q{', '}, @{ $key_href->{$key}{values} } ) . $SINGLE_QUOTE . $NEWLINE;
+              . join( q{', '}, @{ $key_href->{$key}{values} } )
+              . $SINGLE_QUOTE
+              . $NEWLINE;
             return $error_msg;
         }
     }
@@ -402,7 +557,9 @@ sub _check_parameter_data_type {
               . q{' in key: '}
               . $key
               . q{' in file: '}
-              . $file_path . $SINGLE_QUOTE . $NEWLINE;
+              . $file_path
+              . $SINGLE_QUOTE
+              . $NEWLINE;
             return $error_msg;
         }
     }
@@ -417,100 +574,12 @@ sub _check_parameter_data_type {
           . q{' in key: '}
           . $key
           . q{' in file: '}
-          . $file_path . $SINGLE_QUOTE . $NEWLINE;
+          . $file_path
+          . $SINGLE_QUOTE
+          . $NEWLINE;
         return $error_msg;
     }
     return;
-}
-
-sub check_allowed_array_values {
-
-## Function : Check that the array values are allowed
-## Returns  :
-## Arguments: $allowed_values_ref, $values_ref
-##          : $allowed_values_ref => Allowed values for parameter {REF}
-##          : $values_ref         => Values for parameter {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $allowed_values_ref;
-    my $values_ref;
-
-    my $tmpl = {
-        allowed_values_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$allowed_values_ref
-        },
-        values_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$values_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my %is_allowed;
-
-    # Remake allowed values into keys in is_allowed hash
-    map { $is_allowed{$_} = undef } @{$allowed_values_ref};
-
-  VALUES:
-    foreach my $value ( @{$values_ref} ) {
-
-        # Test if value is allowed
-        if ( not exists $is_allowed{$value} ) {
-
-            return 0;
-        }
-    }
-
-    # All ok
-    return 1;
-}
-
-sub check_allowed_temp_directory {
-
-## Function : Check that the temp directory value is allowed
-## Returns  :
-## Arguments: $temp_directory
-##          : $temp_directory => Temp directory
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $temp_directory;
-
-    my $tmpl = {
-        temp_directory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$temp_directory
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my %is_not_allowed = (
-        q{/scratch}  => undef,
-        q{/scratch/} => undef,
-    );
-
-    # Test if value is allowed
-    if ( exists $is_not_allowed{$temp_directory} ) {
-
-        return 0;
-    }
-
-    # All ok
-    return 1;
 }
 
 1;

@@ -22,6 +22,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Script::Utils qw{ help };
+use MIP::File::Format::Yaml qw{ load_yaml };
 
 our $USAGE = build_usage( {} );
 
@@ -78,7 +79,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Get::Analysis});
+    my @modules = (q{MIP::Check::Parameter});
 
   MODULE:
     for my $module (@modules) {
@@ -86,10 +87,10 @@ BEGIN {
     }
 }
 
-use MIP::Get::Analysis qw{ print_program };
+use MIP::Check::Parameter qw{ check_cmd_config_vs_definition_file };
 
-diag(   q{Test print_program from Analysis.pm v}
-      . $MIP::Get::Analysis::VERSION
+diag(   q{Test check_cmd_config_vs_definition_file from Check::Parameter.pm v}
+      . $MIP::Check::Parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -97,25 +98,40 @@ diag(   q{Test print_program from Analysis.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my %parameter = ( pbwa_mem => { type => q{program} } );
-
-my @printed_programs = print_program(
+my %parameter = load_yaml(
     {
-        parameter_href     => \%parameter,
-        print_program_mode => 1,
-        define_parameters_file =>
+        yaml_file =>
           catfile( $Bin, qw{ data test_data define_parameters.yaml } ),
     }
 );
 
-is( scalar @printed_programs,
-    1, q{Did not print rio block: pbamcalibrationblock} );
+my %active_parameter = (
+    pbwa_mem                => 1,
+    vcfparser_outfile_count => 1,
+    family_id               => q{family_1},    #Add mandatory key default
+    family_1                => 1,
+);
 
-my @program_mode = split $SPACE, $printed_programs[0];
+my $error_msg = check_cmd_config_vs_definition_file(
+    {
+        active_parameter_href => \%active_parameter,
+        parameter_href        => \%parameter,
+    }
+);
 
-is( $program_mode[1], 1, q{Printed correct program mode} );
+is( $error_msg, undef, q{No unique parameters} );
 
-is( $printed_programs[0], q{pbwa_mem 1}, q{Printed program} );
+## Add not unique key
+$active_parameter{unique_key} = 1;
+
+$error_msg = check_cmd_config_vs_definition_file(
+    {
+        active_parameter_href => \%active_parameter,
+        parameter_href        => \%parameter,
+    }
+);
+
+isnt( $error_msg, undef, q{Unique parameters} );
 
 done_testing();
 

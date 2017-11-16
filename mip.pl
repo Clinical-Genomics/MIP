@@ -45,7 +45,7 @@ use lib catdir( $Bin, q{lib} );
 use MIP::Check::Cluster qw{ check_max_core_number };
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Check::Parameter
-  qw{ check_parameter_hash check_allowed_temp_directory };
+  qw{ check_allowed_temp_directory check_cmd_config_vs_definition_file check_parameter_hash };
 use MIP::Check::Path qw{ check_target_bed_file_exist check_parameter_files };
 use MIP::Check::Reference
   qw{ check_bwa_prerequisites check_capture_file_prerequisites check_file_endings_to_build check_human_genome_file_endings check_human_genome_prerequisites check_parameter_metafiles check_references_for_vt };
@@ -16200,66 +16200,6 @@ sub add_to_sample_info {
         $sample_info_href->{last_log_file_path} =
           $active_parameter_href->{log_file};
     }
-}
-
-sub check_cmd_config_vs_definition_file {
-
-## Function : Compare keys from config and cmd with definitions file
-## Returns  :
-## Arguments: $parameter_href       => Parameter hash {REF}
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $parameter_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my @allowed_unique_keys =
-      ( q{vcfparser_outfile_count}, $active_parameter_href->{family_id} );
-    my @unique;
-
-  ACTIVE_PARAMETER:
-    foreach my $key ( keys %{$active_parameter_href} ) {
-
-        ## Parameters from definitions file
-        if ( not exists $parameter_href->{$key} ) {
-
-            push @unique, $key;
-        }
-    }
-  UNIQUE_KEYS:
-    foreach my $unique_key (@unique) {
-
-        ## Do not print if allowed_unique_keys that have been created dynamically from previous runs
-        if ( not any { $_ eq $unique_key } @allowed_unique_keys ) {
-
-            my $error_msg =
-                q{Found illegal key: }
-              . $unique_key
-              . q{ in config file or command line that is not defined in define_parameters.yaml};
-            return $error_msg;
-        }
-    }
-    return;
 }
 
 sub check_vep_directories {
