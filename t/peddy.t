@@ -146,7 +146,7 @@ my %required_argument = (
 my %specific_argument = (
     processor_number => {
         input           => $N_PROCESSORS,
-        expected_output => q{--procs} . $N_PROCESSORS,
+        expected_output => q{--procs} .$SPACE . $N_PROCESSORS,
     },
     plot => {
         input           => 1,
