@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_cnvnator };
@@ -314,6 +314,13 @@ sub install_cnvnator {
         );
         print {$FILEHANDLE} $NEWLINE;
     }
+    say {$FILEHANDLE} $NEWLINE;
+
+    ## Linking
+    say {$FILEHANDLE} q{## Linking};
+    say {$FILEHANDLE} q{echo 'LD_LIBRARY_PATH=} . catdir(
+      $conda_prefix_path, qw{ lib :$LD_LIBRARY_PATH } ) . q{' >> ~/.bashrc};
+    say {$FILEHANDLE} q{echo 'export LD_LIBRARY_PATH' >> ~/.bashrc};
     say {$FILEHANDLE} $NEWLINE;
 
     ## Go back to starting directory

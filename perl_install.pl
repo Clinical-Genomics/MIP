@@ -62,7 +62,7 @@ $array_parameter{perl_modules} = [
     q{File::Copy::Recursive},     # VEP
 ];
 
-our $VERSION = q{1.0.1};
+our $VERSION = q{1.0.2};
 
 ###User Options
 GetOptions(
@@ -156,9 +156,12 @@ elsif ( $PERL_VERSION ge q{v} . $parameter{perl_version}
       . q{current perl version: }
       . $PERL_VERSION;
     say STDERR q{## Re-run the script with }
-      . q{'--perl-force-install' flag to force perl installation};
+      . q{'--perl_force_install' flag to force perl installation};
 
     say {$FILEHANDLE} q{## Perl version requirement met};
+
+    # Change the perl version string if a newer verseion is found
+    $parameter{perl_version} = substr $PERL_VERSION, 1;
 }
 else {
     say STDERR q{## Writing perl installation recipe};
@@ -402,6 +405,10 @@ sub install_cpanm {
     say {$FILEHANDLE} q{PERL5LIB=}
       . catdir( $perl_install_path, qw{ lib perl5} ) . qq{\n};
 
+    ## source .bashrc and .bash_profile
+    say {$FILEHANDLE} q{echo 'source ~/.bash_profile'} . qq{\n};
+    say {$FILEHANDLE} q{echo 'source ~/.bashrc'} . qq{\n};
+
     return;
 }
 
@@ -437,7 +444,7 @@ sub install_cpanm_modules {
     }
 
     ## Check aginst what's already installed
-    my @modules_to_install =
+    if my @modules_to_install =
       check_perl_modules( { modules_ref => \@perl_modules } );
 
     if (@modules_to_install) {

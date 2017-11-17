@@ -80,7 +80,7 @@ $parameter{conda_packages}{pip}    = undef;
 ## Bioconda channel
 $parameter{bioconda}{bwa}          = q{0.7.15};
 $parameter{bioconda}{bwakit}       = q{0.7.12};
-$parameter{bioconda}{fastqc}       = q{0.11.4};
+$parameter{bioconda}{fastqc}       = q{0.11.5};
 $parameter{bioconda}{cramtools}    = q{3.0.b47};
 $parameter{bioconda}{samtools}     = q{1.4.1};
 $parameter{bioconda}{bcftools}     = q{1.4.1};
@@ -99,7 +99,7 @@ $parameter{bioconda}{peddy}        = q{0.2.9};
 $parameter{bioconda}{plink2}       = q{1.90b3.35};
 $parameter{bioconda}{vcfanno}      = q{0.1.0};
 $parameter{bioconda}{q{rtg-tools}} = q{3.8.4};
-$parameter{bioconda}{q{gatk}}      = q{3.8};
+$parameter{bioconda}{gatk}         = q{3.8};
 
 # Required for CNVnator
 $parameter{bioconda}{gcc}   = q{4.8.5};
@@ -146,7 +146,7 @@ $parameter{shell}{snpeff}{snpeff_genome_versions} =
   [qw{ GRCh37.75 GRCh38.86 }];
 $parameter{reference_genome_versions} = [qw{ GRCh37 hg38 }];
 
-our $VERSION = q{1.2.19};
+our $VERSION = q{1.2.21};
 
 GetOptions(
     q{see|bash_set_errexit}    => \$parameter{bash_set_errexit},
@@ -203,6 +203,7 @@ GetOptions(
         exit;
     },
     q{nup|noupdate} => \$parameter{noupdate},
+    q{skip|skip_program:s} => \@{ $parameter{skip_program} },
     q{l|log:s}      => \$parameter{log_file},
     q{q|quiet}      => \$parameter{quiet},
     q{h|help}       => sub {
@@ -316,6 +317,14 @@ create_bash_file(
 );
 
 $log->info( q{Writing install instructions to:} . $SPACE . $file_name_path );
+
+## Remove selected programs from installation
+if ( $parameter{skip_program} ) {
+    foreach my $skip ( @{ $parameter{skip_program} } ) {
+        delete $parameter{shell}{$skip};
+        delete $parameter{bioconda}{$skip};
+    }
+}
 
 ## Check whether the user wants to do a shell installation of some or all overlapping bioconda packages
 my @shell_programs_to_install = get_programs_for_shell_installation(
@@ -489,6 +498,7 @@ sub build_usage {
     -rd/--reference_genome_versions Reference versions to download ((Default: ["GRCh37", "hg38"]))
     -ppd/--print_parameters_default Print the parameter defaults
     -nup/--noupdate                 Do not update already installed programs (Supply flag to enable)
+    -skip/--skip_program            Exclude a default program from installation
     -l/--log                        File for writing log messages (Default: "mip_install_TIMESTAMP.log")
     -q/--quiet                      Quiet (Supply flag to enable; no output from individual program that has a quiet flag)
     -h/--help                       Display this help message
