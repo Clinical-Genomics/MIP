@@ -444,7 +444,7 @@ sub install_cpanm_modules {
     }
 
     ## Check aginst what's already installed
-    if my @modules_to_install =
+    my @modules_to_install =
       check_perl_modules( { modules_ref => \@perl_modules } );
 
     if (@modules_to_install) {
