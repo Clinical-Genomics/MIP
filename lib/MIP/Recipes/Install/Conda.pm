@@ -449,7 +449,8 @@ sub finish_bioconda_package_install {
 
     ## Custom BWA
     say {$FILEHANDLE} q{## Custom BWA solutions};
-    my $infile_path  = catdir( q/${BWAKIT_PATH}/, q{resource-human-HLA} );
+    ## Double quote to avoid expansion of shell varaible
+    my $infile_path  = catdir( q/"${BWAKIT_PATH}"/, q{resource-human-HLA} );
     my $outfile_path = catdir( $conda_env_path,     q{bin} );
     gnu_cp(
         {
@@ -719,7 +720,8 @@ sub _create_target_link_paths {
             }
         );
         print {$FILEHANDLE} $BACKTICK . $NEWLINE;
-        my $program_dir_path = q/${/ . $program_path_aliases{$program} . q/}/;
+        ## Double quotes to avoid expansion in shell
+        my $program_dir_path = q/"${/ . $program_path_aliases{$program} . q/}"/;
 
       BINARY:
         foreach my $binary ( @{ $binaries{$program} } ) {
