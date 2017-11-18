@@ -451,6 +451,7 @@ sub finish_bioconda_package_install {
     ## Check if bwakit has been removed from bioconda installation hash
     if ( $bioconda_packages_href->{bwakit} ) {
         say {$FILEHANDLE} q{## Custom BWA solutions};
+        ## Double quote to avoid expansion of shell variable
         my $infile_path  = catdir( q/"${BWAKIT_PATH}"/, q{resource-human-HLA} );
         my $outfile_path = catdir( $conda_env_path,     q{bin} );
         gnu_cp(
@@ -729,7 +730,8 @@ sub _create_target_link_paths {
             }
         );
         print {$FILEHANDLE} $BACKTICK . $NEWLINE;
-        my $program_dir_path = q/${/ . $program_path_aliases{$program} . q/}/;
+        ## Double quotes to avoid expansion in shell
+        my $program_dir_path = q/"${/ . $program_path_aliases{$program} . q/}"/;
 
       BINARY:
         foreach my $binary ( @{ $binaries{$program} } ) {
