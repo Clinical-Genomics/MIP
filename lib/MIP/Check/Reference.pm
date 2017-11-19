@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -232,7 +232,7 @@ sub check_if_processed_by_vt {
         $regexp .= q?if($_=~/#CHROM/) {last}'?;
 
         ## Detect if vt program has processed reference
-        my $ret = `less $reference_file_path | $regexp`;
+        my $ret = `bcftools view $reference_file_path | $regexp`;
 
         ## No trace of vt processing found
         if ( not $ret ) {
