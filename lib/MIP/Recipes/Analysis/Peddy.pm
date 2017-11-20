@@ -131,7 +131,7 @@ sub analysis_peddy {
             store       => \$outaligner_dir,
         },
         temp_directory => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
+            default     => $arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
             store       => \$temp_directory,
         },
@@ -254,6 +254,7 @@ sub analysis_peddy {
 
     my $infile_path = catfile( $infamily_directory,
         $infile_prefix . $infile_suffix . $ASTERISK );
+
     migrate_file(
         {
             FILEHANDLE   => $FILEHANDLE,
