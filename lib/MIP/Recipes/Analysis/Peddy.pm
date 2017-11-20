@@ -197,7 +197,7 @@ sub analysis_peddy {
             call_type                       => $call_type,
             core_number                     => $core_number,
             process_time                    => $time,
-            source_environment_commands_ref => [],
+            source_environment_commands_ref => [], # Peddy fails if sourcing conda env on node - this makes sure that does not happen
         }
     );
 
@@ -211,16 +211,17 @@ sub analysis_peddy {
     #To enable submission to &sample_info_qc later
     my $stdout_file = $program_info_file . $DOT . q{stdout.txt};
 
-    ## Paths
     my $outfamily_file_directory =
       catfile( $active_parameter_href->{outdata_dir}, $family_id );
-    my $outfile_path_prefix = catfile( $outfamily_directory, $family_id );
-
+    
     ## Files
     my $infile_tag =
       $file_info_href->{$family_id}{pgatk_combinevariantcallsets}{file_tag};
     my $infile_prefix = $family_id . $infile_tag . $call_type;
+
+    ## Paths
     my $file_path_prefix = catfile( $temp_directory, $infile_prefix );
+    my $outfile_path_prefix = catfile( $outfamily_directory, $family_id );
 
     ### Assign suffix
     ## Return the current infile vcf compression suffix for this jobid chain_vcf_data
