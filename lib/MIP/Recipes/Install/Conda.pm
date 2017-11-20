@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.0.5;
+    our $VERSION = 1.0.7;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ setup_conda_env install_bioconda_packages };
@@ -334,7 +334,7 @@ sub install_bioconda_packages {
     }
     print {$FILEHANDLE} $NEWLINE;
 
-    ## Custom solutions for BWA, SnpEff and Manta
+    ## Custom solutions for BWA, SnpEff, Manta and GATK
     ## Copying files, downloading necessary databases and make files executable
     finish_bioconda_package_install(
         {
@@ -354,7 +354,7 @@ sub install_bioconda_packages {
 
 sub finish_bioconda_package_install {
 
-## Function  : Custom solutions to finish the install of BWA, SnpEff and Manta
+## Function  : Custom solutions to finish the install of BWA, SnpEff, Manta and GATK
 ## Returns   :
 ## Arguments : $bioconda_packages_href     => Hash with bioconda packages {REF}
 ##           : $bioconda_patches_href      => Hash with package patches {REF}
@@ -446,28 +446,32 @@ sub finish_bioconda_package_install {
     }
 
     ## Custom BWA
-    say {$FILEHANDLE} q{## Custom BWA solutions};
-    my $infile_path = catdir(
-        $conda_env_path,
-        q{share},
-        q{bwakit-}
-          . $bioconda_packages_href->{bwakit}
-          . $bioconda_patches_href->{bioconda_bwakit_patch},
-        q{resource-human-HLA}
-    );
-    my $outfile_path = catdir( $conda_env_path, q{bin} );
-    gnu_cp(
-        {
-            FILEHANDLE   => $FILEHANDLE,
-            recursive    => 1,
-            force        => 1,
-            infile_path  => $infile_path,
-            outfile_path => $outfile_path,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
+    ## Check if bwakit has been removed from bioconda installation hash
+    if ( $bioconda_packages_href->{bwakit} ) {
+        say {$FILEHANDLE} q{## Custom BWA solutions};
+        my $infile_path = catdir(
+            $conda_env_path,
+            q{share},
+            q{bwakit-}
+              . $bioconda_packages_href->{bwakit}
+              . $bioconda_patches_href->{bioconda_bwakit_patch},
+            q{resource-human-HLA}
+        );
+        my $outfile_path = catdir( $conda_env_path, q{bin} );
+        gnu_cp(
+            {
+                FILEHANDLE   => $FILEHANDLE,
+                recursive    => 1,
+                force        => 1,
+                infile_path  => $infile_path,
+                outfile_path => $outfile_path,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+    }
+ 
 
-    ## Check if snpeff has been set to be installed via shell
+    ## Check if snpeff has been set to be installed via shell or excluded from installation
     if ( $bioconda_packages_href->{snpeff} ) {
         ## Custom snpeff - Download necessary databases
         ## Check and if required add the vertebrate mitochondrial codon table to snpeff config
@@ -514,44 +518,50 @@ sub finish_bioconda_package_install {
     }
 
     ## Custom manta
-    # Make file executable
-    say {$FILEHANDLE} q{## Changing mode of configManta.py to executable};
-    my $file_path = catfile( $conda_env_path, qw{bin configManta.py} );
-    gnu_chmod(
-        {
-            file_path  => $file_path,
-            permission => q{a+x},
-            FILEHANDLE => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
+    ## Check if manta has been removed from bioconda installation hash
+    if ( $bioconda_packages_href->{manta} ) {
+        # Make file executable
+        say {$FILEHANDLE} q{## Changing mode of configManta.py to executable};
+        my $file_path = catfile( $conda_env_path, qw{bin configManta.py} );
+        gnu_chmod(
+            {
+                file_path  => $file_path,
+                permission => q{a+x},
+                FILEHANDLE => $FILEHANDLE,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+    }
 
     ## Custom GATK
-    say {$FILEHANDLE} q{## Custom GATK solutions};
+    ## Check if GATK has been removed from bioconda installation hash
+    if ( $bioconda_packages_href->{gatk} ) {
+        say {$FILEHANDLE} q{## Custom GATK solutions};
 
-    ## Download gatk .tar.bz2
-    my $gatk_tar_path = gatk_download(
-        {
-            gatk_version => $bioconda_packages_href->{gatk},
-            verbose      => $verbose,
-            quiet        => $quiet,
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
+        ## Download gatk .tar.bz2
+        my $gatk_tar_path = gatk_download(
+            {
+                gatk_version => $bioconda_packages_href->{gatk},
+                verbose      => $verbose,
+                quiet        => $quiet,
+                FILEHANDLE   => $FILEHANDLE,
+            }
+        );
 
-    ## Hard coding here since GATK 4.0 will be open source.
-    ## Then this step will be unnecessary
-    say {$FILEHANDLE} q{gatk-register} . $SPACE . $gatk_tar_path . $NEWLINE;
+        ## Hard coding here since GATK 4.0 will be open source.
+        ## Then this step will be unnecessary
+        say {$FILEHANDLE} q{gatk-register} . $SPACE . $gatk_tar_path . $NEWLINE;
 
-    gnu_rm(
-        {
-            infile_path => dirname($gatk_tar_path),
-            force       => 1,
-            recursive   => 1,
-            FILEHANDLE  => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE x 2;
+        gnu_rm(
+            {
+                infile_path => dirname($gatk_tar_path),
+                force       => 1,
+                recursive   => 1,
+                FILEHANDLE  => $FILEHANDLE,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE x 2;
+    }
 
     ## Deactivate conda environment if conda_environment exists
     if ($conda_env) {
