@@ -1,4 +1,3 @@
-analysis_get_overall_analysis_type.t
 bcftools_annotate.t
 bcftools_call.t
 bcftools_concat.t
@@ -60,6 +59,7 @@ gatk_varianteval.t
 gatk_variantrecalibrator.t
 get_exom_target_bed_file.t
 get_merged_infile_prefix.t
+get_overall_analysis_type.t
 get_select_file_contigs.t
 get_seq_dict_contigs.t
 git_clone.t
