@@ -94,7 +94,7 @@ shell:
   plink2:
     version: 171013
   rhocall:
-    path: /home/anders.jemt/rhocall
+    path: ~/rhocall
     version: 0.4
   sambamba:
     version: 0.6.1
