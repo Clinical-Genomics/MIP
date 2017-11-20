@@ -4,7 +4,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catfile catdir };
 use FindBin qw{ $Bin };
 use Getopt::Long;
 use open qw{ :encoding(UTF-8) :std };
@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.1;
+our $VERSION = 1.0.0;
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -78,7 +78,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Program::Variantcalling::Bcftools});
+    my @modules = (q{MIP::Program::Base::Bcftools});
 
   MODULE:
     for my $module (@modules) {
@@ -86,11 +86,11 @@ BEGIN {
     }
 }
 
-use MIP::Program::Variantcalling::Bcftools qw{ bcftools_annotate };
+use MIP::Program::Base::Bcftools qw{ bcftools_base };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test bcftools_annotate from Bcftools.pm v}
-      . $MIP::Program::Variantcalling::Bcftools::VERSION
+diag(   q{Test bcftools_base from Base::Bcftools.pm v}
+      . $MIP::Program::Base::Bcftools::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -102,14 +102,6 @@ diag(   q{Test bcftools_annotate from Bcftools.pm v}
 my $function_base_command = q{bcftools};
 
 my %base_argument = (
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
-    },
-    stderrfile_path_append => {
-        input           => q{stderrfile.test},
-        expected_output => q{2>> stderrfile.test},
-    },
     FILEHANDLE => {
         input           => undef,
         expected_output => $function_base_command,
@@ -118,41 +110,44 @@ my %base_argument = (
 
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
-my %required_argument = ();
+my %required_argument = (
+    commands_ref => {
+        inputs_ref      => [qw{ bcftools mpileup }],
+        expected_output => q{bcftools mpileup},
+    },
+    FILEHANDLE => {
+        input           => undef,
+        expected_output => $function_base_command,
+    },
+);
 
 my %specific_argument = (
-    remove_ids_ref => {
-        inputs_ref      => [qw{ idref1 idref2 idref3 }],
-        expected_output => q{--remove idref1,idref2,idref3},
+    commands_ref => {
+        inputs_ref      => [qw{ bcftools mpileup }],
+        expected_output => q{mpileup},
     },
     outfile_path => {
-        input           => q{outfile.txt},
-        expected_output => q{--output outfile.txt},
-    },
-    infile_path => {
-        input           => q{infile.test},
-        expected_output => q{infile.test},
-    },
-    samples_file => {
-        input           => q{samplesfile},
-        expected_output => q{--samples-file samplesfile},
-    },
-    headerfile_path => {
-        input           => q{headerlines},
-        expected_output => q{--header-lines headerlines},
-    },
-    set_id => {
-        input           => q{id},
-        expected_output => q{--set-id id},
+        input           => catfile(qw{ a test file }),
+        expected_output => q{--output} . $SPACE . catfile(qw{ a test file }),
     },
     output_type => {
-        input           => q{v},
-        expected_output => q{--output-type v},
+        input           => q{b},
+        expected_output => q{--output-type} . $SPACE . q{b},
+    },
+    regions_ref => {
+        inputs_ref      => [qw{ 1 2 }],
+        expected_output => q{--regions_ref 1,2},
+    },
+    samples_file => {
+        input           => catfile(qw{ a test sample_file }),
+        expected_output => q{--samples-file}
+          . $SPACE
+          . catfile(qw{ a test sample_file }),
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&bcftools_annotate;
+my $module_function_cref = \&bcftools_base;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
@@ -178,12 +173,9 @@ done_testing();
 
 sub build_usage {
 
-## build_usage
-
 ## Function  : Build the USAGE instructions
-## Returns   : ""
-## Arguments : $program_name
-##           : $program_name => Name of the script
+## Returns   :
+## Arguments : $program_name => Name of the script
 
     my ($arg_href) = @_;
 
