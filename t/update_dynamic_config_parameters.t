@@ -5,7 +5,7 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use Getopt::Long;
 use Params::Check qw{ check allow last_error };
@@ -29,9 +29,9 @@ my $VERBOSE = 1;
 our $VERSION = '1.0.0';
 
 ## Constants
-Readonly my $COMMA   => q{,};
-Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
+Readonly my $NEWLINE => qq{\n};
+Readonly my $COMMA   => q{,};
 
 ### User Options
 GetOptions(
@@ -78,7 +78,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::PATH::TO::MODULE});
+    my @modules = (q{MIP::Update::Parameters});
 
   MODULE:
     for my $module (@modules) {
@@ -86,10 +86,10 @@ BEGIN {
     }
 }
 
-use MIP::PATH::TO::MODULE qw{ SUB_ROUTINE };
+use MIP::Update::Parameters qw{ update_dynamic_config_parameters };
 
-diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
-      . $MIP::PATH::TO::MODULE::VERSION
+diag(   q{Test update_dynamic_config_parameters from Update::Parameters.pm v}
+      . $MIP::Update::Parameters::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -97,9 +97,40 @@ diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-########################
-#### YOUR TEST HERE ####
-########################
+my %active_parameter = (
+    cluster_constant_path  => catfile(qw{ root dir_1 dir_2 }),
+    analysis_constant_path => q{analysis},
+    family_id              => q{family_1},
+    pedigree_file =>
+      catfile(qw{ cluster_constant_path! family_id! family_id!_pedigree.yaml }),
+    sample_info_file => catfile(
+        qw{ cluster_constant_path! family_id! analysis_constant_path! family_id!_qc_sample_info.yaml }
+    ),
+);
+
+my @order_parameters = qw{ pedigree_file sample_info_file };
+
+## Loop through all parameters and update info
+PARAMETER:
+foreach my $parameter_name (@order_parameters) {
+
+    ## Updates the active parameters to particular user/cluster for dynamic config parameters following specifications. Leaves other entries untouched.
+    update_dynamic_config_parameters(
+        {
+            active_parameter_href => \%active_parameter,
+            parameter_name        => $parameter_name,
+        }
+    );
+}
+my $updated_pedigree_file =
+  catfile(qw{ root dir_1 dir_2 family_1 family_1_pedigree.yaml });
+is( $active_parameter{pedigree_file},
+    $updated_pedigree_file, q{Updated pedigree file path} );
+
+my $updated_sample_info_file = catfile(
+    qw{ root dir_1 dir_2 family_1 analysis family_1_qc_sample_info.yaml });
+is( $active_parameter{sample_info_file},
+    $updated_sample_info_file, q{Updated sample_info_file path} );
 
 done_testing();
 

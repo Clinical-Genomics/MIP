@@ -130,7 +130,7 @@ clear_all_job_ids_within_chain_key_dependency_tree(
 );
 
 my $result = 0;
-foreach my $key ( keys $job_id{$family_id_chain_key} ) {
+foreach my $key ( keys %{ $job_id{$family_id_chain_key} } ) {
 
     $result = $result + scalar @{ $job_id{$family_id_chain_key}{$key} };
 }
