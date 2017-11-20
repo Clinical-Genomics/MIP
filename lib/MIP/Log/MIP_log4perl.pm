@@ -25,7 +25,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ create_log4perl_congfig initiate_logger set_default_log4perl_file retrieve_log };
+      qw{ create_log4perl_config initiate_logger set_default_log4perl_file retrieve_log };
 }
 
 ## Constants
@@ -74,8 +74,8 @@ sub initiate_logger {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Creates log for the master script
-    my $config = create_log4perl_congfig(
+    ## Creates config for the log file
+    my $config = create_log4perl_config(
         {
             categories_ref => $categories_ref,
             file_path      => $file_path,
@@ -88,7 +88,7 @@ sub initiate_logger {
     return $logger;
 }
 
-sub create_log4perl_congfig {
+sub create_log4perl_config {
 
 ## Function : Create log4perl config file.
 ## Returns  : $config

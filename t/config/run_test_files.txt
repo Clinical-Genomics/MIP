@@ -33,6 +33,7 @@ conda_source_deactivate.t
 conda_uninstall.t
 conda_update.t
 contigs_set_contigs.t
+create_log4perl_config.t
 create_fam_file.t
 cluster_check_max_core_number.t
 cluster_get_core_number.t
@@ -86,6 +87,7 @@ gnu_split.t
 gnu_trap.t
 gnu_wait.t
 gzip.t
+initiate_logger.t
 java_core.t
 list_delete_contig_elements.t
 list_delete_male_contig.t
