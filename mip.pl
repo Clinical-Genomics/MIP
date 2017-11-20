@@ -3906,7 +3906,7 @@ sub mqccollect {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Script::Setup_script qw(setup_script);
-    use Program::Qc::Mip qw(qccollect);
+    use MIP::Program::Qc::Qccollect qw(qccollect);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_chain_job_ids_dependency_add_to_path);
