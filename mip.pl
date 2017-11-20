@@ -23,7 +23,6 @@ use charnames qw{ :full :short };
 use Getopt::Long;
 use POSIX;
 use Params::Check qw{ check allow last_error };
-$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 use Cwd;
 use Cwd qw{ abs_path };
 use File::Basename qw{ dirname basename fileparse };
@@ -55,14 +54,14 @@ use MIP::File::Format::Pedigree
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
 use MIP::Get::Analysis qw{ get_overall_analysis_type print_program };
 use MIP::Get::File qw{ get_select_file_contigs };
-use MIP::Log::MIP_log4perl qw{ initiate_logger };
+use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
 use MIP::Script::Utils qw{ help };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter
   qw{ set_config_to_active_parameters set_default_config_dynamic_parameters set_dynamic_parameter set_parameter_reference_dir_path set_parameter_to_broadcast };
 use MIP::Update::Contigs qw{ update_contigs_for_run };
 use MIP::Update::Parameters
-  qw{ update_reference_parameters update_vcfparser_outfile_counter };
+  qw{ update_dynamic_config_parameters update_reference_parameters update_vcfparser_outfile_counter };
 use MIP::Update::Path qw{ update_to_absolute_path };
 use MIP::Update::Programs
   qw{ update_program_mode_with_dry_run_all update_program_mode update_prioritize_flag };
@@ -680,7 +679,7 @@ if ( exists $active_parameter{config_file}
 }
 
 ## Set the default Log4perl file using supplied dynamic parameters.
-$active_parameter{log_file} = deafult_log4perl_file(
+$active_parameter{log_file} = set_default_log4perl_file(
     {
         active_parameter_href => \%active_parameter,
         cmd_input             => $active_parameter{log_file},
@@ -2462,8 +2461,8 @@ if ( $active_parameter{ppeddy} > 0 ) {
 
 if ( $active_parameter{pplink} > 0 ) {    #Run plink. Done per family
 
-    $log->info( q{[Plink]} );
-    my $program_name = q{plink};
+    $log->info(q{[Plink]});
+    my $program_name       = q{plink};
     my $infamily_directory = catdir(
         $active_parameter{outdata_dir},
         $active_parameter{family_id},
@@ -13502,52 +13501,6 @@ sub check_unique_ids {
     }
 }
 
-sub update_dynamic_config_parameters {
-
-## Function : Updates the config file to particular user/cluster for dynamic config parameters following specifications. Leaves other entries untouched.
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $parameter_name        => MIP Parameter to update
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $parameter_name;
-
-    my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        parameter_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$parameter_name
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return if ( not defined $active_parameter_href->{$parameter_name} );
-
-    my @dynamic_parameters =
-      qw{ cluster_constant_path analysis_constant_path family_id outaligner_dir };
-
-  DYNAMIC_PARAMETER:
-    foreach my $dynamic_parameter (@dynamic_parameters) {
-
-        ## Replace dynamic config parameters with actual value that is now set from cmd or config
-        $active_parameter_href->{$parameter_name} =~
-          s/$dynamic_parameter!/$active_parameter_href->{$dynamic_parameter}/gi;
-    }
-    return;
-}
-
 sub parse_human_genome_reference {
 
 ##parse_human_genome_reference
@@ -14363,89 +14316,6 @@ sub remove_pedigree_elements {
             }
         }
     }
-}
-
-sub deafult_log4perl_file {
-
-## Function : Set the default Log4perl file using supplied dynamic parameters.
-## Returns  : $log_file
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $cmd_input         => User supplied info on cmd for log_file option {REF}
-##          : $script            => The script that is executed {REF}
-##          : $date              => The date {REF}
-##          : $date_time_stamp   => The date and time {REF}
-##          : $family_id_ref         => Family id {REF}
-##          : $outdata_dir       => Outdata directory {REF}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $outdata_dir;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $cmd_input;
-    my $script;
-    my $date;
-    my $date_time_stamp;
-
-    my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        cmd_input => { strict_type => 1, store => \$cmd_input },
-        script    => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$script
-        },
-        date => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$date
-        },
-        date_time_stamp => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$date_time_stamp
-        },
-        family_id_ref => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref,
-        },
-        outdata_dir => {
-            default     => $arg_href->{active_parameter_href}{outdata_dir},
-            strict_type => 1,
-            store       => \$outdata_dir
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## No input from cmd i.e. create default logging directory and set default
-    if ( not defined $cmd_input ) {
-
-        make_path( catfile( $outdata_dir, q{mip_log}, $date ) );
-
-        ## Build log filename
-        my $log_file = catfile( $outdata_dir, q{mip_log}, $date,
-            $script . q{_} . $date_time_stamp . q{.log} );
-
-        ## Return default log file
-        return $log_file;
-    }
-
-    ## Return cmd input log file
-    return $cmd_input;
 }
 
 sub collect_path_entries {

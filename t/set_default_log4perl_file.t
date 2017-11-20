@@ -4,12 +4,14 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
-use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use File::Basename qw{ dirname basename fileparse };
+use File::Spec::Functions qw{ catdir catfile };
+use File::Temp;
 use FindBin qw{ $Bin };
 use Getopt::Long;
 use Params::Check qw{ check allow last_error };
 use Test::More;
+use Time::Piece;
 use utf8;
 use warnings qw{ FATAL utf8 };
 use 5.018;
@@ -30,6 +32,7 @@ our $VERSION = '1.0.0';
 
 ## Constants
 Readonly my $COMMA   => q{,};
+Readonly my $DOT     => q{.};
 Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
 
@@ -78,7 +81,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::PATH::TO::MODULE});
+    my @modules = (q{MIP::Log::MIP_log4perl});
 
   MODULE:
     for my $module (@modules) {
@@ -86,10 +89,10 @@ BEGIN {
     }
 }
 
-use MIP::PATH::TO::MODULE qw{ SUB_ROUTINE };
+use MIP::Log::MIP_log4perl qw{ set_default_log4perl_file };
 
-diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
-      . $MIP::PATH::TO::MODULE::VERSION
+diag(   q{Test set_default_log4perl_file from MIP_log4perl.pm v}
+      . $MIP::Log::MIP_log4perl::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -97,9 +100,53 @@ diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-########################
-#### YOUR TEST HERE ####
-########################
+## Add date_time_stamp for later use in log and qc_metrics yaml file
+my $date_time       = localtime;
+my $date_time_stamp = $date_time->datetime;
+my $date            = $date_time->ymd;
+
+## Create temp logger
+my $test_dir = File::Temp->newdir();
+my $test_log_path = catfile( $test_dir, q{test.log} );
+
+# Catches script name and removes ending
+my $script = fileparse( basename( $PROGRAM_NAME, $DOT . q{t} ) );
+
+my %active_parameter = (
+    log_file    => undef,
+    outdata_dir => $test_dir
+);
+
+## Set the default Log4perl file using supplied dynamic parameters.
+$active_parameter{log_file} = set_default_log4perl_file(
+    {
+        active_parameter_href => \%active_parameter,
+        cmd_input             => $active_parameter{log_file},
+        script                => $script,
+        date                  => $date,
+        date_time_stamp       => $date_time_stamp,
+    }
+);
+
+## Test
+
+ok( $active_parameter{log_file}, q{Set default log file} );
+
+## Reset for new test
+$active_parameter{log_file} = $test_log_path;
+
+## Set the default Log4perl file using supplied dynamic parameters.
+$active_parameter{log_file} = set_default_log4perl_file(
+    {
+        active_parameter_href => \%active_parameter,
+        cmd_input             => $active_parameter{log_file},
+        script                => $script,
+        date                  => $date,
+        date_time_stamp       => $date_time_stamp,
+    }
+);
+
+is( $active_parameter{log_file}, $test_log_path, q{Did not set default} );
 
 done_testing();
 

@@ -1,5 +1,3 @@
-unix_standard_streams.t
-unix_write_to_file.t
 analysis_get_overall_analysis_type.t
 bcftools_annotate.t
 bcftools_call.t
@@ -155,6 +153,7 @@ samtools_stats.t
 samtools_view.t
 set_config_to_active_parameters.t
 set_default_config_dynamic_parameters.t
+set_default_log4perl_file.t
 set_file_suffix.t
 set_dynamic_parameter.t
 shell_build_shebang.t
@@ -166,7 +165,10 @@ slurm_build_sbatch_header.t
 slurm_reformat_sacct_output.t
 tar.t
 tiddit.t
+unix_standard_streams.t
+unix_write_to_file.t
 unzip.t
+update_dynamic_config_parameters.t
 update_to_absolute_path.t
 update_prioritize_flag.t
 update_program_mode.t

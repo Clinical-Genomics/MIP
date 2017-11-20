@@ -1,14 +1,14 @@
 package MIP::Update::Parameters;
 
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
 
 ## CPANM
 use Readonly;
@@ -18,15 +18,61 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ update_reference_parameters update_vcfparser_outfile_counter };
+      qw{ update_dynamic_config_parameters update_reference_parameters update_vcfparser_outfile_counter };
 }
 
 ## Constants
 Readonly my $SPACE => q{ };
+
+sub update_dynamic_config_parameters {
+
+## Function : Updates the config file to particular user/cluster for dynamic config parameters following specifications. Leaves other entries untouched.
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $parameter_name        => MIP Parameter to update
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$active_parameter_href,
+        },
+        parameter_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$parameter_name
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( not defined $active_parameter_href->{$parameter_name} );
+
+    my @dynamic_parameters =
+      qw{ cluster_constant_path analysis_constant_path family_id outaligner_dir };
+
+  DYNAMIC_PARAMETER:
+    foreach my $dynamic_parameter (@dynamic_parameters) {
+
+        ## Replace dynamic config parameters with actual value that is now set from cmd or config
+        $active_parameter_href->{$parameter_name} =~
+s/$dynamic_parameter!/$active_parameter_href->{$dynamic_parameter}/smgi;
+    }
+    return;
+}
 
 sub update_reference_parameters {
 
@@ -116,7 +162,7 @@ sub update_vcfparser_outfile_counter {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-## Create link
+    ## Create link
     my %vcfparser_select_file = (
         pvcfparser => { vcfparser_select_file => q{vcfparser_outfile_count} },
         psv_vcfparser =>
