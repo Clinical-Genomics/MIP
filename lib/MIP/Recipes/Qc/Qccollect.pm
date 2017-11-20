@@ -143,7 +143,7 @@ sub analysis_qccollect {
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_chain_job_ids_dependency_add_to_path };
-    use MIP::Program::Qc::qccollect qw{ qccollect };
+    use MIP::Program::Qc::Qccollect qw{ qccollect };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
