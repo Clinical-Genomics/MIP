@@ -142,8 +142,8 @@ sub install_vep {
     if ( -d $miniconda_bin_dir ) {
 
         $log->info(
-q{Varianteffectpredictor is already installed in conda environment: }
-              . $miniconda_bin_dir );
+q{Varianteffectpredictor is already installed in the specified conda environment: }
+              . $conda_environment );
 
         if ($noupdate) {
 

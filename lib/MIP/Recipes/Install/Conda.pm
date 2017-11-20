@@ -19,6 +19,7 @@ Readonly my $SPACE      => q{ };
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $DOT        => q{.};
 Readonly my $UNDERSCORE => q{_};
+Readonly my $BACKTICK   => q{`};
 
 BEGIN {
 
@@ -26,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.0.7;
+    our $VERSION = 1.0.8;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ setup_conda_env install_bioconda_packages };
@@ -207,7 +208,6 @@ sub install_bioconda_packages {
 ## Function  : Install conda packages from the bioconda channel into a conda environment.
 ## Returns   :
 ## Arguments : $bioconda_packages_href     => Hash holding bioconda packages and their version numbers {REF}
-##           : $bioconda_patches_href      => Hash holding the patches for the bioconda packages {REF}
 ##           : $snpeff_genome_versions_ref => Array with the genome versions for the snpeff databases {REF}
 ##           : $conda_env                  => Name of conda environment
 ##           : $conda_env_path             => Path to conda environment (default: conda root)
@@ -219,7 +219,6 @@ sub install_bioconda_packages {
 
     ## Flatten argument(s)
     my $bioconda_packages_href;
-    my $bioconda_patches_href;
     my $snpeff_genome_versions_ref;
     my $conda_env;
     my $conda_env_path;
@@ -234,13 +233,6 @@ sub install_bioconda_packages {
             default     => {},
             strict_type => 1,
             store       => \$bioconda_packages_href,
-        },
-        bioconda_patches_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$bioconda_patches_href,
         },
         snpeff_genome_versions_ref => {
             required    => 1,
@@ -314,8 +306,8 @@ sub install_bioconda_packages {
     my %target_link_paths = _create_target_link_paths(
         {
             bioconda_packages_href => $bioconda_packages_href,
-            bioconda_patches_href  => $bioconda_patches_href,
             conda_env_path         => $conda_env_path,
+            FILEHANDLE             => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} q{## Creating symbolic links for bioconda packages};
@@ -339,7 +331,6 @@ sub install_bioconda_packages {
     finish_bioconda_package_install(
         {
             bioconda_packages_href     => $bioconda_packages_href,
-            bioconda_patches_href      => $bioconda_patches_href,
             conda_env                  => $conda_env,
             conda_env_path             => $conda_env_path,
             FILEHANDLE                 => $FILEHANDLE,
@@ -349,6 +340,25 @@ sub install_bioconda_packages {
         }
     );
 
+    ## Unset variables
+    say {$FILEHANDLE} q{## Unset variables};
+    my %program_path_aliases = (
+        bwakit  => q{BWAKIT_PATH},
+        snpeff  => q{SNPEFF_PATH},
+        snpsift => q{SNPSIFT_PATH},
+        manta   => q{MANTA_PATH},
+        picard  => q{PICARD_PATH},
+    );
+
+  PROGRAM:
+    foreach my $program ( keys %program_path_aliases ) {
+        # Check if the program has been set to be installed via shell and
+        # thus has been removed from the bioconda_packages hash
+        next PROGRAM if ( not $bioconda_packages_href->{$program} );
+        say {$FILEHANDLE} q{unset} . $SPACE . $program_path_aliases{$program};
+    }
+    say {$FILEHANDLE} $NEWLINE;
+
     return;
 }
 
@@ -357,7 +367,6 @@ sub finish_bioconda_package_install {
 ## Function  : Custom solutions to finish the install of BWA, SnpEff, Manta and GATK
 ## Returns   :
 ## Arguments : $bioconda_packages_href     => Hash with bioconda packages {REF}
-##           : $bioconda_patches_href      => Hash with package patches {REF}
 ##           : $snpeff_genome_versions_ref => Array with the genome versions for the snpeff databases {REF}
 ##           : $conda_env_path             => Path to conda environment
 ##           : $FILEHANDLE                 => Filehandle to write to
@@ -367,7 +376,6 @@ sub finish_bioconda_package_install {
 
     ## Flatten arguments
     my $bioconda_packages_href;
-    my $bioconda_patches_href;
     my $snpeff_genome_versions_ref;
     my $conda_env_path;
     my $FILEHANDLE;
@@ -382,13 +390,6 @@ sub finish_bioconda_package_install {
             default     => {},
             strict_type => 1,
             store       => \$bioconda_packages_href
-        },
-        bioconda_patches_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$bioconda_patches_href
         },
         snpeff_genome_versions_ref => {
             required    => 1,
@@ -425,6 +426,7 @@ sub finish_bioconda_package_install {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use File::Spec::Functions qw{ catdir catfile };
+    use IPC::Cmd qw{ run };
     use MIP::Gnu::Coreutils qw{ gnu_cp gnu_chmod gnu_rm };
     use MIP::Package_manager::Conda
       qw{ conda_source_activate conda_source_deactivate };
@@ -449,15 +451,9 @@ sub finish_bioconda_package_install {
     ## Check if bwakit has been removed from bioconda installation hash
     if ( $bioconda_packages_href->{bwakit} ) {
         say {$FILEHANDLE} q{## Custom BWA solutions};
-        my $infile_path = catdir(
-            $conda_env_path,
-            q{share},
-            q{bwakit-}
-              . $bioconda_packages_href->{bwakit}
-              . $bioconda_patches_href->{bioconda_bwakit_patch},
-            q{resource-human-HLA}
-        );
-        my $outfile_path = catdir( $conda_env_path, q{bin} );
+        ## Double quote to avoid expansion of shell variable
+        my $infile_path  = catdir( q/"${BWAKIT_PATH}"/, q{resource-human-HLA} );
+        my $outfile_path = catdir( $conda_env_path,     q{bin} );
         gnu_cp(
             {
                 FILEHANDLE   => $FILEHANDLE,
@@ -469,20 +465,31 @@ sub finish_bioconda_package_install {
         );
         say {$FILEHANDLE} $NEWLINE;
     }
- 
 
+    ## Custom SnpEff
     ## Check if snpeff has been set to be installed via shell or excluded from installation
     if ( $bioconda_packages_href->{snpeff} ) {
         ## Custom snpeff - Download necessary databases
         ## Check and if required add the vertebrate mitochondrial codon table to snpeff config
-
         say {$FILEHANDLE} q{## Custom SnpEff solutions};
+
+        ## Get the full version, including patch for snpeff
+        my $command =
+            qq{conda install --dry-run snpeff=$bioconda_packages_href->{snpeff}}
+          . $SPACE
+          . q{| grep 'snpeff' | awk '{ print $2 }'};
+        my $version;
+        run(
+            command => $command,
+            buffer  => \$version
+        );
+        chomp $version;
+
       SNPEFF_GENOME_VERSION:
         foreach my $genome_version ( @{$snpeff_genome_versions_ref} ) {
-            my $share_dir = catdir( $conda_env_path, q{share},
-                    q{snpeff-}
-                  . $bioconda_packages_href->{snpeff}
-                  . $bioconda_patches_href->{bioconda_snpeff_patch} );
+
+            my $share_dir =
+              catdir( $conda_env_path, q{share}, q{snpeff-} . $version );
             check_mt_codon_table(
                 {
                     FILEHANDLE     => $FILEHANDLE,
@@ -640,15 +647,15 @@ sub _create_target_link_paths {
 ##           : Returns a hash ref consisting of the paths.
 ## Returns   : %target_link_paths
 ## Arguments : $bioconda_packages_href => Hash with bioconda packages {REF}
-##           : $bioconda_patches_href  => Hash with bioconda package patches {REF}
 ##           : $conda_env_path         => Path to conda environment
+##           : $FILEHANDLE             => Filehandle to write to
 
     my ($arg_href) = @_;
 
     ## Flatten arguments
     my $bioconda_packages_href;
-    my $bioconda_patches_href;
     my $conda_env_path;
+    my $FILEHANDLE;
 
     my $tmpl = {
         bioconda_packages_href => {
@@ -658,24 +665,21 @@ sub _create_target_link_paths {
             strict_type => 1,
             store       => \$bioconda_packages_href
         },
-        bioconda_patches_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$bioconda_patches_href
-        },
         conda_env_path => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$conda_env_path,
         },
+        FILEHANDLE => {
+            store => \$FILEHANDLE
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use File::Spec::Functions qw{ catfile };
+    use File::Spec::Functions qw{ catfile catdir };
+    use MIP::Gnu::Findutils qw{ gnu_find };
 
     my %target_link_paths;
 
@@ -695,6 +699,17 @@ sub _create_target_link_paths {
         picard  => [qw{ picard.jar }],
     );
 
+    ## Variables to store the full path in
+    my %program_path_aliases = (
+        bwakit  => q{BWAKIT_PATH},
+        snpeff  => q{SNPEFF_PATH},
+        snpsift => q{SNPSIFT_PATH},
+        manta   => q{MANTA_PATH},
+        picard  => q{PICARD_PATH},
+    );
+
+    say {$FILEHANDLE} q{## Find exact path to program and store it for linking};
+
   PROGRAM:
     foreach my $program ( keys %binaries ) {
 
@@ -702,31 +717,32 @@ sub _create_target_link_paths {
         # thus has been removed from the bioconda_packages hash
         next PROGRAM if ( not $bioconda_packages_href->{$program} );
 
+        ## Capture the full path including the conda patch in a variable
+        print {$FILEHANDLE} $program_path_aliases{$program} . q{=} . $BACKTICK;
+        my $search_path = catdir( $conda_env_path, q{share},
+            $program . q{-} . $bioconda_packages_href->{$program} . q{*} );
+        gnu_find(
+            {
+                search_path   => $search_path,
+                test_criteria => q{-type d},
+                action        => q{-prune},
+                FILEHANDLE    => $FILEHANDLE
+            }
+        );
+        print {$FILEHANDLE} $BACKTICK . $NEWLINE;
+        ## Double quotes to avoid expansion in shell
+        my $program_dir_path = q/"${/ . $program_path_aliases{$program} . q/}"/;
+
       BINARY:
         foreach my $binary ( @{ $binaries{$program} } ) {
-            ## Concatenate the name of the program directory
-            ## in steps for easier interpretation.
-            my $program_version = $bioconda_packages_href->{$program};
-            my $program_patch =
-              $bioconda_patches_href->{ q{bioconda}
-                  . $UNDERSCORE
-                  . $program
-                  . $UNDERSCORE
-                  . q{patch} };
-            my $program_directory =
-              $program . q{-} . $program_version . $program_patch;
 
             ## Construct target path
             my $target_path;
             if ( $program eq q{manta} ) {
-                $target_path =
-                  catfile( $conda_env_path, q{share}, $program_directory,
-                    q{bin}, $binary );
+                $target_path = catfile( $program_dir_path, q{bin}, $binary );
             }
             else {
-                $target_path =
-                  catfile( $conda_env_path, q{share}, $program_directory,
-                    $binary );
+                $target_path = catfile( $program_dir_path, $binary );
             }
             ## Construct link_path
             my $link_path = catfile( $conda_env_path, q{bin}, $binary );
