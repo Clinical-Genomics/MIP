@@ -32,9 +32,9 @@ bioconda:
 
 # mip_install searches for conda in these paths 
 conda_dir_path:
-  - /home/anders.jemt/miniconda
-  - /home/anders.jemt/miniconda2
-  - /home/anders.jemt/miniconda3
+  - ~/miniconda
+  - ~/miniconda2
+  - ~/miniconda3
 
 # Optional name of conda envronment. Defaults to root 
 conda_environment: ~
