@@ -1,6 +1,6 @@
 language: perl
 perl:
-  - "5.18"
+  - "5.26"
 sudo: required
  
 install:
@@ -20,12 +20,19 @@ install:
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
   - conda info -a
-  - cpanm Readonly
+  - conda config --add channels defaults
+  - conda config --add channels conda-forge
+  - conda config --add channels bioconda
+  
+## Download cpan libraries
+  - cpanm --quiet --notest Modern::Perl IPC::System::Simple Path::Iterator::Rule YAML Log::Log4perl Readonly Array::Utils HTML::Lint Archive::Zip Archive::Extract DBI JSON DBD::mysql CGI Sereal::Encoder Sereal::Decoder Bio::Root::Version
 
 script:
 ## Run MIP install script
   - cd t; prove mip_install.t; cd -
-  - perl mip_install.pl --bash_set_errexit -env test_environment  --quiet -vep 87 --vep_auto_flag al --vep_plugin 0 
+  - perl mip_install.pl --quiet --bash_set_errexit -env test_environment -vep 90 --vep_auto_flag al --vep_plugin 0 -snpg GRCh37.75 -skip gatk -skip cnvnator --bioconda fastqc=0.11.4
+  # Set user specific path to data
+  - echo 'cluster_constant_path:' /home/travis/build/${TRAVIS_REPO_SLUG}/t/data >> /home/travis/build/${TRAVIS_REPO_SLUG}/templates/mip_travis_config.yaml
   - bash mip.sh
   - source ~/.bash_profile
   - source ~/.bashrc
