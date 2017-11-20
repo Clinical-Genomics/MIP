@@ -44,7 +44,6 @@ sub analysis_peddy {
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $sample_id               => Sample id
 ##          : $infamily_directory      => In family directory
 ##          : $outfamily_directory     => Out family directory
 ##          : $temp_directory          => Temporary directory
@@ -62,7 +61,6 @@ sub analysis_peddy {
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $sample_id;
     my $infamily_directory;
     my $outfamily_directory;
     my $program_name;
@@ -115,12 +113,6 @@ sub analysis_peddy {
             default     => {},
             strict_type => 1,
             store       => \$job_id_href,
-        },
-        sample_id => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$sample_id,
         },
         program_name => {
             required    => 1,
