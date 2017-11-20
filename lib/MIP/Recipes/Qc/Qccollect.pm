@@ -38,7 +38,6 @@ sub analysis_qccollect {
     ## Arguments: $parameter_href          => Parameter hash {REF}
     ##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
     ##          : $sample_info_href        => Info on samples and family hash {REF}
-    ##          : $file_info_href          => File_info hash {REF}
     ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
     ##          : $job_id_href             => Job id hash {REF}
     ##          : $infile_path             => Infile path
@@ -53,7 +52,6 @@ sub analysis_qccollect {
     my $parameter_href;
     my $active_parameter_href;
     my $sample_info_href;
-    my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $infile_path;
@@ -85,13 +83,6 @@ sub analysis_qccollect {
             default     => {},
             strict_type => 1,
             store       => \$sample_info_href,
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href,
         },
         infile_lane_prefix_href => {
             required    => 1,
