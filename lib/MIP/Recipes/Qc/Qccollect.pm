@@ -1,4 +1,4 @@
-package MIP::Recipes::QC::Qccollect;
+package MIP::Recipes::Qc::Qccollect;
 
 use Carp;
 use charnames qw{ :full :short };
