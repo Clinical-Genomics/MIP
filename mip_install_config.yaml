@@ -1,0 +1,128 @@
+---
+# Bash paramters
+bash_set_errexit: 0
+bash_set_nounset: 0
+
+# Conda packages and versions be installed via the bioconda channel
+bioconda:
+  bcftools: 1.4.1
+  bedtools: 2.26.0
+  bwa: 0.7.15
+  bwakit: 0.7.12
+  cmake: 3.3.1
+  cramtools: 3.0.b47
+  delly: 0.7.7
+  fastqc: 0.11.5
+  freebayes: 1.1.0
+  gatk: 3.8
+  gcc: 4.8.5
+  htslib: 1.4.1
+  manta: 1.1.0
+  multiqc: 0.9.1a0
+  peddy: 0.2.9
+  picard: 2.9.2
+  plink2: 1.90b3.35
+  rtg-tools: 3.8.4
+  sambamba: 0.6.6
+  samtools: 1.4.1
+  snpeff: 4.3.1
+  snpsift: 4.3.1
+  vcfanno: 0.1.0
+  vt: 2015.11.10
+
+# mip_install searches for conda in these paths 
+conda_dir_path:
+  - ~/miniconda
+  - ~/miniconda2
+  - ~/miniconda3
+
+# Optional name of conda envronment. Defaults to root 
+conda_environment: ~
+
+# Packages and versionsthat are to be installed via conda's default channels
+conda_packages:
+  pip: ~
+  python: 2.7
+
+# Optionally update conda 
+conda_update: ~
+
+# Optional name of log file
+log_file: ~
+
+# Skip updating existing packages 
+noupdate: ~
+
+# Python packages to be installed via pip
+pip:
+  chanjo: 4.2.0
+  genmod: 3.7.2
+  variant_integrity: 0.0.4
+
+# Prefer installation via shell instead of via conda, 
+# only applicaple for shell programs that overlap with existing conda packages
+prefer_shell: ~
+
+# Specify python version
+python_version: ~
+
+# Supress output, both when generating the install script and running it
+quiet: ~
+
+# Path to directory to which refernce genomes are to be downloaded
+reference_dir: ~
+
+# Reference genomes to download
+reference_genome_versions:
+  - GRCh37
+  - hg38
+
+# Select programs that are to be installed via shell instead of conda 
+select_programs: []
+
+# Shell programs
+shell:  
+  bedtools:
+    version: 2.25.0
+  cnvnator:
+    cnvnator_root_binary: root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz
+    version: 0.3.3
+  mip_scripts:
+    version: Your current MIP version
+  picard:
+    version: 2.3.0
+  plink2:
+    version: 171013
+  rhocall:
+    path: ~/rhocall
+    version: 0.4
+  sambamba:
+    version: 0.6.1
+  snpeff:
+    snpeff_genome_versions:
+      - GRCh37.75
+      - GRCh38.86
+    version: v4_3s
+  svdb:
+    version: 1.0.7
+  tiddit:
+    version: 1.1.6
+  vep:
+    vep_assemblies:
+      - GRCh37
+      - GRCh38
+    vep_auto_flag: alcfp
+    vep_cache_dir: ~
+    vep_plugins:
+      - UpDownDistance
+      - LoFtool
+      - MaxEntScan
+    version: 90
+  vt:
+    version: gitRepo
+
+# Don't write installation instructions for these programs
+skip_program: []
+
+# Verbose output when running the generated install script
+verbose: ~
