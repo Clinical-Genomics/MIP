@@ -2,33 +2,33 @@ sub name_of_subroutine {
 
 ## Function :
 ## Returns  :
-## Arguments: $hash_href  => Hash ref description {REF}
-##          : $arrays_ref => Array ref description {REF}
+## Arguments: $arrays_ref => Array ref description {REF}
+##          : $hash_href  => Hash ref description {REF}
 ##          : $scalar     => Scalar description
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $hash_href;
     my $arrays_ref;
+    my $hash_href;
 
     ## Default(s)
     my $scalar;
 
     my $tmpl = {
-        hash_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$hash_href,
-        },
         arrays_ref => {
             required    => 1,
             defined     => 1,
             default     => [],
             strict_type => 1,
             store       => \$arrays_ref,
+        },
+        hash_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$hash_href,
         },
         scalar => {
             default     => 1,
