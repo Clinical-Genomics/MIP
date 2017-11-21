@@ -3978,7 +3978,7 @@ sub endvariantannotationblock {
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::IO::Files qw{ xargs_migrate_contig_files };
-    use Program::Htslib qw(bgzip tabix);
+    use MIP::Program::Utility::Htslib qw(htslib_bgzip htslib_tabix);
     use MIP::Gnu::Software::Gnu_grep qw(gnu_grep);
     use MIP::QC::Record qw(add_program_metafile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
@@ -4192,7 +4192,7 @@ sub endvariantannotationblock {
         if ( $active_parameter_href->{rankvariant_binary_file} ) {
 
             ## Compress or decompress original file or stream to outfile (if supplied)
-            bgzip(
+            htslib_bgzip(
                 {
                     FILEHANDLE  => $FILEHANDLE,
                     infile_path => $outfile_path_prefix
@@ -4207,7 +4207,7 @@ sub endvariantannotationblock {
             say {$FILEHANDLE} "\n";
 
             ## Index file using tabix
-            tabix(
+            htslib_tabix(
                 {
                     FILEHANDLE  => $FILEHANDLE,
                     infile_path => $outfile_path_prefix
@@ -6879,7 +6879,7 @@ sub prepareforvariantannotationblock {
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use Program::Htslib qw(bgzip tabix);
+    use MIP::Program::Utility::Htslib qw(htslib_bgzip htslib_tabix);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
 
@@ -6977,7 +6977,7 @@ sub prepareforvariantannotationblock {
     say {$FILEHANDLE} q{wait}, "\n";
 
     ## Compress or decompress original file or stream to outfile (if supplied)
-    bgzip(
+    htslib_bgzip(
         {
             FILEHANDLE      => $FILEHANDLE,
             infile_path     => $file_path_prefix . $infile_suffix,
@@ -6988,7 +6988,7 @@ sub prepareforvariantannotationblock {
     say {$FILEHANDLE} "\n";
 
     ## Index file using tabix
-    tabix(
+    htslib_tabix(
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => $file_path_prefix . $outfile_suffix,
@@ -7012,7 +7012,7 @@ sub prepareforvariantannotationblock {
     ## Split vcf into contigs
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
-        tabix(
+        htslib_tabix(
             {
                 regions_ref => [$contig],
                 infile_path => $file_path_prefix . $outfile_suffix,
@@ -7023,7 +7023,7 @@ sub prepareforvariantannotationblock {
         print $XARGSFILEHANDLE "| ";
 
         ## Compress or decompress original file or stream to outfile (if supplied)
-        bgzip(
+        htslib_bgzip(
             {
                 FILEHANDLE   => $XARGSFILEHANDLE,
                 outfile_path => $file_path_prefix . "_"
@@ -7035,7 +7035,7 @@ sub prepareforvariantannotationblock {
         print $XARGSFILEHANDLE "; ";
 
         ## Index file using tabix
-        tabix(
+        htslib_tabix(
             {
                 FILEHANDLE  => $XARGSFILEHANDLE,
                 infile_path => $file_path_prefix . "_"
@@ -7218,7 +7218,7 @@ sub sv_reformat {
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Delete::List qw{ delete_contig_elements delete_male_contig };
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
-    use Program::Htslib qw(bgzip tabix);
+    use MIP::Program::Utility::Htslib qw(htslib_bgzip htslib_tabix);
     use MIP::Gnu::Software::Gnu_grep qw( gnu_grep);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
@@ -7508,7 +7508,7 @@ sub sv_reformat {
         if ( $active_parameter_href->{sv_rankvariant_binary_file} ) {
 
             ## Compress or decompress original file or stream to outfile (if supplied)
-            bgzip(
+            htslib_bgzip(
                 {
                     FILEHANDLE  => $FILEHANDLE,
                     infile_path => $outfile_path_prefix
@@ -7523,7 +7523,7 @@ sub sv_reformat {
             say {$FILEHANDLE} "\n";
 
             ## Index file using tabix
-            tabix(
+            htslib_tabix(
                 {
                     FILEHANDLE  => $FILEHANDLE,
                     infile_path => $outfile_path_prefix
@@ -8936,7 +8936,7 @@ sub sv_combinevariantcallsets {
     use Program::Variantcalling::Svdb qw(merge query);
     use MIP::Program::Variantcalling::Bcftools
       qw (bcftools_merge bcftools_view bcftools_annotate);
-    use Program::Htslib qw(bgzip tabix);
+    use MIP::Program::Utility::Htslib qw(htslib_bgzip htslib_tabix);
     use MIP::Program::Variantcalling::Bcftools qw{bcftools_view_and_index_vcf};
     use Program::Variantcalling::Vt qw(decompose);
     use Program::Variantcalling::Genmod qw(annotate);
