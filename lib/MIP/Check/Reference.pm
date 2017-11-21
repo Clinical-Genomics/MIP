@@ -1,20 +1,20 @@
 package MIP::Check::Reference;
 
-use strict;
-use warnings;
-use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
 use Carp;
+use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
 use File::Basename qw{ fileparse };
 use File::Spec::Functions qw{ catfile };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
+use strict;
+use utf8;
+use warnings;
+use warnings qw{ FATAL utf8 };
 
 ## CPANM
-use Readonly;
 use List::MoreUtils qw { uniq };
+use Readonly;
 
 BEGIN {
     require Exporter;
@@ -38,34 +38,34 @@ sub check_references_for_vt {
 
 ## Function : Check if vt has processed references
 ## Returns  : @to_process_references
-## Arguments: $parameter_href, $active_parameter_href, $vt_references_ref
-##          : $parameter_href        => Parameter hash {REF}
-##          : $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $vt_references_ref     => The references to check with vt {REF}
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $log                   => Log object
+##          : $parameter_href        => Parameter hash {REF}
+##          : $vt_references_ref     => The references to check with vt {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $vt_references_ref;
     my $log;
+    my $parameter_href;
+    my $vt_references_ref;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
             store       => \$active_parameter_href,
+        },
+        log            => { store => \$log },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
         },
         vt_references_ref => {
             required    => 1,
@@ -74,7 +74,6 @@ sub check_references_for_vt {
             strict_type => 1,
             store       => \$vt_references_ref,
         },
-        log => { store => \$log },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -174,26 +173,26 @@ sub check_if_processed_by_vt {
 
 ## Function : Check if vt has processed references using regexp
 ## Returns  : @process_references
-## Arguments: $reference_file_path => The reference file path
-##          : $log                 => Log object
+## Arguments: $log                 => Log object
+##          : $reference_file_path => The reference file path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $reference_file_path;
     my $log;
+    my $reference_file_path;
 
     my $tmpl = {
+        log => {
+            required => 1,
+            defined  => 1,
+            store    => \$log
+        },
         reference_file_path => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$reference_file_path
-        },
-        log => {
-            required => 1,
-            defined  => 1,
-            store    => \$log
         },
     };
 
@@ -265,48 +264,34 @@ sub check_human_genome_prerequisites {
 
 ## Function : Checks if the human genome prerequisites needs to be built and builds them if required
 ## Returns  :
-## Arguments: $parameter_href          => Parameter hash {REF}
-##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $sample_info_href        => Info on samples and family hash {REF}
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $program_name            => Program name
 ##          : $log                     => Log object
+##          : $program_name            => Program name
+##          : $parameter_href          => Parameter hash {REF}
+##          : $sample_info_href        => Info on samples and family hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $program_name;
     my $log;
+    my $parameter_href;
+    my $program_name;
+    my $sample_info_href;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
             store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
@@ -329,16 +314,30 @@ sub check_human_genome_prerequisites {
             strict_type => 1,
             store       => \$job_id_href,
         },
+        log => {
+            required => 1,
+            defined  => 1,
+            store    => \$log
+        },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$program_name,
         },
-        log => {
-            required => 1,
-            defined  => 1,
-            store    => \$log
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href,
         },
     };
 
@@ -375,33 +374,26 @@ sub check_human_genome_file_endings {
 
 ## Function : Check the existance of associated human genome files.
 ## Returns  :
-## Arguments: $parameter_href                     => Parameter hash {REF}
-##          : $active_parameter_href              => Holds all set parameter for analysis {REF}
+## Arguments: $active_parameter_href              => Holds all set parameter for analysis {REF}
 ##          : $file_info_href                     => File info hash {REF}
-##          : $parameter_name                     => The parameter under evaluation
 ##          : $human_genome_reference_name_prefix => The associated human genome file without file ending {REF}
+##          : $parameter_href                     => Parameter hash {REF}
+##          : $parameter_name                     => The parameter under evaluation
 ##          : $reference_dir                      => MIP reference directory {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
     my $file_info_href;
+    my $parameter_href;
     my $parameter_name;
 
     ## Default(s)
-    my $reference_dir;
     my $human_genome_reference_name_prefix;
+    my $reference_dir;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
@@ -416,17 +408,24 @@ sub check_human_genome_file_endings {
             strict_type => 1,
             store       => \$file_info_href,
         },
-        parameter_name => { strict_type => 1, store => \$parameter_name },
-        reference_dir  => {
-            default     => $arg_href->{active_parameter_href}{reference_dir},
-            strict_type => 1,
-            store       => \$reference_dir,
-        },
         human_genome_reference_name_prefix => {
             default =>
               $arg_href->{file_info_href}{human_genome_reference_name_prefix},
             strict_type => 1,
             store       => \$human_genome_reference_name_prefix
+        },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
+        parameter_name => { strict_type => 1, store => \$parameter_name },
+        reference_dir  => {
+            default     => $arg_href->{active_parameter_href}{reference_dir},
+            strict_type => 1,
+            store       => \$reference_dir,
         },
     };
 
@@ -485,17 +484,12 @@ sub check_human_genome_file_endings {
         ## Get sequence contigs from human reference ".dict" file since it exists
         my $dict_file_path = catfile( $reference_dir,
             $human_genome_reference_name_prefix . $DOT . q{dict} );
-        ( my $error_msg, @{ $file_info_href->{contigs} } ) =
-          get_seq_dict_contigs(
+        @{ $file_info_href->{contigs} } = get_seq_dict_contigs(
             {
                 dict_file_path => $dict_file_path,
+                log            => $log,
             }
-          );
-        if ($error_msg) {
-
-            $log->fatal($error_msg);
-            exit 1;
-        }
+        );
     }
     return;
 }
@@ -504,41 +498,34 @@ sub check_capture_file_prerequisites {
 
 ## Function : Check if capture file prerequisites needs to be built and initate process to build them if required
 ## Returns  :
-## Arguments: $parameter_href              => Parameter hash {REF}
-##          : $active_parameter_href       => Active parameters for this analysis hash {REF}
-##          : $sample_info_href            => Info on samples and family hash {REF}
+## Arguments: $active_parameter_href       => Active parameters for this analysis hash {REF}
+##          : $FILEHANDLE                  => Filehandle to write to
 ##          : $infile_lane_prefix_href     => Infile(s) without the ".ending" {REF}
-##          : $job_id_href                 => Job id hash {REF}
 ##          : $infile_list_suffix          => Infile list suffix
+##          : $job_id_href                 => Job id hash {REF}
+##          : $log                         => Log object
 ##          : $padded_infile_list_suffix   => Padded infile list suffix
 ##          : $padded_interval_list_suffix => Padded interval list suffix
+##          : $parameter_href              => Parameter hash {REF}
 ##          : $program_name                => Program name
-##          : $FILEHANDLE                  => Filehandle to write to
-##          : $log                         => Log object
+##          : $sample_info_href            => Info on samples and family hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
+    my $FILEHANDLE;
     my $infile_lane_prefix_href;
-    my $job_id_href;
     my $infile_list_suffix;
+    my $job_id_href;
+    my $log;
     my $padded_infile_list_suffix;
     my $padded_interval_list_suffix;
+    my $parameter_href;
     my $program_name;
-    my $FILEHANDLE;
-    my $log;
+    my $sample_info_href;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
@@ -546,19 +533,19 @@ sub check_capture_file_prerequisites {
             strict_type => 1,
             store       => \$active_parameter_href,
         },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href,
-        },
+        FILEHANDLE              => { store => \$FILEHANDLE, },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
             store       => \$infile_lane_prefix_href,
+        },
+        infile_list_suffix => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$infile_list_suffix,
         },
         job_id_href => {
             required    => 1,
@@ -567,11 +554,17 @@ sub check_capture_file_prerequisites {
             strict_type => 1,
             store       => \$job_id_href,
         },
-        infile_list_suffix => {
+        log => {
+            required => 1,
+            defined  => 1,
+            store    => \$log,
+        },
+        parameter_href => {
             required    => 1,
             defined     => 1,
+            default     => {},
             strict_type => 1,
-            store       => \$infile_list_suffix,
+            store       => \$parameter_href,
         },
         padded_infile_list_suffix => {
             required    => 1,
@@ -591,11 +584,12 @@ sub check_capture_file_prerequisites {
             strict_type => 1,
             store       => \$program_name,
         },
-        FILEHANDLE => { store => \$FILEHANDLE, },
-        log        => {
-            required => 1,
-            defined  => 1,
-            store    => \$log,
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href,
         },
     };
 
@@ -632,48 +626,34 @@ sub check_bwa_prerequisites {
 
 ## Function : Checks if the Bwa mem prerequisites needs to be built and builds them if required
 ## Returns  :
-## Arguments: $parameter_href          => Parameter hash {REF}
-##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $sample_info_href        => Info on samples and family hash {REF}
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $program_name            => Program name
 ##          : $parameter_build_name          => File info build key parameter name
+##          : $parameter_href          => Parameter hash {REF}
+##          : $program_name            => Program name
+##          : $sample_info_href        => Info on samples and family hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $program_name;
     my $parameter_build_name;
+    my $parameter_href;
+    my $program_name;
+    my $sample_info_href;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
             store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
@@ -696,17 +676,31 @@ sub check_bwa_prerequisites {
             strict_type => 1,
             store       => \$job_id_href,
         },
+        parameter_build_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$parameter_build_name,
+        },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$program_name,
         },
-        parameter_build_name => {
+        sample_info_href => {
             required    => 1,
             defined     => 1,
+            default     => {},
             strict_type => 1,
-            store       => \$parameter_build_name,
+            store       => \$sample_info_href,
         },
     };
 
@@ -737,28 +731,22 @@ sub check_file_endings_to_build {
 
 ## Function : Checks files to be built by combining filename stub with fileendings.
 ## Returns  :
-## Arguments: $parameter_href        => Parameter hash {REF}
-##          : $active_parameter_href => Active parameters for this analysis hash {REF}
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $file_endings_ref      => Reference to the file_endings to be added to the filename stub {REF}
+##          : $file_name             => File name
+##          : $parameter_href        => Parameter hash {REF}
 ##          : $parameter_name        => MIP parameter name
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
     my $file_endings_ref;
-    my $parameter_name;
     my $file_name;
+    my $parameter_href;
+    my $parameter_name;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
@@ -773,17 +761,24 @@ sub check_file_endings_to_build {
             strict_type => 1,
             store       => \$file_endings_ref
         },
-        parameter_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$parameter_name,
-        },
         file_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$file_name
+        },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
+        parameter_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$parameter_name,
         },
     };
 
@@ -826,26 +821,18 @@ sub check_parameter_metafiles {
 
 ## Function : Checks parameter metafile exists
 ## Returns  :
-## Arguments: $parameter_href        => Holds all parameters
-##          : $active_parameter_href => Holds all set parameter for analysis
+## Arguments: $active_parameter_href => Holds all set parameter for analysis
 ##          : $file_info_href        => File info hash {REF}
+##          : $parameter_href        => Holds all parameters
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
     my $file_info_href;
-    my $parameter_name;
+    my $parameter_href;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
@@ -859,6 +846,13 @@ sub check_parameter_metafiles {
             default     => {},
             strict_type => 1,
             store       => \$file_info_href,
+        },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
         },
     };
 

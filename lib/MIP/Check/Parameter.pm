@@ -37,8 +37,7 @@ sub check_allowed_array_values {
 
 ## Function : Check that the array values are allowed
 ## Returns  :
-## Arguments: $allowed_values_ref, $values_ref
-##          : $allowed_values_ref => Allowed values for parameter {REF}
+## Arguments: $allowed_values_ref => Allowed values for parameter {REF}
 ##          : $values_ref         => Values for parameter {REF}
 
     my ($arg_href) = @_;
@@ -89,8 +88,7 @@ sub check_allowed_temp_directory {
 
 ## Function : Check that the temp directory value is allowed
 ## Returns  :
-## Arguments: $temp_directory
-##          : $temp_directory => Temp directory
+## Arguments: $temp_directory => Temp directory
 
     my ($arg_href) = @_;
 
@@ -127,8 +125,8 @@ sub check_cmd_config_vs_definition_file {
 
 ## Function : Compare keys from config and cmd with definitions file
 ## Returns  :
-## Arguments: $parameter_href       => Parameter hash {REF}
-##          : $active_parameter_href => Active parameters for this analysis hash {REF}
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $parameter_href        => Parameter hash {REF}
 
     my ($arg_href) = @_;
 
@@ -174,11 +172,10 @@ sub check_cmd_config_vs_definition_file {
         ## Do not print if allowed_unique_keys that have been created dynamically from previous runs
         if ( not any { $_ eq $unique_key } @allowed_unique_keys ) {
 
-            my $error_msg =
-                q{Found illegal key: }
-              . $unique_key
-              . q{ in config file or command line that is not defined in define_parameters.yaml};
-            return $error_msg;
+            croak(  q{Found illegal key: }
+                  . $unique_key
+                  . q{ in config file or command line that is not defined in define_parameters.yaml}
+            );
         }
     }
     return;
@@ -187,26 +184,26 @@ sub check_cmd_config_vs_definition_file {
 sub check_parameter_hash {
 
 ## Function : Evaluate parameters in parameters hash
-## Returns  : ""
-## Arguments: $parameter_href         => Hash with parameters from yaml file {REF}
+## Returns  :
+## Arguments: $file_path              => Path to yaml file
 ##          : $mandatory_key_href     => Hash with mandatory key {REF}
 ##          : $non_mandatory_key_href => Hash with non mandatory key {REF}
-##          : $file_path              => Path to yaml file
+##          : $parameter_href         => Hash with parameters from yaml file {REF}
 
     my ($arg_href) = @_;
 
     ##Flatten argument(s)
-    my $parameter_href;
+    my $file_path;
     my $mandatory_key_href;
     my $non_mandatory_key_href;
-    my $file_path;
+    my $parameter_href;
 
     my $tmpl = {
-        parameter_href => {
+        file_path => {
             required    => 1,
-            default     => {},
+            defined     => 1,
             strict_type => 1,
-            store       => \$parameter_href,
+            store       => \$file_path,
         },
         mandatory_key_href => {
             required    => 1,
@@ -220,18 +217,18 @@ sub check_parameter_hash {
             strict_type => 1,
             store       => \$non_mandatory_key_href,
         },
-        file_path => {
+        parameter_href => {
             required    => 1,
-            defined     => 1,
+            default     => {},
             strict_type => 1,
-            store       => \$file_path,
+            store       => \$parameter_href,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Check that mandatory keys exists for each parameter
-    my $error_msg = _check_parameter_mandatory_keys_exits(
+    _check_parameter_mandatory_keys_exits(
         {
             parameter_href     => $parameter_href,
             mandatory_key_href => $mandatory_key_href,
@@ -239,10 +236,6 @@ sub check_parameter_hash {
         }
     );
 
-    if ($error_msg) {
-
-        return $error_msg;
-    }
     ## Test both mandatory and non_mandatory keys data type and values
     my @arguments = ( \%{$mandatory_key_href}, \%{$non_mandatory_key_href} );
 
@@ -250,17 +243,13 @@ sub check_parameter_hash {
     foreach my $argument_href (@arguments) {
 
         ## Mandatory keys
-        $error_msg = _check_parameter_keys(
+        _check_parameter_keys(
             {
                 parameter_href => $parameter_href,
                 key_href       => $argument_href,
                 file_path      => $file_path,
             }
         );
-        if ($error_msg) {
-
-            return $error_msg;
-        }
     }
     return;
 }
@@ -269,23 +258,23 @@ sub _check_parameter_mandatory_keys_exits {
 
 ## Function : Check that mandatory keys exists
 ## Returns  :
-## Arguments: $parameter_href     => Hash with parameters from yaml file {REF}
+## Arguments: $file_path          => Path to yaml file
 ##          : $mandatory_key_href => Hash with mandatory key {REF}
-##          : $file_path          => Path to yaml file
+##          : $parameter_href     => Hash with parameters from yaml file {REF}
 
     my ($arg_href) = @_;
 
     ##Flatten argument(s)
-    my $parameter_href;
-    my $mandatory_key_href;
     my $file_path;
+    my $mandatory_key_href;
+    my $parameter_href;
 
     my $tmpl = {
-        parameter_href => {
+        file_path => {
             required    => 1,
-            default     => {},
+            defined     => 1,
             strict_type => 1,
-            store       => \$parameter_href,
+            store       => \$file_path,
         },
         mandatory_key_href => {
             required    => 1,
@@ -293,11 +282,11 @@ sub _check_parameter_mandatory_keys_exits {
             strict_type => 1,
             store       => \$mandatory_key_href,
         },
-        file_path => {
+        parameter_href => {
             required    => 1,
-            defined     => 1,
+            default     => {},
             strict_type => 1,
-            store       => \$file_path,
+            store       => \$parameter_href,
         },
     };
 
@@ -312,16 +301,14 @@ sub _check_parameter_mandatory_keys_exits {
             ## Mandatory key exists
             if ( not exists $parameter_href->{$parameter}{$mandatory_key} ) {
 
-                my $error_msg =
-                    q{Missing mandatory key: '}
-                  . $mandatory_key
-                  . q{' for parameter: '}
-                  . $parameter
-                  . q{' in file: '}
-                  . $file_path
-                  . $SINGLE_QUOTE
-                  . $NEWLINE;
-                return $error_msg;
+                croak(  q{Missing mandatory key: '}
+                      . $mandatory_key
+                      . q{' for parameter: '}
+                      . $parameter
+                      . q{' in file: '}
+                      . $file_path
+                      . $SINGLE_QUOTE
+                      . $NEWLINE );
             }
         }
     }
@@ -332,23 +319,23 @@ sub _check_parameter_keys {
 
 ## Function : Evaluate parameter keys in hash
 ## Returns  :
-## Arguments: $parameter_href => Hash with parameters from yaml file {REF}
+## Arguments: $file_path      => Path to yaml file
 ##          : $key_href       => Hash with mandatory key {REF}
-##          : $file_path      => Path to yaml file
+##          : $parameter_href => Hash with parameters from yaml file {REF}
 
     my ($arg_href) = @_;
 
     ##Flatten argument(s)
-    my $parameter_href;
-    my $key_href;
     my $file_path;
+    my $key_href;
+    my $parameter_href;
 
     my $tmpl = {
-        parameter_href => {
+        file_path => {
             required    => 1,
-            default     => {},
+            defined     => 1,
             strict_type => 1,
-            store       => \$parameter_href,
+            store       => \$file_path,
         },
         key_href => {
             required    => 1,
@@ -356,17 +343,15 @@ sub _check_parameter_keys {
             strict_type => 1,
             store       => \$key_href,
         },
-        file_path => {
+        parameter_href => {
             required    => 1,
-            defined     => 1,
+            default     => {},
             strict_type => 1,
-            store       => \$file_path,
+            store       => \$parameter_href,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $error_msg;
 
   PARAMETER:
     foreach my $parameter ( keys %{$parameter_href} ) {
@@ -378,7 +363,7 @@ sub _check_parameter_keys {
             if ( exists $parameter_href->{$parameter}{$key} ) {
 
                 ## Check key data type
-                $error_msg = _check_parameter_data_type(
+                _check_parameter_data_type(
                     {
                         parameter_href => $parameter_href,
                         key_href       => $key_href,
@@ -387,13 +372,9 @@ sub _check_parameter_keys {
                         file_path      => $file_path,
                     }
                 );
-                if ($error_msg) {
-
-                    return $error_msg;
-                }
 
                 ## Evaluate key values
-                $error_msg = _check_parameter_values(
+                _check_parameter_values(
                     {
                         parameter_href => $parameter_href,
                         key_href       => $key_href,
@@ -402,10 +383,6 @@ sub _check_parameter_keys {
                         file_path      => $file_path,
                     }
                 );
-                if ($error_msg) {
-
-                    return $error_msg;
-                }
             }
         }
     }
@@ -416,27 +393,30 @@ sub _check_parameter_values {
 
 ## Function : Evaluate parameter key values
 ## Returns  :
-## Arguments: $parameter_href => Hash with parameters from yaml file {REF}
-##          : $key_href       => Hash with  key {REF}
+## Arguments: $file_path      => Path to yaml file
 ##          : $key            => Hash with non  key
-##          : $file_path      => Path to yaml file
+##          : $key_href       => Hash with  key {REF}
+##          : $parameter      => Parameter
+##          : $parameter_href => Hash with parameters from yaml file {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
+    my $file_path;
+    my $key;
     my $key_href;
     my $parameter;
-    my $key;
-    my $file_path;
+    my $parameter_href;
 
     my $tmpl = {
-        parameter_href => {
+        file_path => {
             required    => 1,
-            default     => {},
+            defined     => 1,
             strict_type => 1,
-            store       => \$parameter_href,
+            store       => \$file_path,
         },
+        key =>
+          { required => 1, defined => 1, strict_type => 1, store => \$key, },
         key_href => {
             required    => 1,
             default     => {},
@@ -449,13 +429,11 @@ sub _check_parameter_values {
             strict_type => 1,
             store       => \$parameter,
         },
-        key =>
-          { required => 1, defined => 1, strict_type => 1, store => \$key, },
-        file_path => {
+        parameter_href => {
             required    => 1,
-            defined     => 1,
+            default     => {},
             strict_type => 1,
-            store       => \$file_path,
+            store       => \$parameter_href,
         },
     };
 
@@ -468,22 +446,20 @@ sub _check_parameter_values {
 
         if ( not( any { $_ eq $value } @{ $key_href->{$key}{values} } ) ) {
 
-            my $error_msg =
-                q{Found illegal value '}
-              . $value
-              . q{' for parameter: '}
-              . $parameter
-              . q{' in key: '}
-              . $key
-              . q{' in file: '}
-              . $file_path
-              . $SINGLE_QUOTE
-              . $NEWLINE
-              . q{Allowed entries: '}
-              . join( q{', '}, @{ $key_href->{$key}{values} } )
-              . $SINGLE_QUOTE
-              . $NEWLINE;
-            return $error_msg;
+            croak(  q{Found illegal value '}
+                  . $value
+                  . q{' for parameter: '}
+                  . $parameter
+                  . q{' in key: '}
+                  . $key
+                  . q{' in file: '}
+                  . $file_path
+                  . $SINGLE_QUOTE
+                  . $NEWLINE
+                  . q{Allowed entries: '}
+                  . join( q{', '}, @{ $key_href->{$key}{values} } )
+                  . $SINGLE_QUOTE
+                  . $NEWLINE );
         }
     }
     return;
@@ -493,27 +469,30 @@ sub _check_parameter_data_type {
 
 ## Function : Check key data type
 ## Returns  :
-## Arguments: $parameter_href => Hash with paremters from yaml file {REF}
-##          : $key_href       => Hash with key {REF}
+## Arguments: $file_path      => Path to yaml file
 ##          : $key            => Hash with non key
-##          : $file_path      => Path to yaml file
+##          : $key_href       => Hash with key {REF}
+##          : $parameter      => Parameter
+##          : $parameter_href => Hash with paremters from yaml file {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
+    my $file_path;
+    my $key;
     my $key_href;
     my $parameter;
-    my $key;
-    my $file_path;
+    my $parameter_href;
 
     my $tmpl = {
-        parameter_href => {
+        file_path => {
             required    => 1,
-            default     => {},
+            defined     => 1,
             strict_type => 1,
-            store       => \$parameter_href
+            store       => \$file_path
         },
+        key =>
+          { required => 1, defined => 1, strict_type => 1, store => \$key },
         key_href => {
             required    => 1,
             default     => {},
@@ -526,13 +505,11 @@ sub _check_parameter_data_type {
             strict_type => 1,
             store       => \$parameter
         },
-        key =>
-          { required => 1, defined => 1, strict_type => 1, store => \$key },
-        file_path => {
+        parameter_href => {
             required    => 1,
-            defined     => 1,
+            default     => {},
             strict_type => 1,
-            store       => \$file_path
+            store       => \$parameter_href
         },
     };
 
@@ -547,10 +524,24 @@ sub _check_parameter_data_type {
         ## Wrong data_type
         if ( not $data_type eq $key_href->{$key}{key_data_type} ) {
 
-            my $error_msg =
-                q{Found '}
-              . $data_type
-              . q{' but expected datatype '}
+            croak(  q{Found '}
+                  . $data_type
+                  . q{' but expected datatype '}
+                  . $key_href->{$key}{key_data_type}
+                  . q{' for parameter: '}
+                  . $parameter
+                  . q{' in key: '}
+                  . $key
+                  . q{' in file: '}
+                  . $file_path
+                  . $SINGLE_QUOTE
+                  . $NEWLINE );
+        }
+    }
+    elsif ( $key_href->{$key}{key_data_type} ne q{SCALAR} ) {
+
+        ## Wrong data_type
+        croak(  q{Found 'SCALAR' but expected datatype '}
               . $key_href->{$key}{key_data_type}
               . q{' for parameter: '}
               . $parameter
@@ -559,25 +550,7 @@ sub _check_parameter_data_type {
               . q{' in file: '}
               . $file_path
               . $SINGLE_QUOTE
-              . $NEWLINE;
-            return $error_msg;
-        }
-    }
-    elsif ( $key_href->{$key}{key_data_type} ne q{SCALAR} ) {
-
-        ## Wrong data_type
-        my $error_msg =
-            q{Found 'SCALAR' but expected datatype '}
-          . $key_href->{$key}{key_data_type}
-          . q{' for parameter: '}
-          . $parameter
-          . q{' in key: '}
-          . $key
-          . q{' in file: '}
-          . $file_path
-          . $SINGLE_QUOTE
-          . $NEWLINE;
-        return $error_msg;
+              . $NEWLINE );
     }
     return;
 }

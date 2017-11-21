@@ -194,7 +194,7 @@ my %non_mandatory_key = load_yaml(
 );
 
 ## Eval parameter hash
-my $error_msg = check_parameter_hash(
+check_parameter_hash(
     {
         parameter_href         => \%parameter,
         mandatory_key_href     => \%mandatory_key,
@@ -202,8 +202,6 @@ my $error_msg = check_parameter_hash(
         file_path              => $definitions_file,
     }
 );
-## Broadcast error in parameter key or values
-croak($error_msg) if ($error_msg);
 
 ## Set MIP version
 our $VERSION = 'v5.0.12';
@@ -609,13 +607,12 @@ GetOptions(
 $active_parameter{mip} = $parameter{mip}{default};
 
 ## Change relative path to absolute path for parameter with "update_path: absolute_path" in config
-$error_msg = update_to_absolute_path(
+update_to_absolute_path(
     {
         parameter_href        => \%parameter,
         active_parameter_href => \%active_parameter,
     }
 );
-croak($error_msg) if ($error_msg);
 
 ### Config file
 ## If config from cmd
@@ -646,13 +643,12 @@ if ( exists $active_parameter{config_file}
     );
 
     ## Compare keys from config and cmd (%active_parameter) with definitions file (%parameter)
-    my $error_msg = check_cmd_config_vs_definition_file(
+    check_cmd_config_vs_definition_file(
         {
             active_parameter_href => \%active_parameter,
             parameter_href        => \%parameter,
         }
     );
-    croak($error_msg) if ($error_msg);
 
     my @config_dynamic_parameters = qw{ analysis_constant_path outaligner_dir };
 
@@ -904,19 +900,13 @@ update_vcfparser_outfile_counter(
 if ( $active_parameter{vcfparser_select_file} ) {
 
 ## Collects sequences contigs used in select file
-    ( my $error_msg, @{ $file_info{select_file_contigs} } ) =
-      get_select_file_contigs(
+    @{ $file_info{select_file_contigs} } = get_select_file_contigs(
         {
             select_file_path =>
               catfile( $active_parameter{vcfparser_select_file} ),
             log => $log,
         }
-      );
-    if ($error_msg) {
-
-        $log->fatal($error_msg);
-        exit 1;
-    }
+    );
 }
 
 ## Detect family constellation based on pedigree file
@@ -2826,9 +2816,10 @@ if ( $active_parameter{pgatk_variantevalexome} > 0 ) {
 
 if ( $active_parameter{pqccollect} > 0 ) {    #Run qccollect. Done per family
 
-    $log->info( q{[Qccollect]} );
+    $log->info(q{[Qccollect]});
     my $program_name = q{qccollect};
-    my $outfamily_directory = catdir( $active_parameter{outdata_dir}, $active_parameter{family_id} );
+    my $outfamily_directory =
+      catdir( $active_parameter{outdata_dir}, $active_parameter{family_id} );
 
     analysis_qccollect(
         {

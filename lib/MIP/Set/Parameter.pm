@@ -35,29 +35,29 @@ sub set_config_to_active_parameters {
 
 ## Function : Add contig parameters to active_parameters if not already initilized from command line
 ## Returns  :
-## Arguments: $config_parameter_href => Config parameters hash
-##          : $active_parameter_href  => Active parameters for this analysis hash {REF}
+## Arguments: $active_parameter_href  => Active parameters for this analysis hash {REF}
+##          : $config_parameter_href => Config parameters hash
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $config_parameter_href;
     my $active_parameter_href;
+    my $config_parameter_href;
 
     my $tmpl = {
-        config_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$config_parameter_href,
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
             store       => \$active_parameter_href,
+        },
+        config_parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$config_parameter_href,
         },
     };
 
@@ -94,31 +94,31 @@ sub set_default_config_dynamic_parameters {
 
 ## Function : Set default for config dynamic parameter using default definitions
 ## Returns  :
-## Arguments: $parameter_href        => Parameter hash {REF}
-##          : $active_parameter_href => Active parameters for this analysis hash {REF}
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $parameter_href        => Parameter hash {REF}
 ##          : $parameter_names_ref   => MIP activate parameter names {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
+    my $parameter_href;
     my $parameter_names_ref;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
             store       => \$active_parameter_href,
+        },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
         },
         parameter_names_ref => {
             required    => 1,
@@ -149,29 +149,29 @@ sub set_dynamic_parameter {
 
 ## Function : Sets dynamic aggregate information from definitions to parameter hash
 ## Returns  :
-## Arguments: $parameter_href => Parameter hash {REF}
-##          : $aggregates_ref => The data to aggregate and add to parameter hash{REF}
+## Arguments: $aggregates_ref => The data to aggregate and add to parameter hash{REF}
+##          : $parameter_href => Parameter hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $aggregates_ref;
+    my $parameter_href;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
         aggregates_ref => {
             required    => 1,
             defined     => 1,
             default     => [],
             strict_type => 1,
             store       => \$aggregates_ref
+        },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
         },
     };
 
@@ -305,33 +305,33 @@ sub set_parameter_to_broadcast {
 
 ## Function : Set parameters to broadcast message
 ## Returns  :
-## Arguments: $parameter_href        => Holds all parameters
-##          : $active_parameter_href => Active parameters for this analysis hash {REF}
-    ##          : $order_parameters_ref  => Order of parameters (for structured output) {REF}
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $broadcasts_ref        => Holds the parameters info for broadcasting later {REF}
+##          : $order_parameters_ref  => Order of parameters (for structured output) {REF}
+##          : $parameter_href        => Holds all parameters
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $order_parameters_ref;
     my $broadcasts_ref;
+    my $order_parameters_ref;
+    my $parameter_href;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
             store       => \$active_parameter_href,
+        },
+        broadcasts_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => [],
+            strict_type => 1,
+            store       => \$broadcasts_ref,
         },
         order_parameters_ref => {
             required    => 1,
@@ -340,12 +340,12 @@ sub set_parameter_to_broadcast {
             strict_type => 1,
             store       => \$order_parameters_ref,
         },
-        broadcasts_ref => {
+        parameter_href => {
             required    => 1,
             defined     => 1,
-            default     => [],
+            default     => {},
             strict_type => 1,
-            store       => \$broadcasts_ref,
+            store       => \$parameter_href,
         },
     };
 
