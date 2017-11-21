@@ -4198,7 +4198,7 @@ sub endvariantannotationblock {
                     infile_path => $outfile_path_prefix
                       . $vcfparser_analysis_type
                       . $outfile_suffix,
-                    outfile_path => $outfile_path_prefix
+                    stdoutfile_path => $outfile_path_prefix
                       . $vcfparser_analysis_type
                       . $outfile_suffix . ".gz",
                     write_to_stdout => 1,
@@ -6981,7 +6981,7 @@ sub prepareforvariantannotationblock {
         {
             FILEHANDLE      => $FILEHANDLE,
             infile_path     => $file_path_prefix . $infile_suffix,
-            outfile_path    => $file_path_prefix . $outfile_suffix,
+            stdoutfile_path => $file_path_prefix . $outfile_suffix,
             write_to_stdout => 1,
         }
     );
@@ -7025,8 +7025,8 @@ sub prepareforvariantannotationblock {
         ## Compress or decompress original file or stream to outfile (if supplied)
         htslib_bgzip(
             {
-                FILEHANDLE   => $XARGSFILEHANDLE,
-                outfile_path => $file_path_prefix . "_"
+                FILEHANDLE      => $XARGSFILEHANDLE,
+                stdoutfile_path => $file_path_prefix . "_"
                   . $contig
                   . $outfile_suffix,
                 write_to_stdout => 1,
@@ -7514,7 +7514,7 @@ sub sv_reformat {
                     infile_path => $outfile_path_prefix
                       . $vcfparser_analysis_type
                       . $file_suffix,
-                    outfile_path => $outfile_path_prefix
+                    stdoutfile_path => $outfile_path_prefix
                       . $vcfparser_analysis_type
                       . $file_suffix . ".gz",
                     write_to_stdout => 1,

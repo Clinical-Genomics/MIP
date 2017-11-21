@@ -1,22 +1,22 @@
 #!/usr/bin/env perl
 
+use 5.018;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ dirname basename };
+use File::Basename qw{ basename dirname };
 use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use Getopt::Long;
 use open qw{ :encoding(UTF-8) :std };
-use Params::Check qw{ check allow last_error };
+use Params::Check qw{ allow check last_error };
 use Test::More;
 use utf8;
 use warnings qw{ FATAL utf8 };
-use 5.018;
 
 ## CPANM
-use Modern::Perl qw{ 2014 };
 use autodie;
+use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ## MIPs lib/
@@ -102,6 +102,10 @@ diag(   q{Test htslib_bgzip from Htslib.pm v}
 my $function_base_command = q{bgzip};
 
 my %base_argument = (
+    FILEHANDLE => {
+        input           => undef,
+        expected_output => $function_base_command,
+    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
@@ -110,9 +114,13 @@ my %base_argument = (
         input           => q{stderrfile.test},
         expected_output => q{2>> stderrfile.test},
     },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
+    stdoutfile_path => {
+        input => catfile(
+            qw{ outfile_path_prefix vcfparser_analysis_type file_suffix .gz }),
+        expected_output => q{1>}
+          . $SPACE
+          . catfile(
+            qw{ outfile_path_prefix vcfparser_analysis_type file_suffix .gz }),
     },
 );
 
@@ -121,23 +129,15 @@ my %base_argument = (
 my %required_argument;
 
 my %specific_argument = (
+    decompress => {
+        input           => 1,
+        expected_output => q{--decompress},
+    },
     infile_path => {
         input => catfile(
             qw{ outfile_path_prefix vcfparser_analysis_type file_suffix }),
         expected_output => catfile(
             qw{ outfile_path_prefix vcfparser_analysis_type file_suffix }),
-    },
-    outfile_path => {
-        input => catfile(
-            qw{ outfile_path_prefix vcfparser_analysis_type file_suffix .gz }),
-        expected_output => q{>}
-          . $SPACE
-          . catfile(
-            qw{ outfile_path_prefix vcfparser_analysis_type file_suffix .gz }),
-    },
-    decompress => {
-        input           => 1,
-        expected_output => q{--decompress},
     },
     write_to_stdout => {
         input           => 1,

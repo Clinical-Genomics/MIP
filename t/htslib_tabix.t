@@ -1,22 +1,22 @@
 #!/usr/bin/env perl
 
+use 5.018;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ dirname basename };
+use File::Basename qw{ basename dirname };
 use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use Getopt::Long;
 use open qw{ :encoding(UTF-8) :std };
-use Params::Check qw{ check allow last_error };
+use Params::Check qw{ allow check last_error };
 use Test::More;
 use utf8;
 use warnings qw{ FATAL utf8 };
-use 5.018;
 
 ## CPANM
-use Modern::Perl qw{ 2014 };
 use autodie;
+use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ## MIPs lib/
@@ -102,6 +102,10 @@ diag(   q{Test htslib_tabix from Htslib.pm v}
 my $function_base_command = q{tabix};
 
 my %base_argument = (
+    FILEHANDLE => {
+        input           => undef,
+        expected_output => $function_base_command,
+    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
@@ -110,9 +114,13 @@ my %base_argument = (
         input           => q{stderrfile.test},
         expected_output => q{2>> stderrfile.test},
     },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
+    stdoutfile_path => {
+        input => catfile(
+            qw{ outfile_path_prefix vcfparser_analysis_type file_suffix .tbi }),
+        expected_output => q{1>}
+          . $SPACE
+          . catfile(
+            qw{ outfile_path_prefix vcfparser_analysis_type file_suffix .tbi }),
     },
 );
 
@@ -121,30 +129,22 @@ my %base_argument = (
 my %required_argument;
 
 my %specific_argument = (
-    regions_ref => {
-        inputs_ref      => [qw{ 1 2 3 }],
-        expected_output => q{1 2 3},
+    force => {
+        input           => 1,
+        expected_output => q{--force},
     },
     infile_path => {
         input => catfile(qw{ outfile_path_prefix vcfparser_analysis_type .gz }),
         expected_output =>
           catfile(qw{ outfile_path_prefix vcfparser_analysis_type .gz }),
     },
-    outfile_path => {
-        input => catfile(
-            qw{ outfile_path_prefix vcfparser_analysis_type file_suffix .tbi }),
-        expected_output => q{>}
-          . $SPACE
-          . catfile(
-            qw{ outfile_path_prefix vcfparser_analysis_type file_suffix .tbi }),
-    },
-    force => {
-        input           => 1,
-        expected_output => q{--force},
-    },
     preset => {
         input           => q{vcf},
         expected_output => q{--preset vcf},
+    },
+    regions_ref => {
+        inputs_ref      => [qw{ 1 2 3 }],
+        expected_output => q{1 2 3},
     },
     with_header => {
         input           => 1,

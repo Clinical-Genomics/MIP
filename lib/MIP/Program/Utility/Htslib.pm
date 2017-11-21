@@ -4,7 +4,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
-use Params::Check qw{ check allow last_error };
+use Params::Check qw{ allow check last_error };
 use strict;
 use utf8;
 use warnings;
@@ -35,31 +35,38 @@ sub htslib_bgzip {
 
 ## Function : Perl wrapper for writing bgzip recipe to $FILEHANDLE or return commands array. Based on htslib 1.3.1.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
-##          : $outfile_path           => Outfile path to write to
+## Arguments: $decompress             => Decompress file
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $infile_path            => Infile path to read from
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
-##          : $infile_path            => Infile path to read from
-##          : $decompress             => Decompress file
+##          : $stdoutfile_path        => Stdoutfile path
 ##          : $write_to_stdout        => Write on standard output, keep original files unchanged
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $FILEHANDLE;
+    my $infile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
-    my $infile_path;
-    my $outfile_path;
+    my $stdoutfile_path;
 
     ## Default(s)
     my $decompress;
     my $write_to_stdout;
 
     my $tmpl = {
+        decompress => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$decompress
+        },
         FILEHANDLE => {
             store => \$FILEHANDLE,
         },
+        infile_path     => { strict_type => 1, store => \$infile_path },
         stderrfile_path => {
             strict_type => 1,
             store       => \$stderrfile_path,
@@ -68,13 +75,9 @@ sub htslib_bgzip {
             strict_type => 1,
             store       => \$stderrfile_path_append,
         },
-        infile_path  => { strict_type => 1, store => \$infile_path },
-        outfile_path => { strict_type => 1, store => \$outfile_path },
-        decompress   => {
-            default     => 0,
-            allow       => [ 0, 1 ],
+        stdoutfile_path => {
             strict_type => 1,
-            store       => \$decompress
+            store       => \$stdoutfile_path,
         },
         write_to_stdout => {
             default     => 0,
@@ -106,17 +109,12 @@ sub htslib_bgzip {
         push @commands, $infile_path;
     }
 
-    #Specify output filename
-    if ($outfile_path) {
-
-        push @commands, q{>} . $SPACE . $outfile_path;
-    }
-
     push @commands,
       unix_standard_streams(
         {
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
         }
       );
 
@@ -135,34 +133,48 @@ sub htslib_tabix {
 ## Function : Perl wrapper for writing tabix recipe to $FILEHANDLE or return commands array. Based on htslib 1.3.1.
 ## Returns  : @commands
 ## Arguments: $FILEHANDLE             => Filehandle to write to
+##          : $force                  => Overwrite existing index without asking
 ##          : $infile_path            => Infile path to read from
-##          : $outfile_path           => Outfile path to write to
+##          : $preset                 => Preset
+##          : $regions_ref            => The regions to process {REF}
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
-##          : $regions_ref            => The regions to process {REF}
-##          : $force                  => Overwrite existing index without asking
-##          : $preset                 => Preset
+##          : $stdoutfile_path        => Stdoutfile path
 ##          : $with_header            => Include header
 
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $with_header;
     my $force;
     my $preset;
 
     ## Flatten argument(s)
-    my $regions_ref;
+    my $FILEHANDLE;
     my $infile_path;
-    my $outfile_path;
+    my $regions_ref;
     my $stderrfile_path;
     my $stderrfile_path_append;
-    my $FILEHANDLE;
+    my $stdoutfile_path;
+    my $with_header;
 
     my $tmpl = {
         FILEHANDLE => {
             store => \$FILEHANDLE,
         },
+        force => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$force
+        },
+        infile_path => { strict_type => 1, store => \$infile_path },
+        preset      => {
+            allow       => [ undef, qw{ gff bed sam vcf } ],
+            strict_type => 1,
+            store       => \$preset
+        },
+        regions_ref =>
+          { default => [], strict_type => 1, store => \$regions_ref },
         stderrfile_path => {
             strict_type => 1,
             store       => \$stderrfile_path,
@@ -171,20 +183,9 @@ sub htslib_tabix {
             strict_type => 1,
             store       => \$stderrfile_path_append,
         },
-        regions_ref =>
-          { default => [], strict_type => 1, store => \$regions_ref },
-        infile_path  => { strict_type => 1, store => \$infile_path },
-        outfile_path => { strict_type => 1, store => \$outfile_path },
-        force        => {
-            default     => 0,
-            allow       => [ 0, 1 ],
+        stdoutfile_path => {
             strict_type => 1,
-            store       => \$force
-        },
-        preset => {
-            allow       => [ undef, qw{ gff bed sam vcf } ],
-            strict_type => 1,
-            store       => \$preset
+            store       => \$stdoutfile_path,
         },
         with_header => {
             default     => 0,
@@ -210,7 +211,7 @@ sub htslib_tabix {
         push @commands, q{--preset} . $SPACE . $preset;
     }
 
-    #Include header
+    # Include header
     if ($with_header) {
 
         push @commands, q{--print-header};
@@ -222,16 +223,10 @@ sub htslib_tabix {
         push @commands, $infile_path;
     }
 
-    #Limit output to regions
+    # Limit output to regions
     if ( @{$regions_ref} ) {
 
         push @commands, join $SPACE, @{$regions_ref};
-    }
-
-    #Specify output filename
-    if ($outfile_path) {
-
-        push @commands, q{>} . $SPACE . $outfile_path;
     }
 
     push @commands,
@@ -239,6 +234,7 @@ sub htslib_tabix {
         {
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
         }
       );
 
