@@ -108,12 +108,6 @@ sub install_tiddit {
     use MIP::Program::Compression::Zip qw{ unzip };
     use MIP::Program::Download::Wget qw{ wget };
 
-
-
-
-
-
-
     ## Unpack parameters
     my $tiddit_version = $tiddit_parameters_href->{version};
 
@@ -176,7 +170,7 @@ sub install_tiddit {
     ## Download
     say {$FILEHANDLE} q{## Download TIDDIT};
     my $url =
-        q{https://github.com/J35P312/TIDDIT/archive/}
+        q{https://github.com/J35P312/TIDDIT/archive/TIDDIT-}
       . $tiddit_version
       . $DOT . q{zip};
     my $tiddit_zip_path =
@@ -209,7 +203,7 @@ sub install_tiddit {
     say {$FILEHANDLE} q{## Move to TIDDIT directory};
     gnu_cd(
         {
-            directory_path => q{TIDDIT-} . $tiddit_version,
+            directory_path => q{TIDDIT-TIDDIT-} . $tiddit_version,
             FILEHANDLE     => $FILEHANDLE,
         }
     );
@@ -273,7 +267,7 @@ sub install_tiddit {
     say {$FILEHANDLE} q{## Make available from conda environment};
     my $target_path = catfile(
         $conda_prefix_path,
-        q{TIDDIT-} . $tiddit_version,
+        q{TIDDIT-TIDDIT-} . $tiddit_version,
         qw{ bin TIDDIT }
     );
     my $link_path = catfile( $conda_prefix_path, qw{ bin TIDDIT } );
