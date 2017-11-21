@@ -33,18 +33,18 @@ Readonly my $UNDERSCORE => q{_};
 
 sub analysis_qccollect {
 
-    ## Function : Collect qc metrics for this analysis run.
-    ## Returns  :
-    ## Arguments: $parameter_href          => Parameter hash {REF}
-    ##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
-    ##          : $sample_info_href        => Info on samples and family hash {REF}
-    ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-    ##          : $job_id_href             => Job id hash {REF}
-    ##          : $infile_path             => Infile path
-    ##          : $outfamily_directory     => out Family Directory
-    ##          : $program_name            => Program name
-    ##          : $family_id               => Family id
-    ##          : $outaligner_dir          => Outaligner_dir used in the analysis
+## Function : Collect qc metrics for this analysis run.
+## Returns  :
+## Arguments: $parameter_href          => Parameter hash {REF}
+##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $job_id_href             => Job id hash {REF}
+##          : $infile_path             => Infile path
+##          : $outfamily_directory     => Out family directory
+##          : $program_name            => Program name
+##          : $family_id               => Family id
+##          : $outaligner_dir          => Outaligner_dir used in the analysis
 
     my ($arg_href) = @_;
 
@@ -130,7 +130,6 @@ sub analysis_qccollect {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ### SET IMPORT IN ALPHABETIC ORDER
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_chain_job_ids_dependency_add_to_path };
@@ -150,7 +149,6 @@ sub analysis_qccollect {
     my $core_number =
       $active_parameter_href->{module_core_number}{$mip_program_name};
     my $time = $active_parameter_href->{module_time}{$mip_program_name};
-    my $reduce_io_ref = $active_parameter_href->{reduce_io};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -200,8 +198,6 @@ sub analysis_qccollect {
             {
                 sample_info_href => $sample_info_href,
                 program_name     => q{qccollect},
-                outdirectory     => $outfamily_directory,
-                outfile          => $qc_metric_outfile,
                 path             => $path,
             }
         );
