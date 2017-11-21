@@ -138,11 +138,15 @@ my %specific_argument = (
         inputs_ref      => [qw{ 1 2 }],
         expected_output => q{--regions_ref 1,2},
     },
-    samples_file => {
+    samples_file_path => {
         input           => catfile(qw{ a test sample_file }),
         expected_output => q{--samples-file}
           . $SPACE
           . catfile(qw{ a test sample_file }),
+    },
+    samples_ref => {
+        inputs_ref      => [qw{ ^sample_1 sample_2 }],
+        expected_output => q{--samples ^sample_1,sample_2},
     },
 );
 
