@@ -4,7 +4,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
-use Params::Check qw{ check allow last_error };
+use Params::Check qw{ allow check last_error };
 use strict;
 use utf8;
 use warnings;
@@ -36,27 +36,23 @@ sub name_of_subroutine {
 ## Function : Perl wrapper for generic commands module.
 ## Returns  : @commands
 ## Arguments: $FILEHANDLE             => Filehandle to write to
-##          : $stdoutfile_path        => Stdoutfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $FILEHANDLE;
-    my $stdoutfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
+    my $stdoutfile_path;
 
     ## Default(s)
 
     my $tmpl = {
         FILEHANDLE => {
             store => \$FILEHANDLE,
-        },
-        stdoutfile_path => {
-            strict_type => 1,
-            store       => \$stdoutfile_path,
         },
         stderrfile_path => {
             strict_type => 1,
@@ -65,6 +61,10 @@ sub name_of_subroutine {
         stderrfile_path_append => {
             strict_type => 1,
             store       => \$stderrfile_path_append,
+        },
+        stdoutfile_path => {
+            strict_type => 1,
+            store       => \$stdoutfile_path,
         },
     };
 
@@ -80,17 +80,18 @@ sub name_of_subroutine {
     push @commands,
       unix_standard_streams(
         {
-            stdoutfile_path        => $stdoutfile_path,
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
         }
       );
 
     unix_write_to_file(
         {
+            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
             separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
+
         }
     );
     return @commands;
