@@ -107,7 +107,7 @@ use MIP::Recipes::Analysis::Picardtools_genotypeconcordance
 use MIP::Recipes::Analysis::Picardtools_mergesamfiles
   qw{ analysis_picardtools_mergesamfiles };
 use MIP::Recipes::Analysis::Plink qw{ analysis_plink };
-use MIP::Recipes::Pipeline::Wts qw{ pipeline_wts };
+use MIP::Recipes::Qc::Qccollect qw{ analysis_qccollect };
 use MIP::Recipes::Analysis::Rcoverageplots qw{ analysis_rcoverageplots };
 use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
 use MIP::Recipes::Analysis::Bcftools_mpileup qw { analysis_bcftools_mpileup };
@@ -117,6 +117,7 @@ use MIP::Recipes::Analysis::Variant_integrity qw{ analysis_variant_integrity };
 use MIP::Recipes::Analysis::Vep
   qw{ analysis_vep analysis_vep_rio analysis_vep_sv };
 use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core analysis_vt_core_rio};
+use MIP::Recipes::Pipeline::Wts qw{ pipeline_wts };
 use MIP::Recipes::Qc::Multiqc qw{ analysis_multiqc };
 
 our $USAGE = build_usage( {} );
@@ -2825,16 +2826,19 @@ if ( $active_parameter{pgatk_variantevalexome} > 0 ) {
 
 if ( $active_parameter{pqccollect} > 0 ) {    #Run qccollect. Done per family
 
-    $log->info("[Qccollect]\n");
+    $log->info( q{[Qccollect]} );
+    my $program_name = q{qccollect};
+    my $outfamily_directory = catdir( $active_parameter{outdata_dir}, $active_parameter{family_id} );
 
-    mqccollect(
+    analysis_qccollect(
         {
             parameter_href          => \%parameter,
             active_parameter_href   => \%active_parameter,
             sample_info_href        => \%sample_info,
             infile_lane_prefix_href => \%infile_lane_prefix,
             job_id_href             => \%job_id,
-            program_name            => "qccollect",
+            program_name            => $program_name,
+            outfamily_directory     => $outfamily_directory,
         }
     );
 }
@@ -3839,165 +3843,6 @@ sub removeredundantfiles {
         }
     );
     close $FILEHANDLE;
-}
-
-sub mqccollect {
-
-##mqccollect
-
-##Function : Collect qc metrics for this analysis run.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, family_id_ref, $call_type,
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $program_name               => Program name
-##         : $family_id_ref              => Family id {REF}
-##         : $call_type                  => Variant call type
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $call_type;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $program_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href,
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href,
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href,
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name,
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref,
-        },
-        call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::Program::Qc::Qccollect qw(qccollect);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_chain_job_ids_dependency_add_to_path);
-
-    my $reduce_io_ref = \$active_parameter_href->{reduce_io};
-    my $job_id_chain  = $parameter_href->{ "p" . $program_name }{chain};
-
-    ## Filehandles
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $$family_id_ref,
-            program_name          => $program_name,
-            program_directory     => lc($program_name),
-            core_number => $active_parameter_href->{module_core_number}
-              { "p" . $program_name },
-            process_time =>
-              $active_parameter_href->{module_time}{ "p" . $program_name },
-        }
-    );
-
-    ## Assign directories
-    my $outfamily_directory =
-      catdir( $active_parameter_href->{outdata_dir}, $$family_id_ref );
-
-    qccollect(
-        {
-            infile_path  => $active_parameter_href->{qccollect_sampleinfo_file},
-            outfile_path => catfile(
-                $outfamily_directory, $$family_id_ref . "_qc_metrics.yaml"
-            ),
-            log_file_path => catfile(
-                $outfamily_directory, $$family_id_ref . "_qccollect.log"
-            ),
-            regexp_file_path => $active_parameter_href->{qccollect_regexp_file},
-            skip_evaluation =>
-              $active_parameter_href->{qccollect_skip_evaluation},
-            FILEHANDLE => $FILEHANDLE,
-        }
-    );
-    say $FILEHANDLE "\n";
-
-    close $FILEHANDLE;
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        ## Collect QC metadata info for later use
-        my $qc_metric_outfile = $$family_id_ref . q{_qc_metrics.yaml};
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                program_name     => 'qccollect',
-                outdirectory     => $outfamily_directory,
-                outfile          => $qc_metric_outfile,
-                path => catfile( $outfamily_directory, $qc_metric_outfile ),
-            }
-        );
-
-        slurm_submit_chain_job_ids_dependency_add_to_path(
-            {
-                job_id_href      => $job_id_href,
-                path             => $job_id_chain,
-                log              => $log,
-                sbatch_file_name => $file_path,
-            }
-        );
-    }
 }
 
 sub endvariantannotationblock {
