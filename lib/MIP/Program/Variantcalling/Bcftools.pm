@@ -669,7 +669,6 @@ sub bcftools_index {
         {
             commands_ref      => \@commands,
             outfile_path      => $outfile_path,
-            output_type       => $output_type,
             regions_ref       => $regions_ref,
             samples_file_path => $samples_file_path,
             samples_ref       => $samples_ref,
@@ -677,7 +676,7 @@ sub bcftools_index {
     );
 
     ## Options
-    # Csi or tbi
+    # Special case: 'csi' or 'tbi'
     if ($output_type) {
 
         #Specify output type
