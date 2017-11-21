@@ -1,4 +1,4 @@
-package MIP::Recipes::Analysis::Samtools_mpileup;
+package MIP::Recipes::Analysis::Bcftools_mpileup;
 
 use Carp;
 use charnames qw{ :full :short };
@@ -24,7 +24,7 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_samtools_mpileup };
+    our @EXPORT_OK = qw{ analysis_bcftools_mpileup };
 
 }
 
@@ -37,51 +37,44 @@ Readonly my $PIPE       => q{|};
 Readonly my $SPACE      => q{ };
 Readonly my $UNDERSCORE => q{_};
 
-sub analysis_samtools_mpileup {
+sub analysis_bcftools_mpileup {
 
-## Function : samtools_mpileup
+## Function : Bcftools_mpileup
 ## Returns  :
-## Arguments: $parameter_href          => Parameter hash {REF}
-##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $sample_info_href        => Info on samples and family hash {REF}
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $call_type               => Variant call type
+##          : $family_id               => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $program_name            => Program name
-##          : $family_id               => Family id
-##          : $outfamily_directory     => Out family directory
-##          : $temp_directory          => Temporary directory
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $call_type               => Variant call type
+##          : $outfamily_directory     => Out family directory
+##          : $parameter_href          => Parameter hash {REF}
+##          : $program_name            => Program name
+##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $temp_directory          => Temporary directory
 ##          : $xargs_file_counter      => The xargs file counter
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $program_name;
     my $outfamily_directory;
+    my $parameter_href;
+    my $program_name;
+    my $sample_info_href;
 
     ## Default(s)
+    my $call_type;
     my $family_id;
     my $outaligner_dir;
     my $temp_directory;
-    my $call_type;
     my $xargs_file_counter;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
@@ -89,12 +82,12 @@ sub analysis_samtools_mpileup {
             strict_type => 1,
             store       => \$active_parameter_href,
         },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
+        call_type =>
+          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
+        family_id => {
+            default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$sample_info_href,
+            store       => \$family_id,
         },
         file_info_href => {
             required    => 1,
@@ -117,35 +110,43 @@ sub analysis_samtools_mpileup {
             strict_type => 1,
             store       => \$job_id_href,
         },
-        program_name => {
-            required    => 1,
-            defined     => 1,
+        outaligner_dir => {
+            default     => $arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$program_name,
+            store       => \$outaligner_dir,
         },
+
         outfamily_directory => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$outfamily_directory,
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
             strict_type => 1,
-            store       => \$family_id,
+            store       => \$parameter_href,
+        },
+        program_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$program_name,
+        },
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href,
         },
         temp_directory_ref => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
             store       => \$temp_directory,
         },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir,
-        },
-        call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
         xargs_file_counter => {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
@@ -161,9 +162,8 @@ sub analysis_samtools_mpileup {
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
-    use MIP::Program::Alignment::Samtools qw{ samtools_mpileup };
     use MIP::Program::Variantcalling::Bcftools
-      qw{ bcftools_call bcftools_filter bcftools_norm };
+      qw{ bcftools_call bcftools_filter bcftools_mpileup bcftools_norm };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
     use MIP::Program::Variantcalling::Perl qw{ replace_iupac };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
@@ -217,7 +217,7 @@ sub analysis_samtools_mpileup {
       catfile( $active_parameter_href->{outdata_dir},
         $family_id, $outaligner_dir, $program_outdirectory_name );
 
-    #Used downstream
+    # Used downstream
     $parameter_href->{$mip_program_name}{indirectory} = $outfamily_directory;
 
     ## Files
@@ -250,7 +250,7 @@ sub analysis_samtools_mpileup {
 
     ## Create .fam file to be used in variant calling analyses
     my $fam_file_path =
-      catfile( $outfamily_file_directory, $family_id . q{.fam} );
+      catfile( $outfamily_file_directory, $family_id . $DOT . q{fam} );
     create_fam_file(
         {
             parameter_href        => $parameter_href,
@@ -308,8 +308,8 @@ sub analysis_samtools_mpileup {
 
     }
 
-    ## Samtools mpileup
-    say {$FILEHANDLE} q{## Samtools mpileup};
+    ## Bcftools mpileup
+    say {$FILEHANDLE} q{## Bcftools mpileup};
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
@@ -334,19 +334,20 @@ sub analysis_samtools_mpileup {
 
         my $stderrfile_path_prefix = $xargs_file_path_prefix . $DOT . $contig;
         Readonly my $ADJUST_MQ => 50;
+        my $output_type = q{b};
 
-        samtools_mpileup(
+        bcftools_mpileup(
             {
-                infile_paths_ref   => \@file_paths,
-                output_tags_ref    => [qw{ DV AD }],
-                referencefile_path => $reference_path,
-                stderrfile_path    => $stderrfile_path_prefix
+                adjust_mq                        => $ADJUST_MQ,
+                FILEHANDLE                       => $XARGSFILEHANDLE,
+                infile_paths_ref                 => \@file_paths,
+                output_tags_ref                  => [qw{ DV AD }],
+                output_type                      => $output_type,
+                per_sample_increased_sensitivity => 1,
+                referencefile_path               => $reference_path,
+                stderrfile_path                  => $stderrfile_path_prefix
                   . $DOT
                   . q{stderr.txt},
-                output_bcf                       => 1,
-                adjust_mq                        => $ADJUST_MQ,
-                per_sample_increased_sensitivity => 1,
-                FILEHANDLE                       => $XARGSFILEHANDLE,
             }
         );
 
@@ -366,34 +367,41 @@ sub analysis_samtools_mpileup {
 
         bcftools_call(
             {
-                form_fields_ref     => [qw{ GQ }],
-                variants_only       => 1,
-                multiallelic_caller => 1,
-                samples_file_path   => $samples_file,
                 constrain           => $constrain,
+                FILEHANDLE          => $XARGSFILEHANDLE,
+                form_fields_ref     => [qw{ GQ }],
+                multiallelic_caller => 1,
+                output_type         => $output_type,
+                samples_file_path   => $samples_file,
                 stderrfile_path     => $stderrfile_path_prefix
                   . $UNDERSCORE
                   . q{call.stderr.txt},
-                FILEHANDLE => $XARGSFILEHANDLE,
+                variants_only => 1,
             }
         );
 
         # Print pipe
         print {$XARGSFILEHANDLE} $PIPE . $SPACE;
 
+        if ( $active_parameter_href->{replace_iupac} ) {
+
+            ## Change output type to "v"
+            $output_type = q{v};
+        }
         Readonly my $SNP_GAP   => 3;
         Readonly my $INDEL_GAP => 10;
 
         bcftools_filter(
             {
+                FILEHANDLE      => $XARGSFILEHANDLE,
+                exclude         => _build_bcftools_filter_expr(),
+                indel_gap       => $INDEL_GAP,
+                output_type     => $output_type,
+                snp_gap         => $SNP_GAP,
+                soft_filter     => q{LowQual},
                 stderrfile_path => $stderrfile_path_prefix
                   . $UNDERSCORE
                   . q{filter.stderr.txt},
-                soft_filter => q{LowQual},
-                snp_gap     => $SNP_GAP,
-                indel_gap   => $INDEL_GAP,
-                exclude     => _build_bcftools_filter_expr(),
-                FILEHANDLE  => $XARGSFILEHANDLE,
             }
         );
 
@@ -416,14 +424,14 @@ sub analysis_samtools_mpileup {
         ## BcfTools norm, Left-align and normalize indels, split multiallelics
         bcftools_norm(
             {
-                FILEHANDLE     => $XARGSFILEHANDLE,
-                reference_path => $reference_path,
-                output_type    => q{v},
-                outfile_path   => $outfile_path_prefix
+                FILEHANDLE   => $XARGSFILEHANDLE,
+                multiallelic => $DASH,
+                output_type  => q{v},
+                outfile_path => $outfile_path_prefix
                   . $UNDERSCORE
                   . $contig
                   . $outfile_suffix,
-                multiallelic    => $DASH,
+                reference_path  => $reference_path,
                 stderrfile_path => $stderrfile_path_prefix
                   . $UNDERSCORE
                   . q{norm.stderr.txt},
@@ -466,26 +474,19 @@ sub analysis_samtools_mpileup {
         my $path =>
           catfile( $outfamily_directory, $outfile_prefix . $outfile_suffix );
 
-        ## Collect samtools version in qccollect
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                program_name     => q{samtools},
-                path             => $path,
-            }
-        );
-        ## Locating samtools_mpileup file
-        add_program_outfile_to_sample_info(
-            {
-                sample_info_href => $sample_info_href,
-                program_name     => q{samtools_mpileup},
-                path             => $path,
-            }
-        );
+        ## Collect bcftools version in qccollect
         add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => q{bcftools},
+                path             => $path,
+            }
+        );
+        ## Locating bcftools_mpileup file
+        add_program_outfile_to_sample_info(
+            {
+                sample_info_href => $sample_info_href,
+                program_name     => q{bcftools_mpileup},
                 path             => $path,
             }
         );

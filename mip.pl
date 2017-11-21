@@ -110,7 +110,7 @@ use MIP::Recipes::Analysis::Plink qw{ analysis_plink };
 use MIP::Recipes::Pipeline::Wts qw{ pipeline_wts };
 use MIP::Recipes::Analysis::Rcoverageplots qw{ analysis_rcoverageplots };
 use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
-use MIP::Recipes::Analysis::Samtools_mpileup qw { analysis_samtools_mpileup };
+use MIP::Recipes::Analysis::Bcftools_mpileup qw { analysis_bcftools_mpileup };
 use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
 use MIP::Recipes::Analysis::Tiddit qw{ analysis_tiddit };
 use MIP::Recipes::Analysis::Variant_integrity qw{ analysis_variant_integrity };
@@ -425,7 +425,7 @@ GetOptions(
       \$active_parameter{sv_rankvariant_binary_file},
     q{svrergf|sv_reformat_remove_genes_file:s} =>
       \$active_parameter{sv_reformat_remove_genes_file},
-    q{psmp|psamtools_mpileup=n} => \$active_parameter{psamtools_mpileup},
+    q{pbmp|pbcftools_mpileup=n} => \$active_parameter{pbcftools_mpileup},
     q{pfrb|pfreebayes=n}        => \$active_parameter{pfreebayes},
     q{gtp|gatk_path:s}          => \$active_parameter{gatk_path},
     q{gll|gatk_logging_level:s} => \$active_parameter{gatk_logging_level},
@@ -2212,19 +2212,20 @@ if ( $active_parameter{psv_reformat} > 0 ) {   #Run sv_reformat. Done per family
     );
 }
 
-if ( $active_parameter{psamtools_mpileup} > 0 ) {    #Run samtools mpileup
+## Run bcftools mpileup
+if ( $active_parameter{pbcftools_mpileup} ) {
 
-    $log->info(q{[Samtools mpileup]});
-    my $program_name = q{samtools_mpileup};
+    $log->info(q{[Bcftools mpileup]});
+    my $program_name = q{bcftools_mpileup};
 
-    my $program_outdirectory_name = $parameter{psamtools_mpileup}{outdir_name};
+    my $program_outdirectory_name = $parameter{pbcftools_mpileup}{outdir_name};
 
     my $outfamily_directory = catfile(
         $active_parameter{outdata_dir},    $active_parameter{family_id},
         $active_parameter{outaligner_dir}, $program_outdirectory_name,
     );
 
-    analysis_samtools_mpileup(
+    analysis_bcftools_mpileup(
         {
             parameter_href          => \%parameter,
             active_parameter_href   => \%active_parameter,
@@ -2428,7 +2429,7 @@ if ( $active_parameter{pgatk_combinevariantcallsets} > 0 ) {
 # Run Peddy. Done per family
 if ( $active_parameter{ppeddy} > 0 ) {
 
-    $log->info( q{[Peddy]} );
+    $log->info(q{[Peddy]});
     my $program_name = q{peddy};
 
     my $infamily_directory = catdir(
@@ -3093,8 +3094,8 @@ sub build_usage {
       -svrevbf/--sv_rankvariant_binary_file Produce binary file from the rank variant chromosome sorted vcfs (defaults to "1" (=yes))
       -svrergf/--sv_reformat_remove_genes_file Remove variants in hgnc_ids (defaults to "")
 
-    ##Samtools
-    -psmp/--psamtools_mpileup Variant calling using samtools mpileup and bcftools (defaults to "0" (=no))
+    ##Bcftools
+    -pbmp/--pbcftools_mpileup Variant calling using samtools mpileup and bcftools (defaults to "0" (=no))
 
     ##Freebayes
     -pfrb/--pfreebayes Variant calling using Freebayes and bcftools (defaults to "0" (=no))
@@ -6837,7 +6838,7 @@ sub rhocall {
                 outfile_path => $file_path_prefix . "_" . $contig . ".roh",
                 af_file_path =>
                   $active_parameter_href->{rhocall_frequency_file},
-                sample_ids_ref => \@sample_ids,
+                samples_ref => \@sample_ids,
                 skip_indels =>
                   1,    #Skip indels as their genotypes are enriched for errors
                 FILEHANDLE => $XARGSFILEHANDLE,

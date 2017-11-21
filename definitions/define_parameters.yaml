@@ -183,7 +183,7 @@ human_genome_reference:
    - pgatk_baserecalibration
    - pgatk_haplotypecaller
    - pgatk_genotypegvcfs
-   - psamtools_mpileup
+   - pbcftools_mpileup
    - pfreebayes
    - pmanta
    - pdelly_call
@@ -242,7 +242,7 @@ module_time:
     pgatk_genotypegvcfs: 10
     pgatk_variantrecalibration: 10
     pfreebayes: 20
-    psamtools_mpileup: 40
+    pbcftools_mpileup: 40
     pgatk_combinevariantcallsets: 2
     pprepareforvariantannotationblock: 5
     prhocall: 5
@@ -296,7 +296,7 @@ module_core_number:
     pgatk_genotypegvcfs: 4
     pgatk_variantrecalibration: 16
     pfreebayes: 16
-    psamtools_mpileup: 16
+    pbcftools_mpileup: 16
     pgatk_combinevariantcallsets: 1
     pendvariantannotationblock: 1
     ppeddy: 4
@@ -1124,7 +1124,7 @@ sv_reformat_remove_genes_file:
   reference: reference_dir
   type: path
 ##Samtools
-psamtools_mpileup:
+pbcftools_mpileup:
   associated_program:
    - mip
   chain: SAMMP
@@ -1564,7 +1564,7 @@ gatk_bundle_download_version:
    - pcnvnator
    - pgatk_haplotypecaller
    - pgatk_genotypegvcfs
-   - psamtools_mpileup
+   - pbcftools_mpileup
    - pgatk_variantrecalibration
    - pgatk_variantevalall
    - pgatk_variantevalexome
@@ -1805,7 +1805,7 @@ gatk_path:
    - pgatk_baserecalibration
    - pgatk_haplotypecaller
    - pgatk_genotypegvcfs
-   - psamtools_mpileup
+   - pbcftools_mpileup
    - pgatk_variantrecalibration
    - pgatk_combinevariantcallsets
    - pgatk_variantevalall
@@ -1822,7 +1822,7 @@ gatk_logging_level:
    - pgatk_baserecalibration
    - pgatk_haplotypecaller
    - pgatk_genotypegvcfs
-   - psamtools_mpileup
+   - pbcftools_mpileup
    - pgatk_variantrecalibration
    - pgatk_combinevariantcallsets
    - pcnvnator
