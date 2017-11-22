@@ -878,7 +878,7 @@ sub _get_conda_dir_path {
         ## Get the path to the conda base directory
         my @conda_bin_in_paths = splitdir($conda_bin_in_path);
 
-        # Remove the tw last elements of the array (bin and conda)
+        # Remove the two last elements of the array (bin and conda)
         splice @conda_bin_in_paths, -2;
         $conda_dir_path = catdir(@conda_bin_in_paths);
     }
