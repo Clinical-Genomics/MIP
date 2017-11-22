@@ -30,7 +30,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -245,7 +245,23 @@ sub conda_update {
 sub conda_check_env_status {
 
 ## Function  : Check if a conda environment is active (returns name of env if true).
-## Returns   : $env_status
+## Returns   :
+## Arguments : $log => Log
+
+    my ($arg_href) = @_;
+
+    ## Flatten arguments
+    my $log;
+
+    my $tmpl = {
+        log => {
+            required => 1,
+            defined  => 1,
+            store    => \$log
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Deactivate any activate env prior to installation
     #   Perl options:
@@ -267,7 +283,15 @@ sub conda_check_env_status {
         buffer  => \$env_status
     );
 
-    return $env_status;
+    # Kill script if a conda environment is active
+    if ($env_status) {
+        $log->fatal( q{Found activate conda env: } . $env_status );
+        $log->fatal(
+            q{Run 'source deactivate' prior to running installation script});
+        exit 1;
+    }
+
+    return;
 }
 
 sub conda_install {

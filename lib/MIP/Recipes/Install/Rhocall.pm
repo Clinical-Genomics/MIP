@@ -10,7 +10,7 @@ use Carp;
 use English qw{ -no_match_vars };
 use Params::Check qw{ check allow last_error };
 use Cwd;
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catdir catfile splitdir };
 
 ## Cpanm
 use Readonly;
@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_rhocall };
@@ -110,6 +110,11 @@ sub install_rhocall {
     my $rhocall_version = $rhocall_parameters_href->{version};
     my $rhocall_path    = $rhocall_parameters_href->{path};
 
+    ## Set rhocall default install path
+    if ( not $rhocall_path ) {
+        $rhocall_path = catdir( $ENV{'HOME'}, q{rhocall} );
+    }
+
     ## Retrieve logger object
     my $log = retrieve_log(
         {
@@ -173,8 +178,11 @@ sub install_rhocall {
         q{https://github.com/dnil/rhocall/archive/}
       . $rhocall_version
       . $DOT . q{zip};
+    my @rhocall_dirs = splitdir( $rhocall_path );
+    pop @rhocall_dirs;
+    my $rhocall_base_path = catdir( @rhocall_dirs );
     my $rhocall_zip_path =
-      catfile( $rhocall_path, q{rhocall-} . $rhocall_version . $DOT . q{zip} );
+      catfile( $rhocall_base_path, q{rhocall-} . $rhocall_version . $DOT . q{zip} );
     wget(
         {
             url          => $url,

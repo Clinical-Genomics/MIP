@@ -21,23 +21,24 @@ use List::Util qw{ any };
 
 ## CPANM
 use Readonly;
+use YAML;
 
 ## MIPs lib/
 #Add MIPs internal lib
 use lib catdir( $Bin, q{lib} );
-use MIP::Check::Path qw{ check_dir_path_exist };
 use MIP::Gnu::Coreutils qw{ gnu_rm };
 use MIP::Language::Shell qw{ create_bash_file };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Package_manager::Conda
   qw{ conda_source_activate conda_source_deactivate };
 use MIP::Script::Utils qw{ help };
+use MIP::File::Format::Yaml qw{ load_yaml };
 
 ## Recipes
 use MIP::Recipes::Install::Bedtools qw{ install_bedtools };
 use MIP::Recipes::Install::Cnvnator qw{ install_cnvnator };
 use MIP::Recipes::Install::Conda
-  qw{ setup_conda_env install_bioconda_packages };
+  qw{ check_conda_installation setup_conda_env install_bioconda_packages };
 use MIP::Recipes::Install::Mip_scripts qw{ install_mip_scripts };
 use MIP::Recipes::Install::Picard qw{ install_picard };
 use MIP::Recipes::Install::Pip qw{ install_pip_packages };
@@ -54,103 +55,28 @@ use MIP::Recipes::Install::Vt qw{ install_vt };
 our $USAGE = build_usage( {} );
 
 ## Constants
-Readonly my $DOT        => q{.};
+Readonly my $COLON      => q{:};
 Readonly my $COMMA      => q{,};
+Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
 Readonly my $UNDERSCORE => q{_};
-Readonly my $COLON      => q{:};
 
 ### Set parameter default
-my %parameter;
+my $config_file = catfile( $Bin, q{mip_install_config.yaml} );
+my %parameter = load_yaml( { yaml_file => $config_file } );
 
-## Bash
-$parameter{bash_set_errexit} = 0;
-$parameter{bash_set_nounset} = 0;
-
-## Conda
-$parameter{conda_dir_path} = [
-    catdir( $ENV{HOME}, q{miniconda} ),
-    catdir( $ENV{HOME}, q{miniconda2} ),
-    catdir( $ENV{HOME}, q{miniconda3} )
-];
-$parameter{conda_packages}{python} = q{2.7};
-$parameter{conda_packages}{pip}    = undef;
-
-## Bioconda channel
-$parameter{bioconda}{bwa}          = q{0.7.15};
-$parameter{bioconda}{bwakit}       = q{0.7.12};
-$parameter{bioconda}{fastqc}       = q{0.11.5};
-$parameter{bioconda}{cramtools}    = q{3.0.b47};
-$parameter{bioconda}{samtools}     = q{1.4.1};
-$parameter{bioconda}{bcftools}     = q{1.4.1};
-$parameter{bioconda}{snpeff}       = q{4.3.1};
-$parameter{bioconda}{snpsift}      = q{4.3.1};
-$parameter{bioconda}{picard}       = q{2.9.2};
-$parameter{bioconda}{htslib}       = q{1.4.1};
-$parameter{bioconda}{bedtools}     = q{2.26.0};
-$parameter{bioconda}{vt}           = q{2015.11.10};
-$parameter{bioconda}{sambamba}     = q{0.6.6};
-$parameter{bioconda}{freebayes}    = q{1.1.0};
-$parameter{bioconda}{delly}        = q{0.7.7};
-$parameter{bioconda}{manta}        = q{1.1.0};
-$parameter{bioconda}{multiqc}      = q{0.9.1a0};
-$parameter{bioconda}{peddy}        = q{0.2.9};
-$parameter{bioconda}{plink2}       = q{1.90b3.35};
-$parameter{bioconda}{vcfanno}      = q{0.1.0};
-$parameter{bioconda}{q{rtg-tools}} = q{3.8.4};
-$parameter{bioconda}{gatk}         = q{3.8};
-
-# Required for CNVnator
-$parameter{bioconda}{gcc}   = q{4.8.5};
-$parameter{bioconda}{cmake} = q{3.3.1};
-
-## PIP
-$parameter{pip}{genmod}            = q{3.7.2};
-$parameter{pip}{variant_integrity} = q{0.0.4};
-$parameter{pip}{chanjo}            = q{4.2.0};
-
-## Programs currently installable by SHELL
-$parameter{shell}{mip_scripts}{version} = q{Your current MIP version};
-$parameter{shell}{picard}{version}      = q{2.3.0};
-$parameter{shell}{sambamba}{version}    = q{0.6.1};
-$parameter{shell}{bedtools}{version}    = q{2.25.0};
-$parameter{shell}{vt}{version}          = q{gitRepo};
-$parameter{shell}{plink2}{version}      = q{171013};
-$parameter{shell}{snpeff}{version}      = q{v4_3s};
-$parameter{shell}{vep}{version}         = q{90};
-$parameter{shell}{vep}{vep_auto_flag}   = q{alcfp};
-$parameter{shell}{rhocall}{version}     = q{0.4};
-$parameter{shell}{rhocall}{path}        = catdir( $ENV{HOME}, q{rhocall} );
-$parameter{shell}{cnvnator}{version}    = q{0.3.3};
-$parameter{shell}{cnvnator}{cnvnator_root_binary} =
-  q{root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz};
-$parameter{shell}{tiddit}{version} = q{1.1.6};
-$parameter{shell}{svdb}{version}   = q{1.0.7};
-
-## Define default array parameters
-$parameter{shell}{vep}{vep_assemblies} = [qw{ GRCh37 GRCh38 }];
-$parameter{shell}{vep}{vep_plugins} =
-  [qw{ UpDownDistance LoFtool MaxEntScan }];
-
-# GRCh38.86 but check current on the snpEff sourceForge
-$parameter{shell}{snpeff}{snpeff_genome_versions} =
-  [qw{ GRCh37.75 GRCh38.86 }];
-$parameter{reference_genome_versions} = [qw{ GRCh37 hg38 }];
-
-our $VERSION = q{1.2.22};
+our $VERSION = q{1.2.23};
 
 GetOptions(
     q{see|bash_set_errexit}    => \$parameter{bash_set_errexit},
     q{snu|bash_set_nounset}    => \$parameter{bash_set_nounset},
     q{env|conda_environment:s} => \$parameter{conda_environment},
-    q{cdp|conda_dir_path:s{,}} => sub {
-        @{ $parameter{conda_dir_path} } = split /,/xms, $ARG[1];
-    },
-    q{cdu|conda_update}     => \$parameter{conda_update},
-    q{bcv|bioconda=s}       => \%{ $parameter{bioconda} },
-    q{pip|pip=s}            => \%{ $parameter{pip} },
-    q{pyv|python_version=s} => \$parameter{python_version},
+    q{cdp|conda_dir_path:s}    => \$parameter{conda_dir_path},
+    q{cdu|conda_update}        => \$parameter{conda_update},
+    q{bcv|bioconda=s}          => \%{ $parameter{bioconda} },
+    q{pip|pip=s}               => \%{ $parameter{pip} },
+    q{pyv|python_version=s}    => \$parameter{python_version},
 
     # SHELL
     q{psh|prefer_shell}     => \$parameter{prefer_shell},
@@ -194,11 +120,11 @@ GetOptions(
         );
         exit;
     },
-    q{nup|noupdate} => \$parameter{noupdate},
+    q{nup|noupdate}        => \$parameter{noupdate},
     q{skip|skip_program:s} => \@{ $parameter{skip_program} },
-    q{l|log:s}      => \$parameter{log_file},
-    q{q|quiet}      => \$parameter{quiet},
-    q{h|help}       => sub {
+    q{l|log:s}             => \$parameter{log_file},
+    q{q|quiet}             => \$parameter{quiet},
+    q{h|help}              => sub {
         say {*STDOUT} $USAGE;
         exit;
     },
@@ -236,38 +162,18 @@ my $log = initiate_logger(
         log_name  => q{mip_install},
     }
 );
-
 $log->info(
     q{Writing log messages to} . $COLON . $SPACE . $parameter{log_file} );
 
-## Establish path to conda
-my @conda_dir_paths = check_dir_path_exist(
+## Check the conda installation and get the conda path
+$parameter{conda_prefix_path} = check_conda_installation(
     {
-        dir_paths_ref => $parameter{conda_dir_path},
+        conda_dir_path => $parameter{conda_dir_path},
+        conda_env      => $parameter{conda_environment},
+        quiet          => $parameter{quiet},
+        verbose        => $parameter{verbose},
     }
 );
-my $conda_dir_path = $conda_dir_paths[0];
-if ( not defined $conda_dir_path ) {
-    $log->error(
-        q{Could not find miniconda directory in}
-          . $COLON
-          . $SPACE
-          . join $SPACE,
-        @{ $parameter{conda_dir_path} }
-    );
-    exit 1;
-}
-
-## Update default parameter dependent on other parameters
-if (   ( exists $parameter{conda_environment} )
-    && ( $parameter{conda_environment} ) )
-{
-    $parameter{conda_prefix_path} =
-      catdir( $conda_dir_path, q{envs}, $parameter{conda_environment} );
-}
-else {
-    $parameter{conda_prefix_path} = $conda_dir_path;
-}
 
 if ( not $parameter{vep_cache_dir} ) {
 
@@ -312,10 +218,10 @@ $log->info( q{Writing install instructions to:} . $SPACE . $file_name_path );
 
 ## Remove selected programs from installation
 if ( $parameter{skip_program} ) {
-  SKIP: 
-    foreach my $skip ( @{ $parameter{skip_program} } ) {
-        delete $parameter{shell}{$skip};
-        delete $parameter{bioconda}{$skip};
+  PROGRAM:
+    foreach my $program ( @{ $parameter{skip_program} } ) {
+        delete $parameter{shell}{$program};
+        delete $parameter{bioconda}{$program};
     }
 }
 
