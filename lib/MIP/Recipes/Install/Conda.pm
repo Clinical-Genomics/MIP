@@ -40,10 +40,10 @@ sub check_conda_installation {
 
 ## Function  : Checks that conda is installed and returns installation path
 ## Returns   : $conda_prefix_path
-## Arguments : $conda_dir_path      => Path to conda environment (default: conda root)
-##           : $conda_env           => Name of conda environment
-##           : $quiet               => Log only warnings and above
-##           : $verbose             => Log debug messages
+## Arguments : $conda_dir_path => Path to conda environment (default: conda root)
+##           : $conda_env      => Name of conda environment
+##           : $quiet          => Log only warnings and above
+##           : $verbose        => Log debug messages
 
     my ($arg_href) = @_;
 
@@ -98,42 +98,16 @@ sub check_conda_installation {
         }
     );
 
-    ## Establish path to conda
-    if ( $conda_dir_path and not -d $conda_dir_path ) {
-        $log->fatal( q{Could not find miniconda directory in}
-              . $COLON
-              . $SPACE
-              . $conda_dir_path );
-        exit 1;
-    }
-    elsif ( not $conda_dir_path ) {
-        my $conda_bin_path;
-        run(
-            command => q{which conda},
-            buffer  => \$conda_bin_path
-        );
-        ## If no output from which command
-        if ( not $conda_bin_path ) {
-            $log->fatal( q{Could not find conda installation path.}
-                  . $NEWLINE
-                  . q{Specify the path to conda using the --conda_dir_path flag}
-            );
-            exit 1;
+    ## Establish path to conda, Exit if not found
+    $conda_dir_path = _get_conda_dir_path(
+        {
+            conda_dir_path => $conda_dir_path,
+            log            => $log,
         }
-        ## Get the path to the conda base directory
-        my @conda_bin_paths = splitdir($conda_bin_path);
-        splice @conda_bin_paths, -2;
-        $conda_dir_path = catdir(@conda_bin_paths);
-    }
+    );
 
     ## Check for active conda environment (exit if true)
-    my $env_status = conda_check_env_status();
-    if ($env_status) {
-        $log->fatal( q{Found activate conda env: } . $env_status );
-        $log->fatal(
-            q{Run 'source deactivate' prior to running installation script});
-        exit 1;
-    }
+    conda_check_env_status( { log => $log } );
 
     ## Add env to conda_prefix_path if applicable
     my $conda_prefix_path;
@@ -208,7 +182,6 @@ sub setup_conda_env {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    #use MIP::Check::Unix qw{ check_binary_in_path };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
     use MIP::Package_manager::Conda
       qw{ conda_create conda_install conda_update };
@@ -850,6 +823,68 @@ sub _create_target_link_paths {
         }
     }
     return %target_link_paths;
+}
+
+sub _get_conda_dir_path {
+
+## Function : Finds the conda directory path and returns it
+## Returns  : $conda_dir_path
+## Arguments: $conda_dir_path => Path to conda dir
+##          : $log            => Log
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $conda_dir_path;
+    my $log;
+
+    my $tmpl = {
+        conda_dir_path => {
+            required    => 1,
+            strict_type => 1,
+            store       => \$conda_dir_path,
+        },
+        log => {
+            required => 1,
+            defined  => 1,
+            store    => \$log
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Establish path to conda
+    if ( $conda_dir_path and not -d $conda_dir_path ) {
+        $log->fatal( q{Could not find miniconda directory in}
+              . $COLON
+              . $SPACE
+              . $conda_dir_path );
+        exit 1;
+    }
+    elsif ( not $conda_dir_path ) {
+        my $conda_bin_in_path;
+        run(
+            command => q{which conda},
+            buffer  => \$conda_bin_in_path
+        );
+        ## If no output from which command
+        if ( not $conda_bin_in_path ) {
+            $log->fatal( q{Could not find conda installation path.}
+                  . $NEWLINE
+                  . q{Specify the path to conda using the --conda_dir_path flag}
+            );
+            exit 1;
+        }
+        ## Get the path to the conda base directory
+        my @conda_bin_in_paths = splitdir($conda_bin_in_path);
+
+        # Remove the tw last elements of the array (bin and conda)
+        splice @conda_bin_in_paths, -2;
+        $conda_dir_path = catdir(@conda_bin_in_paths);
+    }
+
+    return $conda_dir_path;
+
 }
 
 1;

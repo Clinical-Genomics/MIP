@@ -218,10 +218,10 @@ $log->info( q{Writing install instructions to:} . $SPACE . $file_name_path );
 
 ## Remove selected programs from installation
 if ( $parameter{skip_program} ) {
-  SKIP:
-    foreach my $skip ( @{ $parameter{skip_program} } ) {
-        delete $parameter{shell}{$skip};
-        delete $parameter{bioconda}{$skip};
+  PROGRAM:
+    foreach my $program ( @{ $parameter{skip_program} } ) {
+        delete $parameter{shell}{$program};
+        delete $parameter{bioconda}{$program};
     }
 }
 
