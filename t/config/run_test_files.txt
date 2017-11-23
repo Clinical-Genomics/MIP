@@ -10,6 +10,7 @@ bcftools_roh.t
 bcftools_stats.t
 bcftools_view.t
 bedtools_genomecov.t
+bedtools_intersectbed.t
 bwa_mem.t
 bwa_index.t
 bzip2.t
