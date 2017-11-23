@@ -88,6 +88,8 @@ gnu_split.t
 gnu_trap.t
 gnu_wait.t
 gzip.t
+htslib_bgzip.t
+htslib_tabix.t
 initiate_logger.t
 java_core.t
 list_delete_contig_elements.t

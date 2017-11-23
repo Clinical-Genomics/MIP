@@ -203,14 +203,14 @@ sub analysis_vt_core {
 
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Gnu::Software::Gnu_sed qw{ gnu_sed };
-    use MIP::Program::Variantcalling::Bcftools
-      qw{ bcftools_view bcftools_index };
-    use Program::Variantcalling::Mip qw{ calculate_af max_af };
-    use Program::Htslib qw{ bgzip tabix };
-    use Program::Variantcalling::Vt qw{ decompose normalize vt_uniq };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_no_dependency_add_to_samples };
+    use MIP::Program::Variantcalling::Bcftools
+      qw{ bcftools_view bcftools_index };
     use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
+    use Program::Variantcalling::Mip qw{ calculate_af max_af };
+    use Program::Variantcalling::Vt qw{ decompose normalize vt_uniq };
 
     ## Constants
     Readonly my $MAX_RANDOM_NUMBER => 10_000;
@@ -340,7 +340,7 @@ sub analysis_vt_core {
         ## Pipe
         print {$FILEHANDLE} $PIPE . $SPACE;
 
-        bgzip(
+        htslib_bgzip(
             {
                 FILEHANDLE      => $FILEHANDLE,
                 write_to_stdout => 1,
@@ -368,7 +368,7 @@ sub analysis_vt_core {
           . q{splitted}
           . $UNDERSCORE
           . $random_integer;
-        tabix(
+        htslib_tabix(
             {
                 FILEHANDLE  => $FILEHANDLE,
                 infile_path => $tabix_infile_path,
@@ -579,7 +579,7 @@ sub analysis_vt_core_rio {
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_view bcftools_index };
     use Program::Variantcalling::Mip qw{ calculate_af max_af };
-    use Program::Htslib qw{ bgzip tabix };
+    use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
     use Program::Variantcalling::Vt qw{ decompose normalize vt_uniq };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_no_dependency_add_to_samples };
@@ -693,7 +693,7 @@ sub analysis_vt_core_rio {
         ## Pipe
         print {$FILEHANDLE} $PIPE . $SPACE;
 
-        bgzip(
+        htslib_bgzip(
             {
                 FILEHANDLE      => $FILEHANDLE,
                 write_to_stdout => 1,
@@ -721,7 +721,7 @@ sub analysis_vt_core_rio {
           . q{splitted}
           . $UNDERSCORE
           . $random_integer;
-        tabix(
+        htslib_tabix(
             {
                 FILEHANDLE  => $FILEHANDLE,
                 infile_path => $tabix_infile_path,
