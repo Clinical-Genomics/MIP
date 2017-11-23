@@ -4,7 +4,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
-use Params::Check qw{ check allow last_error };
+use Params::Check qw{ allow check last_error };
 use strict;
 use utf8;
 use warnings;
@@ -31,8 +31,8 @@ sub name_of_subroutine {
 
 ## Function :
 ## Returns  :
-## Arguments: $hash_href  => Hash ref description {REF}
-##          : $arrays_ref => Array ref description {REF}
+## Arguments: $arrays_ref => Array ref description {REF}
+##          : $hash_href  => Hash ref description {REF}
 ##          : $scalar     => Scalar description
 
     my ($arg_href) = @_;
@@ -45,19 +45,19 @@ sub name_of_subroutine {
     my $scalar;
 
     my $tmpl = {
-        hash_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$hash_href,
-        },
         arrays_ref => {
             required    => 1,
             defined     => 1,
             default     => [],
             strict_type => 1,
             store       => \$arrays_ref,
+        },
+        hash_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$hash_href,
         },
         scalar => {
             default     => 1,
