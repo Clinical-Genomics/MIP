@@ -1,22 +1,22 @@
 #!/usr/bin/env perl
 
+use 5.018;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catfile catdir };
+use File::Basename qw{ basename dirname  };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use Getopt::Long;
 use open qw{ :encoding(UTF-8) :std };
-use Params::Check qw{ check allow last_error };
+use Params::Check qw{ allow check last_error };
 use Test::More;
 use utf8;
 use warnings qw{ FATAL utf8 };
-use 5.018;
 
 ## CPANM
-use Modern::Perl qw{ 2014 };
 use autodie;
+use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ## MIPs lib/
@@ -78,7 +78,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Check::Parameter});
+    my @modules = (q{MIP::Program::Variantcalling::Bedtools_intersectbed});
 
   MODULE:
     for my $module (@modules) {
@@ -86,11 +86,12 @@ BEGIN {
     }
 }
 
-use MIP::Check::Parameter qw{ check_parameter_hash };
-use MIP::File::Format::Yaml qw{ load_yaml };
+use MIP::Program::Variantcalling::Bedtools_intersectbed
+  qw{ bedtools_intersectbed };
+use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test check_parameter_hash from Parameter.pm v}
-      . $MIP::Check::Parameter::VERSION
+diag(   q{Test bedtools_intersectbed from Bedtools_intersectbed.pm v}
+      . $MIP::Program::Variantcalling::Bedtools_intersectbed::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -98,43 +99,66 @@ diag(   q{Test check_parameter_hash from Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $definitions_file =
-  catfile( $Bin, qw{ data test_data define_parameters.yaml } );
+## Base arguments
+my $function_base_command = q{intersectBed};
 
-## Loads a YAML file into an arbitrary hash and returns it.
-my %parameter = load_yaml( { yaml_file => $definitions_file, } );
-
-## Load mandatory keys and values for parameters
-my %mandatory_key = load_yaml(
-    {
-        yaml_file => catfile(
-            dirname($Bin), qw{ definitions mandatory_parameter_keys.yaml }
-        ),
-    }
+my %base_argument = (
+    FILEHANDLE => {
+        input           => undef,
+        expected_output => $function_base_command,
+    },
+    stderrfile_path => {
+        input           => q{stderrfile.test},
+        expected_output => q{2> stderrfile.test},
+    },
+    stderrfile_path_append => {
+        input           => q{stderrfile.test},
+        expected_output => q{2>> stderrfile.test},
+    },
+    stdoutfile_path => {
+        input           => q{stdoutfile.test},
+        expected_output => q{1> stdoutfile.test},
+    },
 );
 
-## Load non mandatory keys and values for parameters
-my %non_mandatory_key = load_yaml(
-    {
-        yaml_file => catfile(
-            dirname($Bin), qw{ definitions non_mandatory_parameter_keys.yaml }
-        ),
-
-    }
+## Can be duplicated with %base_argument and/or %specific_argument
+## to enable testing of each individual argument
+my %required_argument = (
+    intersectfile_path => {
+        input           => q{bwa_mem_rapid_db},
+        expected_output => q{-b bwa_mem_rapid_db},
+    },
 );
 
-check_parameter_hash(
-    {
-        parameter_href         => \%parameter,
-        mandatory_key_href     => \%mandatory_key,
-        non_mandatory_key_href => \%non_mandatory_key,
-        file_path              => $definitions_file,
-    }
+my %specific_argument = (
+    infile_path => {
+        input           => q{stdin},
+        expected_output => q{-a stdin},
+    },
+    with_header => {
+        input           => 1,
+        expected_output => q{-header},
+    },
 );
 
-## Made it this far without croakin
-my $error;
-is( $error, undef, q{No errors detected} );
+## Coderef - enables generalized use of generate call
+my $module_function_cref = \&bedtools_intersectbed;
+
+## Test both base and function specific arguments
+my @arguments = ( \%base_argument, \%specific_argument );
+
+ARGUMENT_HASH_REF:
+foreach my $argument_href (@arguments) {
+    my @commands = test_function(
+        {
+            argument_href          => $argument_href,
+            required_argument_href => \%required_argument,
+            module_function_cref   => $module_function_cref,
+            function_base_command  => $function_base_command,
+            do_test_base_command   => 1,
+        }
+    );
+}
 
 done_testing();
 

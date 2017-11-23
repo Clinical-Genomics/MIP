@@ -1,4 +1,3 @@
-analysis_get_overall_analysis_type.t
 bcftools_annotate.t
 bcftools_call.t
 bcftools_concat.t
@@ -11,6 +10,7 @@ bcftools_roh.t
 bcftools_stats.t
 bcftools_view.t
 bedtools_genomecov.t
+bedtools_intersectbed.t
 bwa_mem.t
 bwa_index.t
 bzip2.t
@@ -39,6 +39,7 @@ cluster_check_max_core_number.t
 cluster_get_core_number.t
 cluster_update_core_number_to_seq_mode.t
 cpanm_install.t
+cutadapt.t
 delly_call.t
 delly_filter.t
 delly_merge.t
@@ -63,6 +64,7 @@ gatk_varianteval.t
 gatk_variantrecalibrator.t
 get_exom_target_bed_file.t
 get_merged_infile_prefix.t
+get_overall_analysis_type.t
 get_select_file_contigs.t
 get_seq_dict_contigs.t
 git_clone.t
@@ -90,6 +92,8 @@ gnu_split.t
 gnu_trap.t
 gnu_wait.t
 gzip.t
+htslib_bgzip.t
+htslib_tabix.t
 initiate_logger.t
 java_core.t
 list_delete_contig_elements.t

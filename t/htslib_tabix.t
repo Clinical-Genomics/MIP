@@ -1,22 +1,22 @@
 #!/usr/bin/env perl
 
+use 5.018;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use File::Basename qw{ basename dirname };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use Getopt::Long;
 use open qw{ :encoding(UTF-8) :std };
-use Params::Check qw{ check allow last_error };
+use Params::Check qw{ allow check last_error };
 use Test::More;
 use utf8;
 use warnings qw{ FATAL utf8 };
-use 5.018;
 
 ## CPANM
-use Modern::Perl qw{ 2014 };
 use autodie;
+use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ## MIPs lib/
@@ -78,7 +78,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Program::Variantcalling::Bcftools});
+    my @modules = (q{MIP::Program::Utility::Htslib});
 
   MODULE:
     for my $module (@modules) {
@@ -86,11 +86,11 @@ BEGIN {
     }
 }
 
-use MIP::Program::Variantcalling::Bcftools qw{ bcftools_norm };
+use MIP::Program::Utility::Htslib qw{ htslib_tabix };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test bcftools_norm from Bcftools.pm v}
-      . $MIP::Program::Variantcalling::Bcftools::VERSION
+diag(   q{Test htslib_tabix from Htslib.pm v}
+      . $MIP::Program::Utility::Htslib::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -99,9 +99,13 @@ diag(   q{Test bcftools_norm from Bcftools.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{bcftools};
+my $function_base_command = q{tabix};
 
 my %base_argument = (
+    FILEHANDLE => {
+        input           => undef,
+        expected_output => $function_base_command,
+    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
@@ -110,51 +114,47 @@ my %base_argument = (
         input           => q{stderrfile.test},
         expected_output => q{2>> stderrfile.test},
     },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
+    stdoutfile_path => {
+        input => catfile(
+            qw{ outfile_path_prefix vcfparser_analysis_type file_suffix .tbi }),
+        expected_output => q{1>}
+          . $SPACE
+          . catfile(
+            qw{ outfile_path_prefix vcfparser_analysis_type file_suffix .tbi }),
     },
 );
 
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
-my %required_argument = (
-    reference_path => {
-        input           => q{path_to_fasta_ref},
-        expected_output => q{--fasta-ref path_to_fasta_ref},
-    },
-    outfile_path => {
-        input           => q{outfile.txt},
-        expected_output => q{--output outfile.txt},
-    },
-    multiallelic => {
-        input           => q{+},
-        expected_output => q{--multiallelics +both},
-    },
-);
+my %required_argument;
 
 my %specific_argument = (
+    force => {
+        input           => 1,
+        expected_output => q{--force},
+    },
     infile_path => {
-        input           => q{infile.test},
-        expected_output => q{infile.test},
+        input => catfile(qw{ outfile_path_prefix vcfparser_analysis_type .gz }),
+        expected_output =>
+          catfile(qw{ outfile_path_prefix vcfparser_analysis_type .gz }),
     },
-    multiallelic => {
-        input           => q{+},
-        expected_output => q{--multiallelics +both},
+    preset => {
+        input           => q{vcf},
+        expected_output => q{--preset vcf},
     },
-    output_type => {
-        input           => q{v},
-        expected_output => q{--output-type v},
+    regions_ref => {
+        inputs_ref      => [qw{ 1 2 3 }],
+        expected_output => q{1 2 3},
     },
-    multiallelic_type => {
-        input           => q{snps},
-        expected_output => q{--multiallelics +snps},
+    with_header => {
+        input           => 1,
+        expected_output => q{--print-header},
     },
 
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&bcftools_norm;
+my $module_function_cref = \&htslib_tabix;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
@@ -180,12 +180,9 @@ done_testing();
 
 sub build_usage {
 
-## build_usage
-
 ## Function  : Build the USAGE instructions
-## Returns   : ""
-## Arguments : $program_name
-##           : $program_name => Name of the script
+## Returns   :
+## Arguments : $program_name => Name of the script
 
     my ($arg_href) = @_;
 

@@ -91,6 +91,7 @@ BEGIN {
 }
 
 use MIP::Get::File qw{ get_select_file_contigs };
+use MIP::Log::MIP_log4perl qw{ initiate_logger };
 
 diag(   q{Test get_select_file_contigs from File.pm v}
       . $MIP::Get::File::VERSION
@@ -104,35 +105,33 @@ diag(   q{Test get_select_file_contigs from File.pm v}
 ## Constants
 Readonly my $NUMBER_OF_CONTIGS => 25;
 
+## Create temp logger
+my $test_dir = File::Temp->newdir();
+my $test_log_path = catfile( $test_dir, q{test.log} );
+
+## Creates log object
+my $log = initiate_logger(
+    {
+        file_path => $test_log_path,
+        log_name  => q{TEST},
+    }
+);
+
 my %file_info;
 my $select_file_path =
   catfile( $Bin, qw{ data 643594-miptest aggregated_gene_panel_test.txt } );
 my $wrong_file =
   catfile( $Bin, qw{ data 643594-miptest 643594-miptest_pedigree.yaml } );
 
-( my $error_msg, @{ $file_info{select_file_contigs} } ) =
-  get_select_file_contigs(
+@{ $file_info{select_file_contigs} } = get_select_file_contigs(
     {
         select_file_path => $select_file_path,
-    }
-  );
-
-is( scalar @{ $file_info{select_file_contigs} },
-    $NUMBER_OF_CONTIGS, q{Got select file contigs} );
-
-is( $error_msg, undef, q{No error message} );
-
-## Should fail
-( $error_msg, @{ $file_info{select_file_contigs} } ) = get_select_file_contigs(
-    {
-        select_file_path => $wrong_file,
+        log              => $log,
     }
 );
 
 is( scalar @{ $file_info{select_file_contigs} },
-    0, q{Did not get select file contigs} );
-
-isnt( $error_msg, undef, q{Generated error message} );
+    $NUMBER_OF_CONTIGS, q{Got select file contigs} );
 
 done_testing();
 

@@ -31,29 +31,29 @@ sub update_to_absolute_path {
 
 ## Function : Change relative path to absolute path for parameters with update_path: aboslute path in definitions file
 ## Returns  :
-## Arguments: $parameter_href        => Parameter hash {REF}
-##          : $active_parameter_href => Active parameters for this analysis hash {REF}
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $parameter_href        => Parameter hash {REF}
 
     my ($arg_href) = @_;
 
     ##Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
+    my $parameter_href;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
             store       => \$active_parameter_href,
+        },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
         },
     };
 
@@ -76,8 +76,6 @@ sub update_to_absolute_path {
         @{ $parameter_href->{dynamic_parameter}{absolute_path} } )
     {
 
-        my $error_msg;
-
         ## If array
         if ( ref $active_parameter_href->{$parameter_name} eq q{ARRAY} ) {
 
@@ -85,7 +83,7 @@ sub update_to_absolute_path {
                 @{ $active_parameter_href->{$parameter_name} } )
             {
 
-                ( $parameter_value, $error_msg ) = set_absolute_path(
+                $parameter_value = set_absolute_path(
                     {
                         path           => $parameter_value,
                         parameter_name => $parameter_name,
@@ -105,7 +103,7 @@ sub update_to_absolute_path {
                 if ( defined $parameter_value_ref ) {
 
                     ## Find aboslute path for supplied key path or croaks and exists if path does not exists
-                    ( my $updated_key, $error_msg ) = set_absolute_path(
+                    my $updated_key = set_absolute_path(
                         {
                             path           => $key,
                             parameter_name => $parameter_name,
@@ -122,15 +120,13 @@ sub update_to_absolute_path {
         {
             ## Scalar
 
-            ( $active_parameter_href->{$parameter_name}, $error_msg ) =
-              set_absolute_path(
+            $active_parameter_href->{$parameter_name} = set_absolute_path(
                 {
                     path           => $active_parameter_href->{$parameter_name},
                     parameter_name => $parameter_name,
                 }
-              );
+            );
         }
-        return $error_msg if ($error_msg);
     }
     return;
 }

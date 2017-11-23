@@ -101,7 +101,7 @@ prankvariant: 1
 prhocall: 1
 psacct: 1
 psambamba_depth: 1
-psamtools_mpileup: 1
+pbcftools_mpileup: 1
 psnpeff: 1
 psv_combinevariantcallsets: 1
 psv_rankvariant: 1

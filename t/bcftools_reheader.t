@@ -1,21 +1,22 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{ 2014 };
-use warnings qw{ FATAL utf8 };
-use autodie;
-use 5.018;    #Require at least perl 5.18
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
 use Carp;
+use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-
-use FindBin qw{ $Bin };    #Find directory of script
 use File::Basename qw{ dirname basename };
 use File::Spec::Functions qw{ catdir };
+use FindBin qw{ $Bin };
 use Getopt::Long;
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
+use 5.018;
+
+## CPANM
+use Modern::Perl qw{ 2014 };
+use autodie;
 use Readonly;
 
 ## MIPs lib/
@@ -28,17 +29,21 @@ my $VERBOSE = 1;
 our $VERSION = 1.0.0;
 
 ## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
 Readonly my $COMMA   => q{,};
+Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => q{ };
 
-###User Options
+### User Options
 GetOptions(
+
+    # Display help text
     q{h|help} => sub {
         done_testing();
         say {*STDOUT} $USAGE;
         exit;
-    },    #Display help text
+    },
+
+    # Display version number
     q{v|version} => sub {
         done_testing();
         say {*STDOUT} $NEWLINE
@@ -47,7 +52,7 @@ GetOptions(
           . $VERSION
           . $NEWLINE;
         exit;
-    },    #Display version number
+    },
     q{vb|verbose} => $VERBOSE,
   )
   or (
@@ -64,9 +69,7 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module;
-
-    $perl_module{q{MIP::Script::Utils}} = [qw{ help }];
+    my %perl_module = ( q{MIP::Script::Utils} => [qw{ help }], );
 
   PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
@@ -86,7 +89,7 @@ BEGIN {
 use MIP::Program::Variantcalling::Bcftools qw{ bcftools_reheader };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test bcftools_reheader from Bcftools v}
+diag(   q{Test bcftools_reheader from Bcftools.pm v}
       . $MIP::Program::Variantcalling::Bcftools::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -99,6 +102,10 @@ diag(   q{Test bcftools_reheader from Bcftools v}
 my $function_base_command = q{bcftools};
 
 my %base_argument = (
+    FILEHANDLE => {
+        input           => undef,
+        expected_output => $function_base_command,
+    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
@@ -106,10 +113,6 @@ my %base_argument = (
     stderrfile_path_append => {
         input           => q{stderrfile.test},
         expected_output => q{2>> stderrfile.test},
-    },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
     },
     stdoutfile_path => {
         input           => q{stdoutfile_path},
@@ -124,7 +127,7 @@ my %required_argument = ();
 my %specific_argument = (
     outfile_path => {
         input           => q{outfile.txt},
-        expected_output => q{> outfile.txt},
+        expected_output => q{--output outfile.txt},
     },
     infile_path => {
         input           => q{infile.test},
@@ -132,7 +135,7 @@ my %specific_argument = (
     },
     samples_file_path => {
         input           => q{samples_file_path},
-        expected_output => q{--samples samples_file_path},
+        expected_output => q{--samples-file samples_file_path},
     },
 );
 

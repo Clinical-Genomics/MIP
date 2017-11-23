@@ -1,22 +1,22 @@
 #!/usr/bin/env perl
 
+use 5.018;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use File::Basename qw{ basename dirname  };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use Getopt::Long;
 use open qw{ :encoding(UTF-8) :std };
-use Params::Check qw{ check allow last_error };
+use Params::Check qw{ allow check last_error };
 use Test::More;
 use utf8;
 use warnings qw{ FATAL utf8 };
-use 5.018;
 
 ## CPANM
-use Modern::Perl qw{ 2014 };
 use autodie;
+use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ## MIPs lib/
@@ -78,7 +78,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Program::Variantcalling::Bcftools});
+    my @modules = (q{MIP::Program::Trimming::Cutadapt});
 
   MODULE:
     for my $module (@modules) {
@@ -86,11 +86,11 @@ BEGIN {
     }
 }
 
-use MIP::Program::Variantcalling::Bcftools qw{ bcftools_norm };
+use MIP::Program::Trimming::Cutadapt qw{ cutadapt };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test bcftools_norm from Bcftools.pm v}
-      . $MIP::Program::Variantcalling::Bcftools::VERSION
+diag(   q{Test cutadapt from Cutadapt.pm v}
+      . $MIP::Program::Trimming::Cutadapt::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -99,9 +99,13 @@ diag(   q{Test bcftools_norm from Bcftools.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{bcftools};
+my $function_base_command = q{cutadapt};
 
 my %base_argument = (
+    FILEHANDLE => {
+        input           => undef,
+        expected_output => $function_base_command,
+    },
     stderrfile_path => {
         input           => q{stderrfile.test},
         expected_output => q{2> stderrfile.test},
@@ -110,51 +114,42 @@ my %base_argument = (
         input           => q{stderrfile.test},
         expected_output => q{2>> stderrfile.test},
     },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
+    stdoutfile_path => {
+        input           => q{stdoutfile.test},
+        expected_output => q{1> stdoutfile.test},
     },
 );
 
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    reference_path => {
-        input           => q{path_to_fasta_ref},
-        expected_output => q{--fasta-ref path_to_fasta_ref},
+    adapter_3_prime => {
+        input           => q{TEST_STRING},
+        expected_output => q{--adapter=TEST_STRING},
     },
-    outfile_path => {
-        input           => q{outfile.txt},
-        expected_output => q{--output outfile.txt},
-    },
-    multiallelic => {
-        input           => q{+},
-        expected_output => q{--multiallelics +both},
+    adapter_5_prime => {
+        input           => q{TEST_STRING},
+        expected_output => q{--adapter=TEST_STRING},
     },
 );
 
 my %specific_argument = (
-    infile_path => {
-        input           => q{infile.test},
-        expected_output => q{infile.test},
+    adapter_3_prime => {
+        input           => q{test_3_prime},
+        expected_output => q{--adapter=test_3_prime},
     },
-    multiallelic => {
-        input           => q{+},
-        expected_output => q{--multiallelics +both},
+    adapter_5_prime => {
+        input           => q{test_5_prime},
+        expected_output => q{--front=test_5_prime},
     },
-    output_type => {
-        input           => q{v},
-        expected_output => q{--output-type v},
+    outputfile_path => {
+        input           => catfile(qw{ a test file }),
+        expected_output => q{--output=} . catfile(qw{ a test file }),
     },
-    multiallelic_type => {
-        input           => q{snps},
-        expected_output => q{--multiallelics +snps},
-    },
-
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&bcftools_norm;
+my $module_function_cref = \&cutadapt;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
@@ -180,12 +175,9 @@ done_testing();
 
 sub build_usage {
 
-## build_usage
-
 ## Function  : Build the USAGE instructions
-## Returns   : ""
-## Arguments : $program_name
-##           : $program_name => Name of the script
+## Returns   :
+## Arguments : $program_name => Name of the script
 
     my ($arg_href) = @_;
 

@@ -78,7 +78,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Check::Parameter});
+    my @modules = (q{MIP::Program::Base::Bcftools});
 
   MODULE:
     for my $module (@modules) {
@@ -86,11 +86,11 @@ BEGIN {
     }
 }
 
-use MIP::Check::Parameter qw{ check_parameter_hash };
-use MIP::File::Format::Yaml qw{ load_yaml };
+use MIP::Program::Base::Bcftools qw{ bcftools_base };
+use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test check_parameter_hash from Parameter.pm v}
-      . $MIP::Check::Parameter::VERSION
+diag(   q{Test bcftools_base from Base::Bcftools.pm v}
+      . $MIP::Program::Base::Bcftools::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -98,43 +98,76 @@ diag(   q{Test check_parameter_hash from Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $definitions_file =
-  catfile( $Bin, qw{ data test_data define_parameters.yaml } );
+## Base arguments
+my $function_base_command = q{bcftools};
 
-## Loads a YAML file into an arbitrary hash and returns it.
-my %parameter = load_yaml( { yaml_file => $definitions_file, } );
-
-## Load mandatory keys and values for parameters
-my %mandatory_key = load_yaml(
-    {
-        yaml_file => catfile(
-            dirname($Bin), qw{ definitions mandatory_parameter_keys.yaml }
-        ),
-    }
+my %base_argument = (
+    FILEHANDLE => {
+        input           => undef,
+        expected_output => $function_base_command,
+    },
 );
 
-## Load non mandatory keys and values for parameters
-my %non_mandatory_key = load_yaml(
-    {
-        yaml_file => catfile(
-            dirname($Bin), qw{ definitions non_mandatory_parameter_keys.yaml }
-        ),
-
-    }
+## Can be duplicated with %base_argument and/or %specific_argument
+## to enable testing of each individual argument
+my %required_argument = (
+    commands_ref => {
+        inputs_ref      => [qw{ bcftools mpileup }],
+        expected_output => q{bcftools mpileup},
+    },
+    FILEHANDLE => {
+        input           => undef,
+        expected_output => $function_base_command,
+    },
 );
 
-check_parameter_hash(
-    {
-        parameter_href         => \%parameter,
-        mandatory_key_href     => \%mandatory_key,
-        non_mandatory_key_href => \%non_mandatory_key,
-        file_path              => $definitions_file,
-    }
+my %specific_argument = (
+    commands_ref => {
+        inputs_ref      => [qw{ bcftools mpileup }],
+        expected_output => q{mpileup},
+    },
+    outfile_path => {
+        input           => catfile(qw{ a test file }),
+        expected_output => q{--output} . $SPACE . catfile(qw{ a test file }),
+    },
+    output_type => {
+        input           => q{b},
+        expected_output => q{--output-type} . $SPACE . q{b},
+    },
+    regions_ref => {
+        inputs_ref      => [qw{ 1 2 }],
+        expected_output => q{--regions_ref 1,2},
+    },
+    samples_file_path => {
+        input           => catfile(qw{ a test sample_file }),
+        expected_output => q{--samples-file}
+          . $SPACE
+          . catfile(qw{ a test sample_file }),
+    },
+    samples_ref => {
+        inputs_ref      => [qw{ ^sample_1 sample_2 }],
+        expected_output => q{--samples ^sample_1,sample_2},
+    },
 );
 
-## Made it this far without croakin
-my $error;
-is( $error, undef, q{No errors detected} );
+## Coderef - enables generalized use of generate call
+my $module_function_cref = \&bcftools_base;
+
+## Test both base and function specific arguments
+my @arguments = ( \%base_argument, \%specific_argument );
+
+ARGUMENT_HASH_REF:
+foreach my $argument_href (@arguments) {
+    my @commands = test_function(
+        {
+            argument_href          => $argument_href,
+            required_argument_href => \%required_argument,
+            module_function_cref   => $module_function_cref,
+            function_base_command  => $function_base_command,
+            do_test_base_command   => 1,
+        }
+    );
+}
 
 done_testing();
 

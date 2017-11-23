@@ -110,7 +110,7 @@ use MIP::Recipes::Analysis::Plink qw{ analysis_plink };
 use MIP::Recipes::Qc::Qccollect qw{ analysis_qccollect };
 use MIP::Recipes::Analysis::Rcoverageplots qw{ analysis_rcoverageplots };
 use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
-use MIP::Recipes::Analysis::Samtools_mpileup qw { analysis_samtools_mpileup };
+use MIP::Recipes::Analysis::Bcftools_mpileup qw { analysis_bcftools_mpileup };
 use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
 use MIP::Recipes::Analysis::Tiddit qw{ analysis_tiddit };
 use MIP::Recipes::Analysis::Variant_integrity qw{ analysis_variant_integrity };
@@ -194,7 +194,7 @@ my %non_mandatory_key = load_yaml(
 );
 
 ## Eval parameter hash
-my $error_msg = check_parameter_hash(
+check_parameter_hash(
     {
         parameter_href         => \%parameter,
         mandatory_key_href     => \%mandatory_key,
@@ -202,8 +202,6 @@ my $error_msg = check_parameter_hash(
         file_path              => $definitions_file,
     }
 );
-## Broadcast error in parameter key or values
-croak($error_msg) if ($error_msg);
 
 ## Set MIP version
 our $VERSION = 'v5.0.12';
@@ -312,6 +310,7 @@ GetOptions(
       \$active_parameter{split_fastq_file_read_batch},
     q{pgz|pgzip_fastq=n}         => \$active_parameter{pgzip_fastq},
     q{pfqc|pfastqc=n}            => \$active_parameter{pfastqc},
+    q{pcta|pcutadapt=n}          => \$active_parameter{pcutadapt},
     q{pmem|pbwa_mem=n}           => \$active_parameter{pbwa_mem},
     q{memhla|bwa_mem_hla=n}      => \$active_parameter{bwa_mem_hla},
     q{memcrm|bwa_mem_cram=n}     => \$active_parameter{bwa_mem_cram},
@@ -426,7 +425,9 @@ GetOptions(
       \$active_parameter{sv_rankvariant_binary_file},
     q{svrergf|sv_reformat_remove_genes_file:s} =>
       \$active_parameter{sv_reformat_remove_genes_file},
-    q{psmp|psamtools_mpileup=n} => \$active_parameter{psamtools_mpileup},
+    q{pbmp|pbcftools_mpileup=n} => \$active_parameter{pbcftools_mpileup},
+    q{pbmpfv|bcftools_mpileup_filter_variant} =>
+      \$active_parameter{bcftools_mpileup_filter_variant},
     q{pfrb|pfreebayes=n}        => \$active_parameter{pfreebayes},
     q{gtp|gatk_path:s}          => \$active_parameter{gatk_path},
     q{gll|gatk_logging_level:s} => \$active_parameter{gatk_logging_level},
@@ -609,13 +610,12 @@ GetOptions(
 $active_parameter{mip} = $parameter{mip}{default};
 
 ## Change relative path to absolute path for parameter with "update_path: absolute_path" in config
-$error_msg = update_to_absolute_path(
+update_to_absolute_path(
     {
         parameter_href        => \%parameter,
         active_parameter_href => \%active_parameter,
     }
 );
-croak($error_msg) if ($error_msg);
 
 ### Config file
 ## If config from cmd
@@ -646,13 +646,12 @@ if ( exists $active_parameter{config_file}
     );
 
     ## Compare keys from config and cmd (%active_parameter) with definitions file (%parameter)
-    my $error_msg = check_cmd_config_vs_definition_file(
+    check_cmd_config_vs_definition_file(
         {
             active_parameter_href => \%active_parameter,
             parameter_href        => \%parameter,
         }
     );
-    croak($error_msg) if ($error_msg);
 
     my @config_dynamic_parameters = qw{ analysis_constant_path outaligner_dir };
 
@@ -904,19 +903,13 @@ update_vcfparser_outfile_counter(
 if ( $active_parameter{vcfparser_select_file} ) {
 
 ## Collects sequences contigs used in select file
-    ( my $error_msg, @{ $file_info{select_file_contigs} } ) =
-      get_select_file_contigs(
+    @{ $file_info{select_file_contigs} } = get_select_file_contigs(
         {
             select_file_path =>
               catfile( $active_parameter{vcfparser_select_file} ),
             log => $log,
         }
-      );
-    if ($error_msg) {
-
-        $log->fatal($error_msg);
-        exit 1;
-    }
+    );
 }
 
 ## Detect family constellation based on pedigree file
@@ -2213,19 +2206,20 @@ if ( $active_parameter{psv_reformat} > 0 ) {   #Run sv_reformat. Done per family
     );
 }
 
-if ( $active_parameter{psamtools_mpileup} > 0 ) {    #Run samtools mpileup
+## Run bcftools mpileup
+if ( $active_parameter{pbcftools_mpileup} ) {
 
-    $log->info(q{[Samtools mpileup]});
-    my $program_name = q{samtools_mpileup};
+    $log->info(q{[Bcftools mpileup]});
+    my $program_name = q{bcftools_mpileup};
 
-    my $program_outdirectory_name = $parameter{psamtools_mpileup}{outdir_name};
+    my $program_outdirectory_name = $parameter{pbcftools_mpileup}{outdir_name};
 
     my $outfamily_directory = catfile(
         $active_parameter{outdata_dir},    $active_parameter{family_id},
         $active_parameter{outaligner_dir}, $program_outdirectory_name,
     );
 
-    analysis_samtools_mpileup(
+    analysis_bcftools_mpileup(
         {
             parameter_href          => \%parameter,
             active_parameter_href   => \%active_parameter,
@@ -2429,7 +2423,7 @@ if ( $active_parameter{pgatk_combinevariantcallsets} > 0 ) {
 # Run Peddy. Done per family
 if ( $active_parameter{ppeddy} > 0 ) {
 
-    $log->info( q{[Peddy]} );
+    $log->info(q{[Peddy]});
     my $program_name = q{peddy};
 
     my $infamily_directory = catdir(
@@ -2825,9 +2819,10 @@ if ( $active_parameter{pgatk_variantevalexome} > 0 ) {
 
 if ( $active_parameter{pqccollect} > 0 ) {    #Run qccollect. Done per family
 
-    $log->info( q{[Qccollect]} );
+    $log->info(q{[Qccollect]});
     my $program_name = q{qccollect};
-    my $outfamily_directory = catdir( $active_parameter{outdata_dir}, $active_parameter{family_id} );
+    my $outfamily_directory =
+      catdir( $active_parameter{outdata_dir}, $active_parameter{family_id} );
 
     analysis_qccollect(
         {
@@ -3012,6 +3007,7 @@ sub build_usage {
       -sfqrdb/--split_fastq_file_read_batch The number of sequence reads to place in each batch (defaults to "25,000,000")
     -pgz/--pgzip_fastq Gzip fastq files (defaults to "0" (=no))
     -pfqc/--pfastqc Sequence quality analysis using FastQC (defaults to "0" (=no))
+    -pcta/--pcutadapt trim input reads using cutadapt (defaults to "0" (=no))
 
     ##BWA
     -pmem/--pbwa_mem Align reads using Bwa Mem (defaults to "0" (=no))
@@ -3097,8 +3093,9 @@ sub build_usage {
       -svrevbf/--sv_rankvariant_binary_file Produce binary file from the rank variant chromosome sorted vcfs (defaults to "1" (=yes))
       -svrergf/--sv_reformat_remove_genes_file Remove variants in hgnc_ids (defaults to "")
 
-    ##Samtools
-    -psmp/--psamtools_mpileup Variant calling using samtools mpileup and bcftools (defaults to "0" (=no))
+    ##Bcftools
+    -pbmp/--pbcftools_mpileup Variant calling using bcftools mpileup (defaults to "0" (=no))
+      -pbmpfv/--bcftools_mpileup_filter_variant (Supply flag to enable)
 
     ##Freebayes
     -pfrb/--pfreebayes Variant calling using Freebayes and bcftools (defaults to "0" (=no))
@@ -3139,7 +3136,7 @@ sub build_usage {
     -pgcv/--pgatk_combinevariantcallsets Combine variant call sets (defaults to "0" (=no))
       -gcvbcf/--gatk_combinevariantcallsets_bcf_file Produce a bcf from the GATK CombineVariantCallSet vcf (defaults to "1" (=yes))
       -gcvgmo/--gatk_combinevariants_genotype_merge_option Type of merge to perform (defaults to "PRIORITIZE")
-      -gcvpc/--gatk_combinevariants_prioritize_caller The prioritization order of variant callers.(defaults to ""; comma sep; Options: gatk|samtools|freebayes)
+      -gcvpc/--gatk_combinevariants_prioritize_caller The prioritization order of variant callers.(defaults to ""; comma sep; Options: gatk|bcftools|freebayes)
     -pgvea/--pgatk_variantevalall Variant evaluation using GATK varianteval for all variants  (defaults to "0" (=no))
     -pgvee/--pgatk_variantevalexome Variant evaluation using GATK varianteval for exonic variants  (defaults to "0" (=no))
       -gveedbs/--gatk_varianteval_dbsnp DbSNP file used in GATK varianteval (defaults to "dbsnp_GRCh37_138_esa_129.vcf")
@@ -3978,7 +3975,7 @@ sub endvariantannotationblock {
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::IO::Files qw{ xargs_migrate_contig_files };
-    use Program::Htslib qw(bgzip tabix);
+    use MIP::Program::Utility::Htslib qw(htslib_bgzip htslib_tabix);
     use MIP::Gnu::Software::Gnu_grep qw(gnu_grep);
     use MIP::QC::Record qw(add_program_metafile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
@@ -4192,13 +4189,13 @@ sub endvariantannotationblock {
         if ( $active_parameter_href->{rankvariant_binary_file} ) {
 
             ## Compress or decompress original file or stream to outfile (if supplied)
-            bgzip(
+            htslib_bgzip(
                 {
                     FILEHANDLE  => $FILEHANDLE,
                     infile_path => $outfile_path_prefix
                       . $vcfparser_analysis_type
                       . $outfile_suffix,
-                    outfile_path => $outfile_path_prefix
+                    stdoutfile_path => $outfile_path_prefix
                       . $vcfparser_analysis_type
                       . $outfile_suffix . ".gz",
                     write_to_stdout => 1,
@@ -4207,7 +4204,7 @@ sub endvariantannotationblock {
             say {$FILEHANDLE} "\n";
 
             ## Index file using tabix
-            tabix(
+            htslib_tabix(
                 {
                     FILEHANDLE  => $FILEHANDLE,
                     infile_path => $outfile_path_prefix
@@ -6682,7 +6679,7 @@ sub rhocall {
                 outfile_path => $file_path_prefix . "_" . $contig . ".roh",
                 af_file_path =>
                   $active_parameter_href->{rhocall_frequency_file},
-                sample_ids_ref => \@sample_ids,
+                samples_ref => \@sample_ids,
                 skip_indels =>
                   1,    #Skip indels as their genotypes are enriched for errors
                 FILEHANDLE => $XARGSFILEHANDLE,
@@ -6879,7 +6876,7 @@ sub prepareforvariantannotationblock {
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use Program::Htslib qw(bgzip tabix);
+    use MIP::Program::Utility::Htslib qw(htslib_bgzip htslib_tabix);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
 
@@ -6977,18 +6974,18 @@ sub prepareforvariantannotationblock {
     say {$FILEHANDLE} q{wait}, "\n";
 
     ## Compress or decompress original file or stream to outfile (if supplied)
-    bgzip(
+    htslib_bgzip(
         {
             FILEHANDLE      => $FILEHANDLE,
             infile_path     => $file_path_prefix . $infile_suffix,
-            outfile_path    => $file_path_prefix . $outfile_suffix,
+            stdoutfile_path => $file_path_prefix . $outfile_suffix,
             write_to_stdout => 1,
         }
     );
     say {$FILEHANDLE} "\n";
 
     ## Index file using tabix
-    tabix(
+    htslib_tabix(
         {
             FILEHANDLE  => $FILEHANDLE,
             infile_path => $file_path_prefix . $outfile_suffix,
@@ -7012,7 +7009,7 @@ sub prepareforvariantannotationblock {
     ## Split vcf into contigs
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
-        tabix(
+        htslib_tabix(
             {
                 regions_ref => [$contig],
                 infile_path => $file_path_prefix . $outfile_suffix,
@@ -7023,10 +7020,10 @@ sub prepareforvariantannotationblock {
         print $XARGSFILEHANDLE "| ";
 
         ## Compress or decompress original file or stream to outfile (if supplied)
-        bgzip(
+        htslib_bgzip(
             {
-                FILEHANDLE   => $XARGSFILEHANDLE,
-                outfile_path => $file_path_prefix . "_"
+                FILEHANDLE      => $XARGSFILEHANDLE,
+                stdoutfile_path => $file_path_prefix . "_"
                   . $contig
                   . $outfile_suffix,
                 write_to_stdout => 1,
@@ -7035,7 +7032,7 @@ sub prepareforvariantannotationblock {
         print $XARGSFILEHANDLE "; ";
 
         ## Index file using tabix
-        tabix(
+        htslib_tabix(
             {
                 FILEHANDLE  => $XARGSFILEHANDLE,
                 infile_path => $file_path_prefix . "_"
@@ -7218,7 +7215,7 @@ sub sv_reformat {
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Delete::List qw{ delete_contig_elements delete_male_contig };
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
-    use Program::Htslib qw(bgzip tabix);
+    use MIP::Program::Utility::Htslib qw(htslib_bgzip htslib_tabix);
     use MIP::Gnu::Software::Gnu_grep qw( gnu_grep);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
@@ -7508,13 +7505,13 @@ sub sv_reformat {
         if ( $active_parameter_href->{sv_rankvariant_binary_file} ) {
 
             ## Compress or decompress original file or stream to outfile (if supplied)
-            bgzip(
+            htslib_bgzip(
                 {
                     FILEHANDLE  => $FILEHANDLE,
                     infile_path => $outfile_path_prefix
                       . $vcfparser_analysis_type
                       . $file_suffix,
-                    outfile_path => $outfile_path_prefix
+                    stdoutfile_path => $outfile_path_prefix
                       . $vcfparser_analysis_type
                       . $file_suffix . ".gz",
                     write_to_stdout => 1,
@@ -7523,7 +7520,7 @@ sub sv_reformat {
             say {$FILEHANDLE} "\n";
 
             ## Index file using tabix
-            tabix(
+            htslib_tabix(
                 {
                     FILEHANDLE  => $FILEHANDLE,
                     infile_path => $outfile_path_prefix
@@ -8936,7 +8933,7 @@ sub sv_combinevariantcallsets {
     use Program::Variantcalling::Svdb qw(merge query);
     use MIP::Program::Variantcalling::Bcftools
       qw (bcftools_merge bcftools_view bcftools_annotate);
-    use Program::Htslib qw(bgzip tabix);
+    use MIP::Program::Utility::Htslib qw(htslib_bgzip htslib_tabix);
     use MIP::Program::Variantcalling::Bcftools qw{bcftools_view_and_index_vcf};
     use Program::Variantcalling::Vt qw(decompose);
     use Program::Variantcalling::Genmod qw(annotate);

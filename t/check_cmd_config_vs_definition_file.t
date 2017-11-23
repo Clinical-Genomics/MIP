@@ -121,18 +121,6 @@ my $error_msg = check_cmd_config_vs_definition_file(
 
 is( $error_msg, undef, q{No unique parameters} );
 
-## Add not unique key
-$active_parameter{unique_key} = 1;
-
-$error_msg = check_cmd_config_vs_definition_file(
-    {
-        active_parameter_href => \%active_parameter,
-        parameter_href        => \%parameter,
-    }
-);
-
-isnt( $error_msg, undef, q{Unique parameters} );
-
 done_testing();
 
 ######################

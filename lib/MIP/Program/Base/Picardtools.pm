@@ -1,17 +1,19 @@
 package MIP::Program::Base::Picardtools;
 
-use strict;
-use warnings;
-use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
 use Carp;
+use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-use FindBin qw{ $Bin };
 use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir };
+use FindBin qw{ $Bin };
+use Params::Check qw{ check allow last_error };
+use open qw{ :encoding(UTF-8) :std };
+use strict;
+use utf8;
+use warnings;
+use warnings qw{ FATAL utf8 };
+
+## CPANM
 use Readonly;
 
 ## MIPs lib/
@@ -34,15 +36,11 @@ Readonly my $SPACE => q{ };
 
 sub picardtools_base {
 
-## picardtools_base
-
 ## Function : Perl wrapper for picardtools base. Based on Picardtools v2.9.2-SNAPSHOT
 ## Returns  : @commands
-
-## Arguments:$commands_ref, $create_index, $referencefile_path, $FILEHANDLE
-##          : $commands_ref => List of commands added earlier
-##          : $FILEHANDLE   => Filehandle to write to
-##          : $create_index => Create a BAM index when writing a coordinate-sorted BAM file
+## Arguments: $commands_ref       => List of commands added earlier
+##          : $FILEHANDLE         => Filehandle to write to
+##          : $create_index       => Create a BAM index when writing a coordinate-sorted BAM file
 ##          : $referencefile_path => Genome reference file
 
     my ($arg_href) = @_;

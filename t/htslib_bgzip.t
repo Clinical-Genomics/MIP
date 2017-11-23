@@ -1,22 +1,22 @@
 #!/usr/bin/env perl
 
+use 5.018;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catfile catdir };
+use File::Basename qw{ basename dirname };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use Getopt::Long;
 use open qw{ :encoding(UTF-8) :std };
-use Params::Check qw{ check allow last_error };
+use Params::Check qw{ allow check last_error };
 use Test::More;
 use utf8;
 use warnings qw{ FATAL utf8 };
-use 5.018;
 
 ## CPANM
-use Modern::Perl qw{ 2014 };
 use autodie;
+use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ## MIPs lib/
@@ -78,7 +78,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Check::Parameter});
+    my @modules = (q{MIP::Program::Utility::Htslib});
 
   MODULE:
     for my $module (@modules) {
@@ -86,11 +86,11 @@ BEGIN {
     }
 }
 
-use MIP::Check::Parameter qw{ check_parameter_hash };
-use MIP::File::Format::Yaml qw{ load_yaml };
+use MIP::Program::Utility::Htslib qw{ htslib_bgzip };
+use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test check_parameter_hash from Parameter.pm v}
-      . $MIP::Check::Parameter::VERSION
+diag(   q{Test htslib_bgzip from Htslib.pm v}
+      . $MIP::Program::Utility::Htslib::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -98,43 +98,72 @@ diag(   q{Test check_parameter_hash from Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $definitions_file =
-  catfile( $Bin, qw{ data test_data define_parameters.yaml } );
+## Base arguments
+my $function_base_command = q{bgzip};
 
-## Loads a YAML file into an arbitrary hash and returns it.
-my %parameter = load_yaml( { yaml_file => $definitions_file, } );
-
-## Load mandatory keys and values for parameters
-my %mandatory_key = load_yaml(
-    {
-        yaml_file => catfile(
-            dirname($Bin), qw{ definitions mandatory_parameter_keys.yaml }
-        ),
-    }
+my %base_argument = (
+    FILEHANDLE => {
+        input           => undef,
+        expected_output => $function_base_command,
+    },
+    stderrfile_path => {
+        input           => q{stderrfile.test},
+        expected_output => q{2> stderrfile.test},
+    },
+    stderrfile_path_append => {
+        input           => q{stderrfile.test},
+        expected_output => q{2>> stderrfile.test},
+    },
+    stdoutfile_path => {
+        input => catfile(
+            qw{ outfile_path_prefix vcfparser_analysis_type file_suffix .gz }),
+        expected_output => q{1>}
+          . $SPACE
+          . catfile(
+            qw{ outfile_path_prefix vcfparser_analysis_type file_suffix .gz }),
+    },
 );
 
-## Load non mandatory keys and values for parameters
-my %non_mandatory_key = load_yaml(
-    {
-        yaml_file => catfile(
-            dirname($Bin), qw{ definitions non_mandatory_parameter_keys.yaml }
-        ),
+## Can be duplicated with %base_argument and/or %specific_argument
+## to enable testing of each individual argument
+my %required_argument;
 
-    }
+my %specific_argument = (
+    decompress => {
+        input           => 1,
+        expected_output => q{--decompress},
+    },
+    infile_path => {
+        input => catfile(
+            qw{ outfile_path_prefix vcfparser_analysis_type file_suffix }),
+        expected_output => catfile(
+            qw{ outfile_path_prefix vcfparser_analysis_type file_suffix }),
+    },
+    write_to_stdout => {
+        input           => 1,
+        expected_output => q{--stdout},
+    },
+
 );
 
-check_parameter_hash(
-    {
-        parameter_href         => \%parameter,
-        mandatory_key_href     => \%mandatory_key,
-        non_mandatory_key_href => \%non_mandatory_key,
-        file_path              => $definitions_file,
-    }
-);
+## Coderef - enables generalized use of generate call
+my $module_function_cref = \&htslib_bgzip;
 
-## Made it this far without croakin
-my $error;
-is( $error, undef, q{No errors detected} );
+## Test both base and function specific arguments
+my @arguments = ( \%base_argument, \%specific_argument );
+
+ARGUMENT_HASH_REF:
+foreach my $argument_href (@arguments) {
+    my @commands = test_function(
+        {
+            argument_href          => $argument_href,
+            required_argument_href => \%required_argument,
+            module_function_cref   => $module_function_cref,
+            function_base_command  => $function_base_command,
+            do_test_base_command   => 1,
+        }
+    );
+}
 
 done_testing();
 

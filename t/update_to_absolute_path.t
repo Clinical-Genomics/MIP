@@ -97,20 +97,23 @@ diag(   q{Test update_to_absolute_path from Update::Path.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my %parameter =
-  ( dynamic_parameter =>
-      { absolute_path => [qw{ hash array scalar no_absolute_path }] } );
+my %parameter = (
+    hash   => { update_path => q{absolute_path}, },
+    array  => { update_path => q{absolute_path}, },
+    scalar => { update_path => q{absolute_path}, },
+);
 
 my %active_parameter = (
     hash => {
-        scalar =>
-          catfile(qw{ data reference GRCh37_homo_sapiens_-d5-.fasta.gz })
+        file => q{annotation},
     },
     array =>
-      [ catfile(qw{ data reference GRCh37_homo_sapiens_-d5-.fasta.gz }) ],
-    scalar => catfile(qw{ data reference GRCh37_homo_sapiens_-d5-.fasta.gz }),
-    no_absolute_path => catfile(qw{ not a file }),
+      [ catfile(qw{ data references GRCh37_homo_sapiens_-d5-.fasta.gz }) ],
+    scalar => catfile(qw{ data references GRCh37_homo_sapiens_-d5-.fasta.gz }),
 );
+
+## Expected id for hash key after update_to_absolute_path
+my $hash_key_path = catfile( $Bin, q{file} );
 
 update_to_absolute_path(
     {
@@ -120,26 +123,16 @@ update_to_absolute_path(
 );
 
 ## NOTE: Update_to_absolute_path uppdated path for hash key and not value
-my $hash_key_path = catfile( $Bin, qw{ scalar } );
-my $expected_value =
-  catfile(qw{ data reference GRCh37_homo_sapiens_-d5-.fasta.gz });
-is( $active_parameter{hash}{$hash_key_path},
-    $expected_value, q{Set hash absolute path} );
+foreach my $key ( keys %{ $active_parameter{hash} } ) {
 
+    is( $key, $hash_key_path, q{Set hash absolute path} );
+}
+
+my $expected_value =
+  catfile( $Bin, qw{ data references GRCh37_homo_sapiens_-d5-.fasta.gz } );
 is( $active_parameter{array}[0], $expected_value, q{Set array absolute path} );
 
 is( $active_parameter{scalar}, $expected_value, q{Set scalar absolute path} );
-
-my %no_path = ( no_absolute_path => catfile(qw{ not a file }), );
-
-update_to_absolute_path(
-    {
-        parameter_href        => \%parameter,
-        active_parameter_href => \%no_path,
-    }
-);
-
-isnt( $no_path{no_absolute_path}, undef, q{Got error message} );
 
 done_testing();
 

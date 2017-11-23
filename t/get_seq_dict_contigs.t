@@ -70,9 +70,7 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Script::Utils}     => [qw{ help }],
-    );
+    my %perl_module = ( q{MIP::Script::Utils} => [qw{ help }], );
 
   PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
@@ -90,6 +88,7 @@ BEGIN {
 }
 
 use MIP::Get::File qw{ get_seq_dict_contigs };
+use MIP::Log::MIP_log4perl qw{ initiate_logger };
 
 diag(   q{Test get_seq_dict_contigs from File.pm v}
       . $MIP::Get::File::VERSION
@@ -103,33 +102,33 @@ diag(   q{Test get_seq_dict_contigs from File.pm v}
 ## Constants
 Readonly my $NUMBER_OF_CONTIGS => 86;
 
+## Create temp logger
+my $test_dir = File::Temp->newdir();
+my $test_log_path = catfile( $test_dir, q{test.log} );
+
+## Creates log object
+my $log = initiate_logger(
+    {
+        file_path => $test_log_path,
+        log_name  => q{TEST},
+    }
+);
+
 my %file_info;
 my $dict_file_path =
   catfile( $Bin, qw{ data references GRCh37_homo_sapiens_-d5-.dict } );
 my $wrong_file =
   catfile( $Bin, qw{ data 643594-miptest 643594-miptest_pedigree.yaml } );
 
-( my $error_msg, @{ $file_info{contigs} } ) = get_seq_dict_contigs(
+@{ $file_info{contigs} } = get_seq_dict_contigs(
     {
         dict_file_path => $dict_file_path,
+        log            => $log
     }
 );
 
 is( scalar @{ $file_info{contigs} },
     $NUMBER_OF_CONTIGS, q{Got dict file contigs} );
-
-is( $error_msg, undef, q{No error message} );
-
-## Should fail
-( $error_msg, @{ $file_info{contigs} } ) = get_seq_dict_contigs(
-    {
-        dict_file_path => $wrong_file,
-    }
-);
-
-is( scalar @{ $file_info{contigs} }, 0, q{Did not get dict file contigs} );
-
-isnt( $error_msg, undef, q{Generated error message} );
 
 done_testing();
 
