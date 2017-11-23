@@ -310,6 +310,7 @@ GetOptions(
       \$active_parameter{split_fastq_file_read_batch},
     q{pgz|pgzip_fastq=n}         => \$active_parameter{pgzip_fastq},
     q{pfqc|pfastqc=n}            => \$active_parameter{pfastqc},
+    q{pcta|pcutadapt=n}          => \$active_parameter{pcutadapt},
     q{pmem|pbwa_mem=n}           => \$active_parameter{pbwa_mem},
     q{memhla|bwa_mem_hla=n}      => \$active_parameter{bwa_mem_hla},
     q{memcrm|bwa_mem_cram=n}     => \$active_parameter{bwa_mem_cram},
@@ -3006,6 +3007,7 @@ sub build_usage {
       -sfqrdb/--split_fastq_file_read_batch The number of sequence reads to place in each batch (defaults to "25,000,000")
     -pgz/--pgzip_fastq Gzip fastq files (defaults to "0" (=no))
     -pfqc/--pfastqc Sequence quality analysis using FastQC (defaults to "0" (=no))
+    -pcta/--pcutadapt trim input reads using cutadapt (defaults to "0" (=no))
 
     ##BWA
     -pmem/--pbwa_mem Align reads using Bwa Mem (defaults to "0" (=no))

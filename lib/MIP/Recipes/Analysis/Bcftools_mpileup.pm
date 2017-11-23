@@ -345,6 +345,7 @@ sub analysis_bcftools_mpileup {
                 output_type                      => $output_type,
                 per_sample_increased_sensitivity => 1,
                 referencefile_path               => $reference_path,
+                regions_ref                      => [$contig],
                 stderrfile_path                  => $stderrfile_path_prefix
                   . $DOT
                   . q{stderr.txt},
@@ -372,6 +373,7 @@ sub analysis_bcftools_mpileup {
                 form_fields_ref     => [qw{ GQ }],
                 multiallelic_caller => 1,
                 output_type         => $output_type,
+                regions_ref         => [$contig],
                 samples_file_path   => $samples_file,
                 stderrfile_path     => $stderrfile_path_prefix
                   . $UNDERSCORE
@@ -434,6 +436,7 @@ sub analysis_bcftools_mpileup {
                   . $contig
                   . $outfile_suffix,
                 reference_path  => $reference_path,
+                regions_ref     => [$contig],
                 stderrfile_path => $stderrfile_path_prefix
                   . $UNDERSCORE
                   . q{norm.stderr.txt},

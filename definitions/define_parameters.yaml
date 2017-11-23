@@ -410,6 +410,18 @@ pfastqc:
   program_name_path:
    - fastqc
   type: program
+## Cutadapt
+pcutadapt:
+  associated_program:
+   - mip
+  chain: MAIN
+  data_type: SCALAR
+  default: 0
+  file_tag: _cuta
+  infile_suffix: ".fastq"
+  program_name_path:
+   - cutadapt
+  type: program
 ## BWA
 pbwa_mem:
   associated_program:
