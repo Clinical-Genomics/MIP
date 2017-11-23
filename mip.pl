@@ -2041,7 +2041,7 @@ if ( $active_parameter{pdelly_call} > 0 ) {    #Run delly_call
 
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
-        delly_call(
+        mdelly_call(
             {
                 parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
@@ -9736,7 +9736,7 @@ sub delly_reformat {
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Gnu::Coreutils qw(gnu_mv);
-    use Program::Variantcalling::Delly qw(call merge filter);
+    use MIP::Program::Variantcalling::Delly qw(delly_call delly_merge delly_filter);
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_merge bcftools_index bcftools_concat };
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
@@ -10003,7 +10003,7 @@ sub delly_reformat {
                           . $suffix{pdelly_call}
                     } @{ $active_parameter_href->{sample_ids} };
 
-                    Program::Variantcalling::Delly::merge(
+                    MIP::Program::Variantcalling::Delly::delly_merge(
                         {
                             infile_paths_ref => \@file_paths,
                             outfile_path     => $outfile_path_prefix . "_"
@@ -10035,7 +10035,7 @@ sub delly_reformat {
                       . $suffix{pdelly_call}
                 } @{ $active_parameter_href->{sample_ids} };
 
-                Program::Variantcalling::Delly::merge(
+                MIP::Program::Variantcalling::Delly::delly_merge(
                     {
                         infile_paths_ref => \@file_paths,
                         outfile_path     => $outfile_path_prefix . "_"
@@ -10088,7 +10088,7 @@ sub delly_reformat {
                           . $contig
                           . $suffix{pgatk_baserecalibration};
 
-                        Program::Variantcalling::Delly::call(
+                        MIP::Program::Variantcalling::Delly::delly_call(
                             {
                                 infile_path => $alignment_sample_file_path,
                                 genotypefile_path => $outfile_path_prefix . "_"
@@ -10126,7 +10126,7 @@ sub delly_reformat {
                         $infile_path_prefix{$sample_id}{pgatk_baserecalibration}
                       . $suffix{pgatk_baserecalibration};
 
-                    Program::Variantcalling::Delly::call(
+                    MIP::Program::Variantcalling::Delly::delly_call(
                         {
                             infile_path       => $alignment_sample_file_path,
                             genotypefile_path => $outfile_path_prefix . "_"
@@ -10348,7 +10348,7 @@ sub delly_reformat {
 
             if ( $sv_type ne "TRA" ) {
 
-                Program::Variantcalling::Delly::filter(
+                MIP::Program::Variantcalling::Delly::delly_filter(
                     {
                         infile_path => $outfile_path_prefix . "_"
                           . $sv_type
@@ -10373,7 +10373,7 @@ sub delly_reformat {
             }
             else {
 
-                Program::Variantcalling::Delly::filter(
+                MIP::Program::Variantcalling::Delly::delly_filter(
                     {
                         infile_path => $outfile_path_prefix . "_"
                           . $sv_type
@@ -10519,7 +10519,7 @@ sub delly_reformat {
     }
 }
 
-sub delly_call {
+sub mdelly_call {
 
 ##delly_call
 
@@ -10650,7 +10650,7 @@ sub delly_call {
     use MIP::Get::File qw{get_file_suffix get_merged_infile_prefix };
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Delete::List qw{ delete_contig_elements };
-    use Program::Variantcalling::Delly qw(call);
+    use MIP::Program::Variantcalling::Delly qw(delly_call);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_sample);
 
@@ -10815,7 +10815,7 @@ sub delly_call {
             ## Process per contig
             foreach my $contig (@contigs) {
 
-                Program::Variantcalling::Delly::call(
+                MIP::Program::Variantcalling::Delly::delly_call(
                     {
                         infile_path => $file_path_prefix . "_"
                           . $contig
@@ -10845,7 +10845,7 @@ sub delly_call {
         }
         else {
 
-            Program::Variantcalling::Delly::call(
+            MIP::Program::Variantcalling::Delly::delly_call(
                 {
                     infile_path  => $file_path_prefix . $infile_suffix,
                     outfile_path => $outfile_path_prefix . "_"
