@@ -133,7 +133,7 @@ my %specific_argument = (
         input           => q{infile.test},
         expected_output => q{infile.test},
     },
-    samples_file => {
+    samples_file_path => {
         input           => q{samplesfile},
         expected_output => q{--samples-file samplesfile},
     },
