@@ -1,6 +1,6 @@
 language: perl
 perl:
-  - "5.26"
+  - "5.26.0"
 sudo: required
  
 install:
@@ -25,8 +25,10 @@ install:
   - conda config --add channels bioconda
   
 ## Download cpan libraries
-  - cpanm --quiet --notest Modern::Perl IPC::System::Simple Path::Iterator::Rule YAML Log::Log4perl Readonly Array::Utils HTML::Lint Archive::Zip Archive::Extract DBI JSON DBD::mysql CGI Sereal::Encoder Sereal::Decoder Bio::Root::Version
-
+  - perl perl_install.pl --modules_skip_test --quiet
+  - cat perl_install.sh
+  - bash perl_install.sh
+  
 script:
 ## Run MIP install script
   - cd t; prove mip_install.t; cd -

@@ -74,6 +74,7 @@ GetOptions(
     q{pm|perl_modules:s}            => \@{ $parameter{perl_modules} },
     q{pmf|perl_modules_force}       => \$parameter{perl_modules_force},
     q{pma|perl_modules_append:s}    => \@{ $parameter{perl_modules_append} },
+    q{mst|modules_skip_test}        => \$parameter{modules_skip_test},
     q{ppd|print_parameters_default} => sub {
 
         # Display parameter defaults
@@ -141,6 +142,8 @@ say STDERR q{## Writing perl install instructions to: } . $file_name_path;
 
 # Add shebang
 say {$FILEHANDLE} q{#!/usr/bin/env/bash};
+say {$FILEHANDLE} q{set -e};
+say {$FILEHANDLE} q{set pipefail -o};
 say {$FILEHANDLE} qq{\n};
 
 ## Write perl install instructions
@@ -178,19 +181,21 @@ say {$FILEHANDLE} qq{\n};
 
 ## Write cpanm install instructions
 # Check if cpanm alread in path
-my ($installed) = ExtUtils::Installed->new();
-my (@modules)   = $installed->modules();
+my $cpanm_check = `which cpanm`;
 
-if (    grep { m/ cpanm /xms } @modules
+my $cpanm_installation_flag;
+if ( $cpanm_check
     and $PERL_VERSION ge q{v} . $parameter{perl_version}
     and not $parameter{perl_force_install} )
 {
     say STDERR q{## Cpanm already installed};
     say {$FILEHANDLE} q{## Cpanm already installed} . qq{\n};
+    $cpanm_installation_flag = 0;
 }
 else {
     say STDERR q{## Writing Cpanm install recipe};
     say {$FILEHANDLE} q{## Cpanm installation recipe};
+    $cpanm_installation_flag = 1;
 
     install_cpanm(
         {
@@ -205,7 +210,8 @@ say {$FILEHANDLE} qq{\n};
 install_cpanm_modules(
     {
         parameter_href => \%parameter,
-        FILEHANDLE     => $FILEHANDLE
+        FILEHANDLE     => $FILEHANDLE,
+        cpanm_installation_flag => $cpanm_installation_flag,
     }
 );
 
@@ -315,18 +321,22 @@ sub install_perl {
     ## Editing bash_profile
     say {$FILEHANDLE} q{# Edit bash_profile};
 
-    # Add at start-up
+    ## Add at start-up
     say {$FILEHANDLE}
       q{echo "# Added by MIP's perl installer $(date)" >> ~/.bash_profile};
-    say {$FILEHANDLE} q{echo 'eval `perl -I }
-      . catdir( $perl_install_path, qw{ lib perl5 } )
-      . q{ -Mlocal::lib=}
-      . $perl_install_path
-      . q{/`' >> ~/.bash_profile };
-
-    # Handle Unicode
-    say {$FILEHANDLE} q{echo 'export PERL_UNICODE=SAD' >> ~/.bash_profile }
-      . qq{\n};
+    
+    ## Handle Unicode
+    # Check if already added to .bash_profile
+    my $detect_regexp =
+        # Excute perl, loop over input and search for PERL_UNICODE=SAD
+        # Prints "1" if found
+        q?perl -nae 'if($_=~/PERL_UNICODE=SAD/xms){print 1}' ?;
+    my $unicode_test = `$detect_regexp . ~/.bash_profile`;
+    
+    if (not $unicode_test) {
+        say {$FILEHANDLE} q{echo 'export PERL_UNICODE=SAD' >> ~/.bash_profile }
+        . qq{\n};
+    }
 
     return;
 }
@@ -426,6 +436,7 @@ sub install_cpanm_modules {
 
     $parameter_href = $arg_href->{parameter_href};
     $FILEHANDLE     = $arg_href->{FILEHANDLE};
+    $cpanm_installation_flag = $arg_href->{cpanm_installation_flag};
 
     my @perl_modules = @{ $arg_href->{parameter_href}{perl_modules} };
     my @perl_modules_append =
@@ -443,17 +454,24 @@ sub install_cpanm_modules {
         @perl_modules = keys %perl_modules;
     }
 
-    ## Check aginst what's already installed
-    my @modules_to_install =
-      check_perl_modules( { modules_ref => \@perl_modules } );
+    my @modules_to_install;
+    if ( $cpanm_installation_flag == 0 ) {
+        ## Check aginst what's already installed
+        @modules_to_install =
+        check_perl_modules( { modules_ref => \@perl_modules } );
+    }
+    else {
+        @modules_to_install = @perl_modules;
+    }
 
     if (@modules_to_install) {
-        say STDERR q{## Writing recipe for installation of Cpanm modules};
+        say STDERR q{## Writing recipe for installation of Cpan modules};
         say {$FILEHANDLE} q{## Install modules required by MIP via Cpanm};
         my @commands = cpanm_install_module(
             {
                 modules_ref => \@modules_to_install,
                 force       => $parameter_href->{force},
+                notest      => $parameter_href->{modules_skip_test},
                 quiet       => $parameter_href->{quiet},
                 verbose     => $parameter_href->{verbose}
             }
@@ -461,8 +479,8 @@ sub install_cpanm_modules {
         say {$FILEHANDLE} join q{ }, @commands;
     }
     else {
-        say STDERR q{## Required Cpanm modules already installed};
-        say {$FILEHANDLE} q{## Required Cpanm modules already installed};
+        say STDERR q{## Required Cpan modules already installed};
+        say {$FILEHANDLE} q{## Required Cpan modules already installed};
     }
 
     return;
@@ -487,7 +505,7 @@ sub build_usage {
 
     ## Perl installation
     -pid/--perl_install_dir     Set perl installation directory (default: home folder) 
-    -pev/--perl_version         Set perl version (default: 5.18.2)
+    -pev/--perl_version         Set perl version (default: 5.26.1)
     -psi/--perl_skip_install    Skip perl installation (supply flag to enable)
     -pfi/--perl_force_install   Force perl installation (supply flag to enable)
     -pst/--perl_skip_test       Skip perl installation tests (supply flag to enable)
@@ -505,6 +523,7 @@ sub build_usage {
                                 ] )
     -pmf/--perl_modules_force   Force installation of perl modules (supply flag to enable)
     -pma/--perl_modules_append  Install additional perl modules aside from default (supply csv list)
+    -mst/--modules_skip_test    Skip installation tests for cpan modules (supply flag to enable)
    
 
     ## Utility

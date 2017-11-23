@@ -15,7 +15,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.0.0;
+    our $VERSION = 1.0.1;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ cpanm_install_module };
@@ -24,21 +24,20 @@ BEGIN {
 
 sub cpanm_install_module {
 
-## cpanm_install_module
-
 ## Function  : Perl wrapper for writing cpanm recipe to array (@commands).
 ## Returns   : @commands
-## Arguments : $modules_ref, $FILEHANDLE, $force, $quiet
-##           : $modules_ref => Perl modules {REF}
 ##           : $force       => Force install
+##           : $modules_ref => Perl modules {REF}
+##           : $notest      => No testing of installed cpanmodules
 ##           : $quiet       => Supress output
 ##           : $verbose     => Toggle verbsoe output
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $modules_ref = $arg_href->{modules_ref};
     my $force       = $arg_href->{force};
+    my $modules_ref = $arg_href->{modules_ref};
+    my $notest      = $arg_href->{notest};
     my $quiet       = $arg_href->{quiet};
     my $verbose     = $arg_href->{verbose};
 
@@ -58,6 +57,11 @@ sub cpanm_install_module {
     ## Add optional verbose flag
     if ($verbose) {
         push @commands, q{--verbose};
+    }
+
+    ## Add optional no test flag
+    if ($notest) {
+        push @commands, q{--notest};
     }
 
     ## Add cpan modules
