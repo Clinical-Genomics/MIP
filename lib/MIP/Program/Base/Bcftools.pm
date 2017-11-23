@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ bcftools_base };
@@ -98,8 +98,7 @@ sub bcftools_base {
     if ( @{$regions_ref} ) {
 
         # Limit output to regions
-        push @commands, q{--regions_ref} . $SPACE . join $COMMA,
-          @{$regions_ref};
+        push @commands, q{--regions} . $SPACE . join $COMMA, @{$regions_ref};
     }
     if ($outfile_path) {
 
