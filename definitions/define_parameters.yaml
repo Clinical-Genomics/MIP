@@ -1131,9 +1131,8 @@ pbcftools_mpileup:
   data_type: SCALAR
   default: 0
   file_tag: _mpileup_
-  outdir_name: samtools
+  outdir_name: bcftools
   program_name_path:
-   - samtools
    - bcftools
   program_type: variant_callers
   file_endings:
@@ -1142,6 +1141,12 @@ pbcftools_mpileup:
   remove_redundant_file: yes
   remove_redundant_file_setting: family
   type: program
+bcftools_mpileup_filter_variant:
+  associated_program:
+   - pbcftools_mpileup
+  data_type: SCALAR
+  default: 0
+  type: program_argument
 ##Freebayes
 pfreebayes:
   associated_program:

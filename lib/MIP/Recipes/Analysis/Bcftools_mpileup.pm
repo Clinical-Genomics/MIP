@@ -380,9 +380,6 @@ sub analysis_bcftools_mpileup {
             }
         );
 
-        # Print pipe
-        print {$XARGSFILEHANDLE} $PIPE . $SPACE;
-
         if ( $active_parameter_href->{replace_iupac} ) {
 
             ## Change output type to "v"
@@ -391,20 +388,25 @@ sub analysis_bcftools_mpileup {
         Readonly my $SNP_GAP   => 3;
         Readonly my $INDEL_GAP => 10;
 
-        bcftools_filter(
-            {
-                FILEHANDLE      => $XARGSFILEHANDLE,
-                exclude         => _build_bcftools_filter_expr(),
-                indel_gap       => $INDEL_GAP,
-                output_type     => $output_type,
-                snp_gap         => $SNP_GAP,
-                soft_filter     => q{LowQual},
-                stderrfile_path => $stderrfile_path_prefix
-                  . $UNDERSCORE
-                  . q{filter.stderr.txt},
-            }
-        );
+        if ( $active_parameter_href->{bcftools_mpileup_filter_variant} ) {
 
+            # Print pipe
+            print {$XARGSFILEHANDLE} $PIPE . $SPACE;
+
+            bcftools_filter(
+                {
+                    FILEHANDLE      => $XARGSFILEHANDLE,
+                    exclude         => _build_bcftools_filter_expr(),
+                    indel_gap       => $INDEL_GAP,
+                    output_type     => $output_type,
+                    snp_gap         => $SNP_GAP,
+                    soft_filter     => q{LowQual},
+                    stderrfile_path => $stderrfile_path_prefix
+                      . $UNDERSCORE
+                      . q{filter.stderr.txt},
+                }
+            );
+        }
         if ( $active_parameter_href->{replace_iupac} ) {
 
             ## Replace the IUPAC code in alternative allels with N for input stream and writes to stream
@@ -514,7 +516,7 @@ sub _build_bcftools_filter_expr {
     Readonly my $FILTER_SEPARATOR => q{ || };
 
     # Add minimum value for QUAL field
-    my $expr = q?\'%QUAL<10?;
+    my $expr = q?\'"%QUAL<10?;
 
     # Add read position bias threshold
     $expr .= $FILTER_SEPARATOR . q{(RPB<0.1 && %QUAL<15)};
@@ -526,7 +528,7 @@ sub _build_bcftools_filter_expr {
     $expr .= $FILTER_SEPARATOR . q{%MAX(DV)<=3};
 
     # Add high-qual non-reference bases / high-qual bases
-    $expr .= $FILTER_SEPARATOR . q?%MAX(DV)/%MAX(DP)<=0.25\'?;
+    $expr .= $FILTER_SEPARATOR . q?%MAX(DV)/%MAX(DP)<=0.25\"'?;
 
     return $expr;
 }

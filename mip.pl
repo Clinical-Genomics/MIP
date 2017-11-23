@@ -425,6 +425,8 @@ GetOptions(
     q{svrergf|sv_reformat_remove_genes_file:s} =>
       \$active_parameter{sv_reformat_remove_genes_file},
     q{pbmp|pbcftools_mpileup=n} => \$active_parameter{pbcftools_mpileup},
+    q{pbmpfv|bcftools_mpileup_filter_variant} =>
+      \$active_parameter{bcftools_mpileup_filter_variant},
     q{pfrb|pfreebayes=n}        => \$active_parameter{pfreebayes},
     q{gtp|gatk_path:s}          => \$active_parameter{gatk_path},
     q{gll|gatk_logging_level:s} => \$active_parameter{gatk_logging_level},
@@ -3090,7 +3092,8 @@ sub build_usage {
       -svrergf/--sv_reformat_remove_genes_file Remove variants in hgnc_ids (defaults to "")
 
     ##Bcftools
-    -pbmp/--pbcftools_mpileup Variant calling using samtools mpileup and bcftools (defaults to "0" (=no))
+    -pbmp/--pbcftools_mpileup Variant calling using bcftools mpileup (defaults to "0" (=no))
+      -pbmpfv/--bcftools_mpileup_filter_variant (Supply flag to enable)
 
     ##Freebayes
     -pfrb/--pfreebayes Variant calling using Freebayes and bcftools (defaults to "0" (=no))
@@ -3131,7 +3134,7 @@ sub build_usage {
     -pgcv/--pgatk_combinevariantcallsets Combine variant call sets (defaults to "0" (=no))
       -gcvbcf/--gatk_combinevariantcallsets_bcf_file Produce a bcf from the GATK CombineVariantCallSet vcf (defaults to "1" (=yes))
       -gcvgmo/--gatk_combinevariants_genotype_merge_option Type of merge to perform (defaults to "PRIORITIZE")
-      -gcvpc/--gatk_combinevariants_prioritize_caller The prioritization order of variant callers.(defaults to ""; comma sep; Options: gatk|samtools|freebayes)
+      -gcvpc/--gatk_combinevariants_prioritize_caller The prioritization order of variant callers.(defaults to ""; comma sep; Options: gatk|bcftools|freebayes)
     -pgvea/--pgatk_variantevalall Variant evaluation using GATK varianteval for all variants  (defaults to "0" (=no))
     -pgvee/--pgatk_variantevalexome Variant evaluation using GATK varianteval for exonic variants  (defaults to "0" (=no))
       -gveedbs/--gatk_varianteval_dbsnp DbSNP file used in GATK varianteval (defaults to "dbsnp_GRCh37_138_esa_129.vcf")
