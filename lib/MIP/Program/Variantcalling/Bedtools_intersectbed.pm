@@ -38,7 +38,6 @@ sub bedtools_intersectbed {
 ## Arguments: $FILEHANDLE             => Filehandle to write to
 ##          : $infile_path            => Infile path
 ##          : $intersectfile_path     => Intersect file (-b)
-##          : $outfile_path           => Outfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
@@ -50,7 +49,6 @@ sub bedtools_intersectbed {
     my $FILEHANDLE;
     my $infile_path;
     my $intersectfile_path;
-    my $outfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
@@ -69,7 +67,6 @@ sub bedtools_intersectbed {
             strict_type => 1,
             store       => \$intersectfile_path
         },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
         stderrfile_path => {
             strict_type => 1,
             store       => \$stderrfile_path,
@@ -111,12 +108,6 @@ sub bedtools_intersectbed {
     if ($intersectfile_path) {
 
         push @commands, q{-b} . $SPACE . $intersectfile_path;
-    }
-
-    ## Outfile
-    if ($outfile_path) {
-
-        push @commands, q{>} . $SPACE . $outfile_path;
     }
 
     push @commands,

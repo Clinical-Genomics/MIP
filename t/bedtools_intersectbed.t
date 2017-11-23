@@ -135,16 +135,6 @@ my %specific_argument = (
         input           => q{stdin},
         expected_output => q{-a stdin},
     },
-    outfile_path => {
-        input => catfile(
-            qw{ outsample_directory infile_prefix_sbatch_counteroutfile_suffix }
-        ),
-        expected_output => q{>}
-          . $SPACE
-          . catfile(
-            qw{ outsample_directory infile_prefix_sbatch_counteroutfile_suffix }
-          ),
-    },
     with_header => {
         input           => 1,
         expected_output => q{-header},
