@@ -147,6 +147,7 @@ sub htslib_tabix {
     ## Default(s)
     my $force;
     my $preset;
+    my $with_header;
 
     ## Flatten argument(s)
     my $FILEHANDLE;
@@ -155,7 +156,7 @@ sub htslib_tabix {
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
-    my $with_header;
+
 
     my $tmpl = {
         FILEHANDLE => {
