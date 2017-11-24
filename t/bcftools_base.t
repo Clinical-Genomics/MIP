@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.0;
+our $VERSION = 1.0.1;
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -136,7 +136,7 @@ my %specific_argument = (
     },
     regions_ref => {
         inputs_ref      => [qw{ 1 2 }],
-        expected_output => q{--regions_ref 1,2},
+        expected_output => q{--regions 1,2},
     },
     samples_file_path => {
         input           => catfile(qw{ a test sample_file }),

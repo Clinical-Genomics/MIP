@@ -1,20 +1,20 @@
 package MIP::Get::Analysis;
 
-use strict;
-use warnings;
-use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
 use Carp;
-use autodie;
-use Params::Check qw{ check allow last_error };
-
-use FindBin qw{ $Bin };
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir catfile };
+use FindBin qw{ $Bin };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
+use strict;
+use utf8;
+use warnings;
+use warnings qw{ FATAL utf8 };
 
 ## Third party module(s)
+use autodie;
 use List::MoreUtils qw{ all any };
 use Readonly;
 
@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_overall_analysis_type print_program };
@@ -80,9 +80,9 @@ sub print_program {
 
 ## Function : Print all supported programs in '-ppm' mode
 ## Returns  :
-## Arguments: $parameter_href         => Parameter hash {REF}
+## Arguments: $define_parameters_file => MIPs define parameters file
+##          : $parameter_href         => Parameter hash {REF}
 ##          : $print_program_mode     => Mode to run modules in
-##          : $define_parameters_file => MIPs define parameters file
 
     my ($arg_href) = @_;
 
@@ -90,10 +90,16 @@ sub print_program {
     my $parameter_href;
 
     ## Default(s)
-    my $print_program_mode;
     my $define_parameters_file;
+    my $print_program_mode;
 
     my $tmpl = {
+        define_parameters_file => {
+            default =>
+              catfile( $Bin, qw{ definitions define_parameters.yaml } ),
+            strict_type => 1,
+            store       => \$define_parameters_file
+        },
         parameter_href => {
             required    => 1,
             defined     => 1,
@@ -106,12 +112,6 @@ sub print_program {
             allow       => [ undef, 0, 1, 2 ],
             strict_type => 1,
             store       => \$print_program_mode
-        },
-        define_parameters_file => {
-            default =>
-              catfile( $Bin, qw{ definitions define_parameters.yaml } ),
-            strict_type => 1,
-            store       => \$define_parameters_file
         },
     };
 

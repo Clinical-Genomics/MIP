@@ -697,11 +697,6 @@ my $log = initiate_logger(
     }
 );
 
-## Detect if all samples has the same sequencing type and return consensus if reached
-$parameter{dynamic_parameter}{consensus_analysis_type} =
-  get_overall_analysis_type(
-    { analysis_type_href => \%{ $active_parameter{analysis_type} }, } );
-
 ## Parse pedigree file
 ## Reads family_id_pedigree file in PLINK|YAML format. Checks for pedigree data for allowed entries and correct format. Add data to sample_info depending on user info.
 # Meta data in YAML format
@@ -725,6 +720,11 @@ if ( defined $active_parameter{pedigree_file}
         }
     );
 }
+
+## Detect if all samples has the same sequencing type and return consensus if reached
+$parameter{dynamic_parameter}{consensus_analysis_type} =
+  get_overall_analysis_type(
+    { analysis_type_href => \%{ $active_parameter{analysis_type} }, } );
 
 ### Populate uninitilized active_parameters{parameter_name} with default from parameter
 PARAMETER:

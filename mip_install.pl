@@ -63,10 +63,10 @@ Readonly my $SPACE      => q{ };
 Readonly my $UNDERSCORE => q{_};
 
 ### Set parameter default
-my $config_file = catfile( $Bin, q{mip_install_config.yaml} );
+my $config_file = catfile( $Bin, qw{ definitions install_parameters.yaml} );
 my %parameter = load_yaml( { yaml_file => $config_file } );
 
-our $VERSION = q{1.2.23};
+our $VERSION = q{1.2.24};
 
 GetOptions(
     q{see|bash_set_errexit}    => \$parameter{bash_set_errexit},
@@ -222,6 +222,7 @@ if ( $parameter{skip_program} ) {
     foreach my $program ( @{ $parameter{skip_program} } ) {
         delete $parameter{shell}{$program};
         delete $parameter{bioconda}{$program};
+        delete $parameter{pip}{$program};
     }
 }
 
