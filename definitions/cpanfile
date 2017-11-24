@@ -7,7 +7,7 @@ requires qw{ Path::Iterator::Rule 1.012 };      # MIP
 requires qw{ YAML 1.24 };                       # MIP
 requires qw{ Log::Log4perl 1.49 };              # MIP
 requires qw{ List::Util 1.49 };                 # MIP
-requires qw{ List::MoreUtils 0.426 };           # MIP
+requires qw{ List::MoreUtils 0.413 };           # MIP
 requires qw{ Readonly 2.05 };                   # MIP
 requires qw{ Try::Tiny 0.28 };                  # MIP
 requires qw{ Array::Utils 0.5 };                # MIP
