@@ -179,7 +179,6 @@ sub analysis_bwa_mem {
     use MIP::Program::Alignment::Bwa qw{ bwa_mem run_bwamem };
     use MIP::Program::Alignment::Samtools qw{ samtools_view samtools_stats };
     use MIP::Program::Alignment::Sambamba qw{ sambamba_sort };
-    use Program::Variantcalling::Bedtools qw{ intersectbed };
     use MIP::QC::Record
       qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info add_processing_metafile_to_sample_info };
 

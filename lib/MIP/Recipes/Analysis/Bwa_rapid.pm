@@ -168,15 +168,15 @@ sub bwa_mem_rapid {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::IO::Files qw(migrate_file);
-    use MIP::Program::Alignment::Samtools qw(samtools_view samtools_stats);
-    use MIP::Program::Alignment::Bwa qw(bwa_mem run_bwamem);
-    use Program::Variantcalling::Bedtools qw (intersectbed);
-    use MIP::Program::Alignment::Sambamba qw(sambamba_sort);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
+    use MIP::IO::Files qw{ migrate_file };
+    use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_sample_id_dependency_step_in_parallel);
+      qw{ slurm_submit_job_sample_id_dependency_step_in_parallel };
+    use MIP::Program::Alignment::Bwa qw{ bwa_mem run_bwamem };
+    use MIP::Program::Alignment::Sambamba qw{ sambamba_sort };
+    use MIP::Program::Alignment::Samtools qw{ samtools_view samtools_stats };
+    use MIP::Program::Variantcalling::Bedtools_intersectbed qw { bedtools_intersectbed };
+    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -417,7 +417,7 @@ sub bwa_mem_rapid {
                     }
                 );
                 print $FILEHANDLE "| ";    #Pipe
-                intersectbed(
+                bedtools_intersectbed(
                     {
                         with_header => 1,
                         infile_path => "stdin",
