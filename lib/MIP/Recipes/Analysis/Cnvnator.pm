@@ -1,18 +1,18 @@
 package MIP::Recipes::Analysis::Cnvnator;
 
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catdir catfile };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use autodie qw{ :all };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-use File::Spec::Functions qw{ catdir catfile };
 
 ## CPANM
+use autodie qw{ :all };
 use Readonly;
 
 BEGIN {
@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_cnvnator };
@@ -29,65 +29,58 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $UNDERSCORE => q{_};
-Readonly my $DOT        => q{.};
-Readonly my $SPACE      => q{ };
-Readonly my $ASTERISK   => q{*};
-Readonly my $NEWLINE    => qq{\n};
 Readonly my $AMPERSAND  => q{&};
-Readonly my $SEMICOLON  => q{;};
+Readonly my $ASTERISK   => q{*};
+Readonly my $DOT        => q{.};
 Readonly my $EMPTY_STR  => q{};
+Readonly my $NEWLINE    => qq{\n};
+Readonly my $SEMICOLON  => q{;};
+Readonly my $SPACE      => q{ };
+Readonly my $UNDERSCORE => q{_};
 
 sub analysis_cnvnator {
 
 ## Function : Call structural variants using cnvnator
 ## Returns  :
-##          : $parameter_href          => Parameter hash {REF}
 ##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $family_id               => Family id
 ##          : $file_info_href          => The file_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $job_id_href             => Job id hash {REF}
-##          : $sample_id               => Sample id
 ##          : $insample_directory      => In sample directory
-##          : $outsample_directory     => Out sample directory
-##          : $program_name            => Program name
-##          : $family_id               => Family id
-##          : $temp_directory          => Temporary directory
-##          : $reference_dir           => MIP reference directory
+##          : $job_id_href             => Job id hash {REF}
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
+##          : $outsample_directory     => Out sample directory
+##          : $parameter_href          => Parameter hash {REF}
+##          : $program_name            => Program name
+##          : $reference_dir           => MIP reference directory
+##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $sample_id               => Sample id
+##          : $temp_directory          => Temporary directory
 ##          : $xargs_file_counter      => The xargs file counter
 
     my ($arg_href) = @_;
 
     ## Default(s)
     my $family_id;
-    my $temp_directory;
-    my $reference_dir;
     my $outaligner_dir;
+    my $reference_dir;
+    my $temp_directory;
     my $xargs_file_counter;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
+    my $FILEHANDLE;
     my $file_info_href;
     my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $sample_id;
     my $insample_directory;
+    my $job_id_href;
     my $outsample_directory;
+    my $parameter_href;
     my $program_name;
-    my $FILEHANDLE;
+    my $sample_id;
+    my $sample_info_href;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
@@ -95,12 +88,10 @@ sub analysis_cnvnator {
             strict_type => 1,
             store       => \$active_parameter_href,
         },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
+        family_id => {
+            default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$sample_info_href,
+            store       => \$family_id,
         },
         file_info_href => {
             required    => 1,
@@ -116,12 +107,47 @@ sub analysis_cnvnator {
             strict_type => 1,
             store       => \$infile_lane_prefix_href,
         },
+        insample_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$insample_directory,
+        },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
             store       => \$job_id_href,
+        },
+        outaligner_dir => {
+            default     => $arg_href->{active_parameter_href}{outaligner_dir},
+            strict_type => 1,
+            store       => \$outaligner_dir,
+        },
+        outsample_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$outsample_directory,
+        },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
+        program_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$program_name,
+        },
+        reference_dir => {
+            default     => $arg_href->{active_parameter_href}{reference_dir},
+            strict_type => 1,
+            store       => \$reference_dir,
         },
         sample_id => {
             required    => 1,
@@ -130,43 +156,17 @@ sub analysis_cnvnator {
             strict_type => 1,
             store       => \$sample_id,
         },
-        insample_directory => {
+        sample_info_href => {
             required    => 1,
             defined     => 1,
+            default     => {},
             strict_type => 1,
-            store       => \$insample_directory,
-        },
-        outsample_directory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$outsample_directory,
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name,
-        },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id,
+            store       => \$sample_info_href,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
             store       => \$temp_directory,
-        },
-        reference_dir => {
-            default     => $arg_href->{active_parameter_href}{reference_dir},
-            strict_type => 1,
-            store       => \$reference_dir,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir,
         },
         xargs_file_counter => {
             default     => 0,
