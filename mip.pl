@@ -1642,6 +1642,7 @@ if ( $active_parameter{reduce_io} ) {
             infile_lane_prefix_href => \%infile_lane_prefix,
             lane_href               => \%lane,
             job_id_href             => \%job_id,
+            outaligner_dir          => $active_parameter{outaligner_dir},
             program_name            => q{bamcalibrationblock},
             log                     => $log,
         }
