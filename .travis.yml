@@ -25,7 +25,8 @@ install:
   - conda config --add channels bioconda
   
 ## Download cpan libraries
-  - cpanm --quiet --notest Modern::Perl IPC::System::Simple Path::Iterator::Rule YAML Log::Log4perl Readonly Array::Utils HTML::Lint Archive::Zip Archive::Extract DBI JSON DBD::mysql CGI Sereal::Encoder Sereal::Decoder Bio::Root::Version
+  - cd definitions; cpanm --installdeps .
+  - cd -
 
 script:
 ## Run MIP install script
