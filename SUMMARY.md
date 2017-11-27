@@ -1,9 +1,9 @@
 # Summary
 
 * [Introduction](README.md)
-* [Documentation](Documentation/README.md)
-    * [Setup](Documentation/Setup.md)
-    * [Analysis](Documentation/Analysis.md)
-    * [API](Documentation/Api.md)
-      * [Identifiers](Documentation/API/Identifiers.md)
-      * [Modules](Documentation/API/Modules.md)
+* [Documentation](documentation/README.md)
+    * [Setup](documentation/Setup.md)
+    * [Analysis](documentation/Analysis.md)
+    * [API](documentation/Api.md)
+      * [Identifiers](documentation/API/Identifiers.md)
+      * [Modules](documentation/API/Modules.md)
