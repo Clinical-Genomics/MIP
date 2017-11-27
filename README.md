@@ -111,7 +111,7 @@ $ cd t; prove mip_install.t
 $ cd -
 ```
 
-2. Create the install instructions for MIP
+4. Create the install instructions for MIP
 ```
 $ perl mip_install.pl
 ```
@@ -125,7 +125,7 @@ This will generate a batch script "mip.sh" for the install in your working direc
   For a full list of available options and parameters, run: ``$ perl mip_install.pl --help``.  
   For a full list of parameter defaults, run: ``$ perl mip_install.pl -ppd``
 
-3. Run the bash script
+5. Run the bash script
 ```Bash
 $ bash mip.sh
 ```
@@ -134,7 +134,7 @@ This will install all the dependencies of MIP and other modules included in MIP 
   ###### *Note:*  
   Some references are quite large and will take time to download. You might want to run this using screen or tmux.
 
-4. Test your MIP installation (optional)  
+6. Test your MIP installation (optional)  
   Make sure to activate your conda environment if that option was used above.  
 
   ```Bash
@@ -142,23 +142,29 @@ This will install all the dependencies of MIP and other modules included in MIP 
   $ cd -
   ```
 
-5. Installing tools with conflicting dependencies
+7. Installing tools with conflicting dependencies
 Create seperate environment for each tool that has to have a seperate dependecy demands. For instance a tools that require python v3 or higher and are not compatible with older versions of pyton. 
 
-```conda create --name python_v3.6_tools --quiet --yes python=3.6 pip
+```Bash
+$ conda create --name python_v3.6_tools --quiet --yes python=3.6 pip
 $ source activate python_v3.6_tools
 $ pip install genmod==3.7.2 chanjo==4.2.0
 ```
 
 In your ~/.bashrc add a variable and and source of a file containing aliases of the tools you want to activate:
-```# source aliases
+
+```
+# source aliases
 CONDA_BIN="[MINICONDA_PATH]/envs/python_v3.6_tools/bin"
-source ~/dotfiles/aliases.sh 
+source ~/dotfiles/aliases.sh
 ```
 
 Add the aliases of the binaries in the aliases.sh file:
+
+```
 alias chanjo="${CONDA_BIN}/chanjo"
 alias genmod="${CONDA_BIN}/genmod"
+```
 
 ### Usage
 
