@@ -53,12 +53,10 @@ sub bcftools_base {
     my $commands_ref;
     my $FILEHANDLE;
     my $outfile_path;
+    my $output_type;
     my $regions_ref;
     my $samples_file_path;
     my $samples_ref;
-
-    ## Default(s)
-    my $output_type;
 
     my $tmpl = {
         commands_ref =>
@@ -66,8 +64,7 @@ sub bcftools_base {
         FILEHANDLE   => { store       => \$FILEHANDLE },
         outfile_path => { strict_type => 1, store => \$outfile_path, },
         output_type => {
-            default     => q{v},
-            allow       => [qw{ b u z v}],
+            allow       => [ undef, qw{ b u z v} ],
             strict_type => 1,
             store       => \$output_type,
         },
@@ -106,8 +103,11 @@ sub bcftools_base {
         push @commands, q{--output} . $SPACE . $outfile_path;
     }
 
-    #Specify output type
-    push @commands, q{--output-type} . $SPACE . $output_type;
+    if ($output_type) {
+
+        #Specify output type
+        push @commands, q{--output-type} . $SPACE . $output_type;
+    }
 
     unix_write_to_file(
         {

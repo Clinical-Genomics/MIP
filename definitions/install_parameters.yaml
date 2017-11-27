@@ -5,7 +5,7 @@ bash_set_nounset: 0
 
 # Conda packages and versions be installed via the bioconda channel
 bioconda:
-  bcftools: 1.4.1
+  bcftools: 1.6
   bedtools: 2.26.0
   bwa: 0.7.15
   bwakit: 0.7.12

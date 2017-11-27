@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -1615,7 +1615,6 @@ sub bcftools_view {
             commands_ref      => \@commands,
             regions_ref       => $regions_ref,
             output_type       => $output_type,
-            outfile_path      => $outfile_path,
             samples_file_path => $samples_file_path,
             samples_ref       => $samples_ref,
         }
@@ -1644,6 +1643,10 @@ sub bcftools_view {
         push @commands, q{--include} . $SPACE . $include;
     }
 
+    if ($outfile_path) {
+
+        push @commands, q{--output-file} . $SPACE . $outfile_path;
+    }
     ## Infile
     if ($infile_path) {
 
