@@ -52,27 +52,12 @@ sub remove_array_element {
             strict_type => 1,
             store       => \$contigs_ref
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
-        },
         remove_contigs_ref => {
             required    => 1,
             defined     => 1,
             default     => [],
             strict_type => 1,
             store       => \$remove_contigs_ref
-        },
-        stderrfile_path => {
-            strict_type => 1,
-            store       => \$stderrfile_path,
-        },
-        stderrfile_path_append => {
-            strict_type => 1,
-            store       => \$stderrfile_path_append,
-        },
-        stdoutfile_path => {
-            strict_type => 1,
-            store       => \$stdoutfile_path,
         },
     };
 
