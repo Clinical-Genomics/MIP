@@ -9,11 +9,10 @@ reference:
     - phase3_v5b.20130502
   1000g_all_sv:
     - phase3_v2.20130502
-  exac:
-    - r0.3.1
   clinvar:
     - 20170104
     - 20170501
+    - 20171029
   1000g_omni:
     - 2.5
   1000g_indels:
@@ -43,6 +42,16 @@ reference:
     - na24385_v3.3.2_bed
     - na24631_v3.3.2_wgs
     - na24631_v3.3.2_bed
+  gnomad:
+    - r2.0.1
+gnomad:
+  grch37:
+    r2.0.1:
+      file: gnomad.genomes.r2.0.1.sites.noVEP.vcf.gz
+      file_index: gnomad.genomes.r2.0.1.sites.noVEP.vcf.gz.tbi
+      outfile: GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz
+      outfile_index: GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz.tbi
+      url_prefix: ftp://ftp.ensembl.org/pub/data_files/homo_sapiens/GRCh37/variation_genotype/
 human_reference:
   grch37:
     decoy_5:
@@ -74,16 +83,6 @@ human_reference:
       outfile: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz
       outfile_index: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz.tbi
       url_prefix: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/
-exac:
-  grch37:
-    r0.3.1:
-      file: ExAC.r0.3.1.sites.vep.vcf.gz
-      file_index: ExAC.r0.3.1.sites.vep.vcf.gz.tbi
-      outfile: GRCh37_exac_-r0.3.1-.vcf.gz
-      outfile_index: GRCh37_exac_-r0.3.1-.vcf.gz.tbi
-      outfile_reformat_command: "zcat GRCh37_exac_-r0.3.1-.vcf.gz | sed 's/ID=AD,Number=./ID=AD,Number=R/' | vt decompose -s - | calculate_af -cak Adj - | bcftools view -o GRCh37_exac_vt_cal_-r0.3.1-.vcf.gz -O z"
-      outfile_tabix_command: 'tabix -p vcf GRCh37_exac_vt_cal_-r0.3.1-.vcf.gz'
-      url_prefix: ftp://ftp.broadinstitute.org/pub/ExAC_release/release0.3.1/
 1000g_all_sv:
   grch37:
     phase3_v2.20130502:
@@ -112,6 +111,15 @@ clinvar:
       outfile_index: GRCh37_clinvar_-2017-05-01-.vcf.gz.tbi
       outfile_check_method: md5sum
       url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/
+    20171029:
+      file: clinvar_20171029.vcf.gz
+      file_check: clinvar_20171029.vcf.gz.md5
+      file_index: clinvar_20171029.vcf.gz.tbi
+      outfile: GRCh37_clinvar_-2017-10-29-.vcf.gz
+      outfile_check: GRCh37_clinvar_-2017-10-29-.vcf.gz.md5
+      outfile_index: GRCh37_clinvar_-2017-10-29-.vcf.gz.tbi
+      outfile_check_method: md5sum
+      url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/
   hg38:
     20170104:
       file: clinvar_20170104.vcf.gz
@@ -138,6 +146,19 @@ clinvar:
       outfile_reformat_command: "perl -n -a -e ' if($_=~/^#/) { print $_;} else { $_ =~ s/^(MT)/M/g; print $_;}' hg38_clinvar_-2017-05-01-.vcf | perl -n -a -e ' if($_=~/^#/) { print $_; } else {$_ =~ s/^(.+)/chr$1/g; print $_; }' > hg38_clinvar_reformat_-2017-05-01-.vcf"
       outfile_bgzip_command: 'bgzip hg38_clinvar_reformat_-2017-05-01-.vcf'
       outfile_tabix_command: 'tabix -p vcf hg38_clinvar_reformat_-2017-05-01-.vcf.gz'
+      url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/
+    20171029:
+      file: clinvar_20171029.vcf.gz
+      file_check: clinvar_20171029.vcf.gz.md5
+      file_index: clinvar_20171029.vcf.gz.tbi
+      outfile: hg38_clinvar_-2017-10-29-.vcf.gz
+      outfile_check: hg38_clinvar_-2017-10-29-.vcf.gz.md5
+      outfile_index: hg38_clinvar_-2017-10-29-.vcf.gz.tbi
+      outfile_check_method: md5sum
+      outfile_decompress: gzip
+      outfile_reformat_command: "perl -n -a -e ' if($_=~/^#/) { print $_;} else { $_ =~ s/^(MT)/M/g; print $_;}' hg38_clinvar_-2017-10-29-.vcf | perl -n -a -e ' if($_=~/^#/) { print $_; } else {$_ =~ s/^(.+)/chr$1/g; print $_; }' > hg38_clinvar_reformat_-2017-10-29-.vcf"
+      outfile_bgzip_command: 'bgzip hg38_clinvar_reformat_-2017-10-29-.vcf'
+      outfile_tabix_command: 'tabix -p vcf hg38_clinvar_reformat_-2017-10-29-.vcf.gz'
       url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/
 1000g_omni:
   grch37:
