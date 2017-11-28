@@ -163,7 +163,7 @@ sub analysis_plink {
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
+      qw{ slurm_submit_job_sample_id_dependency_family_dead_end };
     use MIP::Program::Variantcalling::Bcftools
       qw(bcftools_view bcftools_annotate);
     use MIP::Program::Variantcalling::Plink

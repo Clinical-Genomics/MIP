@@ -160,7 +160,7 @@ sub analysis_peddy {
       qw{ bcftools_view_and_index_vcf };
     use MIP::Program::Variantcalling::Peddy qw{ peddy };
     use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
+      qw{ slurm_submit_job_sample_id_dependency_family_dead_end };
     use MIP::QC::Record
       qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };

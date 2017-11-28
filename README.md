@@ -45,7 +45,7 @@ $ mip --family_id [family_id] --pbwa_mem 1 --config_file [mip_config.yaml] --ped
   * Creates internal queues at nodes to optimize processing
   * Minimal IO between nodes and login node
 * Flexible:
-  * Design your own workflow by turning on/off relevant modules 
+  * Design your own workflow by turning on/off relevant modules
   * Restart an analysis from anywhere in your workflow
   * Process one, or multiple samples using the module\(s\) of your choice
   * Supply parameters on the command line, in a pedigree.yaml file or via config files
@@ -80,123 +80,91 @@ $ mip --family_id [family_id] --pbwa_mem 1 --config_file [mip_config.yaml] --ped
   * Use standard formats whenever possible
 * Visualization
   * Ranks variants according to pathogenic potential
-  * Output is directly compatibel with [Scout](https://github.com/Clinical-Genomics/scout)
+  * Output is directly compatible with [Scout](https://github.com/Clinical-Genomics/scout)
 
 ## Getting Started
 
 ### Installation
 
-MIP is written in perl and therfore requires that perl is installed on your OS.
+MIP is written in perl and therefore requires that perl is installed on your OS.
+
+#### Prerequisites
+* [Perl], version 5.18.2 or above
+* [Cpanm](http://search.cpan.org/~miyagawa/App-cpanminus-1.7043/lib/App/cpanminus.pm)
+* [Miniconda]
 
 #### Automated Installation \(Linux x86\_64\)
-This installation procedure assumes that you have a working perl version (>= 5.10) and a [Miniconda]
-installation.
-
-1. Install MIP
-Clone the official git repository
-```
-$ git clone https://github.com/henrikstranneheim/MIP.git
+1. Clone the official git repository
+```Bash
+$ git clone https://github.com/Clinical-Genomics/MIP.git
 $ cd MIP
 ```
-#### *Optional*
-Test conda and mip_install
+2. Install required modules from cpan
+```Bash
+$ cd definitions
+$ cpanm --installdeps .
+$ cd -
 ```
+3. Test conda and mip_install (optional)
+```Bash
 $ cd t; prove mip_install.t
 $ cd -
 ```
 
-2. Create the install instructions for MIP
+4. Create the install instructions for MIP
 ```
 $ perl mip_install.pl
 ```
-This will generate a batch script "mip.sh" for the install in your working directory. Use ``--help`` to see
-parameters that can be used in the installation process. 
-#### *Conda* 
-You can decide to install in the conda default environment or use a conda environment with ``--env [env_name]``.
-If you have installed conda in another location than the default you have to supply the path to the location
-using ``--conda_dir_path [conda_directory_path]``.
-#### *Perl*
-MIP requires perl version (>=5.18) and the installation process will upgrade the perl version to at least 5.18 for the user
-if you enable ``--perl_install``. Cpanm will be installed if you install a new perl version and used to download required 
-perl modules. Currently MIP does not use the conda perl installation, but installs perl and cpanm outside of conda.
-##### *NOTE*
-This will add the following lines to bashrc and bash_profile if the install perl version is not found in your path:
-``` 
-'export PATH=$HOME/perl-PERLVERSION/:$PATH' >> ~/.bashrc
-'eval `perl -I ~/perl-PERLVERSION/lib/perl5/ -Mlocal::lib=~/perl-PERLVERSION/`' >> ~/.bash_profile
-'export PERL_UNICODE=SAD' >> ~/.bash_profile
-```
-#### *References*
-MIP requires many references depending on what modules in MIP you decide to run. MIP ships with a download script
-that will attempt to download references that are available in public repositories. This feature can be enables with
-by supplying a ``--reference_dir [reference_dir]`` in the installation process.
-##### *NOTE*
-Some references are quite large and will take time to download. You might want to run this using screen or tmux.
+This will generate a batch script "mip.sh" for the install in your working directory.
 
-3. Run the bash script
-```
+  ###### *Note:*  
+  The batch script will install the MIP dependencies in Conda's root environment. Often it is beneficial to create a separate environment for each of your applications. In order to create a separate environment for MIP supply the ``-env [env_name]`` flag when running *mip_install.pl*.  
+
+  There is currrently an issue with installing GATK via Conda causing the installation process to freeze. The solution at the moment is to turn of the GATK installation by running the install script together with the ``-skip gatk`` flag and install [GATK] manually.
+
+  For a full list of available options and parameters, run: ``$ perl mip_install.pl --help``.  
+  For a full list of parameter defaults, run: ``$ perl mip_install.pl -ppd``
+
+5. Run the bash script
+```Bash
 $ bash mip.sh
 ```
-This will install all the dependencies of MIP and other modules included in MIP into a conda environment. 
-However a fresh version of perl and cpanm is installed, if enabled, outside of the conda environment, but are activated through bashrc and bash_profile.
-#### *Optional*
-Make sure to activate your conda environment if that option was used above.
-    Test Perl modules and MIP
+This will install all the dependencies of MIP and other modules included in MIP into a conda environment.
+
+  ###### *Note:*  
+  Some references are quite large and will take time to download. You might want to run this using screen or tmux.
+
+6. Test your MIP installation (optional)  
+  Make sure to activate your conda environment if that option was used above.  
+
+  ```Bash
+  $ cd t; prove run_tests.t
+  $ cd -
+  ```
+
+7. Installing tools with conflicting dependencies
+Create seperate environment for each tool that has to have a seperate dependecy demands. For instance a tools that require python v3 or higher and are not compatible with older versions of pyton. 
+
+```Bash
+$ conda create --name python_v3.6_tools --quiet --yes python=3.6 pip
+$ source activate python_v3.6_tools
+$ pip install genmod==3.7.2 chanjo==4.2.0
 ```
-$ cd t; prove run_tests.t
-$ cd -
+
+In your ~/.bashrc add a variable and and source of a file containing aliases of the tools you want to activate:
+
+```
+# source aliases
+CONDA_BIN="[MINICONDA_PATH]/envs/python_v3.6_tools/bin"
+source ~/dotfiles/aliases.sh
 ```
 
-4. Run MIP
+Add the aliases of the binaries in the aliases.sh file:
 
-*Conda default environment*
-``` 
-$ mip
 ```
-*Conda environment*
+alias chanjo="${CONDA_BIN}/chanjo"
+alias genmod="${CONDA_BIN}/genmod"
 ```
-$ source activate conda_env
-$ mip
-```
-
-### Prerequisites
-
-##### Programs/Modules
-
-* Perl modules: There are several perl modules that are used by MIP which are not included in the Perl standard distribution. These need to be downloaded from [CPAN]. The install script will attempt to download all required perl modules and you can also list them and programs using ``perl mip_install -ppd``.
-* Simple Linux Utility for Resource Management \(SLURM\)
-* Fastqc
-* Bwa
-* Sambamba
-* Samtools
-* Bedtools
-* Picardtools
-* Chanjo
-* Plink
-* Peddy
-* GATK
-* Freebayes
-* Manta
-* Delly
-* Cnvnator
-* TIDDIT
-* Svdb
-* Vt
-* VEP
-* vcfParser \(Supplied with MIP\)
-* Snpeff
-* Snpsift
-* Annovar
-* Vcfanno
-* Genmod
-* Multiqc
-* Tabix
-* Gzip
-
-##### Meta-Data
-
-* [Pedigree file] \(YAML-format\)
-* [Configuration file] \(YAML-format\)
 
 ### Usage
 
@@ -222,6 +190,12 @@ This will analyse family 3 using 3 individuals from that family and begin the an
 
 All references and template files should be placed directly in the reference directory specified by `--reference_dir`, except for ANNOVAR db files, which should be located in annovar/humandb.
 
+##### Meta-Data
+
+* [Pedigree file] \(YAML-format\)
+* [Configuration file] \(YAML-format\)
+
+
 #### Output
 
 Analyses done per individual is found in each sample_id directory and analyses done including all samples can be found in the family directory.
@@ -236,5 +210,7 @@ MIP will place any generated datafiles in the output data directory specified by
 
 [Miniconda]: http://conda.pydata.org/miniconda.html
 [CPAN]: https://www.cpan.org/
-[Pedigree file]: https://github.com/henrikstranneheim/MIP/tree/master/templates/643594-miptest_pedigree.yaml
-[Configuration file]: https://github.com/henrikstranneheim/MIP/blob/master/templates/mip_config.yaml
+[Pedigree file]: https://github.com/Clinical-GenomicsMIP/tree/master/templates/643594-miptest_pedigree.yaml
+[Configuration file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/mip_config.yaml
+[GATK]:https://software.broadinstitute.org/gatk/
+[Perl]:https://www.perl.org/

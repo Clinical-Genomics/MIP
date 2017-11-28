@@ -10009,7 +10009,7 @@ sub delly_reformat {
                           . $suffix{pdelly_call}
                     } @{ $active_parameter_href->{sample_ids} };
 
-                    MIP::Program::Variantcalling::Delly::delly_merge(
+                    delly_merge(
                         {
                             infile_paths_ref => \@file_paths,
                             outfile_path     => $outfile_path_prefix . "_"
@@ -10041,7 +10041,7 @@ sub delly_reformat {
                       . $suffix{pdelly_call}
                 } @{ $active_parameter_href->{sample_ids} };
 
-                MIP::Program::Variantcalling::Delly::delly_merge(
+                delly_merge(
                     {
                         infile_paths_ref => \@file_paths,
                         outfile_path     => $outfile_path_prefix . "_"
@@ -10094,7 +10094,7 @@ sub delly_reformat {
                           . $contig
                           . $suffix{pgatk_baserecalibration};
 
-                        MIP::Program::Variantcalling::Delly::delly_call(
+                        delly_call(
                             {
                                 infile_path => $alignment_sample_file_path,
                                 genotypefile_path => $outfile_path_prefix . "_"
@@ -10132,7 +10132,7 @@ sub delly_reformat {
                         $infile_path_prefix{$sample_id}{pgatk_baserecalibration}
                       . $suffix{pgatk_baserecalibration};
 
-                    MIP::Program::Variantcalling::Delly::delly_call(
+                    delly_call(
                         {
                             infile_path       => $alignment_sample_file_path,
                             genotypefile_path => $outfile_path_prefix . "_"
@@ -10354,7 +10354,7 @@ sub delly_reformat {
 
             if ( $sv_type ne "TRA" ) {
 
-                MIP::Program::Variantcalling::Delly::delly_filter(
+                delly_filter(
                     {
                         infile_path => $outfile_path_prefix . "_"
                           . $sv_type
@@ -10379,7 +10379,7 @@ sub delly_reformat {
             }
             else {
 
-                MIP::Program::Variantcalling::Delly::delly_filter(
+                delly_filter(
                     {
                         infile_path => $outfile_path_prefix . "_"
                           . $sv_type

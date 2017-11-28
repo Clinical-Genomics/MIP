@@ -66,7 +66,7 @@ Readonly my $UNDERSCORE => q{_};
 my $config_file = catfile( $Bin, qw{ definitions install_parameters.yaml} );
 my %parameter = load_yaml( { yaml_file => $config_file } );
 
-our $VERSION = q{1.2.24};
+our $VERSION = q{1.2.25};
 
 GetOptions(
     q{see|bash_set_errexit}    => \$parameter{bash_set_errexit},
@@ -76,7 +76,7 @@ GetOptions(
     q{cdu|conda_update}        => \$parameter{conda_update},
     q{bcv|bioconda=s}          => \%{ $parameter{bioconda} },
     q{pip|pip=s}               => \%{ $parameter{pip} },
-    q{pyv|python_version=s}    => \$parameter{python_version},
+    q{pyv|python_version=s}    => \$parameter{conda_packages}{python},
 
     # SHELL
     q{psh|prefer_shell}     => \$parameter{prefer_shell},
