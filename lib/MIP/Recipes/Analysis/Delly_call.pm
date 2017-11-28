@@ -278,7 +278,7 @@ sub analysis_delly_call {
     # Removes contigs from supplied contigs_ref
     delete_contig_elements(
         {
-            contigs_ref        => \@contigs,
+            elements_ref        => \@contigs,
             remove_contigs_ref => [q{Y}],
         }
     );
