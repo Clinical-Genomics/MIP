@@ -267,19 +267,11 @@ sub analysis_delly_call {
 
     ### Update contigs
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
+    # Skip contig Y along with MT throughout since sometimes there are no variants particularly for INS
     my @contigs = delete_contig_elements(
         {
             elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
-            remove_contigs_ref => [qw{ MT M }],
-        }
-    );
-
-    ## Skip contig Y throughout since sometimes there are no variants particularly for INS
-    # Removes contigs from supplied contigs_ref
-    @contigs = delete_contig_elements(
-        {
-            elements_ref        => \@contigs,
-            remove_contigs_ref => [q{Y}],
+            remove_contigs_ref => [qw{ MT M Y }],
         }
     );
 
