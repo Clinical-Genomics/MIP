@@ -4,6 +4,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
+use List::MoreUtils qw { any };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use strict;
@@ -283,7 +284,7 @@ sub analysis_delly_call {
     );
 
     # If element is part of array
-    if (  grep { $_ eq q{TRA} } @{ $active_parameter_href->{delly_types} }  ) {
+    if ( ( any { $_ eq q{TRA} } @{ $active_parameter_href->{delly_types} } ) ) {
 
         ## Required for processing complete file (TRA)
         ## Copy file(s) to temporary directory
