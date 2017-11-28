@@ -40,6 +40,9 @@ cluster_get_core_number.t
 cluster_update_core_number_to_seq_mode.t
 cpanm_install.t
 cutadapt.t
+delly_call.t
+delly_filter.t
+delly_merge.t
 download_reference.t
 fastqc.t
 findutils_xargs.t
