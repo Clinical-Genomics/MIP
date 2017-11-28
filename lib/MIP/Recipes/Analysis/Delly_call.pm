@@ -176,6 +176,7 @@ sub analysis_delly_call {
     use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
+    use MIP::Program::Interval::Contigshandler qw{ remove_array_element };
     use MIP::Program::Variantcalling::Delly qw{ delly_call };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
@@ -272,12 +273,12 @@ sub analysis_delly_call {
         }
     );
 
-    ## Removes contigs from supplied contigs_ref
+    ## Skip contig Y throughout since sometimes there are no variants particularly for INS
+    # Removes contigs from supplied contigs_ref
     remove_array_element(
         {
             contigs_ref        => \@contigs,
-            remove_contigs_ref => [q{Y}]
-            , # Skip contig Y throughout since sometimes there are no variants particularly for INS
+            remove_contigs_ref => [q{Y}],
         }
     );
 
