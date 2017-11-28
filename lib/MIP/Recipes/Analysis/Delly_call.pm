@@ -276,7 +276,7 @@ sub analysis_delly_call {
 
     ## Skip contig Y throughout since sometimes there are no variants particularly for INS
     # Removes contigs from supplied contigs_ref
-    delete_contig_elements(
+    @contigs = delete_contig_elements(
         {
             elements_ref        => \@contigs,
             remove_contigs_ref => [q{Y}],
