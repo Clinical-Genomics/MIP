@@ -17,7 +17,7 @@ bioconda:
   freebayes: 1.1.0
   gatk: 3.8
   gcc: 4.8.5
-  htslib: 1.4.1
+  htslib: 1.6
   manta: 1.1.0
   multiqc: 0.9.1a0
   peddy: 0.2.9
@@ -25,7 +25,7 @@ bioconda:
   plink2: 1.90b3.35
   rtg-tools: 3.8.4
   sambamba: 0.6.6
-  samtools: 1.4.1
+  samtools: 1.6
   snpeff: 4.3.1
   snpsift: 4.3.1
   vcfanno: 0.1.0
