@@ -268,7 +268,7 @@ sub analysis_delly_call {
 
     ### Update contigs
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-# Skip contig Y along with MT throughout since sometimes there are no variants particularly for INS
+    # Skip contig Y along with MT throughout since sometimes there are no variants particularly for INS
     my @contigs = delete_contig_elements(
         {
             elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
@@ -294,13 +294,7 @@ sub analysis_delly_call {
         );
     }
 
-    if (
-        (
-            any { /DEL|DUP|INS|INV/ }
-            @{ $active_parameter_href->{delly_types} }
-        )
-      )
-    {
+    if ( any { /DEL|DUP|INS|INV/ } @{ $active_parameter_href->{delly_types} } ) {
         # If element is part of array
         ## Copy file(s) to temporary directory
         say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
@@ -323,7 +317,7 @@ sub analysis_delly_call {
         say {$FILEHANDLE} q{wait}, $NEWLINE;
     }
 
-    ## delly
+    ## Delly
     say {$FILEHANDLE} q{## delly};
 
     my $xargs_file_path_prefix;
