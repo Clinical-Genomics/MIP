@@ -283,7 +283,7 @@ sub analysis_delly_call {
     );
 
     # If element is part of array
-    if ( ( any { $_ eq q{TRA} } @{ $active_parameter_href->{delly_types} } ) ) {
+    if (  grep { $_ eq q{TRA} } @{ $active_parameter_href->{delly_types} }  ) {
 
         ## Required for processing complete file (TRA)
         ## Copy file(s) to temporary directory
