@@ -41,10 +41,9 @@ sub analysis_delly_reformat {
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $insample_directory      => In sample directory
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $outsample_directory     => Out sample directory
+##          : $outfamily_directory     => Out family directory
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $reference_dir           => MIP reference directory
@@ -53,16 +52,14 @@ sub analysis_delly_reformat {
 ##          : $temp_directory          => Temporary directory
 ##          : $xargs_file_counter      => The xargs file counter
 
-
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
     my $infile_lane_prefix_href;
-    my $insample_directory;
     my $job_id_href;
-    my $outsample_directory;
+    my $outfamily_directory;
     my $parameter_href;
     my $program_name;
     my $sample_id;
@@ -105,12 +102,6 @@ sub analysis_delly_reformat {
             strict_type => 1,
             store       => \$infile_lane_prefix_href,
         },
-        insample_directory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$insample_directory,
-        },
         job_id_href => {
             required    => 1,
             defined     => 1,
@@ -123,11 +114,11 @@ sub analysis_delly_reformat {
             strict_type => 1,
             store       => \$outaligner_dir,
         },
-        outsample_directory => {
+        outfamily_directory => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$outsample_directory,
+            store       => \$oufamily_directory,
         },
         parameter_href => {
             required    => 1,
@@ -176,16 +167,30 @@ sub analysis_delly_reformat {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ### SET IMPORT IN ALPHABETIC ORDER
+    use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
-    use MIP::PATH::TO::PROGRAMS qw{ COMMANDS_SUB };
+    use MIP::Gnu::Coreutils qw{ gnu_mv };
+    use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
+    use MIP::Program::Variantcalling::Bcftools
+      qw{ bcftools_merge bcftools_index bcftools_concat };
+    use MIP::Program::Variantcalling::Delly qw{ delly_call delly_merge delly_filter };
     use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
-    use MIP::QC::Record
-      qw{ add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
+      qw{ slurm_submit_job_sample_id_dependency_add_to_family };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
+    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Set::File qw{ set_file_suffix };
+
+
+
+
+
+
+
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
+
 
     ## Set MIP program name
     my $mip_program_name = q{p} . $program_name;
