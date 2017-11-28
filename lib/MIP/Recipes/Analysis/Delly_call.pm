@@ -173,7 +173,6 @@ sub analysis_delly_call {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ### SET IMPORT IN ALPHABETIC ORDER
     use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
@@ -234,11 +233,13 @@ sub analysis_delly_call {
         }
     );
 
-    ## Files
+    ## Tags
     my $infile_tag =
       $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag =
       $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
+
+    ## Files
     my $infile_prefix  = $merged_infile_prefix . $infile_tag;
     my $outfile_prefix = $merged_infile_prefix . $outfile_tag;
 
@@ -267,7 +268,7 @@ sub analysis_delly_call {
 
     ### Update contigs
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    # Skip contig Y along with MT throughout since sometimes there are no variants particularly for INS
+# Skip contig Y along with MT throughout since sometimes there are no variants particularly for INS
     my @contigs = delete_contig_elements(
         {
             elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
@@ -276,7 +277,7 @@ sub analysis_delly_call {
     );
 
     # If element is part of array
-    if ( ( any { $_ eq q{TRA} } @{ $active_parameter_href->{delly_types} } ) ) {
+    if ( any { $_ eq q{TRA} } @{ $active_parameter_href->{delly_types} } ) {
 
         ## Required for processing complete file (TRA)
         ## Copy file(s) to temporary directory
@@ -311,7 +312,7 @@ sub analysis_delly_call {
                 file_path         => $file_path,
                 program_info_path => $program_info_path,
                 core_number       => ( $core_number - 1 )
-                ,    #Compensate for cp of entire BAM (INS, TRA), see above
+                ,    # Compensate for cp of entire BAM (INS, TRA), see above
                 xargs_file_counter => $xargs_file_counter,
                 infile             => $infile_prefix,
                 indirectory        => $insample_directory,
