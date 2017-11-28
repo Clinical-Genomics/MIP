@@ -60,26 +60,26 @@ sub delly_call {
     my $stdoutfile_path;
     my $sv_type;
 
-    ## Default(s)
-
     my $tmpl = {
-        exclude_file_path => { strict_type => 1, store => \$exclude_file_path },
-        FILEHANDLE        => {
+        exclude_file_path =>
+          { strict_type => 1, store => \$exclude_file_path, },
+        FILEHANDLE => {
             store => \$FILEHANDLE,
         },
-        genotypefile_path => { strict_type => 1, store => \$genotypefile_path },
-        infile_path       => {
+        genotypefile_path =>
+          { strict_type => 1, store => \$genotypefile_path, },
+        infile_path => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$infile_path
+            store       => \$infile_path,
         },
-        outfile_path       => { strict_type => 1, store => \$outfile_path },
+        outfile_path       => { strict_type => 1, store => \$outfile_path, },
         referencefile_path => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$referencefile_path
+            store       => \$referencefile_path,
         },
         stderrfile_path => {
             strict_type => 1,
@@ -98,7 +98,7 @@ sub delly_call {
             defined     => 1,
             allow       => [qw{ DEL DUP INV INS TRA }],
             strict_type => 1,
-            store       => \$sv_type
+            store       => \$sv_type,
         },
     };
 
@@ -186,8 +186,6 @@ sub delly_merge {
     my $stdoutfile_path;
     my $sv_type;
 
-    ## Default(s)
-
     my $tmpl = {
         FILEHANDLE => {
             store => \$FILEHANDLE,
@@ -197,20 +195,19 @@ sub delly_merge {
             defined     => 1,
             default     => [],
             strict_type => 1,
-            store       => \$infile_paths_ref
+            store       => \$infile_paths_ref,
         },
-        outfile_path => { strict_type => 1, store => \$outfile_path },
-        max_size     => {
-            allow       => qr/^\d+$/,
+        max_size => {
+            allow       => [ undef, qr/^\d+$/ ],
             strict_type => 1,
-            store       => \$max_size
+            store       => \$max_size,
         },
         min_size => {
-            allow       => qr/^\d+$/,
+            allow       => [ undef, qr/^\d+$/ ],
             strict_type => 1,
-            store       => \$min_size
+            store       => \$min_size,
         },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
+        outfile_path    => { strict_type => 1, store => \$outfile_path, },
         stderrfile_path => {
             strict_type => 1,
             store       => \$stderrfile_path,
@@ -228,7 +225,7 @@ sub delly_merge {
             defined     => 1,
             allow       => [qw{ DEL DUP INV INS TRA }],
             strict_type => 1,
-            store       => \$sv_type
+            store       => \$sv_type,
         },
     };
 
@@ -243,12 +240,12 @@ sub delly_merge {
         push @commands, q{--type} . $SPACE . $sv_type;
     }
 
-    if ( defined $min_size ) {
+    if ($min_size) {
 
         push @commands, q{--minsize} . $SPACE . $min_size;
     }
 
-    if ( defined $max_size ) {
+    if ($max_size) {
 
         push @commands, q{--maxsize} . $SPACE . $max_size;
     }
@@ -311,8 +308,6 @@ sub delly_filter {
     my $stdoutfile_path;
     my $sv_type;
 
-    ## Default(s)
-
     my $tmpl = {
         FILEHANDLE => {
             store => \$FILEHANDLE,
@@ -322,25 +317,25 @@ sub delly_filter {
             defined     => 1,
             allow       => [qw{ somatic germline }],
             strict_type => 1,
-            store       => \$filter_mode
+            store       => \$filter_mode,
         },
         infile_path => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$infile_path
+            store       => \$infile_path,
         },
         max_size => {
-            allow       => qr/^\d+$/,
+            allow       => [ undef, qr/^\d+$/ ],
             strict_type => 1,
-            store       => \$max_size
+            store       => \$max_size,
         },
         min_size => {
-            allow       => qr/^\d+$/,
+            allow       => [ undef, qr/^\d+$/ ],
             strict_type => 1,
-            store       => \$min_size
+            store       => \$min_size,
         },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
+        outfile_path    => { strict_type => 1, store => \$outfile_path, },
         stderrfile_path => {
             strict_type => 1,
             store       => \$stderrfile_path,
@@ -358,7 +353,7 @@ sub delly_filter {
             defined     => 1,
             allow       => [qw{ DEL DUP INV INS TRA }],
             strict_type => 1,
-            store       => \$sv_type
+            store       => \$sv_type,
         },
     };
 
@@ -378,12 +373,12 @@ sub delly_filter {
         push @commands, q{--filter} . $SPACE . $filter_mode;
     }
 
-    if ( defined($min_size) ) {
+    if ($min_size) {
 
         push @commands, q{--minsize} . $SPACE . $min_size;
     }
 
-    if ( defined $max_size ) {
+    if ($max_size) {
 
         push @commands, q{--maxsize} . $SPACE . $max_size;
     }
