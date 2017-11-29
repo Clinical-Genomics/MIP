@@ -430,7 +430,7 @@ sub analysis_delly_reformat {
             }
         );
 
-        Readonly my $MAX_SV_SIZE => 100_000_000;
+        my $max_sv_size => 100000000;
 
       SV_TYPE:
         foreach my $sv_type ( @{ $active_parameter_href->{delly_types} } ) {
@@ -475,7 +475,7 @@ sub analysis_delly_reformat {
                               . q{stderr.txt},
                             sv_type    => $sv_type,
                             min_size   => 0,
-                            max_size   => $MAX_SV_SIZE,
+                            max_size   => $max_sv_size,
                             FILEHANDLE => $XARGSFILEHANDLE,
                         }
                     );
@@ -511,7 +511,7 @@ sub analysis_delly_reformat {
                           . q{stderr.txt},
                         sv_type    => $sv_type,
                         min_size   => 0,
-                        max_size   => $MAX_SV_SIZE,
+                        max_size   => $max_sv_size,
                         FILEHANDLE => $XARGSFILEHANDLE,
                     }
                 );
@@ -999,7 +999,7 @@ sub analysis_delly_reformat {
                 FILEHANDLE     => $FILEHANDLE,
             }
         );
-        say {$FILEHANDLE} $UNDERSCORE;
+        say {$FILEHANDLE} $NEWLINE;
 
         ## Writes sbatch code to supplied filehandle to sort variants in vcf format
         say {$FILEHANDLE} "## Picard SortVcf";
