@@ -147,7 +147,7 @@ sub analysis_delly_reformat {
             strict_type => 1,
             store       => \$sample_info_href,
         },
-        temp_directory_ref => {
+        temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
             store       => \$temp_directory,
@@ -171,6 +171,7 @@ sub analysis_delly_reformat {
       qw{ bcftools_merge bcftools_index bcftools_concat };
     use MIP::Program::Variantcalling::Delly
       qw{ delly_call delly_merge delly_filter };
+    use MIP::Program::Variantcalling::Picardtools qw{ picardtools_sortvcf };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
@@ -192,6 +193,7 @@ sub analysis_delly_reformat {
     my $time = $active_parameter_href->{module_time}{$mip_program_name};
     my $program_outdirectory_name =
       $parameter_href->{$mip_program_name}{outdir_name};
+    my $referencefile_path = $active_parameter_href->{human_genome_reference};
 
     ## Filehandles
     # Create anonymous filehandles
@@ -583,8 +585,7 @@ sub analysis_delly_reformat {
                                 sv_type => $sv_type,
                                 exclude_file_path =>
                                   $active_parameter_href->{delly_exclude_file},
-                                referencefile_path => $active_parameter_href
-                                  ->{human_genome_reference},
+                                referencefile_path => $referencefile_path,
                                 FILEHANDLE => $XARGSFILEHANDLE,
                             }
                         );
@@ -623,8 +624,7 @@ sub analysis_delly_reformat {
                             sv_type => $sv_type,
                             exclude_file_path =>
                               $active_parameter_href->{delly_exclude_file},
-                            referencefile_path =>
-                              $active_parameter_href->{human_genome_reference},
+                            referencefile_path => $referencefile_path,
                             FILEHANDLE => $XARGSFILEHANDLE,
                         }
                     );
@@ -1002,24 +1002,34 @@ sub analysis_delly_reformat {
         say {$FILEHANDLE} $UNDERSCORE;
 
         ## Writes sbatch code to supplied filehandle to sort variants in vcf format
-        sort_vcf(
+        say {$FILEHANDLE} "## Picard SortVcf";
+        picardtools_sortvcf(
             {
-                active_parameter_href => $active_parameter_href,
                 FILEHANDLE            => $FILEHANDLE,
-                sequence_dict_file    => catfile(
-                    $reference_dir,
-                    $file_info_href->{human_genome_reference_name_prefix}
-                      . $DOT . q{dict}
-                ),
                 infile_paths_ref => [
                         $outfile_path_prefix
                       . $UNDERSCORE
                       . q{concat}
                       . $outfile_suffix
                 ],
-                outfile => $outfile_path_prefix . $outfile_suffix,
+                java_jar       => catfile(
+                    $active_parameter_href->{picardtools_path},
+                    q{picard.jar}
+                ),
+                java_use_large_pages =>
+                  $active_parameter_href->{java_use_large_pages},
+                outfile_path => $outfile_path_prefix . $outfile_suffix,
+                memory_allocation   => q{Xmx2g},
+                referencefile_path => $referencefile_path,
+                sequence_dictionary    => catfile(
+                    $reference_dir,
+                    $file_info_href->{human_genome_reference_name_prefix}
+                      . $DOT . q{dict}
+                ),
+                temp_directory => $temp_directory,
             }
         );
+        say {$FILEHANDLE} $NEWLINE;
 
         ## Copies file from temporary directory.
         say {$FILEHANDLE} $NEWLINE . q{## Copy file from temporary directory};
