@@ -406,7 +406,6 @@ sub analysis_delly_reformat {
         }
     }
 
-    ### Beginning of if scalar
     if ( scalar @{ $active_parameter_href->{sample_ids} } > 1 ) {
 
         ### Delly merge
@@ -430,15 +429,19 @@ sub analysis_delly_reformat {
             }
         );
 
-        my $max_sv_size => 100000000;
-
       SV_TYPE:
         foreach my $sv_type ( @{ $active_parameter_href->{delly_types} } ) {
 
+            say {$FILEHANDLE} "\n" . q{@@@@@@@@@@@@@@@ Debugging the sh*t out of this code: @@@@@@@@@@@@@@@}.
+            q{@@@@@@@@@@@@@@@ } . $sv_type . q{ @@@@@@@@@@@@@@@} . "\n";
+
             if ( $sv_type ne q{TRA} ) {
 
+              say {$FILEHANDLE}  "\n" . q{@@@@@@@@@@@@@@@ NOT TRA @@@@@@@@@@@@@@@} . "\n";
               CONTIG:
                 foreach my $contig (@contigs) {
+
+                    say {$FILEHANDLE}  "\n" . q{@@@@@@@ CONTING } . $contig . "\n";
 
                     ## Assemble file paths by adding file ending
                     my @file_paths = map {
@@ -475,7 +478,7 @@ sub analysis_delly_reformat {
                               . q{stderr.txt},
                             sv_type    => $sv_type,
                             min_size   => 0,
-                            max_size   => $max_sv_size,
+                            max_size   => 100000000,
                             FILEHANDLE => $XARGSFILEHANDLE,
                         }
                     );
@@ -483,6 +486,8 @@ sub analysis_delly_reformat {
                 }
             }
             else {
+
+              say {$FILEHANDLE}  "\n" . q{@@@@@@@@@@@@@@@ TRA @@@@@@@@@@@@@@@} . "\n";
 
                 ## Assemble file paths by adding file ending
                 my @file_paths = map {
@@ -511,7 +516,7 @@ sub analysis_delly_reformat {
                           . q{stderr.txt},
                         sv_type    => $sv_type,
                         min_size   => 0,
-                        max_size   => $max_sv_size,
+                        max_size   => 100000000,
                         FILEHANDLE => $XARGSFILEHANDLE,
                     }
                 );
@@ -525,6 +530,7 @@ sub analysis_delly_reformat {
       SAMPLE_ID:
         foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
+            say {$FILEHANDLE}  "\n" . q{############  SAMPLE ID} .  $sample_id. " {############\n";
             ## Create file commands for xargs
             ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
                 {
@@ -539,11 +545,16 @@ sub analysis_delly_reformat {
           SV_TYPE:
             foreach my $sv_type ( @{ $active_parameter_href->{delly_types} } ) {
 
+                say {$FILEHANDLE}  "\n" . q{############  SV TYPE} .  $sv_type. " {############\n";
+
                 if ( $sv_type ne q{TRA} ) {
+
+                  say {$FILEHANDLE}  "\n" . q{############  NOT TRA ############} . "\n";
 
                   CONTIG:
                     foreach my $contig (@contigs) {
 
+                        say {$FILEHANDLE}  "\n" . q{############ CONTIG } . $contig . q{############} . "\n";
                         ## Assemble file path
                         my $alignment_sample_file_path =
                           $infile_path_prefix{$sample_id}
