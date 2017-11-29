@@ -1,18 +1,18 @@
 package MIP::Recipes::Analysis::Variant_integrity;
 
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catdir catfile devnull splitpath };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use autodie qw{ :all };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-use File::Spec::Functions qw{ catdir catfile devnull splitpath };
 
 ## CPANM
+use autodie qw{ :all };
 use Readonly;
 
 BEGIN {
@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_variant_integrity };
@@ -39,47 +39,40 @@ sub analysis_variant_integrity {
 
 ## Function : Tests sample for correct relatives (only performed for samples with relatives defined in pedigree file) performed on sequence data.
 ## Returns  :
-## Arguments: $parameter_href          => Parameter hash {REF}
-##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $sample_info_href        => Info on samples and family hash {REF}
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $call_type               => The variant call type
+##          : $family_id               => Family id
 ##          : $file_info_href          => The file_info hash {REF}
+##          : $infamily_directory      => In family directory
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $program_name            => Program name
-##          : $family_id               => Family id
-##          : $temp_directory          => Temporary directory
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $call_type               => The variant call type
-##          : $infamily_directory      => In family directory
 ##          : $outfamily_directory     => Out family directory
+##          : $parameter_href          => Parameter hash {REF}
+##          : $program_name            => Program name
+##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $temp_directory          => Temporary directory
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
     my $file_info_href;
+    my $infamily_directory;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $program_name;
-    my $infamily_directory;
     my $outfamily_directory;
+    my $parameter_href;
+    my $program_name;
+    my $sample_info_href;
 
     ## Default(s)
-    my $family_id;
-    my $temp_directory;
-    my $outaligner_dir;
     my $call_type;
+    my $family_id;
+    my $outaligner_dir;
+    my $temp_directory;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
@@ -87,12 +80,12 @@ sub analysis_variant_integrity {
             strict_type => 1,
             store       => \$active_parameter_href
         },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
+        call_type =>
+          { default => q{BOTH}, strict_type => 1, store => \$call_type },
+        family_id => {
+            default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$family_id
         },
         file_info_href => {
             required    => 1,
@@ -100,6 +93,12 @@ sub analysis_variant_integrity {
             default     => {},
             strict_type => 1,
             store       => \$file_info_href
+        },
+        infamily_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$infamily_directory
         },
         infile_lane_prefix_href => {
             required    => 1,
@@ -115,40 +114,41 @@ sub analysis_variant_integrity {
             strict_type => 1,
             store       => \$job_id_href
         },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name
-        },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id
-        },
-        temp_directory => {
-            default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory
-        },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
             store       => \$outaligner_dir
-        },
-        call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type },
-        infamily_directory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$infamily_directory
         },
         outfamily_directory => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$outfamily_directory
+        },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href
+        },
+        program_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$program_name
+        },
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href
+        },
+        temp_directory => {
+            default     => $arg_href->{active_parameter_href}{temp_directory},
+            strict_type => 1,
+            store       => \$temp_directory
         },
     };
 
@@ -157,6 +157,7 @@ sub analysis_variant_integrity {
     use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_file_suffix };
     use MIP::IO::Files qw{ migrate_file };
+    use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_family_dead_end };
     use MIP::Program::Variantcalling::Variant_integrity
@@ -173,9 +174,12 @@ sub analysis_variant_integrity {
 
     ## Alias
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my $core_number =
-      $active_parameter_href->{module_core_number}{$mip_program_name};
-    my $time = $active_parameter_href->{module_time}{$mip_program_name};
+    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_program_name      => $mip_program_name,
+        }
+    );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -191,9 +195,10 @@ sub analysis_variant_integrity {
             program_name          => $program_name,
             program_directory =>
               catfile( $outaligner_dir, q{casecheck}, $program_name ),
-            call_type    => $call_type,
-            core_number  => $core_number,
-            process_time => $time,
+            call_type                       => $call_type,
+            core_number                     => $core_number,
+            process_time                    => $time,
+            source_environment_commands_ref => [$source_environment_cmd],
         }
     );
 

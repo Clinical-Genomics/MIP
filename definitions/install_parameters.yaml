@@ -21,7 +21,7 @@ bioconda:
   manta: 1.1.0
   multiqc: 0.9.1a0
   peddy: 0.2.9
-  picard: 2.9.2
+  picard: 2.14.1
   plink2: 1.90b3.35
   rtg-tools: 3.8.4
   sambamba: 0.6.6

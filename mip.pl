@@ -16974,23 +16974,22 @@ sub check_snpsift_keys {
 
 sub check_key_exists_in_hash {
 
-##check_key_exists_in_hash
-
 ##Function : Test if key from query hash exists truth hash
-##Returns  : ""
-##Arguments: $truth_href, $query_href, $parameter_name
+##Returns  :
+##Arguments: $parameter_name => Parameter name
 ##         : $truth_href     => Truth hash
 ##         : $query_href     => Query hash
-##         : $parameter_name => Parameter name
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $parameter_name;
     my $truth_href;
     my $query_href;
-    my $parameter_name;
 
     my $tmpl = {
+        parameter_name =>
+          { required => 1, defined => 1, store => \$parameter_name },
         truth_href => {
             required    => 1,
             defined     => 1,
@@ -17005,8 +17004,6 @@ sub check_key_exists_in_hash {
             strict_type => 1,
             store       => \$query_href
         },
-        parameter_name =>
-          { required => 1, defined => 1, store => \$parameter_name },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -17014,17 +17011,19 @@ sub check_key_exists_in_hash {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    foreach my $key ( keys %$query_href ) {
+  QUERY_KEY:
+    foreach my $key ( keys %{$query_href} ) {
 
-        if ( !exists( $truth_href->{$key} ) ) {
+        if ( not exists( $truth_href->{$key} ) ) {
 
             $log->fatal( $parameter_name
-                  . " key '"
+                  . q{ key '}
                   . $key
-                  . "' - Does not exist as module program parameter in MIP" );
+                  . q{' - Does not exist as module program parameter in MIP} );
             exit 1;
         }
     }
+    return;
 }
 
 sub check_element_exists_in_hash {
