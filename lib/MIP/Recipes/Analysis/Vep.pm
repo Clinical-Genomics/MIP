@@ -1,20 +1,20 @@
 package MIP::Recipes::Analysis::Vep;
 
-use strict;
-use warnings;
-use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use autodie qw{ :all };
-use charnames qw{ :full :short };
 use Carp;
+use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
 use File::Basename qw{ fileparse };
 use File::Spec::Functions qw{ catdir catfile splitpath };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use POSIX;
+use strict;
+use utf8;
+use warnings;
+use warnings qw{ FATAL utf8 };
 
 ## CPANM
+use autodie qw{ :all };
 use Readonly;
 
 BEGIN {
@@ -41,49 +41,42 @@ sub analysis_vep {
 
 ## Function : Varianteffectpredictor performs effect predictions and annotation of variants.
 ## Returns  :
-## Arguments: $parameter_href          => Parameter hash {REF}
-##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $sample_info_href        => Info on samples and family hash {REF}
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $call_type               => The variant call type
+##          : $family_id               => Family id
 ##          : $file_info_href          => File_info hash {REF}
+##          : $file_path               => File path
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
+##          : $outaligner_dir          => Outaligner_dir used in the analysis
+##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $program_info_path       => Program info path
-##          : $file_path               => File path
-##          : $family_id               => Family id
+##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $call_type               => The variant call type
 ##          : $xargs_file_counter      => The xargs file counter
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
     my $file_info_href;
+    my $file_path;
     my $infile_lane_prefix_href;
     my $job_id_href;
+    my $parameter_href;
     my $program_name;
     my $program_info_path;
-    my $file_path;
+    my $sample_info_href;
 
     ## Default(s)
-    my $family_id;
-    my $temp_directory;
-    my $outaligner_dir;
     my $call_type;
+    my $family_id;
+    my $outaligner_dir;
+    my $temp_directory;
     my $xargs_file_counter;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
@@ -91,12 +84,12 @@ sub analysis_vep {
             strict_type => 1,
             store       => \$active_parameter_href
         },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
+        call_type =>
+          { default => q{BOTH}, strict_type => 1, store => \$call_type },
+        family_id => {
+            default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$family_id
         },
         file_info_href => {
             required    => 1,
@@ -105,6 +98,7 @@ sub analysis_vep {
             strict_type => 1,
             store       => \$file_info_href
         },
+        file_path               => { strict_type => 1, store => \$file_path },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
@@ -119,6 +113,18 @@ sub analysis_vep {
             strict_type => 1,
             store       => \$job_id_href
         },
+        outaligner_dir => {
+            default     => $arg_href->{active_parameter_href}{outaligner_dir},
+            strict_type => 1,
+            store       => \$outaligner_dir
+        },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href
+        },
         program_name => {
             required    => 1,
             defined     => 1,
@@ -126,24 +132,18 @@ sub analysis_vep {
             store       => \$program_name
         },
         program_info_path => { strict_type => 1, store => \$program_info_path },
-        file_path         => { strict_type => 1, store => \$file_path },
-        family_id         => {
-            default     => $arg_href->{active_parameter_href}{family_id},
+        sample_info_href  => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
             strict_type => 1,
-            store       => \$family_id
+            store       => \$sample_info_href
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
             store       => \$temp_directory
         },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir
-        },
-        call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type },
         xargs_file_counter => {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
@@ -156,6 +156,7 @@ sub analysis_vep {
 
     use MIP::Cluster qw{ get_core_number };
     use MIP::Get::File qw{ get_file_suffix };
+    use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
@@ -178,7 +179,12 @@ sub analysis_vep {
 
     ## Alias
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my $time         = $active_parameter_href->{module_time}{$mip_program_name};
+    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_program_name      => $mip_program_name,
+        }
+    );
     my $xargs_file_path_prefix;
 
     ## Filehandles
@@ -187,7 +193,7 @@ sub analysis_vep {
     my $XARGSFILEHANDLE = IO::Handle->new();
 
     ## Get core number depending on user supplied input exists or not and max number of cores
-    my $core_number = get_core_number(
+    $core_number = get_core_number(
         {
             module_core_number =>
               $active_parameter_href->{module_core_number}{$mip_program_name},
@@ -202,16 +208,17 @@ sub analysis_vep {
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     ( $file_path, $program_info_path ) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $family_id,
-            program_name          => $program_name,
-            program_directory     => $outaligner_dir,
-            call_type             => $call_type,
-            core_number           => $core_number,
-            process_time          => $time,
-            temp_directory        => $temp_directory
+            active_parameter_href           => $active_parameter_href,
+            job_id_href                     => $job_id_href,
+            FILEHANDLE                      => $FILEHANDLE,
+            directory_id                    => $family_id,
+            program_name                    => $program_name,
+            program_directory               => $outaligner_dir,
+            call_type                       => $call_type,
+            core_number                     => $core_number,
+            process_time                    => $time,
+            source_environment_commands_ref => [$source_environment_cmd],
+            temp_directory                  => $temp_directory,
         }
     );
     my $stderr_path = $program_info_path . $DOT . q{stderr.txt};
@@ -476,53 +483,46 @@ sub analysis_vep_rio {
 
 ## Function : Varianteffectpredictor performs effect predictions and annotation of variants.
 ## Returns  : undef | $xargs_file_counter
-## Arguments: $parameter_href          => Parameter hash {REF}
-##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $sample_info_href        => Info on samples and family hash {REF}
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $call_type               => The variant call type
+##          : $family_id               => Family id
+##          : $FILEHANDLE              => Filehandle to write to
 ##          : $file_info_href          => The file_info hash {REF}
+##          : $file_path               => File path
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
+##          : $outaligner_dir          => Outaligner_dir used in the analysis
+##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $program_info_path       => The program info path
-##          : $file_path               => File path
+##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $stderr_path             => Stderr path of the block script
-##          : $FILEHANDLE              => Filehandle to write to
-##          : $family_id               => Family id
 ##          : $temp_directory          => Temporary directory
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $call_type               => The variant call type
 ##          : $xargs_file_counter      => The xargs file counter
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
+    my $FILEHANDLE;
     my $file_info_href;
+    my $file_path;
     my $infile_lane_prefix_href;
     my $job_id_href;
+    my $parameter_href;
     my $program_name;
     my $program_info_path;
-    my $file_path;
+    my $sample_info_href;
     my $stderr_path;
-    my $FILEHANDLE;
 
     ## Default(s)
-    my $family_id;
-    my $temp_directory;
-    my $outaligner_dir;
     my $call_type;
+    my $family_id;
+    my $outaligner_dir;
+    my $temp_directory;
     my $xargs_file_counter;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
@@ -530,13 +530,14 @@ sub analysis_vep_rio {
             strict_type => 1,
             store       => \$active_parameter_href
         },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
+        call_type =>
+          { default => q{BOTH}, strict_type => 1, store => \$call_type },
+        family_id => {
+            default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$family_id
         },
+        FILEHANDLE     => { required => 1, store => \$FILEHANDLE },
         file_info_href => {
             required    => 1,
             defined     => 1,
@@ -544,6 +545,7 @@ sub analysis_vep_rio {
             strict_type => 1,
             store       => \$file_info_href
         },
+        file_path               => { strict_type => 1, store => \$file_path },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
@@ -558,6 +560,18 @@ sub analysis_vep_rio {
             strict_type => 1,
             store       => \$job_id_href
         },
+        outaligner_dir => {
+            default     => $arg_href->{active_parameter_href}{outaligner_dir},
+            strict_type => 1,
+            store       => \$outaligner_dir
+        },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href
+        },
         program_name => {
             required    => 1,
             defined     => 1,
@@ -565,31 +579,24 @@ sub analysis_vep_rio {
             store       => \$program_name
         },
         program_info_path => { strict_type => 1, store => \$program_info_path },
-        file_path         => { strict_type => 1, store => \$file_path },
-        stderr_path       => {
+        sample_info_href  => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href
+        },
+        stderr_path => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$stderr_path
-        },
-        FILEHANDLE => { required => 1, store => \$FILEHANDLE },
-        family_id  => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
             store       => \$temp_directory
         },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir
-        },
-        call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type },
         xargs_file_counter => {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
@@ -603,11 +610,12 @@ sub analysis_vep_rio {
     use MIP::Cluster qw{ get_core_number };
     use MIP::Get::File qw{ get_file_suffix };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
+    use MIP::Package_manager::Conda qw{ conda_source_deactivate };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
     use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Script::Setup_script qw{ write_source_environment_command };
     use MIP::Set::File qw{ set_file_suffix };
     use MIP::QC::Record
       qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info};
@@ -624,8 +632,14 @@ sub analysis_vep_rio {
 
     ## Alias
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my $time         = $active_parameter_href->{module_time}{$mip_program_name};
-    my $reduce_io    = $active_parameter_href->{reduce_io};
+    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_program_name      => $mip_program_name,
+        }
+    );
+
+    my $reduce_io = $active_parameter_href->{reduce_io};
     my $xargs_file_path_prefix;
 
     ## Filehandles
@@ -633,7 +647,7 @@ sub analysis_vep_rio {
     my $XARGSFILEHANDLE = IO::Handle->new();
 
     ## Get core number depending on user supplied input exists or not and max number of cores
-    my $core_number = get_core_number(
+    $core_number = get_core_number(
         {
             module_core_number =>
               $active_parameter_href->{module_core_number}{$mip_program_name},
@@ -644,6 +658,17 @@ sub analysis_vep_rio {
 
     # Adjust for the number of forks vep forks
     $core_number = floor( $core_number / $VEP_FORK_NUMBER );
+
+    ## If program needs special environment variables set
+    if ($source_environment_cmd) {
+
+        write_source_environment_command(
+            {
+                FILEHANDLE                      => $FILEHANDLE,
+                source_environment_commands_ref => [$source_environment_cmd],
+            }
+        );
+    }
 
     # Split to enable submission to &sample_info_qc later
     my ( $volume, $directory, $stderr_file ) = splitpath($stderr_path);
@@ -827,6 +852,30 @@ sub analysis_vep_rio {
     );
     say {$FILEHANDLE} q{wait}, $NEWLINE;
 
+    ## Return to main environement
+    if ( @{ $active_parameter_href->{source_main_environment_commands} } ) {
+
+        write_source_environment_command(
+            {
+                FILEHANDLE                      => $FILEHANDLE,
+                source_environment_commands_ref => \@{
+                    $active_parameter_href->{source_main_environment_commands}
+                },
+            }
+        );
+    }
+    else {
+
+        ## Return to login shell parameters
+        say {$FILEHANDLE} q{## Deactivate environment};
+        conda_source_deactivate(
+            {
+                FILEHANDLE => $FILEHANDLE,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+    }
+
     if ( $mip_program_mode == 1 ) {
 
         ## Collect QC metadata info for later use
@@ -876,49 +925,42 @@ sub analysis_vep_sv {
 
 ## Function : Varianteffectpredictor performs annotation of SV variants.
 ## Returns  :
-## Arguments: $parameter_href          => Parameter hash {REF}
-##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $sample_info_href        => Info on samples and family hash {REF}
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $call_type               => The variant call type
+##          : $contigs_ref             => Contigs to analyse
+##          : $family_id               => Family id
+##          : $FILEHANDLE              => Filehandle to write to
 ##          : $file_info_href          => The file_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $contigs_ref             => Contigs to analyse
+##          : $outaligner_dir          => Outaligner_dir used in the analysis
+##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $program_info_path       => The program info path
-##          : $FILEHANDLE              => Filehandle to write to
-##          : $family_id               => Family id
+##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $call_type               => The variant call type
 ##          : $xargs_file_counter      => The xargs file counter
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
+    my $contigs_ref;
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $contigs_ref;
+    my $parameter_href;
     my $program_name;
+    my $sample_info_href;
 
     ## Default(s)
-    my $family_id;
-    my $temp_directory;
-    my $outaligner_dir;
     my $call_type;
+    my $family_id;
+    my $outaligner_dir;
+    my $temp_directory;
     my $xargs_file_counter;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
@@ -926,12 +968,23 @@ sub analysis_vep_sv {
             strict_type => 1,
             store       => \$active_parameter_href
         },
-        sample_info_href => {
+        call_type => {
+            default     => q{SV},
+            allow       => [qw{ SV }],
+            strict_type => 1,
+            store       => \$call_type
+        },
+        contigs_ref => {
             required    => 1,
             defined     => 1,
-            default     => {},
+            default     => [],
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$contigs_ref
+        },
+        family_id => {
+            default     => $arg_href->{active_parameter_href}{family_id},
+            strict_type => 1,
+            store       => \$family_id
         },
         file_info_href => {
             required    => 1,
@@ -954,39 +1007,35 @@ sub analysis_vep_sv {
             strict_type => 1,
             store       => \$job_id_href
         },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href
+        },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$program_name
         },
-        contigs_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$contigs_ref
-        },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id
-        },
-        temp_directory => {
-            default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory
-        },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
             store       => \$outaligner_dir
         },
-        call_type => {
-            default     => q{SV},
-            allow       => [qw{ SV }],
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
             strict_type => 1,
-            store       => \$call_type
+            store       => \$sample_info_href
+        },
+        temp_directory => {
+            default     => $arg_href->{active_parameter_href}{temp_directory},
+            strict_type => 1,
+            store       => \$temp_directory
         },
         xargs_file_counter => {
             default     => 0,
@@ -1001,6 +1050,7 @@ sub analysis_vep_sv {
     use MIP::Cluster qw{ get_core_number };
     use MIP::Delete::List qw{ delete_contig_elements delete_male_contig };
     use MIP::Get::File qw{ get_file_suffix };
+    use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
@@ -1024,7 +1074,12 @@ sub analysis_vep_sv {
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my $time         = $active_parameter_href->{module_time}{$mip_program_name};
+    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_program_name      => $mip_program_name,
+        }
+    );
     my $xargs_file_path_prefix;
 
     ## Filehandles
@@ -1033,7 +1088,7 @@ sub analysis_vep_sv {
     my $XARGSFILEHANDLE = IO::Handle->new();
 
     ## Get core number depending on user supplied input exists or not and max number of cores
-    my $core_number = get_core_number(
+    $core_number = get_core_number(
         {
             module_core_number =>
               $active_parameter_href->{module_core_number}{$mip_program_name},
@@ -1048,16 +1103,17 @@ sub analysis_vep_sv {
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ( $file_path, $program_info_path ) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $family_id,
-            program_name          => $program_name,
-            program_directory     => catfile( lc $outaligner_dir ),
-            call_type             => $call_type,
-            core_number           => $core_number,
-            process_time          => $time,
-            temp_directory        => $temp_directory
+            active_parameter_href           => $active_parameter_href,
+            job_id_href                     => $job_id_href,
+            FILEHANDLE                      => $FILEHANDLE,
+            directory_id                    => $family_id,
+            program_name                    => $program_name,
+            program_directory               => catfile( lc $outaligner_dir ),
+            call_type                       => $call_type,
+            core_number                     => $core_number,
+            process_time                    => $time,
+            source_environment_commands_ref => [$source_environment_cmd],
+            temp_directory                  => $temp_directory,
         }
     );
     my $stderr_path = $program_info_path . $DOT . q{stderr.txt};

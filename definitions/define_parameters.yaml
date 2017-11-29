@@ -359,7 +359,15 @@ slurm_quality_of_service:
   data_type: SCALAR
   default: normal
   type: mip
-source_environment_commands:
+module_source_environment_command:
+  associated_program:
+   - mip
+  data_type: HASH
+  default:
+   pchanjo: "source activate python_v3.6_tools"
+  mandatory: no
+  type: mip
+source_main_environment_commands:
   associated_program:
    - mip
   element_separator: " "
@@ -641,8 +649,8 @@ pchanjo_sexcheck:
   default: 0
   file_tag: _sex
   outfile_suffix: ".tsv"
-  program_name_path:
-   - chanjo
+#  program_name_path:
+#   - chanjo
   type: program
 chanjo_sexcheck_log_level:
   associated_program:
@@ -760,7 +768,7 @@ pcnvnator:
   default: 0
   file_tag: _cnvnator
   program_name_path:
-   - root
+#   - root
    - bcftools
    - samtools
   outdir_name: cnvnator

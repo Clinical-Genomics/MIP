@@ -298,13 +298,15 @@ GetOptions(
     q{emt|email_types:s}        => \@{ $active_parameter{email_types} },
     q{mcn|module_core_number:s} => \%{ $active_parameter{module_core_number} },
     q{mot|module_time:s}        => \%{ $active_parameter{module_time} },
+    q{mse|module_source_environment_command:s} =>
+      \%{ $active_parameter{module_source_environment_command} },
+    q{sen|source_main_environment_commands=s{,}} =>
+      \@{ $active_parameter{source_main_environment_commands} },
     q{mcn|max_cores_per_node=n} => \$active_parameter{max_cores_per_node},
     q{nrm|node_ram_memory=n}    => \$active_parameter{node_ram_memory},
     q{tmd|temp_directory:s}     => \$active_parameter{temp_directory},
     q{qos|slurm_quality_of_service=s} =>
       \$active_parameter{slurm_quality_of_service},
-    q{sen|source_environment_commands=s{,}} =>
-      \@{ $active_parameter{source_environment_commands} },
     q{psfq|psplit_fastq_file=n} => \$active_parameter{psplit_fastq_file},
     q{sfqrdb|split_fastq_file_read_batch=n} =>
       \$active_parameter{split_fastq_file_read_batch},
@@ -726,7 +728,6 @@ $parameter{dynamic_parameter}{consensus_analysis_type} =
   get_overall_analysis_type(
     { analysis_type_href => \%{ $active_parameter{analysis_type} }, } );
 
-
 ### Populate uninitilized active_parameters{parameter_name} with default from parameter
 PARAMETER:
 foreach my $parameter_name (@order_parameters) {
@@ -950,7 +951,8 @@ if (
 }
 
 ## Parameters that have keys as MIP program names
-my @parameter_keys_to_check = (qw(module_time module_core_number));
+my @parameter_keys_to_check =
+  (qw(module_time module_core_number module_source_environment_command));
 foreach my $parameter_name (@parameter_keys_to_check) {
 
     ## Test if key from query hash exists truth hash
@@ -2995,13 +2997,14 @@ sub build_usage {
     -bsp/--bash_set_pipefail Set pipefail in bash scripts (defaults to "0")
     -mot/--module_time Set the time allocation for each module (Format: module "program name"=time(Hours))
     -mcn/--module_core_number Set the number of cores for each module (Format: module "program_name"=X(cores))
+    -mse/--module_source_environment_command Set environment variables specific for each module (Format: module "program_name"="command"
+    -sen/--source_main_environment_commands Source main environment command in sbatch scripts (defaults to "")
     -mcn/--max_cores_per_node The maximum number of processor cores per node used in the analysis (defaults to "16")
     -nrm/--node_ram_memory The RAM memory size of the node(s) in GigaBytes (Defaults to 24)
     -tmd/--temp_directory Set the temporary directory for all programs (defaults to "/scratch/SLURM_JOB_ID";supply whole path)
     -em/--email E-mail (defaults to "")
     -emt/--email_types E-mail type (defaults to FAIL (=FAIL);Options: BEGIN (=BEGIN) and/or F (=FAIL) and/or END=(END))
     -qos/--slurm_quality_of_service SLURM quality of service command in sbatch scripts (defaults to "normal")
-    -sen/--source_environment_commands Source environment command in sbatch scripts (defaults to "")
 
     ####Programs
     -psfq/--psplit_fastq_file Split fastq files in batches of X reads and exits (defaults to "0" (=no))
@@ -9734,7 +9737,8 @@ sub delly_reformat {
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Gnu::Coreutils qw(gnu_mv);
-    use MIP::Program::Variantcalling::Delly qw(delly_call delly_merge delly_filter);
+    use MIP::Program::Variantcalling::Delly
+      qw(delly_call delly_merge delly_filter);
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_merge bcftools_index bcftools_concat };
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);

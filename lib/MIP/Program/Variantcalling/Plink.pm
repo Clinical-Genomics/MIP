@@ -25,7 +25,8 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ plink_calculate_inbreeding plink_check_sex_chroms plink_create_mibs plink_fix_fam_ped_map_freq plink_sex_check plink_variant_pruning };
+    our @EXPORT_OK =
+      qw{ plink_calculate_inbreeding plink_check_sex_chroms plink_create_mibs plink_fix_fam_ped_map_freq plink_sex_check plink_variant_pruning };
 }
 
 ## Constants
@@ -600,8 +601,7 @@ sub plink_sex_check {
     my $FILEHANDLE;
 
     my $tmpl = {
-        sex_check_min_f =>
-          { required => 1, strict_type => 1, store => \$sex_check_min_f },
+        sex_check_min_f => { strict_type => 1, store => \$sex_check_min_f },
         extract_file =>
           { required => 1, strict_type => 1, store => \$extract_file },
         read_freqfile_path =>
@@ -624,8 +624,10 @@ sub plink_sex_check {
 
     push @commands, q{--check-sex};
 
-    push @commands, $sex_check_min_f;
+    if ($sex_check_min_f) {
 
+        push @commands, $sex_check_min_f;
+    }
     push @commands, q{--read-freq} . $SPACE . $read_freqfile_path;
 
     push @commands, q{--extract} . $SPACE . $extract_file;

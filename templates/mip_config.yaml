@@ -62,10 +62,10 @@ rank_model_file: rank_model_cmms_-v1.19-.ini
 sv_genmod_models_family_type: cmms
 sv_genmod_models_reduced_penetrance_file: GRCh37_cust003-cmms-red-pen_-2017-.tsv
 sv_rank_model_file: svrank_model_cmms_-v1.1-.ini
-source_environment_commands:
+source_main_environment_commands:
   - source
   - activate
-  - mip4.0
+  - mip6.0
 slurm_quality_of_service: low
 ### Analysis
 ### Programs
