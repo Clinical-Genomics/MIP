@@ -412,7 +412,7 @@ sub analysis_delly_reformat {
 
         say {$FILEHANDLE}
           q{## Fix locale bug using old centosOS and Boost library};
-        say {$FILEHANDLE} q?LC_ALL="C"; export LC_ALL ?, $NEWLINE * 2;
+        say {$FILEHANDLE} q?LC_ALL="C"; export LC_ALL ?, $NEWLINE . $NEWLINE;
 
         my $xargs_file_path_prefix;
 
