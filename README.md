@@ -155,15 +155,18 @@ In your ~/.bashrc add a variable and and source of a file containing aliases of 
 
 ```
 # source aliases
-CONDA_BIN="[MINICONDA_PATH]/envs/python_v3.6_tools/bin"
 source ~/dotfiles/aliases.sh
 ```
 
 Add the aliases of the binaries in the aliases.sh file:
 
 ```
-alias chanjo="${CONDA_BIN}/chanjo"
-alias genmod="${CONDA_BIN}/genmod"
+CONDA_MIP_PY3_BIN="[CONDA_PATH]/envs/python_v3.6_tools/bin"
+alias chanjo="${CONDA_MIP_PY3_BIN}/chanjo"
+alias genmod="${CONDA_MIP_PY3_BIN}/genmod"
+alias variant_integrity="${CONDA_MIP_PY3_BIN}/variant_integrity"
+CONDA_MIP_CNVNATOR_BIN="[CONDA_PATH]/envs/mip_cnvnator/bin"
+alias cnvnator="LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH ; source [CONDA_PATH]/envs/mip_cnvnator/root/bin/thisroot.sh; ${CONDA_MIP_CNVNATOR_BIN}/cnvnator"
 ```
 
 ### Usage

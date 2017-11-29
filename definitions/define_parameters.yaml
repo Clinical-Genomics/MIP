@@ -760,7 +760,6 @@ pcnvnator:
   default: 0
   file_tag: _cnvnator
   program_name_path:
-   - cnvnator
    - root
    - bcftools
    - samtools

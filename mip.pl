@@ -726,6 +726,7 @@ $parameter{dynamic_parameter}{consensus_analysis_type} =
   get_overall_analysis_type(
     { analysis_type_href => \%{ $active_parameter{analysis_type} }, } );
 
+
 ### Populate uninitilized active_parameters{parameter_name} with default from parameter
 PARAMETER:
 foreach my $parameter_name (@order_parameters) {
@@ -742,7 +743,7 @@ foreach my $parameter_name (@order_parameters) {
 
     ## If scalar and set - skip
     next PARAMETER
-      if ( $active_parameter{$parameter_name}
+      if ( defined $active_parameter{$parameter_name}
         && ref( $active_parameter{$parameter_name} ) !~ / HASH | ARRAY /sxm );
 
     ### Special case for parameters that are dependent on other parameters values

@@ -350,8 +350,6 @@ sub analysis_vep {
             }
         }
 
-        my $script_path =
-          catfile( $active_parameter_href->{vep_directory_path}, q{vep} );
         my $infile_path =
           $file_path_prefix . $UNDERSCORE . $contig . $infile_suffix;
         my $outfile_path =
@@ -365,7 +363,6 @@ sub analysis_vep {
                 regions_ref      => [$contig],
                 plugins_ref      => \@plugins,
                 vep_features_ref => \@vep_features_ref,
-                script_path      => $script_path,
                 assembly         => $assembly_version,
                 cache_directory =>
                   $active_parameter_href->{vep_directory_cache},
@@ -765,8 +762,6 @@ sub analysis_vep_rio {
             }
         }
 
-        my $script_path =
-          catfile( $active_parameter_href->{vep_directory_path}, q{vep} );
         my $infile_path =
           $file_path_prefix . $UNDERSCORE . $contig . $infile_suffix;
         my $outfile_path =
@@ -780,7 +775,6 @@ sub analysis_vep_rio {
                 regions_ref      => [$contig],
                 plugins_ref      => \@plugins,
                 vep_features_ref => \@vep_features_ref,
-                script_path      => $script_path,
                 assembly         => $assembly_version,
                 cache_directory =>
                   $active_parameter_href->{vep_directory_cache},
@@ -1211,8 +1205,6 @@ sub analysis_vep_sv {
             }
         }
 
-        my $script_path =
-          catfile( $active_parameter_href->{vep_directory_path}, q{vep} );
         my $infile_path =
           $infile_path_prefix . $UNDERSCORE . q{fixedsvlength} . $file_suffix;
         my $outfile_path =
@@ -1226,7 +1218,6 @@ sub analysis_vep_sv {
                 regions_ref      => \@regions,
                 plugins_ref      => \@plugins,
                 vep_features_ref => \@vep_features_ref,
-                script_path      => $script_path,
                 assembly         => $assembly_version,
                 cache_directory =>
                   $active_parameter_href->{vep_directory_cache},

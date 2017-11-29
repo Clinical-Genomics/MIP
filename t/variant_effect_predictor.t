@@ -99,7 +99,7 @@ diag(   q{Test variant_effect_predictor from Vep v}
 Readonly my $VARIANT_BUFFERT_SIZE => 20_000;
 
 ## Base arguments
-my $function_base_command = q{perl};
+my $function_base_command = q{vep};
 
 my %base_argument = (
     stdoutfile_path => {
@@ -141,11 +141,6 @@ my %specific_argument = (
     vep_features_ref => {
         inputs_ref      => [qw{ tsl hgvs}],
         expected_output => q{--tsl} . $SPACE . q{--hgvs},
-    },
-    script_path => {
-        input => catfile( q{test_dir}, q{variant_effect_predictor.pl} ),
-        expected_output =>
-          catfile( q{test_dir}, q{variant_effect_predictor.pl} ),
     },
     fork => {
         input           => 1,
