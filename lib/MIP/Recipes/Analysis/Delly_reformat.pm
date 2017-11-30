@@ -472,7 +472,7 @@ sub analysis_delly_reformat {
                               . q{stderr.txt},
                             sv_type    => $sv_type,
                             min_size   => 0,
-                            max_size   => 100_000_000;,
+                            max_size   => 100000000,
                             FILEHANDLE => $XARGSFILEHANDLE,
                         }
                     );
@@ -508,7 +508,7 @@ sub analysis_delly_reformat {
                           . q{stderr.txt},
                         sv_type    => $sv_type,
                         min_size   => 0,
-                        max_size   => 100_000_000;,
+                        max_size   => 100000000,
                         FILEHANDLE => $XARGSFILEHANDLE,
                     }
                 );
