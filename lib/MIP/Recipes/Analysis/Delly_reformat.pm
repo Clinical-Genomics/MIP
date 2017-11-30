@@ -243,7 +243,7 @@ sub analysis_delly_reformat {
 
     ### Update contigs
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    # Skip contig Y along with MT throughout since sometimes there are no variants particularly for INS
+# Skip contig Y along with MT throughout since sometimes there are no variants particularly for INS
     my @contigs = delete_contig_elements(
         {
             elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
@@ -259,7 +259,7 @@ sub analysis_delly_reformat {
 
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
-      say {$FILEHANDLE} q{@@@@@@@@@@@ Sample ---> } . $sample_id;
+        say {$FILEHANDLE} q{@@@@@@@@@@@ Sample ---> } . $sample_id;
 
         ## Assign directories
         my $insample_directory_bam =
@@ -443,7 +443,8 @@ sub analysis_delly_reformat {
               CONTIG:
                 foreach my $contig (@contigs) {
 
-                    say {$FILEHANDLE} q{@@@@@@@@@@@ LINE 446, CONTIG ---> } . $contig;
+                    say {$FILEHANDLE} q{@@@@@@@@@@@ LINE 446, CONTIG ---> }
+                      . $contig;
 
                     ## Assemble file paths by adding file ending
                     my @file_paths = map {
@@ -530,9 +531,6 @@ sub analysis_delly_reformat {
       SAMPLE_ID:
         foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
-            say {$FILEHANDLE} q{@@@@@@@@@@@ Sample ---> } . $sample_id;
-            say {$FILEHANDLE} q{@@@@@@@@@@@ XARGS  ---> } .  $xargs_file_counter;
-
             ## Create file commands for xargs
             ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
                 {
@@ -547,14 +545,10 @@ sub analysis_delly_reformat {
           SV_TYPE:
             foreach my $sv_type ( @{ $active_parameter_href->{delly_types} } ) {
 
-              say {$FILEHANDLE} q{@@@@@@@@@@@ SV_TYPE  ---> } .  $sv_type;
-
                 if ( $sv_type ne q{TRA} ) {
 
                   CONTIG:
                     foreach my $contig (@contigs) {
-
-                        say {$FILEHANDLE} q{@@@@@@@@@@@ SV-TYPE:}.$sv_type."\tCONTIG:".$contig;
 
                         ## Assemble file path
                         my $alignment_sample_file_path =
@@ -611,8 +605,6 @@ sub analysis_delly_reformat {
                         $infile_path_prefix{$sample_id}{pgatk_baserecalibration}
                       . $suffix{pgatk_baserecalibration};
 
-                    say {$FILEHANDLE} q{@@@@@@@@@@@ NON TRA, DELLY CALL  ---> } .  $sv_type;
-
                     delly_call(
                         {
                             infile_path       => $alignment_sample_file_path,
@@ -645,98 +637,36 @@ sub analysis_delly_reformat {
                     say {$XARGSFILEHANDLE} $NEWLINE;
                 }
             }
-          }
+        }
 
-            ### Merge calls
-            say {$FILEHANDLE} q{## bcftools merge};
+        ### Merge calls
+        say {$FILEHANDLE} q{## bcftools merge};
 
-            ## Create file commands for xargs
-            ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
-                {
-                    FILEHANDLE         => $FILEHANDLE,
-                    XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                    file_path          => $file_path,
-                    program_info_path  => $program_info_path,
-                    core_number        => $core_number,
-                    xargs_file_counter => $xargs_file_counter,
-                }
-            );
+        ## Create file commands for xargs
+        ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
+            {
+                FILEHANDLE         => $FILEHANDLE,
+                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+                file_path          => $file_path,
+                program_info_path  => $program_info_path,
+                core_number        => $core_number,
+                xargs_file_counter => $xargs_file_counter,
+            }
+        );
 
-          SV_TYPE:
-            foreach my $sv_type ( @{ $active_parameter_href->{delly_types} } ) {
+      SV_TYPE:
+        foreach my $sv_type ( @{ $active_parameter_href->{delly_types} } ) {
 
-                if ( $sv_type ne q{TRA} ) {
+            if ( $sv_type ne q{TRA} ) {
 
-                  CONTIG:
-                    foreach my $contig (@contigs) {
-
-                        ## Assemble file paths by adding file ending
-                        my @file_paths = map {
-                                $file_path_prefix{$_}
-                              . $UNDERSCORE
-                              . $contig
-                              . $UNDERSCORE
-                              . $sv_type
-                              . $UNDERSCORE . q{geno}
-                              . $suffix{pdelly_call}
-                        } @{ $active_parameter_href->{sample_ids} };
-
-                        bcftools_merge(
-                            {
-                                infile_paths_ref => \@file_paths,
-                                outfile_path     => $outfile_path_prefix
-                                  . $UNDERSCORE
-                                  . $contig
-                                  . $UNDERSCORE
-                                  . $sv_type
-                                  . $suffix{pdelly_call},
-                                output_type     => q{b},
-                                stdoutfile_path => $xargs_file_path_prefix
-                                  . $DOT
-                                  . $contig
-                                  . $DOT
-                                  . $sv_type
-                                  . $DOT
-                                  . q{stdout.txt},
-                                stderrfile_path => $xargs_file_path_prefix
-                                  . $DOT
-                                  . $contig
-                                  . $DOT
-                                  . $sv_type
-                                  . $DOT
-                                  . q{stderr.txt},
-                                FILEHANDLE => $XARGSFILEHANDLE,
-                            }
-                        );
-                        print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
-
-                        bcftools_index(
-                            {
-                                infile_path => $outfile_path_prefix
-                                  . $UNDERSCORE
-                                  . $contig
-                                  . $UNDERSCORE
-                                  . $sv_type
-                                  . $suffix{pdelly_call},
-                                stderrfile_path => $xargs_file_path_prefix
-                                  . $DOT
-                                  . $contig
-                                  . $DOT
-                                  . $sv_type
-                                  . $UNDERSCORE
-                                  . q{index.stderr.txt},
-                                output_type => q{csi},
-                                FILEHANDLE  => $XARGSFILEHANDLE,
-                            }
-                        );
-                        say {$XARGSFILEHANDLE} $NEWLINE;
-                    }
-                }
-                else {
+              CONTIG:
+                foreach my $contig (@contigs) {
 
                     ## Assemble file paths by adding file ending
                     my @file_paths = map {
                             $file_path_prefix{$_}
+                          . $UNDERSCORE
+                          . $contig
                           . $UNDERSCORE
                           . $sv_type
                           . $UNDERSCORE . q{geno}
@@ -748,15 +678,21 @@ sub analysis_delly_reformat {
                             infile_paths_ref => \@file_paths,
                             outfile_path     => $outfile_path_prefix
                               . $UNDERSCORE
+                              . $contig
+                              . $UNDERSCORE
                               . $sv_type
                               . $suffix{pdelly_call},
                             output_type     => q{b},
                             stdoutfile_path => $xargs_file_path_prefix
                               . $DOT
+                              . $contig
+                              . $DOT
                               . $sv_type
                               . $DOT
                               . q{stdout.txt},
                             stderrfile_path => $xargs_file_path_prefix
+                              . $DOT
+                              . $contig
                               . $DOT
                               . $sv_type
                               . $DOT
@@ -770,9 +706,13 @@ sub analysis_delly_reformat {
                         {
                             infile_path => $outfile_path_prefix
                               . $UNDERSCORE
+                              . $contig
+                              . $UNDERSCORE
                               . $sv_type
                               . $suffix{pdelly_call},
                             stderrfile_path => $xargs_file_path_prefix
+                              . $DOT
+                              . $contig
                               . $DOT
                               . $sv_type
                               . $UNDERSCORE
@@ -784,66 +724,45 @@ sub analysis_delly_reformat {
                     say {$XARGSFILEHANDLE} $NEWLINE;
                 }
             }
+            else {
 
-            ### Concatenate SV types
-            say {$FILEHANDLE}
-              q{## bcftools concat - concatenate SV type per contigs};
-
-            ## Assemble file paths by adding file ending
-            my @file_paths;
-
-          SV_TYPE:
-            foreach my $sv_type ( @{ $active_parameter_href->{delly_types} } ) {
-
-                if ( $sv_type ne q{TRA} ) {
-
-                    push @file_paths, map {
-                            $outfile_path_prefix
-                          . $UNDERSCORE
-                          . $_
-                          . $UNDERSCORE
-                          . $sv_type
-                          . $suffix{pdelly_call}
-                    } @contigs;
-                }
-                else {
-
-                    push @file_paths,
-                        $outfile_path_prefix
+                ## Assemble file paths by adding file ending
+                my @file_paths = map {
+                        $file_path_prefix{$_}
                       . $UNDERSCORE
                       . $sv_type
-                      . $suffix{pdelly_call};
-                }
+                      . $UNDERSCORE . q{geno}
+                      . $suffix{pdelly_call}
+                } @{ $active_parameter_href->{sample_ids} };
 
-                bcftools_concat(
+                bcftools_merge(
                     {
                         infile_paths_ref => \@file_paths,
                         outfile_path     => $outfile_path_prefix
                           . $UNDERSCORE
                           . $sv_type
-                          . $UNDERSCORE
-                          . q{concat}
                           . $suffix{pdelly_call},
                         output_type     => q{b},
-                        stderrfile_path => $program_info_path
-                          . $UNDERSCORE
+                        stdoutfile_path => $xargs_file_path_prefix
+                          . $DOT
                           . $sv_type
-                          . $UNDERSCORE
-                          . q{concat.stderr.txt},
-                        allow_overlaps => 1,
-                        rm_dups        => q{all},
-                        FILEHANDLE     => $FILEHANDLE,
+                          . $DOT
+                          . q{stdout.txt},
+                        stderrfile_path => $xargs_file_path_prefix
+                          . $DOT
+                          . $sv_type
+                          . $DOT
+                          . q{stderr.txt},
+                        FILEHANDLE => $XARGSFILEHANDLE,
                     }
                 );
-                say {$FILEHANDLE} "\n";
+                print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
 
                 bcftools_index(
                     {
                         infile_path => $outfile_path_prefix
                           . $UNDERSCORE
                           . $sv_type
-                          . $UNDERSCORE
-                          . q{concat}
                           . $suffix{pdelly_call},
                         stderrfile_path => $xargs_file_path_prefix
                           . $DOT
@@ -851,93 +770,166 @@ sub analysis_delly_reformat {
                           . $UNDERSCORE
                           . q{index.stderr.txt},
                         output_type => q{csi},
-                        FILEHANDLE  => $FILEHANDLE,
+                        FILEHANDLE  => $XARGSFILEHANDLE,
                     }
                 );
-                say {$FILEHANDLE} $NEWLINE;
+                say {$XARGSFILEHANDLE} $NEWLINE;
             }
-            ### Filter calls
-            say {$FILEHANDLE} q{## Delly filter};
+        }
 
-            ## Create file commands for xargs
-            ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
+        ### Concatenate SV types
+        say {$FILEHANDLE}
+          q{## bcftools concat - concatenate SV type per contigs};
+
+        ## Assemble file paths by adding file ending
+        my @file_paths;
+
+      SV_TYPE:
+        foreach my $sv_type ( @{ $active_parameter_href->{delly_types} } ) {
+
+            if ( $sv_type ne q{TRA} ) {
+
+                push @file_paths, map {
+                        $outfile_path_prefix
+                      . $UNDERSCORE
+                      . $_
+                      . $UNDERSCORE
+                      . $sv_type
+                      . $suffix{pdelly_call}
+                } @contigs;
+            }
+            else {
+
+                push @file_paths,
+                    $outfile_path_prefix
+                  . $UNDERSCORE
+                  . $sv_type
+                  . $suffix{pdelly_call};
+            }
+
+            bcftools_concat(
                 {
-                    FILEHANDLE         => $FILEHANDLE,
-                    XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                    file_path          => $file_path,
-                    program_info_path  => $program_info_path,
-                    core_number        => $core_number,
-                    xargs_file_counter => $xargs_file_counter,
+                    infile_paths_ref => \@file_paths,
+                    outfile_path     => $outfile_path_prefix
+                      . $UNDERSCORE
+                      . $sv_type
+                      . $UNDERSCORE
+                      . q{concat}
+                      . $suffix{pdelly_call},
+                    output_type     => q{b},
+                    stderrfile_path => $program_info_path
+                      . $UNDERSCORE
+                      . $sv_type
+                      . $UNDERSCORE
+                      . q{concat.stderr.txt},
+                    allow_overlaps => 1,
+                    rm_dups        => q{all},
+                    FILEHANDLE     => $FILEHANDLE,
                 }
             );
-          SV_TYPE:
-            foreach my $sv_type ( @{ $active_parameter_href->{delly_types} } ) {
+            say {$FILEHANDLE} $NEWLINE;
 
-                if ( $sv_type ne q{TRA} ) {
-
-                    delly_filter(
-                        {
-                            infile_path => $outfile_path_prefix
-                              . $UNDERSCORE
-                              . $sv_type
-                              . $UNDERSCORE
-                              . q{concat}
-                              . $suffix{pdelly_call},
-                            outfile_path => $outfile_path_prefix
-                              . $UNDERSCORE
-                              . $sv_type
-                              . $UNDERSCORE
-                              . q{filtered}
-                              . $suffix{pdelly_call},
-                            stdoutfile_path => $xargs_file_path_prefix
-                              . $DOT
-                              . $sv_type
-                              . $DOT
-                              . q{stdout.txt},
-                            stderrfile_path => $xargs_file_path_prefix
-                              . $DOT
-                              . $sv_type
-                              . $DOT
-                              . q{stderr.txt},
-                            sv_type     => $sv_type,
-                            filter_mode => q{germline},
-                            FILEHANDLE  => $XARGSFILEHANDLE,
-                        }
-                    );
-                    say {$XARGSFILEHANDLE} $NEWLINE;
+            bcftools_index(
+                {
+                    infile_path => $outfile_path_prefix
+                      . $UNDERSCORE
+                      . $sv_type
+                      . $UNDERSCORE
+                      . q{concat}
+                      . $suffix{pdelly_call},
+                    stderrfile_path => $xargs_file_path_prefix
+                      . $DOT
+                      . $sv_type
+                      . $UNDERSCORE
+                      . q{index.stderr.txt},
+                    output_type => q{csi},
+                    FILEHANDLE  => $FILEHANDLE,
                 }
-                else {
+            );
+            say {$FILEHANDLE} $NEWLINE;
+        }
+        ### Filter calls
+        say {$FILEHANDLE} q{## Delly filter};
 
-                    delly_filter(
-                        {
-                            infile_path => $outfile_path_prefix
-                              . $UNDERSCORE
-                              . $sv_type
-                              . $suffix{pdelly_call},
-                            outfile_path => $outfile_path_prefix
-                              . $UNDERSCORE
-                              . $sv_type
-                              . $UNDERSCORE
-                              . q{filtered}
-                              . $suffix{pdelly_call},
-                            stdoutfile_path => $xargs_file_path_prefix
-                              . $DOT
-                              . $sv_type
-                              . $DOT
-                              . q{stdout.txt},
-                            stderrfile_path => $xargs_file_path_prefix
-                              . $DOT
-                              . $sv_type
-                              . $DOT
-                              . q{stderr.txt},
-                            sv_type     => $sv_type,
-                            filter_mode => q{germline},
-                            FILEHANDLE  => $XARGSFILEHANDLE,
-                        }
-                    );
-                    say {$XARGSFILEHANDLE} $NEWLINE;
-                }
+        ## Create file commands for xargs
+        ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
+            {
+                FILEHANDLE         => $FILEHANDLE,
+                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+                file_path          => $file_path,
+                program_info_path  => $program_info_path,
+                core_number        => $core_number,
+                xargs_file_counter => $xargs_file_counter,
             }
+        );
+      SV_TYPE:
+        foreach my $sv_type ( @{ $active_parameter_href->{delly_types} } ) {
+
+            if ( $sv_type ne q{TRA} ) {
+
+                delly_filter(
+                    {
+                        infile_path => $outfile_path_prefix
+                          . $UNDERSCORE
+                          . $sv_type
+                          . $UNDERSCORE
+                          . q{concat}
+                          . $suffix{pdelly_call},
+                        outfile_path => $outfile_path_prefix
+                          . $UNDERSCORE
+                          . $sv_type
+                          . $UNDERSCORE
+                          . q{filtered}
+                          . $suffix{pdelly_call},
+                        stdoutfile_path => $xargs_file_path_prefix
+                          . $DOT
+                          . $sv_type
+                          . $DOT
+                          . q{stdout.txt},
+                        stderrfile_path => $xargs_file_path_prefix
+                          . $DOT
+                          . $sv_type
+                          . $DOT
+                          . q{stderr.txt},
+                        sv_type     => $sv_type,
+                        filter_mode => q{germline},
+                        FILEHANDLE  => $XARGSFILEHANDLE,
+                    }
+                );
+                say {$XARGSFILEHANDLE} $NEWLINE;
+            }
+            else {
+
+                delly_filter(
+                    {
+                        infile_path => $outfile_path_prefix
+                          . $UNDERSCORE
+                          . $sv_type
+                          . $suffix{pdelly_call},
+                        outfile_path => $outfile_path_prefix
+                          . $UNDERSCORE
+                          . $sv_type
+                          . $UNDERSCORE
+                          . q{filtered}
+                          . $suffix{pdelly_call},
+                        stdoutfile_path => $xargs_file_path_prefix
+                          . $DOT
+                          . $sv_type
+                          . $DOT
+                          . q{stdout.txt},
+                        stderrfile_path => $xargs_file_path_prefix
+                          . $DOT
+                          . $sv_type
+                          . $DOT
+                          . q{stderr.txt},
+                        sv_type     => $sv_type,
+                        filter_mode => q{germline},
+                        FILEHANDLE  => $XARGSFILEHANDLE,
+                    }
+                );
+                say {$XARGSFILEHANDLE} $NEWLINE;
+            }
+        }
 
         ### Concatenate SV types
         if ( scalar( @{ $active_parameter_href->{sample_ids} } ) > 1 ) {
