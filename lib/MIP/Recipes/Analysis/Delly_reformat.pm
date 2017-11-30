@@ -547,10 +547,14 @@ sub analysis_delly_reformat {
           SV_TYPE:
             foreach my $sv_type ( @{ $active_parameter_href->{delly_types} } ) {
 
+              say {$FILEHANDLE} q{@@@@@@@@@@@ SV_TYPE  ---> } .  $sv_type;
+
                 if ( $sv_type ne q{TRA} ) {
 
                   CONTIG:
                     foreach my $contig (@contigs) {
+
+                        say {$FILEHANDLE} q{@@@@@@@@@@@ TRA, @contigs  ---> } .  @contigs;
 
                         ## Assemble file path
                         my $alignment_sample_file_path =
@@ -606,6 +610,8 @@ sub analysis_delly_reformat {
                     my $alignment_sample_file_path =
                         $infile_path_prefix{$sample_id}{pgatk_baserecalibration}
                       . $suffix{pgatk_baserecalibration};
+
+                    say {$FILEHANDLE} q{@@@@@@@@@@@ NON TRA, DELLY CALL  ---> } .  $sv_type;
 
                     delly_call(
                         {
