@@ -544,9 +544,9 @@ sub finish_bioconda_package_install {
 
         ## Get the full version, including patch for snpeff
         my $command =
-            qq{conda install --dry-run snpeff=$bioconda_packages_href->{snpeff}}
+            qq{conda search --spec snpeff=$bioconda_packages_href->{snpeff}}
           . $SPACE
-          . q{| grep 'snpeff' | awk '{ print $2 }'};
+          . qq{| grep -wo '$bioconda_packages_href->{snpeff}.' | tail -1};
         my $version;
         run(
             command => $command,
