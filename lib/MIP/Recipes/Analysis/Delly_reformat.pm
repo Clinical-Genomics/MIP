@@ -243,7 +243,7 @@ sub analysis_delly_reformat {
 
     ### Update contigs
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-# Skip contig Y along with MT throughout since sometimes there are no variants particularly for INS
+    # Skip contig Y along with MT throughout since sometimes there are no variants particularly for INS
     my @contigs = delete_contig_elements(
         {
             elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
@@ -554,7 +554,8 @@ sub analysis_delly_reformat {
                   CONTIG:
                     foreach my $contig (@contigs) {
 
-                        say {$FILEHANDLE} q{@@@@@@@@@@@ TRA, @contigs  ---> } .  @contigs;
+                        #say {$FILEHANDLE} q{@@@@@@@@@@@ NON-TRA, @contigs  ---> } .  $contig;
+                        say {$FILEHANDLE} q{@@@@@@@@@@@ SV-TYPE:}.$sv_type."\tCONTIG:".$contig;
 
                         ## Assemble file path
                         my $alignment_sample_file_path =
