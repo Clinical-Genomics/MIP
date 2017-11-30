@@ -429,19 +429,15 @@ sub analysis_delly_reformat {
             }
         );
 
+        Readonly my $MAX_SV_SIZE = 100_000_000;
+
       SV_TYPE:
         foreach my $sv_type ( @{ $active_parameter_href->{delly_types} } ) {
 
-            say {$FILEHANDLE} "\n" . q{@@@@@@@@@@@@@@@ Debugging the sh*t out of this code: @@@@@@@@@@@@@@@}.
-            q{@@@@@@@@@@@@@@@ } . $sv_type . q{ @@@@@@@@@@@@@@@} . "\n";
-
             if ( $sv_type ne q{TRA} ) {
 
-              say {$FILEHANDLE}  "\n" . q{@@@@@@@@@@@@@@@ NOT TRA @@@@@@@@@@@@@@@} . "\n";
               CONTIG:
                 foreach my $contig (@contigs) {
-
-                    say {$FILEHANDLE}  "\n" . q{@@@@@@@ CONTING } . $contig . "\n";
 
                     ## Assemble file paths by adding file ending
                     my @file_paths = map {
@@ -478,7 +474,7 @@ sub analysis_delly_reformat {
                               . q{stderr.txt},
                             sv_type    => $sv_type,
                             min_size   => 0,
-                            max_size   => 100000000,
+                            max_size   => $MAX_SV_SIZE,
                             FILEHANDLE => $XARGSFILEHANDLE,
                         }
                     );
@@ -486,8 +482,6 @@ sub analysis_delly_reformat {
                 }
             }
             else {
-
-              say {$FILEHANDLE}  "\n" . q{@@@@@@@@@@@@@@@ TRA @@@@@@@@@@@@@@@} . "\n";
 
                 ## Assemble file paths by adding file ending
                 my @file_paths = map {
@@ -516,7 +510,7 @@ sub analysis_delly_reformat {
                           . q{stderr.txt},
                         sv_type    => $sv_type,
                         min_size   => 0,
-                        max_size   => 100000000,
+                        max_size   => $MAX_SV_SIZE,
                         FILEHANDLE => $XARGSFILEHANDLE,
                     }
                 );
@@ -530,7 +524,6 @@ sub analysis_delly_reformat {
       SAMPLE_ID:
         foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
-            say {$FILEHANDLE}  "\n" . q{############  SAMPLE ID} .  $sample_id. " {############\n";
             ## Create file commands for xargs
             ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
                 {
@@ -545,16 +538,11 @@ sub analysis_delly_reformat {
           SV_TYPE:
             foreach my $sv_type ( @{ $active_parameter_href->{delly_types} } ) {
 
-                say {$FILEHANDLE}  "\n" . q{############  SV TYPE} .  $sv_type. " {############\n";
-
                 if ( $sv_type ne q{TRA} ) {
-
-                  say {$FILEHANDLE}  "\n" . q{############  NOT TRA ############} . "\n";
 
                   CONTIG:
                     foreach my $contig (@contigs) {
 
-                        say {$FILEHANDLE}  "\n" . q{############ CONTIG } . $contig . q{############} . "\n";
                         ## Assemble file path
                         my $alignment_sample_file_path =
                           $infile_path_prefix{$sample_id}
@@ -597,7 +585,7 @@ sub analysis_delly_reformat {
                                 exclude_file_path =>
                                   $active_parameter_href->{delly_exclude_file},
                                 referencefile_path => $referencefile_path,
-                                FILEHANDLE => $XARGSFILEHANDLE,
+                                FILEHANDLE         => $XARGSFILEHANDLE,
                             }
                         );
                         say {$XARGSFILEHANDLE} $NEWLINE;
@@ -636,7 +624,7 @@ sub analysis_delly_reformat {
                             exclude_file_path =>
                               $active_parameter_href->{delly_exclude_file},
                             referencefile_path => $referencefile_path,
-                            FILEHANDLE => $XARGSFILEHANDLE,
+                            FILEHANDLE         => $XARGSFILEHANDLE,
                         }
                     );
                     say {$XARGSFILEHANDLE} $NEWLINE;
@@ -793,15 +781,14 @@ sub analysis_delly_reformat {
 
                 if ( $sv_type ne q{TRA} ) {
 
-                    push
-                      @file_paths, map {
+                    push @file_paths, map {
                             $outfile_path_prefix
                           . $UNDERSCORE
                           . $_
                           . $UNDERSCORE
                           . $sv_type
                           . $suffix{pdelly_call}
-                      } @contigs;
+                    } @contigs;
                 }
                 else {
 
@@ -971,26 +958,24 @@ sub analysis_delly_reformat {
                     foreach my $contig (@contigs) {
 
                         ## Assemble file paths by adding file ending
-                        push
-                          @file_paths, map {
+                        push @file_paths, map {
                                 $infile_path_prefix{$_}{pdelly_call}
                               . $UNDERSCORE
                               . $contig
                               . $UNDERSCORE
                               . $sv_type
                               . $suffix{pdelly_call}
-                          } @{ $active_parameter_href->{sample_ids} };
+                        } @{ $active_parameter_href->{sample_ids} };
                     }
                 }
                 else {
 
-                    push
-                      @file_paths, map {
+                    push @file_paths, map {
                             $infile_path_prefix{$_}{pdelly_call}
                           . $UNDERSCORE
                           . $sv_type
                           . $suffix{pdelly_call}
-                      } @{ $active_parameter_href->{sample_ids} };
+                    } @{ $active_parameter_href->{sample_ids} };
                 }
             }
         }
@@ -1013,26 +998,26 @@ sub analysis_delly_reformat {
         say {$FILEHANDLE} $NEWLINE;
 
         ## Writes sbatch code to supplied filehandle to sort variants in vcf format
-        say {$FILEHANDLE} "## Picard SortVcf";
+        say {$FILEHANDLE} q{## Picard SortVcf};
         picardtools_sortvcf(
             {
-                FILEHANDLE            => $FILEHANDLE,
+                FILEHANDLE       => $FILEHANDLE,
                 infile_paths_ref => [
                         $outfile_path_prefix
                       . $UNDERSCORE
                       . q{concat}
                       . $outfile_suffix
                 ],
-                java_jar       => catfile(
+                java_jar => catfile(
                     $active_parameter_href->{picardtools_path},
                     q{picard.jar}
                 ),
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
-                outfile_path => $outfile_path_prefix . $outfile_suffix,
+                outfile_path        => $outfile_path_prefix . $outfile_suffix,
                 memory_allocation   => q{Xmx2g},
-                referencefile_path => $referencefile_path,
-                sequence_dictionary    => catfile(
+                referencefile_path  => $referencefile_path,
+                sequence_dictionary => catfile(
                     $reference_dir,
                     $file_info_href->{human_genome_reference_name_prefix}
                       . $DOT . q{dict}
