@@ -4,11 +4,11 @@ use 5.018;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ basename dirname  };
+use open qw{ :encoding(UTF-8) :std };
+use File::Basename qw{ basename dirname };
 use File::Spec::Functions qw{ catdir };
 use FindBin qw{ $Bin };
 use Getopt::Long;
-use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use Test::More;
 use utf8;
@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.0;
+our $VERSION = '1.0.0';
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -69,10 +69,7 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Script::Utils}   => [qw{ help }],
-        q{MIP::Test::Writefile} => [qw(test_write_to_file)],
-    );
+    my %perl_module = ( q{MIP::Script::Utils} => [qw{ help }], );
 
   PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
@@ -81,7 +78,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Unix::Write_to_file});
+    my @modules = (q{MIP::Get::Parameter});
 
   MODULE:
     for my $module (@modules) {
@@ -89,11 +86,10 @@ BEGIN {
     }
 }
 
-use MIP::Unix::Write_to_file qw(unix_write_to_file);
-use MIP::Test::Writefile qw(test_write_to_file);
+use MIP::Get::Parameter qw{ get_module_parameters };
 
-diag(   q{Test unix_write_to_file from Write_to_file.pm v}
-      . $MIP::Unix::Write_to_file::VERSION
+diag(   q{Test get_module_parameters from Parameter.pm v}
+      . $MIP::Get::Parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -101,29 +97,50 @@ diag(   q{Test unix_write_to_file from Write_to_file.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Coderef - enables generalized use of generate call
-my $module_function_cref = \&unix_write_to_file;
+my $mip_program_name = q{pchanjo_sexcheck};
 
-## Test
-# In line test
-my @commands = ( q{commands_ref}, [qw{ test in-line }] );
-test_write_to_file(
+my %active_parameter = (
+    module_time                      => { pchanjo_sexcheck => 1, },
+    module_core_number               => { pchanjo_sexcheck => 1, },
+    source_main_environment_commands => [ qw{ source activate mip }, ],
+);
+
+my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
     {
-        args_ref             => \@commands,
-        base_command         => q{test in-line},
-        module_function_cref => $module_function_cref,
+        active_parameter_href => \%active_parameter,
+        mip_program_name      => $mip_program_name,
     }
 );
 
-# Per line test
-@commands = ( q{commands_ref}, [qw{ test per-line }] );
-test_write_to_file(
+is( $core_number, 1, q{Got module core_number} );
+
+is( $time, 1, q{Got module time} );
+
+is(
+    $source_environment_cmd,
+    q{source activate mip},
+    q{Got main source environment command}
+);
+
+## Test module specific source command
+%active_parameter = (
+    module_time        => { pchanjo_sexcheck => 1, },
+    module_core_number => { pchanjo_sexcheck => 1, },
+    module_source_environment_command =>
+      { pchanjo_sexcheck => q{source activate python_v3.6_tools}, },
+);
+
+( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
     {
-        args_ref             => \@commands,
-        base_command         => q{test},
-        module_function_cref => $module_function_cref,
-        separator            => q{\n},
+        active_parameter_href => \%active_parameter,
+        mip_program_name      => $mip_program_name,
     }
+);
+
+is(
+    $source_environment_cmd,
+    q{source activate python_v3.6_tools},
+    q{Got source environment commmand}
 );
 
 done_testing();

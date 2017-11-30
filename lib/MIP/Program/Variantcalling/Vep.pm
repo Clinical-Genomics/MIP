@@ -54,7 +54,6 @@ sub variant_effect_predictor {
 ##         : $stderrfile_path_append  => Append stderr info to file path
 ##         : $FILEHANDLE              => Filehandle to write to
 ##         : $reference_path          => Reference sequence file
-##         : $script_path             => Path to variant_effect_predictor script
 ##         : $assembly                => Assembly version to use
 ##         : $cache_directory         => VEP chache directory
 ##         : $buffer_size             => Sets the internal buffer size, corresponding to the number of variants that are read in to memory simultaneously
@@ -79,7 +78,6 @@ sub variant_effect_predictor {
     my $stderrfile_path_append;
     my $FILEHANDLE;
     my $reference_path;
-    my $script_path;
     my $assembly;
     my $cache_directory;
     my $buffer_size;
@@ -99,7 +97,6 @@ sub variant_effect_predictor {
           { strict_type => 1, store => \$stderrfile_path_append },
         FILEHANDLE      => { store       => \$FILEHANDLE },
         reference_path  => { strict_type => 1, store => \$reference_path },
-        script_path     => { strict_type => 1, store => \$script_path },
         assembly        => { strict_type => 1, store => \$assembly },
         cache_directory => { strict_type => 1, store => \$cache_directory },
         buffer_size => {
@@ -131,16 +128,7 @@ sub variant_effect_predictor {
 
     ## Vep
     # Stores commands depending on input parameters
-    my @commands = qw{ perl };
-
-    if ($script_path) {
-
-        push @commands, $script_path;
-    }
-    else {
-
-        push @commands, q{vep};
-    }
+    my @commands = q{vep};
 
     ## Options
     if ($fork) {
