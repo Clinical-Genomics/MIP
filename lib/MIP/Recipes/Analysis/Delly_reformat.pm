@@ -259,8 +259,6 @@ sub analysis_delly_reformat {
 
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
-        say {$FILEHANDLE} q{@@@@@@@@@@@ Sample ---> } . $sample_id;
-
         ## Assign directories
         my $insample_directory_bam =
           catdir( $active_parameter_href->{outdata_dir},
@@ -410,8 +408,6 @@ sub analysis_delly_reformat {
 
     if ( scalar @{ $active_parameter_href->{sample_ids} } > 1 ) {
 
-        say {$FILEHANDLE} q{@@@@@@@@@@@ ---> IM IN IF SCALAR};
-
         ### Delly merge
         say {$FILEHANDLE} q{## delly merge} . $NEWLINE;
 
@@ -436,15 +432,10 @@ sub analysis_delly_reformat {
       SV_TYPE:
         foreach my $sv_type ( @{ $active_parameter_href->{delly_types} } ) {
 
-            say {$FILEHANDLE} q{@@@@@@@@@@@ LINE 439, SV TYPE ---> } . $sv_type;
-
             if ( $sv_type ne q{TRA} ) {
 
               CONTIG:
                 foreach my $contig (@contigs) {
-
-                    say {$FILEHANDLE} q{@@@@@@@@@@@ LINE 446, CONTIG ---> }
-                      . $contig;
 
                     ## Assemble file paths by adding file ending
                     my @file_paths = map {
