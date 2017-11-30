@@ -148,8 +148,8 @@ sub analysis_recipe {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ### SET IMPORT IN ALPHABETIC ORDER
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
+    use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::PATH::TO::PROGRAMS qw{ COMMANDS_SUB };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
@@ -166,9 +166,12 @@ sub analysis_recipe {
 
     ## Unpack parameters
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my $core_number =
-      $active_parameter_href->{module_core_number}{$mip_program_name};
-    my $time = $active_parameter_href->{module_time}{$mip_program_name};
+    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_program_name      => $mip_program_name,
+        }
+    );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -194,17 +197,17 @@ sub analysis_recipe {
     ## Get infile_suffix from baserecalibration jobid chain
     my $infile_suffix = get_file_suffix(
         {
-            parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
             jobid_chain =>
               $parameter_href->{UPPSTREAM_DEPENDENCY_PROGRAM}{chain},
+            parameter_href => $parameter_href,
+            suffix_key     => q{alignment_file_suffix},
         }
     );
     my $outfile_suffix = get_file_suffix(
         {
             parameter_href => $parameter_href,
-            suffix_key     => q{outfile_suffix},
             program_name   => $mip_program_name,
+            suffix_key     => q{outfile_suffix},
         }
     );
 
@@ -220,13 +223,14 @@ sub analysis_recipe {
     my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
+            core_number           => $core_number,
             directory_id          => $sample_id,
-            program_name          => $program_name,
+            FILEHANDLE            => $FILEHANDLE,
+            job_id_href           => $job_id_href,
+            process_time          => $time,
             program_directory => catfile( $outaligner_dir, q{PROGRAM_NAME} ),
-            core_number       => $core_number,
-            process_time      => $time,
+            program_name      => $program_name,
+            source_environment_commands_ref => [$source_environment_cmd],
         }
     );
 
@@ -244,11 +248,11 @@ sub analysis_recipe {
         ## Collect QC metadata info for later use
         add_program_outfile_to_sample_info(
             {
-                sample_info_href => $sample_info_href,
-                sample_id        => $sample_id,
-                program_name     => q{PROGRAM_NAME},
                 infile           => $merged_infile_prefix,
                 path             => $program_outfile_path,
+                program_name     => q{PROGRAM_NAME},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
             }
         );
 
@@ -258,22 +262,22 @@ sub analysis_recipe {
           catfile( $outsample_directory, $infile_prefix . $outfile_suffix );
         add_processing_metafile_to_sample_info(
             {
-                sample_info_href => $sample_info_href,
-                sample_id        => $sample_id,
                 metafile_tag     => $most_complete_format_key,
                 path             => $qc_metafile_path,
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
             }
         );
 
         ## MODIY THE CHOICE OF SUB ACCORDING TO HOW YOU WANT SLURM TO PROCESSES IT AND DOWNSTREAM DEPENDENCIES
         slurm_submit_job_sample_id_dependency_add_to_sample(
             {
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
                 family_id               => $family_id,
-                sample_id               => $sample_id,
-                path                    => $job_id_chain,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
                 log                     => $log,
+                path                    => $job_id_chain,
+                sample_id               => $sample_id,
                 sbatch_file_name        => $file_path
             }
         );

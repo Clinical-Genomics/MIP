@@ -300,13 +300,15 @@ GetOptions(
     q{emt|email_types:s}        => \@{ $active_parameter{email_types} },
     q{mcn|module_core_number:s} => \%{ $active_parameter{module_core_number} },
     q{mot|module_time:s}        => \%{ $active_parameter{module_time} },
+    q{mse|module_source_environment_command:s} =>
+      \%{ $active_parameter{module_source_environment_command} },
+    q{sen|source_main_environment_commands=s{,}} =>
+      \@{ $active_parameter{source_main_environment_commands} },
     q{mcn|max_cores_per_node=n} => \$active_parameter{max_cores_per_node},
     q{nrm|node_ram_memory=n}    => \$active_parameter{node_ram_memory},
     q{tmd|temp_directory:s}     => \$active_parameter{temp_directory},
     q{qos|slurm_quality_of_service=s} =>
       \$active_parameter{slurm_quality_of_service},
-    q{sen|source_environment_commands=s{,}} =>
-      \@{ $active_parameter{source_environment_commands} },
     q{psfq|psplit_fastq_file=n} => \$active_parameter{psplit_fastq_file},
     q{sfqrdb|split_fastq_file_read_batch=n} =>
       \$active_parameter{split_fastq_file_read_batch},
@@ -744,7 +746,7 @@ foreach my $parameter_name (@order_parameters) {
 
     ## If scalar and set - skip
     next PARAMETER
-      if ( $active_parameter{$parameter_name}
+      if ( defined $active_parameter{$parameter_name}
         && ref( $active_parameter{$parameter_name} ) !~ / HASH | ARRAY /sxm );
 
     ### Special case for parameters that are dependent on other parameters values
@@ -951,7 +953,8 @@ if (
 }
 
 ## Parameters that have keys as MIP program names
-my @parameter_keys_to_check = (qw(module_time module_core_number));
+my @parameter_keys_to_check =
+  (qw(module_time module_core_number module_source_environment_command));
 foreach my $parameter_name (@parameter_keys_to_check) {
 
     ## Test if key from query hash exists truth hash
@@ -3017,13 +3020,14 @@ sub build_usage {
     -bsp/--bash_set_pipefail Set pipefail in bash scripts (defaults to "0")
     -mot/--module_time Set the time allocation for each module (Format: module "program name"=time(Hours))
     -mcn/--module_core_number Set the number of cores for each module (Format: module "program_name"=X(cores))
+    -mse/--module_source_environment_command Set environment variables specific for each module (Format: module "program_name"="command"
+    -sen/--source_main_environment_commands Source main environment command in sbatch scripts (defaults to "")
     -mcn/--max_cores_per_node The maximum number of processor cores per node used in the analysis (defaults to "16")
     -nrm/--node_ram_memory The RAM memory size of the node(s) in GigaBytes (Defaults to 24)
     -tmd/--temp_directory Set the temporary directory for all programs (defaults to "/scratch/SLURM_JOB_ID";supply whole path)
     -em/--email E-mail (defaults to "")
     -emt/--email_types E-mail type (defaults to FAIL (=FAIL);Options: BEGIN (=BEGIN) and/or F (=FAIL) and/or END=(END))
     -qos/--slurm_quality_of_service SLURM quality of service command in sbatch scripts (defaults to "normal")
-    -sen/--source_environment_commands Source environment command in sbatch scripts (defaults to "")
 
     ####Programs
     -psfq/--psplit_fastq_file Split fastq files in batches of X reads and exits (defaults to "0" (=no))
@@ -15701,23 +15705,22 @@ sub check_snpsift_keys {
 
 sub check_key_exists_in_hash {
 
-##check_key_exists_in_hash
-
 ##Function : Test if key from query hash exists truth hash
-##Returns  : ""
-##Arguments: $truth_href, $query_href, $parameter_name
+##Returns  :
+##Arguments: $parameter_name => Parameter name
 ##         : $truth_href     => Truth hash
 ##         : $query_href     => Query hash
-##         : $parameter_name => Parameter name
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $parameter_name;
     my $truth_href;
     my $query_href;
-    my $parameter_name;
 
     my $tmpl = {
+        parameter_name =>
+          { required => 1, defined => 1, store => \$parameter_name },
         truth_href => {
             required    => 1,
             defined     => 1,
@@ -15732,8 +15735,6 @@ sub check_key_exists_in_hash {
             strict_type => 1,
             store       => \$query_href
         },
-        parameter_name =>
-          { required => 1, defined => 1, store => \$parameter_name },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -15741,17 +15742,19 @@ sub check_key_exists_in_hash {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    foreach my $key ( keys %$query_href ) {
+  QUERY_KEY:
+    foreach my $key ( keys %{$query_href} ) {
 
-        if ( !exists( $truth_href->{$key} ) ) {
+        if ( not exists( $truth_href->{$key} ) ) {
 
             $log->fatal( $parameter_name
-                  . " key '"
+                  . q{ key '}
                   . $key
-                  . "' - Does not exist as module program parameter in MIP" );
+                  . q{' - Does not exist as module program parameter in MIP} );
             exit 1;
         }
     }
+    return;
 }
 
 sub check_element_exists_in_hash {
