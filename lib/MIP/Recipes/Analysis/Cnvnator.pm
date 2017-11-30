@@ -179,6 +179,7 @@ sub analysis_cnvnator {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_file_suffix };
+    use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files};
     use MIP::Language::Java qw{ java_core };
     use MIP::Processmanagement::Slurm_processes
@@ -203,12 +204,15 @@ sub analysis_cnvnator {
 
     ## Alias
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my $core_number =
-      $active_parameter_href->{module_core_number}{$mip_program_name};
+    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_program_name      => $mip_program_name,
+        }
+    );
     my $program_outdirectory_name =
       $parameter_href->{$mip_program_name}{outdir_name};
     my $xargs_file_path_prefix;
-    my $time = $active_parameter_href->{module_time}{$mip_program_name};
     my $phenotype_info =
       $sample_info_href->{sample}{$sample_id}{phenotype};
     my $human_genome_reference_ref =
@@ -231,9 +235,10 @@ sub analysis_cnvnator {
             program_name          => $program_name,
             program_directory =>
               catfile( $outaligner_dir, $program_outdirectory_name ),
-            core_number    => $core_number,
-            process_time   => $time,
-            temp_directory => $temp_directory
+            core_number                     => $core_number,
+            process_time                    => $time,
+            source_environment_commands_ref => [$source_environment_cmd],
+            temp_directory                  => $temp_directory,
         }
     );
 

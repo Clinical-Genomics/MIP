@@ -127,6 +127,33 @@ my %required_argument = (
           . $SPACE
           . catfile(qw{ temp_directory $family_id _data }),
     },
+    extract_file => {
+        input => catfile(qw{ temp_directory family_id _data.prune.in }),
+        expected_output => q{--extract}
+          . $SPACE
+          . catfile(qw{ temp_directory family_id _data.prune.in }),
+    },
+    read_freqfile_path => {
+        input           => catfile(qw{ temp_directory family_id _data.frqx }),
+        expected_output => q{--read-freq}
+          . $SPACE
+          . catfile(qw{ temp_directory family_id _data.frqx }),
+    },
+);
+
+my %specific_argument = (
+    outfile_prefix => {
+        input           => catfile(qw{ temp_directory $family_id _data }),
+        expected_output => q{--out}
+          . $SPACE
+          . catfile(qw{ temp_directory $family_id _data }),
+    },
+    binary_fileset_prefix => {
+        input           => catfile(qw{ temp_directory $family_id _data }),
+        expected_output => q{--bfile}
+          . $SPACE
+          . catfile(qw{ temp_directory $family_id _data }),
+    },
     sex_check_min_f => {
         input           => q{0.2 0.75},
         expected_output => q{0.2 0.75},
@@ -144,8 +171,6 @@ my %required_argument = (
           . catfile(qw{ temp_directory family_id _data.frqx }),
     },
 );
-
-my %specific_argument;
 
 # Coderef - enables generalized use of generate call
 my $module_function_cref = \&plink_sex_check;

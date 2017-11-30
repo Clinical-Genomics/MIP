@@ -1,22 +1,20 @@
 package MIP::Script::Setup_script;
 
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Basename qw{ dirname };
+use File::Path qw{ make_path };
+use File::Spec::Functions qw{ catdir catfile devnull };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
-# Allow unicode characters in this script
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
-use Carp;
+## CPANM
 use autodie;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir catfile devnull };
-use File::Path qw{ make_path };
-
-##CPANM
 use Readonly;
 
 BEGIN {
@@ -25,13 +23,13 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ setup_script };
+    our @EXPORT_OK = qw{ setup_script write_source_environment_command };
 }
 
-##Constant
+## Constant
 Readonly my $DOT        => q{.};
 Readonly my $EMPTY_STR  => q{};
 Readonly my $NEWLINE    => qq{\n};
@@ -40,48 +38,45 @@ Readonly my $UNDERSCORE => q{_};
 
 sub setup_script {
 
-##setup_script
-
 ##Function : Creates program directories (info & programData & programScript), program script filenames and writes sbatch header.
 ##Returns  : $file_path, $file_info_path . $file_name_version
-##Arguments: $active_parameter_href, $job_id_href, $FILEHANDLE, $directory_id, $program_directory, $program_name, $call_type, $outdata_dir, $outscript_dir, $temp_directory, $email_types_ref, $source_environment_commands_ref, $slurm_quality_of_service, $core_number, $process_time, $error_trap, $set_errexit, $set_nounset, $set_pipefail, $sleep
-##         : $active_parameter_href           => The active parameters for this analysis hash {REF}
-##         : $job_id_href                     => The job_id hash {REF}
-##         : $FILEHANDLE                      => FILEHANDLE to write to
+##Arguments: $active_parameter_href           => The active parameters for this analysis hash {REF}
+##         : $call_type                       => SNV,INDEL or BOTH
+##         : $core_number                     => The number of cores to allocate {Optional}
 ##         : $directory_id                    => $samplID|$family_id
+##         : $email_types_ref                 => The email type
+##         : $error_trap                      => Error trap switch {Optional}
+##         : $FILEHANDLE                      => FILEHANDLE to write to
+##         : $job_id_href                     => The job_id hash {REF}
 ##         : $program_directory               => Builds from $directory_id/$outaligner_dir
 ##         : $program_name                    => Assigns filename to sbatch script
-##         : $call_type                       => SNV,INDEL or BOTH
-##         : $source_environment_commands_ref => Source environment command {REF}
 ##         : $outdata_dir                     => The MIP out data directory {Optional}
 ##         : $outscript_dir                   => The MIP out script directory {Optional}
-##         : $temp_directory                  => Temporary directory for program {Optional}
-##         : $email_types_ref                 => The email type
-##         : $slurm_quality_of_service        => SLURM quality of service priority {Optional}
-##         : $core_number                     => The number of cores to allocate {Optional}
 ##         : $process_time                    => Allowed process time (Hours) {Optional}
-##         : $error_trap                      => Error trap switch {Optional}
 ##         : $set_errexit                     => Bash set -e {Optional}
 ##         : $set_nounset                     => Bash set -u {Optional}
 ##         : $set_pipefail                    => Pipe fail switch {Optional}
 ##         : $sleep                           => Sleep for X seconds {Optional}
+##         : $slurm_quality_of_service        => SLURM quality of service priority {Optional}
+##         : $source_environment_commands_ref => Source environment command {REF}
+##         : $temp_directory                  => Temporary directory for program {Optional}
 
     my ($arg_href) = @_;
 
     ## Default(s)
+    my $core_number;
+    my $email_types_ref;
+    my $error_trap;
     my $outdata_dir;
     my $outscript_dir;
-    my $temp_directory;
-    my $email_types_ref;
-    my $source_environment_commands_ref;
-    my $slurm_quality_of_service;
-    my $core_number;
     my $process_time;
     my $set_errexit;
     my $set_nounset;
     my $set_pipefail;
-    my $error_trap;
     my $sleep;
+    my $slurm_quality_of_service;
+    my $source_environment_commands_ref;
+    my $temp_directory;
 
     if ( defined $arg_href->{call_type} ) {
 
@@ -91,12 +86,12 @@ sub setup_script {
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $job_id_href;
-    my $FILEHANDLE;
+    my $call_type;
     my $directory_id;
+    my $FILEHANDLE;
+    my $job_id_href;
     my $program_directory;
     my $program_name;
-    my $call_type;
 
     use MIP::Check::Parameter qw{ check_allowed_array_values };
 
@@ -108,47 +103,18 @@ sub setup_script {
             strict_type => 1,
             store       => \$active_parameter_href
         },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
+        call_type   => { strict_type => 1, store => \$call_type },
+        core_number => {
+            default     => 1,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store       => \$job_id_href
+            store       => \$core_number
         },
-        FILEHANDLE   => { store => \$FILEHANDLE },
         directory_id => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$directory_id
-        },
-        program_directory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_directory
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name
-        },
-        call_type   => { strict_type => 1, store => \$call_type },
-        outdata_dir => {
-            default     => $arg_href->{active_parameter_href}{outdata_dir},
-            strict_type => 1,
-            store       => \$outdata_dir
-        },
-        outscript_dir => {
-            default     => $arg_href->{active_parameter_href}{outscript_dir},
-            strict_type => 1,
-            store       => \$outscript_dir
-        },
-        temp_directory => {
-            default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory
         },
         email_types_ref => {
             default => $arg_href->{active_parameter_href}{email_types},
@@ -166,23 +132,71 @@ sub setup_script {
             strict_type => 1,
             store       => \$email_types_ref
         },
-        source_environment_commands_ref => {
-            default =>
-              $arg_href->{active_parameter_href}{source_environment_commands},
-            strict_type => 1,
-            store       => \$source_environment_commands_ref
-        },
-        core_number => {
+        error_trap => {
             default     => 1,
-            allow       => qr/ ^\d+$ /xsm,
+            allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$core_number
+            store       => \$error_trap
+        },
+        FILEHANDLE  => { store => \$FILEHANDLE },
+        job_id_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$job_id_href
+        },
+        outdata_dir => {
+            default     => $arg_href->{active_parameter_href}{outdata_dir},
+            strict_type => 1,
+            store       => \$outdata_dir
+        },
+        outscript_dir => {
+            default     => $arg_href->{active_parameter_href}{outscript_dir},
+            strict_type => 1,
+            store       => \$outscript_dir
         },
         process_time => {
             default     => 1,
             allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
             store       => \$process_time
+        },
+        program_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$program_directory
+        },
+        program_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$program_name
+        },
+        set_errexit => {
+            default     => $arg_href->{active_parameter_href}{bash_set_errexit},
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$set_errexit
+        },
+        set_nounset => {
+            default     => $arg_href->{active_parameter_href}{bash_set_nounset},
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$set_nounset
+        },
+        set_pipefail => {
+            default => $arg_href->{active_parameter_href}{bash_set_pipefail},
+            allow   => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$set_pipefail
+        },
+        sleep => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$sleep
         },
         slurm_quality_of_service => {
             default =>
@@ -191,49 +205,29 @@ sub setup_script {
             strict_type => 1,
             store       => \$slurm_quality_of_service
         },
-        set_nounset => {
-            default     => $arg_href->{active_parameter_href}{bash_set_nounset},
-            allow       => [ 0, 1 ],
+        source_environment_commands_ref => {
+            default => $arg_href->{active_parameter_href}
+              {source_main_environment_commands},
             strict_type => 1,
-            store       => \$set_nounset
+            store       => \$source_environment_commands_ref
         },
-        set_errexit => {
-            default     => $arg_href->{active_parameter_href}{bash_set_errexit},
-            allow       => [ 0, 1 ],
+        temp_directory => {
+            default     => $arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
-            store       => \$set_errexit
-        },
-        set_pipefail => {
-            default => $arg_href->{active_parameter_href}{bash_set_pipefail},
-            allow   => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$set_pipefail
-        },
-        error_trap => {
-            default     => 1,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$error_trap
-        },
-        sleep => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$sleep
+            store       => \$temp_directory
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Language::Shell
-      qw{ build_shebang create_housekeeping_function create_error_trap_function enable_trap };
-    use MIP::Workloadmanager::Slurm qw{ slurm_build_sbatch_header };
+    use MIP::Check::Path qw{ check_file_version_exist };
     use MIP::Gnu::Bash qw{ gnu_set };
     use MIP::Gnu::Coreutils qw{ gnu_echo gnu_mkdir gnu_sleep };
-    use MIP::Check::Path qw{ check_file_version_exist };
-    use MIP::Language::Shell qw{ quote_bash_variable };
+    use MIP::Language::Shell
+      qw{ build_shebang create_housekeeping_function create_error_trap_function enable_trap quote_bash_variable };
+    use MIP::Workloadmanager::Slurm qw{ slurm_build_sbatch_header };
 
-    ##Constants
+    ## Constants
     Readonly my $MAX_SECONDS_TO_SLEEP => 60;
 
     ## Retrieve logger object
@@ -374,13 +368,18 @@ sub setup_script {
         );
         say {$FILEHANDLE} $NEWLINE;
     }
-    if (   ($source_environment_commands_ref)
-        && ( @{$source_environment_commands_ref} ) )
+    if ( $source_environment_commands_ref
+        && @{$source_environment_commands_ref} )
     {
 
-        say {$FILEHANDLE} q{## Activate environment};
-        say {$FILEHANDLE} join( $SPACE, @{$source_environment_commands_ref} ),
-          $NEWLINE;
+        write_source_environment_command(
+            {
+                FILEHANDLE => $FILEHANDLE,
+                source_environment_commands_ref =>
+                  $source_environment_commands_ref,
+            }
+        );
+
     }
 
     # Not all programs need a temporary directory
@@ -452,6 +451,47 @@ sub setup_script {
 
     # Return filen name, file path for stdout/stderr for QC check later
     return ( $file_path, $file_info_path . $file_name_version );
+}
+
+sub write_source_environment_command {
+
+## Function : Write source environment commmands to filehandle
+## Returns  :
+## Arguments: $FILEHANDLE                      => Filehandle to write to
+##          : $source_environment_commands_ref => Source environment command {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $source_environment_commands_ref;
+
+    my $tmpl = {
+        FILEHANDLE => { required => 1, store => \$FILEHANDLE, },
+        source_environment_commands_ref => {
+            default     => [],
+            strict_type => 1,
+            store       => \$source_environment_commands_ref
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Unix::Write_to_file qw{ unix_write_to_file };
+
+    if ( @{$source_environment_commands_ref} ) {
+
+        say {$FILEHANDLE} q{## Activate environment};
+
+        unix_write_to_file(
+            {
+                commands_ref => $source_environment_commands_ref,
+                FILEHANDLE   => $FILEHANDLE,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+    }
+    return;
 }
 
 1;
