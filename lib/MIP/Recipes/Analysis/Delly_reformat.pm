@@ -530,6 +530,9 @@ sub analysis_delly_reformat {
       SAMPLE_ID:
         foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
+            say {$FILEHANDLE} q{@@@@@@@@@@@ Sample ---> } . $sample_id;
+            say {$FILEHANDLE} q{@@@@@@@@@@@ XARGS  ---> } .  $xargs_file_counter;
+
             ## Create file commands for xargs
             ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
                 {
