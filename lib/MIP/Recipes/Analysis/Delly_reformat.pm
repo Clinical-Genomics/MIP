@@ -645,6 +645,7 @@ sub analysis_delly_reformat {
                     say {$XARGSFILEHANDLE} $NEWLINE;
                 }
             }
+          }
 
             ### Merge calls
             say {$FILEHANDLE} q{## bcftools merge};
@@ -937,11 +938,6 @@ sub analysis_delly_reformat {
                     say {$XARGSFILEHANDLE} $NEWLINE;
                 }
             }
-
-        }
-
-        ## Assemble filepaths
-        my @file_paths;
 
         ### Concatenate SV types
         if ( scalar( @{ $active_parameter_href->{sample_ids} } ) > 1 ) {
