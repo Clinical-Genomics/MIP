@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bcftools_mpileup };
@@ -159,6 +159,7 @@ sub analysis_bcftools_mpileup {
 
     use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
+    use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
@@ -180,10 +181,12 @@ sub analysis_bcftools_mpileup {
 
     ## Unpack parameters
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my $core_number =
-      $active_parameter_href->{module_core_number}{$mip_program_name};
-    my $time = $active_parameter_href->{module_time}{$mip_program_name};
-
+    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_program_name      => $mip_program_name,
+        }
+    );
     ## Alias
     my $program_outdirectory_name =
       $parameter_href->{$mip_program_name}{outdir_name};
@@ -200,15 +203,16 @@ sub analysis_bcftools_mpileup {
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ( $file_path, $program_info_path ) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $family_id,
-            program_name          => $program_name,
-            program_directory     => $program_directory,
-            core_number           => $core_number,
-            process_time          => $time,
-            temp_directory        => $temp_directory,
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $core_number,
+            directory_id                    => $family_id,
+            FILEHANDLE                      => $FILEHANDLE,
+            job_id_href                     => $job_id_href,
+            program_directory               => $program_directory,
+            program_name                    => $program_name,
+            process_time                    => $time,
+            source_environment_commands_ref => [$source_environment_cmd],
+            temp_directory                  => $temp_directory,
         }
     );
 
@@ -232,19 +236,19 @@ sub analysis_bcftools_mpileup {
     # Get infile_suffix from baserecalibration jobid chain
     my $infile_suffix = get_file_suffix(
         {
+            jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain},
             parameter_href => $parameter_href,
             suffix_key     => q{alignment_file_suffix},
-            jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain},
         }
     );
 
     ## Set file suffix for next module within jobid chain
     my $outfile_suffix = set_file_suffix(
         {
+            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
-            job_id_chain   => $job_id_chain,
-            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
         }
     );
 
@@ -253,12 +257,12 @@ sub analysis_bcftools_mpileup {
       catfile( $outfamily_file_directory, $family_id . $DOT . q{fam} );
     create_fam_file(
         {
-            parameter_href        => $parameter_href,
             active_parameter_href => $active_parameter_href,
-            sample_info_href      => $sample_info_href,
-            FILEHANDLE            => $FILEHANDLE,
             fam_file_path         => $fam_file_path,
+            FILEHANDLE            => $FILEHANDLE,
             include_header        => 0,
+            parameter_href        => $parameter_href,
+            sample_info_href      => $sample_info_href,
         }
     );
 
@@ -292,17 +296,17 @@ sub analysis_bcftools_mpileup {
 
         ($xargs_file_counter) = xargs_migrate_contig_files(
             {
-                FILEHANDLE      => $FILEHANDLE,
-                XARGSFILEHANDLE => $XARGSFILEHANDLE,
                 contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
+                core_number => $core_number,
+                FILEHANDLE  => $FILEHANDLE,
+                file_ending => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
                 file_path   => $file_path,
+                infile      => $infile_prefix,
+                indirectory => $insample_directory,
                 program_info_path  => $program_info_path,
-                core_number        => $core_number,
+                temp_directory     => $temp_directory,
+                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                 xargs_file_counter => $xargs_file_counter,
-                infile             => $infile_prefix,
-                indirectory        => $insample_directory,
-                file_ending    => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
-                temp_directory => $temp_directory,
             }
         );
 
@@ -314,11 +318,11 @@ sub analysis_bcftools_mpileup {
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
+            core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             file_path          => $file_path,
             program_info_path  => $program_info_path,
-            core_number        => $core_number,
+            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
         }
     );
@@ -413,10 +417,10 @@ sub analysis_bcftools_mpileup {
             ## Replace the IUPAC code in alternative allels with N for input stream and writes to stream
             replace_iupac(
                 {
+                    FILEHANDLE      => $XARGSFILEHANDLE,
                     stderrfile_path => $stderrfile_path_prefix
                       . $UNDERSCORE
                       . q{replace_iupac.stderr.txt},
-                    FILEHANDLE => $XARGSFILEHANDLE
                 }
             );
         }
@@ -461,9 +465,9 @@ sub analysis_bcftools_mpileup {
     say {$FILEHANDLE} q{## Copy file from temporary directory};
     migrate_file(
         {
+            FILEHANDLE   => $FILEHANDLE,
             infile_path  => $outfile_path_prefix . $outfile_suffix . $ASTERISK,
             outfile_path => $outfamily_directory,
-            FILEHANDLE   => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} q{wait}, $NEWLINE;
@@ -480,28 +484,28 @@ sub analysis_bcftools_mpileup {
         ## Collect bcftools version in qccollect
         add_program_outfile_to_sample_info(
             {
-                sample_info_href => $sample_info_href,
-                program_name     => q{bcftools},
                 path             => $path,
+                program_name     => q{bcftools},
+                sample_info_href => $sample_info_href,
             }
         );
         ## Locating bcftools_mpileup file
         add_program_outfile_to_sample_info(
             {
-                sample_info_href => $sample_info_href,
-                program_name     => q{bcftools_mpileup},
                 path             => $path,
+                program_name     => q{bcftools_mpileup},
+                sample_info_href => $sample_info_href,
             }
         );
 
         slurm_submit_job_sample_id_dependency_add_to_family(
             {
+                family_id               => $family_id,
                 job_id_href             => $job_id_href,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                log                     => $log,
+                path                    => $job_id_chain,
                 sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                family_id        => $family_id,
-                path             => $job_id_chain,
-                log              => $log,
                 sbatch_file_name => $file_path,
             }
         );

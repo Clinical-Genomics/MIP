@@ -1,18 +1,18 @@
 package MIP::Recipes::Analysis::Bamcalibrationblock;
 
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catdir catfile };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use autodie qw{ :all };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-use File::Spec::Functions qw{ catdir catfile };
 
 ## CPANM
+use autodie qw{ :all };
 use Readonly;
 
 BEGIN {
@@ -21,14 +21,14 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bamcalibrationblock };
 
 }
 
-##Constants
+## Constants
 Readonly my $TAB        => qq{\t};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $UNDERSCORE => q{_};
@@ -37,57 +37,42 @@ sub analysis_bamcalibrationblock {
 
 ## Function : Run consecutive module
 ## Returns  :
-## Arguments: $parameter_href          => Parameter hash {REF}
-##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $sample_info_href        => Info on samples and family hash {REF}
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $lane_href               => The lane info hash {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $outaligner_dir          => The outaligner_dir used
-##          : $program_name            => Program name
-##          : $temp_directory          => Temporary directory
-##          : $outaligner_dir          => Outaligner dir used in the analysis
+##          : $lane_href               => The lane info hash {REF}
 ##          : $log                     => Log object to write to
+##          : $outaligner_dir          => The outaligner_dir used
+##          : $parameter_href          => Parameter hash {REF}
+##          : $program_name            => Program name
+##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $temp_directory          => Temporary directory
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
     my $file_info_href;
     my $infile_lane_prefix_href;
-    my $lane_href;
     my $job_id_href;
-    my $program_name;
+    my $lane_href;
     my $log;
+    my $parameter_href;
+    my $program_name;
+    my $sample_info_href;
 
     ## Default(s)
-    my $temp_directory;
     my $outaligner_dir;
+    my $temp_directory;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
             store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href,
         },
         file_info_href => {
             required    => 1,
@@ -103,13 +88,6 @@ sub analysis_bamcalibrationblock {
             strict_type => 1,
             store       => \$infile_lane_prefix_href,
         },
-        lane_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$lane_href
-        },
         job_id_href => {
             required    => 1,
             defined     => 1,
@@ -117,35 +95,58 @@ sub analysis_bamcalibrationblock {
             strict_type => 1,
             store       => \$job_id_href,
         },
-        program_name => {
+        lane_href => {
             required    => 1,
             defined     => 1,
+            default     => {},
             strict_type => 1,
-            store       => \$program_name,
-        },
-        temp_directory => {
-            default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir,
+            store       => \$lane_href
         },
         log => {
             required => 1,
             defined  => 1,
             store    => \$log
         },
+        outaligner_dir => {
+            default     => $arg_href->{active_parameter_href}{outaligner_dir},
+            strict_type => 1,
+            store       => \$outaligner_dir,
+        },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
+        program_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$program_name,
+        },
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href,
+        },
+        temp_directory => {
+            default     => $arg_href->{active_parameter_href}{temp_directory},
+            strict_type => 1,
+            store       => \$temp_directory,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates_rio };
+    use MIP::Recipes::Analysis::Markduplicates
+      qw{ analysis_markduplicates_rio };
     use MIP::Recipes::Analysis::Picardtools_mergesamfiles
       qw{ analysis_picardtools_mergesamfiles_rio };
-    use MIP::Recipes::Analysis::Gatk_realigner qw{ analysis_gatk_realigner_rio };
+    use MIP::Recipes::Analysis::Gatk_realigner
+      qw{ analysis_gatk_realigner_rio };
     use MIP::Recipes::Analysis::Gatk_baserecalibration
       qw{ analysis_gatk_baserecalibration_rio };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -161,23 +162,23 @@ sub analysis_bamcalibrationblock {
 
     ### Always run Picardtools mergesamfiles even for single samples to rename them correctly for standardised downstream processing.
     ## Will also split alignment per contig and copy to temporary directory for '-rio 1' block to enable selective removal of block submodules.
-    if ( $active_parameter_href->{ppicardtools_mergesamfiles} > 0 ) {
+    if ( $active_parameter_href->{ppicardtools_mergesamfiles} ) {
 
         $log->info( $TAB . q{[Picardtools mergesamfiles]} );
     }
     ## Markduplicates
-    if ( $active_parameter_href->{pmarkduplicates} > 0 ) {
+    if ( $active_parameter_href->{pmarkduplicates} ) {
 
         $log->info( $TAB . q{[Markduplicates]} );
     }
 
     ## Run GATK realignertargetcreator/indelrealigner
-    if ( $active_parameter_href->{pgatk_realigner} > 0 ) {
+    if ( $active_parameter_href->{pgatk_realigner} ) {
 
         $log->info( $TAB . q{[GATK realignertargetcreator/indelrealigner]} );
     }
     ## Run GATK baserecalibrator/printreads
-    if ( $active_parameter_href->{pgatk_baserecalibration} > 0 ) {
+    if ( $active_parameter_href->{pgatk_baserecalibration} ) {
 
         $log->info( $TAB . q{[GATK baserecalibrator/printreads]} );
     }
@@ -210,7 +211,7 @@ sub analysis_bamcalibrationblock {
 
         ## Always run Picardtools mergesamfiles even for single samples to rename them correctly for standardised downstream processing.
         ## Will also split alignment per contig and copy to temporary directory for -rio 1 block to enable selective removal of block submodules.
-        if ( $active_parameter_href->{ppicardtools_mergesamfiles} > 0 ) {
+        if ( $active_parameter_href->{ppicardtools_mergesamfiles} ) {
 
             ($xargs_file_counter) = analysis_picardtools_mergesamfiles_rio(
                 {
@@ -232,7 +233,7 @@ sub analysis_bamcalibrationblock {
         }
 
         # Markduplicates
-        if ( $active_parameter_href->{pmarkduplicates} > 0 ) {
+        if ( $active_parameter_href->{pmarkduplicates} ) {
 
             ($xargs_file_counter) = analysis_markduplicates_rio(
                 {
@@ -251,7 +252,7 @@ sub analysis_bamcalibrationblock {
         }
 
         ## Run GATK realignertargetcreator/indelrealigner
-        if ( $active_parameter_href->{pgatk_realigner} > 0 ) {
+        if ( $active_parameter_href->{pgatk_realigner} ) {
 
             ($xargs_file_counter) = analysis_gatk_realigner_rio(
                 {
@@ -269,7 +270,7 @@ sub analysis_bamcalibrationblock {
         }
 
         ## Run GATK baserecalibrator/printreads
-        if ( $active_parameter_href->{pgatk_baserecalibration} > 0 ) {
+        if ( $active_parameter_href->{pgatk_baserecalibration} ) {
 
             ($xargs_file_counter) = analysis_gatk_baserecalibration_rio(
                 {

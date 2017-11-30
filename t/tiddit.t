@@ -1,21 +1,22 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{ 2014 };
-use warnings qw{ FATAL utf8 };
-use autodie;
-use 5.018;    #Require at least perl 5.18
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
+use 5.018;
 use Carp;
+use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-
-use FindBin qw{ $Bin };    #Find directory of script
-use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use File::Basename qw{ basename dirname  };
+use File::Spec::Functions qw{ catdir catfile };
+use FindBin qw{ $Bin };
 use Getopt::Long;
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
+
+## CPANM
+use autodie;
+use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ## MIPs lib/
@@ -28,18 +29,22 @@ my $VERBOSE = 1;
 our $VERSION = 1.0.0;
 
 ## Constants
-Readonly my $SPACE              => q{ };
-Readonly my $NEWLINE            => qq{\n};
 Readonly my $COMMA              => q{,};
+Readonly my $NEWLINE            => qq{\n};
+Readonly my $SPACE              => q{ };
 Readonly my $N_SUPPORTING_PAIRS => 50;
 
-###User Options
+### User Options
 GetOptions(
+
+    # Display help text
     q{h|help} => sub {
         done_testing();
         say {*STDOUT} $USAGE;
         exit;
-    },    #Display help text
+    },
+
+    # Display version number
     q{v|version} => sub {
         done_testing();
         say {*STDOUT} $NEWLINE
@@ -48,7 +53,7 @@ GetOptions(
           . $VERSION
           . $NEWLINE;
         exit;
-    },    #Display version number
+    },
     q{vb|verbose} => $VERBOSE,
   )
   or (
@@ -65,9 +70,7 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module;
-
-    $perl_module{q{MIP::Script::Utils}} = [qw{ help }];
+    my %perl_module = ( q{MIP::Script::Utils} => [qw{ help }], );
 
   PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
@@ -87,7 +90,7 @@ BEGIN {
 use MIP::Program::Variantcalling::Tiddit qw{ tiddit_sv };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test tiddit_sv from Tiddit v}
+diag(   q{Test tiddit_sv from Tiddit.pm v}
       . $MIP::Program::Variantcalling::Tiddit::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -97,12 +100,24 @@ diag(   q{Test tiddit_sv from Tiddit v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{TIDDIT};
+my $function_base_command = q{TIDDIT.py};
 
 my %base_argument = (
     FILEHANDLE => {
         input           => undef,
         expected_output => $function_base_command,
+    },
+    stderrfile_path => {
+        input           => q{stderrfile.test},
+        expected_output => q{2> stderrfile.test},
+    },
+    stderrfile_path_append => {
+        input           => q{stderrfile.test},
+        expected_output => q{2>> stderrfile.test},
+    },
+    stdoutfile_path => {
+        input           => q{stdoutfile.test},
+        expected_output => q{1> stdoutfile.test},
     },
 );
 
@@ -111,18 +126,34 @@ my %base_argument = (
 my %required_argument = (
     infile_path => {
         input           => q{infile_path},
-        expected_output => q{infile_path},
+        expected_output => q{--bam infile_path},
+    },
+    referencefile_path => {
+        input           => catfile(qw{ a test reference_path }),
+        expected_output => q{--ref}
+          . $SPACE
+          . catfile(qw{ a test reference_path }),
     },
 );
 
 my %specific_argument = (
-    outfile_path_prefix => {
-        input           => q{outfile_path_prefix},
-        expected_output => q{-o outfile_path_prefix},
+    infile_path => {
+        input           => q{infile_path},
+        expected_output => q{--bam infile_path},
     },
     minimum_number_supporting_pairs => {
         input           => $N_SUPPORTING_PAIRS,
         expected_output => q{-p} . $SPACE . $N_SUPPORTING_PAIRS,
+    },
+    outfile_path_prefix => {
+        input           => q{outfile_path_prefix},
+        expected_output => q{-o outfile_path_prefix},
+    },
+    referencefile_path => {
+        input           => catfile(qw{ a test reference_path }),
+        expected_output => q{--ref}
+          . $SPACE
+          . catfile(qw{ a test reference_path }),
     },
 );
 

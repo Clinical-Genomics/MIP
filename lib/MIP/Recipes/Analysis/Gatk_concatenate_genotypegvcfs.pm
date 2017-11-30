@@ -1,18 +1,18 @@
 package MIP::Recipes::Analysis::Gatk_concatenate_genotypegvcfs;
 
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catdir catfile };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use autodie qw{ :all };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-use File::Spec::Functions qw{ catdir catfile };
 
 ## CPANM
+use autodie qw{ :all };
 use Readonly;
 
 BEGIN {
@@ -21,14 +21,14 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_concatenate_genotypegvcfs };
 
 }
 
-##Constants
+## Constants
 Readonly my $ASTERIX    => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
@@ -38,43 +38,36 @@ sub analysis_gatk_concatenate_genotypegvcfs {
 
 ## Function : Concatenate GVCFs produced after gatk_genotypegvcfs done per contig.
 ## Returns  :
-## Arguments: $parameter_href          => Parameter hash {REF}
-##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $sample_info_href        => Info on samples and family hash {REF}
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $file_info_href          => File info hash {REF}
+##          : $infamily_directory      => In family directory
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $infamily_directory      => In family directory
 ##          : $outfamily_directory     => Out family directory
+##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
+##          : $sample_info_href        => Info on samples and family hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
     my $file_info_href;
+    my $infamily_directory;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $infamily_directory;
     my $outfamily_directory;
+    my $parameter_href;
     my $program_name;
+    my $sample_info_href;
 
     ## Default(s)
-    my $family_id;
-    my $temp_directory;
-    my $outaligner_dir;
     my $call_type;
+    my $family_id;
+    my $outaligner_dir;
+    my $temp_directory;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
@@ -82,12 +75,12 @@ sub analysis_gatk_concatenate_genotypegvcfs {
             strict_type => 1,
             store       => \$active_parameter_href,
         },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
+        call_type =>
+          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
+        family_id => {
+            default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$sample_info_href,
+            store       => \$family_id,
         },
         file_info_href => {
             required    => 1,
@@ -95,6 +88,12 @@ sub analysis_gatk_concatenate_genotypegvcfs {
             default     => {},
             strict_type => 1,
             store       => \$file_info_href,
+        },
+        infamily_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$infamily_directory,
         },
         infile_lane_prefix_href => {
             required    => 1,
@@ -110,11 +109,10 @@ sub analysis_gatk_concatenate_genotypegvcfs {
             strict_type => 1,
             store       => \$job_id_href,
         },
-        infamily_directory => {
-            required    => 1,
-            defined     => 1,
+        outaligner_dir => {
+            default     => $arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$infamily_directory,
+            store       => \$outaligner_dir,
         },
         outfamily_directory => {
             required    => 1,
@@ -122,34 +120,37 @@ sub analysis_gatk_concatenate_genotypegvcfs {
             strict_type => 1,
             store       => \$outfamily_directory,
         },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$program_name,
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
             strict_type => 1,
-            store       => \$family_id,
+            store       => \$sample_info_href,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
             store       => \$temp_directory,
         },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir,
-        },
-        call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_file_suffix };
+    use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Language::Java qw{ java_core };
@@ -159,10 +160,10 @@ sub analysis_gatk_concatenate_genotypegvcfs {
     use MIP::Program::Variantcalling::Bcftools qw{bcftools_view_and_index_vcf};
     use MIP::Program::Variantcalling::Gatk
       qw{ gatk_selectvariants gatk_concatenate_variants };
-    use MIP::Set::File qw{ set_file_suffix };
-    use MIP::Script::Setup_script qw{ setup_script };
     use MIP::QC::Record
       qw{ add_processing_metafile_to_sample_info add_program_outfile_to_sample_info };
+    use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Set::File qw{ set_file_suffix };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -173,14 +174,17 @@ sub analysis_gatk_concatenate_genotypegvcfs {
 
     ## Alias
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my $core_number =
-      $active_parameter_href->{module_core_number}{$mip_program_name};
-    my $time = $active_parameter_href->{module_time}{$mip_program_name};
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $gatk_jar =
       catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} );
+    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_program_name      => $mip_program_name,
+        }
+    );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -204,18 +208,18 @@ sub analysis_gatk_concatenate_genotypegvcfs {
     my $infile_suffix = get_file_suffix(
         {
             parameter_href => $parameter_href,
-            suffix_key     => q{outfile_suffix},
             program_name   => $mip_program_name,
+            suffix_key     => q{outfile_suffix},
         }
     );
 
     ## Set file suffix for next module within jobid chain
     my $outfile_suffix = set_file_suffix(
         {
+            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
-            job_id_chain   => $job_id_chain,
-            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
         }
     );
 
@@ -223,15 +227,16 @@ sub analysis_gatk_concatenate_genotypegvcfs {
     my ($file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $family_id,
-            program_name          => $program_name,
-            program_directory     => catfile( $outaligner_dir, q{gatk} ),
             call_type             => $call_type,
             core_number           => $core_number,
+            directory_id          => $family_id,
+            FILEHANDLE            => $FILEHANDLE,
+            job_id_href           => $job_id_href,
             process_time          => $time,
-            temp_directory        => $temp_directory
+            program_directory     => catfile( $outaligner_dir, q{gatk} ),
+            program_name          => $program_name,
+            source_environment_commands_ref => [$source_environment_cmd],
+            temp_directory                  => $temp_directory,
         }
     );
 
@@ -244,10 +249,10 @@ sub analysis_gatk_concatenate_genotypegvcfs {
 
         $process_batches_count = print_wait(
             {
-                process_counter       => $contig_index,
+                FILEHANDLE            => $FILEHANDLE,
                 max_process_number    => $core_number,
                 process_batches_count => $process_batches_count,
-                FILEHANDLE            => $FILEHANDLE,
+                process_counter       => $contig_index,
             }
         );
 
@@ -273,10 +278,10 @@ sub analysis_gatk_concatenate_genotypegvcfs {
     gatk_concatenate_variants(
         {
             active_parameter_href => $active_parameter_href,
-            FILEHANDLE            => $FILEHANDLE,
             elements_ref          => \@{ $file_info_href->{contigs} },
-            infile_prefix         => $file_path_prefix . $UNDERSCORE,
+            FILEHANDLE            => $FILEHANDLE,
             infile_postfix        => $infile_suffix,
+            infile_prefix         => $file_path_prefix . $UNDERSCORE,
             outfile_path_prefix   => $outfile_path_prefix,
             outfile_suffix        => $outfile_suffix,
         }
@@ -294,22 +299,22 @@ sub analysis_gatk_concatenate_genotypegvcfs {
 
             gatk_selectvariants(
                 {
-                    memory_allocation => q{Xmx2g},
+                    FILEHANDLE => $FILEHANDLE,
+                    java_jar   => $gatk_jar,
                     java_use_large_pages =>
                       $active_parameter_href->{java_use_large_pages},
-                    temp_directory => $temp_directory,
-                    java_jar       => $gatk_jar,
-                    sample_names_ref =>
-                      \@{ $active_parameter_href->{sample_ids} },
+                    infile_path => $outfile_path_prefix . $outfile_suffix,
                     logging_level =>
                       $active_parameter_href->{gatk_logging_level},
-                    referencefile_path => $referencefile_path,
-                    infile_path  => $outfile_path_prefix . $outfile_suffix,
-                    outfile_path => $outfile_path_prefix
+                    memory_allocation => q{Xmx2g},
+                    outfile_path      => $outfile_path_prefix
                       . $UNDERSCORE
                       . q{incnonvariantloci}
                       . $outfile_suffix,
-                    FILEHANDLE => $FILEHANDLE,
+                    referencefile_path => $referencefile_path,
+                    sample_names_ref =>
+                      \@{ $active_parameter_href->{sample_ids} },
+                    temp_directory => $temp_directory,
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
@@ -317,12 +322,12 @@ sub analysis_gatk_concatenate_genotypegvcfs {
             ## Move to original filename
             gnu_mv(
                 {
+                    FILEHANDLE  => $FILEHANDLE,
                     infile_path => $outfile_path_prefix
                       . $UNDERSCORE
                       . q{incnonvariantloci}
                       . $outfile_suffix,
                     outfile_path => $outfile_path_prefix . $outfile_suffix,
-                    FILEHANDLE   => $FILEHANDLE,
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
@@ -331,10 +336,10 @@ sub analysis_gatk_concatenate_genotypegvcfs {
         ## Reformat variant calling file and index
         bcftools_view_and_index_vcf(
             {
+                FILEHANDLE          => $FILEHANDLE,
                 infile_path         => $outfile_path_prefix . $outfile_suffix,
                 outfile_path_prefix => $outfile_path_prefix,
                 output_type         => q{b},
-                FILEHANDLE          => $FILEHANDLE,
             }
         );
 
@@ -342,9 +347,9 @@ sub analysis_gatk_concatenate_genotypegvcfs {
         say {$FILEHANDLE} q{## Copy file from temporary directory};
         migrate_file(
             {
+                FILEHANDLE   => $FILEHANDLE,
                 infile_path  => $outfile_path_prefix . $DOT . q{bcf} . $ASTERIX,
                 outfile_path => $outfamily_directory,
-                FILEHANDLE   => $FILEHANDLE,
             }
         );
         say {$FILEHANDLE} q{wait}, $NEWLINE;
@@ -354,9 +359,9 @@ sub analysis_gatk_concatenate_genotypegvcfs {
     say {$FILEHANDLE} q{## Copy file from temporary directory};
     migrate_file(
         {
+            FILEHANDLE   => $FILEHANDLE,
             infile_path  => $outfile_path_prefix . $outfile_suffix . $ASTERIX,
             outfile_path => $outfamily_directory,
-            FILEHANDLE   => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} q{wait}, $NEWLINE;
@@ -373,9 +378,9 @@ sub analysis_gatk_concatenate_genotypegvcfs {
               catfile( $outfamily_directory, $outfile_prefix . $DOT . q{bcf} );
             add_processing_metafile_to_sample_info(
                 {
-                    sample_info_href => $sample_info_href,
                     metafile_tag     => q{gbcf_file},
                     path             => $program_gbcf_file_path,
+                    sample_info_href => $sample_info_href,
                 }
             );
         }
@@ -385,20 +390,20 @@ sub analysis_gatk_concatenate_genotypegvcfs {
           catfile( $outfamily_directory, $outfile_prefix . $outfile_suffix );
         add_program_outfile_to_sample_info(
             {
-                sample_info_href => $sample_info_href,
-                program_name     => $program_name,
                 path             => $program_outfile_path,
+                program_name     => $program_name,
+                sample_info_href => $sample_info_href,
             }
         );
 
         slurm_submit_job_sample_id_dependency_add_to_family(
             {
-                job_id_href             => $job_id_href,
+                family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                log                     => $log,
+                path                    => $job_id_chain,
                 sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                family_id        => $family_id,
-                path             => $job_id_chain,
-                log              => $log,
                 sbatch_file_name => $file_path,
             }
         );

@@ -1,19 +1,19 @@
 package MIP::Recipes::Analysis::Bwa_mem;
 
-use strict;
-use warnings;
-use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use autodie qw{ :all };
-use charnames qw{ :full :short };
 use Carp;
+use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
 use File::Basename qw{ dirname fileparse };
 use File::Spec::Functions qw{ catdir catfile devnull splitpath };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
+use strict;
+use utf8;
+use warnings;
+use warnings qw{ FATAL utf8 };
 
 ## CPANM
+use autodie qw{ :all };
 use Readonly;
 
 BEGIN {
@@ -22,14 +22,14 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bwa_mem };
 
 }
 
-##Constants
+## Constants
 Readonly my $ASTERIX      => q{*};
 Readonly my $DOT          => q{.};
 Readonly my $DOUBLE_QUOTE => q{"};
@@ -43,35 +43,35 @@ sub analysis_bwa_mem {
 
 ## Function : Performs alignment of single and paired-end as well as interleaved fastq(.gz) files.
 ## Returns  :
-## Arguments: $parameter_href          => Parameter hash {REF}
-##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $sample_info_href        => Info on samples and family hash {REF}
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $family_id               => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infiles_ref             => Infiles hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $job_id_href             => Job id hash {REF}
 ##          : $insample_directory      => In sample directory
-##          : $outsample_directory     => Out sample directory
-##          : $sample_id               => Sample id
-##          : $program_name            => Program name
-##          : $family_id               => Family id
+##          : $job_id_href             => Job id hash {REF}
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
+##          : $outsample_directory     => Out sample directory
+##          : $parameter_href          => Parameter hash {REF}
+##          : $program_name            => Program name
+##          : $sample_id               => Sample id
+##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
     my $file_info_href;
     my $infiles_ref;
     my $infile_lane_prefix_href;
-    my $job_id_href;
     my $insample_directory;
+    my $job_id_href;
     my $outsample_directory;
-    my $sample_id;
+    my $parameter_href;
     my $program_name;
+    my $sample_id;
+    my $sample_info_href;
 
     ## Default(s)
     my $family_id;
@@ -79,13 +79,6 @@ sub analysis_bwa_mem {
     my $temp_directory;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
@@ -93,12 +86,10 @@ sub analysis_bwa_mem {
             strict_type => 1,
             store       => \$active_parameter_href
         },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
+        family_id => {
+            default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$family_id
         },
         file_info_href => {
             required    => 1,
@@ -121,6 +112,12 @@ sub analysis_bwa_mem {
             strict_type => 1,
             store       => \$infile_lane_prefix_href
         },
+        insample_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$insample_directory
+        },
         job_id_href => {
             required    => 1,
             defined     => 1,
@@ -128,11 +125,10 @@ sub analysis_bwa_mem {
             strict_type => 1,
             store       => \$job_id_href
         },
-        insample_directory => {
-            required    => 1,
-            defined     => 1,
+        outaligner_dir => {
+            default     => $arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$insample_directory
+            store       => \$outaligner_dir
         },
         outsample_directory => {
             required    => 1,
@@ -140,11 +136,12 @@ sub analysis_bwa_mem {
             strict_type => 1,
             store       => \$outsample_directory
         },
-        sample_id => {
+        parameter_href => {
             required    => 1,
             defined     => 1,
+            default     => {},
             strict_type => 1,
-            store       => \$sample_id
+            store       => \$parameter_href
         },
         program_name => {
             required    => 1,
@@ -152,15 +149,18 @@ sub analysis_bwa_mem {
             strict_type => 1,
             store       => \$program_name
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
             strict_type => 1,
-            store       => \$family_id
+            store       => \$sample_info_href
         },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
+        sample_id => {
+            required    => 1,
+            defined     => 1,
             strict_type => 1,
-            store       => \$outaligner_dir
+            store       => \$sample_id
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
@@ -171,9 +171,8 @@ sub analysis_bwa_mem {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file };
-    use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Set::File qw{ set_file_suffix };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_step_in_parallel };
     use MIP::Program::Alignment::Bwa qw{ bwa_mem run_bwamem };
@@ -181,6 +180,8 @@ sub analysis_bwa_mem {
     use MIP::Program::Alignment::Sambamba qw{ sambamba_sort };
     use MIP::QC::Record
       qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info add_processing_metafile_to_sample_info };
+    use MIP::Set::File qw{ set_file_suffix };
+    use MIP::Script::Setup_script qw{ setup_script };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -193,10 +194,13 @@ sub analysis_bwa_mem {
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $core_number =
-      $active_parameter_href->{module_core_number}{$mip_program_name};
-    my $time = $active_parameter_href->{module_time}{$mip_program_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
+    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_program_name      => $mip_program_name,
+        }
+    );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -255,16 +259,17 @@ sub analysis_bwa_mem {
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
         my ( $file_name, $program_info_path ) = setup_script(
             {
-                active_parameter_href => $active_parameter_href,
-                job_id_href           => $job_id_href,
-                FILEHANDLE            => $FILEHANDLE,
-                directory_id          => $sample_id,
-                program_name          => $program_name,
-                program_directory     => lc $outaligner_dir,
-                core_number           => $core_number,
-                process_time          => $time,
-                temp_directory        => $temp_directory,
-                sleep                 => 1,
+                active_parameter_href           => $active_parameter_href,
+                core_number                     => $core_number,
+                directory_id                    => $sample_id,
+                FILEHANDLE                      => $FILEHANDLE,
+                job_id_href                     => $job_id_href,
+                program_directory               => lc $outaligner_dir,
+                program_name                    => $program_name,
+                process_time                    => $time,
+                sleep                           => 1,
+                source_environment_commands_ref => [$source_environment_cmd],
+                temp_directory                  => $temp_directory,
             }
         );
 
@@ -352,15 +357,15 @@ sub analysis_bwa_mem {
 
             bwa_mem(
                 {
-                    infile_path        => $fastq_file_path,
-                    second_infile_path => $second_fastq_file_path,
-                    idxbase            => $referencefile_path,
-                    FILEHANDLE         => $FILEHANDLE,
-                    thread_number      => $core_number,
-                    read_group_header =>
-                      join( $EMPTY_STR, @read_group_headers ),
+                    FILEHANDLE              => $FILEHANDLE,
+                    idxbase                 => $referencefile_path,
+                    infile_path             => $fastq_file_path,
                     interleaved_fastq_file  => $interleaved_fastq_file,
                     mark_split_as_secondary => 1,
+                    read_group_header =>
+                      join( $EMPTY_STR, @read_group_headers ),
+                    second_infile_path => $second_fastq_file_path,
+                    thread_number      => $core_number,
                 }
             );
 
@@ -369,12 +374,12 @@ sub analysis_bwa_mem {
 
             samtools_view(
                 {
-                    infile_path              => q{-},
-                    FILEHANDLE               => $FILEHANDLE,
-                    thread_number            => $core_number,
                     auto_detect_input_format => 1,
-                    with_header              => 1,
+                    FILEHANDLE               => $FILEHANDLE,
+                    infile_path              => q{-},
+                    thread_number            => $core_number,
                     uncompressed_bam_output  => $uncompressed_bam_output,
+                    with_header              => 1,
                 }
             );
             print {$FILEHANDLE} $PIPE . $SPACE;
@@ -389,15 +394,15 @@ sub analysis_bwa_mem {
 
             run_bwamem(
                 {
-                    infile_path          => $fastq_file_path,
-                    second_infile_path   => $second_fastq_file_path,
-                    idxbase              => $referencefile_path,
+                    FILEHANDLE  => $FILEHANDLE,
+                    hla_typing  => $active_parameter_href->{bwa_mem_hla},
+                    infile_path => $fastq_file_path,
+                    idxbase     => $referencefile_path,
                     outfiles_prefix_path => $file_path_prefix,
-                    FILEHANDLE           => $FILEHANDLE,
-                    thread_number        => $core_number,
                     read_group_header =>
                       join( $EMPTY_STR, @read_group_headers ),
-                    hla_typing => $active_parameter_href->{bwa_mem_hla},
+                    second_infile_path => $second_fastq_file_path,
+                    thread_number      => $core_number,
                 }
             );
             print {$FILEHANDLE} $PIPE . $SPACE;
@@ -414,12 +419,12 @@ sub analysis_bwa_mem {
         ## Sort the output from bwa mem|run-bwamem
         sambamba_sort(
             {
-                infile_path   => $sambamba_sort_infile,
-                outfile_path  => $outfile_path_prefix . $outfile_suffix,
-                FILEHANDLE    => $FILEHANDLE,
-                show_progress => 1,
+                FILEHANDLE  => $FILEHANDLE,
+                infile_path => $sambamba_sort_infile,
                 memory_limit =>
                   $active_parameter_href->{bwa_sambamba_sort_memory_limit},
+                outfile_path   => $outfile_path_prefix . $outfile_suffix,
+                show_progress  => 1,
                 temp_directory => $temp_directory,
             }
         );
@@ -432,10 +437,10 @@ sub analysis_bwa_mem {
             ## BAMS, bwa_mem logs etc.
             migrate_file(
                 {
+                    FILEHANDLE  => $FILEHANDLE,
                     infile_path => $outfile_path_prefix . $DOT . $ASTERIX,
                     ,
                     outfile_path => $outsample_directory,
-                    FILEHANDLE   => $FILEHANDLE,
                 }
             );
             say {$FILEHANDLE} q{wait}, $NEWLINE;
@@ -453,9 +458,9 @@ sub analysis_bwa_mem {
 
                 migrate_file(
                     {
+                        FILEHANDLE   => $FILEHANDLE,
                         infile_path  => $outfile,
                         outfile_path => $outsample_directory,
-                        FILEHANDLE   => $FILEHANDLE,
                     }
                 );
             }
@@ -466,9 +471,9 @@ sub analysis_bwa_mem {
 
             samtools_stats(
                 {
-                    infile_path => $outfile_path_prefix . $outfile_suffix,
-                    FILEHANDLE  => $FILEHANDLE,
                     auto_detect_input_format => 1,
+                    FILEHANDLE               => $FILEHANDLE,
+                    infile_path => $outfile_path_prefix . $outfile_suffix,
                 }
             );
             print {$FILEHANDLE} $PIPE . $SPACE;
@@ -476,8 +481,8 @@ sub analysis_bwa_mem {
             ## Collect raw total sequences and reads mapped from samtools stats and calculate the percentage. Write it to stdout
             _add_percentage_mapped_reads_from_samtools(
                 {
-                    outfile_path => $outfile_path_prefix . $DOT . q{stats},
                     FILEHANDLE   => $FILEHANDLE,
+                    outfile_path => $outfile_path_prefix . $DOT . q{stats},
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
@@ -486,9 +491,9 @@ sub analysis_bwa_mem {
             say {$FILEHANDLE} q{## Copy file from temporary directory};
             migrate_file(
                 {
+                    FILEHANDLE   => $FILEHANDLE,
                     infile_path  => $outfile_path_prefix . $DOT . q{stats},
                     outfile_path => $outsample_directory,
-                    FILEHANDLE   => $FILEHANDLE,
                 }
             );
             say {$FILEHANDLE} q{wait}, $NEWLINE;
@@ -501,11 +506,11 @@ sub analysis_bwa_mem {
             say {$FILEHANDLE} q{## Create CRAM file from SAM|BAM};
             samtools_view(
                 {
-                    infile_path  => $outfile_path_prefix . $outfile_suffix,
-                    outfile_path => $outfile_path_prefix . $DOT . q{cram},
+                    FILEHANDLE    => $FILEHANDLE,
+                    infile_path   => $outfile_path_prefix . $outfile_suffix,
+                    outfile_path  => $outfile_path_prefix . $DOT . q{cram},
+                    output_format => q{cram},
                     referencefile_path => $referencefile_path,
-                    output_format      => q{cram},
-                    FILEHANDLE         => $FILEHANDLE,
                     with_header        => 1,
                 }
             );
@@ -515,9 +520,9 @@ sub analysis_bwa_mem {
             say {$FILEHANDLE} q{## Copy file from temporary directory};
             migrate_file(
                 {
+                    FILEHANDLE   => $FILEHANDLE,
                     infile_path  => $outfile_path_prefix . $DOT . q{cram},
                     outfile_path => $outsample_directory,
-                    FILEHANDLE   => $FILEHANDLE,
                 }
             );
             say {$FILEHANDLE} q{wait}, $NEWLINE;
@@ -533,10 +538,10 @@ sub analysis_bwa_mem {
               catfile( $outsample_directory, $infile_prefix . $outfile_suffix );
             add_processing_metafile_to_sample_info(
                 {
-                    sample_info_href => $sample_info_href,
-                    sample_id        => $sample_id,
                     metafile_tag     => $most_complete_format_key,
                     path             => $qc_metafile_path,
+                    sample_id        => $sample_id,
+                    sample_info_href => $sample_info_href,
                 }
             );
 
@@ -549,12 +554,12 @@ sub analysis_bwa_mem {
                     $infile_prefix . $outfile_tag . $DOT . q{cram} );
                 add_program_metafile_to_sample_info(
                     {
-                        sample_info_href => $sample_info_href,
-                        sample_id        => $sample_id,
-                        program_name     => $program_name,
                         infile           => $infile_prefix,
                         metafile_tag     => q{cram},
                         path             => $qc_cram_path,
+                        program_name     => $program_name,
+                        sample_id        => $sample_id,
+                        sample_info_href => $sample_info_href,
                     }
                 );
 
@@ -566,12 +571,12 @@ sub analysis_bwa_mem {
                   $infile_prefix . $outfile_tag . $DOT . q{stats};
                 add_program_outfile_to_sample_info(
                     {
-                        sample_info_href => $sample_info_href,
-                        sample_id        => $sample_id,
-                        program_name     => q{bamstats},
                         infile           => $infile_prefix,
                         outdirectory     => $outsample_directory,
                         outfile          => $qc_stats_outfile,
+                        program_name     => q{bamstats},
+                        sample_id        => $sample_id,
+                        sample_info_href => $sample_info_href,
                     }
                 );
             }
@@ -580,12 +585,12 @@ sub analysis_bwa_mem {
 
                 add_program_outfile_to_sample_info(
                     {
-                        sample_info_href => $sample_info_href,
-                        sample_id        => $sample_id,
-                        program_name     => $program_name,
                         infile           => $infile_prefix,
                         outdirectory     => $directory,
                         outfile          => $stderr_file,
+                        program_name     => $program_name,
+                        sample_id        => $sample_id,
+                        sample_info_href => $sample_info_href,
                     }
                 );
             }
@@ -594,24 +599,24 @@ sub analysis_bwa_mem {
                 my $qc_bwa_log = $infile_prefix . $DOT . q{log.bwamem};
                 add_program_outfile_to_sample_info(
                     {
-                        sample_info_href => $sample_info_href,
-                        sample_id        => $sample_id,
-                        program_name     => $program_name,
                         infile           => $infile_prefix,
                         outdirectory     => $outsample_directory,
                         outfile          => $qc_bwa_log,
+                        program_name     => $program_name,
+                        sample_id        => $sample_id,
+                        sample_info_href => $sample_info_href,
                     }
                 );
             }
 
             slurm_submit_job_sample_id_dependency_step_in_parallel(
                 {
-                    job_id_href             => $job_id_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
                     family_id               => $family_id,
-                    sample_id               => $sample_id,
-                    path                    => $job_id_chain,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    job_id_href             => $job_id_href,
                     log                     => $log,
+                    path                    => $job_id_chain,
+                    sample_id               => $sample_id,
                     sbatch_file_name        => $file_name,
                     sbatch_script_tracker   => $infile_index
                 }
@@ -690,23 +695,23 @@ sub _add_percentage_mapped_reads_from_samtools {
 
 ## Function : Collect raw total sequences and reads mapped from samtools stats and calculate the percentage. Write it to stdout.
 ## Returns  :
-## Arguments: $outfile_path => Outfile path
-##          : $FILEHANDLE   => Filehandle to write to
+## Arguments: $FILEHANDLE   => Filehandle to write to
+##          : $outfile_path => Outfile path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $outfile_path;
     my $FILEHANDLE;
+    my $outfile_path;
 
     my $tmpl = {
+        FILEHANDLE   => { required => 1, defined => 1, store => \$FILEHANDLE },
         outfile_path => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$outfile_path
         },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};

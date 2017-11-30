@@ -1,19 +1,19 @@
 package MIP::Recipes::Analysis::Gatk_haplotypecaller;
 
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catdir catfile };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
+use POSIX qw{ floor };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use autodie qw{ :all };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-use File::Spec::Functions qw{ catdir catfile };
-use POSIX qw{ floor };
 
 ## CPANM
+use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
@@ -25,14 +25,14 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_haplotypecaller };
 
 }
 
-##Constants
+## Constants
 Readonly my $ASTERIX    => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
@@ -42,49 +42,42 @@ sub analysis_gatk_haplotypecaller {
 
 ## Function : Gatk haplotypecaller analysis recipe
 ## Returns  :
-## Arguments: $parameter_href          => Parameter hash {REF}
-##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $sample_info_href        => Info on samples and family hash {REF}
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $family_id               => Family id
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $job_id_href             => Job id hash {REF}
-##          : $sample_id               => Sample id
 ##          : $insample_directory      => In sample directory
-##          : $outsample_directory     => Out sample directory
-##          : $program_name            => Program name
-##          : $family_id               => Family id
-##          : $temp_directory          => Temporary directory
+##          : $job_id_href             => Job id hash {REF}
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
+##          : $outsample_directory     => Out sample directory
+##          : $parameter_href          => Parameter hash {REF}
+##          : $program_name            => Program name
+##          : $sample_id               => Sample id
+##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $temp_directory          => Temporary directory
 ##          : $xargs_file_counter      => The xargs file counter
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
     my $file_info_href;
     my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $sample_id;
     my $insample_directory;
+    my $job_id_href;
     my $outsample_directory;
+    my $parameter_href;
     my $program_name;
+    my $sample_id;
+    my $sample_info_href;
 
     ## Default(s)
     my $family_id;
-    my $temp_directory;
     my $outaligner_dir;
+    my $temp_directory;
     my $xargs_file_counter;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
@@ -92,12 +85,10 @@ sub analysis_gatk_haplotypecaller {
             strict_type => 1,
             store       => \$active_parameter_href,
         },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
+        family_id_ref => {
+            default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$sample_info_href,
+            store       => \$family_id,
         },
         file_info_href => {
             required    => 1,
@@ -113,6 +104,12 @@ sub analysis_gatk_haplotypecaller {
             strict_type => 1,
             store       => \$infile_lane_prefix_href,
         },
+        insample_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$insample_directory,
+        },
         job_id_href => {
             required    => 1,
             defined     => 1,
@@ -120,17 +117,10 @@ sub analysis_gatk_haplotypecaller {
             strict_type => 1,
             store       => \$job_id_href,
         },
-        sample_id => {
-            required    => 1,
-            defined     => 1,
+        outaligner_dir => {
+            default     => $arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$sample_id
-        },
-        insample_directory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$insample_directory,
+            store       => \$outaligner_dir,
         },
         outsample_directory => {
             required    => 1,
@@ -138,26 +128,36 @@ sub analysis_gatk_haplotypecaller {
             strict_type => 1,
             store       => \$outsample_directory,
         },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$program_name,
         },
-        family_id_ref => {
-            default     => $arg_href->{active_parameter_href}{family_id},
+        sample_id => {
+            required    => 1,
+            defined     => 1,
             strict_type => 1,
-            store       => \$family_id,
+            store       => \$sample_id
+        },
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
             store       => \$temp_directory,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir,
         },
         xargs_file_counter => {
             default     => 0,
@@ -173,6 +173,7 @@ sub analysis_gatk_haplotypecaller {
     use MIP::File::Interval qw{ generate_contig_interval_file };
     use MIP::Get::File
       qw{ get_file_suffix get_merged_infile_prefix get_exom_target_bed_file };
+    use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
@@ -194,12 +195,15 @@ sub analysis_gatk_haplotypecaller {
     my $mip_program_mode = $active_parameter_href->{$mip_program_name};
 
     ## Alias
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my $core_number =
-      $active_parameter_href->{module_core_number}{$mip_program_name};
-    my $time = $active_parameter_href->{module_time}{$mip_program_name};
     my $analysis_type = \$active_parameter_href->{analysis_type}{$sample_id};
+    my $job_id_chain  = $parameter_href->{$mip_program_name}{chain};
     my $xargs_file_path_prefix;
+    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_program_name      => $mip_program_name,
+        }
+    );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -210,14 +214,15 @@ sub analysis_gatk_haplotypecaller {
     my ( $file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $sample_id,
-            program_name          => $program_name,
-            program_directory     => catfile( $outaligner_dir, q{gatk} ),
             core_number           => $core_number,
+            directory_id          => $sample_id,
+            FILEHANDLE            => $FILEHANDLE,
+            job_id_href           => $job_id_href,
             process_time          => $time,
-            temp_directory        => $temp_directory
+            program_directory     => catfile( $outaligner_dir, q{gatk} ),
+            program_name          => $program_name,
+            source_environment_commands_ref => [$source_environment_cmd],
+            temp_directory                  => $temp_directory,
         }
     );
 
@@ -228,8 +233,8 @@ sub analysis_gatk_haplotypecaller {
     ## Limit number of cores requested to the maximum number of cores available per node
     $core_number = check_max_core_number(
         {
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
             core_number_requested => $core_number,
+            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
         }
     );
 
@@ -267,19 +272,19 @@ sub analysis_gatk_haplotypecaller {
     ## Assign suffix
     my $infile_suffix = get_file_suffix(
         {
+            jobid_chain    => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{alignment_file_suffix},
-            jobid_chain    => $job_id_chain,
         }
     );
 
     ## Set file suffix for next module within jobid chain
     my $outfile_suffix = set_file_suffix(
         {
+            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
-            job_id_chain   => $job_id_chain,
-            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
         }
     );
 
@@ -288,11 +293,11 @@ sub analysis_gatk_haplotypecaller {
       catfile( $outfamily_file_directory, $family_id . $DOT . q{fam} );
     create_fam_file(
         {
-            parameter_href        => $parameter_href,
             active_parameter_href => $active_parameter_href,
-            sample_info_href      => $sample_info_href,
-            FILEHANDLE            => $FILEHANDLE,
             fam_file_path         => $fam_file_path,
+            FILEHANDLE            => $FILEHANDLE,
+            parameter_href        => $parameter_href,
+            sample_info_href      => $sample_info_href,
         }
     );
 
@@ -301,9 +306,9 @@ sub analysis_gatk_haplotypecaller {
     my $exome_target_bed_file         = get_exom_target_bed_file(
         {
             exome_target_bed_href => $active_parameter_href->{exome_target_bed},
-            sample_id             => $sample_id,
-            log                   => $log,
             file_ending           => $file_ending_pad_interval_list,
+            log                   => $log,
+            sample_id             => $sample_id,
         }
     );
 
@@ -315,10 +320,10 @@ sub analysis_gatk_haplotypecaller {
             {
                 contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
                 exome_target_bed_file => $exome_target_bed_file,
-                reference_dir      => $active_parameter_href->{reference_dir},
-                outdirectory       => $temp_directory,
-                max_cores_per_node => $core_number,
-                FILEHANDLE         => $FILEHANDLE,
+                FILEHANDLE            => $FILEHANDLE,
+                max_cores_per_node    => $core_number,
+                outdirectory          => $temp_directory,
+                reference_dir => $active_parameter_href->{reference_dir},
             }
         );
 
@@ -330,17 +335,17 @@ sub analysis_gatk_haplotypecaller {
     say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
     ($xargs_file_counter) = xargs_migrate_contig_files(
         {
-            FILEHANDLE         => $FILEHANDLE,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
-            file_path          => $file_path,
-            program_info_path  => $program_info_path,
             core_number        => $core_number,
-            xargs_file_counter => $xargs_file_counter,
-            infile             => $infile_prefix,
-            indirectory        => $insample_directory,
+            FILEHANDLE         => $FILEHANDLE,
             file_ending        => substr( $infile_suffix, 0, 2 ) . $ASTERIX,
+            file_path          => $file_path,
+            indirectory        => $insample_directory,
+            infile             => $infile_prefix,
+            program_info_path  => $program_info_path,
             temp_directory     => $temp_directory,
+            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargs_file_counter => $xargs_file_counter,
         }
     );
 
@@ -350,21 +355,21 @@ sub analysis_gatk_haplotypecaller {
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            FILEHANDLE         => $FILEHANDLE,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_path          => $file_path,
-            program_info_path  => $program_info_path,
-            core_number        => $core_number,
-            xargs_file_counter => $xargs_file_counter,
-            first_command      => q{java},
-            memory_allocation  => q{Xmx8g},
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory => $temp_directory,
-            java_jar       => catfile(
+            core_number   => $core_number,
+            FILEHANDLE    => $FILEHANDLE,
+            file_path     => $file_path,
+            first_command => q{java},
+            java_jar      => catfile(
                 $active_parameter_href->{gatk_path},
                 q{GenomeAnalysisTK.jar}
             ),
+            java_use_large_pages =>
+              $active_parameter_href->{java_use_large_pages},
+            memory_allocation  => q{Xmx8g},
+            program_info_path  => $program_info_path,
+            temp_directory     => $temp_directory,
+            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargs_file_counter => $xargs_file_counter,
         }
     );
 
@@ -419,27 +424,27 @@ sub analysis_gatk_haplotypecaller {
 
         gatk_haplotypecaller(
             {
-                intervals_ref => \@intervals,
                 annotations_ref =>
                   \@{ $active_parameter_href->{gatk_haplotypecaller_annotation}
                   },
                 dbsnp =>
                   $active_parameter_href->{gatk_haplotypecaller_snp_known_set},
-                standard_min_confidence_threshold_for_calling =>
-                  $STANDARD_MIN_CONFIDENCE_THRSD,
                 dont_use_soft_clipped_bases => $active_parameter_href
                   ->{gatk_haplotypecaller_no_soft_clipped_bases},
-                pcr_indel_model         => $pcr_indel_model,
-                variant_index_parameter => $VARIANT_INDEX_PARAMETER,
-                infile_path             => $infile_path,
-                outfile_path            => $outfile_path,
-                stderrfile_path         => $stderrfile_path,
-                referencefile_path =>
-                  $active_parameter_href->{human_genome_reference},
-                logging_level => $active_parameter_href->{gatk_logging_level},
+                FILEHANDLE      => $XARGSFILEHANDLE,
+                infile_path     => $infile_path,
+                intervals_ref   => \@intervals,
+                logging_level   => $active_parameter_href->{gatk_logging_level},
+                outfile_path    => $outfile_path,
+                pcr_indel_model => $pcr_indel_model,
                 pedigree_validation_type => $commands{pedigree_validation_type},
                 pedigree                 => $commands{pedigree},
-                FILEHANDLE               => $XARGSFILEHANDLE,
+                referencefile_path =>
+                  $active_parameter_href->{human_genome_reference},
+                standard_min_confidence_threshold_for_calling =>
+                  $STANDARD_MIN_CONFIDENCE_THRSD,
+                stderrfile_path         => $stderrfile_path,
+                variant_index_parameter => $VARIANT_INDEX_PARAMETER,
             }
         );
         say {$XARGSFILEHANDLE} $NEWLINE;
@@ -449,17 +454,17 @@ sub analysis_gatk_haplotypecaller {
     say {$FILEHANDLE} q{## Copy file from temporary directory};
     ($xargs_file_counter) = xargs_migrate_contig_files(
         {
-            FILEHANDLE         => $FILEHANDLE,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
-            file_path          => $file_path,
-            program_info_path  => $program_info_path,
             core_number        => $core_number,
-            xargs_file_counter => $xargs_file_counter,
-            outfile            => $outfile_prefix,
-            outdirectory       => $outsample_directory,
-            temp_directory     => $temp_directory,
+            contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
+            FILEHANDLE         => $FILEHANDLE,
             file_ending        => $outfile_suffix . $ASTERIX,
+            file_path          => $file_path,
+            outdirectory       => $outsample_directory,
+            outfile            => $outfile_prefix,
+            program_info_path  => $program_info_path,
+            temp_directory     => $temp_directory,
+            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargs_file_counter => $xargs_file_counter,
         }
     );
     close $FILEHANDLE;
@@ -469,12 +474,12 @@ sub analysis_gatk_haplotypecaller {
 
         slurm_submit_job_sample_id_dependency_add_to_sample(
             {
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
                 family_id               => $family_id,
-                sample_id               => $sample_id,
-                path                    => $job_id_chain,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
                 log                     => $log,
+                path                    => $job_id_chain,
+                sample_id               => $sample_id,
                 sbatch_file_name        => $file_path
             }
         );

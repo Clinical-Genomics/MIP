@@ -323,6 +323,8 @@ sub analysis_tiddit {
                 infile_path => $file_path_prefix{$sample_id}{in}
                   . $infile_suffix,
                 outfile_path_prefix => $file_path_prefix{$sample_id}{out},
+                referencefile_path =>
+                  $active_parameter_href->{human_genome_reference},
                 minimum_number_supporting_pairs => $active_parameter_href
                   ->{tiddit_minimum_number_supporting_pairs},
             }

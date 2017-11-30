@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_peddy };
@@ -38,47 +38,40 @@ sub analysis_peddy {
 
 ## Function : Compares familial-relationships and sexes.
 ## Returns  :
-## Arguments: $parameter_href          => Parameter hash {REF}
-##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $sample_info_href        => Info on samples and family hash {REF}
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $call_type               => Variant call type
+##          : $family_id               => Family id
 ##          : $file_info_href          => File_info hash {REF}
+##          : $infamily_directory      => In family directory
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $infamily_directory      => In family directory
-##          : $outfamily_directory     => Out family directory
-##          : $temp_directory          => Temporary directory
-##          : $program_name            => Program name
-##          : $family_id               => Family id
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $call_type               => Variant call type
+##          : $outfamily_directory     => Out family directory
+##          : $parameter_href          => Parameter hash {REF}
+##          : $program_name            => Program name
+##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $temp_directory          => Temporary directory
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
     my $file_info_href;
+    my $infamily_directory;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $infamily_directory;
     my $outfamily_directory;
+    my $parameter_href;
     my $program_name;
+    my $sample_info_href;
 
     ## Default(s)
+    my $call_type;
     my $family_id;
     my $outaligner_dir;
-    my $call_type;
     my $temp_directory;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
@@ -86,12 +79,12 @@ sub analysis_peddy {
             strict_type => 1,
             store       => \$active_parameter_href,
         },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
+        call_type =>
+          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
+        family_id => {
+            default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$sample_info_href,
+            store       => \$family_id,
         },
         file_info_href => {
             required    => 1,
@@ -99,6 +92,12 @@ sub analysis_peddy {
             default     => {},
             strict_type => 1,
             store       => \$file_info_href,
+        },
+        infamily_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$infamily_directory,
         },
         infile_lane_prefix_href => {
             required    => 1,
@@ -114,32 +113,10 @@ sub analysis_peddy {
             strict_type => 1,
             store       => \$job_id_href,
         },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name,
-        },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id,
-        },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
             store       => \$outaligner_dir,
-        },
-        temp_directory => {
-            default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory,
-        },
-        infamily_directory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$infamily_directory,
         },
         outfamily_directory => {
             required    => 1,
@@ -147,14 +124,38 @@ sub analysis_peddy {
             strict_type => 1,
             store       => \$outfamily_directory,
         },
-        call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
+        program_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$program_name,
+        },
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href,
+        },
+        temp_directory => {
+            default     => $arg_href->{active_parameter_href}{temp_directory},
+            strict_type => 1,
+            store       => \$temp_directory,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
+    use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_view_and_index_vcf };
@@ -174,9 +175,12 @@ sub analysis_peddy {
 
     ## Unpack parameters
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my $core_number =
-      $active_parameter_href->{module_core_number}{$mip_program_name};
-    my $time = $active_parameter_href->{module_time}{$mip_program_name};
+    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_program_name      => $mip_program_name,
+        }
+    );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -189,15 +193,16 @@ sub analysis_peddy {
     my ( $file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            job_id_href                     => $job_id_href,
-            FILEHANDLE                      => $FILEHANDLE,
-            directory_id                    => $family_id,
-            program_name                    => $program_name,
-            program_directory               => $program_directory,
             call_type                       => $call_type,
             core_number                     => $core_number,
+            directory_id                    => $family_id,
+            FILEHANDLE                      => $FILEHANDLE,
+            job_id_href                     => $job_id_href,
             process_time                    => $time,
-            source_environment_commands_ref => [], # Peddy fails if sourcing conda env on node - this makes sure that does not happen
+            program_directory               => $program_directory,
+            program_name                    => $program_name,
+            source_environment_commands_ref => []
+            , # Peddy fails if sourcing conda env on node - this makes sure that does not happen
         }
     );
 
@@ -213,24 +218,24 @@ sub analysis_peddy {
 
     my $outfamily_file_directory =
       catfile( $active_parameter_href->{outdata_dir}, $family_id );
-    
+
     ## Files
     my $infile_tag =
       $file_info_href->{$family_id}{pgatk_combinevariantcallsets}{file_tag};
     my $infile_prefix = $family_id . $infile_tag . $call_type;
 
     ## Paths
-    my $file_path_prefix = catfile( $temp_directory, $infile_prefix );
+    my $file_path_prefix    = catfile( $temp_directory,      $infile_prefix );
     my $outfile_path_prefix = catfile( $outfamily_directory, $family_id );
 
     ### Assign suffix
     ## Return the current infile vcf compression suffix for this jobid chain_vcf_data
     my $infile_suffix = get_file_suffix(
         {
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
             jobid_chain =>
               $parameter_href->{pgatk_combinevariantcallsets}{chain},
+            parameter_href => $parameter_href,
+            suffix_key     => q{variant_file_suffix},
         }
     );
 
@@ -242,11 +247,11 @@ sub analysis_peddy {
     ## Create .fam file to be used in variant calling analyses
     create_fam_file(
         {
-            parameter_href        => $parameter_href,
             active_parameter_href => $active_parameter_href,
-            sample_info_href      => $sample_info_href,
-            FILEHANDLE            => $FILEHANDLE,
             fam_file_path         => $family_file,
+            FILEHANDLE            => $FILEHANDLE,
+            parameter_href        => $parameter_href,
+            sample_info_href      => $sample_info_href,
         }
     );
 
@@ -268,22 +273,22 @@ sub analysis_peddy {
     ## Reformat variant calling file and index
     bcftools_view_and_index_vcf(
         {
+            FILEHANDLE          => $FILEHANDLE,
             infile_path         => $file_path_prefix . $infile_suffix,
-            outfile_path_prefix => $file_path_prefix,
-            output_type         => q{z},
             index               => 1,
             index_type          => q{tbi},
-            FILEHANDLE          => $FILEHANDLE,
+            outfile_path_prefix => $file_path_prefix,
+            output_type         => q{z},
         }
     );
 
     ## Peddy
     peddy(
         {
-            infile_path         => $file_path_prefix . $suffix,
-            outfile_prefix_path => $outfile_path_prefix,
             family_file_path    => $family_file,
             FILEHANDLE          => $FILEHANDLE,
+            infile_path         => $file_path_prefix . $suffix,
+            outfile_prefix_path => $outfile_path_prefix,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -291,9 +296,9 @@ sub analysis_peddy {
     if ( $mip_program_mode == 1 ) {
 
         my %peddy_output = (
+            peddy     => q{ped},
             ped_check => q{csv},
             sex_check => q{csv},
-            peddy     => q{ped},
         );
 
       PEDDY_OUTPUT_FILES:
@@ -304,22 +309,22 @@ sub analysis_peddy {
             ## Collect QC metadata info for later use
             add_program_metafile_to_sample_info(
                 {
-                    sample_info_href => $sample_info_href,
-                    program_name     => $program_name,
                     metafile_tag     => $file_key,
                     path             => $outfile_path_prefix . $outfile_suffix,
+                    program_name     => $program_name,
+                    sample_info_href => $sample_info_href,
                 }
             );
         }
 
         slurm_submit_job_sample_id_dependency_family_dead_end(
             {
-                job_id_href             => $job_id_href,
+                family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                log                     => $log,
+                path                    => $job_id_chain,
                 sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                family_id        => $family_id,
-                path             => $job_id_chain,
-                log              => $log,
                 sbatch_file_name => $file_path,
             }
         );
