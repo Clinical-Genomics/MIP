@@ -554,7 +554,6 @@ sub analysis_delly_reformat {
                   CONTIG:
                     foreach my $contig (@contigs) {
 
-                        #say {$FILEHANDLE} q{@@@@@@@@@@@ NON-TRA, @contigs  ---> } .  $contig;
                         say {$FILEHANDLE} q{@@@@@@@@@@@ SV-TYPE:}.$sv_type."\tCONTIG:".$contig;
 
                         ## Assemble file path
