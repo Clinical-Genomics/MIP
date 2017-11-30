@@ -436,14 +436,14 @@ sub analysis_delly_reformat {
       SV_TYPE:
         foreach my $sv_type ( @{ $active_parameter_href->{delly_types} } ) {
 
-            say {$FILEHANDLE} q{@@@@@@@@@@@ LINE 439, SV TYPE ---> } . $sv_type};
+            say {$FILEHANDLE} q{@@@@@@@@@@@ LINE 439, SV TYPE ---> } . $sv_type;
 
             if ( $sv_type ne q{TRA} ) {
 
               CONTIG:
                 foreach my $contig (@contigs) {
 
-                    say {$FILEHANDLE} q{@@@@@@@@@@@ LINE 446, CONTIG ---> } . $contig};
+                    say {$FILEHANDLE} q{@@@@@@@@@@@ LINE 446, CONTIG ---> } . $contig;
 
                     ## Assemble file paths by adding file ending
                     my @file_paths = map {
