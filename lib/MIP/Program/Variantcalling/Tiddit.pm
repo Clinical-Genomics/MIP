@@ -109,10 +109,7 @@ sub tiddit_sv {
         push @commands, q{-o} . $SPACE . $outfile_path_prefix;
     }
 
-    if ($referencefile_path) {
-
-        push @commands, q{--ref} . $SPACE . $referencefile_path;
-    }
+    push @commands, q{--ref} . $SPACE . $referencefile_path;
 
     ## Infile
     push @commands, q{--bam} . $SPACE . $infile_path;
