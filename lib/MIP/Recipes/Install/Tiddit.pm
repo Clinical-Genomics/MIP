@@ -60,39 +60,39 @@ sub install_tiddit {
     my $tmpl = {
         conda_environment => {
             strict_type => 1,
-            store       => \$conda_environment
+            store       => \$conda_environment,
         },
 
         conda_prefix_path => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$conda_prefix_path
+            store       => \$conda_prefix_path,
         },
         FILEHANDLE => {
             required => 1,
             defined  => 1,
-            store    => \$FILEHANDLE
+            store    => \$FILEHANDLE,
         },
         noupdate => {
             strict_type => 1,
-            store       => \$noupdate
+            store       => \$noupdate,
         },
         program_parameters_href => {
             required    => 1,
             default     => {},
             strict_type => 1,
-            store       => \$tiddit_parameters_href
+            store       => \$tiddit_parameters_href,
         },
         quiet => {
             allow       => [ undef, 0, 1 ],
             strict_type => 1,
-            store       => \$quiet
+            store       => \$quiet,
         },
         verbose => {
             allow       => [ undef, 0, 1 ],
             strict_type => 1,
-            store       => \$verbose
+            store       => \$verbose,
         },
 
     };
