@@ -8,7 +8,7 @@ use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
 use Carp;
 use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
+use Params::Check qw{ allow check last_error };
 use Cwd;
 use File::Spec::Functions qw{ catdir catfile };
 
@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_tiddit };
@@ -36,45 +36,53 @@ sub install_tiddit {
 
 ## Function : Install TIDDIT
 ## Returns  : ""
-## Arguments: $program_parameters_href => Hash with TIDDIT specific parameters {REF}
+## Arguments: $conda_environment       => Conda environment
 ##          : $conda_prefix_path       => Conda prefix path
-##          : $conda_environment       => Conda environment
+##          : $FILEHANDLE              => Filehandle to write to
 ##          : $noupdate                => Do not update
+##          : $program_parameters_href => Hash with TIDDIT specific parameters {REF}
 ##          : $quiet                   => Be quiet
 ##          : $verbose                 => Set verbosity
-##          : $FILEHANDLE              => Filehandle to write to
+
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $tiddit_parameters_href;
-    my $conda_prefix_path;
     my $conda_environment;
+    my $conda_prefix_path;
+    my $FILEHANDLE;
     my $noupdate;
     my $quiet;
+    my $tiddit_parameters_href;
     my $verbose;
-    my $FILEHANDLE;
+
 
     my $tmpl = {
-        program_parameters_href => {
-            required    => 1,
-            default     => {},
+        conda_environment => {
             strict_type => 1,
-            store       => \$tiddit_parameters_href
+            store       => \$conda_environment
         },
+
         conda_prefix_path => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$conda_prefix_path
         },
-        conda_environment => {
-            strict_type => 1,
-            store       => \$conda_environment
+        FILEHANDLE => {
+            required => 1,
+            defined  => 1,
+            store    => \$FILEHANDLE
         },
         noupdate => {
             strict_type => 1,
             store       => \$noupdate
+        },
+        program_parameters_href => {
+            required    => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$tiddit_parameters_href
         },
         quiet => {
             allow       => [ undef, 0, 1 ],
@@ -86,11 +94,7 @@ sub install_tiddit {
             strict_type => 1,
             store       => \$verbose
         },
-        FILEHANDLE => {
-            required => 1,
-            defined  => 1,
-            store    => \$FILEHANDLE
-        },
+
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -126,7 +130,7 @@ sub install_tiddit {
     say {$FILEHANDLE} q{### Install TIDDIT};
 
     ## Check if installation exists and remove directory unless a noupdate flag is provided
-    my $tiddit_dir = catdir( $conda_prefix_path, q{TIDDIT-} . $tiddit_version );
+    my $tiddit_dir = catdir( $conda_prefix_path, q{TIDDIT-TIDDIT-} . $tiddit_version );
     my $install_check = check_existing_installation(
         {
             program_directory_path => $tiddit_dir,
@@ -151,8 +155,8 @@ sub install_tiddit {
         say $FILEHANDLE q{## Activate conda environment};
         conda_source_activate(
             {
-                FILEHANDLE => $FILEHANDLE,
                 env_name   => $conda_environment,
+                FILEHANDLE => $FILEHANDLE,
             }
         );
         say $FILEHANDLE $NEWLINE;
@@ -177,11 +181,12 @@ sub install_tiddit {
       catfile( q{TIDDIT-} . $tiddit_version . $DOT . q{zip} );
     wget(
         {
-            url          => $url,
             FILEHANDLE   => $FILEHANDLE,
-            quiet        => $quiet,
-            verbose      => $verbose,
             outfile_path => $tiddit_zip_path,
+            quiet        => $quiet,
+            url          => $url,
+            verbose      => $verbose,
+
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -190,11 +195,11 @@ sub install_tiddit {
     say {$FILEHANDLE} q{## Extract};
     unzip(
         {
+            FILEHANDLE  => $FILEHANDLE,
+            force       => 1,
             infile_path => $tiddit_zip_path,
             quiet       => $quiet,
             verbose     => $verbose,
-            FILEHANDLE  => $FILEHANDLE,
-            force       => 1,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -211,9 +216,9 @@ sub install_tiddit {
 
     gnu_mkdir(
         {
+            FILEHANDLE       => $FILEHANDLE,
             indirectory_path => q{build},
             parents          => 1,
-            FILEHANDLE       => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -230,8 +235,8 @@ sub install_tiddit {
     say {$FILEHANDLE} q{## Configure TIDDIT};
     cmake(
         {
+            FILEHANDLE   => $FILEHANDLE,
             makefile_dir => q{..},
-            FILEHANDLE   => $FILEHANDLE
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -245,10 +250,10 @@ sub install_tiddit {
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    say {$FILEHANDLE} q{## Move to TIDDIT bin directory};
+    say {$FILEHANDLE} q{## Move to TIDDIT directory};
     gnu_cd(
         {
-            directory_path => catdir(qw{ .. bin }),
+            directory_path => catdir(qw{ .. }),
             FILEHANDLE     => $FILEHANDLE,
         }
     );
@@ -256,9 +261,9 @@ sub install_tiddit {
 
     gnu_chmod(
         {
-            file_path  => q{TIDDIT},
-            permission => q{a+x},
             FILEHANDLE => $FILEHANDLE,
+            file_path  => q{TIDDIT.py},
+            permission => q{a+x},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -268,16 +273,16 @@ sub install_tiddit {
     my $target_path = catfile(
         $conda_prefix_path,
         q{TIDDIT-TIDDIT-} . $tiddit_version,
-        qw{ bin TIDDIT }
+        qw{ TIDDIT.py }
     );
-    my $link_path = catfile( $conda_prefix_path, qw{ bin TIDDIT } );
+    my $link_path = catfile( $conda_prefix_path, qw{ bin TIDDIT.py } );
     gnu_ln(
         {
             FILEHANDLE  => $FILEHANDLE,
-            target_path => $target_path,
+            force       => 1,
             link_path   => $link_path,
             symbolic    => 1,
-            force       => 1,
+            target_path => $target_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -295,9 +300,9 @@ sub install_tiddit {
     ## Clean-up
     gnu_rm(
         {
-            infile_path => catfile( $conda_prefix_path, $tiddit_zip_path ),
-            force       => 1,
             FILEHANDLE  => $FILEHANDLE,
+            force       => 1,
+            infile_path => catfile( $conda_prefix_path, $tiddit_zip_path ),
         }
     );
     say {$FILEHANDLE} $NEWLINE;
