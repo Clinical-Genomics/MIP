@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_cnvnator };
@@ -277,15 +277,6 @@ sub analysis_cnvnator {
             file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
         }
     );
-
-    ##Special fix to accomodate outdated versions of .so libraries required by root
-    if ( exists $active_parameter_href->{cnv_root_ld_lib} ) {
-
-        say {$FILEHANDLE} q{LD_LIBRARY_PATH=}
-          . $active_parameter_href->{cnv_root_ld_lib}
-          . q{/:$LD_LIBRARY_PATH};
-        say {$FILEHANDLE} q{export LD_LIBRARY_PATH}, $NEWLINE;
-    }
 
     ## Add contigs to vcfheader
     _add_contigs_to_vcfheader(

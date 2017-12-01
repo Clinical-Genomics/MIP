@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_delly_call };
@@ -175,6 +175,7 @@ sub analysis_delly_call {
 
     use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
+    use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Program::Variantcalling::Delly qw{ delly_call };
     use MIP::Processmanagement::Slurm_processes
@@ -192,12 +193,14 @@ sub analysis_delly_call {
 
     ## Unpack parameters
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
+    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_program_name      => $mip_program_name,
+        }
+    );
     my $program_outdirectory_name =
       $parameter_href->{$mip_program_name}{outdir_name};
-    my $core_number =
-      $active_parameter_href->{module_core_number}{$mip_program_name};
-    my $time = $active_parameter_href->{module_time}{$mip_program_name};
-
     my $program_directory =
       catfile( $outaligner_dir, $program_outdirectory_name );
 
@@ -209,15 +212,16 @@ sub analysis_delly_call {
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ( $file_path, $program_info_path ) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $sample_id,
-            program_name          => $program_name,
-            program_directory     => $program_directory,
-            core_number           => $core_number,
-            process_time          => $time,
-            temp_directory        => $temp_directory,
+            active_parameter_href           => $active_parameter_href,
+            directory_id                    => $sample_id,
+            core_number                     => $core_number,
+            FILEHANDLE                      => $FILEHANDLE,
+            job_id_href                     => $job_id_href,
+            program_directory               => $program_directory,
+            program_name                    => $program_name,
+            process_time                    => $time,
+            source_environment_commands_ref => [$source_environment_cmd],
+            temp_directory                  => $temp_directory,
         }
     );
 
@@ -251,24 +255,24 @@ sub analysis_delly_call {
     # Get infile_suffix from baserecalibration jobid chain
     my $infile_suffix = get_file_suffix(
         {
+            jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain},
             parameter_href => $parameter_href,
             suffix_key     => q{alignment_file_suffix},
-            jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain},
         }
     );
 
     my $outfile_suffix = set_file_suffix(
         {
+            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
-            job_id_chain   => $job_id_chain,
-            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
         }
     );
 
     ### Update contigs
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    # Skip contig Y along with MT throughout since sometimes there are no variants particularly for INS
+# Skip contig Y along with MT throughout since sometimes there are no variants particularly for INS
     my @contigs = delete_contig_elements(
         {
             elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
@@ -294,24 +298,25 @@ sub analysis_delly_call {
         );
     }
 
-    if ( any { /DEL|DUP|INS|INV/ } @{ $active_parameter_href->{delly_types} } ) {
+    if ( any { /DEL|DUP|INS|INV/ } @{ $active_parameter_href->{delly_types} } )
+    {
         # If element is part of array
         ## Copy file(s) to temporary directory
         say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
         ($xargs_file_counter) = xargs_migrate_contig_files(
             {
-                FILEHANDLE        => $FILEHANDLE,
-                XARGSFILEHANDLE   => $XARGSFILEHANDLE,
-                contigs_ref       => \@contigs,
-                file_path         => $file_path,
-                program_info_path => $program_info_path,
-                core_number       => ( $core_number - 1 )
+                contigs_ref => \@contigs,
+                core_number => ( $core_number - 1 )
                 ,    # Compensate for cp of entire BAM (INS, TRA), see above
+                FILEHANDLE        => $FILEHANDLE,
+                file_ending       => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
+                file_path         => $file_path,
+                indirectory       => $insample_directory,
+                infile            => $infile_prefix,
+                program_info_path => $program_info_path,
+                temp_directory    => $temp_directory,
+                XARGSFILEHANDLE   => $XARGSFILEHANDLE,
                 xargs_file_counter => $xargs_file_counter,
-                infile             => $infile_prefix,
-                indirectory        => $insample_directory,
-                file_ending    => substr( $infile_suffix, 0, 2 ) . $ASTERISK,
-                temp_directory => $temp_directory,
             }
         );
         say {$FILEHANDLE} q{wait}, $NEWLINE;
@@ -325,11 +330,11 @@ sub analysis_delly_call {
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            FILEHANDLE         => $FILEHANDLE,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_path          => $file_path,
-            program_info_path  => $program_info_path,
             core_number        => $core_number,
+            file_path          => $file_path,
+            FILEHANDLE         => $FILEHANDLE,
+            program_info_path  => $program_info_path,
+            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
         }
     );
@@ -343,6 +348,9 @@ sub analysis_delly_call {
 
                 delly_call(
                     {
+                        exclude_file_path =>
+                          $active_parameter_href->{delly_exclude_file},
+                        FILEHANDLE  => $XARGSFILEHANDLE,
                         infile_path => $file_path_prefix
                           . $UNDERSCORE
                           . $contig
@@ -353,13 +361,8 @@ sub analysis_delly_call {
                           . $UNDERSCORE
                           . $sv_type
                           . $outfile_suffix,
-                        stdoutfile_path => $xargs_file_path_prefix
-                          . $DOT
-                          . $contig
-                          . $DOT
-                          . $sv_type
-                          . $DOT
-                          . q{stdout.txt},
+                        referencefile_path =>
+                          $active_parameter_href->{human_genome_reference},
                         stderrfile_path => $xargs_file_path_prefix
                           . $DOT
                           . $contig
@@ -367,12 +370,14 @@ sub analysis_delly_call {
                           . $sv_type
                           . $DOT
                           . q{stderr.txt},
+                        stdoutfile_path => $xargs_file_path_prefix
+                          . $DOT
+                          . $contig
+                          . $DOT
+                          . $sv_type
+                          . $DOT
+                          . q{stdout.txt},
                         sv_type => $sv_type,
-                        exclude_file_path =>
-                          $active_parameter_href->{delly_exclude_file},
-                        referencefile_path =>
-                          $active_parameter_href->{human_genome_reference},
-                        FILEHANDLE => $XARGSFILEHANDLE,
                     }
                 );
                 say {$XARGSFILEHANDLE} $NEWLINE;
@@ -382,11 +387,16 @@ sub analysis_delly_call {
 
             delly_call(
                 {
+                    exclude_file_path =>
+                      $active_parameter_href->{delly_exclude_file},
+                    FILEHANDLE   => $XARGSFILEHANDLE,
                     infile_path  => $file_path_prefix . $infile_suffix,
                     outfile_path => $outfile_path_prefix
                       . $UNDERSCORE
                       . $sv_type
                       . $outfile_suffix,
+                    referencefile_path =>
+                      $active_parameter_href->{human_genome_reference},
                     stdoutfile_path => $xargs_file_path_prefix
                       . $DOT
                       . $sv_type
@@ -398,11 +408,6 @@ sub analysis_delly_call {
                       . $DOT
                       . q{stderr.txt},
                     sv_type => $sv_type,
-                    exclude_file_path =>
-                      $active_parameter_href->{delly_exclude_file},
-                    referencefile_path =>
-                      $active_parameter_href->{human_genome_reference},
-                    FILEHANDLE => $XARGSFILEHANDLE,
                 }
             );
             say {$XARGSFILEHANDLE} $NEWLINE;
@@ -413,12 +418,12 @@ sub analysis_delly_call {
     say {$FILEHANDLE} q{## Copy file from temporary directory};
     migrate_file(
         {
+            FILEHANDLE  => $FILEHANDLE,
             infile_path => $outfile_path_prefix
               . $ASTERISK
               . $outfile_suffix
               . $ASTERISK,
             outfile_path => $outsample_directory,
-            FILEHANDLE   => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} q{wait}, $NEWLINE;
@@ -431,17 +436,16 @@ sub analysis_delly_call {
 
         slurm_submit_job_sample_id_dependency_add_to_sample(
             {
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
                 family_id               => $family_id,
-                sample_id               => $sample_id,
-                path                    => $job_id_chain,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
                 log                     => $log,
+                path                    => $job_id_chain,
+                sample_id               => $sample_id,
                 sbatch_file_name        => $file_path
             }
         );
     }
-
     return;
 }
 

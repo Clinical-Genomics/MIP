@@ -1,35 +1,35 @@
 package MIP::Recipes::Analysis::Split_fastq_file;
 
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Basename qw{fileparse};
+use File::Spec::Functions qw{ catdir catfile };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use autodie qw{:all};
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-use File::Basename qw{fileparse};
-use File::Spec::Functions qw{catdir catfile};
 
 ## CPANM
+use autodie qw{:all};
 use Readonly;
 
 BEGIN {
 
     require Exporter;
-    use base qw{Exporter};
+    use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{analysis_split_fastq_file};
+    our @EXPORT_OK = qw{ analysis_split_fastq_file };
 
 }
 
-##Constants
+## Constants
 Readonly my $ASTERIX    => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $EMPTY_STR  => q{};
@@ -41,48 +41,38 @@ Readonly my $UNDERSCORE => q{_};
 
 sub analysis_split_fastq_file {
 
-##analysis_split_fastq_file
-
-##Function : Split input fastq files into batches of reads, versions and compress. Moves original file to subdirectory.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $infile_href, $job_id_href, $insample_directory, $outsample_directory, $sample_id, $program_name, $family_id, $sequence_read_batch, $temp_directory
-##         : $parameter_href          => Parameter hash {REF}
-##         : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##         : $infile_href             => Infiles hash {REF}
-##         : $job_id_href             => Job id hash {REF}
-##         : $insample_directory      => In sample directory
-##         : $outsample_directory     => Out sample directory
-##         : $sample_id               => Sample id
-##         : $program_name            => Program name
-##         : $family_id               => Family id
-##         : $sequence_read_batch     => Number of sequences in each fastq batch
-##         : $temp_directory          => Temporary directory
+## Function : Split input fastq files into batches of reads, versions and compress. Moves original file to subdirectory.
+## Returns  :
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $family_id               => Family id
+##          : $infile_href             => Infiles hash {REF}
+##          : $insample_directory      => In sample directory
+##          : $job_id_href             => Job id hash {REF}
+##          : $outsample_directory     => Out sample directory
+##          : $parameter_href          => Parameter hash {REF}
+##          : $program_name            => Program name
+##          : $sample_id               => Sample id
+##          : $sequence_read_batch     => Number of sequences in each fastq batch
+##          : $temp_directory          => Temporary directory
 
     my ($arg_href) = @_;
 
     ## Default(s)
     my $family_id;
-    my $temp_directory;
     my $sequence_read_batch;
+    my $temp_directory;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
     my $infile_href;
-    my $job_id_href;
     my $insample_directory;
+    my $job_id_href;
     my $outsample_directory;
-    my $sample_id;
+    my $parameter_href;
     my $program_name;
+    my $sample_id;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
@@ -90,11 +80,22 @@ sub analysis_split_fastq_file {
             strict_type => 1,
             store       => \$active_parameter_href
         },
+        family_id => {
+            default     => $arg_href->{active_parameter_href}{family_id},
+            strict_type => 1,
+            store       => \$family_id
+        },
         infile_href => {
             defined     => 1,
             default     => {},
             strict_type => 1,
             store       => \$infile_href
+        },
+        insample_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$insample_directory
         },
         job_id_href => {
             required    => 1,
@@ -103,23 +104,18 @@ sub analysis_split_fastq_file {
             strict_type => 1,
             store       => \$job_id_href
         },
-        insample_directory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$insample_directory
-        },
         outsample_directory => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$outsample_directory
         },
-        sample_id => {
+        parameter_href => {
             required    => 1,
             defined     => 1,
+            default     => {},
             strict_type => 1,
-            store       => \$sample_id
+            store       => \$parameter_href
         },
         program_name => {
             required    => 1,
@@ -127,15 +123,11 @@ sub analysis_split_fastq_file {
             strict_type => 1,
             store       => \$program_name
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
+        sample_id => {
+            required    => 1,
+            defined     => 1,
             strict_type => 1,
-            store       => \$family_id
-        },
-        temp_directory => {
-            default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory
+            store       => \$sample_id
         },
         sequence_read_batch => {
             default     => 250_000_0,
@@ -143,17 +135,23 @@ sub analysis_split_fastq_file {
             strict_type => 1,
             store       => \$sequence_read_batch
         },
+        temp_directory => {
+            default     => $arg_href->{active_parameter_href}{temp_directory},
+            strict_type => 1,
+            store       => \$temp_directory
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Script::Setup_script qw{setup_script};
-    use MIP::Get::File qw{get_file_suffix};
-    use MIP::IO::Files qw{migrate_file};
-    use MIP::Gnu::Coreutils qw{gnu_cp gnu_rm gnu_mv gnu_split gnu_mkdir};
-    use MIP::Program::Compression::Pigz qw{pigz};
+    use MIP::Get::File qw{ get_file_suffix };
+    use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Gnu::Coreutils qw{ gnu_cp gnu_mkdir gnu_mv gnu_rm gnu_split };
+    use MIP::IO::Files qw{ migrate_file };
+    use MIP::Program::Compression::Pigz qw{ pigz };
+    use MIP::Script::Setup_script qw{ setup_script };
 
-    ##Constants
+    ## Constants
     Readonly my $FASTQC_SEQUENCE_LINE_BLOCK => 4;
     Readonly my $SUFFIX_LENGTH              => 4;
 
@@ -165,9 +163,12 @@ sub analysis_split_fastq_file {
 
     ## Alias
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my $core_number =
-      $active_parameter_href->{module_core_number}{$mip_program_name};
-    my $time = $active_parameter_href->{module_time}{$mip_program_name};
+    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_program_name      => $mip_program_name,
+        }
+    );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -178,15 +179,16 @@ sub analysis_split_fastq_file {
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
         my ($file_name) = setup_script(
             {
-                active_parameter_href => $active_parameter_href,
-                job_id_href           => $job_id_href,
-                FILEHANDLE            => $FILEHANDLE,
-                directory_id          => $sample_id,
-                program_name          => $program_name,
-                program_directory     => lc($program_name),
-                core_number           => $core_number,
-                process_time          => $time,
-                temp_directory        => $temp_directory,
+                active_parameter_href           => $active_parameter_href,
+                core_number                     => $core_number,
+                directory_id                    => $sample_id,
+                FILEHANDLE                      => $FILEHANDLE,
+                job_id_href                     => $job_id_href,
+                process_time                    => $time,
+                program_directory               => lc($program_name),
+                program_name                    => $program_name,
+                source_environment_commands_ref => [$source_environment_cmd],
+                temp_directory                  => $temp_directory,
             }
         );
 
@@ -199,8 +201,8 @@ sub analysis_split_fastq_file {
         my $outfile_suffix = get_file_suffix(
             {
                 parameter_href => $parameter_href,
-                suffix_key     => q{outfile_suffix},
                 program_name   => $mip_program_name,
+                suffix_key     => q{outfile_suffix},
             }
         );
 
@@ -252,23 +254,23 @@ sub analysis_split_fastq_file {
         ## Decompress file and split
         pigz(
             {
-                infile_path => $file_path,
                 decompress  => 1,
+                FILEHANDLE  => $FILEHANDLE,
+                infile_path => $file_path,
                 processes   => $core_number,
                 stdout      => 1,
-                FILEHANDLE  => $FILEHANDLE,
             }
         );
         print {$FILEHANDLE} $PIPE . $SPACE;    #Pipe
 
         gnu_split(
             {
+                FILEHANDLE  => $FILEHANDLE,
                 infile_path => q{-},
                 lines => ( $sequence_read_batch * $FASTQC_SEQUENCE_LINE_BLOCK ),
                 numeric_suffixes => 1,
-                suffix_length    => $SUFFIX_LENGTH,
-                FILEHANDLE       => $FILEHANDLE,
                 prefix           => catfile( $temp_directory, $file_prefix ),
+                suffix_length    => $SUFFIX_LENGTH,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -276,9 +278,9 @@ sub analysis_split_fastq_file {
         ## Remove original files
         gnu_rm(
             {
-                infile_path => $file_path,
-                force       => 1,
                 FILEHANDLE  => $FILEHANDLE,
+                force       => 1,
+                infile_path => $file_path,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -286,9 +288,9 @@ sub analysis_split_fastq_file {
         _list_all_splitted_files(
             {
                 fastq_file_info_href => \%fastq_file_info,
+                FILEHANDLE           => $FILEHANDLE,
                 infile_suffix        => $infile_suffix,
                 temp_directory       => $temp_directory,
-                FILEHANDLE           => $FILEHANDLE,
             }
         );
 
@@ -296,9 +298,9 @@ sub analysis_split_fastq_file {
         ## Compress file again
         pigz(
             {
+                FILEHANDLE => $FILEHANDLE,
                 infile_path =>
                   catfile( $temp_directory, $ASTERIX . $infile_suffix ),
-                FILEHANDLE => $FILEHANDLE,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -316,10 +318,10 @@ sub analysis_split_fastq_file {
 
         gnu_mkdir(
             {
+                FILEHANDLE => $FILEHANDLE,
                 indirectory_path =>
                   catfile( $insample_directory, q{original_fastq_files}, ),
-                parents    => 1,
-                FILEHANDLE => $FILEHANDLE,
+                parents => 1,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -329,12 +331,12 @@ sub analysis_split_fastq_file {
           q{## Move original file to not be included in subsequent analysis};
         gnu_mv(
             {
+                FILEHANDLE   => $FILEHANDLE,
                 infile_path  => $infile_path,
                 outfile_path => catfile(
                     $insample_directory, q{original_fastq_files},
                     $fastq_file
                 ),
-                FILEHANDLE => $FILEHANDLE,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -343,11 +345,11 @@ sub analysis_split_fastq_file {
 
             slurm_submit_job_no_dependency_add_to_sample(
                 {
-                    job_id_href      => $job_id_href,
                     family_id        => $family_id,
-                    sample_id        => $sample_id,
-                    path             => $job_id_chain,
+                    job_id_href      => $job_id_href,
                     log              => $log,
+                    path             => $job_id_chain,
+                    sample_id        => $sample_id,
                     sbatch_file_name => $file_name
                 }
             );
@@ -359,23 +361,20 @@ sub analysis_split_fastq_file {
 
 sub _list_all_splitted_files {
 
-##_list_all_splitted_files
-
-##Function : List all splitted files
-##Returns  : ""
-##Arguments: $fastq_file_info_href, $infile_suffix, $temp_directory, $FILEHANDLE
-##         : $fastq_file_info_href => Fastq file info {REF}
-##         : $infile_suffix        => Infile suffix
-##         : $temp_directory       => Temprary directory
-##         : $FILEHANDLE           => Filehandle to write to
+## Function : List all splitted files
+## Returns  :
+## Arguments: $fastq_file_info_href => Fastq file info {REF}
+##          : $FILEHANDLE           => Filehandle to write to
+##          : $infile_suffix        => Infile suffix
+##          : $temp_directory       => Temprary directory
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $fastq_file_info_href;
+    my $FILEHANDLE;
     my $infile_suffix;
     my $temp_directory;
-    my $FILEHANDLE;
 
     my $tmpl = {
         fastq_file_info_href => {
@@ -385,6 +384,7 @@ sub _list_all_splitted_files {
             strict_type => 1,
             store       => \$fastq_file_info_href
         },
+        FILEHANDLE    => { store => \$FILEHANDLE },
         infile_suffix => {
             required    => 1,
             defined     => 1,
@@ -397,7 +397,6 @@ sub _list_all_splitted_files {
             strict_type => 1,
             store       => \$temp_directory
         },
-        FILEHANDLE => { store => \$FILEHANDLE },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};

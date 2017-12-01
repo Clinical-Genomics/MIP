@@ -1,20 +1,20 @@
 package MIP::Recipes::Analysis::Picardtools_mergesamfiles;
 
-use strict;
-use warnings;
-use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use autodie qw{ :all };
-use charnames qw{ :full :short };
 use Carp;
+use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
 use File::Basename qw{ fileparse };
 use File::Spec::Functions qw{ catdir catfile };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use POSIX;
+use strict;
+use utf8;
+use warnings;
+use warnings qw{ FATAL utf8 };
 
 ## CPANM
+use autodie qw{ :all };
 use Readonly;
 
 BEGIN {
@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -31,7 +31,7 @@ BEGIN {
 
 }
 
-##Constants
+## Constants
 Readonly my $ASTERIX      => q{*};
 Readonly my $DOT          => q{.};
 Readonly my $EMPTY_STRING => q{};
@@ -42,62 +42,52 @@ Readonly my $UNDERSCORE   => q{_};
 
 sub analysis_picardtools_mergesamfiles {
 
-##analysis_picardtools_mergesamfiles
-
-##Function : Merges all bam files using Picardtools mergesamfiles within each sampleid and files generated previously (option if provided with '-picardtools_mergesamfiles_previous_bams'). The merged files have to be sorted before attempting to merge.
-##Returns  : |$xargs_file_counter
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $lane_href, $job_id_href, $insample_directory, $outsample_directory, $sample_id, $program_name, $program_info_path, $file_path, $family_id, $outaligner_dir, $referencefile_path, $xargs_file_counter
-##         : $parameter_href          => Parameter hash {REF}
-##         : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##         : $sample_info_href        => Info on samples and family hash {REF}
-##         : $file_info_href          => File_info hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $lane_href               => The lane info hash {REF}
-##         : $job_id_href             => Job id hash {REF}
-##         : $insample_directory      => In sample directory
-##         : $outsample_directory     => Out sample directory
-##         : $sample_id               => Sample id
-##         : $program_name            => Program name
-##         : $program_info_path       => The program info path
-##         : $file_path               => File path
-##         : $family_id               => Family id
-##         : $temp_directory          => Temporary directory
-##         : $outaligner_dir          => Outaligner_dir used in the analysis
-##         : $referencefile_path      => Human genome reference file path
-##         : $xargs_file_counter      => The xargs file counter
+## Function : Merges all bam files using Picardtools mergesamfiles within each sampleid and files generated previously (option if provided with '-picardtools_mergesamfiles_previous_bams'). The merged files have to be sorted before attempting to merge.
+## Returns  : |$xargs_file_counter
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $family_id               => Family id
+##          : $file_info_href          => File_info hash {REF}
+##          : $file_path               => File path
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $insample_directory      => In sample directory
+##          : $job_id_href             => Job id hash {REF}
+##          : $lane_href               => The lane info hash {REF}
+##          : $parameter_href          => Parameter hash {REF}
+##          : $program_name            => Program name
+##          : $program_info_path       => The program info path
+##          : $outaligner_dir          => Outaligner_dir used in the analysis
+##          : $outsample_directory     => Out sample directory
+##          : $referencefile_path      => Human genome reference file path
+##          : $sample_id               => Sample id
+##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $temp_directory          => Temporary directory
+##          : $xargs_file_counter      => The xargs file counter
 
     my ($arg_href) = @_;
 
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $file_info_href;
+    my $file_path;
+    my $insample_directory;
+    my $infile_lane_prefix_href;
+    my $job_id_href;
+    my $lane_href;
+    my $outsample_directory;
+    my $parameter_href;
+    my $program_info_path;
+    my $program_name;
+    my $sample_info_href;
+    my $sample_id;
+
     ## Default(s)
     my $family_id;
-    my $temp_directory;
     my $outaligner_dir;
     my $referencefile_path;
+    my $temp_directory;
     my $xargs_file_counter;
 
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $lane_href;
-    my $job_id_href;
-    my $insample_directory;
-    my $outsample_directory;
-    my $sample_id;
-    my $program_name;
-    my $program_info_path;
-    my $file_path;
-
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
@@ -105,12 +95,10 @@ sub analysis_picardtools_mergesamfiles {
             strict_type => 1,
             store       => \$active_parameter_href
         },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
+        family_id => {
+            default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$family_id
         },
         file_info_href => {
             required    => 1,
@@ -119,19 +107,19 @@ sub analysis_picardtools_mergesamfiles {
             strict_type => 1,
             store       => \$file_info_href
         },
+        file_path          => { strict_type => 1, store => \$file_path },
+        insample_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$insample_directory
+        },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
             store       => \$infile_lane_prefix_href
-        },
-        lane_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$lane_href
         },
         job_id_href => {
             required    => 1,
@@ -140,17 +128,17 @@ sub analysis_picardtools_mergesamfiles {
             strict_type => 1,
             store       => \$job_id_href
         },
-        sample_id => {
+        lane_href => {
             required    => 1,
             defined     => 1,
+            default     => {},
             strict_type => 1,
-            store       => \$sample_id
+            store       => \$lane_href
         },
-        insample_directory => {
-            required    => 1,
-            defined     => 1,
+        outaligner_dir => {
+            default     => $arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$insample_directory
+            store       => \$outaligner_dir
         },
         outsample_directory => {
             required    => 1,
@@ -158,34 +146,43 @@ sub analysis_picardtools_mergesamfiles {
             strict_type => 1,
             store       => \$outsample_directory
         },
-        program_name => {
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href
+        },
+        program_info_path => { strict_type => 1, store => \$program_info_path },
+        program_name      => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$program_name
-        },
-        program_info_path => { strict_type => 1, store => \$program_info_path },
-        file_path         => { strict_type => 1, store => \$file_path },
-        family_id         => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id
-        },
-        temp_directory => {
-            default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir
         },
         referencefile_path => {
             default =>
               $arg_href->{active_parameter_href}{human_genome_reference},
             strict_type => 1,
             store       => \$referencefile_path
+        },
+        sample_id => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$sample_id
+        },
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href
+        },
+        temp_directory => {
+            default     => $arg_href->{active_parameter_href}{temp_directory},
+            strict_type => 1,
+            store       => \$temp_directory
         },
         xargs_file_counter => {
             default     => 0,
@@ -198,18 +195,19 @@ sub analysis_picardtools_mergesamfiles {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Cluster qw{ check_max_core_number };
-    use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::IO::Files qw{ migrate_files xargs_migrate_contig_files };
     use MIP::Get::File qw{ get_file_suffix };
-    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use MIP::Program::Alignment::Sambamba qw{ split_and_index_aligment_file };
-    use MIP::Program::Alignment::Picardtools qw{ picardtools_mergesamfiles };
+    use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
-    use MIP::Program::Alignment::Samtools qw{ samtools_index };
-    use MIP::Set::File qw{ set_merged_infile_prefix };
-    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
+    use MIP::IO::Files qw{ migrate_files xargs_migrate_contig_files };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
+    use MIP::Program::Alignment::Picardtools qw{ picardtools_mergesamfiles };
+    use MIP::Program::Alignment::Sambamba qw{ split_and_index_aligment_file };
+    use MIP::Program::Alignment::Samtools qw{ samtools_index };
+    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
+    use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Set::File qw{ set_merged_infile_prefix };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -220,12 +218,15 @@ sub analysis_picardtools_mergesamfiles {
 
     ## Alias
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my $core_number =
-      $active_parameter_href->{module_core_number}{$mip_program_name};
-    my $time = $active_parameter_href->{module_time}{$mip_program_name};
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $xargs_file_path_prefix;
+    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_program_name      => $mip_program_name,
+        }
+    );
 
     # Extract lanes
     my $lanes_id = join $EMPTY_STRING, @{ $lane_href->{$sample_id} };
@@ -238,15 +239,16 @@ sub analysis_picardtools_mergesamfiles {
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     ( $file_path, $program_info_path ) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $sample_id,
-            program_name          => $program_name,
-            program_directory     => $outaligner_dir,
-            core_number           => $core_number,
-            process_time          => $time,
-            temp_directory        => $temp_directory,
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $core_number,
+            directory_id                    => $sample_id,
+            FILEHANDLE                      => $FILEHANDLE,
+            job_id_href                     => $job_id_href,
+            process_time                    => $time,
+            program_directory               => $outaligner_dir,
+            program_name                    => $program_name,
+            source_environment_commands_ref => [$source_environment_cmd],
+            temp_directory                  => $temp_directory,
         }
     );
 
@@ -263,9 +265,9 @@ sub analysis_picardtools_mergesamfiles {
     ## Assign suffix
     my $infile_suffix = my $outfile_suffix = get_file_suffix(
         {
+            jobid_chain    => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{alignment_file_suffix},
-            jobid_chain    => $job_id_chain,
         }
     );
 
@@ -275,20 +277,20 @@ sub analysis_picardtools_mergesamfiles {
     set_merged_infile_prefix(
         {
             file_info_href       => $file_info_href,
-            sample_id            => $sample_id,
             merged_infile_prefix => $merged_infile_prefix,
+            sample_id            => $sample_id,
         }
     );
 
     ## Copies files from source to destination
     migrate_files(
         {
+            core_number  => $core_number,
+            FILEHANDLE   => $FILEHANDLE,
+            file_ending  => $infile_tag . $infile_suffix . $ASTERIX,
+            indirectory  => $insample_directory,
             infiles_ref  => \@{ $infile_lane_prefix_href->{$sample_id} },
             outfile_path => $temp_directory,
-            FILEHANDLE   => $FILEHANDLE,
-            indirectory  => $insample_directory,
-            core_number  => $core_number,
-            file_ending  => $infile_tag . $infile_suffix . $ASTERIX,
         }
     );
 
@@ -300,16 +302,16 @@ sub analysis_picardtools_mergesamfiles {
         ($xargs_file_counter) = split_and_index_aligment_file(
             {
                 active_parameter_href => $active_parameter_href,
-                contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
-                FILEHANDLE  => $FILEHANDLE,
-                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                file_path          => $file_path,
+                contigs_ref   => \@{ $file_info_href->{contigs_size_ordered} },
+                core_number   => $core_number,
+                FILEHANDLE    => $FILEHANDLE,
+                file_path     => $file_path,
+                infile        => $infile . $infile_tag,
+                output_format => substr( $infile_suffix, 1 ),
                 program_info_path  => $program_info_path,
-                core_number        => $core_number,
-                xargs_file_counter => $xargs_file_counter,
                 temp_directory     => $temp_directory,
-                infile             => $infile . $infile_tag,
-                output_format      => substr( $infile_suffix, 1 ),
+                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+                xargs_file_counter => $xargs_file_counter,
             }
         );
     }
@@ -329,30 +331,30 @@ sub analysis_picardtools_mergesamfiles {
         ## Limit number of cores requested to the maximum number of cores available per node
         $core_number = check_max_core_number(
             {
+                core_number_requested => $core_number,
                 max_cores_per_node =>
                   $active_parameter_href->{max_cores_per_node},
-                core_number_requested => $core_number,
             }
         );
 
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
-                FILEHANDLE         => $FILEHANDLE,
-                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                file_path          => $file_path,
-                program_info_path  => $program_info_path,
-                core_number        => $core_number,
-                first_command      => q{java},
-                xargs_file_counter => $xargs_file_counter,
-                memory_allocation  => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-                java_use_large_pages =>
-                  $active_parameter_href->{java_use_large_pages},
-                temp_directory => $temp_directory,
-                java_jar       => catfile(
+                core_number   => $core_number,
+                FILEHANDLE    => $FILEHANDLE,
+                file_path     => $file_path,
+                first_command => q{java},
+                java_jar      => catfile(
                     $active_parameter_href->{picardtools_path},
                     q{picard.jar}
                 ),
+                java_use_large_pages =>
+                  $active_parameter_href->{java_use_large_pages},
+                memory_allocation  => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+                program_info_path  => $program_info_path,
+                temp_directory     => $temp_directory,
+                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+                xargs_file_counter => $xargs_file_counter,
             }
         );
 
@@ -384,13 +386,13 @@ sub analysis_picardtools_mergesamfiles {
 
             picardtools_mergesamfiles(
                 {
+                    FILEHANDLE         => $XARGSFILEHANDLE,
+                    create_index       => q{true},
                     infile_paths_ref   => \@infile_paths,
                     outfile_path       => $outfile_path,
+                    referencefile_path => $referencefile_path,
                     stderrfile_path    => $stderrfile_path,
                     threading          => q{true},
-                    create_index       => q{true},
-                    referencefile_path => $referencefile_path,
-                    FILEHANDLE         => $XARGSFILEHANDLE,
                 }
             );
             say {$XARGSFILEHANDLE} $NEWLINE;
@@ -406,11 +408,11 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
+                core_number        => $core_number,
                 FILEHANDLE         => $FILEHANDLE,
-                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                 file_path          => $file_path,
                 program_info_path  => $program_info_path,
-                core_number        => $core_number,
+                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                 xargs_file_counter => $xargs_file_counter,
             }
         );
@@ -444,9 +446,9 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
                 ## Rename
                 gnu_mv(
                     {
+                        FILEHANDLE   => $XARGSFILEHANDLE,
                         infile_path  => $gnu_mv_infile_path,
                         outfile_path => $gnu_mv_outfile_path,
-                        FILEHANDLE   => $XARGSFILEHANDLE,
                     }
                 );
                 print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
@@ -454,9 +456,9 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
                 ## Index
                 samtools_index(
                     {
-                        infile_path => $gnu_mv_outfile_path,
                         bai_format  => 1,
                         FILEHANDLE  => $XARGSFILEHANDLE,
+                        infile_path => $gnu_mv_outfile_path,
                     }
                 );
             }
@@ -468,22 +470,22 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
     say {$FILEHANDLE} q{## Copy file from temporary directory};
     ($xargs_file_counter) = xargs_migrate_contig_files(
         {
-            FILEHANDLE         => $FILEHANDLE,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            contigs_ref        => \@{ $file_info_href->{contigs_size_ordered} },
-            file_path          => $file_path,
-            program_info_path  => $program_info_path,
-            core_number        => $core_number,
-            xargs_file_counter => $xargs_file_counter,
-            outfile            => $sample_id
+            contigs_ref  => \@{ $file_info_href->{contigs_size_ordered} },
+            core_number  => $core_number,
+            FILEHANDLE   => $FILEHANDLE,
+            file_ending  => $outfile_suffix . $ASTERIX,
+            file_path    => $file_path,
+            outdirectory => $outsample_directory,
+            outfile      => $sample_id
               . $UNDERSCORE
               . q{lanes}
               . $UNDERSCORE
               . $lanes_id
               . $outfile_tag,
-            outdirectory   => $outsample_directory,
-            temp_directory => $temp_directory,
-            file_ending    => $outfile_suffix . $ASTERIX,
+            program_info_path  => $program_info_path,
+            temp_directory     => $temp_directory,
+            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            xargs_file_counter => $xargs_file_counter,
         }
     );
 
@@ -504,22 +506,22 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
               . $outfile_suffix );
         add_program_outfile_to_sample_info(
             {
-                sample_info_href => $sample_info_href,
-                sample_id        => $sample_id,
-                program_name     => $program_name,
                 infile           => $merged_infile_prefix,
                 path             => $qc_outfile_path,
+                program_name     => $program_name,
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
             }
         );
 
         slurm_submit_job_sample_id_dependency_add_to_sample(
             {
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
                 family_id               => $family_id,
-                sample_id               => $sample_id,
-                path                    => $job_id_chain,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
                 log                     => $log,
+                path                    => $job_id_chain,
+                sample_id               => $sample_id,
                 sbatch_file_name        => $file_path
             }
         );
@@ -529,62 +531,52 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
 
 sub analysis_picardtools_mergesamfiles_rio {
 
-##analysis_picardtools_mergesamfiles_rio
-
-##Function : Merges all bam files using Picardtools mergesamfiles within each sampleid and files generated previously (option if provided with '-picardtools_mergesamfiles_previous_bams'). The merged files have to be sorted before attempting to merge.
-##Returns  : |$xargs_file_counter
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $lane_href, $job_id_href, $insample_directory, $sample_id, $program_name, $program_info_path, $file_path,, $FILEHANDLE, $family_id, $outaligner_dir, $referencefile_path, $xargs_file_counter
-##         : $parameter_href          => Parameter hash {REF}
-##         : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##         : $sample_info_href        => Info on samples and family hash {REF}
-##         : $file_info_href          => The file_info hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $lane_href               => The lane info hash {REF}
-##         : $job_id_href             => Job id hash {REF}
-##         : $insample_directory      => In sample directory
-##         : $sample_id               => Sample id
-##         : $program_name            => Program name
-##         : $program_info_path       => The program info path
-##         : $file_path               => File path
-##         : $FILEHANDLE              => Filehandle to write to
-##         : $family_id               => Family id
-##         : $temp_directory          => Temporary directory
-##         : $outaligner_dir          => Outaligner_dir used in the analysis
-##         : $referencefile_path      => Human genome reference file path
-##         : $xargs_file_counter      => The xargs file counter
+## Function : Merges all bam files using Picardtools mergesamfiles within each sampleid and files generated previously (option if provided with '-picardtools_mergesamfiles_previous_bams'). The merged files have to be sorted before attempting to merge.
+## Returns  : |$xargs_file_counter
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $family_id               => Family id
+##          : $FILEHANDLE              => Filehandle to write to
+##          : $file_info_href          => The file_info hash {REF}
+##          : $file_path               => File path
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $insample_directory      => In sample directory
+##          : $job_id_href             => Job id hash {REF}
+##          : $lane_href               => The lane info hash {REF}
+##          : $parameter_href          => Parameter hash {REF}
+##          : $outaligner_dir          => Outaligner_dir used in the analysis
+##          : $referencefile_path      => Human genome reference file path
+##          : $sample_id               => Sample id
+##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $program_info_path       => The program info path
+##          : $program_name            => Program name
+##          : $temp_directory          => Temporary directory
+##          : $xargs_file_counter      => The xargs file counter
 
     my ($arg_href) = @_;
 
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $FILEHANDLE;
+    my $file_info_href;
+    my $file_path;
+    my $infile_lane_prefix_href;
+    my $insample_directory;
+    my $job_id_href;
+    my $lane_href;
+    my $parameter_href;
+    my $program_info_path;
+    my $program_name;
+    my $sample_id;
+    my $sample_info_href;
+
     ## Default(s)
     my $family_id;
-    my $temp_directory;
     my $outaligner_dir;
     my $referencefile_path;
+    my $temp_directory;
     my $xargs_file_counter;
 
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $lane_href;
-    my $job_id_href;
-    my $insample_directory;
-    my $sample_id;
-    my $program_name;
-    my $program_info_path;
-    my $file_path;
-    my $FILEHANDLE;
-
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
@@ -592,13 +584,12 @@ sub analysis_picardtools_mergesamfiles_rio {
             strict_type => 1,
             store       => \$active_parameter_href
         },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
+        family_id => {
+            default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$family_id
         },
+        FILEHANDLE     => { store => \$FILEHANDLE },
         file_info_href => {
             required    => 1,
             defined     => 1,
@@ -606,6 +597,7 @@ sub analysis_picardtools_mergesamfiles_rio {
             strict_type => 1,
             store       => \$file_info_href
         },
+        file_path               => { strict_type => 1, store => \$file_path },
         infile_lane_prefix_href => {
             required    => 1,
             defined     => 1,
@@ -613,12 +605,11 @@ sub analysis_picardtools_mergesamfiles_rio {
             strict_type => 1,
             store       => \$infile_lane_prefix_href
         },
-        lane_href => {
+        insample_directory => {
             required    => 1,
             defined     => 1,
-            default     => {},
             strict_type => 1,
-            store       => \$lane_href
+            store       => \$insample_directory
         },
         job_id_href => {
             required    => 1,
@@ -627,11 +618,37 @@ sub analysis_picardtools_mergesamfiles_rio {
             strict_type => 1,
             store       => \$job_id_href
         },
-        insample_directory => {
+        lane_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$lane_href
+        },
+        outaligner_dir => {
+            default     => $arg_href->{active_parameter_href}{outaligner_dir},
+            strict_type => 1,
+            store       => \$outaligner_dir
+        },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href
+        },
+        program_info_path => { strict_type => 1, store => \$program_info_path },
+        program_name      => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$insample_directory
+            store       => \$program_name
+        },
+        referencefile_path => {
+            default =>
+              $arg_href->{active_parameter_href}{human_genome_reference},
+            strict_type => 1,
+            store       => \$referencefile_path
         },
         sample_id => {
             required    => 1,
@@ -639,35 +656,17 @@ sub analysis_picardtools_mergesamfiles_rio {
             strict_type => 1,
             store       => \$sample_id
         },
-        program_name => {
+        sample_info_href => {
             required    => 1,
             defined     => 1,
+            default     => {},
             strict_type => 1,
-            store       => \$program_name
-        },
-        program_info_path => { strict_type => 1, store => \$program_info_path },
-        file_path         => { strict_type => 1, store => \$file_path },
-        FILEHANDLE => { store => \$FILEHANDLE },
-        family_id  => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id
+            store       => \$sample_info_href
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
             store       => \$temp_directory
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir
-        },
-        referencefile_path => {
-            default =>
-              $arg_href->{active_parameter_href}{human_genome_reference},
-            strict_type => 1,
-            store       => \$referencefile_path
         },
         xargs_file_counter => {
             default     => 0,
@@ -680,17 +679,18 @@ sub analysis_picardtools_mergesamfiles_rio {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Cluster qw{ check_max_core_number };
-    use MIP::IO::Files qw{ migrate_files xargs_migrate_contig_files };
-    use MIP::Get::File qw{ get_file_suffix };
-    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use MIP::Program::Alignment::Sambamba qw{ split_and_index_aligment_file };
-    use MIP::Program::Alignment::Picardtools qw{ picardtools_mergesamfiles };
-    use MIP::Gnu::Coreutils qw{ gnu_mv };
-    use MIP::Program::Alignment::Samtools qw{ samtools_index };
-    use MIP::Set::File qw{ set_merged_infile_prefix };
     use MIP::Delete::File qw{ delete_files };
+    use MIP::Get::File qw{ get_file_suffix };
+    use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Gnu::Coreutils qw{ gnu_mv };
+    use MIP::IO::Files qw{ migrate_files xargs_migrate_contig_files };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
+    use MIP::Program::Alignment::Picardtools qw{ picardtools_mergesamfiles };
+    use MIP::Program::Alignment::Sambamba qw{ split_and_index_aligment_file };
+    use MIP::Program::Alignment::Samtools qw{ samtools_index };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
+    use MIP::Set::File qw{ set_merged_infile_prefix };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -700,14 +700,17 @@ sub analysis_picardtools_mergesamfiles_rio {
     my $mip_program_mode = $active_parameter_href->{$mip_program_name};
 
     ## Alias
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my $core_number =
-      $active_parameter_href->{module_core_number}{$mip_program_name};
-    my $time = $active_parameter_href->{module_time}{$mip_program_name};
-    my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
+    my $job_id_chain  = $parameter_href->{$mip_program_name}{chain};
+    my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $xargs_file_path_prefix;
+    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_program_name      => $mip_program_name,
+        }
+    );
 
     # Extract lanes
     my $lanes_id = join $EMPTY_STRING, @{ $lane_href->{$sample_id} };
@@ -725,9 +728,9 @@ sub analysis_picardtools_mergesamfiles_rio {
     ## Assign suffix
     my $infile_suffix = my $outfile_suffix = get_file_suffix(
         {
+            jobid_chain    => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{alignment_file_suffix},
-            jobid_chain    => $job_id_chain,
         }
     );
 
@@ -737,20 +740,20 @@ sub analysis_picardtools_mergesamfiles_rio {
     set_merged_infile_prefix(
         {
             file_info_href       => $file_info_href,
-            sample_id            => $sample_id,
             merged_infile_prefix => $merged_infile_prefix,
+            sample_id            => $sample_id,
         }
     );
 
     ## Copies files from source to destination
     migrate_files(
         {
+            core_number  => $core_number,
+            FILEHANDLE   => $FILEHANDLE,
+            file_ending  => $infile_tag . $infile_suffix . $ASTERIX,
+            indirectory  => $insample_directory,
             infiles_ref  => \@{ $infile_lane_prefix_href->{$sample_id} },
             outfile_path => $temp_directory,
-            FILEHANDLE   => $FILEHANDLE,
-            indirectory  => $insample_directory,
-            core_number  => $core_number,
-            file_ending  => $infile_tag . $infile_suffix . $ASTERIX,
         }
     );
 
@@ -762,16 +765,16 @@ sub analysis_picardtools_mergesamfiles_rio {
         ($xargs_file_counter) = split_and_index_aligment_file(
             {
                 active_parameter_href => $active_parameter_href,
-                contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
-                FILEHANDLE  => $FILEHANDLE,
-                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                file_path          => $file_path,
+                contigs_ref   => \@{ $file_info_href->{contigs_size_ordered} },
+                core_number   => $core_number,
+                FILEHANDLE    => $FILEHANDLE,
+                file_path     => $file_path,
+                infile        => $infile . $infile_tag,
+                output_format => substr( $infile_suffix, 1 ),
                 program_info_path  => $program_info_path,
-                core_number        => $core_number,
-                xargs_file_counter => $xargs_file_counter,
                 temp_directory     => $temp_directory,
-                infile             => $infile . $infile_tag,
-                output_format      => substr( $infile_suffix, 1 ),
+                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+                xargs_file_counter => $xargs_file_counter,
             }
         );
     }
@@ -791,30 +794,30 @@ sub analysis_picardtools_mergesamfiles_rio {
         ## Limit number of cores requested to the maximum number of cores available per node
         $core_number = check_max_core_number(
             {
+                core_number_requested => $core_number,
                 max_cores_per_node =>
                   $active_parameter_href->{max_cores_per_node},
-                core_number_requested => $core_number,
             }
         );
 
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
-                FILEHANDLE         => $FILEHANDLE,
-                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                file_path          => $file_path,
-                program_info_path  => $program_info_path,
-                core_number        => $core_number,
-                first_command      => q{java},
-                xargs_file_counter => $xargs_file_counter,
-                memory_allocation  => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+                core_number   => $core_number,
+                FILEHANDLE    => $FILEHANDLE,
+                file_path     => $file_path,
+                first_command => q{java},
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
-                temp_directory => $temp_directory,
-                java_jar       => catfile(
+                java_jar => catfile(
                     $active_parameter_href->{picardtools_path},
                     q{picard.jar}
                 ),
+                memory_allocation  => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+                program_info_path  => $program_info_path,
+                temp_directory     => $temp_directory,
+                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+                xargs_file_counter => $xargs_file_counter,
             }
         );
 
@@ -846,13 +849,13 @@ sub analysis_picardtools_mergesamfiles_rio {
 
             picardtools_mergesamfiles(
                 {
+                    create_index       => q{true},
+                    FILEHANDLE         => $XARGSFILEHANDLE,
                     infile_paths_ref   => \@infile_paths,
                     outfile_path       => $outfile_path,
+                    referencefile_path => $referencefile_path,
                     stderrfile_path    => $stderrfile_path,
                     threading          => q{true},
-                    create_index       => q{true},
-                    referencefile_path => $referencefile_path,
-                    FILEHANDLE         => $XARGSFILEHANDLE,
                 }
             );
             say {$XARGSFILEHANDLE} $NEWLINE;
@@ -868,11 +871,11 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
+                core_number        => $core_number,
                 FILEHANDLE         => $FILEHANDLE,
-                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                 file_path          => $file_path,
                 program_info_path  => $program_info_path,
-                core_number        => $core_number,
+                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                 xargs_file_counter => $xargs_file_counter,
             }
         );
@@ -906,9 +909,9 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
                 ## Rename
                 gnu_mv(
                     {
+                        FILEHANDLE   => $XARGSFILEHANDLE,
                         infile_path  => $gnu_infile_path,
                         outfile_path => $gnu_outfile_path,
-                        FILEHANDLE   => $XARGSFILEHANDLE,
                     }
                 );
                 print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
@@ -916,9 +919,9 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
                 ## Index
                 samtools_index(
                     {
-                        infile_path => $gnu_outfile_path,
                         bai_format  => 1,
                         FILEHANDLE  => $XARGSFILEHANDLE,
+                        infile_path => $gnu_outfile_path,
                     }
                 );
             }
@@ -930,11 +933,11 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
 
     delete_files(
         {
-            infiles_ref => \@{ $infile_lane_prefix_href->{$sample_id} },
-            FILEHANDLE  => $FILEHANDLE,
-            indirectory => $temp_directory,
             core_number => $core_number,
+            FILEHANDLE  => $FILEHANDLE,
             file_ending => $infile_tag . $ASTERIX,
+            indirectory => $temp_directory,
+            infiles_ref => \@{ $infile_lane_prefix_href->{$sample_id} },
         }
     );
 

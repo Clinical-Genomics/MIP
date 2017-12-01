@@ -1,19 +1,19 @@
 package MIP::Recipes::Analysis::Fastqc;
 
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Basename qw(fileparse);
+use File::Spec::Functions qw{ catdir catfile };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use autodie qw{:all};
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-use File::Basename qw(fileparse);
-use File::Spec::Functions qw(catdir catfile);
 
 ## CPANM
+use autodie qw{:all};
 use Readonly;
 
 BEGIN {
@@ -22,74 +22,57 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw(analysis_fastqc);
 
 }
 
-##Constants
+## Constants
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $UNDERSCORE => q{_};
 
 sub analysis_fastqc {
 
-##analysis_fastqc
-
-##Function : Raw sequence quality analysis using FASTQC.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infiles_ref, $infile_lane_prefix_href, $job_id_href, $insample_directory, $outsample_directory, $sample_id, $program_name, $temp_directory
-##         : $parameter_href          => Parameter hash {REF}
-##         : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##         : $sample_info_href        => Info on samples and family hash {REF}
-##         : $infiles_ref             => Infiles {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href             => Job id hash {REF}
-##         : $insample_directory      => In sample directory
-##         : $outsample_directory     => Out sample directory
-##         : $sample_id               => Sample id
-##         : $program_name            => Program name
-##         : $temp_directory          => Temporary directory
+## Function : Raw sequence quality analysis using FASTQC.
+## Returns  :
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $infiles_ref             => Infiles {REF}
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $insample_directory      => In sample directory
+##          : $job_id_href             => Job id hash {REF}
+##          : $outsample_directory     => Out sample directory
+##          : $parameter_href          => Parameter hash {REF}
+##          : $program_name            => Program name
+##          : $sample_id               => Sample id
+##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $temp_directory          => Temporary directory
 
     my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $infiles_ref;
+    my $infile_lane_prefix_href;
+    my $insample_directory;
+    my $job_id_href;
+    my $outsample_directory;
+    my $parameter_href;
+    my $program_name;
+    my $sample_id;
+    my $sample_info_href;
 
     ## Default(s)
     my $temp_directory;
 
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $infiles_ref;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $insample_directory;
-    my $outsample_directory;
-    my $sample_id;
-    my $program_name;
-
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
             store       => \$active_parameter_href
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href
         },
         infiles_ref => {
             defined     => 1,
@@ -104,6 +87,12 @@ sub analysis_fastqc {
             strict_type => 1,
             store       => \$infile_lane_prefix_href
         },
+        insample_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$insample_directory
+        },
         job_id_href => {
             required    => 1,
             defined     => 1,
@@ -111,17 +100,24 @@ sub analysis_fastqc {
             strict_type => 1,
             store       => \$job_id_href
         },
-        insample_directory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$insample_directory
-        },
         outsample_directory => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$outsample_directory
+        },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href
+        },
+        program_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$program_name
         },
         sample_id => {
             required    => 1,
@@ -129,11 +125,12 @@ sub analysis_fastqc {
             strict_type => 1,
             store       => \$sample_id
         },
-        program_name => {
+        sample_info_href => {
             required    => 1,
             defined     => 1,
+            default     => {},
             strict_type => 1,
-            store       => \$program_name
+            store       => \$sample_info_href
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
@@ -146,14 +143,15 @@ sub analysis_fastqc {
 
     use MIP::Check::Cluster qw{check_max_core_number};
     use MIP::Cluster qw{update_core_number_to_seq_mode};
-    use MIP::Script::Setup_script qw{setup_script};
+    use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Gnu::Coreutils qw{gnu_cp};
     use MIP::IO::Files qw{migrate_files};
     use MIP::Processmanagement::Processes qw{print_wait};
-    use MIP::Gnu::Coreutils qw{gnu_cp};
-    use MIP::Program::Qc::Fastqc qw{fastqc};
-    use MIP::QC::Record qw{add_program_outfile_to_sample_info};
     use MIP::Processmanagement::Slurm_processes
       qw{slurm_submit_job_no_dependency_dead_end};
+    use MIP::Program::Qc::Fastqc qw{fastqc};
+    use MIP::QC::Record qw{add_program_outfile_to_sample_info};
+    use MIP::Script::Setup_script qw{setup_script};
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -161,13 +159,18 @@ sub analysis_fastqc {
     my $mip_program_name = q{p} . $program_name;
     my $mip_program_mode = $active_parameter_href->{$mip_program_name};
 
-    my $core_number =
-      $active_parameter_href->{module_core_number}{$mip_program_name};
+    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_program_name      => $mip_program_name,
+        }
+    );
 
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
+  INFILE_LANE:
     foreach my $infile ( @{ $infile_lane_prefix_href->{$sample_id} } ) {
 
         ## Update the number of cores to be used in the analysis according to sequencing mode requirements
@@ -192,16 +195,16 @@ sub analysis_fastqc {
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $sample_id,
-            program_name          => $program_name,
-            program_directory     => $program_name,
-            core_number           => $core_number,
-            process_time =>
-              $active_parameter_href->{module_time}{$mip_program_name},
-            temp_directory => $temp_directory,
+            active_parameter_href           => $active_parameter_href,
+            job_id_href                     => $job_id_href,
+            FILEHANDLE                      => $FILEHANDLE,
+            directory_id                    => $sample_id,
+            program_name                    => $program_name,
+            program_directory               => $program_name,
+            core_number                     => $core_number,
+            process_time                    => $time,
+            source_environment_commands_ref => [$source_environment_cmd],
+            temp_directory                  => $temp_directory,
         }
     );
 
@@ -211,11 +214,11 @@ sub analysis_fastqc {
     ## Copies files from source to destination
     migrate_files(
         {
-            infiles_ref  => \@{$infiles_ref},
-            outfile_path => $temp_directory,
+            core_number  => $core_number,
             FILEHANDLE   => $FILEHANDLE,
             indirectory  => $insample_directory,
-            core_number  => $core_number,
+            infiles_ref  => \@{$infiles_ref},
+            outfile_path => $temp_directory,
         }
     );
 
@@ -227,10 +230,10 @@ sub analysis_fastqc {
 
         $process_batches_count = print_wait(
             {
-                process_counter       => $index,
+                FILEHANDLE            => $FILEHANDLE,
                 max_process_number    => $core_number,
                 process_batches_count => $process_batches_count,
-                FILEHANDLE            => $FILEHANDLE,
+                process_counter       => $index,
             }
         );
 
@@ -240,10 +243,10 @@ sub analysis_fastqc {
 
         fastqc(
             {
-                infile_path       => catfile( $temp_directory, $infile ),
-                outdirectory_path => $temp_directory,
                 extract           => 1,
                 FILEHANDLE        => $FILEHANDLE,
+                infile_path       => catfile( $temp_directory, $infile ),
+                outdirectory_path => $temp_directory,
             }
         );
         say {$FILEHANDLE} q{&}, $NEWLINE;
@@ -256,12 +259,12 @@ sub analysis_fastqc {
                 $file_at_lane_level . $UNDERSCORE . $program_name );
             add_program_outfile_to_sample_info(
                 {
-                    sample_info_href => $sample_info_href,
-                    sample_id        => $sample_id,
-                    program_name     => $program_name,
                     infile           => $infile,
                     outdirectory     => $qc_fastqc_outdirectory,
                     outfile          => q{fastqc_data.txt},
+                    program_name     => $program_name,
+                    sample_id        => $sample_id,
+                    sample_info_href => $sample_info_href,
                 }
             );
         }
@@ -274,10 +277,10 @@ sub analysis_fastqc {
 
         $process_batches_count = print_wait(
             {
-                process_counter       => $index,
+                FILEHANDLE            => $FILEHANDLE,
                 max_process_number    => $core_number,
                 process_batches_count => $process_batches_count,
-                FILEHANDLE            => $FILEHANDLE,
+                process_counter       => $index,
             }
         );
 
@@ -290,9 +293,9 @@ sub analysis_fastqc {
         gnu_cp(
             {
                 FILEHANDLE   => $FILEHANDLE,
-                recursive    => 1,
                 infile_path  => $infile_path,
                 outfile_path => $outsample_directory,
+                recursive    => 1,
             }
         );
         say {$FILEHANDLE} q{&}, $NEWLINE;
@@ -306,8 +309,8 @@ sub analysis_fastqc {
         slurm_submit_job_no_dependency_dead_end(
             {
                 job_id_href      => $job_id_href,
-                sbatch_file_name => $file_name,
                 log              => $log,
+                sbatch_file_name => $file_name,
             }
         );
     }

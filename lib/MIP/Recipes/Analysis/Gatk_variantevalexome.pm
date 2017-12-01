@@ -21,14 +21,14 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_variantevalexome };
 
 }
 
-##Constants
+## Constants
 Readonly my $ASTERIX    => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
@@ -164,6 +164,7 @@ sub analysis_gatk_variantevalexome {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
+    use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_family_dead_end);
@@ -181,13 +182,16 @@ sub analysis_gatk_variantevalexome {
     my $mip_program_mode = $active_parameter_href->{$mip_program_name};
 
     ## Unpack parameters
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my $core_number =
-      $active_parameter_href->{module_core_number}{$mip_program_name};
-    my $time = $active_parameter_href->{module_time}{$mip_program_name};
+    my $job_id_chain       = $parameter_href->{$mip_program_name}{chain};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $gatk_jar =
       catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} );
+    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_program_name      => $mip_program_name,
+        }
+    );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -197,15 +201,16 @@ sub analysis_gatk_variantevalexome {
     my ($file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $sample_id,
-            program_name          => $program_name,
-            program_directory     => catfile( $outaligner_dir, $program_name ),
             call_type             => $call_type,
             core_number           => $core_number,
+            directory_id          => $sample_id,
+            FILEHANDLE            => $FILEHANDLE,
+            job_id_href           => $job_id_href,
             process_time          => $time,
-            temp_directory        => $temp_directory
+            program_directory     => catfile( $outaligner_dir, $program_name ),
+            program_name          => $program_name,
+            source_environment_commands_ref => [$source_environment_cmd],
+            temp_directory                  => $temp_directory,
         }
     );
 
@@ -221,18 +226,18 @@ sub analysis_gatk_variantevalexome {
     ## Return the current infile vcf compression suffix for this jobid chain
     my $infile_suffix = get_file_suffix(
         {
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
             jobid_chain =>
               $parameter_href->{pgatk_combinevariantcallsets}{chain},
+            parameter_href => $parameter_href,
+            suffix_key     => q{variant_file_suffix},
         }
     );
     my $outfile_suffix = set_file_suffix(
         {
+            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_eval_file_suffix},
-            job_id_chain   => $job_id_chain,
-            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
         }
     );
 
@@ -279,11 +284,11 @@ sub analysis_gatk_variantevalexome {
           . $infile_suffix );
     bcftools_view(
         {
-            include         => q{'INFO/CSQ[*]~":p[.]"'},
-            samples_ref     => [$sample_id],
-            infile_path     => $file_path_prefix . $infile_suffix,
-            stdoutfile_path => $sample_exonic_file_path,
             FILEHANDLE      => $FILEHANDLE,
+            include         => q{'INFO/CSQ[*]~":p[.]"'},
+            infile_path     => $file_path_prefix . $infile_suffix,
+            samples_ref     => [$sample_id],
+            stdoutfile_path => $sample_exonic_file_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -292,19 +297,19 @@ sub analysis_gatk_variantevalexome {
     say {$FILEHANDLE} q{## GATK varianteval};
     gatk_varianteval(
         {
-            memory_allocation => q{Xmx2g},
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory     => $temp_directory,
-            java_jar           => $gatk_jar,
-            infile_paths_ref   => [$sample_exonic_file_path],
-            outfile_path       => $outfile_path,
-            logging_level      => $active_parameter_href->{gatk_logging_level},
-            referencefile_path => $referencefile_path,
             dbsnp_file_path => $active_parameter_href->{gatk_varianteval_dbsnp},
+            FILEHANDLE      => $FILEHANDLE,
             indel_gold_standard_file_path =>
               $active_parameter_href->{gatk_varianteval_gold},
-            FILEHANDLE => $FILEHANDLE,
+            infile_paths_ref => [$sample_exonic_file_path],
+            java_jar         => $gatk_jar,
+            java_use_large_pages =>
+              $active_parameter_href->{java_use_large_pages},
+            logging_level      => $active_parameter_href->{gatk_logging_level},
+            memory_allocation  => q{Xmx2g},
+            outfile_path       => $outfile_path,
+            referencefile_path => $referencefile_path,
+            temp_directory     => $temp_directory,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -313,9 +318,9 @@ sub analysis_gatk_variantevalexome {
     say {$FILEHANDLE} q{## Copy file from temporary directory};
     migrate_file(
         {
+            FILEHANDLE   => $FILEHANDLE,
             infile_path  => $outfile_path,
             outfile_path => $outsample_directory,
-            FILEHANDLE   => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} q{wait}, $NEWLINE;
@@ -333,23 +338,23 @@ sub analysis_gatk_variantevalexome {
           . $outfile_suffix;
         add_program_outfile_to_sample_info(
             {
-                sample_info_href => $sample_info_href,
-                sample_id        => $sample_id,
-                program_name     => q{variantevalexome},
                 infile           => $merged_infile_prefix,
                 outdirectory     => $outsample_directory,
                 outfile          => $qc_exome_outfile,
+                program_name     => q{variantevalexome},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
             }
         );
 
         slurm_submit_job_sample_id_dependency_family_dead_end(
             {
-                job_id_href             => $job_id_href,
+                family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                log                     => $log,
+                path                    => $job_id_chain,
                 sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                family_id        => $family_id,
-                path             => $job_id_chain,
-                log              => $log,
                 sbatch_file_name => $file_path,
             }
         );

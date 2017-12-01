@@ -361,7 +361,6 @@ GetOptions(
     q{prcp|prcovplots=n}           => \$active_parameter{prcovplots},
     q{pcnv|pcnvnator=n}            => \$active_parameter{pcnvnator},
     q{cnvhbs|cnv_bin_size=n}       => \$active_parameter{cnv_bin_size},
-    q{cnvrld|cnv_root_ld_lib=s}    => \$active_parameter{cnv_root_ld_lib},
     q{pdelc|pdelly_call=n}         => \$active_parameter{pdelly_call},
     q{pdel|pdelly_reformat=n}      => \$active_parameter{pdelly_reformat},
     q{deltyp|delly_types:s}        => \@{ $active_parameter{delly_types} },
@@ -2034,17 +2033,20 @@ if ( $active_parameter{pcnvnator} > 0 ) {
 
 if ( $active_parameter{pdelly_call} > 0 ) {    #Run delly_call
 
-    $log->info( q{[Delly_call]} );
+    $log->info(q{[Delly_call]});
 
     my $program_name = q{delly_call};
-    my $program_outdirectory_name = $parameter{ q{p} . $program_name }{outdir_name};
+    my $program_outdirectory_name =
+      $parameter{ q{p} . $program_name }{outdir_name};
 
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
         my $insample_directory = catdir( $active_parameter{outdata_dir},
             $sample_id, $active_parameter{outaligner_dir} );
-        my $outsample_directory = catdir( $active_parameter{outdata_dir},
-            $sample_id, $active_parameter{outaligner_dir}, $program_outdirectory_name );
+        my $outsample_directory = catdir(
+            $active_parameter{outdata_dir},    $sample_id,
+            $active_parameter{outaligner_dir}, $program_outdirectory_name
+        );
 
         analysis_delly_call(
             {
@@ -3064,7 +3066,6 @@ sub build_usage {
     ###Structural variant callers
     -pcnv/--pcnvnator Structural variant calling using CNVnator (defaults to "0" (=no))
       -cnvhbs/--cnv_bin_size CNVnator bin size (defaults to "1000")
-      -cnvrld/--cnv_root_ld_lib Root ld library path (defaults to "")
     -pdelc/--pdelly_call Structural variant calling using Delly (defaults to "0" (=no))
     -pdel/--pdelly_reformat Merge, regenotype and filter using Delly (defaults to "0" (=no))
       -deltyp/--delly_types Type of SV to call (defaults to "DEL,DUP,INV,TRA"; comma sep)
