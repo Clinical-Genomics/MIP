@@ -441,7 +441,7 @@ sub analysis_delly_reformat {
       SV_TYPE:
         foreach my $sv_type ( @{ $active_parameter_href->{delly_types} } ) {
 
-            Readonly my $SV_MAX_SIZE = 100_000_000;
+            my $sv_max_size = 100_000_000;
 
             if ( $sv_type ne q{TRA} ) {
 
@@ -463,7 +463,7 @@ sub analysis_delly_reformat {
                             FILEHANDLE       => $XARGSFILEHANDLE,
                             infile_paths_ref => \@file_paths,
                             min_size         => 0,
-                            max_size         => $SV_MAX_SIZE,
+                            max_size         => $sv_max_size,
                             outfile_path     => $outfile_path_prefix
                               . $UNDERSCORE
                               . $contig
@@ -505,7 +505,7 @@ sub analysis_delly_reformat {
                         FILEHANDLE       => $XARGSFILEHANDLE,
                         infile_paths_ref => \@file_paths,
                         min_size         => 0,
-                        max_size         => $SV_MAX_SIZE,
+                        max_size         => $sv_max_size,
                         outfile_path     => $outfile_path_prefix
                           . $UNDERSCORE
                           . $sv_type
