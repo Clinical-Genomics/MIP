@@ -230,9 +230,9 @@ if ( $parameter{skip_program} ) {
 ## Remove all programs except those selected from installation
 if ( $parameter{select_program} ) {
     my @programs = (
-        keys $parameter{shell},
-        keys $parameter{bioconda},
-        keys $parameter{pip}
+        keys %{$parameter{shell}},
+        keys %{$parameter{bioconda}},
+        keys %{$parameter{pip}}
     );
     my @programs_to_skip =
       array_minus( @programs, @{ $parameter{select_program} } );
