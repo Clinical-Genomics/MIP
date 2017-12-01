@@ -438,19 +438,21 @@ sub finish_bioconda_package_install {
 ## Function  : Custom solutions to finish the install of BWA, SnpEff, Manta and GATK
 ## Returns   :
 ## Arguments : $bioconda_packages_href     => Hash with bioconda packages {REF}
-##           : $snpeff_genome_versions_ref => Array with the genome versions for the snpeff databases {REF}
+##           : $conda_env                  => Name of conda env
 ##           : $conda_env_path             => Path to conda environment
 ##           : $FILEHANDLE                 => Filehandle to write to
-##           : $conda_env                  => Name of conda env
+##           : $snpeff_genome_versions_ref => Array with the genome versions for the snpeff databases {REF}
+##           : $quiet                      => Log only warnings and above
+##           : $verbose                    => Log debug messages
 
     my ($arg_href) = @_;
 
     ## Flatten arguments
     my $bioconda_packages_href;
-    my $snpeff_genome_versions_ref;
+    my $conda_env;
     my $conda_env_path;
     my $FILEHANDLE;
-    my $conda_env;
+    my $snpeff_genome_versions_ref;
     my $quiet;
     my $verbose;
 
@@ -462,10 +464,9 @@ sub finish_bioconda_package_install {
             strict_type => 1,
             store       => \$bioconda_packages_href
         },
-        snpeff_genome_versions_ref => {
-            required    => 1,
-            strict_type => 1,
-            store       => \$snpeff_genome_versions_ref
+        conda_env => {
+            required => 1,
+            store    => \$conda_env,
         },
         conda_env_path => {
             required    => 1,
@@ -478,9 +479,12 @@ sub finish_bioconda_package_install {
             defined  => 1,
             store    => \$FILEHANDLE
         },
-        conda_env => {
-            required => 1,
-            store    => \$conda_env,
+        snpeff_genome_versions_ref => {
+            required    => 1,
+            default     => [],
+            defined     => 1,
+            strict_type => 1,
+            store       => \$snpeff_genome_versions_ref
         },
         verbose => {
             allow => [ undef, 0, 1 ],
@@ -543,16 +547,11 @@ sub finish_bioconda_package_install {
         say {$FILEHANDLE} q{## Custom SnpEff solutions};
 
         ## Get the full version, including patch for snpeff
-        my $command =
-            qq{conda search --spec snpeff=$bioconda_packages_href->{snpeff}}
-          . $SPACE
-          . qq{| grep -wo '$bioconda_packages_href->{snpeff}.' | tail -1};
-        my $version;
-        run(
-            command => $command,
-            buffer  => \$version
+        my $version = _get_full_snpeff_version(
+            {
+                snpeff_version => $bioconda_packages_href->{snpeff},
+            }
         );
-        chomp $version;
 
       SNPEFF_GENOME_VERSION:
         foreach my $genome_version ( @{$snpeff_genome_versions_ref} ) {
@@ -885,4 +884,51 @@ sub _get_conda_dir_path {
 
 }
 
+sub _get_full_snpeff_version {
+## Function  : Get the snpeff version together with patch that are to be installed via Conda
+## Returns   : $version
+## Arguments : $snpeff_version => Main snpeff version number
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $snpeff_version;
+
+    my $tmpl = {
+        snpeff_version => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$snpeff_version,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $command =
+
+      # Get tpackages that will be installed
+      qq{conda install --dry-run snpeff=$snpeff_version}
+
+      # Isolate the snpeff installation
+      . q{ | grep 'snpeff' | }
+
+      # Loop over snpeff line and print the version number(s)
+      . q?perl -nae 'foreach (@F)?
+      . q?{ print $_ . "\n" if /?
+      . qq?$snpeff_version/}'?
+
+      # Get the last of the version number
+      . q{ | tail -1 };
+
+    my $version;
+    run(
+        command => $command,
+        buffer  => \$version
+    );
+
+    chomp $version;
+
+    return $version;
+}
 1;
