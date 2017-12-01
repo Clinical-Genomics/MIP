@@ -22,6 +22,7 @@ use List::Util qw{ any };
 ## CPANM
 use Readonly;
 use YAML;
+use Array::Utils qw{ array_minus };
 
 ## MIPs lib/
 #Add MIPs internal lib
@@ -66,7 +67,7 @@ Readonly my $UNDERSCORE => q{_};
 my $config_file = catfile( $Bin, qw{ definitions install_parameters.yaml} );
 my %parameter = load_yaml( { yaml_file => $config_file } );
 
-our $VERSION = q{1.2.25};
+our $VERSION = q{1.2.26};
 
 GetOptions(
     q{see|bash_set_errexit}    => \$parameter{bash_set_errexit},
@@ -79,13 +80,13 @@ GetOptions(
     q{pyv|python_version=s}    => \$parameter{conda_packages}{python},
 
     # SHELL
-    q{psh|prefer_shell}     => \$parameter{prefer_shell},
-    q{sp|select_programs:s} => \@{ $parameter{select_programs} },
-    q{pic|picard:s}         => \$parameter{shell}{picard}{version},
-    q{sbb|sambamba:s}       => \$parameter{shell}{sambamba}{version},
-    q{bet|bedtools:s}       => \$parameter{shell}{bedtools}{version},
-    q{vt|vt:s}              => \$parameter{shell}{vt}{version},
-    q{plk|plink2:s}         => \$parameter{shell}{plink2}{version},
+    q{psh|prefer_shell}   => \$parameter{prefer_shell},
+    q{si|shell_install:s} => \@{ $parameter{shell_install} },
+    q{pic|picard:s}       => \$parameter{shell}{picard}{version},
+    q{sbb|sambamba:s}     => \$parameter{shell}{sambamba}{version},
+    q{bet|bedtools:s}     => \$parameter{shell}{bedtools}{version},
+    q{vt|vt:s}            => \$parameter{shell}{vt}{version},
+    q{plk|plink2:s}       => \$parameter{shell}{plink2}{version},
     q{snpg|snpeff_genome_versions:s{,}} => sub {
         @{ $parameter{shell}{snpeff}{snpeff_genome_versions} } =
           split /,/xms, $ARG[1];
@@ -121,6 +122,7 @@ GetOptions(
         exit;
     },
     q{nup|noupdate}        => \$parameter{noupdate},
+    q{sp|select_program:s} => \@{ $parameter{select_program} },
     q{skip|skip_program:s} => \@{ $parameter{skip_program} },
     q{l|log:s}             => \$parameter{log_file},
     q{q|quiet}             => \$parameter{quiet},
@@ -225,14 +227,31 @@ if ( $parameter{skip_program} ) {
         delete $parameter{pip}{$program};
     }
 }
+## Remove all programs except those selected from installation
+if ( $parameter{select_program} ) {
+    my @programs = (
+        keys $parameter{shell},
+        keys $parameter{bioconda},
+        keys $parameter{pip}
+    );
+    my @programs_to_skip =
+      array_minus( @programs, @{ $parameter{select_program} } );
+
+  PROGRAM:
+    foreach my $program (@programs_to_skip) {
+        delete $parameter{shell}{$program};
+        delete $parameter{bioconda}{$program};
+        delete $parameter{pip}{$program};
+    }
+}
 
 ## Check whether the user wants to do a shell installation of some or all overlapping bioconda packages
 my @shell_programs_to_install = get_programs_for_shell_installation(
     {
-        shell_programs_href       => $parameter{shell},
-        conda_programs_href       => $parameter{bioconda},
-        shell_select_programs_ref => $parameter{select_programs},
-        prefer_shell              => $parameter{prefer_shell},
+        shell_programs_href        => $parameter{shell},
+        conda_programs_href        => $parameter{bioconda},
+        shell_install_programs_ref => $parameter{shell_install},
+        prefer_shell               => $parameter{prefer_shell},
     }
 );
 
@@ -372,7 +391,7 @@ sub build_usage {
 
     ## SHELL
     -psh/--prefer_shell             Shell will be used for overlapping shell and biconda installations (Supply flag to enable)
-    -sp/--select_programs           Install supplied programs via shell e.g. -sp bedtools -sp picard (Default: "")
+    -si/--shell_install             Install supplied programs via shell e.g. -si bedtools -si picard (Default: "")
     -pic/--picard                   Set the picard version (Default: "2.5.9"),
     -sbb/--sambamba                 Set the sambamba version (Default: "0.6.6")
     -bet/--bedtools                 Set the bedtools version (Default: "2.26.0")
@@ -398,6 +417,7 @@ sub build_usage {
     -ppd/--print_parameters_default Print the parameter defaults
     -nup/--noupdate                 Do not update already installed programs (Supply flag to enable)
     -skip/--skip_program            Exclude a default program from installation
+    -sp/--select_program            Only install selected program(s) (e.g. -sp bedtools -sp TIDDIT)
     -l/--log                        File for writing log messages (Default: "mip_install_TIMESTAMP.log")
     -q/--quiet                      Quiet (Supply flag to enable; no output from individual program that has a quiet flag)
     -h/--help                       Display this help message
@@ -520,7 +540,7 @@ sub get_programs_for_shell_installation {
 ## Returns   : @shell_programs
 ## Arguments : $shell_programs_href       => Hash with shell programs {REF}
 ##           : $conda_programs_href       => Hash with conda progrmas {REF}
-##           : $shell_select_programs_ref => Array with programs selected for shell installation {REF}
+##           : $shell_install_programs_ref => Array with programs selected for shell installation {REF}
 ##           : $prefer_shell              => Path to conda environment
 
     my ($arg_href) = @_;
@@ -528,7 +548,7 @@ sub get_programs_for_shell_installation {
     ## Flatten argument(s)
     my $shell_programs_href;
     my $conda_programs_href;
-    my $shell_select_programs_ref;
+    my $shell_install_programs_ref;
     my $prefer_shell;
 
     my $tmpl = {
@@ -546,12 +566,12 @@ sub get_programs_for_shell_installation {
             strict_type => 1,
             store       => \$conda_programs_href,
         },
-        shell_select_programs_ref => {
+        shell_install_programs_ref => {
             required    => 1,
             defined     => 1,
             default     => [],
             strict_type => 1,
-            store       => \$shell_select_programs_ref,
+            store       => \$shell_install_programs_ref,
         },
         prefer_shell => {
             required    => 1,
@@ -571,18 +591,18 @@ sub get_programs_for_shell_installation {
     if ($prefer_shell) {
 
         # Only get the selected programs otherwise leave the array unaltered
-        if ( @{$shell_select_programs_ref} ) {
+        if ( @{$shell_install_programs_ref} ) {
 
             # Get the intersect between the two arrays
             @shell_programs =
-              intersect( @shell_programs, @{$shell_select_programs_ref} );
+              intersect( @shell_programs, @{$shell_install_programs_ref} );
         }
     }
-    elsif ( @{$shell_select_programs_ref} ) {
+    elsif ( @{$shell_install_programs_ref} ) {
 
         # Assert that the selected program has shell install instructions.
         my @faulty_selects =
-          array_minus( @{$shell_select_programs_ref}, @shell_programs );
+          array_minus( @{$shell_install_programs_ref}, @shell_programs );
         if (@faulty_selects) {
             $log->fatal(
                 q{No shell installation instructions available for}
@@ -599,7 +619,7 @@ sub get_programs_for_shell_installation {
 
         # Add the selected program(s) and remove possible duplicates
         @shell_programs =
-          unique( @shell_only_programs, @{$shell_select_programs_ref} );
+          unique( @shell_only_programs, @{$shell_install_programs_ref} );
     }
     else {
         # If no shell preferences only add programs lacking conda counterpart
