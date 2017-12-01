@@ -1,18 +1,18 @@
 package MIP::Recipes::Analysis::Rcoverageplots;
 
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catdir catfile devnull };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use autodie qw{ :all };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-use File::Spec::Functions qw{ catdir catfile devnull };
 
 ## CPANM
+use autodie qw{ :all };
 use Readonly;
 
 BEGIN {
@@ -21,14 +21,14 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_rcoverageplots };
 
 }
 
-##Constants
+## Constants
 Readonly my $AMPERSAND  => q{&};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $UNDERSCORE => q{_};
@@ -37,49 +37,42 @@ sub analysis_rcoverageplots {
 
 ## Function : Generates sbatch scripts for R scripts: 1. covplots_genome.R 2. covplots_exome.R; on files generated from bedtools genomecov.
 ## Returns  :
-## Arguments: $parameter_href          => Parameter hash {REF}
-##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $sample_info_href        => Info on samples and family hash {REF}
-##          : $file_info_href          => File info hash {REF}
-##          : $lane_href               => The lane info hash {REF}
-##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $job_id_href             => Job id hash {REF}
-##          : $sample_id               => Sample id
-##          : $insample_directory      => In sample directory
-##          : $outsample_directory     => Out sample directory
-##          : $program_name            => Program name
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id
-##          : $temp_directory          => Temporary directory
+##          : $file_info_href          => File info hash {REF}
+##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
+##          : $insample_directory      => In sample directory
+##          : $job_id_href             => Job id hash {REF}
+##          : $lane_href               => The lane info hash {REF}
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
+##          : $outsample_directory     => Out sample directory
+##          : $parameter_href          => Parameter hash {REF}
+##          : $program_name            => Program name
+##          : $sample_id               => Sample id
+##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $temp_directory          => Temporary directory
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
     my $file_info_href;
-    my $lane_href;
     my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $sample_id;
     my $insample_directory;
+    my $job_id_href;
+    my $lane_href;
     my $outsample_directory;
+    my $parameter_href;
     my $program_name;
+    my $sample_id;
+    my $sample_info_href;
 
     ## Default(s)
     my $family_id;
-    my $temp_directory;
     my $outaligner_dir;
+    my $temp_directory;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
@@ -87,19 +80,10 @@ sub analysis_rcoverageplots {
             strict_type => 1,
             store       => \$active_parameter_href
         },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
+        family_id => {
+            default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$sample_info_href
-        },
-        lane_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$lane_href
+            store       => \$family_id,
         },
         file_info_href => {
             required    => 1,
@@ -115,6 +99,12 @@ sub analysis_rcoverageplots {
             strict_type => 1,
             store       => \$infile_lane_prefix_href
         },
+        insample_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$insample_directory,
+        },
         job_id_href => {
             required    => 1,
             defined     => 1,
@@ -122,17 +112,17 @@ sub analysis_rcoverageplots {
             strict_type => 1,
             store       => \$job_id_href
         },
-        sample_id => {
+        lane_href => {
             required    => 1,
             defined     => 1,
+            default     => {},
             strict_type => 1,
-            store       => \$sample_id
+            store       => \$lane_href
         },
-        insample_directory => {
-            required    => 1,
-            defined     => 1,
+        outaligner_dir => {
+            default     => $arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$insample_directory,
+            store       => \$outaligner_dir
         },
         outsample_directory => {
             required    => 1,
@@ -140,32 +130,43 @@ sub analysis_rcoverageplots {
             strict_type => 1,
             store       => \$outsample_directory,
         },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href
+        },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$program_name
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
+        sample_id => {
+            required    => 1,
+            defined     => 1,
             strict_type => 1,
-            store       => \$family_id,
+            store       => \$sample_id
+        },
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
             store       => \$temp_directory
         },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_merged_infile_prefix };
+    use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_dead_end };
     use MIP::Program::Qc::Rcoverageplots qw{ covplots_genome };
@@ -180,6 +181,12 @@ sub analysis_rcoverageplots {
 
     ## Alias
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
+    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_program_name      => $mip_program_name,
+        }
+    );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -203,12 +210,15 @@ sub analysis_rcoverageplots {
     my ($file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
             directory_id          => $sample_id,
-            program_name          => $program_name,
+            core_number           => $core_number,
+            FILEHANDLE            => $FILEHANDLE,
+            job_id_href           => $job_id_href,
+            process_time          => $time,
             program_directory => catfile( $outaligner_dir, q{coveragereport} ),
-            temp_directory    => $temp_directory,
+            program_name      => $program_name,
+            source_environment_commands_ref => [$source_environment_cmd],
+            temp_directory                  => $temp_directory,
         }
     );
 
@@ -216,17 +226,17 @@ sub analysis_rcoverageplots {
       catfile( $insample_directory, $merged_infile_prefix . $infile_tag );
     covplots_genome(
         {
+            FILEHANDLE  => $FILEHANDLE,
             infile_path => $infile_path,
-            sample_id   => $sample_id,
             max_coverage_depth =>
               $active_parameter_href->{bedtools_genomecov_max_coverage},
             outdirectory_path => $outsample_directory,
-            FILEHANDLE        => $FILEHANDLE,
+            sample_id         => $sample_id,
         }
     );
 
-    say $FILEHANDLE $AMPERSAND, $NEWLINE;
-    say $FILEHANDLE q{wait}, $NEWLINE;
+    say {$FILEHANDLE} $AMPERSAND, $NEWLINE;
+    say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     close $FILEHANDLE;
 
@@ -234,13 +244,13 @@ sub analysis_rcoverageplots {
 
         slurm_submit_job_sample_id_dependency_dead_end(
             {
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
                 family_id               => $family_id,
-                sample_id               => $sample_id,
-                path                    => $job_id_chain,
-                sbatch_file_name        => $file_path,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
                 log                     => $log,
+                path                    => $job_id_chain,
+                sample_id               => $sample_id,
+                sbatch_file_name        => $file_path,
             }
         );
     }

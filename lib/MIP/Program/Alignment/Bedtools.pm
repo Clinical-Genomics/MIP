@@ -1,16 +1,21 @@
 package MIP::Program::Alignment::Bedtools;
 
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use Carp;
-use utf8;    #Allow unicode characters in this script
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
 
-use FindBin qw{$Bin};    # Find directory of script
-use File::Basename qw{dirname};
-use File::Spec::Functions qw{catdir};
+## CPANM
+use Readonly;
+
+## MIPs lib/
+use MIP::Unix::Standard_streams qw{unix_standard_streams};
+use MIP::Unix::Write_to_file qw{unix_write_to_file};
 
 BEGIN {
     require Exporter;
@@ -19,60 +24,54 @@ BEGIN {
     our $VERSION = 1.01;
 
     # Inherit from Exporter to export functions and variables
-    use base qw {Exporter};
+    use base qw { Exporter };
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{bedtools_genomecov};
+    our @EXPORT_OK = qw{ bedtools_genomecov };
 
 }
-
-## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
-use MIP::Unix::Standard_streams qw{unix_standard_streams};
-use MIP::Unix::Write_to_file qw{unix_write_to_file};
-
-use Params::Check qw{check allow last_error};
-use Readonly;
 
 ## Constants
 Readonly my $SPACE => q{ };
 
 sub bedtools_genomecov {
 
-## bedtools_genomecov
-
 ## Function : Perl wrapper for writing bedtools genomecov recipe to $FILEHANDLE. Based on bedtools 2.26.0.
 ## Returns  : "@commands"
-## Arguments: $infile_path, $stdoutfile_path, $referencefile_path, $stderrfile_path, $FILEHANDLE, $max_coverage
+## Arguments: $FILEHANDLE             => Sbatch filehandle to write to
 ##          : $infile_path            => Infile paths
-##          : $stdoutfile_path         => Outfile path
+##          : $max_coverage           => Combine all positions with a depth >= max into a single bin in the histogram
 ##          : $referencefile_path     => Genome reference file
 ##          : $stderrfile_path        => Stderrfile path
-##          : $FILEHANDLE             => Sbatch filehandle to write to
-##          : $max_coverage           => Combine all positions with a depth >= max into a single bin in the histogram
 ##          : $stderrfile_path_append => Stderrfile path append
+##          : $stdoutfile_path        => Outfile path
 
     my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $infile_path;
+    my $referencefile_path;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
 
     ## Default(s)
     my $max_coverage;
 
-    ## Flatten argument(s)
-    my $infile_path;
-    my $stdoutfile_path;
-    my $referencefile_path;
-    my $stderrfile_path;
-    my $FILEHANDLE;
-    my $stderrfile_path_append;
-
     my $tmpl = {
+        FILEHANDLE  => { store => \$FILEHANDLE },
         infile_path => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$infile_path
         },
-        stdoutfile_path    => { strict_type => 1, store => \$stdoutfile_path },
+        max_coverage => {
+            allow       => qr/^\d+$/,
+            strict_type => 1,
+            store       => \$max_coverage
+        },
         referencefile_path => {
             required    => 1,
             defined     => 1,
@@ -82,12 +81,7 @@ sub bedtools_genomecov {
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
         stderrfile_path_append =>
           { strict_type => 1, store => \$stderrfile_path_append },
-        FILEHANDLE   => { store => \$FILEHANDLE },
-        max_coverage => {
-            allow       => qr/^\d+$/,
-            strict_type => 1,
-            store       => \$max_coverage
-        },
+        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
@@ -96,7 +90,7 @@ sub bedtools_genomecov {
     my @commands = qw{bedtools genomecov};
 
     ## Options
-    if ( defined $max_coverage ) {
+    if ($max_coverage) {
 
         push @commands, q{-max} . $SPACE . $max_coverage;
     }
@@ -104,10 +98,7 @@ sub bedtools_genomecov {
     ## Infile
     push @commands, q{-ibam} . $SPACE . $infile_path;
 
-    if ($referencefile_path) {
-
-        push @commands, q{-g} . $SPACE . $referencefile_path;
-    }
+    push @commands, q{-g} . $SPACE . $referencefile_path;
 
     # Redirect stderr output to program specific stderr file
     push @commands,

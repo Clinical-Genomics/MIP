@@ -1,19 +1,19 @@
 package MIP::Recipes::Analysis::Xargs;
 
-use strict;
-use warnings;
-use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use autodie qw{ :all };
-use charnames qw{ :full :short };
 use Carp;
+use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
 use File::Basename qw{ fileparse };
 use File::Spec::Functions qw{ catdir catfile };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
+use strict;
+use utf8;
+use warnings;
+use warnings qw{ FATAL utf8 };
 
 ## CPANM
+use autodie qw{ :all };
 use Readonly;
 
 BEGIN {
@@ -22,14 +22,14 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ xargs_command };
 
 }
 
-##Constants
+## Constants
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $PIPE       => q{|};
@@ -38,67 +38,64 @@ Readonly my $UNDERSCORE => q{_};
 
 sub xargs_command {
 
-##xargs_command
-
 ##Function : Creates the command line for xargs. Writes to sbatch FILEHANDLE and opens xargs FILEHANDLE
-##Returns  : "xargs_file_counter, $xargs_file_path"
-##Arguments: $FILEHANDLE, $XARGSFILEHANDLE, $file_path, $core_number, $first_command, $program_info_path, $memory_allocation, $java_use_large_pages, $temp_directory, $java_jar, $xargs_file_counter
+##Returns  : xargs_file_counter, $xargs_file_path
+##Arguments: $core_number          => Number of cores to use
 ##         : $FILEHANDLE           => Sbatch filehandle to write to
-##         : $XARGSFILEHANDLE      => XARGS filehandle to write to
 ##         : $file_path            => File path
-##         : $core_number          => Number of cores to use
 ##         : $first_command        => Inital command
-##         : $program_info_path    => Program info path
-##         : $memory_allocation    => Memory allocation for java
-##         : $java_use_large_pages => Use java large pages {REF}
-##         : $temp_directory       => Redirect tmp files to java temp {Optional}
 ##         : $java_jar             => Java jar
+##         : $java_use_large_pages => Use java large pages {REF}
+##         : $memory_allocation    => Memory allocation for java
+##         : $program_info_path    => Program info path
+##         : $XARGSFILEHANDLE      => XARGS filehandle to write to
+##         : $temp_directory       => Redirect tmp files to java temp {Optional}
 ##         : $xargs_file_counter   => Xargs file counter
 
     my ($arg_href) = @_;
 
+    ## Flatten argument(s)
+    my $core_number;
+    my $FILEHANDLE;
+    my $file_path;
+    my $first_command;
+    my $java_jar;
+    my $java_use_large_pages;
+    my $memory_allocation;
+    my $program_info_path;
+    my $XARGSFILEHANDLE;
+    my $temp_directory;
+
     ## Default(s)
     my $xargs_file_counter;
 
-    ## Flatten argument(s)
-    my $FILEHANDLE;
-    my $XARGSFILEHANDLE;
-    my $file_path;
-    my $core_number;
-    my $first_command;
-    my $program_info_path;
-    my $memory_allocation;
-    my $java_use_large_pages;
-    my $temp_directory;
-    my $java_jar;
-
     my $tmpl = {
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
-        XARGSFILEHANDLE =>
-          { required => 1, defined => 1, store => \$XARGSFILEHANDLE },
-        file_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$file_path
-        },
         core_number => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$core_number
         },
-        first_command     => { strict_type => 1, store => \$first_command },
-        program_info_path => { strict_type => 1, store => \$program_info_path },
-        memory_allocation => { strict_type => 1, store => \$memory_allocation },
+        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
+        file_path  => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$file_path
+        },
+        first_command        => { strict_type => 1, store => \$first_command },
+        java_jar             => { strict_type => 1, store => \$java_jar },
         java_use_large_pages => {
             default     => 0,
             allow       => [ 0, 1 ],
             strict_type => 1,
             store       => \$java_use_large_pages
         },
-        temp_directory     => { strict_type => 1, store => \$temp_directory },
-        java_jar           => { strict_type => 1, store => \$java_jar },
+        memory_allocation => { strict_type => 1, store => \$memory_allocation },
+        program_info_path => { strict_type => 1, store => \$program_info_path },
+        temp_directory    => { strict_type => 1, store => \$temp_directory },
+        XARGSFILEHANDLE =>
+          { required => 1, defined => 1, store => \$XARGSFILEHANDLE },
         xargs_file_counter => {
             default     => 0,
             allow       => qr/ ^\d+$ /xsm,
@@ -135,8 +132,8 @@ sub xargs_command {
     ## Read xargs command file
     gnu_cat(
         {
-            infile_paths_ref => [$xargs_file_path],
             FILEHANDLE       => $FILEHANDLE,
+            infile_paths_ref => [$xargs_file_path],
         }
     );
 
@@ -149,10 +146,10 @@ sub xargs_command {
         ## Return java core commands
         @commands = java_core(
             {
-                memory_allocation    => $memory_allocation,
-                java_use_large_pages => $java_use_large_pages,
-                temp_directory       => $temp_directory,
                 java_jar             => $java_jar,
+                java_use_large_pages => $java_use_large_pages,
+                memory_allocation    => $memory_allocation,
+                temp_directory       => $temp_directory,
             }
         );
     }
@@ -163,11 +160,11 @@ sub xargs_command {
 
     xargs(
         {
+            FILEHANDLE         => $FILEHANDLE,
+            max_procs          => $core_number,
             shell_commands_ref => \@commands,
             replace_str        => 1,
             verbose            => 1,
-            max_procs          => $core_number,
-            FILEHANDLE         => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;

@@ -1,16 +1,18 @@
 package MIP::Recipes::Analysis::Vt_core;
 
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catdir catfile };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
 
 ## CPANM
+use autodie qw{ :all };
 use Readonly;
 
 BEGIN {
@@ -18,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vt_core analysis_vt_core_rio };
@@ -33,73 +35,113 @@ Readonly my $UNDERSCORE => q{_};
 
 sub analysis_vt_core {
 
-## analysis_vt_core
-
 ## Function : Split multi allelic records into single records and normalize
-## Returns  : ""
-## Arguments: $parameter_href, $active_parameter_href, $infile_lane_prefix_href, $job_id_href, $infile_path, $FILEHANDLE, $contig, $family_id, $human_genome_reference, $outfile_path, $bcftools_output_type, $core_number, $decompose, $normalize, $uniq, $gnu_sed, $program_name, $program_directory, $bgzip, $tabix, $instream, $cmd_break, $xargs_file_path_prefix
-##          : $parameter_href          => Hash with paremters from yaml file {REF}
-##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
+## Returns  :
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $bcftools_output_type    => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
+##          : $bgzip                   => Compress output from vt using bgzip
+##          : $cmd_break               => Command line separator ['"\n\n"'|";"]
+##          : $contig                  => The contig to extract {OPTIONAL, REF}
+##          : $core_number             => The number of cores to allocate
+##          : $decompose               => Vt program decomnpose for splitting multiallelic variants
+##          : $family_id               => The family ID
+##          : $FILEHANDLE              => Filehandle to write to
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $infile_path             => Infile path
-##          : $FILEHANDLE              => Filehandle to write to
-##          : $contig                  => The contig to extract {OPTIONAL, REF}
-##          : $family_id               => The family ID
-##          : $human_genome_reference  => Human genome reference
-##          : $outfile_path            => Outfile path
-##          : $bcftools_output_type    => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
-##          : $core_number             => The number of cores to allocate
-##          : $decompose               => Vt program decomnpose for splitting multiallelic variants
-##          : $normalize               => Vt program normalize for normalizing to reference used in analysis
-##          : $uniq                    => Vt program uniq for removing variant duplication that appear later in file
-##          : $gnu_sed                 => Sed program for changing vcf #FORMAT field in variant vcfs
-##          : $program_name            => Program name
-##          : $program_directory       => Program directory to write to in sbatch script
-##          : $bgzip                   => Compress output from vt using bgzip
-##          : $tabix                   => Index compressed output using tabix
 ##          : $instream                => Data to vt is supplied as a unix pipe
-##          : $cmd_break               => Command line separator ['"\n\n"'|";"]
+##          : $gnu_sed                 => Sed program for changing vcf #FORMAT field in variant vcfs
+##          : $human_genome_reference  => Human genome reference
+##          : $normalize               => Vt program normalize for normalizing to reference used in analysis
+##          : $outfile_path            => Outfile path
+##          : $parameter_href          => Hash with paremters from yaml file {REF}
+##          : $program_directory       => Program directory to write to in sbatch script
+##          : $program_name            => Program name
+##          : $tabix                   => Index compressed output using tabix
+##          : $uniq                    => Vt program uniq for removing variant duplication that appear later in file
 ##          : $xargs_file_path_prefix  => The xargs sbatch script file name {OPTIONAL}
 
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id;
-    my $human_genome_reference;
-    my $outfile_path;
     my $bcftools_output_type;
+    my $bgzip;
+    my $cmd_break;
     my $core_number;
     my $decompose;
-    my $normalize;
-    my $uniq;
+    my $family_id;
     my $gnu_sed;
-    my $program_name;
-    my $program_directory;
-    my $bgzip;
-    my $tabix;
+    my $human_genome_reference;
     my $instream;
-    my $cmd_break;
+    my $normalize;
+    my $outfile_path;
+    my $program_directory;
+    my $program_name;
+    my $tabix;
+    my $uniq;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
+    my $contig;
+    my $FILEHANDLE;
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $infile_path;
-    my $FILEHANDLE;
-    my $contig;
+    my $parameter_href;
     my $xargs_file_path_prefix;
 
     my $tmpl = {
-        parameter_href =>
-          { default => {}, strict_type => 1, store => \$parameter_href },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
             store       => \$active_parameter_href
+        },
+        bcftools_output_type => {
+            default     => q{v},
+            allow       => [qw{ b u z v }],
+            strict_type => 1,
+            store       => \$bcftools_output_type,
+        },
+        bgzip => {
+            default     => 0,
+            allow       => [ undef, 0, 1 ],
+            strict_type => 1,
+            store       => \$bgzip
+        },
+        cmd_break =>
+          { default => $NEWLINE x 2, strict_type => 1, store => \$cmd_break },
+        core_number => {
+            default     => 1,
+            allow       => qr/ ^\d+$ /xsm,
+            strict_type => 1,
+            store       => \$core_number
+        },
+        contig    => { strict_type => 1, store => \$contig },
+        decompose => {
+            default     => 0,
+            allow       => [ undef, 0, 1 ],
+            strict_type => 1,
+            store       => \$decompose
+        },
+        family_id => {
+            default     => $arg_href->{active_parameter_href}{family_id},
+            strict_type => 1,
+            store       => \$family_id
+        },
+        FILEHANDLE => { store => \$FILEHANDLE },
+        gnu_sed    => {
+            default     => 0,
+            allow       => [ undef, 0, 1 ],
+            strict_type => 1,
+            store       => \$gnu_sed
+        },
+        human_genome_reference => {
+            default =>
+              $arg_href->{active_parameter_href}{human_genome_reference},
+            strict_type => 1,
+            store       => \$human_genome_reference
         },
         infile_lane_prefix_href => {
             required    => 1,
@@ -108,86 +150,11 @@ sub analysis_vt_core {
             strict_type => 1,
             store       => \$infile_lane_prefix_href
         },
-        job_id_href =>
-          { default => {}, strict_type => 1, store => \$job_id_href },
         infile_path => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$infile_path
-        },
-        FILEHANDLE => { store => \$FILEHANDLE },
-        xargs_file_path_prefix =>
-          { strict_type => 1, store => \$xargs_file_path_prefix },
-        contig    => { strict_type => 1, store => \$contig },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id
-        },
-        human_genome_reference => {
-            default =>
-              $arg_href->{active_parameter_href}{human_genome_reference},
-            strict_type => 1,
-            store       => \$human_genome_reference
-        },
-        ## Use same path as infile path unless parameter is supplied
-        outfile_path => {
-            default     => $arg_href->{infile_path},
-            strict_type => 1,
-            store       => \$outfile_path,
-        },
-        bcftools_output_type => {
-            default     => q{v},
-            allow       => [qw{ b u z v }],
-            strict_type => 1,
-            store       => \$bcftools_output_type,
-        },
-        core_number => {
-            default     => 1,
-            allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
-            store       => \$core_number
-        },
-        decompose => {
-            default     => 0,
-            allow       => [ undef, 0, 1 ],
-            strict_type => 1,
-            store       => \$decompose
-        },
-        normalize => {
-            default     => 0,
-            allow       => [ undef, 0, 1 ],
-            strict_type => 1,
-            store       => \$normalize
-        },
-        uniq => {
-            default     => 0,
-            allow       => [ undef, 0, 1 ],
-            strict_type => 1,
-            store       => \$uniq
-        },
-        gnu_sed => {
-            default     => 0,
-            allow       => [ undef, 0, 1 ],
-            strict_type => 1,
-            store       => \$gnu_sed
-        },
-        program_name =>
-          { default => q{vt}, strict_type => 1, store => \$program_name },
-        program_directory =>
-          { default => q{vt}, strict_type => 1, store => \$program_directory },
-        bgzip => {
-            default     => 0,
-            allow       => [ undef, 0, 1 ],
-            strict_type => 1,
-            store       => \$bgzip
-        },
-        tabix => {
-            default     => 0,
-            allow       => [ undef, 0, 1 ],
-            strict_type => 1,
-            store       => \$tabix
         },
         instream => {
             default     => 0,
@@ -195,8 +162,40 @@ sub analysis_vt_core {
             strict_type => 1,
             store       => \$instream
         },
-        cmd_break =>
-          { default => $NEWLINE x 2, strict_type => 1, store => \$cmd_break },
+        job_id_href =>
+          { default => {}, strict_type => 1, store => \$job_id_href },
+        ## Use same path as infile path unless parameter is supplied
+        normalize => {
+            default     => 0,
+            allow       => [ undef, 0, 1 ],
+            strict_type => 1,
+            store       => \$normalize
+        },
+        outfile_path => {
+            default     => $arg_href->{infile_path},
+            strict_type => 1,
+            store       => \$outfile_path,
+        },
+        parameter_href =>
+          { default => {}, strict_type => 1, store => \$parameter_href },
+        program_directory =>
+          { default => q{vt}, strict_type => 1, store => \$program_directory },
+        program_name =>
+          { default => q{vt}, strict_type => 1, store => \$program_name },
+        tabix => {
+            default     => 0,
+            allow       => [ undef, 0, 1 ],
+            strict_type => 1,
+            store       => \$tabix
+        },
+        uniq => {
+            default     => 0,
+            allow       => [ undef, 0, 1 ],
+            strict_type => 1,
+            store       => \$uniq
+        },
+        xargs_file_path_prefix =>
+          { strict_type => 1, store => \$xargs_file_path_prefix },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -205,15 +204,16 @@ sub analysis_vt_core {
     use MIP::Gnu::Software::Gnu_sed qw{ gnu_sed };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_no_dependency_add_to_samples };
+    use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_view bcftools_index };
-    use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
     use Program::Variantcalling::Mip qw{ calculate_af max_af };
     use Program::Variantcalling::Vt qw{ decompose normalize vt_uniq };
+    use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
     Readonly my $MAX_RANDOM_NUMBER => 10_000;
+    Readonly my $PROCESS_TIME      => 20;
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -238,13 +238,13 @@ sub analysis_vt_core {
     ( $file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
+            core_number           => $core_number,
             directory_id          => $family_id,
+            FILEHANDLE            => $FILEHANDLE,
+            job_id_href           => $job_id_href,
+            process_time          => $PROCESS_TIME,
             program_name          => $program_name,
             program_directory     => $program_directory,
-            core_number           => $core_number,
-            process_time          => 20,
         }
     );
 
@@ -268,9 +268,9 @@ sub analysis_vt_core {
 
         bcftools_view(
             {
+                FILEHANDLE  => $FILEHANDLE,
                 infile_path => $infile_path,
                 output_type => $bcftools_output_type,
-                FILEHANDLE  => $FILEHANDLE,
             }
         );
     }
@@ -282,8 +282,8 @@ sub analysis_vt_core {
 
         gnu_sed(
             {
-                script     => q{'s/ID=AD,Number=./ID=AD,Number=R/'},
                 FILEHANDLE => $FILEHANDLE,
+                script     => q{'s/ID=AD,Number=./ID=AD,Number=R/'},
             }
         );
     }
@@ -294,10 +294,10 @@ sub analysis_vt_core {
 
         decompose(
             {
-                infile_path         => q{-},
-                stderrfile_path     => $stderrfile_path,
                 FILEHANDLE          => $FILEHANDLE,
+                infile_path         => q{-},
                 smart_decomposition => 1,
+                stderrfile_path     => $stderrfile_path,
             }
         );
     }
@@ -308,12 +308,12 @@ sub analysis_vt_core {
 
         normalize(
             {
-                infile_path                    => q{-},
-                stderrfile_path                => $stderrfile_path,
                 append_stderr_info             => 1,
-                referencefile_path             => $human_genome_reference,
-                no_fail_inconsistent_reference => 1,
                 FILEHANDLE                     => $FILEHANDLE,
+                infile_path                    => q{-},
+                no_fail_inconsistent_reference => 1,
+                referencefile_path             => $human_genome_reference,
+                stderrfile_path                => $stderrfile_path,
             }
         );
     }
@@ -324,10 +324,10 @@ sub analysis_vt_core {
 
         vt_uniq(
             {
-                infile_path        => q{-},
-                stderrfile_path    => $stderrfile_path,
                 append_stderr_info => $append_stderr_info,
                 FILEHANDLE         => $FILEHANDLE,
+                infile_path        => q{-},
+                stderrfile_path    => $stderrfile_path,
             }
         );
     }
@@ -371,8 +371,8 @@ sub analysis_vt_core {
         htslib_tabix(
             {
                 FILEHANDLE  => $FILEHANDLE,
-                infile_path => $tabix_infile_path,
                 force       => 1,
+                infile_path => $tabix_infile_path,
                 preset      => q{vcf},
             }
         );
@@ -381,9 +381,9 @@ sub analysis_vt_core {
         ## Move index in place
         gnu_mv(
             {
+                FILEHANDLE   => $FILEHANDLE,
                 infile_path  => $tabix_infile_path . $tabix_suffix,
                 outfile_path => $outfile_path . $tabix_suffix,
-                FILEHANDLE   => $FILEHANDLE,
             }
         );
         print {$FILEHANDLE} $cmd_break;
@@ -392,13 +392,13 @@ sub analysis_vt_core {
     ## Move processed reference to original place
     gnu_mv(
         {
+            FILEHANDLE  => $FILEHANDLE,
             infile_path => $outfile_path
               . $UNDERSCORE
               . q{splitted}
               . $UNDERSCORE
               . $random_integer,
             outfile_path => $outfile_path,
-            FILEHANDLE   => $FILEHANDLE,
         }
     );
     print {$FILEHANDLE} $cmd_break;
@@ -409,12 +409,12 @@ sub analysis_vt_core {
 
         slurm_submit_job_no_dependency_add_to_samples(
             {
-                job_id_href      => $job_id_href,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
                 family_id        => $family_id,
-                path             => $job_id_chain,
-                sbatch_file_name => $file_path,
+                job_id_href      => $job_id_href,
                 log              => $log,
+                path             => $job_id_chain,
+                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
+                sbatch_file_name => $file_path,
             }
         );
     }
@@ -423,57 +423,54 @@ sub analysis_vt_core {
 
 sub analysis_vt_core_rio {
 
-## analysis_vt_core
-
 ## Function : Split multi allelic records into single records and normalize
-## Returns  : ""
-## Arguments: $active_parameter_href, $infile_path, $FILEHANDLE, $contig, $family_id, $human_genome_reference, $outfile_path, $bcftools_output_type, $core_number, $decompose, $normalize, $uniq, $gnu_sed, $program_name, $program_directory, $bgzip, $tabix, $instream, $cmd_break, $xargs_file_path_prefix
-##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $infile_path             => Infile path
-##          : $FILEHANDLE              => Filehandle to write to
-##          : $contig                  => The contig to extract {OPTIONAL, REF}
-##          : $family_id               => The family ID
-##          : $human_genome_reference  => Human genome reference
-##          : $outfile_path            => Outfile path
+## Returns  :
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $bcftools_output_type    => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
+##          : $bgzip                   => Compress output from vt using bgzip
+##          : $cmd_break               => Command line separator ['"\n\n"'|";"]
+##          : $contig                  => The contig to extract {OPTIONAL, REF}
 ##          : $core_number             => The number of cores to allocate
 ##          : $decompose               => Vt program decomnpose for splitting multiallelic variants
-##          : $normalize               => Vt program normalize for normalizing to reference used in analysis
-##          : $uniq                    => Vt program uniq for removing variant duplication that appear later in file
+##          : $family_id               => The family ID
+##          : $FILEHANDLE              => Filehandle to write to
 ##          : $gnu_sed                 => Sed program for changing vcf #FORMAT field in variant vcfs
-##          : $program_name            => Program name
-##          : $program_directory       => Program directory to write to in sbatch script
-##          : $bgzip                   => Compress output from vt using bgzip
-##          : $tabix                   => Index compressed output using tabix
+##          : $human_genome_reference  => Human genome reference
+##          : $infile_path             => Infile path
 ##          : $instream                => Data to vt is supplied as a unix pipe
-##          : $cmd_break               => Command line separator ['"\n\n"'|";"]
+##          : $normalize               => Vt program normalize for normalizing to reference used in analysis
+##          : $outfile_path            => Outfile path
+##          : $program_directory       => Program directory to write to in sbatch script
+##          : $program_name            => Program name
+##          : $tabix                   => Index compressed output using tabix
+##          : $uniq                    => Vt program uniq for removing variant duplication that appear later in file
 ##          : $xargs_file_path_prefix  => The xargs sbatch script file name {OPTIONAL}
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $family_id;
-    my $human_genome_reference;
-    my $outfile_path;
-    my $bcftools_output_type;
-    my $core_number;
-    my $decompose;
-    my $normalize;
-    my $uniq;
-    my $gnu_sed;
-    my $program_name;
-    my $program_directory;
-    my $bgzip;
-    my $tabix;
-    my $instream;
-    my $cmd_break;
-
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $infile_path;
-    my $FILEHANDLE;
     my $contig;
+    my $FILEHANDLE;
+    my $infile_path;
     my $xargs_file_path_prefix;
+
+    ## Default(s)
+    my $bcftools_output_type;
+    my $bgzip;
+    my $cmd_break;
+    my $core_number;
+    my $decompose;
+    my $family_id;
+    my $gnu_sed;
+    my $human_genome_reference;
+    my $instream;
+    my $normalize;
+    my $outfile_path;
+    my $program_directory;
+    my $program_name;
+    my $tabix;
+    my $uniq;
 
     my $tmpl = {
         active_parameter_href => {
@@ -483,39 +480,21 @@ sub analysis_vt_core_rio {
             strict_type => 1,
             store       => \$active_parameter_href
         },
-        infile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$infile_path
-        },
-        FILEHANDLE => { store => \$FILEHANDLE },
-        xargs_file_path_prefix =>
-          { strict_type => 1, store => \$xargs_file_path_prefix },
-        contig    => { strict_type => 1, store => \$contig },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id
-        },
-        human_genome_reference => {
-            default =>
-              $arg_href->{active_parameter_href}{human_genome_reference},
-            strict_type => 1,
-            store       => \$human_genome_reference
-        },
-        ## Use same path as infile path unless parameter is supplied
-        outfile_path => {
-            default     => $arg_href->{infile_path},
-            strict_type => 1,
-            store       => \$outfile_path,
-        },
         bcftools_output_type => {
             default     => q{v},
             allow       => [qw{ b u z v }],
             strict_type => 1,
             store       => \$bcftools_output_type,
         },
+        bgzip => {
+            default     => 0,
+            allow       => [ undef, 0, 1 ],
+            strict_type => 1,
+            store       => \$bgzip
+        },
+        cmd_break =>
+          { default => $NEWLINE x 2, strict_type => 1, store => \$cmd_break },
+        contig      => { strict_type => 1, store => \$contig },
         core_number => {
             default     => 1,
             allow       => qr/ ^\d+$ /xsm,
@@ -528,39 +507,29 @@ sub analysis_vt_core_rio {
             strict_type => 1,
             store       => \$decompose
         },
-        normalize => {
-            default     => 0,
-            allow       => [ undef, 0, 1 ],
+        family_id => {
+            default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$normalize
+            store       => \$family_id
         },
-        uniq => {
-            default     => 0,
-            allow       => [ undef, 0, 1 ],
-            strict_type => 1,
-            store       => \$uniq
-        },
-        gnu_sed => {
+        FILEHANDLE => { store => \$FILEHANDLE },
+        gnu_sed    => {
             default     => 0,
             allow       => [ undef, 0, 1 ],
             strict_type => 1,
             store       => \$gnu_sed
         },
-        program_name =>
-          { default => q{vt}, strict_type => 1, store => \$program_name },
-        program_directory =>
-          { default => q{vt}, strict_type => 1, store => \$program_directory },
-        bgzip => {
-            default     => 0,
-            allow       => [ undef, 0, 1 ],
+        human_genome_reference => {
+            default =>
+              $arg_href->{active_parameter_href}{human_genome_reference},
             strict_type => 1,
-            store       => \$bgzip
+            store       => \$human_genome_reference
         },
-        tabix => {
-            default     => 0,
-            allow       => [ undef, 0, 1 ],
+        infile_path => {
+            required    => 1,
+            defined     => 1,
             strict_type => 1,
-            store       => \$tabix
+            store       => \$infile_path
         },
         instream => {
             default     => 0,
@@ -568,8 +537,36 @@ sub analysis_vt_core_rio {
             strict_type => 1,
             store       => \$instream
         },
-        cmd_break =>
-          { default => $NEWLINE x 2, strict_type => 1, store => \$cmd_break },
+        normalize => {
+            default     => 0,
+            allow       => [ undef, 0, 1 ],
+            strict_type => 1,
+            store       => \$normalize
+        },
+        ## Use same path as infile path unless parameter is supplied
+        outfile_path => {
+            default     => $arg_href->{infile_path},
+            strict_type => 1,
+            store       => \$outfile_path,
+        },
+        program_directory =>
+          { default => q{vt}, strict_type => 1, store => \$program_directory },
+        program_name =>
+          { default => q{vt}, strict_type => 1, store => \$program_name },
+        xargs_file_path_prefix =>
+          { strict_type => 1, store => \$xargs_file_path_prefix },
+        tabix => {
+            default     => 0,
+            allow       => [ undef, 0, 1 ],
+            strict_type => 1,
+            store       => \$tabix
+        },
+        uniq => {
+            default     => 0,
+            allow       => [ undef, 0, 1 ],
+            strict_type => 1,
+            store       => \$uniq
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -578,12 +575,12 @@ sub analysis_vt_core_rio {
     use MIP::Gnu::Software::Gnu_sed qw{ gnu_sed };
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_view bcftools_index };
-    use Program::Variantcalling::Mip qw{ calculate_af max_af };
     use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
-    use Program::Variantcalling::Vt qw{ decompose normalize vt_uniq };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_no_dependency_add_to_samples };
     use MIP::Script::Setup_script qw{ setup_script };
+    use Program::Variantcalling::Mip qw{ calculate_af max_af };
+    use Program::Variantcalling::Vt qw{ decompose normalize vt_uniq };
 
     ## Constants
     Readonly my $MAX_RANDOM_NUMBER => 10_000;
@@ -621,9 +618,9 @@ sub analysis_vt_core_rio {
 
         bcftools_view(
             {
+                FILEHANDLE  => $FILEHANDLE,
                 infile_path => $infile_path,
                 output_type => $bcftools_output_type,
-                FILEHANDLE  => $FILEHANDLE,
             }
         );
     }
@@ -635,8 +632,8 @@ sub analysis_vt_core_rio {
 
         gnu_sed(
             {
-                script     => q{'s/ID=AD,Number=./ID=AD,Number=R/'},
                 FILEHANDLE => $FILEHANDLE,
+                script     => q{'s/ID=AD,Number=./ID=AD,Number=R/'},
             }
         );
     }
@@ -647,10 +644,10 @@ sub analysis_vt_core_rio {
 
         decompose(
             {
-                infile_path         => q{-},
-                stderrfile_path     => $stderrfile_path,
                 FILEHANDLE          => $FILEHANDLE,
+                infile_path         => q{-},
                 smart_decomposition => 1,
+                stderrfile_path     => $stderrfile_path,
             }
         );
     }
@@ -661,12 +658,12 @@ sub analysis_vt_core_rio {
 
         normalize(
             {
-                infile_path                    => q{-},
-                stderrfile_path                => $stderrfile_path,
                 append_stderr_info             => 1,
-                referencefile_path             => $human_genome_reference,
-                no_fail_inconsistent_reference => 1,
                 FILEHANDLE                     => $FILEHANDLE,
+                infile_path                    => q{-},
+                no_fail_inconsistent_reference => 1,
+                referencefile_path             => $human_genome_reference,
+                stderrfile_path                => $stderrfile_path,
             }
         );
     }
@@ -677,10 +674,10 @@ sub analysis_vt_core_rio {
 
         vt_uniq(
             {
-                infile_path        => q{-},
-                stderrfile_path    => $stderrfile_path,
                 append_stderr_info => $append_stderr_info,
                 FILEHANDLE         => $FILEHANDLE,
+                infile_path        => q{-},
+                stderrfile_path    => $stderrfile_path,
             }
         );
     }
@@ -724,8 +721,8 @@ sub analysis_vt_core_rio {
         htslib_tabix(
             {
                 FILEHANDLE  => $FILEHANDLE,
-                infile_path => $tabix_infile_path,
                 force       => 1,
+                infile_path => $tabix_infile_path,
                 preset      => q{vcf},
             }
         );
@@ -734,9 +731,9 @@ sub analysis_vt_core_rio {
         ## Move index in place
         gnu_mv(
             {
+                FILEHANDLE   => $FILEHANDLE,
                 infile_path  => $tabix_infile_path . $tabix_suffix,
                 outfile_path => $outfile_path . $tabix_suffix,
-                FILEHANDLE   => $FILEHANDLE,
             }
         );
         print {$FILEHANDLE} $cmd_break;
@@ -745,13 +742,13 @@ sub analysis_vt_core_rio {
     ## Move processed reference to original place
     gnu_mv(
         {
+            FILEHANDLE  => $FILEHANDLE,
             infile_path => $outfile_path
               . $UNDERSCORE
               . q{splitted}
               . $UNDERSCORE
               . $random_integer,
             outfile_path => $outfile_path,
-            FILEHANDLE   => $FILEHANDLE,
         }
     );
     print {$FILEHANDLE} $cmd_break;

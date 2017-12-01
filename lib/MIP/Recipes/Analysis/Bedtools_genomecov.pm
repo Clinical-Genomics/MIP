@@ -267,7 +267,7 @@ sub analysis_bedtools_genomecov {
             infile_path => $file_path_prefix . $infile_suffix,
             max_coverage =>
               $active_parameter_href->{bedtools_genomecov_max_coverage},
-            outfile_path => $outfile_path_prefix,
+            stdoutfile_path => $outfile_path_prefix,
             referencefile_path =>
               $active_parameter_href->{human_genome_reference},
         }
