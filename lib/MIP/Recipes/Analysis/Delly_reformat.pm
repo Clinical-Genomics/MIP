@@ -162,9 +162,9 @@ sub analysis_delly_reformat {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ### SET IMPORT IN ALPHABETIC ORDER
     use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
+    use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Program::Variantcalling::Bcftools
@@ -188,12 +188,15 @@ sub analysis_delly_reformat {
 
     ## Unpack parameters
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my $core_number =
-      $active_parameter_href->{module_core_number}{$mip_program_name};
-    my $time = $active_parameter_href->{module_time}{$mip_program_name};
     my $program_outdirectory_name =
       $parameter_href->{$mip_program_name}{outdir_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
+    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_program_name      => $mip_program_name,
+        }
+    );
 
     ## Filehandles
     # Create anonymous filehandles
@@ -206,15 +209,16 @@ sub analysis_delly_reformat {
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ( $file_path, $program_info_path ) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $family_id,
-            program_name          => $program_name,
-            program_directory     => $program_directory,
-            core_number           => $core_number,
-            process_time          => $time,
-            temp_directory        => $temp_directory,
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $core_number,
+            directory_id                    => $family_id,
+            FILEHANDLE                      => $FILEHANDLE,
+            job_id_href                     => $job_id_href,
+            process_time                    => $time,
+            program_directory               => $program_directory,
+            program_name                    => $program_name,
+            source_environment_commands_ref => [$source_environment_cmd],
+            temp_directory                  => $temp_directory,
         }
     );
 
@@ -225,21 +229,23 @@ sub analysis_delly_reformat {
     my $outfile_tag =
       $file_info_href->{$family_id}{$mip_program_name}{file_tag};
 
+    ### Assign suffix
     ## Files
     my $outfile_prefix = $family_id . $outfile_tag . $UNDERSCORE . $call_type;
-    my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
-    my $file_suffix = $parameter_href->{$mip_program_name}{outfile_suffix};
+    my $file_suffix    = $parameter_href->{$mip_program_name}{outfile_suffix};
 
-    ### Assign suffix
     ## Set file suffix for next module within jobid chain
     my $outfile_suffix = set_file_suffix(
         {
+            file_suffix    => $file_suffix,
+            job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
-            job_id_chain   => $job_id_chain,
-            file_suffix    => $file_suffix,
         }
     );
+
+    ## Paths
+    my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
 
     ### Update contigs
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
@@ -257,6 +263,7 @@ sub analysis_delly_reformat {
     my %suffix;
     my @program_tag_keys = (qw{ pgatk_baserecalibration pdelly_call });
 
+  SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
         ## Assign directories
@@ -269,6 +276,7 @@ sub analysis_delly_reformat {
             $sample_id, $outaligner_dir,
             $parameter_href->{pdelly_call}{outdir_name} );
 
+      INFILE_TAG:
         foreach my $infile_tag_key (@program_tag_keys) {
 
             ## Add merged infile name prefix after merging all BAM files per sample_id
@@ -297,8 +305,8 @@ sub analysis_delly_reformat {
                 $suffix{$infile_tag_key} = get_file_suffix(
                     {
                         parameter_href => $parameter_href,
-                        suffix_key     => q{outfile_suffix},
                         program_name   => $infile_tag_key,
+                        suffix_key     => q{outfile_suffix},
                     }
                 );
 
@@ -320,17 +328,17 @@ sub analysis_delly_reformat {
                           q{## Copy file(s) to temporary directory};
                         ($xargs_file_counter) = xargs_migrate_contig_files(
                             {
-                                FILEHANDLE         => $FILEHANDLE,
-                                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                                contigs_ref        => \@contigs,
-                                file_path          => $file_path,
-                                program_info_path  => $program_info_path,
-                                core_number        => $core_number,
-                                xargs_file_counter => $xargs_file_counter,
+                                contigs_ref => \@contigs,
+                                core_number => $core_number,
+                                FILEHANDLE  => $FILEHANDLE,
+                                file_ending => $file_ending,
+                                file_path   => $file_path,
+                                indirectory => $insample_directory_bcf,
                                 infile => $merged_infile_prefix . $infile_tag,
-                                indirectory    => $insample_directory_bcf,
-                                file_ending    => $file_ending,
-                                temp_directory => $temp_directory,
+                                program_info_path  => $program_info_path,
+                                temp_directory     => $temp_directory,
+                                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+                                xargs_file_counter => $xargs_file_counter,
                             }
                         );
                     }
@@ -353,15 +361,16 @@ sub analysis_delly_reformat {
                     }
                 }
             }
-            else {    #BAMs
+            else {
 
+                #BAMs
                 ## Assign suffix
                 $suffix{$infile_tag_key} = get_file_suffix(
                     {
-                        parameter_href => $parameter_href,
-                        suffix_key     => q{alignment_file_suffix},
                         jobid_chain =>
                           $parameter_href->{$infile_tag_key}{chain},
+                        parameter_href => $parameter_href,
+                        suffix_key     => q{alignment_file_suffix},
                     }
                 );
 
@@ -387,18 +396,18 @@ sub analysis_delly_reformat {
                 say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
                 ($xargs_file_counter) = xargs_migrate_contig_files(
                     {
-                        FILEHANDLE        => $FILEHANDLE,
-                        XARGSFILEHANDLE   => $XARGSFILEHANDLE,
-                        contigs_ref       => \@contigs,
-                        file_path         => $file_path,
-                        program_info_path => $program_info_path,
-                        core_number       => ( $core_number - 1 )
+                        contigs_ref => \@contigs,
+                        core_number => ( $core_number - 1 )
                         ,    # Compensate for cp of entire BAM TRA, see above
+                        FILEHANDLE  => $FILEHANDLE,
+                        file_ending => $file_ending,
+                        file_path   => $file_path,
+                        indirectory => $insample_directory_bam,
+                        infile      => $merged_infile_prefix . $infile_tag,
+                        program_info_path  => $program_info_path,
+                        temp_directory     => $temp_directory,
+                        XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                         xargs_file_counter => $xargs_file_counter,
-                        infile         => $merged_infile_prefix . $infile_tag,
-                        indirectory    => $insample_directory_bam,
-                        file_ending    => $file_ending,
-                        temp_directory => $temp_directory,
                     }
                 );
             }
@@ -420,17 +429,19 @@ sub analysis_delly_reformat {
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
+                core_number        => $core_number,
                 FILEHANDLE         => $FILEHANDLE,
-                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                 file_path          => $file_path,
                 program_info_path  => $program_info_path,
-                core_number        => $core_number,
+                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                 xargs_file_counter => $xargs_file_counter,
             }
         );
 
       SV_TYPE:
         foreach my $sv_type ( @{ $active_parameter_href->{delly_types} } ) {
+
+            Readonly my $SV_MAX_SIZE = 100_000_000;
 
             if ( $sv_type ne q{TRA} ) {
 
@@ -449,20 +460,16 @@ sub analysis_delly_reformat {
 
                     delly_merge(
                         {
+                            FILEHANDLE       => $XARGSFILEHANDLE,
                             infile_paths_ref => \@file_paths,
+                            min_size         => 0,
+                            max_size         => $SV_MAX_SIZE,
                             outfile_path     => $outfile_path_prefix
                               . $UNDERSCORE
                               . $contig
                               . $UNDERSCORE
                               . $sv_type
                               . $DOT . q{bcf},
-                            stdoutfile_path => $xargs_file_path_prefix
-                              . $DOT
-                              . $contig
-                              . $DOT
-                              . $sv_type
-                              . $DOT
-                              . q{stdout.txt},
                             stderrfile_path => $xargs_file_path_prefix
                               . $DOT
                               . $contig
@@ -470,10 +477,14 @@ sub analysis_delly_reformat {
                               . $sv_type
                               . $DOT
                               . q{stderr.txt},
-                            sv_type    => $sv_type,
-                            min_size   => 0,
-                            max_size   => 100000000,
-                            FILEHANDLE => $XARGSFILEHANDLE,
+                            stdoutfile_path => $xargs_file_path_prefix
+                              . $DOT
+                              . $contig
+                              . $DOT
+                              . $sv_type
+                              . $DOT
+                              . q{stdout.txt},
+                            sv_type => $sv_type,
                         }
                     );
                     say {$XARGSFILEHANDLE} $NEWLINE;
@@ -491,25 +502,25 @@ sub analysis_delly_reformat {
 
                 delly_merge(
                     {
+                        FILEHANDLE       => $XARGSFILEHANDLE,
                         infile_paths_ref => \@file_paths,
+                        min_size         => 0,
+                        max_size         => $SV_MAX_SIZE,
                         outfile_path     => $outfile_path_prefix
                           . $UNDERSCORE
                           . $sv_type
                           . $DOT . q{bcf},
-                        stdoutfile_path => $xargs_file_path_prefix
-                          . $DOT
-                          . $sv_type
-                          . $DOT
-                          . q{stdout.txt},
                         stderrfile_path => $xargs_file_path_prefix
                           . $DOT
                           . $sv_type
                           . $DOT
                           . q{stderr.txt},
-                        sv_type    => $sv_type,
-                        min_size   => 0,
-                        max_size   => 100000000,
-                        FILEHANDLE => $XARGSFILEHANDLE,
+                        stdoutfile_path => $xargs_file_path_prefix
+                          . $DOT
+                          . $sv_type
+                          . $DOT
+                          . q{stdout.txt},
+                        sv_type => $sv_type,
                     }
                 );
                 say {$XARGSFILEHANDLE} $NEWLINE;
@@ -525,11 +536,11 @@ sub analysis_delly_reformat {
             ## Create file commands for xargs
             ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
                 {
+                    core_number        => $core_number,
                     FILEHANDLE         => $FILEHANDLE,
-                    XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                     file_path          => $file_path,
                     program_info_path  => $program_info_path,
-                    core_number        => $core_number,
+                    XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                     xargs_file_counter => $xargs_file_counter,
                 }
             );
@@ -551,13 +562,16 @@ sub analysis_delly_reformat {
 
                         delly_call(
                             {
-                                infile_path => $alignment_sample_file_path,
+                                exclude_file_path =>
+                                  $active_parameter_href->{delly_exclude_file},
+                                FILEHANDLE        => $XARGSFILEHANDLE,
                                 genotypefile_path => $outfile_path_prefix
                                   . $UNDERSCORE
                                   . $contig
                                   . $UNDERSCORE
                                   . $sv_type
                                   . $suffix{pdelly_call},
+                                infile_path  => $alignment_sample_file_path,
                                 outfile_path => $file_path_prefix{$sample_id}
                                   . $UNDERSCORE
                                   . $contig
@@ -565,6 +579,14 @@ sub analysis_delly_reformat {
                                   . $sv_type
                                   . $UNDERSCORE . q{geno}
                                   . $suffix{pdelly_call},
+                                referencefile_path => $referencefile_path,
+                                stderrfile_path    => $xargs_file_path_prefix
+                                  . $DOT
+                                  . $contig
+                                  . $DOT
+                                  . $sv_type
+                                  . $DOT
+                                  . q{stderr.txt},
                                 stdoutfile_path => $xargs_file_path_prefix
                                   . $DOT
                                   . $contig
@@ -572,18 +594,7 @@ sub analysis_delly_reformat {
                                   . $sv_type
                                   . $DOT
                                   . q{stdout.txt},
-                                stderrfile_path => $xargs_file_path_prefix
-                                  . $DOT
-                                  . $contig
-                                  . $DOT
-                                  . $sv_type
-                                  . $DOT
-                                  . q{stderr.txt},
                                 sv_type => $sv_type,
-                                exclude_file_path =>
-                                  $active_parameter_href->{delly_exclude_file},
-                                referencefile_path => $referencefile_path,
-                                FILEHANDLE         => $XARGSFILEHANDLE,
                             }
                         );
                         say {$XARGSFILEHANDLE} $NEWLINE;
@@ -598,31 +609,31 @@ sub analysis_delly_reformat {
 
                     delly_call(
                         {
-                            infile_path       => $alignment_sample_file_path,
+                            exclude_file_path =>
+                              $active_parameter_href->{delly_exclude_file},
+                            FILEHANDLE        => $XARGSFILEHANDLE,
                             genotypefile_path => $outfile_path_prefix
                               . $UNDERSCORE
                               . $sv_type
                               . $suffix{pdelly_call},
+                            infile_path  => $alignment_sample_file_path,
                             outfile_path => $file_path_prefix{$sample_id}
                               . $UNDERSCORE
                               . $sv_type
                               . $UNDERSCORE . q{geno}
                               . $suffix{pdelly_call},
+                            referencefile_path => $referencefile_path,
+                            stderrfile_path    => $xargs_file_path_prefix
+                              . $DOT
+                              . $sv_type
+                              . $DOT
+                              . q{stderr.txt},
                             stdoutfile_path => $xargs_file_path_prefix
                               . $DOT
                               . $sv_type
                               . $DOT
                               . q{stdout.txt},
-                            stderrfile_path => $xargs_file_path_prefix
-                              . $DOT
-                              . $sv_type
-                              . $DOT
-                              . q{stderr.txt},
                             sv_type => $sv_type,
-                            exclude_file_path =>
-                              $active_parameter_href->{delly_exclude_file},
-                            referencefile_path => $referencefile_path,
-                            FILEHANDLE         => $XARGSFILEHANDLE,
                         }
                     );
                     say {$XARGSFILEHANDLE} $NEWLINE;
@@ -636,11 +647,11 @@ sub analysis_delly_reformat {
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
+                core_number        => $core_number,
                 FILEHANDLE         => $FILEHANDLE,
-                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                 file_path          => $file_path,
                 program_info_path  => $program_info_path,
-                core_number        => $core_number,
+                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                 xargs_file_counter => $xargs_file_counter,
             }
         );
@@ -666,6 +677,7 @@ sub analysis_delly_reformat {
 
                     bcftools_merge(
                         {
+                            FILEHANDLE       => $XARGSFILEHANDLE,
                             infile_paths_ref => \@file_paths,
                             outfile_path     => $outfile_path_prefix
                               . $UNDERSCORE
@@ -674,13 +686,6 @@ sub analysis_delly_reformat {
                               . $sv_type
                               . $suffix{pdelly_call},
                             output_type     => q{b},
-                            stdoutfile_path => $xargs_file_path_prefix
-                              . $DOT
-                              . $contig
-                              . $DOT
-                              . $sv_type
-                              . $DOT
-                              . q{stdout.txt},
                             stderrfile_path => $xargs_file_path_prefix
                               . $DOT
                               . $contig
@@ -688,19 +693,27 @@ sub analysis_delly_reformat {
                               . $sv_type
                               . $DOT
                               . q{stderr.txt},
-                            FILEHANDLE => $XARGSFILEHANDLE,
+                            stdoutfile_path => $xargs_file_path_prefix
+                              . $DOT
+                              . $contig
+                              . $DOT
+                              . $sv_type
+                              . $DOT
+                              . q{stdout.txt},
                         }
                     );
                     print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
 
                     bcftools_index(
                         {
+                            FILEHANDLE  => $XARGSFILEHANDLE,
                             infile_path => $outfile_path_prefix
                               . $UNDERSCORE
                               . $contig
                               . $UNDERSCORE
                               . $sv_type
                               . $suffix{pdelly_call},
+                            output_type     => q{csi},
                             stderrfile_path => $xargs_file_path_prefix
                               . $DOT
                               . $contig
@@ -708,8 +721,6 @@ sub analysis_delly_reformat {
                               . $sv_type
                               . $UNDERSCORE
                               . q{index.stderr.txt},
-                            output_type => q{csi},
-                            FILEHANDLE  => $XARGSFILEHANDLE,
                         }
                     );
                     say {$XARGSFILEHANDLE} $NEWLINE;
@@ -728,29 +739,30 @@ sub analysis_delly_reformat {
 
                 bcftools_merge(
                     {
+                        FILEHANDLE       => $XARGSFILEHANDLE,
                         infile_paths_ref => \@file_paths,
                         outfile_path     => $outfile_path_prefix
                           . $UNDERSCORE
                           . $sv_type
                           . $suffix{pdelly_call},
                         output_type     => q{b},
-                        stdoutfile_path => $xargs_file_path_prefix
-                          . $DOT
-                          . $sv_type
-                          . $DOT
-                          . q{stdout.txt},
                         stderrfile_path => $xargs_file_path_prefix
                           . $DOT
                           . $sv_type
                           . $DOT
                           . q{stderr.txt},
-                        FILEHANDLE => $XARGSFILEHANDLE,
+                        stdoutfile_path => $xargs_file_path_prefix
+                          . $DOT
+                          . $sv_type
+                          . $DOT
+                          . q{stdout.txt},
                     }
                 );
                 print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
 
                 bcftools_index(
                     {
+                        FILEHANDLE  => $XARGSFILEHANDLE,
                         infile_path => $outfile_path_prefix
                           . $UNDERSCORE
                           . $sv_type
@@ -761,7 +773,6 @@ sub analysis_delly_reformat {
                           . $UNDERSCORE
                           . q{index.stderr.txt},
                         output_type => q{csi},
-                        FILEHANDLE  => $XARGSFILEHANDLE,
                     }
                 );
                 say {$XARGSFILEHANDLE} $NEWLINE;
@@ -800,6 +811,8 @@ sub analysis_delly_reformat {
 
             bcftools_concat(
                 {
+                    allow_overlaps   => 1,
+                    FILEHANDLE       => $FILEHANDLE,
                     infile_paths_ref => \@file_paths,
                     outfile_path     => $outfile_path_prefix
                       . $UNDERSCORE
@@ -808,33 +821,31 @@ sub analysis_delly_reformat {
                       . q{concat}
                       . $suffix{pdelly_call},
                     output_type     => q{b},
+                    rm_dups         => q{all},
                     stderrfile_path => $program_info_path
                       . $UNDERSCORE
                       . $sv_type
                       . $UNDERSCORE
                       . q{concat.stderr.txt},
-                    allow_overlaps => 1,
-                    rm_dups        => q{all},
-                    FILEHANDLE     => $FILEHANDLE,
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
 
             bcftools_index(
                 {
+                    FILEHANDLE  => $FILEHANDLE,
                     infile_path => $outfile_path_prefix
                       . $UNDERSCORE
                       . $sv_type
                       . $UNDERSCORE
                       . q{concat}
                       . $suffix{pdelly_call},
+                    output_type     => q{csi},
                     stderrfile_path => $xargs_file_path_prefix
                       . $DOT
                       . $sv_type
                       . $UNDERSCORE
                       . q{index.stderr.txt},
-                    output_type => q{csi},
-                    FILEHANDLE  => $FILEHANDLE,
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
@@ -845,11 +856,11 @@ sub analysis_delly_reformat {
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
             {
+                core_number        => $core_number,
                 FILEHANDLE         => $FILEHANDLE,
-                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                 file_path          => $file_path,
                 program_info_path  => $program_info_path,
-                core_number        => $core_number,
+                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
                 xargs_file_counter => $xargs_file_counter,
             }
         );
@@ -860,6 +871,8 @@ sub analysis_delly_reformat {
 
                 delly_filter(
                     {
+                        FILEHANDLE  => $XARGSFILEHANDLE,
+                        filter_mode => q{germline},
                         infile_path => $outfile_path_prefix
                           . $UNDERSCORE
                           . $sv_type
@@ -872,19 +885,18 @@ sub analysis_delly_reformat {
                           . $UNDERSCORE
                           . q{filtered}
                           . $suffix{pdelly_call},
-                        stdoutfile_path => $xargs_file_path_prefix
-                          . $DOT
-                          . $sv_type
-                          . $DOT
-                          . q{stdout.txt},
                         stderrfile_path => $xargs_file_path_prefix
                           . $DOT
                           . $sv_type
                           . $DOT
                           . q{stderr.txt},
-                        sv_type     => $sv_type,
-                        filter_mode => q{germline},
-                        FILEHANDLE  => $XARGSFILEHANDLE,
+                        stdoutfile_path => $xargs_file_path_prefix
+                          . $DOT
+                          . $sv_type
+                          . $DOT
+                          . q{stdout.txt},
+                        sv_type => $sv_type,
+
                     }
                 );
                 say {$XARGSFILEHANDLE} $NEWLINE;
@@ -893,6 +905,8 @@ sub analysis_delly_reformat {
 
                 delly_filter(
                     {
+                        FILEHANDLE  => $XARGSFILEHANDLE,
+                        filter_mode => q{germline},
                         infile_path => $outfile_path_prefix
                           . $UNDERSCORE
                           . $sv_type
@@ -903,19 +917,17 @@ sub analysis_delly_reformat {
                           . $UNDERSCORE
                           . q{filtered}
                           . $suffix{pdelly_call},
-                        stdoutfile_path => $xargs_file_path_prefix
-                          . $DOT
-                          . $sv_type
-                          . $DOT
-                          . q{stdout.txt},
                         stderrfile_path => $xargs_file_path_prefix
                           . $DOT
                           . $sv_type
                           . $DOT
                           . q{stderr.txt},
-                        sv_type     => $sv_type,
-                        filter_mode => q{germline},
-                        FILEHANDLE  => $XARGSFILEHANDLE,
+                        stdoutfile_path => $xargs_file_path_prefix
+                          . $DOT
+                          . $sv_type
+                          . $DOT
+                          . q{stdout.txt},
+                        sv_type => $sv_type,
                     }
                 );
                 say {$XARGSFILEHANDLE} $NEWLINE;
@@ -975,18 +987,18 @@ sub analysis_delly_reformat {
         }
         bcftools_concat(
             {
+                allow_overlaps   => 1,
+                FILEHANDLE       => $FILEHANDLE,
                 infile_paths_ref => \@file_paths,
                 outfile_path     => $outfile_path_prefix
                   . $UNDERSCORE
                   . q{concat}
                   . $outfile_suffix,
                 output_type     => q{v},
+                rm_dups         => q{all},
                 stderrfile_path => $program_info_path
                   . $UNDERSCORE
                   . q{concat.stderr.txt},
-                allow_overlaps => 1,
-                rm_dups        => q{all},
-                FILEHANDLE     => $FILEHANDLE,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -1008,8 +1020,8 @@ sub analysis_delly_reformat {
                 ),
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
-                outfile_path        => $outfile_path_prefix . $outfile_suffix,
                 memory_allocation   => q{Xmx2g},
+                outfile_path        => $outfile_path_prefix . $outfile_suffix,
                 referencefile_path  => $referencefile_path,
                 sequence_dictionary => catfile(
                     $reference_dir,
@@ -1025,33 +1037,34 @@ sub analysis_delly_reformat {
         say {$FILEHANDLE} $NEWLINE . q{## Copy file from temporary directory};
         migrate_file(
             {
+                FILEHANDLE   => $FILEHANDLE,
                 infile_path  => $outfile_path_prefix . $outfile_suffix,
                 outfile_path => $outfamily_directory,
-                FILEHANDLE   => $FILEHANDLE,
             }
         );
         say {$FILEHANDLE} q{wait}, $NEWLINE;
 
-        if ( $active_parameter_href->{$mip_program_name} == 1 ) {
+        if ( $mip_program_mode == 1 ) {
 
             add_program_outfile_to_sample_info(
                 {
+                    program_name => q{delly},
+                    path         => catfile(
+                        $outfamily_directory, $outfile_prefix . $outfile_suffix
+                    ),
                     sample_info_href => $sample_info_href,
-                    program_name     => q{delly},
-                    outdirectory     => $outfamily_directory,
-                    outfile          => $outfile_prefix . $outfile_suffix,
                 }
             );
 
             slurm_submit_job_sample_id_dependency_add_to_family(
                 {
-                    job_id_href             => $job_id_href,
+                    family_id               => $family_id,
                     infile_lane_prefix_href => $infile_lane_prefix_href,
+                    job_id_href             => $job_id_href,
+                    log                     => $log,
+                    path                    => $job_id_chain,
                     sample_ids_ref =>
                       \@{ $active_parameter_href->{sample_ids} },
-                    family_id        => $family_id,
-                    path             => $job_id_chain,
-                    log              => $log,
                     sbatch_file_name => $file_path,
                 }
             );
@@ -1060,9 +1073,7 @@ sub analysis_delly_reformat {
         close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
         close $XARGSFILEHANDLE
           or $log->logcroak(q{Could not close $XARGSFILEHANDLE});
-
     }
-
     return;
 }
 
