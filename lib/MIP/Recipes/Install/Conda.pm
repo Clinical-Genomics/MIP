@@ -127,33 +127,26 @@ sub setup_conda_env {
 
 ## Function  : Creates necessary conda environment and install package(s) from the default channel.
 ## Returns   :
-## Arguments : $conda_packages_href => Hash with conda packages and their version numbers {REF}
-##           : $conda_env           => Name of conda environment
+## Arguments : $conda_env           => Name of conda environment
 ##           : $conda_env_path      => Path to conda environment (default: conda root)
-##           : $FILEHANDLE          => Filehandle to write to
+##           : $conda_packages_href => Hash with conda packages and their version numbers {REF}
 ##           : $conda_update        => Update Conda if defined
+##           : $FILEHANDLE          => Filehandle to write to
 ##           : $quiet               => Log only warnings and above
 ##           : $verbose             => Log debug messages
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $conda_packages_href;
     my $conda_env;
     my $conda_env_path;
-    my $FILEHANDLE;
+    my $conda_packages_href;
     my $conda_update;
+    my $FILEHANDLE;
     my $quiet;
     my $verbose;
 
     my $tmpl = {
-        conda_packages_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$conda_packages_href,
-        },
         conda_env => {
             strict_type => 1,
             store       => \$conda_env,
@@ -164,12 +157,19 @@ sub setup_conda_env {
             strict_type => 1,
             store       => \$conda_env_path,
         },
-        FILEHANDLE => {
-            required => 1,
-            store    => \$FILEHANDLE,
+        conda_packages_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$conda_packages_href,
         },
         conda_update => {
             store => \$conda_update,
+        },
+        FILEHANDLE => {
+            required => 1,
+            store    => \$FILEHANDLE,
         },
         quiet => {
             allow => [ undef, 0, 1 ],
@@ -191,8 +191,8 @@ sub setup_conda_env {
     my $log = retrieve_log(
         {
             log_name => q{mip_install::setup_conda_env},
-            verbose  => $verbose,
             quiet    => $quiet,
+            verbose  => $verbose,
         }
     );
 
@@ -228,9 +228,9 @@ sub setup_conda_env {
               . q{ and install packages};
             conda_create(
                 {
+                    FILEHANDLE   => $FILEHANDLE,
                     env_name     => $conda_env,
                     packages_ref => \@packages,
-                    FILEHANDLE   => $FILEHANDLE,
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
@@ -249,9 +249,9 @@ q{Writing installtion instructions for conda packages to environment: }
               q{## Installing conda packages into existing environment};
             conda_install(
                 {
-                    packages_ref => \@packages,
                     FILEHANDLE   => $FILEHANDLE,
                     env_name     => $conda_env,
+                    packages_ref => \@packages,
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
@@ -265,8 +265,8 @@ q{Writing instructions for installing and/or updating packages in conda root}
           q{## Installing and/or updating python and packages in conda root};
         conda_install(
             {
-                packages_ref => \@packages,
                 FILEHANDLE   => $FILEHANDLE,
+                packages_ref => \@packages,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -304,11 +304,6 @@ sub install_bioconda_packages {
             strict_type => 1,
             store       => \$bioconda_packages_href,
         },
-        snpeff_genome_versions_ref => {
-            required    => 1,
-            strict_type => 1,
-            store       => \$snpeff_genome_versions_ref
-        },
         conda_env => {
             strict_type => 1,
             store       => \$conda_env,
@@ -326,6 +321,11 @@ sub install_bioconda_packages {
         quiet => {
             allow => [ undef, 0, 1 ],
             store => \$quiet,
+        },
+        snpeff_genome_versions_ref => {
+            required    => 1,
+            default => [],
+            store       => \$snpeff_genome_versions_ref
         },
         verbose => {
             allow => [ undef, 0, 1 ],
@@ -444,8 +444,8 @@ sub finish_bioconda_package_install {
 ##           : $conda_env_path             => Path to conda environment
 ##           : $FILEHANDLE                 => Filehandle to write to
 ##           : $log                        => Log
-##           : $snpeff_genome_versions_ref => Array with the genome versions for the snpeff databases {REF}
 ##           : $quiet                      => Log only warnings and above
+##           : $snpeff_genome_versions_ref => Array with the genome versions for the snpeff databases {REF}
 ##           : $verbose                    => Log debug messages
 
     my ($arg_href) = @_;
@@ -456,8 +456,8 @@ sub finish_bioconda_package_install {
     my $conda_env_path;
     my $FILEHANDLE;
     my $log;
-    my $snpeff_genome_versions_ref;
     my $quiet;
+    my $snpeff_genome_versions_ref;
     my $verbose;
 
     my $tmpl = {
@@ -488,21 +488,20 @@ sub finish_bioconda_package_install {
             defined  => 1,
             store    => \$log
         },
+        quiet => {
+            allow => [ undef, 0, 1 ],
+            store => \$quiet,
+        },
         snpeff_genome_versions_ref => {
             required    => 1,
-            default     => [],
-            defined     => 1,
-            strict_type => 1,
+            default => [],
             store       => \$snpeff_genome_versions_ref
         },
         verbose => {
             allow => [ undef, 0, 1 ],
             store => \$verbose,
         },
-        quiet => {
-            allow => [ undef, 0, 1 ],
-            store => \$quiet,
-        }
+
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -522,8 +521,8 @@ sub finish_bioconda_package_install {
         say {$FILEHANDLE} q{## Activate conda environment};
         conda_source_activate(
             {
-                FILEHANDLE => $FILEHANDLE,
                 env_name   => $conda_env,
+                FILEHANDLE => $FILEHANDLE,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -539,10 +538,10 @@ sub finish_bioconda_package_install {
         gnu_cp(
             {
                 FILEHANDLE   => $FILEHANDLE,
-                recursive    => 1,
                 force        => 1,
                 infile_path  => $infile_path,
                 outfile_path => $outfile_path,
+                recursive    => 1,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -572,12 +571,12 @@ sub finish_bioconda_package_install {
               catdir( $conda_env_path, q{share}, q{snpeff-} . $version );
             check_mt_codon_table(
                 {
-                    FILEHANDLE     => $FILEHANDLE,
-                    share_dir      => $share_dir,
                     config_file    => q{snpEff.config},
+                    FILEHANDLE     => $FILEHANDLE,
                     genome_version => $genome_version,
-                    verbose        => $verbose,
                     quiet          => $quiet,
+                    share_dir      => $share_dir,
+                    verbose        => $verbose,
                 }
             );
 
@@ -593,10 +592,10 @@ sub finish_bioconda_package_install {
               catfile( $conda_env_path, qw{bin snpEff.config} );
             snpeff_download(
                 {
+                    config_file_path        => $config_file_path,
                     FILEHANDLE              => $FILEHANDLE,
                     genome_version_database => $genome_version,
                     jar_path                => $jar_path,
-                    config_file_path        => $config_file_path,
                     temp_directory          => 1,
                 }
             );
@@ -613,9 +612,9 @@ sub finish_bioconda_package_install {
         my $file_path = catfile( $conda_env_path, qw{bin configManta.py} );
         gnu_chmod(
             {
+                FILEHANDLE => $FILEHANDLE,
                 file_path  => $file_path,
                 permission => q{a+x},
-                FILEHANDLE => $FILEHANDLE,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -629,10 +628,10 @@ sub finish_bioconda_package_install {
         ## Download gatk .tar.bz2
         my $gatk_tar_path = gatk_download(
             {
-                gatk_version => $bioconda_packages_href->{gatk},
-                verbose      => $verbose,
-                quiet        => $quiet,
                 FILEHANDLE   => $FILEHANDLE,
+                gatk_version => $bioconda_packages_href->{gatk},
+                quiet        => $quiet,
+                verbose      => $verbose,
             }
         );
 
@@ -642,10 +641,10 @@ sub finish_bioconda_package_install {
 
         gnu_rm(
             {
-                infile_path => dirname($gatk_tar_path),
-                force       => 1,
-                recursive   => 1,
                 FILEHANDLE  => $FILEHANDLE,
+                force       => 1,
+                infile_path => dirname($gatk_tar_path),
+                recursive   => 1,
             }
         );
         say {$FILEHANDLE} $NEWLINE x 2;
@@ -805,10 +804,10 @@ sub _create_target_link_paths {
             $program . q{-} . $bioconda_packages_href->{$program} . q{*} );
         gnu_find(
             {
+                action        => q{-prune},
+                FILEHANDLE    => $FILEHANDLE,
                 search_path   => $search_path,
                 test_criteria => q{-type d},
-                action        => q{-prune},
-                FILEHANDLE    => $FILEHANDLE
             }
         );
         ## Pipe to next command
