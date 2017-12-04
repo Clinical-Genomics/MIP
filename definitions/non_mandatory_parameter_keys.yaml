@@ -1,0 +1,55 @@
+build_file:
+  key_data_type: SCALAR
+  values:
+    - 0
+    - 1
+mandatory:
+  key_data_type: SCALAR
+  values:
+    - no
+exists_check:
+  key_data_type: SCALAR
+  values:
+    - file
+    - directory
+chain:
+  key_data_type: SCALAR
+file_tag:
+  key_data_type: SCALAR
+infile_suffix:
+  key_data_type: SCALAR
+outfile_suffix:
+  key_data_type: SCALAR
+program_name_path:
+  key_data_type: ARRAY
+element_separator:
+  key_data_type: SCALAR
+reduce_io:
+  key_data_type: SCALAR
+  values:
+    - 1
+program_type:
+  key_data_type: SCALAR
+  values:
+    - aligners
+    - variant_callers
+    - structural_variant_callers
+outdir_name:
+  key_data_type: SCALAR
+file_endings:
+  key_data_type: ARRAY
+remove_redundant_file:
+  key_data_type: SCALAR
+  values:
+    - yes
+remove_redundant_file_setting:
+  key_data_type: SCALAR
+  values:
+    - single
+    - merged
+    - family
+    - variant_annotation
+reference:
+  key_data_type: SCALAR
+  values:
+    - reference_dir
