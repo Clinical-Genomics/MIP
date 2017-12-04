@@ -172,7 +172,7 @@ sub analysis_plink {
     use MIP::QC::Record
       qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
-    use Program::Variantcalling::Vt qw(vt_uniq);
+    use MIP::Program::Variantcalling::Vt qw(vt_uniq);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
