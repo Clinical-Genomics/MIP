@@ -62,6 +62,11 @@ gatk_realignertargetcreator.t
 gatk_selectvariants.t
 gatk_varianteval.t
 gatk_variantrecalibrator.t
+genmod_annotate.t
+genmod_compound.t
+genmod_filter.t
+genmod_models.t
+genmod_score.t
 get_exom_target_bed_file.t
 get_merged_infile_prefix.t
 get_overall_analysis_type.t

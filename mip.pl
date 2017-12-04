@@ -2069,16 +2069,15 @@ if ( $active_parameter{pdelly_call} > 0 ) {    #Run delly_call
 if ( $active_parameter{pdelly_reformat} > 0 )
 {    #Run Delly merge, regenotype, bcftools merge
 
-    $log->info( q{[Delly_reformat]} );
+    $log->info(q{[Delly_reformat]});
 
     my $program_name = q{delly_reformat};
-    my $program_outdirectory_name = $parameter{ q{p} . $program_name }{outdir_name};
+    my $program_outdirectory_name =
+      $parameter{ q{p} . $program_name }{outdir_name};
 
     my $outfamily_directory = catfile(
-        $active_parameter{outdata_dir},
-        $active_parameter{family_id},
-        $active_parameter{outaligner_dir},
-        $program_outdirectory_name
+        $active_parameter{outdata_dir},    $active_parameter{family_id},
+        $active_parameter{outaligner_dir}, $program_outdirectory_name
     );
 
     analysis_delly_reformat(
@@ -4477,7 +4476,8 @@ sub rankvariant {
     use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::IO::Files qw{ xargs_migrate_contig_files };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use Program::Variantcalling::Genmod qw(annotate models score compound);
+    use MIP::Program::Variantcalling::Genmod
+      qw(genmod_annotate genmod_compound genmod_models genmod_score);
     use MIP::QC::Record
       qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
@@ -4654,7 +4654,7 @@ sub rankvariant {
         }
 
         ## Genmod
-        say {$FILEHANDLE} "## GeneMod";
+        say {$FILEHANDLE} "## Genmod";
 
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
@@ -4715,7 +4715,7 @@ sub rankvariant {
             ## Genmod Annotate
             $genmod_module = "_annotate";
 
-            Program::Variantcalling::Genmod::annotate(
+            genmod_annotate(
                 {
                     cadd_file_paths_ref =>
                       \@{ $active_parameter_href->{genmod_annotate_cadd_files}
@@ -4759,7 +4759,7 @@ sub rankvariant {
 
                     $use_vep = 1;
                 }
-                models(
+                genmod_models(
                     {
                         infile_path => $genmod_indata,
                         outfile_path =>
@@ -4786,7 +4786,7 @@ sub rankvariant {
 
                 ## Genmod Score
                 $genmod_module .= "_score";
-                score(
+                genmod_score(
                     {
                         infile_path => $genmod_indata,
                         outfile_path =>
@@ -4810,7 +4810,7 @@ sub rankvariant {
                 ##Genmod Compound
                 $genmod_module .= "_compound";
 
-                compound(
+                genmod_compound(
                     {
                         infile_path  => $genmod_indata,
                         outfile_path => $outfile_path_prefix . "_"
@@ -6123,10 +6123,11 @@ sub vt {
     use Readonly;
     use MIP::Cluster qw(get_core_number);
     use MIP::Set::File qw{set_file_suffix};
+    use MIP::Script::Setup_script qw(setup_script);
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Gnu::Coreutils qw(gnu_mv);
-    use Program::Variantcalling::Genmod qw(annotate filter);
+    use MIP::Program::Variantcalling::Genmod qw(genmod_annotate genmod_filter);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
@@ -6157,8 +6158,6 @@ sub vt {
     );
 
     if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
-
-        use MIP::Script::Setup_script qw(setup_script);
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
         ( $file_path, $program_info_path ) = setup_script(
@@ -6330,7 +6329,7 @@ sub vt {
         ## Remove common variants
         if ( $active_parameter_href->{vt_genmod_filter} ) {
 
-            Program::Variantcalling::Genmod::annotate(
+            genmod_annotate(
                 {
                     infile_path => $outfile_path_prefix . "_"
                       . $contig
@@ -6352,7 +6351,7 @@ sub vt {
 
             $alt_file_tag .= "_genmod_filter";    #Update file tag
 
-            Program::Variantcalling::Genmod::filter(
+            genmod_filter(
                 {
                     infile_path  => "-",
                     outfile_path => $outfile_path_prefix . "_"
@@ -7782,7 +7781,8 @@ sub sv_rankvariant {
     use MIP::Delete::List qw{ delete_contig_elements delete_male_contig};
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
-    use Program::Variantcalling::Genmod qw(annotate models score compound);
+    use Program::Variantcalling::Genmod
+      qw(genmod_annotate genmod_compound genmod_models genmod_score);
     use MIP::QC::Record
       qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
@@ -8076,7 +8076,7 @@ sub sv_rankvariant {
                 $genmod_outfile_path =
                   catfile( dirname( devnull() ), "stdout" );    #OutFile
             }
-            Program::Variantcalling::Genmod::annotate(
+            genmod_annotate(
                 {
                     infile_path     => $genmod_indata,
                     outfile_path    => $genmod_outfile_path,
@@ -8119,7 +8119,7 @@ sub sv_rankvariant {
 
                     $use_vep = 1;
                 }
-                models(
+                genmod_models(
                     {
                         infile_path => $genmod_indata,
                         outfile_path =>
@@ -8149,7 +8149,7 @@ sub sv_rankvariant {
                 ## Genmod Score
                 $genmod_module .= "_score";
 
-                score(
+                genmod_score(
                     {
                         infile_path => $genmod_indata,
                         outfile_path =>
@@ -8964,7 +8964,7 @@ sub sv_combinevariantcallsets {
     use MIP::Program::Utility::Htslib qw(htslib_bgzip htslib_tabix);
     use MIP::Program::Variantcalling::Bcftools qw{bcftools_view_and_index_vcf};
     use Program::Variantcalling::Vt qw(decompose);
-    use Program::Variantcalling::Genmod qw(annotate);
+    use MIP::Program::Variantcalling::Genmod qw(genmod_annotate);
     use Program::Variantcalling::Vcfanno qw(vcfanno);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
@@ -9443,7 +9443,7 @@ sub sv_combinevariantcallsets {
     if ( $active_parameter_href->{sv_genmod_filter} > 0 ) {
 
         say {$FILEHANDLE} "## Remove common variants";
-        Program::Variantcalling::Genmod::annotate(
+        genmod_annotate(
             {
                 infile_path => $outfile_path_prefix
                   . $alt_file_tag
@@ -9460,7 +9460,7 @@ sub sv_combinevariantcallsets {
 
         $alt_file_tag .= "_genmod_filter";    #Update file tag
 
-        Program::Variantcalling::Genmod::filter(
+        genmod_filter(
             {
                 infile_path  => "-",
                 outfile_path => $outfile_path_prefix
