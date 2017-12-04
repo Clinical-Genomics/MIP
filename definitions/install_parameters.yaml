@@ -53,8 +53,8 @@ noupdate: ~
 
 # Python packages to be installed via pip
 pip:
-  chanjo: 4.2.0
-  genmod: 3.7.2
+  #  chanjo: 4.2.0
+  #  genmod: 3.7.2
   variant_integrity: 0.0.4
 
 # Prefer installation via shell instead of via conda, 
@@ -76,7 +76,7 @@ reference_genome_versions:
   - hg38
 
 # Select programs that are to be installed via shell instead of conda 
-select_programs: []
+shell_install: []
 
 # Shell programs
 shell:  
@@ -104,7 +104,7 @@ shell:
   svdb:
     version: 1.0.7
   tiddit:
-    version: 2.0.0
+    version: 2.0.2
   vep:
     vep_assemblies:
       - GRCh37
