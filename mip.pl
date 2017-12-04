@@ -6361,7 +6361,6 @@ sub vt {
                     stderrfile_path => $xargs_file_path_prefix . "."
                       . $contig
                       . ".stderr.txt",
-                    append_stderr_info => 1,
                     verbosity          => "v",
                     threshold =>
                       $active_parameter_href->{sv_genmod_filter_threshold},
