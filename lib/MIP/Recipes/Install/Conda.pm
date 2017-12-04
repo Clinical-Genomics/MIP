@@ -19,6 +19,7 @@ Readonly my $BACKTICK   => q{`};
 Readonly my $DOT        => q{.};
 Readonly my $COLON      => q{:};
 Readonly my $NEWLINE    => qq{\n};
+Readonly my $PIPE       => q{|};
 Readonly my $SPACE      => q{ };
 Readonly my $UNDERSCORE => q{_};
 
@@ -28,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.0.10;
+    our $VERSION = 1.0.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -278,10 +279,10 @@ sub install_bioconda_packages {
 ## Function  : Install conda packages from the bioconda channel into a conda environment.
 ## Returns   :
 ## Arguments : $bioconda_packages_href     => Hash holding bioconda packages and their version numbers {REF}
-##           : $snpeff_genome_versions_ref => Array with the genome versions for the snpeff databases {REF}
 ##           : $conda_env                  => Name of conda environment
 ##           : $conda_env_path             => Path to conda environment (default: conda root)
 ##           : $FILEHANDLE                 => Filehandle to write to
+##           : $snpeff_genome_versions_ref => Array with the genome versions for the snpeff databases {REF}
 ##           : $quiet                      => Log only warnings and above
 ##           : $verbose                    => Log debug messages
 
@@ -289,9 +290,9 @@ sub install_bioconda_packages {
 
     ## Flatten argument(s)
     my $bioconda_packages_href;
-    my $snpeff_genome_versions_ref;
     my $conda_env;
     my $conda_env_path;
+    my $snpeff_genome_versions_ref;
     my $FILEHANDLE;
     my $quiet;
     my $verbose;
@@ -404,6 +405,7 @@ sub install_bioconda_packages {
             conda_env                  => $conda_env,
             conda_env_path             => $conda_env_path,
             FILEHANDLE                 => $FILEHANDLE,
+            log                        => $log,
             snpeff_genome_versions_ref => $snpeff_genome_versions_ref,
             verbose                    => $verbose,
             quiet                      => $quiet,
@@ -441,6 +443,7 @@ sub finish_bioconda_package_install {
 ##           : $conda_env                  => Name of conda env
 ##           : $conda_env_path             => Path to conda environment
 ##           : $FILEHANDLE                 => Filehandle to write to
+##           : $log                        => Log
 ##           : $snpeff_genome_versions_ref => Array with the genome versions for the snpeff databases {REF}
 ##           : $quiet                      => Log only warnings and above
 ##           : $verbose                    => Log debug messages
@@ -452,6 +455,7 @@ sub finish_bioconda_package_install {
     my $conda_env;
     my $conda_env_path;
     my $FILEHANDLE;
+    my $log;
     my $snpeff_genome_versions_ref;
     my $quiet;
     my $verbose;
@@ -478,6 +482,11 @@ sub finish_bioconda_package_install {
             required => 1,
             defined  => 1,
             store    => \$FILEHANDLE
+        },
+        log => {
+            required => 1,
+            defined  => 1,
+            store    => \$log
         },
         snpeff_genome_versions_ref => {
             required    => 1,
@@ -549,6 +558,9 @@ sub finish_bioconda_package_install {
         ## Get the full version, including patch for snpeff
         my $version = _get_full_snpeff_version(
             {
+                conda_env      => $conda_env,
+                conda_env_path => $conda_env_path,
+                log            => $log,
                 snpeff_version => $bioconda_packages_href->{snpeff},
             }
         );
@@ -748,6 +760,7 @@ sub _create_target_link_paths {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use File::Spec::Functions qw{ catfile catdir };
+    use MIP::Gnu::Coreutils qw{ gnu_tail };
     use MIP::Gnu::Findutils qw{ gnu_find };
 
     my %target_link_paths;
@@ -798,7 +811,16 @@ sub _create_target_link_paths {
                 FILEHANDLE    => $FILEHANDLE
             }
         );
-        print {$FILEHANDLE} $BACKTICK . $NEWLINE;
+        ## Pipe to next command
+        print {$FILEHANDLE} $PIPE . $SPACE;
+        ## Only use the latest latest sub patch
+        gnu_tail(
+            {
+                FILEHANDLE => $FILEHANDLE,
+                lines => q{1},
+            }
+        );
+        say {$FILEHANDLE} $BACKTICK;
         ## Double quotes to avoid expansion in shell
         my $program_dir_path = q/"${/ . $program_path_aliases{$program} . q/}"/;
 
@@ -885,16 +907,38 @@ sub _get_conda_dir_path {
 }
 
 sub _get_full_snpeff_version {
+
 ## Function  : Get the snpeff version together with patch that are to be installed via Conda
 ## Returns   : $version
-## Arguments : $snpeff_version => Main snpeff version number
+## Arguments : $conda_env      => Name of conda environment
+##           : $conda_env_path => Path to conda environment (default: conda root)
+##           : $log            => Log
+##           : snpeff_version  => Main snpeff version number
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $conda_env;
+    my $conda_env_path;
     my $snpeff_version;
+    my $log;
 
     my $tmpl = {
+        conda_env => {
+            required => 1,
+            store    => \$conda_env,
+        },
+        conda_env_path => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$conda_env_path,
+        },
+        log => {
+            required => 1,
+            defined  => 1,
+            store    => \$log
+        },
         snpeff_version => {
             required    => 1,
             defined     => 1,
@@ -905,29 +949,71 @@ sub _get_full_snpeff_version {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my $command =
+    ## Store shell query
+    my $command;
 
-      # Get tpackages that will be installed
-      qq{conda install --dry-run snpeff=$snpeff_version}
+    ## Check if environment exists already and isn't root
+    if ( -d $conda_env_path && $conda_env ) {
+        $command =
 
-      # Isolate the snpeff installation
-      . q{ | grep 'snpeff' | }
+          # Get packages that will be installed
+          qq{conda install --dry-run -n $conda_env snpeff=$snpeff_version}
 
-      # Loop over snpeff line and print the version number(s)
-      . q?perl -nae 'foreach (@F)?
-      . q?{ print $_ . "\n" if /?
-      . qq?$snpeff_version/}'?
+          # Isolate the snpeff installation and print/return line as array
+          . q{ | perl -nae 'if ($_=~/snpeff/){print $_}' };
+    }
+    ## New environment
+    else {
+        $command =
 
-      # Get the last of the version number
-      . q{ | tail -1 };
+          # Get packages that will be installed
+          qq{conda install --dry-run snpeff=$snpeff_version}
 
-    my $version;
+          # Isolate the snpeff installation and print/return line as array
+          . q{ | perl -nae 'if ($_=~/snpeff/){print $_}' };
+    }
+
+    my $snpeff_installation_output;
+
     run(
         command => $command,
-        buffer  => \$version
+        buffer  => \$snpeff_installation_output
     );
 
-    chomp $version;
+    my @snpeff_array = split $SPACE, $snpeff_installation_output;
+
+    my $version;
+
+    # New installation
+    # Pattern ex: "snpeff: 4.3.1r-0 bioconda"
+    if ( scalar @snpeff_array == 3
+        && $snpeff_array[1] =~ m/$snpeff_version/xms )
+    {
+        $version = $snpeff_array[1];
+    }
+
+    # Existing installation
+    # Pattern ex: "snpeff 4.3.1r 0 bioconda"
+    elsif ( scalar @snpeff_array == 4
+        && $snpeff_array[1] =~ m/$snpeff_version/xms )
+    {
+        $version = $snpeff_array[1] . q{-} . $snpeff_array[2];
+    }
+
+    # Update existing installation
+    # Pattern ex: snpeff: "4.3.1q-0 bioconda --> 4.3.1r-0 bioconda"
+    elsif ( scalar @snpeff_array == 6
+        && $snpeff_array[4] =~ m/$snpeff_version/xms )
+    {
+        $version = $snpeff_array[4];
+    }
+
+    # Unknown pattern
+    else {
+        $log->logcroak(
+            q{Could not find the snpeff version and subpatch from string: }
+              . $snpeff_installation_output );
+    }
 
     return $version;
 }
