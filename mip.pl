@@ -8172,7 +8172,7 @@ sub sv_rankvariant {
                 ##Genmod Compound
                 $genmod_module .= "_compound";
 
-                compound(
+                genmod_compound(
                     {
                         infile_path  => $genmod_indata,
                         outfile_path => $genmod_outfile_path_prefix
