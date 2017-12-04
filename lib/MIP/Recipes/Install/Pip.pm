@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.0.2;
+    our $VERSION = 1.0.3;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_pip_packages };
@@ -32,21 +32,30 @@ sub install_pip_packages {
 
 ## Function  : Recipe for install pip package(s).
 ## Returns   :
-## Arguments : $pip_packages_href => Hash with pip packages and their version numbers {REF}
-##           : $quiet             => Optionally turn on quiet output
-##           : $conda_env         => Name of conda environment
+## Arguments : $conda_env         => Name of conda environment
 ##           : $FILEHANDLE        => Filehandle to write to
+##           : $pip_packages_href => Hash with pip packages and their version numbers {REF}
+##           : $quiet             => Optionally turn on quiet output
+##           : $verbose           => Log debug messages
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $pip_packages_href;
-    my $quiet;
     my $conda_env;
     my $FILEHANDLE;
+    my $pip_packages_href;
+    my $quiet;
     my $verbose;
 
     my $tmpl = {
+        conda_env => {
+            strict_type => 1,
+            store       => \$conda_env,
+        },
+        FILEHANDLE => {
+            required => 1,
+            store    => \$FILEHANDLE,
+        },
         pip_packages_href => {
             required    => 1,
             defined     => 1,
@@ -59,14 +68,6 @@ sub install_pip_packages {
             strict_type => 1,
             store       => \$quiet,
         },
-        conda_env => {
-            strict_type => 1,
-            store       => \$conda_env,
-        },
-        FILEHANDLE => {
-            required => 1,
-            store    => \$FILEHANDLE,
-        },
         verbose => {
             allow => [ undef, 0, 1 ],
             store => \$verbose
@@ -77,10 +78,13 @@ sub install_pip_packages {
 
     ## Local modules
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
-    use MIP::Package_manager::Pip qw{ pip_install };
     use MIP::Package_manager::Conda
       qw{ conda_source_activate conda_source_deactivate };
+    use MIP::Package_manager::Pip qw{ pip_install };
 
+    ## Return if no packages are to be installed 
+    return if not keys %{$pip_packages_href};
+      
     ## Retrieve logger object
     my $log = retrieve_log(
         {
@@ -102,8 +106,8 @@ sub install_pip_packages {
         ## Activate conda environment
         conda_source_activate(
             {
-                FILEHANDLE => $FILEHANDLE,
                 env_name   => $conda_env,
+                FILEHANDLE => $FILEHANDLE,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -123,9 +127,9 @@ sub install_pip_packages {
     ## Install PIP packages
     pip_install(
         {
+            FILEHANDLE   => $FILEHANDLE,
             packages_ref => \@packages,
             quiet        => $quiet,
-            FILEHANDLE   => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;

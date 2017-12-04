@@ -76,7 +76,7 @@ reference_genome_versions:
   - hg38
 
 # Select programs that are to be installed via shell instead of conda 
-select_programs: []
+shell_install: []
 
 # Shell programs
 shell:  
