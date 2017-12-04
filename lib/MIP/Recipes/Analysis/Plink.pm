@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_plink };
@@ -41,47 +41,40 @@ sub analysis_plink {
 
 ## Function : Tests sample for correct relatives (only performed for samples with relatives defined in pedigree file) performed on sequence data.
 ## Returns  :
-## Arguments: $parameter_href          => Parameter hash {REF}
-##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $sample_info_href        => Info on samples and family hash {REF}
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $call_type               => Variant call type
+##          : $family_id               => Family id
 ##          : $file_info_href          => File_info hash {REF}
+##          : $infamily_directory      => In family directory
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $program_name            => Program name
-##          : $family_id               => Family id
-##          : $infamily_directory      => In family directory
-##          : $outfamily_directory     => Out family directory
-##          : $temp_directory          => Temporary directory
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $call_type               => Variant call type
+##          : $outfamily_directory     => Out family directory
+##          : $parameter_href          => Parameter hash {REF}
+##          : $program_name            => Program name
+##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $temp_directory          => Temporary directory
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
+    my $infamily_directory;
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $program_name;
-    my $infamily_directory;
     my $outfamily_directory;
+    my $parameter_href;
+    my $program_name;
+    my $sample_info_href;
 
     ## Default(s)
+    my $call_type;
     my $family_id;
     my $outaligner_dir;
     my $temp_directory;
-    my $call_type;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
@@ -89,12 +82,15 @@ sub analysis_plink {
             strict_type => 1,
             store       => \$active_parameter_href,
         },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
+        call_type => {
+            default     => q{BOTH},
             strict_type => 1,
-            store       => \$sample_info_href,
+            store       => \$call_type,
+        },
+        family_id => {
+            default     => $arg_href->{active_parameter_href}{family_id},
+            strict_type => 1,
+            store       => \$family_id,
         },
         file_info_href => {
             required    => 1,
@@ -102,6 +98,12 @@ sub analysis_plink {
             default     => {},
             strict_type => 1,
             store       => \$file_info_href,
+        },
+        infamily_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$infamily_directory,
         },
         infile_lane_prefix_href => {
             required    => 1,
@@ -117,22 +119,10 @@ sub analysis_plink {
             strict_type => 1,
             store       => \$job_id_href,
         },
-        program_name => {
-            required    => 1,
-            defined     => 1,
+        outaligner_dir => {
+            default     => $arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$program_name,
-        },
-        temp_directory => {
-            default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory,
-        },
-        infamily_directory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$infamily_directory,
+            store       => \$outaligner_dir,
         },
         outfamily_directory => {
             required    => 1,
@@ -140,20 +130,30 @@ sub analysis_plink {
             strict_type => 1,
             store       => \$outfamily_directory,
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
             strict_type => 1,
-            store       => \$family_id,
+            store       => \$parameter_href,
         },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
+        program_name => {
+            required    => 1,
+            defined     => 1,
             strict_type => 1,
-            store       => \$outaligner_dir,
+            store       => \$program_name,
         },
-        call_type => {
-            default     => q{BOTH},
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
             strict_type => 1,
-            store       => \$call_type,
+            store       => \$sample_info_href,
+        },
+        temp_directory => {
+            default     => $arg_href->{active_parameter_href}{temp_directory},
+            strict_type => 1,
+            store       => \$temp_directory,
         },
     };
 
@@ -161,6 +161,7 @@ sub analysis_plink {
 
     use MIP::File::Format::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
+    use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_family_dead_end };
@@ -183,14 +184,17 @@ sub analysis_plink {
     ## Unpack parameters
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my $core_number =
-      $active_parameter_href->{module_core_number}{$mip_program_name};
-    my $time = $active_parameter_href->{module_time}{$mip_program_name};
     my $human_genome_reference_version =
       $file_info_href->{human_genome_reference_version};
     my $human_genome_reference_source =
       $file_info_href->{human_genome_reference_source};
+    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
+    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_program_name      => $mip_program_name,
+        }
+    );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -202,15 +206,16 @@ sub analysis_plink {
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ( $file_path, $program_info_path ) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $family_id,
-            program_name          => $program_name,
-            program_directory     => $program_directory,
-            call_type             => $call_type,
-            core_number           => $core_number,
-            process_time          => $time,
+            active_parameter_href           => $active_parameter_href,
+            call_type                       => $call_type,
+            core_number                     => $core_number,
+            directory_id                    => $family_id,
+            FILEHANDLE                      => $FILEHANDLE,
+            job_id_href                     => $job_id_href,
+            process_time                    => $time,
+            program_directory               => $program_directory,
+            program_name                    => $program_name,
+            source_environment_commands_ref => [$source_environment_cmd],
         }
     );
 
@@ -239,10 +244,10 @@ sub analysis_plink {
     ## Get infile_suffix from baserecalibration jobid chain
     my $infile_suffix = get_file_suffix(
         {
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
             jobid_chain =>
               $parameter_href->{pgatk_combinevariantcallsets}{chain},
+            parameter_href => $parameter_href,
+            suffix_key     => q{variant_file_suffix},
         }
     );
 
@@ -252,11 +257,11 @@ sub analysis_plink {
     ## Create .fam file to be used in variant calling analyses
     create_fam_file(
         {
-            parameter_href        => $parameter_href,
-            active_parameter_href => $active_parameter_href,
-            sample_info_href      => $sample_info_href,
-            FILEHANDLE            => $FILEHANDLE,
             fam_file_path         => $family_file,
+            FILEHANDLE            => $FILEHANDLE,
+            active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
+            sample_info_href      => $sample_info_href,
         }
     );
 
@@ -278,14 +283,14 @@ sub analysis_plink {
     say {$FILEHANDLE} q{## Remove indels using bcftools};
     bcftools_view(
         {
-            infile_path  => $file_path_prefix . $infile_suffix,
-            outfile_path => $file_path_prefix
+            exclude_types_ref => [q{indels}],
+            FILEHANDLE        => $FILEHANDLE,
+            infile_path       => $file_path_prefix . $infile_suffix,
+            outfile_path      => $file_path_prefix
               . $UNDERSCORE
               . q{no_indels}
               . $infile_suffix,
-            output_type       => q{v},
-            exclude_types_ref => [q{indels}],
-            FILEHANDLE        => $FILEHANDLE,
+            output_type => q{v},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -293,14 +298,14 @@ sub analysis_plink {
     say {$FILEHANDLE} q{## Create uniq IDs and remove duplicate variants};
     bcftools_annotate(
         {
-            remove_ids_ref => [q{ID}],
-            set_id         => q?+'%CHROM:%POS:%REF:%ALT'?,
-            infile_path    => $file_path_prefix
+            FILEHANDLE  => $FILEHANDLE,
+            infile_path => $file_path_prefix
               . $UNDERSCORE
               . q{no_indels}
               . $infile_suffix,
-            output_type => q{v},
-            FILEHANDLE  => $FILEHANDLE,
+            output_type    => q{v},
+            remove_ids_ref => [q{ID}],
+            set_id         => q?+'%CHROM:%POS:%REF:%ALT'?,
         }
     );
 
@@ -309,12 +314,12 @@ sub analysis_plink {
     ## Drops duplicate variants that appear later in the the VCF file
     vt_uniq(
         {
+            FILEHANDLE   => $FILEHANDLE,
             infile_path  => $DASH,
             outfile_path => $file_path_prefix
               . $UNDERSCORE
               . q{no_indels_ann_uniq}
               . $infile_suffix,
-            FILEHANDLE => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -331,23 +336,23 @@ sub analysis_plink {
     say {$FILEHANDLE} q{## Create pruning set and uniq IDs};
     plink_variant_pruning(
         {
+            FILEHANDLE          => $FILEHANDLE,
+            const_fid           => $family_id,
+            outfile_prefix      => $outfile_prefix,
+            make_bed            => 1,
+            indep               => 1,
+            indep_step_size     => $INDEP_STEP_SIZE,
+            indep_vif_threshold => $INDEP_VIF_THRESHOLD,
+            indep_window_size   => $INDEP_WINDOW_SIZE,
+            set_missing_var_ids => q?@:#[?
+              . $human_genome_reference_version
+              . q?]\$1,\$2?,
             vcffile_path => $file_path_prefix
               . $UNDERSCORE
               . q{no_indels_ann_uniq}
               . $infile_suffix,
-            outfile_prefix      => $outfile_prefix,
-            vcf_require_gt      => 1,
-            vcf_half_call       => q{haploid},
-            set_missing_var_ids => q?@:#[?
-              . $human_genome_reference_version
-              . q?]\$1,\$2?,
-            const_fid           => $family_id,
-            make_bed            => 1,
-            indep               => 1,
-            indep_window_size   => $INDEP_WINDOW_SIZE,
-            indep_step_size     => $INDEP_STEP_SIZE,
-            indep_vif_threshold => $INDEP_VIF_THRESHOLD,
-            FILEHANDLE          => $FILEHANDLE,
+            vcf_half_call  => q{haploid},
+            vcf_require_gt => 1,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -361,12 +366,12 @@ sub analysis_plink {
     plink_fix_fam_ped_map_freq(
         {
             binary_fileset_prefix => $binary_fileset_prefix,
-            fam_file_path         => $family_file,
-            make_just_fam         => 1,
-            recode                => 1,
-            freqx                 => 1,
-            outfile_prefix        => $outfile_prefix,
             FILEHANDLE            => $FILEHANDLE,
+            fam_file_path         => $family_file,
+            freqx                 => 1,
+            make_just_fam         => 1,
+            outfile_prefix        => $outfile_prefix,
+            recode                => 1,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -379,13 +384,13 @@ sub analysis_plink {
         say {$FILEHANDLE} q{## Calculate inbreeding coefficients per family};
         plink_calculate_inbreeding(
             {
-                binary_fileset_prefix   => $binary_fileset_prefix,
-                outfile_prefix          => $outfile_prefix,
-                het                     => 1,
-                small_sample            => 1,
-                inbreeding_coefficients => 1,
+                binary_fileset_prefix => $binary_fileset_prefix,
                 extract_file => $binary_fileset_prefix . $DOT . q{prune.in},
                 FILEHANDLE   => $FILEHANDLE,
+                inbreeding_coefficients => 1,
+                het                     => 1,
+                outfile_prefix          => $outfile_prefix,
+                small_sample            => 1,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -393,12 +398,12 @@ sub analysis_plink {
         say {$FILEHANDLE} q{## Create Plink .mibs per family};
         plink_create_mibs(
             {
-                ped_file_path  => $binary_fileset_prefix . $DOT . q{ped},
-                map_file_path  => $binary_fileset_prefix . $DOT . q{map},
                 cluster        => 1,
+                FILEHANDLE     => $FILEHANDLE,
+                map_file_path  => $binary_fileset_prefix . $DOT . q{map},
                 matrix         => 1,
                 outfile_prefix => $outfile_prefix,
-                FILEHANDLE     => $FILEHANDLE,
+                ped_file_path  => $binary_fileset_prefix . $DOT . q{ped},
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -424,13 +429,13 @@ sub analysis_plink {
 
     plink_check_sex_chroms(
         {
-            regions_ref           => [ $CHR_X_NUMBER, $CHR_Y_NUMBER ],
-            split_x               => $genome_build,
+            binary_fileset_prefix => $binary_fileset_prefix,
+            FILEHANDLE            => $FILEHANDLE,
             no_fail               => 1,
             make_bed              => 1,
-            binary_fileset_prefix => $binary_fileset_prefix,
-            outfile_prefix => $outfile_prefix . $UNDERSCORE . q{unsplit},
-            FILEHANDLE     => $FILEHANDLE,
+            outfile_prefix        => $outfile_prefix . $UNDERSCORE . q{unsplit},
+            regions_ref           => [ $CHR_X_NUMBER, $CHR_Y_NUMBER ],
+            split_x               => $genome_build,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -454,14 +459,14 @@ sub analysis_plink {
 
     plink_sex_check(
         {
-            sex_check_min_f       => $sex_check_min_f,
-            extract_file          => $extract_file,
-            read_freqfile_path    => $binary_fileset_prefix . $DOT . q{frqx},
             binary_fileset_prefix => $binary_fileset_prefix
               . $UNDERSCORE
               . q{unsplit},
-            outfile_prefix => $outfile_prefix,
-            FILEHANDLE     => $FILEHANDLE,
+            extract_file       => $extract_file,
+            FILEHANDLE         => $FILEHANDLE,
+            outfile_prefix     => $outfile_prefix,
+            read_freqfile_path => $binary_fileset_prefix . $DOT . q{frqx},
+            sex_check_min_f    => $sex_check_min_f,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -473,22 +478,22 @@ sub analysis_plink {
             ## Collect QC metadata info for later use
             add_program_outfile_to_sample_info(
                 {
-                    sample_info_href => $sample_info_href,
-                    program_name     => q{inbreeding_factor},
-                    path             => catfile(
+                    path => catfile(
                         $outfamily_directory, $family_id . $DOT . q{het}
                     ),
+                    program_name     => q{inbreeding_factor},
+                    sample_info_href => $sample_info_href,
                 }
             );
 
             ## Collect QC metadata info for later use
             add_program_outfile_to_sample_info(
                 {
-                    sample_info_href => $sample_info_href,
-                    program_name     => q{relation_check},
-                    path             => catfile(
+                    path => catfile(
                         $outfamily_directory, $family_id . $DOT . q{mibs}
                     ),
+                    program_name     => q{relation_check},
+                    sample_info_href => $sample_info_href,
                 }
             );
         }
@@ -496,31 +501,31 @@ sub analysis_plink {
         ## Collect QC metadata info for later use
         add_program_outfile_to_sample_info(
             {
-                sample_info_href => $sample_info_href,
-                program_name     => q{plink_sexcheck},
-                path             => catfile(
+                path => catfile(
                     $outfamily_directory, $family_id . $DOT . q{sexcheck}
                 ),
+                program_name     => q{plink_sexcheck},
+                sample_info_href => $sample_info_href,
             }
         );
 
         ## Collect QC metadata info for later use
         add_program_outfile_to_sample_info(
             {
-                sample_info_href => $sample_info_href,
+                path             => catfile( $directory, $stdout_file ),
                 program_name     => q{plink2},
-                path             => catfile( $directory, $stdout_file )
+                sample_info_href => $sample_info_href,
             }
         );
 
         slurm_submit_job_sample_id_dependency_family_dead_end(
             {
-                job_id_href             => $job_id_href,
+                family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                log                     => $log,
+                path                    => $job_id_chain,
                 sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                family_id        => $family_id,
-                path             => $job_id_chain,
-                log              => $log,
                 sbatch_file_name => $file_path,
             }
         );

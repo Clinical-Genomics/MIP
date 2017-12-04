@@ -1,18 +1,18 @@
 package MIP::Recipes::Analysis::Picardtools_genotypeconcordance;
 
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catdir catfile devnull };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use autodie qw{ :all };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-use File::Spec::Functions qw{ catdir catfile devnull };
 
 ## CPANM
+use autodie qw{ :all };
 use Readonly;
 
 BEGIN {
@@ -21,14 +21,14 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_picardtools_genotypeconcordance };
 
 }
 
-##Constants
+## Constants
 Readonly my $ASTERIX    => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
@@ -39,51 +39,44 @@ sub analysis_picardtools_genotypeconcordance {
 
 ## Function : Compare metrics for this analysis run with the NIST reference dataset.
 ## Returns  :
-## Arguments: $parameter_href          => Parameter hash {REF}
-##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $sample_info_href        => Info on samples and family hash {REF}
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $call_type               => Variant call type
+##          : $family_id               => Family id
 ##          : $file_info_href          => File info hash {REF}
+##          : $infamily_directory      => In family directory
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $sample_id               => Sample id
-##          : $infamily_directory      => In family directory
-##          : $outfamily_directory     => Out family directory
-##          : $program_name            => Program name
-##          : $family_id               => Family id
-##          : $temp_directory          => Temporary directory
-##          : $reference_dir           => MIP reference directory
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $call_type               => Variant call type
+##          : $outfamily_directory     => Out family directory
+##          : $parameter_href          => Parameter hash {REF}
+##          : $program_name            => Program name
+##          : $sample_id               => Sample id
+##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $reference_dir           => MIP reference directory
+##          : $temp_directory          => Temporary directory
 
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id;
-    my $temp_directory;
-    my $reference_dir;
-    my $outaligner_dir;
     my $call_type;
+    my $family_id;
+    my $outaligner_dir;
+    my $reference_dir;
+    my $temp_directory;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
     my $file_info_href;
+    my $infamily_directory;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $sample_id;
-    my $infamily_directory;
-    my $outfamily_directory;
+    my $parameter_href;
     my $program_name;
+    my $outfamily_directory;
+    my $sample_id;
+    my $sample_info_href;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
@@ -91,12 +84,12 @@ sub analysis_picardtools_genotypeconcordance {
             strict_type => 1,
             store       => \$active_parameter_href,
         },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
+        call_type =>
+          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
+        family_id => {
+            default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$sample_info_href,
+            store       => \$family_id,
         },
         file_info_href => {
             required    => 1,
@@ -104,6 +97,12 @@ sub analysis_picardtools_genotypeconcordance {
             default     => {},
             strict_type => 1,
             store       => \$file_info_href,
+        },
+        infamily_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$infamily_directory,
         },
         infile_lane_prefix_href => {
             required    => 1,
@@ -119,17 +118,10 @@ sub analysis_picardtools_genotypeconcordance {
             strict_type => 1,
             store       => \$job_id_href,
         },
-        sample_id => {
-            required    => 1,
-            defined     => 1,
+        outaligner_dir => {
+            default     => $arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$sample_id,
-        },
-        infamily_directory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$infamily_directory,
+            store       => \$outaligner_dir,
         },
         outfamily_directory => {
             required    => 1,
@@ -137,39 +129,48 @@ sub analysis_picardtools_genotypeconcordance {
             strict_type => 1,
             store       => \$outfamily_directory,
         },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$program_name,
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
+        reference_dir => {
+            default     => $arg_href->{active_parameter_href}{reference_dir},
             strict_type => 1,
-            store       => \$family_id,
+            store       => \$reference_dir,
+        },
+        sample_id => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$sample_id,
+        },
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
             store       => \$temp_directory,
         },
-        reference_dir => {
-            default     => $arg_href->{active_parameter_href}{reference_dir},
-            strict_type => 1,
-            store       => \$reference_dir,
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir,
-        },
-        call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Gnu::Coreutils qw{ gnu_cat };
+    use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_family_dead_end };
@@ -190,11 +191,14 @@ sub analysis_picardtools_genotypeconcordance {
     my $mip_program_mode = $active_parameter_href->{$mip_program_name};
 
     ## Alias
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my $core_number =
-      $active_parameter_href->{module_core_number}{$mip_program_name};
-    my $time = $active_parameter_href->{module_time}{$mip_program_name};
+    my $job_id_chain       = $parameter_href->{$mip_program_name}{chain};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
+    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_program_name      => $mip_program_name,
+        }
+    );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -204,16 +208,17 @@ sub analysis_picardtools_genotypeconcordance {
     my ($file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $family_id,
-            program_name          => $program_name,
-            program_directory     => catfile( $outaligner_dir, $program_name ),
             core_number           => $core_number,
-            process_time          => $time,
-            temp_directory        => $temp_directory,
+            directory_id          => $family_id,
+            error_trap => 0,    # Special case to allow "vcf.idx" to be created
+            FILEHANDLE        => $FILEHANDLE,
+            job_id_href       => $job_id_href,
+            process_time      => $time,
+            program_directory => catfile( $outaligner_dir, $program_name ),
+            program_name      => $program_name,
             set_errexit => 0,    # Special case to allow "vcf.idx" to be created
-            error_trap  => 0,    # Special case to allow "vcf.idx" to be created
+            source_environment_commands_ref => [$source_environment_cmd],
+            temp_directory                  => $temp_directory,
         }
     );
 
@@ -251,11 +256,11 @@ sub analysis_picardtools_genotypeconcordance {
     ## Rename vcf samples. The samples array will replace the sample names in the same order as supplied.
     bcftools_rename_vcf_samples(
         {
-            sample_ids_ref => [ $active_parameter_href->{nist_id} . q{-NIST} ],
-            temp_directory => $temp_directory,
+            FILEHANDLE => $FILEHANDLE,
             infile  => $active_parameter_href->{nist_high_confidence_call_set},
             outfile => $nist_file_path . $UNDERSCORE . q{refrm.vcf},
-            FILEHANDLE => $FILEHANDLE,
+            temp_directory => $temp_directory,
+            sample_ids_ref => [ $active_parameter_href->{nist_id} . q{-NIST} ],
         }
     );
 
@@ -281,9 +286,9 @@ sub analysis_picardtools_genotypeconcordance {
     say {$FILEHANDLE} q{## bcftools stats};
     bcftools_stats(
         {
+            FILEHANDLE   => $FILEHANDLE,
             infile_path  => $nist_file_path . $DOT . q{vcf},
             outfile_path => $nist_file_path . $DOT . q{vcf.stats},
-            FILEHANDLE   => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -294,20 +299,20 @@ sub analysis_picardtools_genotypeconcordance {
 
     gatk_selectvariants(
         {
-            memory_allocation => q{Xmx2g},
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory => $temp_directory,
-            java_jar       => catfile(
+            FILEHANDLE  => $FILEHANDLE,
+            infile_path => $nist_file_path . $DOT . q{vcf},
+            java_jar    => catfile(
                 $active_parameter_href->{gatk_path},
                 q{GenomeAnalysisTK.jar}
             ),
-            sample_names_ref   => [ $sample_id . q{XXX} ],
+            java_use_large_pages =>
+              $active_parameter_href->{java_use_large_pages},
             logging_level      => $active_parameter_href->{gatk_logging_level},
-            referencefile_path => $referencefile_path,
-            infile_path        => $nist_file_path . $DOT . q{vcf},
+            memory_allocation  => q{Xmx2g},
             outfile_path       => $nist_file_path . q{XXX.vcf},
-            FILEHANDLE         => $FILEHANDLE,
+            referencefile_path => $referencefile_path,
+            sample_names_ref   => [ $sample_id . q{XXX} ],
+            temp_directory     => $temp_directory,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -331,12 +336,12 @@ q?perl -nae 'unless($_=~/NC_007605/ || $_=~/hs37d5/ || $_=~/GL\d+/) {print $_}' 
 
     gnu_cat(
         {
+            FILEHANDLE       => $FILEHANDLE,
             infile_paths_ref => [
                 $genome_dict_file_path,
                 $active_parameter_href->{nist_high_confidence_call_set_bed}
             ],
             outfile_path => $nist_file_path . $DOT . q{bed.dict_body},
-            FILEHANDLE   => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -364,19 +369,19 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
 
     picardtools_intervallisttools(
         {
-            memory_allocation => q{Xmx2g},
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory => $active_parameter_href->{temp_directory},
-            java_jar       => catfile(
+            FILEHANDLE => $FILEHANDLE,
+            infile_paths_ref =>
+              [ $nist_file_path . $DOT . q{bed.dict_body_col_5.interval_list} ],
+            java_jar => catfile(
                 $active_parameter_href->{picardtools_path},
                 q{picard.jar}
             ),
-            infile_paths_ref =>
-              [ $nist_file_path . $DOT . q{bed.dict_body_col_5.interval_list} ],
+            java_use_large_pages =>
+              $active_parameter_href->{java_use_large_pages},
+            memory_allocation  => q{Xmx2g},
             outfile_path       => $nist_file_path . $DOT . q{bed.interval_list},
             referencefile_path => $referencefile_path,
-            FILEHANDLE         => $FILEHANDLE,
+            temp_directory     => $active_parameter_href->{temp_directory},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -387,21 +392,21 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
 
     gatk_selectvariants(
         {
-            memory_allocation => q{Xmx2g},
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory => $temp_directory,
-            java_jar       => catfile(
+            exclude_nonvariants => 1,
+            FILEHANDLE          => $FILEHANDLE,
+            infile_path         => $file_path_prefix . $DOT . q{vcf},
+            java_jar            => catfile(
                 $active_parameter_href->{gatk_path},
                 q{GenomeAnalysisTK.jar}
             ),
-            sample_names_ref    => [$sample_id],
-            logging_level       => $active_parameter_href->{gatk_logging_level},
-            referencefile_path  => $referencefile_path,
-            infile_path         => $file_path_prefix . $DOT . q{vcf},
-            outfile_path        => $call_file_path . $DOT . q{vcf},
-            exclude_nonvariants => 1,
-            FILEHANDLE          => $FILEHANDLE,
+            java_use_large_pages =>
+              $active_parameter_href->{java_use_large_pages},
+            logging_level      => $active_parameter_href->{gatk_logging_level},
+            memory_allocation  => q{Xmx2g},
+            outfile_path       => $call_file_path . $DOT . q{vcf},
+            referencefile_path => $referencefile_path,
+            sample_names_ref   => [$sample_id],
+            temp_directory     => $temp_directory,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -411,20 +416,20 @@ q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^brow
 
     gatk_leftalignandtrimvariants(
         {
-            memory_allocation => q{Xmx2g},
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory => $temp_directory,
-            java_jar       => catfile(
+            FILEHANDLE  => $FILEHANDLE,
+            infile_path => $call_file_path . $DOT . q{vcf},
+            java_jar    => catfile(
                 $active_parameter_href->{gatk_path},
                 q{GenomeAnalysisTK.jar}
             ),
-            infile_path         => $call_file_path . $DOT . q{vcf},
+            java_use_large_pages =>
+              $active_parameter_href->{java_use_large_pages},
             logging_level       => $active_parameter_href->{gatk_logging_level},
+            memory_allocation   => q{Xmx2g},
+            outfile_path        => $call_file_path . $UNDERSCORE . q{lts.vcf},
             referencefile_path  => $referencefile_path,
             split_multiallelics => 1,
-            outfile_path        => $call_file_path . $UNDERSCORE . q{lts.vcf},
-            FILEHANDLE          => $FILEHANDLE,
+            temp_directory      => $temp_directory,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -450,11 +455,11 @@ q?perl -nae 'unless($_=~/##contig=<ID=NC_007605,length=171823>/ || $_=~/##contig
     say {$FILEHANDLE} q{## bcftools stats};
     bcftools_stats(
         {
+            FILEHANDLE   => $FILEHANDLE,
             infile_path  => $call_file_path . $UNDERSCORE . q{lts_refrm.vcf},
             outfile_path => $call_file_path
               . $UNDERSCORE
               . q{lts_refrm.vcf.stats},
-            FILEHANDLE => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -465,20 +470,20 @@ q?perl -nae 'unless($_=~/##contig=<ID=NC_007605,length=171823>/ || $_=~/##contig
 
     gatk_selectvariants(
         {
-            memory_allocation => q{Xmx2g},
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory => $temp_directory,
-            java_jar       => catfile(
+            FILEHANDLE  => $FILEHANDLE,
+            infile_path => $call_file_path . $UNDERSCORE . q{lts_refrm.vcf},
+            java_jar    => catfile(
                 $active_parameter_href->{gatk_path},
                 q{GenomeAnalysisTK.jar}
             ),
-            sample_names_ref   => [ $sample_id . q{XXX} ],
+            java_use_large_pages =>
+              $active_parameter_href->{java_use_large_pages},
             logging_level      => $active_parameter_href->{gatk_logging_level},
+            memory_allocation  => q{Xmx2g},
+            outfile_path       => $call_file_path . q{XXX.vcf},
             referencefile_path => $referencefile_path,
-            infile_path  => $call_file_path . $UNDERSCORE . q{lts_refrm.vcf},
-            outfile_path => $call_file_path . q{XXX.vcf},
-            FILEHANDLE   => $FILEHANDLE,
+            sample_names_ref   => [ $sample_id . q{XXX} ],
+            temp_directory     => $temp_directory,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -487,24 +492,24 @@ q?perl -nae 'unless($_=~/##contig=<ID=NC_007605,length=171823>/ || $_=~/##contig
 q{## Picard GenotypeConcordance - Genome restricted by union - good quality};
     picardtools_genotypeconcordance(
         {
-            intervals_ref => [ $nist_file_path . $DOT . q{bed.interval_list} ],
+            call_sample   => $sample_id,
+            FILEHANDLE    => $FILEHANDLE,
             infile_path   => $call_file_path . $UNDERSCORE . q{lts_refrm.vcf},
-            truth_file_path     => $nist_file_path . $DOT . q{vcf},
-            outfile_prefix_path => $outfile_path_prefix . $UNDERSCORE . q{bed},
-            truth_sample        => $active_parameter_href->{nist_id} . q{-NIST},
-            call_sample         => $sample_id,
-            min_genotype_quality => 20,
-            min_depth            => 10,
-            FILEHANDLE           => $FILEHANDLE,
-            referencefile_path   => $referencefile_path,
-            memory_allocation    => q{Xmx2g},
+            intervals_ref => [ $nist_file_path . $DOT . q{bed.interval_list} ],
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
-            temp_directory => $active_parameter_href->{temp_directory},
-            java_jar       => catfile(
+            java_jar => catfile(
                 $active_parameter_href->{picardtools_path},
                 q{picard.jar}
             ),
+            memory_allocation    => q{Xmx2g},
+            min_depth            => 10,
+            min_genotype_quality => 20,
+            outfile_prefix_path  => $outfile_path_prefix . $UNDERSCORE . q{bed},
+            referencefile_path   => $referencefile_path,
+            temp_directory       => $active_parameter_href->{temp_directory},
+            truth_file_path      => $nist_file_path . $DOT . q{vcf},
+            truth_sample => $active_parameter_href->{nist_id} . q{-NIST},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -512,23 +517,23 @@ q{## Picard GenotypeConcordance - Genome restricted by union - good quality};
     say {$FILEHANDLE} q{## Picard GenotypeConcordance - Genome - good quality};
     picardtools_genotypeconcordance(
         {
-            infile_path     => $call_file_path . $UNDERSCORE . q{lts_refrm.vcf},
-            truth_file_path => $nist_file_path . $DOT . q{vcf},
-            outfile_prefix_path => $outfile_path_prefix,
-            truth_sample        => $active_parameter_href->{nist_id} . q{-NIST},
-            call_sample         => $sample_id,
-            min_genotype_quality => 20,
-            min_depth            => 10,
-            FILEHANDLE           => $FILEHANDLE,
-            referencefile_path   => $referencefile_path,
-            memory_allocation    => q{Xmx2g},
+            call_sample => $sample_id,
+            FILEHANDLE  => $FILEHANDLE,
+            infile_path => $call_file_path . $UNDERSCORE . q{lts_refrm.vcf},
             java_use_large_pages =>
               $active_parameter_href->{java_use_large_pages},
-            temp_directory => $active_parameter_href->{temp_directory},
-            java_jar       => catfile(
+            java_jar => catfile(
                 $active_parameter_href->{picardtools_path},
                 q{picard.jar}
             ),
+            memory_allocation    => q{Xmx2g},
+            min_depth            => 10,
+            min_genotype_quality => 20,
+            outfile_prefix_path  => $outfile_path_prefix,
+            referencefile_path   => $referencefile_path,
+            truth_file_path      => $nist_file_path . $DOT . q{vcf},
+            truth_sample   => $active_parameter_href->{nist_id} . q{-NIST},
+            temp_directory => $active_parameter_href->{temp_directory},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -541,9 +546,9 @@ q{## Picard GenotypeConcordance - Genome restricted by union - good quality};
 
         migrate_file(
             {
+                FILEHANDLE   => $FILEHANDLE,
                 infile_path  => catfile( $temp_directory, $outfile ),
                 outfile_path => $outfamily_directory,
-                FILEHANDLE   => $FILEHANDLE,
             }
         );
     }
@@ -555,12 +560,12 @@ q{## Picard GenotypeConcordance - Genome restricted by union - good quality};
 
         slurm_submit_job_sample_id_dependency_family_dead_end(
             {
-                job_id_href             => $job_id_href,
+                family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                log                     => $log,
+                path                    => $job_id_chain,
                 sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                family_id        => $family_id,
-                path             => $job_id_chain,
-                log              => $log,
                 sbatch_file_name => $file_path,
             }
         );

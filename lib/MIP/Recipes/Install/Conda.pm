@@ -28,7 +28,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.0.9;
+    our $VERSION = 1.0.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -299,15 +299,12 @@ sub install_bioconda_packages {
     my $tmpl = {
         bioconda_packages_href => {
             required    => 1,
-            defined     => 1,
             default     => {},
             strict_type => 1,
             store       => \$bioconda_packages_href,
         },
         snpeff_genome_versions_ref => {
             required    => 1,
-            default     => [],
-            defined     => 1,
             strict_type => 1,
             store       => \$snpeff_genome_versions_ref
         },
@@ -340,6 +337,9 @@ sub install_bioconda_packages {
     use MIP::Gnu::Coreutils qw{ gnu_ln };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
     use MIP::Package_manager::Conda qw{ conda_install };
+
+    ## Return if no packages are to be installed 
+    return if not keys %{$bioconda_packages_href};
 
     ## Retrieve logger object
     my $log = retrieve_log(
@@ -464,8 +464,6 @@ sub finish_bioconda_package_install {
         },
         snpeff_genome_versions_ref => {
             required    => 1,
-            default     => [],
-            defined     => 1,
             strict_type => 1,
             store       => \$snpeff_genome_versions_ref
         },

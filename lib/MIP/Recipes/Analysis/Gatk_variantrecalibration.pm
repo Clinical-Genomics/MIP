@@ -1,20 +1,20 @@
 package MIP::Recipes::Analysis::Gatk_variantrecalibration;
 
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catdir catfile splitpath };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use autodie qw{ :all };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-use File::Spec::Functions qw{ catdir catfile splitpath };
 
 ## CPANM
-use Readonly;
+use autodie qw{ :all };
 use List::MoreUtils qw { uniq };
+use Readonly;
 
 BEGIN {
 
@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -30,7 +30,7 @@ BEGIN {
 
 }
 
-##Constants
+## Constants
 Readonly my $ASTERIX    => q{*};
 Readonly my $AMPERSAND  => q{&};
 Readonly my $DOT        => q{.};
@@ -42,47 +42,40 @@ sub analysis_gatk_variantrecalibration_wgs {
 
 ## Function : GATK VariantRecalibrator/ApplyRecalibration analysis recipe for wgs data
 ## Returns  :
-## Arguments: $parameter_href          => Parameter hash {REF}
-##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $sample_info_href        => Info on samples and family hash {REF}
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $call_type               => Variant call type
+##          : $family_id               => Family id
 ##          : $file_info_href          => File info hash {REF}
+##          : $infamily_directory      => In family directory
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $infamily_directory      => In family directory
-##          : $outfamily_directory     => Out family directory
-##          : $program_name            => Program name
-##          : $family_id               => Family id
-##          : $temp_directory          => Temporary directory
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $call_type               => Variant call type
+##          : $outfamily_directory     => Out family directory
+##          : $parameter_href          => Parameter hash {REF}
+##          : $program_name            => Program name
+##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $temp_directory          => Temporary directory
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $infamily_directory;
     my $outfamily_directory;
+    my $parameter_href;
     my $program_name;
+    my $sample_info_href;
 
     ## Default(s)
-    my $family_id;
-    my $temp_directory;
-    my $outaligner_dir;
     my $call_type;
+    my $family_id;
+    my $outaligner_dir;
+    my $temp_directory;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
@@ -90,12 +83,12 @@ sub analysis_gatk_variantrecalibration_wgs {
             strict_type => 1,
             store       => \$active_parameter_href,
         },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
+        call_type =>
+          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
+        family_id => {
+            default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$sample_info_href,
+            store       => \$family_id,
         },
         file_info_href => {
             required    => 1,
@@ -103,6 +96,12 @@ sub analysis_gatk_variantrecalibration_wgs {
             default     => {},
             strict_type => 1,
             store       => \$file_info_href,
+        },
+        infamily_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$infamily_directory,
         },
         infile_lane_prefix_href => {
             required    => 1,
@@ -118,11 +117,10 @@ sub analysis_gatk_variantrecalibration_wgs {
             strict_type => 1,
             store       => \$job_id_href,
         },
-        infamily_directory => {
-            required    => 1,
-            defined     => 1,
+        outaligner_dir => {
+            default     => $arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$infamily_directory,
+            store       => \$outaligner_dir,
         },
         outfamily_directory => {
             required    => 1,
@@ -130,29 +128,31 @@ sub analysis_gatk_variantrecalibration_wgs {
             strict_type => 1,
             store       => \$outfamily_directory,
         },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$program_name,
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
             strict_type => 1,
-            store       => \$family_id,
+            store       => \$sample_info_href,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
             store       => \$temp_directory,
         },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir,
-        },
-        call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -160,6 +160,7 @@ sub analysis_gatk_variantrecalibration_wgs {
     use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::File::Format::Pedigree qw{ create_fam_file gatk_pedigree_flag };
     use MIP::Get::File qw{ get_file_suffix };
+    use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Language::Java qw{ java_core };
     use MIP::IO::Files qw{ migrate_file };
@@ -168,10 +169,10 @@ sub analysis_gatk_variantrecalibration_wgs {
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_norm };
     use MIP::Program::Variantcalling::Gatk
       qw{ gatk_variantrecalibrator gatk_applyrecalibration gatk_selectvariants gatk_calculategenotypeposteriors };
-    use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Set::File qw{ set_file_suffix };
     use MIP::QC::Record
       qw{ add_program_outfile_to_sample_info add_processing_metafile_to_sample_info };
+    use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Set::File qw{ set_file_suffix };
 
     ## Constants
     Readonly my $MAX_GAUSSIAN_LEVEL => 4;
@@ -184,23 +185,26 @@ sub analysis_gatk_variantrecalibration_wgs {
     my $mip_program_mode = $active_parameter_href->{$mip_program_name};
 
     ## Alias
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my $core_number =
-      $active_parameter_href->{module_core_number}{$mip_program_name};
-    my $time = $active_parameter_href->{module_time}{$mip_program_name};
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $referencefile_path = $active_parameter_href->{human_genome_reference};
-    my $gatk_jar =
-      catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} );
-    my $enable_snv_max_gaussians_filter =
-      $active_parameter_href->{gatk_variantrecalibration_snv_max_gaussians};
     my $enable_indel_max_gaussians_filter =
       $active_parameter_href->{gatk_variantrecalibration_indel_max_gaussians};
-    my $resource_snv_href =
-      $active_parameter_href->{gatk_variantrecalibration_resource_snv};
+    my $enable_snv_max_gaussians_filter =
+      $active_parameter_href->{gatk_variantrecalibration_snv_max_gaussians};
+    my $gatk_jar =
+      catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} );
+    my $job_id_chain       = $parameter_href->{$mip_program_name}{chain};
+    my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $resource_indel_href =
       $active_parameter_href->{gatk_variantrecalibration_resource_indel};
+    my $resource_snv_href =
+      $active_parameter_href->{gatk_variantrecalibration_resource_snv};
+    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_program_name      => $mip_program_name,
+        }
+    );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -235,18 +239,18 @@ sub analysis_gatk_variantrecalibration_wgs {
     my $infile_suffix = get_file_suffix(
         {
             parameter_href => $parameter_href,
-            suffix_key     => q{outfile_suffix},
             program_name   => q{pgatk_genotypegvcfs},
+            suffix_key     => q{outfile_suffix},
         }
     );
 
     ## Set file suffix for next module within jobid chain
     my $outfile_suffix = set_file_suffix(
         {
+            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
-            job_id_chain   => $job_id_chain,
-            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
         }
     );
 
@@ -254,16 +258,17 @@ sub analysis_gatk_variantrecalibration_wgs {
     my ( $file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
+            call_type             => $call_type,
+            core_number           => $core_number,
             directory_id          => $family_id,
-            program_name          => $program_name,
+            FILEHANDLE            => $FILEHANDLE,
+            job_id_href           => $job_id_href,
+            process_time          => $time,
             program_directory =>
               catfile( $outaligner_dir, $program_outdirectory_name ),
-            call_type      => $call_type,
-            core_number    => $core_number,
-            process_time   => $time,
-            temp_directory => $temp_directory,
+            program_name                    => $program_name,
+            source_environment_commands_ref => [$source_environment_cmd],
+            temp_directory                  => $temp_directory,
         }
     );
 
@@ -276,11 +281,11 @@ sub analysis_gatk_variantrecalibration_wgs {
       catfile( $outfamily_file_directory, $family_id . $DOT . q{fam} );
     create_fam_file(
         {
-            parameter_href        => $parameter_href,
             active_parameter_href => $active_parameter_href,
-            sample_info_href      => $sample_info_href,
-            FILEHANDLE            => $FILEHANDLE,
             fam_file_path         => $fam_file_path,
+            FILEHANDLE            => $FILEHANDLE,
+            parameter_href        => $parameter_href,
+            sample_info_href      => $sample_info_href,
         }
     );
 
@@ -372,24 +377,24 @@ sub analysis_gatk_variantrecalibration_wgs {
         my $recal_file_path = $file_path_prefix . $DOT . q{intervals};
         gatk_variantrecalibrator(
             {
-                memory_allocation => q{Xmx10g},
+                annotations_ref  => \@annotations,
+                FILEHANDLE       => $FILEHANDLE,
+                infile_paths_ref => \@infiles,
+                java_jar         => $gatk_jar,
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
-                temp_directory   => $temp_directory,
-                java_jar         => $gatk_jar,
-                infile_paths_ref => \@infiles,
-                annotations_ref  => \@annotations,
-                resources_ref    => \@resources,
                 logging_level => $active_parameter_href->{gatk_logging_level},
-                referencefile_path => $referencefile_path,
-                recal_file_path    => $recal_file_path,
-                rscript_file_path  => $recal_file_path . $DOT . q{plots.R},
-                tranches_file_path => $recal_file_path . $DOT . q{tranches},
-                max_gaussian_level => $max_gaussian_level,
-                mode               => $mode,
+                max_gaussian_level       => $max_gaussian_level,
+                memory_allocation        => q{Xmx10g},
+                mode                     => $mode,
                 pedigree_validation_type => $commands{pedigree_validation_type},
                 pedigree                 => $commands{pedigree},
-                FILEHANDLE               => $FILEHANDLE,
+                recal_file_path          => $recal_file_path,
+                referencefile_path       => $referencefile_path,
+                resources_ref            => \@resources,
+                rscript_file_path  => $recal_file_path . $DOT . q{plots.R},
+                temp_directory     => $temp_directory,
+                tranches_file_path => $recal_file_path . $DOT . q{tranches},
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -423,22 +428,22 @@ sub analysis_gatk_variantrecalibration_wgs {
 
         gatk_applyrecalibration(
             {
-                memory_allocation => q{Xmx10g},
+                FILEHANDLE  => $FILEHANDLE,
+                infile_path => $infile_path,
+                java_jar    => $gatk_jar,
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
-                temp_directory => $temp_directory,
-                java_jar       => $gatk_jar,
-                infile_path    => $infile_path,
-                outfile_path   => $outfile_path,
-                logging_level  => $active_parameter_href->{gatk_logging_level},
-                referencefile_path => $referencefile_path,
-                recal_file_path    => $recal_file_path,
-                tranches_file_path => $recal_file_path . $DOT . q{tranches},
-                ts_filter_level    => $ts_filter_level,
-                mode               => $mode,
+                logging_level => $active_parameter_href->{gatk_logging_level},
+                memory_allocation        => q{Xmx10g},
+                mode                     => $mode,
+                outfile_path             => $outfile_path,
                 pedigree_validation_type => $commands{pedigree_validation_type},
                 pedigree                 => $commands{pedigree},
-                FILEHANDLE               => $FILEHANDLE,
+                recal_file_path          => $recal_file_path,
+                referencefile_path       => $referencefile_path,
+                temp_directory           => $temp_directory,
+                tranches_file_path => $recal_file_path . $DOT . q{tranches},
+                ts_filter_level    => $ts_filter_level,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -453,20 +458,20 @@ sub analysis_gatk_variantrecalibration_wgs {
           $outfile_path_prefix . $UNDERSCORE . q{refined} . $outfile_suffix;
         gatk_calculategenotypeposteriors(
             {
-                memory_allocation => q{Xmx6g},
+                FILEHANDLE  => $FILEHANDLE,
+                infile_path => $outfile_path_prefix . $outfile_suffix,
+                java_jar    => $gatk_jar,
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
-                temp_directory => $temp_directory,
-                java_jar       => $gatk_jar,
-                logging_level  => $active_parameter_href->{gatk_logging_level},
-                referencefile_path => $referencefile_path,
-                infile_path        => $outfile_path_prefix . $outfile_suffix,
-                outfile_path       => $outfile_path,
-                supporting_callset_file_path => $active_parameter_href
-                  ->{gatk_calculategenotypeposteriors_support_set},
+                logging_level => $active_parameter_href->{gatk_logging_level},
+                memory_allocation        => q{Xmx6g},
+                outfile_path             => $outfile_path,
                 pedigree_validation_type => $commands{pedigree_validation_type},
                 pedigree                 => $commands{pedigree},
-                FILEHANDLE               => $FILEHANDLE,
+                referencefile_path       => $referencefile_path,
+                supporting_callset_file_path => $active_parameter_href
+                  ->{gatk_calculategenotypeposteriors_support_set},
+                temp_directory => $temp_directory,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -474,9 +479,9 @@ sub analysis_gatk_variantrecalibration_wgs {
         ## Change name of file to accomodate downstream
         gnu_mv(
             {
+                FILEHANDLE   => $FILEHANDLE,
                 infile_path  => $outfile_path,
                 outfile_path => $outfile_path_prefix . $outfile_suffix,
-                FILEHANDLE   => $FILEHANDLE,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -488,11 +493,11 @@ sub analysis_gatk_variantrecalibration_wgs {
     bcftools_norm(
         {
             FILEHANDLE     => $FILEHANDLE,
-            reference_path => $referencefile_path,
             infile_path    => $outfile_path_prefix . $outfile_suffix,
+            multiallelic   => q{-},
             output_type    => q{v},
             outfile_path   => $bcftools_outfile_path,
-            multiallelic   => q{-},
+            reference_path => $referencefile_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -500,9 +505,9 @@ sub analysis_gatk_variantrecalibration_wgs {
     ## Change name of file to accomodate downstream
     gnu_mv(
         {
+            FILEHANDLE   => $FILEHANDLE,
             infile_path  => $bcftools_outfile_path,
             outfile_path => $outfile_path_prefix . $outfile_suffix,
-            FILEHANDLE   => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -519,9 +524,9 @@ sub analysis_gatk_variantrecalibration_wgs {
 
         migrate_file(
             {
+                FILEHANDLE   => $FILEHANDLE,
                 infile_path  => $outfile,
                 outfile_path => $outfamily_directory,
-                FILEHANDLE   => $FILEHANDLE,
             }
         );
     }
@@ -536,29 +541,29 @@ sub analysis_gatk_variantrecalibration_wgs {
           catfile( $outfamily_directory, $outfile_prefix . $outfile_suffix );
         add_program_outfile_to_sample_info(
             {
-                sample_info_href => $sample_info_href,
-                program_name     => $program_name,
                 path             => $program_outfile_path,
+                program_name     => $program_name,
+                sample_info_href => $sample_info_href,
             }
         );
 
         # Used to find order of samples in qccollect downstream
         add_program_outfile_to_sample_info(
             {
-                sample_info_href => $sample_info_href,
-                program_name     => q{pedigree_check},
                 path             => $program_outfile_path,
+                program_name     => q{pedigree_check},
+                sample_info_href => $sample_info_href,
             }
         );
 
         slurm_submit_job_sample_id_dependency_add_to_family(
             {
-                job_id_href             => $job_id_href,
+                family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                log                     => $log,
+                path                    => $job_id_chain,
                 sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                family_id        => $family_id,
-                path             => $job_id_chain,
-                log              => $log,
                 sbatch_file_name => $file_path,
             }
         );
@@ -570,47 +575,40 @@ sub analysis_gatk_variantrecalibration_wes {
 
 ## Function : GATK VariantRecalibrator/ApplyRecalibration analysis recipe for wes data
 ## Returns  :
-## Arguments: $parameter_href          => Parameter hash {REF}
-##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $sample_info_href        => Info on samples and family hash {REF}
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $call_type               => Variant call type
+##          : $family_id               => Family id
 ##          : $file_info_href          => File info hash {REF}
+##          : $infamily_directory      => In family directory
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $infamily_directory      => In family directory
-##          : $outfamily_directory     => Out family directory
-##          : $program_name            => Program name
-##          : $family_id               => Family id
-##          : $temp_directory          => Temporary directory
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
-##          : $call_type               => Variant call type
+##          : $outfamily_directory     => Out family directory
+##          : $parameter_href          => Parameter hash {REF}
+##          : $program_name            => Program name
+##          : $sample_info_href        => Info on samples and family hash {REF}
+##          : $temp_directory          => Temporary directory
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
     my $file_info_href;
+    my $infamily_directory;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $infamily_directory;
     my $outfamily_directory;
+    my $parameter_href;
     my $program_name;
+    my $sample_info_href;
 
     ## Default(s)
     my $family_id;
-    my $temp_directory;
-    my $outaligner_dir;
     my $call_type;
+    my $outaligner_dir;
+    my $temp_directory;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
@@ -618,12 +616,12 @@ sub analysis_gatk_variantrecalibration_wes {
             strict_type => 1,
             store       => \$active_parameter_href,
         },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
+        call_type =>
+          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
+        family_id => {
+            default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$sample_info_href,
+            store       => \$family_id,
         },
         file_info_href => {
             required    => 1,
@@ -631,6 +629,12 @@ sub analysis_gatk_variantrecalibration_wes {
             default     => {},
             strict_type => 1,
             store       => \$file_info_href,
+        },
+        infamily_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$infamily_directory,
         },
         infile_lane_prefix_href => {
             required    => 1,
@@ -646,11 +650,10 @@ sub analysis_gatk_variantrecalibration_wes {
             strict_type => 1,
             store       => \$job_id_href,
         },
-        infamily_directory => {
-            required    => 1,
-            defined     => 1,
+        outaligner_dir => {
+            default     => $arg_href->{active_parameter_href}{outaligner_dir},
             strict_type => 1,
-            store       => \$infamily_directory,
+            store       => \$outaligner_dir,
         },
         outfamily_directory => {
             required    => 1,
@@ -658,35 +661,38 @@ sub analysis_gatk_variantrecalibration_wes {
             strict_type => 1,
             store       => \$outfamily_directory,
         },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
         program_name => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$program_name,
         },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
             strict_type => 1,
-            store       => \$family_id,
+            store       => \$sample_info_href,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
             store       => \$temp_directory,
         },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir,
-        },
-        call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Delete::List qw{ delete_contig_elements };
     use MIP::Get::File qw{ get_file_suffix };
+    use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Language::Java qw{ java_core };
     use MIP::IO::Files qw{ migrate_file };
@@ -695,9 +701,9 @@ sub analysis_gatk_variantrecalibration_wes {
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_norm };
     use MIP::Program::Variantcalling::Gatk
       qw{ gatk_variantrecalibrator gatk_applyrecalibration gatk_selectvariants gatk_calculategenotypeposteriors };
+    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Set::File qw{ set_file_suffix };
-    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
 
     ## Constants
     Readonly my $MAX_GAUSSIAN_LEVEL => 4;
@@ -710,23 +716,26 @@ sub analysis_gatk_variantrecalibration_wes {
     my $mip_program_mode = $active_parameter_href->{$mip_program_name};
 
     ## Alias
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my $core_number =
-      $active_parameter_href->{module_core_number}{$mip_program_name};
-    my $time = $active_parameter_href->{module_time}{$mip_program_name};
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $referencefile_path = $active_parameter_href->{human_genome_reference};
-    my $gatk_jar =
-      catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} );
-    my $enable_snv_max_gaussians_filter =
-      $active_parameter_href->{gatk_variantrecalibration_snv_max_gaussians};
     my $enable_indel_max_gaussians_filter =
       $active_parameter_href->{gatk_variantrecalibration_indel_max_gaussians};
-    my $resource_snv_href =
-      $active_parameter_href->{gatk_variantrecalibration_resource_snv};
+    my $enable_snv_max_gaussians_filter =
+      $active_parameter_href->{gatk_variantrecalibration_snv_max_gaussians};
+    my $gatk_jar =
+      catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} );
+    my $job_id_chain       = $parameter_href->{$mip_program_name}{chain};
+    my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $resource_indel_href =
       $active_parameter_href->{gatk_variantrecalibration_resource_indel};
+    my $resource_snv_href =
+      $active_parameter_href->{gatk_variantrecalibration_resource_snv};
+    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_program_name      => $mip_program_name,
+        }
+    );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -761,18 +770,18 @@ sub analysis_gatk_variantrecalibration_wes {
     my $infile_suffix = get_file_suffix(
         {
             parameter_href => $parameter_href,
-            suffix_key     => q{outfile_suffix},
             program_name   => q{pgatk_genotypegvcfs},
+            suffix_key     => q{outfile_suffix},
         }
     );
 
     ## Set file suffix for next module within jobid chain
     my $outfile_suffix = set_file_suffix(
         {
+            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
-            job_id_chain   => $job_id_chain,
-            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
         }
     );
 
@@ -780,16 +789,17 @@ sub analysis_gatk_variantrecalibration_wes {
     my ( $file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
+            call_type             => $call_type,
+            core_number           => $core_number,
             directory_id          => $family_id,
-            program_name          => $program_name,
+            FILEHANDLE            => $FILEHANDLE,
+            job_id_href           => $job_id_href,
+            process_time          => $time,
             program_directory =>
               catfile( $outaligner_dir, $program_outdirectory_name ),
-            call_type      => $call_type,
-            core_number    => $core_number,
-            process_time   => $time,
-            temp_directory => $temp_directory,
+            program_name                    => $program_name,
+            source_environment_commands_ref => [$source_environment_cmd],
+            temp_directory                  => $temp_directory,
         }
     );
 
@@ -802,11 +812,11 @@ sub analysis_gatk_variantrecalibration_wes {
       catfile( $outfamily_file_directory, $family_id . $DOT . q{fam} );
     create_fam_file(
         {
-            parameter_href        => $parameter_href,
             active_parameter_href => $active_parameter_href,
-            sample_info_href      => $sample_info_href,
-            FILEHANDLE            => $FILEHANDLE,
             fam_file_path         => $fam_file_path,
+            FILEHANDLE            => $FILEHANDLE,
+            parameter_href        => $parameter_href,
+            sample_info_href      => $sample_info_href,
         }
     );
 
@@ -879,24 +889,24 @@ sub analysis_gatk_variantrecalibration_wes {
         my $recal_file_path = $file_path_prefix . $DOT . q{intervals};
         gatk_variantrecalibrator(
             {
-                memory_allocation => q{Xmx10g},
+                annotations_ref  => \@annotations,
+                FILEHANDLE       => $FILEHANDLE,
+                infile_paths_ref => \@infiles,
+                java_jar         => $gatk_jar,
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
-                temp_directory   => $temp_directory,
-                java_jar         => $gatk_jar,
-                infile_paths_ref => \@infiles,
-                annotations_ref  => \@annotations,
-                resources_ref    => \@resources,
                 logging_level => $active_parameter_href->{gatk_logging_level},
-                referencefile_path => $referencefile_path,
-                recal_file_path    => $recal_file_path,
-                rscript_file_path  => $recal_file_path . $DOT . q{plots.R},
-                tranches_file_path => $recal_file_path . $DOT . q{tranches},
-                max_gaussian_level => $max_gaussian_level,
-                mode               => $mode,
+                max_gaussian_level       => $max_gaussian_level,
+                memory_allocation        => q{Xmx10g},
+                mode                     => $mode,
                 pedigree_validation_type => $commands{pedigree_validation_type},
                 pedigree                 => $commands{pedigree},
-                FILEHANDLE               => $FILEHANDLE,
+                recal_file_path          => $recal_file_path,
+                referencefile_path       => $referencefile_path,
+                resources_ref            => \@resources,
+                rscript_file_path  => $recal_file_path . $DOT . q{plots.R},
+                temp_directory     => $temp_directory,
+                tranches_file_path => $recal_file_path . $DOT . q{tranches},
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -919,22 +929,22 @@ sub analysis_gatk_variantrecalibration_wes {
 
         gatk_applyrecalibration(
             {
-                memory_allocation => q{Xmx10g},
+                FILEHANDLE  => $FILEHANDLE,
+                infile_path => $infile_path,
+                java_jar    => $gatk_jar,
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
-                temp_directory => $temp_directory,
-                java_jar       => $gatk_jar,
-                infile_path    => $infile_path,
-                outfile_path   => $outfile_path,
-                logging_level  => $active_parameter_href->{gatk_logging_level},
-                referencefile_path => $referencefile_path,
-                recal_file_path    => $recal_file_path,
-                tranches_file_path => $recal_file_path . $DOT . q{tranches},
-                ts_filter_level    => $ts_filter_level,
-                mode               => $mode,
+                logging_level => $active_parameter_href->{gatk_logging_level},
+                memory_allocation        => q{Xmx10g},
+                mode                     => $mode,
+                outfile_path             => $outfile_path,
                 pedigree_validation_type => $commands{pedigree_validation_type},
                 pedigree                 => $commands{pedigree},
-                FILEHANDLE               => $FILEHANDLE,
+                recal_file_path          => $recal_file_path,
+                referencefile_path       => $referencefile_path,
+                temp_directory           => $temp_directory,
+                tranches_file_path => $recal_file_path . $DOT . q{tranches},
+                ts_filter_level    => $ts_filter_level,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -943,18 +953,18 @@ sub analysis_gatk_variantrecalibration_wes {
     ## BcfTools norm, Left-align and normalize indels, split multiallelics
     bcftools_norm(
         {
-            FILEHANDLE     => $FILEHANDLE,
-            reference_path => $referencefile_path,
-            infile_path    => $outfile_path_prefix
+            FILEHANDLE  => $FILEHANDLE,
+            infile_path => $outfile_path_prefix
               . $UNDERSCORE
               . q{filtered}
               . $outfile_suffix,
-            output_type  => q{v},
+            multiallelic => q{-},
             outfile_path => $outfile_path_prefix
               . $UNDERSCORE
               . q{filtered_normalized}
               . $outfile_suffix,
-            multiallelic    => q{-},
+            output_type     => q{v},
+            reference_path  => $referencefile_path,
             stderrfile_path => $outfile_path_prefix
               . $UNDERSCORE
               . q{filtered_normalized.stderr},
@@ -971,21 +981,21 @@ sub analysis_gatk_variantrecalibration_wes {
 
     gatk_selectvariants(
         {
-            memory_allocation => q{Xmx2g},
-            java_use_large_pages =>
-              $active_parameter_href->{java_use_large_pages},
-            temp_directory     => $temp_directory,
-            java_jar           => $gatk_jar,
-            sample_names_ref   => \@{ $active_parameter_href->{sample_ids} },
-            logging_level      => $active_parameter_href->{gatk_logging_level},
-            referencefile_path => $referencefile_path,
-            infile_path        => $outfile_path_prefix
+            FILEHANDLE          => $FILEHANDLE,
+            exclude_nonvariants => 1,
+            infile_path         => $outfile_path_prefix
               . $UNDERSCORE
               . q{filtered_normalized}
               . $outfile_suffix,
-            outfile_path        => $outfile_path_prefix . $outfile_suffix,
-            exclude_nonvariants => 1,
-            FILEHANDLE          => $FILEHANDLE,
+            java_jar => $gatk_jar,
+            java_use_large_pages =>
+              $active_parameter_href->{java_use_large_pages},
+            memory_allocation  => q{Xmx2g},
+            logging_level      => $active_parameter_href->{gatk_logging_level},
+            outfile_path       => $outfile_path_prefix . $outfile_suffix,
+            referencefile_path => $referencefile_path,
+            sample_names_ref   => \@{ $active_parameter_href->{sample_ids} },
+            temp_directory     => $temp_directory,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -999,20 +1009,20 @@ sub analysis_gatk_variantrecalibration_wes {
           $outfile_path_prefix . $UNDERSCORE . q{refined} . $outfile_suffix;
         gatk_calculategenotypeposteriors(
             {
-                memory_allocation => q{Xmx6g},
+                FILEHANDLE  => $FILEHANDLE,
+                infile_path => $outfile_path_prefix . $outfile_suffix,
+                java_jar    => $gatk_jar,
                 java_use_large_pages =>
                   $active_parameter_href->{java_use_large_pages},
-                temp_directory => $temp_directory,
-                java_jar       => $gatk_jar,
-                logging_level  => $active_parameter_href->{gatk_logging_level},
-                referencefile_path => $referencefile_path,
-                infile_path        => $outfile_path_prefix . $outfile_suffix,
-                outfile_path       => $outfile_path,
-                supporting_callset_file_path => $active_parameter_href
-                  ->{gatk_calculategenotypeposteriors_support_set},
+                logging_level => $active_parameter_href->{gatk_logging_level},
+                memory_allocation        => q{Xmx6g},
+                outfile_path             => $outfile_path,
                 pedigree_validation_type => $commands{pedigree_validation_type},
                 pedigree                 => $commands{pedigree},
-                FILEHANDLE               => $FILEHANDLE,
+                temp_directory           => $temp_directory,
+                referencefile_path       => $referencefile_path,
+                supporting_callset_file_path => $active_parameter_href
+                  ->{gatk_calculategenotypeposteriors_support_set},
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -1020,9 +1030,9 @@ sub analysis_gatk_variantrecalibration_wes {
         ## Change name of file to accomodate downstream
         gnu_mv(
             {
+                FILEHANDLE   => $FILEHANDLE,
                 infile_path  => $outfile_path,
                 outfile_path => $outfile_path_prefix . $outfile_suffix,
-                FILEHANDLE   => $FILEHANDLE,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -1031,15 +1041,15 @@ sub analysis_gatk_variantrecalibration_wes {
     ## BcfTools norm, Left-align and normalize indels, split multiallelics
     bcftools_norm(
         {
-            FILEHANDLE     => $FILEHANDLE,
-            reference_path => $referencefile_path,
-            infile_path    => $outfile_path_prefix . $outfile_suffix,
-            output_type    => q{v},
-            outfile_path   => $outfile_path_prefix
+            FILEHANDLE   => $FILEHANDLE,
+            infile_path  => $outfile_path_prefix . $outfile_suffix,
+            multiallelic => q{-},
+            outfile_path => $outfile_path_prefix
               . $UNDERSCORE
               . q{normalized}
               . $outfile_suffix,
-            multiallelic => q{-},
+            output_type    => q{v},
+            reference_path => $referencefile_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -1047,12 +1057,12 @@ sub analysis_gatk_variantrecalibration_wes {
     ## Change name of file to accomodate downstream
     gnu_mv(
         {
+            FILEHANDLE  => $FILEHANDLE,
             infile_path => $outfile_path_prefix
               . $UNDERSCORE
               . q{normalized}
               . $outfile_suffix,
             outfile_path => $outfile_path_prefix . $outfile_suffix,
-            FILEHANDLE   => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -1069,9 +1079,9 @@ sub analysis_gatk_variantrecalibration_wes {
 
         migrate_file(
             {
+                FILEHANDLE   => $FILEHANDLE,
                 infile_path  => $outfile,
                 outfile_path => $outfamily_directory,
-                FILEHANDLE   => $FILEHANDLE,
             }
         );
     }
@@ -1086,29 +1096,29 @@ sub analysis_gatk_variantrecalibration_wes {
           catfile( $outfamily_directory, $outfile_prefix . $outfile_suffix );
         add_program_outfile_to_sample_info(
             {
-                sample_info_href => $sample_info_href,
-                program_name     => $program_name,
                 path             => $program_outfile_path,
+                program_name     => $program_name,
+                sample_info_href => $sample_info_href,
             }
         );
 
         # Used to find order of samples in qccollect downstream
         add_program_outfile_to_sample_info(
             {
-                sample_info_href => $sample_info_href,
-                program_name     => q{pedigree_check},
                 path             => $program_outfile_path,
+                program_name     => q{pedigree_check},
+                sample_info_href => $sample_info_href,
             }
         );
 
         slurm_submit_job_sample_id_dependency_add_to_family(
             {
-                job_id_href             => $job_id_href,
+                family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                log                     => $log,
+                path                    => $job_id_chain,
                 sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                family_id        => $family_id,
-                path             => $job_id_chain,
-                log              => $log,
                 sbatch_file_name => $file_path,
             }
         );

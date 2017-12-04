@@ -29,10 +29,9 @@ my $VERBOSE = 1;
 our $VERSION = 1.0.0;
 
 ## Constants
-Readonly my $COMMA              => q{,};
-Readonly my $NEWLINE            => qq{\n};
-Readonly my $SPACE              => q{ };
-Readonly my $N_SUPPORTING_PAIRS => 50;
+Readonly my $COMMA   => q{,};
+Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => q{ };
 
 ### User Options
 GetOptions(
@@ -79,7 +78,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Program::Variantcalling::Tiddit});
+    my @modules = (q{MIP::Program::Variantcalling::Genmod});
 
   MODULE:
     for my $module (@modules) {
@@ -87,11 +86,11 @@ BEGIN {
     }
 }
 
-use MIP::Program::Variantcalling::Tiddit qw{ tiddit_sv };
+use MIP::Program::Variantcalling::Genmod qw{ genmod_annotate };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test tiddit_sv from Tiddit.pm v}
-      . $MIP::Program::Variantcalling::Tiddit::VERSION
+diag(   q{Test genmod_annotate from Genmod.pm v}
+      . $MIP::Program::Variantcalling::Genmod::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -100,7 +99,7 @@ diag(   q{Test tiddit_sv from Tiddit.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{TIDDIT.py};
+my $function_base_command = q{genmod};
 
 my %base_argument = (
     FILEHANDLE => {
@@ -125,40 +124,69 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     infile_path => {
-        input           => q{infile_path},
-        expected_output => q{--bam infile_path},
-    },
-    referencefile_path => {
-        input           => catfile(qw{ a test reference_path }),
-        expected_output => q{--ref}
-          . $SPACE
-          . catfile(qw{ a test reference_path }),
+        input           => catfile(qw{ a test infile }),
+        expected_output => catfile(qw{ a test infile }),
     },
 );
 
 my %specific_argument = (
-    infile_path => {
-        input           => q{infile_path},
-        expected_output => q{--bam infile_path},
+    annotate_region => {
+        input           => 1,
+        expected_output => q{--annotate_regions},
     },
-    minimum_number_supporting_pairs => {
-        input           => $N_SUPPORTING_PAIRS,
-        expected_output => q{-p} . $SPACE . $N_SUPPORTING_PAIRS,
-    },
-    outfile_path_prefix => {
-        input           => q{outfile_path_prefix},
-        expected_output => q{-o outfile_path_prefix},
-    },
-    referencefile_path => {
-        input           => catfile(qw{ a test reference_path }),
-        expected_output => q{--ref}
+    cadd_file_paths_ref => {
+        inputs_ref => [
+            catfile(qw{ a test cadd_file_1 }),
+            catfile(qw{ a test cadd_file_2 })
+        ],
+        expected_output => q{--cadd_file}
           . $SPACE
-          . catfile(qw{ a test reference_path }),
+          . catfile(qw{ a test cadd_file_1 })
+          . $SPACE
+          . q{--cadd_file}
+          . $SPACE
+          . catfile(qw{ a test cadd_file_2 }),
+    },
+    infile_path => {
+        input           => catfile(qw{ a test infile }),
+        expected_output => catfile(qw{ a test infile }),
+    },
+    max_af => {
+        input           => q{1},
+        expected_output => q{--max_af},
+    },
+    outfile_path => {
+        input           => catfile(qw{ a test outfile }),
+        expected_output => q{--outfile}
+          . $SPACE
+          . catfile(qw{ a test outfile }),
+    },
+    temp_directory_path => {
+        input           => catfile(qw{ a test directory }),
+        expected_output => q{--temp_dir}
+          . $SPACE
+          . catfile(qw{ a test directory }),
+    },
+    spidex_file_path => {
+        input           => catfile(qw{ a test spidex_file }),
+        expected_output => q{--spidex}
+          . $SPACE
+          . catfile(qw{ a test spidex_file }),
+    },
+    thousand_g_file_path => {
+        input           => catfile(qw{ a test thousand_g_file }),
+        expected_output => q{--thousand-g}
+          . $SPACE
+          . catfile(qw{ a test thousand_g_file }),
+    },
+    verbosity => {
+        input           => q{v},
+        expected_output => q{-v},
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&tiddit_sv;
+my $module_function_cref = \&genmod_annotate;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
@@ -184,12 +212,9 @@ done_testing();
 
 sub build_usage {
 
-## build_usage
-
 ## Function  : Build the USAGE instructions
-## Returns   : ""
-## Arguments : $program_name
-##           : $program_name => Name of the script
+## Returns   :
+## Arguments : $program_name => Name of the script
 
     my ($arg_href) = @_;
 

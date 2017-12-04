@@ -1,18 +1,18 @@
 package MIP::Recipes::Analysis::Sambamba_depth;
 
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catdir catfile devnull };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use autodie qw{ :all };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-use File::Spec::Functions qw{ catdir catfile devnull };
 
 ## CPANM
+use autodie qw{ :all };
 use Readonly;
 
 BEGIN {
@@ -21,14 +21,14 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sambamba_depth };
 
 }
 
-##Constants
+## Constants
 Readonly my $ASTERIX      => q{*};
 Readonly my $NEWLINE      => qq{\n};
 Readonly my $SINGLE_QUOTE => q{'};
@@ -37,50 +37,41 @@ Readonly my $SPACE        => q{ };
 sub analysis_sambamba_depth {
 
 ## Function : Generate coverage bed outfile for each individual.
-## Returns  : ""
-## Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $sample_id, $insample_directory, $outsample_directory, $program_name, family_id, $temp_directory, $outaligner_dir
-##          : $parameter_href          => Parameter hash {REF}
-##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $sample_info_href        => Info on samples and family hash {REF}
+## Returns  :
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $family_id               => Family id
 ##          : $file_info_href          => The file_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $job_id_href             => Job id hash {REF}
-##          : $sample_id               => Sample id
 ##          : $insample_directory      => In sample directory
+##          : $job_id_href             => Job id hash {REF}
+##          : $outaligner_dir          => Outaligner_dir used in the analysis
 ##          : $outsample_directory     => Out sample directory
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
+##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
-##          : $family_id               => Family id
+##          : $sample_id               => Sample id
+##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $family_id;
-    my $temp_directory;
-    my $outaligner_dir;
-
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
     my $file_info_href;
     my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $sample_id;
     my $insample_directory;
+    my $job_id_href;
     my $outsample_directory;
+    my $parameter_href;
     my $program_name;
+    my $sample_id;
+    my $sample_info_href;
+
+    ## Default(s)
+    my $family_id;
+    my $outaligner_dir;
+    my $temp_directory;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
@@ -88,12 +79,10 @@ sub analysis_sambamba_depth {
             strict_type => 1,
             store       => \$active_parameter_href
         },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
+        family_id => {
+            default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
-            store       => \$sample_info_href
+            store       => \$family_id
         },
         file_info_href => {
             required    => 1,
@@ -109,12 +98,49 @@ sub analysis_sambamba_depth {
             strict_type => 1,
             store       => \$infile_lane_prefix_href
         },
+        insample_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$insample_directory
+        },
         job_id_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
             store       => \$job_id_href
+        },
+        outaligner_dir => {
+            default     => $arg_href->{active_parameter_href}{outaligner_dir},
+            strict_type => 1,
+            store       => \$outaligner_dir
+        },
+        outsample_directory => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$outsample_directory
+        },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href
+        },
+        program_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$program_name
+        },
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href
         },
         sample_id => {
             required    => 1,
@@ -123,38 +149,10 @@ sub analysis_sambamba_depth {
             strict_type => 1,
             store       => \$sample_id
         },
-        insample_directory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$insample_directory
-        },
-        outsample_directory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$outsample_directory
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name
-        },
-        family_id => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id
-        },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
             strict_type => 1,
             store       => \$temp_directory
-        },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir
         },
     };
 
@@ -163,11 +161,12 @@ sub analysis_sambamba_depth {
     use List::MoreUtils qw { any };
     use MIP::Script::Setup_script qw{ setup_script};
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
+    use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file};
-    use MIP::Program::Alignment::Sambamba qw{ sambamba_depth };
-    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_dead_end };
+    use MIP::Program::Alignment::Sambamba qw{ sambamba_depth };
+    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -178,9 +177,12 @@ sub analysis_sambamba_depth {
 
     ## Alias
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my $core_number =
-      $active_parameter_href->{module_core_number}{$mip_program_name};
-    my $time = $active_parameter_href->{module_time}{$mip_program_name};
+    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_program_name      => $mip_program_name,
+        }
+    );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -211,16 +213,16 @@ sub analysis_sambamba_depth {
     ## Get infile_suffix from baserecalibration jobid chain
     my $infile_suffix = get_file_suffix(
         {
+            jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain},
             parameter_href => $parameter_href,
             suffix_key     => q{alignment_file_suffix},
-            jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain},
         }
     );
     my $outfile_suffix = get_file_suffix(
         {
             parameter_href => $parameter_href,
-            suffix_key     => q{outfile_suffix},
             program_name   => $mip_program_name,
+            suffix_key     => q{outfile_suffix},
         }
     );
 
@@ -232,14 +234,15 @@ sub analysis_sambamba_depth {
     my ($file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
+            core_number           => $core_number,
             directory_id          => $sample_id,
-            program_name          => $program_name,
+            FILEHANDLE            => $FILEHANDLE,
+            job_id_href           => $job_id_href,
+            process_time          => $time,
             program_directory => catfile( $outaligner_dir, q{coveragereport} ),
-            core_number       => $core_number,
-            process_time      => $time,
-            temp_directory    => $temp_directory,
+            program_name      => $program_name,
+            source_environment_commands_ref => [$source_environment_cmd],
+            temp_directory                  => $temp_directory,
         }
     );
 
@@ -281,15 +284,15 @@ sub analysis_sambamba_depth {
         {
             depth_cutoffs_ref =>
               \@{ $active_parameter_href->{sambamba_depth_cutoffs} },
-            infile_path      => $file_path_prefix . $infile_suffix,
-            outfile_path     => $outfile_path_prefix . $outfile_suffix,
-            mode             => $active_parameter_href->{sambamba_depth_mode},
+            FILEHANDLE       => $FILEHANDLE,
+            filter           => $sambamba_filter,
             fix_mate_overlap => 1,
+            infile_path      => $file_path_prefix . $infile_suffix,
             min_base_quality =>
               $active_parameter_href->{sambamba_depth_base_quality},
-            filter     => $sambamba_filter,
-            region     => $active_parameter_href->{sambamba_depth_bed},
-            FILEHANDLE => $FILEHANDLE,
+            mode         => $active_parameter_href->{sambamba_depth_mode},
+            outfile_path => $outfile_path_prefix . $outfile_suffix,
+            region       => $active_parameter_href->{sambamba_depth_bed},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -298,9 +301,9 @@ sub analysis_sambamba_depth {
     say {$FILEHANDLE} q{## Copy file from temporary directory};
     migrate_file(
         {
+            FILEHANDLE   => $FILEHANDLE,
             infile_path  => $outfile_path_prefix . $outfile_suffix,
             outfile_path => $outsample_directory,
-            FILEHANDLE   => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} q{wait}, $NEWLINE;
@@ -312,27 +315,26 @@ sub analysis_sambamba_depth {
           catfile( $outsample_directory, $outfile_prefix . $outfile_suffix );
         add_program_outfile_to_sample_info(
             {
-                sample_info_href => $sample_info_href,
-                sample_id        => $sample_id,
-                program_name     => $program_name,
                 infile           => $merged_infile_prefix,
                 path             => $qc_sambamba_path,
+                program_name     => $program_name,
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
             }
         );
 
         slurm_submit_job_sample_id_dependency_dead_end(
             {
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
                 family_id               => $family_id,
-                sample_id               => $sample_id,
-                path                    => $job_id_chain,
-                sbatch_file_name        => $file_path,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
                 log                     => $log,
+                path                    => $job_id_chain,
+                sample_id               => $sample_id,
+                sbatch_file_name        => $file_path,
             }
         );
     }
-
     return;
 }
 
