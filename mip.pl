@@ -7781,7 +7781,7 @@ sub sv_rankvariant {
     use MIP::Delete::List qw{ delete_contig_elements delete_male_contig};
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
-    use Program::Variantcalling::Genmod
+    use MIP::Program::Variantcalling::Genmod
       qw(genmod_annotate genmod_compound genmod_models genmod_score);
     use MIP::QC::Record
       qw(add_program_outfile_to_sample_info add_program_metafile_to_sample_info);
