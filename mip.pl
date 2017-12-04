@@ -8963,7 +8963,7 @@ sub sv_combinevariantcallsets {
       qw (bcftools_merge bcftools_view bcftools_annotate);
     use MIP::Program::Utility::Htslib qw(htslib_bgzip htslib_tabix);
     use MIP::Program::Variantcalling::Bcftools qw{bcftools_view_and_index_vcf};
-    use Program::Variantcalling::Vt qw(decompose);
+    use MIP::Program::Variantcalling::Vt qw(vt_decompose);
     use MIP::Program::Variantcalling::Genmod qw(genmod_annotate);
     use Program::Variantcalling::Vcfanno qw(vcfanno);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
@@ -9259,7 +9259,7 @@ sub sv_combinevariantcallsets {
 
                 ## Split multiallelic variants
                 say {$FILEHANDLE} "## Split multiallelic variants";
-                decompose(
+                vt_decompose(
                     {
                         infile_path => catfile(
                             $$temp_directory_ref,
@@ -9325,7 +9325,7 @@ sub sv_combinevariantcallsets {
 
         ## Split multiallelic variants
         say {$FILEHANDLE} "## Split multiallelic variants";
-        decompose(
+        vt_decompose(
             {
                 infile_path  => $merged_file_path_prefix . $outfile_suffix,
                 outfile_path => $merged_file_path_prefix
