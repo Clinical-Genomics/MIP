@@ -94,6 +94,7 @@ gnu_set.t
 gnu_sleep.t
 gnu_sort.t
 gnu_split.t
+gnu_tail.t
 gnu_trap.t
 gnu_wait.t
 gzip.t
