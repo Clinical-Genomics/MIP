@@ -7768,7 +7768,7 @@ sub sv_combinevariantcallsets {
     use MIP::Program::Variantcalling::Bcftools qw{bcftools_view_and_index_vcf};
     use MIP::Program::Variantcalling::Vt qw(vt_decompose);
     use MIP::Program::Variantcalling::Genmod qw(genmod_annotate);
-    use Program::Variantcalling::Vcfanno qw(vcfanno);
+    use MIP::Program::Variantcalling::Vcfanno qw(vcfanno);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
     my @structural_variant_callers;    #Stores callers that have been executed
@@ -8279,19 +8279,19 @@ sub sv_combinevariantcallsets {
     }
 
     ## Annotate 1000G structural variants
-    if ( $active_parameter_href->{sv_vcfanno} > 0 ) {
+    if ( $active_parameter_href->{sv_vcfanno} ) {
 
-        say {$FILEHANDLE} "## Annotate 1000G structural variants";
+        say {$FILEHANDLE} q{## Annotate 1000G structural variants};
         vcfanno(
             {
+                ends        => 1,
+                FILEHANDLE  => $FILEHANDLE,
                 infile_path => $outfile_path_prefix
                   . $alt_file_tag
                   . $outfile_suffix,
+                luafile_path => $active_parameter_href->{sv_vcfanno_lua},
                 toml_configfile_path =>
                   $active_parameter_href->{sv_vcfanno_config},
-                lua        => $active_parameter_href->{sv_vcfanno_lua},
-                ends       => 1,
-                FILEHANDLE => $FILEHANDLE,
             }
         );
         print {$FILEHANDLE} "| ";
