@@ -53,8 +53,8 @@ noupdate: ~
 
 # Python packages to be installed via pip
 pip:
-  #  chanjo: 4.2.0
-  #  genmod: 3.7.2
+  chanjo: 4.2.0
+  genmod: 3.7.2
   variant_integrity: 0.0.4
 
 # Prefer installation via shell instead of via conda, 
