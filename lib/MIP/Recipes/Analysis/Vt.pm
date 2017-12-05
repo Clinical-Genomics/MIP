@@ -470,8 +470,6 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
             }
         );
         say {$XARGSFILEHANDLE} $NEWLINE;
-        close $XARGSFILEHANDLE
-          or $log->logcroak(q{Could not close $XARGSFILEHANDLE});
     }
 
     #Run as individual sbatch script
