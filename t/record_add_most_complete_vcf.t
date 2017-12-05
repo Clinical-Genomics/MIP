@@ -4,11 +4,11 @@ use 5.018;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ basename dirname  };
-use File::Spec::Functions qw{ catdir };
+use open qw{ :encoding(UTF-8) :std };
+use File::Basename qw{ basename dirname };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use Getopt::Long;
-use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use Test::More;
 use utf8;
@@ -26,12 +26,14 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.0;
+our $VERSION = '1.0.0';
 
 ## Constants
-Readonly my $COMMA   => q{,};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
+Readonly my $DOT        => q{.};
+Readonly my $COMMA      => q{,};
+Readonly my $NEWLINE    => qq{\n};
+Readonly my $SPACE      => q{ };
+Readonly my $UNDERSCORE => q{_};
 
 ### User Options
 GetOptions(
@@ -78,7 +80,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::PATH::TO::MODULE});
+    my @modules = (q{MIP::QC::Record});
 
   MODULE:
     for my $module (@modules) {
@@ -86,11 +88,10 @@ BEGIN {
     }
 }
 
-use MIP::PATH::TO::MODULE qw{ SUB_ROUTINE };
-use MIP::Test::Commands qw{ test_function };
+use MIP::QC::Record qw{ add_most_complete_vcf };
 
-diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
-      . $MIP::PATH::TO::MODULE::VERSION
+diag(   q{Test add_most_complete_vcf from Record.pm v}
+      . $MIP::QC::Record::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -98,70 +99,40 @@ diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Base arguments
-my $function_base_command = q{BASE_COMMAND};
+my $path              = catfile(qw{ a test vcf_file });
+my $program_name_test = q{sv_rankvariants};
+my $file_suffix       = $DOT . q{vcf};
+my $vcf_file_key =
+  q{sv} . $UNDERSCORE . substr( $file_suffix, 1 ) . $UNDERSCORE . q{file};
 
-my %base_argument = (
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
-    },
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
-    },
-    stderrfile_path_append => {
-        input           => q{stderrfile.test},
-        expected_output => q{2>> stderrfile.test},
-    },
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
-    },
+my %active_parameter = ( q{p} . $program_name_test => 1, );
+
+my %sample_info;
+add_most_complete_vcf(
+    {
+        active_parameter_href     => \%active_parameter,
+        path                      => $path,
+        program_name              => $program_name_test,
+        sample_info_href          => \%sample_info,
+        vcfparser_outfile_counter => 0,
+        vcf_file_key              => $vcf_file_key,
+    }
 );
+is( $sample_info{$vcf_file_key}{research}{path}, $path,
+    q{Added research path} );
 
-## Can be duplicated with %base_argument and/or %specific_argument
-## to enable testing of each individual argument
-my %required_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
-    },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
-    },
+add_most_complete_vcf(
+    {
+        active_parameter_href     => \%active_parameter,
+        path                      => $path,
+        program_name              => $program_name_test,
+        sample_info_href          => \%sample_info,
+        vcfparser_outfile_counter => 1,
+        vcf_file_key              => $vcf_file_key,
+    }
 );
-
-my %specific_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
-    },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
-    },
-);
-
-## Coderef - enables generalized use of generate call
-my $module_function_cref = \&SUB_ROUTINE;
-
-## Test both base and function specific arguments
-my @arguments = ( \%base_argument, \%specific_argument );
-
-ARGUMENT_HASH_REF:
-foreach my $argument_href (@arguments) {
-    my @commands = test_function(
-        {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
-        }
-    );
-}
+is( $sample_info{$vcf_file_key}{clinical}{path}, $path,
+    q{Added clinical path} );
 
 done_testing();
 
