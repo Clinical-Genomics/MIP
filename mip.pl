@@ -7345,7 +7345,7 @@ sub sv_combinevariantcallsets {
     use MIP::Program::Utility::Htslib qw(htslib_bgzip htslib_tabix);
     use MIP::Program::Variantcalling::Bcftools qw{bcftools_view_and_index_vcf};
     use MIP::Program::Variantcalling::Vt qw(vt_decompose);
-    use MIP::Program::Variantcalling::Genmod qw(genmod_annotate);
+    use MIP::Program::Variantcalling::Genmod qw(genmod_annotate genmod_filter);
     use Program::Variantcalling::Vcfanno qw(vcfanno);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
 
