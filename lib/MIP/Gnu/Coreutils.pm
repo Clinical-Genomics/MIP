@@ -1315,8 +1315,6 @@ sub gnu_tail {
     my $stderrfile_path_append;
     my $stdoutfile_path;
 
-    ## Default(s)
-
     my $tmpl = {
         FILEHANDLE => {
             store => \$FILEHANDLE,
