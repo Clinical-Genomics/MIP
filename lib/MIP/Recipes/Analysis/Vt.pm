@@ -186,6 +186,7 @@ sub analysis_vt {
     use MIP::Program::Variantcalling::Genmod
       qw{ genmod_annotate genmod_filter };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
+    use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core_rio};
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Set::File qw{ set_file_suffix };
