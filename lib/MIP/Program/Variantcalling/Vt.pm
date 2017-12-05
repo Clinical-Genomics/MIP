@@ -41,6 +41,7 @@ sub vt_decompose {
 ##          : $smart_decomposition    => Smart decomposition
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
 
     my ($arg_href) = @_;
 
@@ -50,6 +51,7 @@ sub vt_decompose {
     my $outfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
+    my $stdoutfile_path;
 
     ## Default(s)
     my $smart_decomposition;
@@ -62,14 +64,14 @@ sub vt_decompose {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$infile_path
+            store       => \$infile_path,
         },
-        outfile_path        => { strict_type => 1, store => \$outfile_path },
+        outfile_path        => { strict_type => 1, store => \$outfile_path, },
         smart_decomposition => {
             default     => 0,
             allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$smart_decomposition
+            store       => \$smart_decomposition,
         },
         stderrfile_path => {
             strict_type => 1,
@@ -79,6 +81,7 @@ sub vt_decompose {
             strict_type => 1,
             store       => \$stderrfile_path_append,
         },
+        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -91,22 +94,20 @@ sub vt_decompose {
         push @commands, q{-s};
     }
 
-    #Specify output filename
+    # Specify output filename
     if ($outfile_path) {
 
         push @commands, q{-o} . $SPACE . $outfile_path;
     }
 
-    if ($infile_path) {
-
-        push @commands, $infile_path;
-    }
+    push @commands, $infile_path;
 
     push @commands,
       unix_standard_streams(
         {
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
         }
       );
 
@@ -132,6 +133,7 @@ sub vt_normalize {
 ##          : $referencefile_path             => Reference sequence fasta file
 ##          : $stderrfile_path                => Stderrfile path
 ##          : $stderrfile_path_append         => Append stderr info to file path
+##          : $stdoutfile_path                => Stdoutfile path
 
     my ($arg_href) = @_;
 
@@ -142,6 +144,7 @@ sub vt_normalize {
     my $referencefile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
+    my $stdoutfile_path;
 
     ## Default(s)
     my $no_fail_inconsistent_reference;
@@ -154,20 +157,20 @@ sub vt_normalize {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$infile_path
+            store       => \$infile_path,
         },
         no_fail_inconsistent_reference => {
             default     => 0,
             allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$no_fail_inconsistent_reference
+            store       => \$no_fail_inconsistent_reference,
         },
         outfile_path       => { strict_type => 1, store => \$outfile_path },
         referencefile_path => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$referencefile_path
+            store       => \$referencefile_path,
         },
         stderrfile_path => {
             strict_type => 1,
@@ -177,6 +180,7 @@ sub vt_normalize {
             strict_type => 1,
             store       => \$stderrfile_path_append,
         },
+        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -202,16 +206,14 @@ sub vt_normalize {
     }
 
     ## Infile
-    if ($infile_path) {
-
-        push @commands, $infile_path;
-    }
+    push @commands, $infile_path;
 
     push @commands,
       unix_standard_streams(
         {
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
         }
       );
 
@@ -230,11 +232,12 @@ sub vt_uniq {
 
 ## Function : Perl wrapper for writing Vt normalize recipe to $FILEHANDLE or return commands array. Based on Vt v0.5.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE                     => Filehandle to write to
-##          : $infile_path                    => Infile path to read from
-##          : $outfile_path                   => Outfile path to write to
-##          : $stderrfile_path                => Stderrfile path
-##          : $stderrfile_path_append         => Append stderr info to file path
+## Arguments: $FILEHANDLE             => Filehandle to write to
+##          : $infile_path            => Infile path to read from
+##          : $outfile_path           => Outfile path to write to
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
 
     my ($arg_href) = @_;
 
@@ -244,6 +247,7 @@ sub vt_uniq {
     my $outfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
+    my $stdoutfile_path;
 
     my $tmpl = {
         FILEHANDLE => {
@@ -253,9 +257,9 @@ sub vt_uniq {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$infile_path
+            store       => \$infile_path,
         },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
+        outfile_path    => { strict_type => 1, store => \$outfile_path, },
         stderrfile_path => {
             strict_type => 1,
             store       => \$stderrfile_path,
@@ -264,6 +268,7 @@ sub vt_uniq {
             strict_type => 1,
             store       => \$stderrfile_path_append,
         },
+        stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -278,16 +283,14 @@ sub vt_uniq {
     }
 
     ## Infile
-    if ($infile_path) {
-
-        push @commands, $infile_path;
-    }
+    push @commands, $infile_path;
 
     push @commands,
       unix_standard_streams(
         {
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
         }
       );
 
@@ -300,7 +303,6 @@ sub vt_uniq {
         }
     );
     return @commands;
-
 }
 
 1;
