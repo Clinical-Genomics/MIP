@@ -193,4 +193,7 @@ variant_effect_predictor.t
 snpeff_download.t
 variant_integrity_father.t
 variant_integrity_mendel.t
+vt_decompose.t
+vt_normalize.t
+vt_uniq.t
 wget.t

@@ -208,7 +208,7 @@ sub analysis_vt_core {
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_view bcftools_index };
     use Program::Variantcalling::Mip qw{ calculate_af max_af };
-    use Program::Variantcalling::Vt qw{ decompose normalize vt_uniq };
+    use MIP::Program::Variantcalling::Vt qw{ vt_decompose vt_normalize vt_uniq };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
@@ -252,7 +252,6 @@ sub analysis_vt_core {
 
     ## Get parameters
     my $stderrfile_path;
-    my $append_stderr_info;
 
     ## Write stderr for xargs process
     if ( defined $xargs_file_path_prefix && defined $contig ) {
@@ -260,7 +259,6 @@ sub analysis_vt_core {
         ## Redirect xargs output to program specific stderr file
         $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
-        $append_stderr_info = 1;
     }
 
     ## Initate processing
@@ -292,12 +290,13 @@ sub analysis_vt_core {
         ## Pipe
         print {$FILEHANDLE} $PIPE . $SPACE;
 
-        decompose(
+        vt_decompose(
             {
-                FILEHANDLE          => $FILEHANDLE,
-                infile_path         => q{-},
-                smart_decomposition => 1,
-                stderrfile_path     => $stderrfile_path,
+                FILEHANDLE             => $FILEHANDLE,
+                infile_path            => q{-},
+                smart_decomposition    => 1,
+                stderrfile_path        => $stderrfile_path,
+                stderrfile_path_append => $stderrfile_path,
             }
         );
     }
@@ -306,14 +305,14 @@ sub analysis_vt_core {
         # Pipe
         print {$FILEHANDLE} $PIPE . $SPACE;
 
-        normalize(
+        vt_normalize(
             {
-                append_stderr_info             => 1,
                 FILEHANDLE                     => $FILEHANDLE,
                 infile_path                    => q{-},
                 no_fail_inconsistent_reference => 1,
                 referencefile_path             => $human_genome_reference,
                 stderrfile_path                => $stderrfile_path,
+                stderrfile_path_append         => $stderrfile_path,
             }
         );
     }
@@ -324,10 +323,10 @@ sub analysis_vt_core {
 
         vt_uniq(
             {
-                append_stderr_info => $append_stderr_info,
-                FILEHANDLE         => $FILEHANDLE,
-                infile_path        => q{-},
-                stderrfile_path    => $stderrfile_path,
+                FILEHANDLE             => $FILEHANDLE,
+                infile_path            => q{-},
+                stderrfile_path        => $stderrfile_path,
+                stderrfile_path_append => $stderrfile_path,
             }
         );
     }
@@ -580,7 +579,7 @@ sub analysis_vt_core_rio {
       qw{ slurm_submit_job_no_dependency_add_to_samples };
     use MIP::Script::Setup_script qw{ setup_script };
     use Program::Variantcalling::Mip qw{ calculate_af max_af };
-    use Program::Variantcalling::Vt qw{ decompose normalize vt_uniq };
+    use MIP::Program::Variantcalling::Vt qw{ vt_decompose vt_normalize vt_uniq };
 
     ## Constants
     Readonly my $MAX_RANDOM_NUMBER => 10_000;
@@ -602,7 +601,6 @@ sub analysis_vt_core_rio {
 
     ## Get parameters
     my $stderrfile_path;
-    my $append_stderr_info;
 
     ## Write stderr for xargs process
     if ( defined $xargs_file_path_prefix && defined $contig ) {
@@ -610,7 +608,6 @@ sub analysis_vt_core_rio {
         ## Redirect xargs output to program specific stderr file
         $stderrfile_path =
           $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
-        $append_stderr_info = 1;
     }
 
     ## Initate processing
@@ -642,12 +639,13 @@ sub analysis_vt_core_rio {
         ## Pipe
         print {$FILEHANDLE} $PIPE . $SPACE;
 
-        decompose(
+        vt_decompose(
             {
-                FILEHANDLE          => $FILEHANDLE,
-                infile_path         => q{-},
-                smart_decomposition => 1,
-                stderrfile_path     => $stderrfile_path,
+                FILEHANDLE             => $FILEHANDLE,
+                infile_path            => q{-},
+                smart_decomposition    => 1,
+                stderrfile_path        => $stderrfile_path,
+                stderrfile_path_append => $stderrfile_path,
             }
         );
     }
@@ -656,14 +654,14 @@ sub analysis_vt_core_rio {
         # Pipe
         print {$FILEHANDLE} $PIPE . $SPACE;
 
-        normalize(
+        vt_normalize(
             {
-                append_stderr_info             => 1,
                 FILEHANDLE                     => $FILEHANDLE,
                 infile_path                    => q{-},
                 no_fail_inconsistent_reference => 1,
                 referencefile_path             => $human_genome_reference,
                 stderrfile_path                => $stderrfile_path,
+                stderrfile_path_append         => $stderrfile_path,
             }
         );
     }
@@ -674,10 +672,10 @@ sub analysis_vt_core_rio {
 
         vt_uniq(
             {
-                append_stderr_info => $append_stderr_info,
-                FILEHANDLE         => $FILEHANDLE,
-                infile_path        => q{-},
-                stderrfile_path    => $stderrfile_path,
+                FILEHANDLE             => $FILEHANDLE,
+                infile_path            => q{-},
+                stderrfile_path        => $stderrfile_path,
+                stderrfile_path_append => $stderrfile_path,
             }
         );
     }
