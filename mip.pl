@@ -121,7 +121,7 @@ use MIP::Recipes::Analysis::Tiddit qw{ analysis_tiddit };
 use MIP::Recipes::Analysis::Variant_integrity qw{ analysis_variant_integrity };
 use MIP::Recipes::Analysis::Vep
   qw{ analysis_vep analysis_vep_rio analysis_vep_sv };
-MIP::Recipes::Analysis::Vt qw{ analysis_vt };
+use MIP::Recipes::Analysis::Vt qw{ analysis_vt };
 use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core analysis_vt_core_rio};
 use MIP::Recipes::Pipeline::Wts qw{ pipeline_wts };
 use MIP::Recipes::Qc::Multiqc qw{ analysis_multiqc };
