@@ -30,7 +30,7 @@ BEGIN {
 
 }
 
-##Constants
+## Constants
 Readonly my $ASTERIX    => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
@@ -610,13 +610,13 @@ sub analysis_vep_rio {
     use MIP::Cluster qw{ get_core_number };
     use MIP::Get::File qw{ get_file_suffix };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
-    use MIP::Package_manager::Conda qw{ conda_source_deactivate };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
     use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use MIP::Script::Setup_script qw{ write_source_environment_command };
     use MIP::Set::File qw{ set_file_suffix };
+    use MIP::Script::Setup_script
+      qw{ write_return_to_conda_environment write_source_environment_command };
     use MIP::QC::Record
       qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info};
 
@@ -852,29 +852,14 @@ sub analysis_vep_rio {
     );
     say {$FILEHANDLE} q{wait}, $NEWLINE;
 
-    ## Return to main environement
-    if ( @{ $active_parameter_href->{source_main_environment_commands} } ) {
-
-        write_source_environment_command(
-            {
-                FILEHANDLE                      => $FILEHANDLE,
-                source_environment_commands_ref => \@{
-                    $active_parameter_href->{source_main_environment_commands}
-                },
-            }
-        );
-    }
-    else {
-
-        ## Return to login shell parameters
-        say {$FILEHANDLE} q{## Deactivate environment};
-        conda_source_deactivate(
-            {
-                FILEHANDLE => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-    }
+    ## Return to main or default environment using conda
+    write_return_to_conda_environment(
+        {
+            source_main_environment_commands_ref =>
+              \@{ $active_parameter_href->{source_main_environment_commands} },
+            FILEHANDLE => $FILEHANDLE,
+        }
+    );
 
     if ( $mip_program_mode == 1 ) {
 

@@ -720,6 +720,8 @@ sub analysis_rankvariant_rio {
       qw{ add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Set::File qw{ set_file_suffix };
+    use MIP::Script::Setup_script
+      qw{ write_return_to_conda_environment write_source_environment_command };
 
     ## Constant
     Readonly my $CORE_NUMBER_REQUESTED => 16;
@@ -771,6 +773,17 @@ sub analysis_rankvariant_rio {
             core_number_requested => $CORE_NUMBER_REQUESTED,
         }
     );
+
+    ## If program needs special environment variables set
+    if ($source_environment_cmd) {
+
+        write_source_environment_command(
+            {
+                FILEHANDLE                      => $FILEHANDLE,
+                source_environment_commands_ref => [$source_environment_cmd],
+            }
+        );
+    }
 
     ## Assign directories
     my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
@@ -1033,6 +1046,15 @@ sub analysis_rankvariant_rio {
         say {$FILEHANDLE} q{wait}, $NEWLINE;
     }
 
+    ## Return to main or default environment using conda
+    write_return_to_conda_environment(
+        {
+            source_main_environment_commands_ref =>
+              \@{ $active_parameter_href->{source_main_environment_commands} },
+            FILEHANDLE => $FILEHANDLE,
+        }
+    );
+
     if ( $mip_program_mode == 1 ) {
 
         my $qc_genmod_outfile =
@@ -1213,6 +1235,8 @@ sub analysis_rankvariant_rio_unaffected {
       qw{ add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Set::File qw{ set_file_suffix };
+    use MIP::Script::Setup_script
+      qw{ write_return_to_conda_environment write_source_environment_command };
 
     ## Constant
     Readonly my $CORE_NUMBER_REQUESTED => 16;
@@ -1264,6 +1288,17 @@ sub analysis_rankvariant_rio_unaffected {
             core_number_requested => $CORE_NUMBER_REQUESTED,
         }
     );
+
+    ## If program needs special environment variables set
+    if ($source_environment_cmd) {
+
+        write_source_environment_command(
+            {
+                FILEHANDLE                      => $FILEHANDLE,
+                source_environment_commands_ref => [$source_environment_cmd],
+            }
+        );
+    }
 
     ## Assign directories
     my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
@@ -1436,6 +1471,15 @@ sub analysis_rankvariant_rio_unaffected {
         );
         say {$FILEHANDLE} q{wait}, $NEWLINE;
     }
+
+    ## Return to main or default environment using conda
+    write_return_to_conda_environment(
+        {
+            source_main_environment_commands_ref =>
+              \@{ $active_parameter_href->{source_main_environment_commands} },
+            FILEHANDLE => $FILEHANDLE,
+        }
+    );
 
     if ( $mip_program_mode == 1 ) {
 
@@ -2059,6 +2103,7 @@ sub analysis_sv_rankvariant {
 
     use MIP::Delete::List qw{ delete_contig_elements delete_male_contig };
     use MIP::Get::File qw{ get_file_suffix };
+    use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
@@ -2688,6 +2733,7 @@ sub analysis_sv_rankvariant_unaffected {
 
     use MIP::Delete::List qw{ delete_contig_elements delete_male_contig };
     use MIP::Get::File qw{ get_file_suffix };
+    use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };

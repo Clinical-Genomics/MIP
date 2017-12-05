@@ -1,39 +1,39 @@
 #!/usr/bin/env perl
 
-use strict;
-use warnings;
-use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
 use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-use Getopt::Long;
+use charnames qw{ :full :short };
 use Cwd;
 use Cwd qw{ abs_path };
-use FindBin qw{ $Bin };
-use IO::Handle;
+use English qw{ -no_match_vars };
 use File::Basename qw{ dirname basename fileparse };
 use File::Spec::Functions qw{ catfile catdir devnull };
-use Time::Piece;
+use FindBin qw{ $Bin };
+use Getopt::Long;
+use IO::Handle;
 use List::Util qw{ any };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
+use strict;
+use Time::Piece;
+use utf8;
+use warnings;
+use warnings qw{ FATAL utf8 };
 
 ## CPANM
+use Array::Utils qw{ array_minus };
 use Readonly;
 use YAML;
-use Array::Utils qw{ array_minus };
 
 ## MIPs lib/
 #Add MIPs internal lib
 use lib catdir( $Bin, q{lib} );
+use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Gnu::Coreutils qw{ gnu_rm };
 use MIP::Language::Shell qw{ create_bash_file };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Package_manager::Conda
   qw{ conda_source_activate conda_source_deactivate };
 use MIP::Script::Utils qw{ help };
-use MIP::File::Format::Yaml qw{ load_yaml };
 
 ## Recipes
 use MIP::Recipes::Install::Bedtools qw{ install_bedtools };

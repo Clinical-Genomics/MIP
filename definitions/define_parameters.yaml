@@ -1875,8 +1875,6 @@ pvariant_integrity:
   data_type: SCALAR
   default: 0
   file_tag: nofile_tag
-  program_name_path:
-   - variant_integrity
   type: program
 pevaluation:
   associated_program:

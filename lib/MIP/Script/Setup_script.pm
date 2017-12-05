@@ -14,7 +14,7 @@ use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
-use autodie;
+use autodie qw{ :all };
 use Readonly;
 
 BEGIN {
@@ -23,10 +23,11 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ setup_script write_source_environment_command };
+    our @EXPORT_OK =
+      qw{ setup_script write_return_to_conda_environment write_source_environment_command };
 }
 
 ## Constant
@@ -63,21 +64,6 @@ sub setup_script {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $core_number;
-    my $email_types_ref;
-    my $error_trap;
-    my $outdata_dir;
-    my $outscript_dir;
-    my $process_time;
-    my $set_errexit;
-    my $set_nounset;
-    my $set_pipefail;
-    my $sleep;
-    my $slurm_quality_of_service;
-    my $source_environment_commands_ref;
-    my $temp_directory;
-
     if ( defined $arg_href->{call_type} ) {
 
         $arg_href->{call_type} = $UNDERSCORE . $arg_href->{call_type};
@@ -92,6 +78,21 @@ sub setup_script {
     my $job_id_href;
     my $program_directory;
     my $program_name;
+    my $source_environment_commands_ref;
+
+    ## Default(s)
+    my $core_number;
+    my $email_types_ref;
+    my $error_trap;
+    my $outdata_dir;
+    my $outscript_dir;
+    my $process_time;
+    my $set_errexit;
+    my $set_nounset;
+    my $set_pipefail;
+    my $sleep;
+    my $slurm_quality_of_service;
+    my $temp_directory;
 
     use MIP::Check::Parameter qw{ check_allowed_array_values };
 
@@ -206,8 +207,7 @@ sub setup_script {
             store       => \$slurm_quality_of_service
         },
         source_environment_commands_ref => {
-            default => $arg_href->{active_parameter_href}
-              {source_main_environment_commands},
+            default     => [],
             strict_type => 1,
             store       => \$source_environment_commands_ref
         },
@@ -368,8 +368,8 @@ sub setup_script {
         );
         say {$FILEHANDLE} $NEWLINE;
     }
-    if ( $source_environment_commands_ref
-        && @{$source_environment_commands_ref} )
+    if ( @{$source_environment_commands_ref}
+        && $source_environment_commands_ref->[0] )
     {
 
         write_source_environment_command(
@@ -379,7 +379,6 @@ sub setup_script {
                   $source_environment_commands_ref,
             }
         );
-
     }
 
     # Not all programs need a temporary directory
@@ -451,6 +450,60 @@ sub setup_script {
 
     # Return filen name, file path for stdout/stderr for QC check later
     return ( $file_path, $file_info_path . $file_name_version );
+}
+
+sub write_return_to_conda_environment {
+
+## Function : Return to main or default environment using conda
+## Returns  :
+## Arguments: $FILEHANDLE                           => Filehandle to write to
+##          : $source_main_environment_commands_ref => Source main environment command {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $source_main_environment_commands_ref;
+
+    my $tmpl = {
+        FILEHANDLE => { required => 1, store => \$FILEHANDLE, },
+        source_main_environment_commands_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => [],
+            strict_type => 1,
+            store       => \$source_main_environment_commands_ref,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Package_manager::Conda qw{ conda_source_deactivate };
+    use MIP::Script::Setup_script qw{ write_source_environment_command };
+
+    ## Return to main environment
+    if ( @{$source_main_environment_commands_ref} ) {
+
+        write_source_environment_command(
+            {
+                FILEHANDLE => $FILEHANDLE,
+                source_environment_commands_ref =>
+                  \@{$source_main_environment_commands_ref},
+            }
+        );
+    }
+    else {
+        ## Return to login shell environment
+
+        say {$FILEHANDLE} q{## Deactivate environment};
+        conda_source_deactivate(
+            {
+                FILEHANDLE => $FILEHANDLE,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+    }
+    return;
 }
 
 sub write_source_environment_command {
