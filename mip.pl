@@ -8242,7 +8242,7 @@ sub variantannotationblock {
                 sample_info_href        => $sample_info_href,
                 file_info_href          => $file_info_href,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
-                infamily_directory      => $infamily_directory.
+                infamily_directory      => $infamily_directory,
                 job_id_href             => $job_id_href,
                 call_type               => $call_type,
                 program_name            => $program_name,
