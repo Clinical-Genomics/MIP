@@ -34,11 +34,11 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ gnu_cat gnu_chmod gnu_cp gnu_echo gnu_ln gnu_md5sum gnu_mkdir gnu_mv gnu_printf gnu_sleep gnu_sort gnu_split gnu_rm };
+      qw{ gnu_cat gnu_chmod gnu_cp gnu_echo gnu_ln gnu_md5sum gnu_mkdir gnu_mv gnu_printf gnu_rm gnu_sleep gnu_sort gnu_split gnu_tail };
 }
 
 ## Constants
@@ -51,38 +51,41 @@ sub gnu_cp {
 
 ## Function : Perl wrapper for writing cp recipe to already open $FILEHANDLE or return commands array. Based on cp 8.4
 ## Returns  : @commands
-## Arguments: $preserve_attributes_ref => Preserve the specified attributes (default:mode,ownership,timestamps), if possible additional attributes: context, links, xattr, all
+## Arguments: $FILEHANDLE             => Filehandle to write to
+##          : $force                  => If an existing destination file cannot be opened, remove it and try again
 ##          : $infile_path            => Infile path
 ##          : $outfile_path           => Outfile path
-##          : $stderrfile_path        => Stderrfile path
-##          : $stderrfile_path_append => Append stderrinfo to file
-##          : $FILEHANDLE             => Filehandle to write to
 ##          : $preserve               => Same as --preserve=mode,ownership,timestamps
 ##          : $recursive              => Copy directories recursively
-##          : $force                  => If an existing destination file cannot be opened, remove it and try again
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderrinfo to file
 ##          : $verbose                => Verbosity
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $preserve_attributes_ref;
+    my $FILEHANDLE;
     my $infile_path;
     my $outfile_path;
+    my $preserve_attributes_ref;
     my $stderrfile_path;
     my $stderrfile_path_append;
-    my $FILEHANDLE;
 
     ## Default(s)
+    my $force;
     my $preserve;
     my $recursive;
-    my $force;
     my $verbose;
 
     my $tmpl = {
-        preserve_attributes_ref => {
-            default     => [],
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        force => {
+            default     => 0,
+            allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$preserve_attributes_ref,
+            store       => \$force,
         },
         infile_path => {
             required    => 1,
@@ -96,16 +99,16 @@ sub gnu_cp {
             strict_type => 1,
             store       => \$outfile_path,
         },
-        stderrfile_path => {
+        preserve => {
+            default     => 0,
+            allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$stderrfile_path,
+            store       => \$preserve,
         },
-        stderrfile_path_append => {
+        preserve_attributes_ref => {
+            default     => [],
             strict_type => 1,
-            store       => \$stderrfile_path_append,
-        },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+            store       => \$preserve_attributes_ref,
         },
         recursive => {
             default     => 0,
@@ -113,17 +116,13 @@ sub gnu_cp {
             strict_type => 1,
             store       => \$recursive,
         },
-        force => {
-            default     => 0,
-            allow       => [ 0, 1 ],
+        stderrfile_path => {
             strict_type => 1,
-            store       => \$force,
+            store       => \$stderrfile_path,
         },
-        preserve => {
-            default     => 0,
-            allow       => [ 0, 1 ],
+        stderrfile_path_append => {
             strict_type => 1,
-            store       => \$preserve,
+            store       => \$stderrfile_path_append,
         },
         verbose => {
             default     => 0,
@@ -187,28 +186,37 @@ sub gnu_mv {
 
 ## Function : Perl wrapper for writing mv recipe to already open $FILEHANDLE or return commands array. Based on mv 8.4
 ## Returns  : @commands
-## Arguments: $infile_path            => Infile path
+## Arguments: $FILEHANDLE             => Filehandle to write to
+##          : $force                  => If an existing destination file cannot be opened, remove it and try again
+##          : $infile_path            => Infile path
 ##          : $outfile_path           => Outfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append to stderrinfo to file
-##          : $FILEHANDLE             => Filehandle to write to
-##          : $force                  => If an existing destination file cannot be opened, remove it and try again
 ##          : $verbose                => Verbosity
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $FILEHANDLE;
     my $infile_path;
     my $outfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
-    my $FILEHANDLE;
 
     ## Default(s)
     my $force;
     my $verbose;
 
     my $tmpl = {
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        force => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$force,
+        },
         infile_path => {
             required    => 1,
             defined     => 1,
@@ -228,15 +236,6 @@ sub gnu_mv {
         stderrfile_path_append => {
             strict_type => 1,
             store       => \$stderrfile_path_append,
-        },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
-        },
-        force => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$force,
         },
         verbose => {
             default     => 0,
@@ -287,28 +286,37 @@ sub gnu_rm {
 
 ## Function : Perl wrapper for writing rm recipe to already open $FILEHANDLE or return commands array. Based on rm 8.4
 ## Returns  : @commands
-## Arguments: $infile_path            => Infile path
+## Arguments: $FILEHANDLE             => Filehandle to write to
+##          : $force                  => If an existing destination file cannot be opened, remove it and try again
+##          : $infile_path            => Infile path
+##          : $recursive              => Copy directories recursively
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append to stderrinfo to file
-##          : $FILEHANDLE             => Filehandle to write to
-##          : $recursive              => Copy directories recursively
-##          : $force                  => If an existing destination file cannot be opened, remove it and try again
 ##          : $verbose                => Verbosity
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $FILEHANDLE;
     my $infile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
-    my $FILEHANDLE;
 
     ## Default(s)
-    my $recursive;
     my $force;
+    my $recursive;
     my $verbose;
 
     my $tmpl = {
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        force => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$force,
+        },
         infile_path => {
             required    => 1,
             defined     => 1,
@@ -323,20 +331,11 @@ sub gnu_rm {
             strict_type => 1,
             store       => \$stderrfile_path_append,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
-        },
         recursive => {
             default     => 0,
             allow       => [ 0, 1 ],
             strict_type => 1,
             store       => \$recursive,
-        },
-        force => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$force,
         },
         verbose => {
             default     => 0,
@@ -389,31 +388,40 @@ sub gnu_mkdir {
 
 ## Function : Perl wrapper for writing mkdir recipe to already open $FILEHANDLE or return commands array. Based on mkdir 8.4
 ## Returns  : @commands
-## Arguments: $indirectory_path       => Infile path
+## Arguments: $FILEHANDLE             => Filehandle to write to
+##          : $indirectory_path       => Infile path
+##          : $parents                => No error if existing, make parent directories as needed
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append to stderrinfo to file
-##          : $FILEHANDLE             => Filehandle to write to
-##          : $parents                => No error if existing, make parent directories as needed
 ##          : $verbose                => Verbosity
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $FILEHANDLE;
     my $indirectory_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
-    my $FILEHANDLE;
 
     ## Default(s)
-    my $verbose;
     my $parents;
+    my $verbose;
 
     my $tmpl = {
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
         indirectory_path => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$indirectory_path,
+        },
+        parents => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$parents,
         },
         stderrfile_path => {
             strict_type => 1,
@@ -422,15 +430,6 @@ sub gnu_mkdir {
         stderrfile_path_append => {
             strict_type => 1,
             store       => \$stderrfile_path_append,
-        },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
-        },
-        parents => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$parents,
         },
         verbose => {
             default     => 0,
@@ -480,22 +479,25 @@ sub gnu_cat {
 
 ## Function : Perl wrapper for writing cat recipe to already open $FILEHANDLE or return commands array. Based on cat 8.4
 ## Returns  : @commands
-## Arguments: $infile_paths_ref       => Infile paths {REF}
+## Arguments: $FILEHANDLE             => Filehandle to write to
+##          : $infile_paths_ref       => Infile paths {REF}
 ##          : $outfile_path           => Outfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append to stderrinfo to file
-##          : $FILEHANDLE             => Filehandle to write to
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $FILEHANDLE;
     my $infile_paths_ref;
     my $outfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
-    my $FILEHANDLE;
 
     my $tmpl = {
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
         infile_paths_ref => {
             required    => 1,
             defined     => 1,
@@ -514,9 +516,6 @@ sub gnu_cat {
         stderrfile_path_append => {
             strict_type => 1,
             store       => \$stderrfile_path_append,
-        },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
         },
     };
 
@@ -555,32 +554,40 @@ sub gnu_echo {
 
 ## Function : Perl wrapper for writing echo recipe to already open $FILEHANDLE or return commands array. Based on echo 8.4
 ## Returns  : @commands
-## Arguments: $strings_ref            => Strings to echo {REF}
+## Arguments: $enable_interpretation  => Enable interpretation of backslash escapes
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $no_trailing_newline    => Do not output the trailing newline
 ##          : $outfile_path           => Outfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append to stderrinfo to file
-##          : $FILEHANDLE             => Filehandle to write to
-##          : $enable_interpretation  => Enable interpretation of backslash escapes
-##          : $no_trailing_newline    => Do not output the trailing newline
+##          : $strings_ref            => Strings to echo {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $strings_ref;
+    my $enable_interpretation;
+    my $FILEHANDLE;
+    my $no_trailing_newline;
     my $outfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
-    my $FILEHANDLE;
-    my $enable_interpretation;
-    my $no_trailing_newline;
+    my $strings_ref;
 
     my $tmpl = {
-        strings_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
+        enable_interpretation => {
+            default     => 0,
+            allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$strings_ref,
+            store       => \$enable_interpretation,
+        },
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        no_trailing_newline => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$no_trailing_newline,
         },
         outfile_path => {
             strict_type => 1,
@@ -594,20 +601,12 @@ sub gnu_echo {
             strict_type => 1,
             store       => \$stderrfile_path_append,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
-        },
-        enable_interpretation => {
-            default     => 0,
-            allow       => [ 0, 1 ],
+        strings_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => [],
             strict_type => 1,
-            store       => \$enable_interpretation,
-        },
-        no_trailing_newline => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$no_trailing_newline,
+            store       => \$strings_ref,
         },
     };
 
@@ -656,42 +655,63 @@ sub gnu_split {
 
 ## Function : Perl wrapper for writing split recipe to $FILEHANDLE or return commands array. Based on split 8.4.
 ## Returns  : @commands
-## Arguments: $infile_path            => Infile path
-##          : $FILEHANDLE             => Filehandle to write to
+## Arguments: $FILEHANDLE             => Filehandle to write to
+##          : $infile_path            => Infile path
+##          : $lines                  => Put number lines per output file
+##          : $numeric_suffixes       => Use numeric suffixes instead of alphabetic
+##          : $prefix                 => Prefix of output files
+##          : $quiet                  => Suppress all warnings
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append to stderrinfo to file
-##          : $prefix                 => Prefix of output files
-##          : $lines                  => Put number lines per output file
 ##          : $suffix_length          => Use suffixes of length N
-##          : $numeric_suffixes       => Use numeric suffixes instead of alphabetic
-##          : $quiet                  => Suppress all warnings
 ##          : $verbose                => Verbosity
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $infile_path;
     my $FILEHANDLE;
+    my $infile_path;
+    my $lines;
+    my $numeric_suffixes;
+    my $prefix;
     my $stderrfile_path;
     my $stderrfile_path_append;
-    my $prefix;
-    my $lines;
     my $suffix_length;
-    my $numeric_suffixes;
 
     ## Default(s)
     my $quiet;
     my $verbose;
 
     my $tmpl = {
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
         infile_path => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$infile_path,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        lines => {
+            allow       => qr/ ^\d+$ /xms,
+            strict_type => 1,
+            store       => \$lines,
+        },
+        numeric_suffixes => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$numeric_suffixes,
+        },
+        prefix => {
+            strict_type => 1,
+            store       => \$prefix,
+        },
+        quiet => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$quiet,
         },
         stderrfile_path => {
             strict_type => 1,
@@ -701,31 +721,10 @@ sub gnu_split {
             strict_type => 1,
             store       => \$stderrfile_path_append,
         },
-        prefix => {
-            strict_type => 1,
-            store       => \$prefix,
-        },
-        lines => {
-            allow       => qr/ ^\d+$ /xms,
-            strict_type => 1,
-            store       => \$lines,
-        },
         suffix_length => {
             allow       => qr/ ^\d+$ /xms,
             strict_type => 1,
             store       => \$suffix_length,
-        },
-        numeric_suffixes => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$numeric_suffixes,
-        },
-        quiet => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$quiet,
         },
         verbose => {
             default     => 0,
@@ -790,36 +789,39 @@ sub gnu_sort {
 
 ## Function : Perl wrapper for writing sort recipe to already open $FILEHANDLE or return commands array. Based on sort 8.4.
 ## Returns  : @commands
-## Arguments: $keys_ref               => Start a key at POS1 (origin 1), end it at POS2
+## Arguments: $FILEHANDLE             => Filehandle to write to
 ##          : $infile_path            => Infile path
+##          : $keys_ref               => Start a key at POS1 (origin 1), end it at POS2
 ##          : $outfile_path           => Outfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append to stderrinfo to file
 ##          : $stdoutfile_path        => Stdoutfile path
-##          : $FILEHANDLE             => Filehandle to write to
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $keys_ref;
+    my $FILEHANDLE;
     my $infile_path;
+    my $keys_ref;
     my $outfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
-    my $FILEHANDLE;
 
     my $tmpl = {
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        infile_path => {
+            strict_type => 1,
+            store       => \$infile_path,
+        },
         keys_ref => {
             required    => 1,
             defined     => 1,
             default     => [],
             strict_type => 1,
             store       => \$keys_ref,
-        },
-        infile_path => {
-            strict_type => 1,
-            store       => \$infile_path,
         },
         outfile_path => {
             strict_type => 1,
@@ -836,9 +838,6 @@ sub gnu_sort {
         stdoutfile_path => {
             strict_type => 1,
             store       => \$stdoutfile_path,
-        },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
         },
     };
 
@@ -886,23 +885,25 @@ sub gnu_printf {
 
 ## Function : Perl wrapper for writing printf recipe to already open $FILEHANDLE or return commands array. Based on printf 8.4.
 ## Returns  : @commands
-## Arguments: $format_string          => Format string to print
+## Arguments: $FILEHANDLE             => Filehandle to write to
+##          : $format_string          => Format string to print
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append to stderrinfo to file
 ##          : $stdoutfile_path        => Stdoutfile path
-##          : $FILEHANDLE             => Filehandle to write to
-##          : $append_stderr_info     => Append stderr info to file
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $FILEHANDLE;
     my $format_string;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
-    my $FILEHANDLE;
 
     my $tmpl = {
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
         format_string => {
             strict_type => 1,
             store       => \$format_string,
@@ -918,9 +919,6 @@ sub gnu_printf {
         stdoutfile_path => {
             strict_type => 1,
             store       => \$stdoutfile_path,
-        },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
         },
     };
 
@@ -957,14 +955,12 @@ sub gnu_printf {
 sub gnu_sleep {
 
 ## Function : Perl wrapper for writing sleep recipe to already open $FILEHANDLE or return commands array. Based on sleep 8.4
-##  Returns : @commands
-## Arguments: $seconds_to_sleep       => Seconds to sleep
-##          : $outfile_path           => Outfile path
+## Returns  : @commands
+## Arguments: $FILEHANDLE             => Filehandle to write to
+##          : $seconds_to_sleep       => Seconds to sleep
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append to stderrinfo to file
 ##          : $stdoutfile_path        => Stdoutfile path
-##          : $FILEHANDLE             => Filehandle to write to
-##          : $append_stderr_info     => Append stderr info to file
 
     my ($arg_href) = @_;
 
@@ -978,6 +974,9 @@ sub gnu_sleep {
     my $seconds_to_sleep;
 
     my $tmpl = {
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
         seconds_to_sleep => {
             default     => 0,
             allow       => qr/ ^\d+$ /xms,
@@ -995,9 +994,6 @@ sub gnu_sleep {
         stdoutfile_path => {
             strict_type => 1,
             store       => \$stdoutfile_path,
-        },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
         },
     };
 
@@ -1035,34 +1031,31 @@ sub gnu_sleep {
 sub gnu_ln {
 
 ## Function : Perl wrapper for writing ln recipe to already open $FILEHANDLE or return commands array. Based on ln 8.4
-##  Returns : @commands
-## Arguments: $symbolic               => Create a symbolic link
+## Returns  : @commands
+## Arguments: $FILEHANDLE             => Filehandle to write to
 ##          : $force                  => Remove existing destination files
 ##          : $link_path              => Path to link
-##          : $target_path            => Path to target
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append to stderrinfo to file
 ##          : $stdoutfile_path        => Stdoutfile path
-##          : $FILEHANDLE             => Filehandle to write to
+##          : $symbolic               => Create a symbolic link
+##          : $target_path            => Path to target
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $symbolic;
+    my $FILEHANDLE;
     my $force;
     my $link_path;
-    my $target_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
-    my $FILEHANDLE;
+    my $symbolic;
+    my $target_path;
 
     my $tmpl = {
-        symbolic => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$symbolic,
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
         },
         force => {
             default     => 0,
@@ -1074,11 +1067,6 @@ sub gnu_ln {
             required    => 1,
             strict_type => 1,
             store       => \$link_path,
-        },
-        target_path => {
-            required    => 1,
-            strict_type => 1,
-            store       => \$target_path,
         },
         stderrfile_path => {
             strict_type => 1,
@@ -1092,8 +1080,16 @@ sub gnu_ln {
             strict_type => 1,
             store       => \$stdoutfile_path,
         },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
+        symbolic => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$symbolic,
+        },
+        target_path => {
+            required    => 1,
+            strict_type => 1,
+            store       => \$target_path,
         },
     };
 
@@ -1140,9 +1136,9 @@ sub gnu_chmod {
 
 ## Function : Perl wrapper for writing chmod recipe to already open $FILEHANDLE or return commands array. Based on chmod 8.4
 ## Returns  : @commands
-## Arguments: $file_path              => Path to file
+## Arguments: $FILEHANDLE             => FILEHANDLE to write to
+##          : $file_path              => Path to file
 ##          : $permission             => Permisions for the file
-##          : $FILEHANDLE             => FILEHANDLE to write to
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append to stderrinfo to file
 ##          : $stdoutfile_path        => Stdoutfile path
@@ -1150,14 +1146,17 @@ sub gnu_chmod {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $FILEHANDLE;
     my $file_path;
     my $permission;
-    my $FILEHANDLE;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
 
     my $tmpl = {
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
         file_path => {
             required    => 1,
             defined     => 1,
@@ -1169,9 +1168,6 @@ sub gnu_chmod {
             defined     => 1,
             strict_type => 1,
             store       => \$permission,
-        },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
         },
         stderrfile_path => {
             strict_type => 1,
@@ -1300,4 +1296,74 @@ sub gnu_md5sum {
     return @commands;
 }
 
+sub gnu_tail {
+
+## Function : Perl wrapper for writing tail recipe to already open $FILEHANDLE or return commands array. Based on tail 8.4
+## Returns  : @commands
+## Arguments: $FILEHANDLE             => Filehandle to write to
+##          : $lines                  => Lines to print
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $lines;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+
+    my $tmpl = {
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        lines => {
+            allow       => qr/ ^\d+$ /xms,
+            strict_type => 1,
+            store       => \$lines,
+        },
+        stderrfile_path => {
+            strict_type => 1,
+            store       => \$stderrfile_path,
+        },
+        stderrfile_path_append => {
+            strict_type => 1,
+            store       => \$stderrfile_path_append,
+        },
+        stdoutfile_path => {
+            strict_type => 1,
+            store       => \$stdoutfile_path,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Stores commands depending on input parameters
+    my @commands = q{tail};
+
+    if ($lines) {
+        push @commands, q{--lines=} . $lines;
+    }
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            FILEHANDLE   => $FILEHANDLE,
+            commands_ref => \@commands,
+            separator    => $SPACE,
+
+        }
+    );
+    return @commands;
+}
 1;

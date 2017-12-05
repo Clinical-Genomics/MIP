@@ -219,7 +219,7 @@ create_bash_file(
 $log->info( q{Writing install instructions to:} . $SPACE . $file_name_path );
 
 ## Remove selected programs from installation
-if ( $parameter{skip_program} ) {
+if ( @{ $parameter{skip_program} } ) {
   PROGRAM:
     foreach my $program ( @{ $parameter{skip_program} } ) {
         delete $parameter{shell}{$program};
@@ -228,7 +228,7 @@ if ( $parameter{skip_program} ) {
     }
 }
 ## Remove all programs except those selected from installation
-if ( $parameter{select_program} ) {
+if ( @{ $parameter{select_program} } ) {
     my @programs = (
         keys %{$parameter{shell}},
         keys %{$parameter{bioconda}},
