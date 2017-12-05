@@ -2726,6 +2726,15 @@ else {
 
         $log->info("[Vt]\n");
 
+        my $program_name = q{vt};
+
+        my $infamily_directory = catdir(
+            $active_parameter{outdata_dir},
+            $active_parameter{family_id},
+            $active_parameter{outaligner_dir}
+        );
+        my $outfamily_directory = $infamily_directory;
+
         vt(
             {
                 parameter_href          => \%parameter,
@@ -2733,9 +2742,11 @@ else {
                 sample_info_href        => \%sample_info,
                 file_info_href          => \%file_info,
                 infile_lane_prefix_href => \%infile_lane_prefix,
+                infamily_directory      => $infamily_directory,
                 job_id_href             => \%job_id,
                 call_type               => q{BOTH},
-                program_name            => "vt",
+                outfamily_directory     => $outfamily_directory,
+                program_name            => $program_name,
             }
         );
     }
@@ -5434,439 +5445,6 @@ sub mvcfparser {
         close $FILEHANDLE;
     }
 
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
-
-            slurm_submit_job_sample_id_dependency_add_to_family(
-                {
-                    job_id_href             => $job_id_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    sample_ids_ref =>
-                      \@{ $active_parameter_href->{sample_ids} },
-                    family_id        => $$family_id_ref,
-                    path             => $job_id_chain,
-                    log              => $log,
-                    sbatch_file_name => $file_path,
-                }
-            );
-        }
-    }
-    if ($$reduce_io_ref) {
-
-        return
-          $xargs_file_counter
-          ; #Track the number of created xargs scripts per module for Block algorithm
-    }
-}
-
-sub vt {
-
-##vt
-
-##Function : Split multi allelic records into single records and normalize
-##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_path, $stderr_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => File info hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $program_name               => Program name
-##         : $program_info_path          => The program info path
-##         : $file_path                  => File path
-##         : $stderr_path                => The stderr path of the block script
-##         : $FILEHANDLE                 => Filehandle to write to
-##         : $family_id_ref              => Family id {REF}
-##         : $temp_directory_ref         => Temporary directory {REF}
-##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => Variant call type
-##         : $xargs_file_counter         => The xargs file counter
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-    my $outaligner_dir_ref;
-    my $call_type;
-    my $xargs_file_counter;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $program_name;
-    my $program_info_path;
-    my $file_path;
-    my $stderr_path;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href,
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href,
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href,
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href,
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name,
-        },
-        program_info_path => { strict_type => 1, store => \$program_info_path },
-        file_path         => { strict_type => 1, store => \$file_path },
-        stderr_path       => { strict_type => 1, store => \$stderr_path },
-        FILEHANDLE    => { store => \$FILEHANDLE, },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref,
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref,
-        },
-        outaligner_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir_ref,
-        },
-        call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
-        xargs_file_counter => {
-            default     => 0,
-            allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
-            store       => \$xargs_file_counter,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use Readonly;
-    use MIP::Cluster qw(get_core_number);
-    use MIP::Set::File qw{set_file_suffix};
-    use MIP::Script::Setup_script qw(setup_script);
-    use MIP::Get::File qw{get_file_suffix};
-    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use MIP::Gnu::Coreutils qw(gnu_mv);
-    use MIP::Program::Variantcalling::Genmod qw(genmod_annotate genmod_filter);
-    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_sample_id_dependency_add_to_family);
-
-    ## Constants
-    Readonly my $DOT => q{.};
-
-    my $reduce_io_ref = \$active_parameter_href->{reduce_io};
-    my $xargs_file_path_prefix;
-    my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
-
-    ## Filehandles
-    my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    unless ( defined($FILEHANDLE) ) {           #Run as individual sbatch script
-
-        $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
-    }
-
-    ## Get core number depending on user supplied input exists or not and max number of cores
-    my $core_number = get_core_number(
-        {
-            module_core_number => $active_parameter_href->{module_core_number}
-              { "p" . $program_name },
-            modifier_core_number => scalar( @{ $file_info_href->{contigs} } ),
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-        }
-    );
-
-    if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
-
-        ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_path, $program_info_path ) = setup_script(
-            {
-                active_parameter_href => $active_parameter_href,
-                job_id_href           => $job_id_href,
-                FILEHANDLE            => $FILEHANDLE,
-                directory_id          => $$family_id_ref,
-                program_name          => $program_name,
-                program_directory     => catfile( lc($$outaligner_dir_ref) ),
-                call_type             => $call_type,
-                core_number           => $core_number,
-                process_time =>
-                  $active_parameter_href->{module_time}{ "p" . $program_name },
-                temp_directory => $$temp_directory_ref,
-            }
-        );
-        $stderr_path = $program_info_path . ".stderr.txt";
-    }
-    my ( $volume, $directory, $stderr_file ) = splitpath($stderr_path)
-      ;    #Split to enable submission to &sample_info_qc later
-
-    ## Assign directories
-    my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $$family_id_ref, $$outaligner_dir_ref );
-    my $outfamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $$family_id_ref, $$outaligner_dir_ref );
-    $parameter_href->{ "p" . $program_name }{indirectory} =
-      $outfamily_directory;    #Used downstream
-
-    ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{prhocall}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$$family_id_ref}{ "p" . $program_name }{file_tag};
-    my $infile_prefix       = $$family_id_ref . $infile_tag . $call_type;
-    my $file_path_prefix    = catfile( $$temp_directory_ref, $infile_prefix );
-    my $outfile_prefix      = $$family_id_ref . $outfile_tag . $call_type;
-    my $outfile_path_prefix = catfile( $$temp_directory_ref, $outfile_prefix );
-
-    ### Assign suffix
-    ## Return the current infile vcf compression suffix for this jobid chain
-    my $infile_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
-            jobid_chain    => $job_id_chain,
-        }
-    );
-    my $outfile_suffix = set_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
-            job_id_chain   => $job_id_chain,
-            file_suffix =>
-              $parameter_href->{ "p" . $program_name }{outfile_suffix},
-        }
-    );
-
-    if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
-
-        ## Copy file(s) to temporary directory
-        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-        ($xargs_file_counter) = xargs_migrate_contig_files(
-            {
-                FILEHANDLE      => $FILEHANDLE,
-                XARGSFILEHANDLE => $XARGSFILEHANDLE,
-                contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
-                file_path   => $file_path,
-                program_info_path  => $program_info_path,
-                core_number        => $core_number,
-                xargs_file_counter => $xargs_file_counter,
-                infile             => $infile_prefix,
-                indirectory        => $infamily_directory,
-                temp_directory     => $$temp_directory_ref,
-            }
-        );
-    }
-
-    say {$FILEHANDLE}
-"## vt - Decompose (split multi allelic records into single records) and/or normalize variants";
-
-    ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
-        {
-            FILEHANDLE         => $FILEHANDLE,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_path          => $file_path,
-            program_info_path  => $program_info_path,
-            core_number        => $core_number,
-            xargs_file_counter => $xargs_file_counter,
-        }
-    );
-
-    my $remove_star_regexp =
-      q?perl -nae \'unless\($F\[4\] eq \"\*\") \{print $_\}\' ?
-      ; #VEP does not annotate '*' since the alt allele does not exist, this is captured in the upstream indel and SNV record associated with '*'
-
-    ## Split vcf into contigs
-    while ( my ( $contig_index, $contig ) =
-        each( @{ $file_info_href->{contigs_size_ordered} } ) )
-    {
-
-        ## vt - Split multi allelic records into single records and normalize
-        analysis_vt_core_rio(
-            {
-                active_parameter_href => $active_parameter_href,
-                FILEHANDLE            => $XARGSFILEHANDLE,
-                infile_path           => $file_path_prefix . "_"
-                  . $contig
-                  . $infile_suffix,
-                outfile_path => $outfile_path_prefix . "_"
-                  . $contig
-                  . $outfile_suffix,
-                decompose => $active_parameter_href->{vt_decompose},
-                normalize => $active_parameter_href->{vt_normalize},
-                uniq      => $active_parameter_href->{vt_uniq},
-                gnu_sed   => 1,
-                instream  => 0,
-                cmd_break => q{;},
-                xargs_file_path_prefix => $xargs_file_path_prefix,
-                contig                 => $contig,
-            }
-        );
-
-        if (   ( $contig_index == 0 )
-            && ( $active_parameter_href->{ "p" . $program_name } == 1 ) )
-        {
-
-            my ( $volume, $directory, $stderr_file ) =
-              splitpath($xargs_file_path_prefix)
-              ;    #Split to enable submission to &SampleInfoQC later
-
-            ## Collect QC metadata info for later use
-            my $qc_vt_outfile =
-              $stderr_file . $DOT . $contig . $DOT . q{stderr.txt};
-            add_program_outfile_to_sample_info(
-                {
-                    sample_info_href => $sample_info_href,
-                    program_name     => 'vt',
-                    outdirectory     => $directory,
-                    outfile          => $qc_vt_outfile,
-                }
-            );
-        }
-
-        my $alt_file_tag = "";
-
-        ## Remove decomposed '*' entries
-        if ( $active_parameter_href->{vt_missing_alt_allele} ) {
-
-            $alt_file_tag = "_nostar";
-            print $XARGSFILEHANDLE catfile(
-                $remove_star_regexp . $$temp_directory_ref,
-                $outfile_prefix . "_" . $contig . $outfile_suffix
-            ) . " ";
-            print $XARGSFILEHANDLE "> "
-              . $outfile_path_prefix . "_"
-              . $contig
-              . $alt_file_tag
-              . $outfile_suffix . " ";
-            print $XARGSFILEHANDLE "2>> "
-              . $xargs_file_path_prefix . "."
-              . $contig
-              . ".stderr.txt "
-              ;    #Redirect xargs output to program specific stderr file
-            print $XARGSFILEHANDLE "; ";
-        }
-
-        ## Remove common variants
-        if ( $active_parameter_href->{vt_genmod_filter} ) {
-
-            genmod_annotate(
-                {
-                    infile_path => $outfile_path_prefix . "_"
-                      . $contig
-                      . $alt_file_tag
-                      . $outfile_suffix,
-                    outfile_path => catfile( dirname( devnull() ), "stdout" ),
-                    stderrfile_path => $xargs_file_path_prefix . "."
-                      . $contig
-                      . ".stderr.txt",
-                    verbosity           => "v",
-                    temp_directory_path => $$temp_directory_ref,
-                    thousand_g_file_path =>
-                      $active_parameter_href->{vt_genmod_filter_1000g},
-                    max_af => $active_parameter_href->{vt_genmod_filter_max_af},
-                    FILEHANDLE => $XARGSFILEHANDLE,
-                }
-            );
-            print $XARGSFILEHANDLE "| ";
-
-            $alt_file_tag .= "_genmod_filter";    #Update file tag
-
-            genmod_filter(
-                {
-                    infile_path  => "-",
-                    outfile_path => $outfile_path_prefix . "_"
-                      . $contig
-                      . $alt_file_tag
-                      . $outfile_suffix,
-                    stderrfile_path_append => $xargs_file_path_prefix . "."
-                      . $contig
-                      . ".stderr.txt",
-                    verbosity => "v",
-                    threshold =>
-                      $active_parameter_href->{sv_genmod_filter_threshold},
-                    FILEHANDLE => $XARGSFILEHANDLE,
-                }
-            );
-            print $XARGSFILEHANDLE "; ";
-        }
-
-        gnu_mv(
-            {
-                infile_path => $outfile_path_prefix . "_"
-                  . $contig
-                  . $alt_file_tag
-                  . $outfile_suffix,
-                outfile_path => $outfile_path_prefix . "_"
-                  . $contig
-                  . $outfile_suffix,
-                FILEHANDLE => $XARGSFILEHANDLE,
-            }
-        );
-        say {$XARGSFILEHANDLE} "\n";
-    }
-
-    if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
-
-        ## Copies file from temporary directory.
-        say {$FILEHANDLE} q{## Copy file from temporary directory};
-        migrate_file(
-            {
-                infile_path => $outfile_path_prefix . q{_*}
-                  . $outfile_suffix . q{*},
-                outfile_path => $outfamily_directory,
-                FILEHANDLE   => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} q{wait}, "\n";
-
-        close $FILEHANDLE;
-    }
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
@@ -8650,6 +8228,12 @@ sub variantannotationblock {
     }
     if ( $active_parameter_href->{pvt} > 0 ) {    #Run vt. Done per family
 
+        my $program_name = q{vt};
+
+        my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
+            $$family_id_ref, $$outaligner_dir_ref );
+        my $outfamily_directory = $infamily_directory;
+
         ($xargs_file_counter) = vt(
             {
                 parameter_href          => $parameter_href,
@@ -8657,10 +8241,12 @@ sub variantannotationblock {
                 sample_info_href        => $sample_info_href,
                 file_info_href          => $file_info_href,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                infamily_directory      => $infamily_directory.
                 job_id_href             => $job_id_href,
                 call_type               => $call_type,
-                program_name            => "vt",
+                program_name            => $program_name,
                 file_path               => $file_path,
+                outfamily_directory     => $outfamily_directory,
                 program_info_path       => $program_info_path,
                 FILEHANDLE              => $FILEHANDLE,
                 xargs_file_counter      => $xargs_file_counter,
