@@ -202,12 +202,18 @@ sub analysis_vt {
     ## Unpack parameters
     my $job_id_chain  = $parameter_href->{$mip_program_name}{chain};
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
-    my $time = $active_parameter_href->{module_time}{$mip_program_name};
+
+    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_program_name      => $mip_program_name,
+        }
+    );
 
     ## Filehandles
     if ( not defined $FILEHANDLE ) {
 
-        #Create anonymous filehandle
+        # Create anonymous filehandle
         $FILEHANDLE = IO::Handle->new();
     }
 
@@ -215,42 +221,41 @@ sub analysis_vt {
     my $XARGSFILEHANDLE = IO::Handle->new();
 
     ## Get core number depending on user supplied input exists or not and max number of cores
-    my $core_number = get_core_number(
+    $core_number = get_core_number(
         {
-            module_core_number =>
-              $active_parameter_href->{module_core_number}{$mip_program_name},
-            modifier_core_number => scalar( @{ $file_info_href->{contigs} } ),
+            module_core_number   => $core_number,
+            modifier_core_number => scalar @{ $file_info_href->{contigs} },
             max_cores_per_node => $active_parameter_href->{max_cores_per_node},
         }
     );
 
-    #Run as individual sbatch script
+    # Run as individual sbatch script
     if ( !${$reduce_io_ref} ) {
 
         ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
         ( $file_path, $program_info_path ) = setup_script(
             {
-                active_parameter_href => $active_parameter_href,
-                job_id_href           => $job_id_href,
-                FILEHANDLE            => $FILEHANDLE,
-                directory_id          => $family_id,
-                program_name          => $program_name,
-                program_directory     => $outaligner_dir,
-                call_type             => $call_type,
-                core_number           => $core_number,
-                process_time          => $time,
-                temp_directory        => $temp_directory,
+                active_parameter_href           => $active_parameter_href,
+                call_type                       => $call_type,
+                core_number                     => $core_number,
+                directory_id                    => $family_id,
+                FILEHANDLE                      => $FILEHANDLE,
+                job_id_href                     => $job_id_href,
+                process_time                    => $time,
+                program_directory               => $outaligner_dir,
+                program_name                    => $program_name,
+                temp_directory                  => $temp_directory,
+                source_environment_commands_ref => [$source_environment_cmd],
             }
         );
         $stderr_path = $program_info_path . $DOT . q{stderr.txt};
     }
 
-    #Split to enable submission to &sample_info_qc later
+    # Split to enable submission to &sample_info_qc later
     my ( $volume, $directory, $stderr_file ) = splitpath($stderr_path);
 
-    #Used downstream
-    $parameter_href->{ $mip_program_name }{indirectory} =
-      $outfamily_directory;
+    # Used downstream
+    $parameter_href->{$mip_program_name}{indirectory} = $outfamily_directory;
 
     ## Tags
     my $infile_tag = $file_info_href->{$family_id}{prhocall}{file_tag};
@@ -270,17 +275,17 @@ sub analysis_vt {
 
     my $infile_suffix = get_file_suffix(
         {
+            jobid_chain    => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
-            jobid_chain    => $job_id_chain,
         }
     );
     my $outfile_suffix = set_file_suffix(
         {
+            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
-            job_id_chain   => $job_id_chain,
-            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
         }
     );
 
@@ -290,16 +295,16 @@ sub analysis_vt {
         say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
         ($xargs_file_counter) = xargs_migrate_contig_files(
             {
-                FILEHANDLE      => $FILEHANDLE,
-                XARGSFILEHANDLE => $XARGSFILEHANDLE,
                 contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
+                core_number => $core_number,
+                FILEHANDLE  => $FILEHANDLE,
                 file_path   => $file_path,
+                indirectory => $infamily_directory,
+                infile      => $infile_prefix,
                 program_info_path  => $program_info_path,
-                core_number        => $core_number,
-                xargs_file_counter => $xargs_file_counter,
-                infile             => $infile_prefix,
-                indirectory        => $infamily_directory,
                 temp_directory     => $temp_directory,
+                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+                xargs_file_counter => $xargs_file_counter,
             }
         );
     }
@@ -312,18 +317,14 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
+            core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             file_path          => $file_path,
             program_info_path  => $program_info_path,
-            core_number        => $core_number,
+            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
         }
     );
-
-#VEP does not annotate '*' since the alt allele does not exist, this is captured in the upstream indel and SNV record associated with '*'
-    my $remove_star_regexp =
-      q?perl -nae \'unless\($F\[4\] eq \"\*\") \{print $_\}\' ?;
 
     ## Split vcf into contigs
     while ( my ( $contig_index, $contig ) =
@@ -334,74 +335,65 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
         analysis_vt_core_rio(
             {
                 active_parameter_href => $active_parameter_href,
+                cmd_break             => $SEMICOLON,
+                contig                => $contig,
+                decompose             => $active_parameter_href->{vt_decompose},
                 FILEHANDLE            => $XARGSFILEHANDLE,
+                gnu_sed               => 1,
                 infile_path           => $file_path_prefix
                   . $UNDERSCORE
                   . $contig
                   . $infile_suffix,
+                instream     => 0,
+                normalize    => $active_parameter_href->{vt_normalize},
                 outfile_path => $outfile_path_prefix
                   . $UNDERSCORE
                   . $contig
                   . $outfile_suffix,
-                decompose => $active_parameter_href->{vt_decompose},
-                normalize => $active_parameter_href->{vt_normalize},
-                uniq      => $active_parameter_href->{vt_uniq},
-                gnu_sed   => 1,
-                instream  => 0,
-                cmd_break => $SEMICOLON,
+                uniq                   => $active_parameter_href->{vt_uniq},
                 xargs_file_path_prefix => $xargs_file_path_prefix,
-                contig                 => $contig,
             }
         );
 
-        if (   ( $contig_index == 0 )
-            && ( $active_parameter_href->{$mip_program_name} == 1 ) )
+        if (   $contig_index == 0
+            && $mip_program_mode == 1 )
         {
 
+            #Split to enable submission to &SampleInfoQC later
             my ( $volume, $directory, $stderr_file ) =
-              splitpath($xargs_file_path_prefix)
-              ;    #Split to enable submission to &SampleInfoQC later
+              splitpath($xargs_file_path_prefix);
 
             ## Collect QC metadata info for later use
             my $qc_vt_outfile =
               $stderr_file . $DOT . $contig . $DOT . q{stderr.txt};
             add_program_outfile_to_sample_info(
                 {
-                    sample_info_href => $sample_info_href,
-                    program_name     => q{vt},
                     outdirectory     => $directory,
                     outfile          => $qc_vt_outfile,
+                    program_name     => q{vt},
+                    sample_info_href => $sample_info_href,
                 }
             );
         }
 
         my $alt_file_tag = q{};
 
+# VEP does not annotate '*' since the alt allele does not exist, this is captured in the upstream indel and SNV record associated with '*'
         ## Remove decomposed '*' entries
         if ( $active_parameter_href->{vt_missing_alt_allele} ) {
 
-            $alt_file_tag = $UNDERSCORE . q{nostar};
-            print {$XARGSFILEHANDLE}
-              catfile( $remove_star_regexp . $temp_directory,
-                $outfile_prefix . $UNDERSCORE . $contig . $outfile_suffix )
-              . $SPACE;
-            print {$XARGSFILEHANDLE} q{>}
-              . $SPACE
-              . $outfile_path_prefix
-              . $UNDERSCORE
-              . $contig
-              . $alt_file_tag
-              . $outfile_suffix
-              . $SPACE;
-            print {$XARGSFILEHANDLE} q{2>>}
-              . $SPACE
-              . $xargs_file_path_prefix
-              . $DOT
-              . $contig
-              . $DOT
-              . q{stderr.txt}
-              . $SPACE;   #Redirect xargs output to program specific stderr file
-            print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
+            _remove_decomposed_asterisk_entries(
+                {
+                    alt_file_tag           => $UNDERSCORE . q{nostar},
+                    contig                 => $contig,
+                    outfile_prefix         => $outfile_prefix,
+                    outfile_suffix         => $outfile_suffix,
+                    outfile_path_prefix    => $outfile_path_prefix,
+                    temp_directory         => $temp_directory,
+                    XARGSFILEHANDLE        => $XARGSFILEHANDLE,
+                    xargs_file_path_prefix => $xargs_file_path_prefix,
+                }
+            );
         }
 
         ## Remove common variants
@@ -409,32 +401,34 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
 
             genmod_annotate(
                 {
+                    FILEHANDLE  => $XARGSFILEHANDLE,
                     infile_path => $outfile_path_prefix
                       . $UNDERSCORE
                       . $contig
                       . $alt_file_tag
                       . $outfile_suffix,
+                    max_af => $active_parameter_href->{vt_genmod_filter_max_af},
                     outfile_path => catfile( dirname( devnull() ), q{stdout} ),
+
                     stderrfile_path => $xargs_file_path_prefix
                       . $DOT
                       . $contig
                       . $DOT
                       . q{stderr.txt},
-                    verbosity           => q{v},
                     temp_directory_path => $temp_directory,
                     thousand_g_file_path =>
                       $active_parameter_href->{vt_genmod_filter_1000g},
-                    max_af => $active_parameter_href->{vt_genmod_filter_max_af},
-                    FILEHANDLE => $XARGSFILEHANDLE,
+                    verbosity => q{v},
                 }
             );
             print {$XARGSFILEHANDLE} $PIPE . $SPACE;
 
-            #Update file tag
+            # Update file tag
             $alt_file_tag .= $UNDERSCORE . q{genmod_filter};
 
             genmod_filter(
                 {
+                    FILEHANDLE   => $XARGSFILEHANDLE,
                     infile_path  => $DASH,
                     outfile_path => $outfile_path_prefix
                       . $UNDERSCORE
@@ -446,10 +440,9 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
                       . $contig
                       . $DOT
                       . q{stderr.txt},
-                    verbosity => q{v},
                     threshold =>
                       $active_parameter_href->{sv_genmod_filter_threshold},
-                    FILEHANDLE => $XARGSFILEHANDLE,
+                    verbosity => q{v},
                 }
             );
             print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
@@ -457,6 +450,7 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
 
         gnu_mv(
             {
+                FILEHANDLE  => $XARGSFILEHANDLE,
                 infile_path => $outfile_path_prefix
                   . $UNDERSCORE
                   . $contig
@@ -466,26 +460,25 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
                   . $UNDERSCORE
                   . $contig
                   . $outfile_suffix,
-                FILEHANDLE => $XARGSFILEHANDLE,
             }
         );
         say {$XARGSFILEHANDLE} $NEWLINE;
     }
 
-    #Run as individual sbatch script
+    # Run as individual sbatch script
     if ( !${$reduce_io_ref} ) {
 
         ## Copies file from temporary directory.
         say {$FILEHANDLE} q{## Copy file from temporary directory};
         migrate_file(
             {
+                FILEHANDLE  => $FILEHANDLE,
                 infile_path => $outfile_path_prefix
                   . $UNDERSCORE
                   . $ASTERISK
                   . $outfile_suffix
                   . $ASTERISK,
                 outfile_path => $outfamily_directory,
-                FILEHANDLE   => $FILEHANDLE,
             }
         );
         say {$FILEHANDLE} q{wait}, $NEWLINE;
@@ -494,18 +487,18 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
 
     if ( $mip_program_mode == 1 ) {
 
-        #Run as individual sbatch script
+        # Run as individual sbatch script
         if ( !${$reduce_io_ref} ) {
 
             slurm_submit_job_sample_id_dependency_add_to_family(
                 {
-                    job_id_href             => $job_id_href,
+                    family_id               => $family_id,
                     infile_lane_prefix_href => $infile_lane_prefix_href,
+                    job_id_href             => $job_id_href,
+                    log                     => $log,
+                    path                    => $job_id_chain,
                     sample_ids_ref =>
                       \@{ $active_parameter_href->{sample_ids} },
-                    family_id        => $family_id,
-                    path             => $job_id_chain,
-                    log              => $log,
                     sbatch_file_name => $file_path,
                 }
             );
@@ -513,9 +506,114 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
     }
     if ( ${$reduce_io_ref} ) {
 
-       #Track the number of created xargs scripts per module for Block algorithm
+      # Track the number of created xargs scripts per module for Block algorithm
         return $xargs_file_counter;
     }
+}
+
+sub _remove_decomposed_asterisk_entries {
+
+## Function : Remove decomposed '*' entries
+## Returns  :
+## Arguments: $alt_file_tag           => Alt. file tag
+##          : $contig                 => contig
+##          : $outfile_prefix         => Outfile prefix
+##          : $outfile_suffix         => Outfile suffix
+##          : $outfile_path_prefix    => Outfile path prefix
+##          : $temp_directory         => Temporary directory
+##          : $XARGSFILEHANDLE        => XARGS file handle
+##          : $xargs_file_path_prefix => Xargs file path prefix
+
+    my ($arg_href) = @_;
+
+    my $alt_file_tag;
+    my $contig;
+    my $outfile_path_prefix;
+    my $outfile_prefix;
+    my $outfile_suffix;
+    my $temp_directory;
+    my $XARGSFILEHANDLE;
+    my $xargs_file_path_prefix;
+
+    my $tmpl = {
+        alt_file_tag => {
+            required => 1,
+            defined  => 1,
+            store    => \$alt_file_tag,
+        },
+        contig => {
+            required => 1,
+            defined  => 1,
+            store    => \$contig,
+        },
+        outfile_path_prefix => {
+            required => 1,
+            defined  => 1,
+            store    => \$outfile_path_prefix,
+        },
+        outfile_prefix => {
+            required => 1,
+            defined  => 1,
+            store    => \$outfile_prefix,
+        },
+        outfile_suffix => {
+            required => 1,
+            defined  => 1,
+            store    => \$outfile_suffix,
+        },
+        temp_directory => {
+            required => 1,
+            defined  => 1,
+            store    => \$temp_directory,
+        },
+        XARGSFILEHANDLE => {
+            required => 1,
+            defined  => 1,
+            store    => \$XARGSFILEHANDLE,
+        },
+        xargs_file_path_prefix => {
+            required => 1,
+            defined  => 1,
+            store    => \$xargs_file_path_prefix,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Execute perl
+    my $remove_star_regexp = q?perl -nae \'?;
+
+    ## Print if line does not contain asterisk
+    $remove_star_regexp .= q?unless\($F\[4\] eq \"\*\") \{print $_\}\' ?;
+
+    $alt_file_tag = $UNDERSCORE . q{nostar};
+
+    print {$XARGSFILEHANDLE} catfile( $remove_star_regexp . $temp_directory,
+        $outfile_prefix . $UNDERSCORE . $contig . $outfile_suffix )
+      . $SPACE;
+
+    print {$XARGSFILEHANDLE} q{>}
+      . $SPACE
+      . $outfile_path_prefix
+      . $UNDERSCORE
+      . $contig
+      . $alt_file_tag
+      . $outfile_suffix
+      . $SPACE;
+
+    print {$XARGSFILEHANDLE} q{2>>}
+      . $SPACE
+      . $xargs_file_path_prefix
+      . $DOT
+      . $contig
+      . $DOT
+      . q{stderr.txt}
+      . $SPACE;
+
+    #Redirect xargs output to program specific stderr file
+    print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
+
+    return;
 }
 
 1;
