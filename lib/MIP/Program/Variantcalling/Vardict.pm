@@ -68,9 +68,9 @@ sub vardict {
             store       => \$referencefile_path
         },
         af_threshold => {
-            required    => 1,
-            defined     => 1,
-                ## FIXME: fix the regex match for float point
+            required => 1,
+            defined  => 1,
+            ## FIXME: fix the regex match for float point
             allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
             strore      => \$af_thresold
@@ -88,32 +88,32 @@ sub vardict {
             store       => \$infile_path
         },
         out_chrom_start => {
-            required => 1,
+            required    => 1,
             strict_type => 1,
-            allow => qr/ ^\d+$ /xsm,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store => \$out_chrom_start
+            store       => \$out_chrom_start
         },
         out_region_start => {
-            required => 1,
+            required    => 1,
             strict_type => 1,
-            allow => qr/ ^\d+$ /xsm,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store => \$out_region_start
+            store       => \$out_region_start
         },
         out_region_end => {
-            required => 1,
+            required    => 1,
             strict_type => 1,
-            allow => qr/ ^\d+$ /xsm,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store => \$out_region_end
+            store       => \$out_region_end
         },
         out_segment_annot => {
-            required => 1,
+            required    => 1,
             strict_type => 1,
-            allow => qr/ ^\d+$ /xsm,
+            allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store => \$out_segment_annot
+            store       => \$out_segment_annot
         },
         infile_bed_region_info => {
             required    => 1,

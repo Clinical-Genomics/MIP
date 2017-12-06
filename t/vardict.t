@@ -123,41 +123,41 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    referencefile_path  => {
+    referencefile_path => {
         inputs          => q{ref_file},
         expected_output => q{-G ref_file},
     },
-    af_threshold        => {
+    af_threshold => {
         input           => q{af_thr},
         expetced_output => q{-f af_thrd}
     },
-    sample_name         => {
+    sample_name => {
         input           => q{sample_name},
         expected_output => q{-N sample_name}
     },
-    infile_path         => {
+    infile_path => {
         input           => q{infile_path},
         expected_output => q{-b infile_path}
     },
-    out_chrom_start     => {
+    out_chrom_start => {
         input           => q{out_chrom_start},
         expected_output => q{-c out_chrom_start}
     },
-    out_region_start    => {
+    out_region_start => {
         input           => q{out_region_start},
         expected_output => q{-S out_region_start}
     },
-    out_region_end      => {
+    out_region_end => {
         input           => q{out_region_end},
         expected_output => q{-E out_region_end}
     },
-    out_segment_annot   => {
+    out_segment_annot => {
         input           => q{out_segment_annot},
         expected_output => q{-g out_segment_annot}
     },
-    infile_bed_region_info  => {
-        input               => q{infile_bed_region_info},
-        expected_output     => $SPACE. q{infile_bed_region_info}
+    infile_bed_region_info => {
+        input           => q{infile_bed_region_info},
+        expected_output => $SPACE . q{infile_bed_region_info}
     }
 );
 
