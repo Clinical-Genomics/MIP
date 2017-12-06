@@ -5604,7 +5604,7 @@ sub rhocall {
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Program::Variantcalling::Bcftools qw(bcftools_roh);
-    use Program::Variantcalling::Rhocall qw(aggregate annotate);
+    use MIP::Program::Variantcalling::Rhocall qw{ rhocall_aggregate rhocall_annotate };
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
 
@@ -5758,7 +5758,7 @@ sub rhocall {
         );
         print $XARGSFILEHANDLE "; ";
 
-        Program::Variantcalling::Rhocall::annotate(
+        rhocall_annotate(
             {
                 infile_path => $file_path_prefix . "_"
                   . $contig
