@@ -180,6 +180,8 @@ slurm_sacct.t
 slurm_sbatch.t
 slurm_build_sbatch_header.t
 slurm_reformat_sacct_output.t
+svdb_merge.t
+svdb_query.t
 tar.t
 tiddit.t
 unix_standard_streams.t

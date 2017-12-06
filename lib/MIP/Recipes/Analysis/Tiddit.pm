@@ -162,6 +162,7 @@ sub analysis_tiddit {
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
     use MIP::Processmanagement::Processes qw{ print_wait };
+    use MIP::Program::Variantcalling::Svdb qw{ svdb_merge };
     use MIP::Program::Variantcalling::Tiddit qw{ tiddit_sv };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -340,12 +341,12 @@ sub analysis_tiddit {
     my @infile_paths = map { $file_path_prefix{$_}{out} . $outfile_suffix }
       ( keys %file_path_prefix );
 
-    Program::Variantcalling::Svdb::merge(
+    svdb_merge(
         {
             FILEHANDLE       => $FILEHANDLE,
             infile_paths_ref => \@infile_paths,
-            outfile_path     => $outfile_path_prefix . $outfile_suffix,
             notag            => 1,
+            outfile_path     => $outfile_path_prefix . $outfile_suffix,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
