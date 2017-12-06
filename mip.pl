@@ -2741,7 +2741,7 @@ else {
         );
         my $outfamily_directory = $infamily_directory;
 
-        vt(
+        analysis_vt(
             {
                 parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
