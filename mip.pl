@@ -5604,7 +5604,7 @@ sub rhocall {
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Program::Variantcalling::Bcftools qw(bcftools_roh);
-    use MIP::Program::Variantcalling::Rhocall qw{ rhocall_aggregate rhocall_annotate };
+    use MIP::Program::Variantcalling::Rhocall qw{ rhocall_annotate };
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
 
