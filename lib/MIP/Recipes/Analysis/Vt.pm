@@ -409,7 +409,6 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
                       . $outfile_suffix,
                     max_af => $active_parameter_href->{vt_genmod_filter_max_af},
                     outfile_path => catfile( dirname( devnull() ), q{stdout} ),
-
                     stderrfile_path => $xargs_file_path_prefix
                       . $DOT
                       . $contig
