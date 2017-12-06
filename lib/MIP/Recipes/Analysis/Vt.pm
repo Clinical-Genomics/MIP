@@ -244,8 +244,8 @@ sub analysis_vt {
                 process_time                    => $time,
                 program_directory               => $outaligner_dir,
                 program_name                    => $program_name,
-                temp_directory                  => $temp_directory,
                 source_environment_commands_ref => [$source_environment_cmd],
+                temp_directory                  => $temp_directory,
             }
         );
         $stderr_path = $program_info_path . $DOT . q{stderr.txt};
@@ -526,6 +526,7 @@ sub _remove_decomposed_asterisk_entries {
 
     my ($arg_href) = @_;
 
+    ## Flatten argument(s)
     my $alt_file_tag;
     my $contig;
     my $outfile_path_prefix;
@@ -610,7 +611,7 @@ sub _remove_decomposed_asterisk_entries {
       . q{stderr.txt}
       . $SPACE;
 
-    #Redirect xargs output to program specific stderr file
+    # Redirect xargs output to program specific stderr file
     print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
 
     return;
