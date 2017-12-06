@@ -544,18 +544,13 @@ sub get_programs_for_installation {
         }
     }
     ## Exit if a python 3 env has ben specified for something else than Chanjo or Genmod
-    if (
-        $parameter_href->{conda_packages}{python} =~
-        m/ 3\.\d+ | 3\.\d+\.\d+ /xms
-        and not any { $_ =~ m/ chanjo | genmod /xms }
-        @{ $parameter_href->{select_program} }
-      )
-    {
-        $log->error(
-q{A python 3 env has been specified. Please use a python 2 environment for all programs except Chanjo and Genmod}
-        );
-        exit 1;
-    }
+    _assure_python_3_compability(
+        {
+            log                => $log,
+            python_version     => $parameter_href->{conda_packages}{python},
+            select_program_ref => $parameter_href->{select_program}
+        }
+    );
 
     ## Remove all programs except those selected from installation
     if ( @{ $parameter_href->{select_program} } ) {
@@ -580,24 +575,13 @@ q{A python 3 env has been specified. Please use a python 2 environment for all p
         delete $parameter_href->{shell}{cnvnator};
     }
 
-    ## Exclude Chanjo and Genmod unless a python 3 env has been specified
-    if ( $parameter_href->{conda_packages}{python} =~
-        m/ 2\.\d+ | 2\.\d+\.\d+ /xms )
-    {
-        delete $parameter_href->{pip}{chanjo};
-        delete $parameter_href->{pip}{genmod};
-
-        ## Check if Chanjo and genmod has been selected for installation in a python 2 environment
-        if (
-            any { $_ =~ m/ chanjo | genmod /xms }
-            @{ $parameter_href->{select_program} }
-          )
+    ## Exclude Chanjo, Genmod and Variant integrity unless a python 3 env has been specified
+    $parameter_href = _assure_python_2_compability(
         {
-            $log->fatal(
-                q{Please specify a python 3 environment for Chanjo and Genmod});
-            exit 1;
+            log            => $log,
+            parameter_href => $parameter_href,
         }
-    }
+    );
 
     my @shell_programs_to_install = get_programs_for_shell_installation(
         {
@@ -618,6 +602,110 @@ q{A python 3 env has been specified. Please use a python 2 environment for all p
     $parameter_href->{shell_programs_to_install} = [@shell_programs_to_install];
 
     return %{$parameter_href};
+}
+
+sub _assure_python_3_compability {
+
+## Function : Test if specified programs are to be installed in a python 3 environment
+## Returns  :
+## Arguments: $log                => Log
+##          : $python_version     => The python version that are to be used for the environment
+##          : $select_program_ref => Programs selected for installation by the user {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $log;
+    my $python_version;
+    my $select_program_ref;
+
+    my $tmpl = {
+        log => {
+            required => 1,
+            defined  => 1,
+            store    => \$log,
+        },
+        python_version => {
+            required => 1,
+            defined  => 1,
+            allow    => qr/ ^(2|3)\.(\d+$|\d+\.\d+$) /xms,
+            store    => \$python_version,
+        },
+        select_program_ref => {
+            required => 1,
+            default  => [],
+            store    => \$select_program_ref,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    if (
+        $python_version =~ m/ 3\.\d+ | 3\.\d+\.\d+ /xms
+        and not any { $_ =~ m/ chanjo | genmod | variant_integrity /xms }
+        @{$select_program_ref}
+      )
+    {
+        $log->fatal(
+q{A python 3 env has been specified. Please use a python 2 environment for all programs except Chanjo and Genmod and Variant integrity}
+        );
+        exit 1;
+    }
+
+    return;
+}
+
+sub _assure_python_2_compability {
+
+## Function : Exclude programs that are not compatible with python 2 and exit when a program with python 3 dependency has been selected.
+## Returns  :
+## Arguments: $log            => Log
+##          : $parameter_href => Parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $log;
+    my $parameter_href;
+
+    my $tmpl = {
+        log => {
+            required => 1,
+            defined  => 1,
+            store    => \$log,
+        },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    if ( $parameter_href->{conda_packages}{python} =~
+        m/ 2\.\d+ | 2\.\d+\.\d+ /xms )
+    {
+        delete $parameter_href->{pip}{chanjo};
+        delete $parameter_href->{pip}{genmod};
+        delete $parameter_href->{pip}{variant_integrity};
+
+        ## Check if Chanjo and genmod has been selected for installation in a python 2 environment
+        if (
+            any { $_ =~ m/ chanjo | genmod | variant_integrity /xms }
+            @{ $parameter_href->{select_program} }
+          )
+        {
+            $log->fatal(
+q{Please specify a python 3 environment for Chanjo, Genmod and Variant integrity}
+            );
+            exit 1;
+        }
+    }
+
+    return $parameter_href;
 }
 
 sub get_programs_for_shell_installation {
@@ -749,7 +837,9 @@ q{echo -e '\tCNVnator has been installed in the specified conda environment'};
         say $FILEHANDLE
           q{echo -e '\tPlease exit the current session before continuing'};
     }
-    elsif ( any { $_ eq q{chanjo} or q{genmod} } @{$select_program_ref} ) {
+    elsif ( any { $_ =~ / chanjo | genmod | variant_integrity /xms }
+        @{$select_program_ref} )
+    {
         say $FILEHANDLE q{echo -e "\tMIP's python 3 tools has been installed"};
     }
     else {
