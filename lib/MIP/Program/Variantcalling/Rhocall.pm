@@ -34,7 +34,7 @@ Readonly my $SPACE => q{ };
 
 sub rhocall_aggregate {
 
-## Function : Perl wrapper for generic commands module.
+## Function : Perl wrapper for writing rhocall aggregate recipe to $FILEHANDLE or return commands array. Based on rhocall 0.3.
 ## Returns  : @commands
 ## Arguments: $FILEHANDLE             => Filehandle to write to
 ##          : $infile_path            => Infile path to read from
@@ -113,7 +113,7 @@ sub rhocall_aggregate {
 
 sub rhocall_annotate {
 
-## Function : Perl wrapper for generic commands module.
+## Function : Perl wrapper for writing rhocall annotate recipe to $FILEHANDLE or return commands array. Based on rhocall 0.3.
 ## Returns  : @commands
 ## Arguments: $bedfile_path           => BED file with AZ windows
 ##          : $FILEHANDLE             => Filehandle to write to

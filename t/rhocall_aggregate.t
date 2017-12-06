@@ -124,17 +124,17 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     infile_path => {
-        input           => catfile(qw{file_path_prefix_contig infile_suffix}),
-        expected_output => catfile(qw{file_path_prefix_contig infile_suffix}),
+        input           => catfile( qw{ file_path_prefix_contig infile_suffix } ),
+        expected_output => catfile( qw{ file_path_prefix_contig infile_suffix } ),
     },
 );
 
 my %specific_argument = (
     outfile_path => {
-        input => catfile(qw{outfile_path_prefix_contig infile_suffix}),
+        input => catfile( qw{ outfile_path_prefix_contig infile_suffix } ),
         expected_output => q{--output}
           . $SPACE
-          . catfile(qw{outfile_path_prefix_contig infile_suffix}),
+          . catfile( qw{ outfile_path_prefix_contig infile_suffix } ),
     },
 );
 

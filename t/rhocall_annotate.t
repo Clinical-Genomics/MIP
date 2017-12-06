@@ -124,29 +124,29 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     infile_path => {
-        input           => catfile(qw{file_path_prefix_contig infile_suffix}),
-        expected_output => catfile(qw{file_path_prefix_contig infile_suffix}),
+        input           => catfile( qw{ file_path_prefix_contig infile_suffix } ),
+        expected_output => catfile( qw{ file_path_prefix_contig infile_suffix } ),
     },
 );
 
 my %specific_argument = (
     bedfile_path => {
-        input           => catfile(qw{path_to_bedfile file.bed}),
+        input           => catfile( qw{ path_to_bedfile file.bed } ),
         expected_output => q{-b}
           . $SPACE
-          . catfile(qw{path_to_bedfile file.bed}),
+          . catfile( qw{ path_to_bedfile file.bed } ),
     },
     outfile_path => {
-        input => catfile(qw{outfile_path_prefix_contig infile_suffix}),
+        input => catfile( qw{ outfile_path_prefix_contig infile_suffix } ),
         expected_output => q{--output}
           . $SPACE
-          . catfile(qw{outfile_path_prefix_contig infile_suffix}),
+          . catfile( qw{ outfile_path_prefix_contig infile_suffix } ),
     },
     rohfile_path => {
-        input           => catfile(qw{$file_path_prefix _contig.roh}),
+        input           => catfile( qw{ file_path_prefix _contig.roh } ),
         expected_output => q{-r}
           . $SPACE
-          . catfile(qw{$file_path_prefix _contig.roh}),
+          . catfile( qw{ file_path_prefix _contig.roh } ),
     },
     v14 => {
         input           => 1,
