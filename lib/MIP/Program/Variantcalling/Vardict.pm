@@ -78,7 +78,7 @@ sub vardict {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$referencefile_path
+            store       => \$referencefile_path,
         },
         af_threshold => {
             required => 1,
