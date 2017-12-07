@@ -29,36 +29,49 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $SPACE => q{ };
+Readonly my $SPACE   => q{ };
+Readonly my $PIPE    => q{|};
+Readonly my $DQUOTE  => q{"};
 
 sub vardict {
 
-    ## Function : Perl wrapper for Vardict, a variant caller.
-    ## Returns  : @commands
-    ## Arguments: $FILEHANDLE             => Filehandle to write to
-    ##          : $referencefile_path     => Genome reference file
-    ##          : $af_threshold           => The threshold for allele frequency
-    ##          : $sample_name            => The sample name to be used directly, will overwrite -n option
-    ##          : $infile_path_normal     => Infile path normal
-    ##          : $infile_path_tumor      => Infile path tumor
-    ##          : $out_chrom_start        => The column for chromosome
-    ##          : $out_region_start       => The column for region start
-    ##          : $out_region_end         => The column for region end
-    ##          : $out_segment_annot      => The column for gene name, or segment annotation
-    ##          : $infile_bed_region_info => Infile path for region info bed file
-    ##          : $stderrfile_path        => Stderrfile path
-    ##          : $stderrfile_path_append => Append stderr info to file path
-    ##          : $stdoutfile_path        => Stdoutfile path
+## Function : Perl wrapper for Vardict, a variant caller. Based on vardict 2017.09.24
+## Returns  : @commands
+## Arguments: $af_threshold           => Threshold for allele frequency
+##          : $infile_bed_region_info => Infile path for region info bed file
+##          : $infile_path_normal     => Infile path normal
+##          : $infile_path_tumor      => Infile path tumor
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $out_chrom_start        => Column for chromosome
+##          : $out_region_start       => Column for region start
+##          : $out_region_end         => Column for region end
+##          : $out_segment_annotn     => Column for gene name, or segment annotation
+##          : $referencefile_path     => Genome reference file
+##          : $sample_name            => Sample name to be used directly, will overwrite -n option
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $infile_bed_region_info;
+    my $infile_path_normal;
+    my $infile_path_tumor;
+    my $out_chrom_start;
+    my $out_region_start;
+    my $out_region_end;
+    my $out_segment_annotn;
+    my $referencefile_path;
+    my $sample_name;
     my $FILEHANDLE;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
 
+
     ## Default(s)
+    my $af_threshold;
 
     my $tmpl = {
         referencefile_path => {
@@ -70,56 +83,63 @@ sub vardict {
         af_threshold => {
             required => 1,
             defined  => 1,
-            ## FIXME: fix the regex match for float point
-            allow       => qr/ ^\d+$ /xsm,
+            default => 0.01,
+            ## Exactly 2 decimal points after 0 or 1
+            allow       => qr/ ^0.\d{1,2}$ | ^1$ /xsm,
             strict_type => 1,
-            strore      => \$af_thresold
+            strore      => \$af_threshold,
         },
         sample_name => {
             required    => 1,
             allow       => qr/ ^\w+$ /xsm,
             strict_type => 1,
-            strore      => \$sample_name
+            strore      => \$sample_name,
         },
-        infile_path => {
+        infile_path_tumor => {
             required    => 1,
             strict_type => 1,
             defined     => 1,
-            store       => \$infile_path
+            store       => \$infile_path_tumor,
+        },
+        infile_path_normal => {
+            required    => 0,
+            strict_type => 1,
+            defined     => 1,
+            store       => \$infile_path_normal,
         },
         out_chrom_start => {
             required    => 1,
             strict_type => 1,
             allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store       => \$out_chrom_start
+            store       => \$out_chrom_start,
         },
         out_region_start => {
             required    => 1,
             strict_type => 1,
             allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store       => \$out_region_start
+            store       => \$out_region_start,
         },
         out_region_end => {
             required    => 1,
             strict_type => 1,
             allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store       => \$out_region_end
+            store       => \$out_region_end,
         },
-        out_segment_annot => {
+        out_segment_annotn => {
             required    => 1,
             strict_type => 1,
             allow       => qr/ ^\d+$ /xsm,
             strict_type => 1,
-            store       => \$out_segment_annot
+            store       => \$out_segment_annotn,
         },
         infile_bed_region_info => {
             required    => 1,
             strict_type => 1,
             defined     => 1,
-            store       => \$infile_bed_region_info
+            store       => \$infile_bed_region_info,
         },
         FILEHANDLE => {
             store => \$FILEHANDLE,
@@ -143,34 +163,29 @@ sub vardict {
     ## Stores commands depending on input parameters
     my @commands = q{vardict};
 
-    if ($referencefile_path) {
-        push @commands, q{-G} . $SPACE . $referencefile_path;
+    push @commands, q{-G} . $SPACE . $referencefile_path;
+
+    push @commands, q{-f} . $SPACE . $af_threshold;
+
+    push @commands, q{-N} . $SPACE . $sample_name;
+
+    ## Vardict requires input in form of "tumor_file_name|normal_file_name" or tumor_file_name (without double quote)
+    if ($infile_path_normal) {
+        push @commands, q{-b} . $SPACE . $infile_path_tumor;
+    } else {
+        push @commands, q{-b} . $SPACE . $DQUOTE . $infile_path_tumor . $PIPE . $infile_path_normal . $DQUOTE;
     }
-    if ($af_threshold) {
-        push @commands, q{-f} . $SPACE . $af_threshold;
-    }
-    if ($sample_name) {
-        push @commands, q{-N} . $SPACE . $sample_name;
-    }
-    ## FIXME: add two infile_path to concatenate as "tumor|normal" (with double quotation) for vardict input
-    if ($infile_path) {
-        push @commands, q{-b} . $SPACE . $infile_path;
-    }
-    if ($out_chrom_start) {
-        push @commands, q{-c} . $SPACE . $out_chrom_start;
-    }
-    if ($out_region_start) {
-        push @commands, q{-S} . $SPACE . $out_region_start;
-    }
-    if ($out_region_end) {
-        push @commands, q{-E} . $SPACE . $out_region_end;
-    }
-    if ($out_segment_annot) {
-        push @commands, q{-g} . $SPACE . $out_segment_annot;
-    }
-    if ($infile_bed_region_info) {
-        push @commands, $SPACE . $infile_bed_region_info;
-    }
+
+    push @commands, q{-c} . $SPACE . $out_chrom_start;
+
+    push @commands, q{-S} . $SPACE . $out_region_start;
+
+    push @commands, q{-E} . $SPACE . $out_region_end;
+
+    push @commands, q{-g} . $SPACE . $out_segment_annotn;
+
+    push @commands, $SPACE . $infile_bed_region_info;
+
     push @commands,
       unix_standard_streams(
         {
