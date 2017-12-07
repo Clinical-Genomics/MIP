@@ -26,6 +26,7 @@ bioconda:
   rtg-tools: 3.8.4
   sambamba: 0.6.6
   samtools: 1.6
+  scikit-learn: 0.15.2
   snpeff: 4.3.1
   snpsift: 4.3.1
   vcfanno: 0.1.0
