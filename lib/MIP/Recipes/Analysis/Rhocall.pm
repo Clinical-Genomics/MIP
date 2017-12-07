@@ -54,7 +54,6 @@ sub analysis_rhocall_annotate {
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_info_path       => The program info path
 ##          : $program_name            => Program name
-##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $stderr_path             => The stderr path of the block script
 ##          : $temp_directory          => Temporary directory {REF}
@@ -73,7 +72,6 @@ sub analysis_rhocall_annotate {
     my $parameter_href;
     my $program_info_path;
     my $program_name;
-    my $sample_id;
     my $sample_info_href;
     my $stderr_path;
 
@@ -151,12 +149,6 @@ sub analysis_rhocall_annotate {
             defined     => 1,
             strict_type => 1,
             store       => \$program_name,
-        },
-        sample_id => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$sample_id,
         },
         sample_info_href => {
             required    => 1,
@@ -412,7 +404,6 @@ sub analysis_rhocall_annotate_rio {
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_info_path       => The program info path
 ##          : $program_name            => Program name
-##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $stderr_path             => The stderr path of the block script
 ##          : $temp_directory          => Temporary directory {REF}
@@ -432,7 +423,6 @@ sub analysis_rhocall_annotate_rio {
     my $parameter_href;
     my $program_info_path;
     my $program_name;
-    my $sample_id;
     my $sample_info_href;
     my $stderr_path;
 
@@ -511,12 +501,6 @@ sub analysis_rhocall_annotate_rio {
             defined     => 1,
             strict_type => 1,
             store       => \$program_name,
-        },
-        sample_id => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$sample_id,
         },
         sample_info_href => {
             required    => 1,
