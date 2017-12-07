@@ -146,28 +146,24 @@ This will install all the dependencies of MIP and other modules included in MIP 
 Create seperate environment for each tool that has to have a seperate dependecy demands. For instance a tools that require python v3 or higher and are not compatible with older versions of pyton. 
 
 ```Bash
-$ conda create --name python_v3.6_tools --quiet --yes python=3.6 pip
-$ source activate python_v3.6_tools
-$ pip install genmod==3.7.2 chanjo==4.2.0
+$ perl develop/modules/MIP/mip_install.pl -env mip_pyv3.6 --select_program genmod --select_program chanjo --select_program variant_integrity --python_version 3.6
+$ bash mip.sh
 ```
 
-In your ~/.bashrc add a variable and and source of a file containing aliases of the tools you want to activate:
+In your config you will have to supply the ``module_source_environment_command`` parameter to activate the conda environment specific for the tool. Here is an example with three python tools in their own environment and VEP and cnvnator in each own, with some extra initilization:
 
 ```
-# source aliases
-source ~/dotfiles/aliases.sh
+module_source_environment_command:
+  pchanjo_sexcheck: "source activate mip_pyv3.6"
+  prankvariant: "source activate mip_pyv3.6"
+  psv_rankvariant: "source activate mip_pyv3.6"
+  pvariant_integrity: "source activate mip_pyv3.6"
+  pvarianteffectpredictor: "LD_LIBRARY_PATH=/mnt/hds/proj/cust003/develop/modules/miniconda2/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source activate mip_vep"
+  psv_varianteffectpredictor: "LD_LIBRARY_PATH=/mnt/hds/proj/cust003/develop/modules/miniconda2/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source activate mip_vep"
+  pcnvnator: "LD_LIBRARY_PATH=/mnt/hds/proj/cust003/develop/modules/miniconda2/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source /mnt/hds/proj/cust003/develop/modules/miniconda2/envs/mip_cnvnator/root/bin/thisroot.sh; source activate mip_cnvnator"
 ```
 
-Add the aliases of the binaries in the aliases.sh file:
-
-```
-CONDA_MIP_PY3_BIN="[CONDA_PATH]/envs/python_v3.6_tools/bin"
-alias chanjo="${CONDA_MIP_PY3_BIN}/chanjo"
-alias genmod="${CONDA_MIP_PY3_BIN}/genmod"
-alias variant_integrity="${CONDA_MIP_PY3_BIN}/variant_integrity"
-CONDA_MIP_CNVNATOR_BIN="[CONDA_PATH]/envs/mip_cnvnator/bin"
-alias cnvnator="LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH ; source [CONDA_PATH]/envs/mip_cnvnator/root/bin/thisroot.sh; ${CONDA_MIP_CNVNATOR_BIN}/cnvnator"
-```
+MIP will execute this on the node before executing the programs and then revert to the ``source_main_environment_command`` if set. Otherwise ``source deactivate`` is used.
 
 ### Usage
 
