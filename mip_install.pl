@@ -67,7 +67,7 @@ Readonly my $UNDERSCORE => q{_};
 my $config_file = catfile( $Bin, qw{ definitions install_parameters.yaml} );
 my %parameter = load_yaml( { yaml_file => $config_file } );
 
-our $VERSION = q{1.2.26};
+our $VERSION = q{1.2.27};
 
 GetOptions(
     q{see|bash_set_errexit}    => \$parameter{bash_set_errexit},
@@ -218,50 +218,13 @@ create_bash_file(
 
 $log->info( q{Writing install instructions to:} . $SPACE . $file_name_path );
 
-## Remove selected programs from installation
-if ( @{ $parameter{skip_program} } ) {
-  PROGRAM:
-    foreach my $program ( @{ $parameter{skip_program} } ) {
-        delete $parameter{shell}{$program};
-        delete $parameter{bioconda}{$program};
-        delete $parameter{pip}{$program};
-    }
-}
-## Remove all programs except those selected from installation
-if ( @{ $parameter{select_program} } ) {
-    my @programs = (
-        keys %{$parameter{shell}},
-        keys %{$parameter{bioconda}},
-        keys %{$parameter{pip}}
-    );
-    my @programs_to_skip =
-      array_minus( @programs, @{ $parameter{select_program} } );
-
-  PROGRAM:
-    foreach my $program (@programs_to_skip) {
-        delete $parameter{shell}{$program};
-        delete $parameter{bioconda}{$program};
-        delete $parameter{pip}{$program};
-    }
-}
-
-## Check whether the user wants to do a shell installation of some or all overlapping bioconda packages
-my @shell_programs_to_install = get_programs_for_shell_installation(
+## Process input parameters to get a correct combination of programs that are to be installed
+%parameter = get_programs_for_installation(
     {
-        shell_programs_href        => $parameter{shell},
-        conda_programs_href        => $parameter{bioconda},
-        shell_install_programs_ref => $parameter{shell_install},
-        prefer_shell               => $parameter{prefer_shell},
+        log            => $log,
+        parameter_href => \%parameter,
     }
 );
-
-## Removing the bioconda packages that has been selected to be installed via SHELL
-delete @{ $parameter{bioconda} }{@shell_programs_to_install};
-## Special case for snpsift since it is installed together with SnpEff
-## if shell installation of SnpEff has been requested.
-if ( any { $_ eq q{snpeff} } @shell_programs_to_install ) {
-    delete $parameter{bioconda}{snpsift};
-}
 
 ## Seting up conda environment and installing default packages
 setup_conda_env(
@@ -319,7 +282,7 @@ my %shell_subs = (
 
 ## Launch shell installation subroutines
 SHELL_PROGRAM:
-for my $shell_program (@shell_programs_to_install) {
+for my $shell_program ( @{ $parameter{shell_programs_to_install} } ) {
     $shell_subs{$shell_program}->(
         {
             program_parameters_href => $parameter{shell}{$shell_program},
@@ -348,6 +311,14 @@ if ( $parameter{reference_dir} ) {
         }
     );
 }
+
+## Add final message to FILEHANDLE
+display_final_message(
+    {
+        FILEHANDLE         => $FILEHANDLE,
+        select_program_ref => $parameter{select_program},
+    }
+);
 
 $log->info(q{Finished writing installation instructions for MIP});
 
@@ -534,6 +505,221 @@ sub print_parameters {
     return;
 }
 
+sub get_programs_for_installation {
+
+## Function : Procces the lists of programs that has been seleceted for installation and returns them
+## Returns  : %{ $parameter_href }
+## Arguments: $log            => Log
+##          : $parameter_href => The entire parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+
+    my $tmpl = {
+        log => {
+            required => 1,
+            defined  => 1,
+            store    => \$log,
+        },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Remove selected programs from installation
+    if ( @{ $parameter_href->{skip_program} } ) {
+      PROGRAM:
+        foreach my $program ( @{ $parameter_href->{skip_program} } ) {
+            delete $parameter_href->{shell}{$program};
+            delete $parameter_href->{bioconda}{$program};
+            delete $parameter_href->{pip}{$program};
+        }
+    }
+    ## Exit if a python 3 env has ben specified for something else than Chanjo or Genmod
+    _assure_python_3_compability(
+        {
+            log                => $log,
+            python_version     => $parameter_href->{conda_packages}{python},
+            select_program_ref => $parameter_href->{select_program}
+        }
+    );
+
+    ## Remove all programs except those selected from installation
+    if ( @{ $parameter_href->{select_program} } ) {
+        my @programs = (
+            keys %{ $parameter_href->{shell} },
+            keys %{ $parameter_href->{bioconda} },
+            keys %{ $parameter_href->{pip} }
+        );
+        my @programs_to_skip =
+          array_minus( @programs, @{ $parameter_href->{select_program} } );
+
+      PROGRAM:
+        foreach my $program (@programs_to_skip) {
+            delete $parameter_href->{shell}{$program};
+            delete $parameter_href->{bioconda}{$program};
+            delete $parameter_href->{pip}{$program};
+        }
+    }
+    ## Exclude CNVnator from installation unless explicitly included
+    if ( not any { $_ eq q{cnvnator} } @{ $parameter_href->{select_program} } )
+    {
+        delete $parameter_href->{shell}{cnvnator};
+    }
+
+    ## Exclude Chanjo, Genmod and Variant_integrity unless a python 3 env has been specified
+    $parameter_href = _assure_python_2_compability(
+        {
+            log            => $log,
+            parameter_href => $parameter_href,
+        }
+    );
+
+    my @shell_programs_to_install = get_programs_for_shell_installation(
+        {
+            shell_programs_href        => $parameter_href->{shell},
+            conda_programs_href        => $parameter_href->{bioconda},
+            shell_install_programs_ref => $parameter_href->{shell_install},
+            prefer_shell               => $parameter_href->{prefer_shell},
+        }
+    );
+
+    ## Removing the bioconda packages that has been selected to be installed via SHELL
+    delete @{ $parameter_href->{bioconda} }{@shell_programs_to_install};
+    ## Special case for snpsift since it is installed together with SnpEff
+    ## if shell installation of SnpEff has been requested.
+    if ( any { $_ eq q{snpeff} } @shell_programs_to_install ) {
+        delete $parameter_href->{bioconda}{snpsift};
+    }
+    $parameter_href->{shell_programs_to_install} = [@shell_programs_to_install];
+
+    return %{$parameter_href};
+}
+
+sub _assure_python_3_compability {
+
+## Function : Test if specified programs are to be installed in a python 3 environment
+## Returns  :
+## Arguments: $log                => Log
+##          : $python_version     => The python version that are to be used for the environment
+##          : $select_program_ref => Programs selected for installation by the user {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $log;
+    my $python_version;
+    my $select_program_ref;
+
+    my $tmpl = {
+        log => {
+            required => 1,
+            defined  => 1,
+            store    => \$log,
+        },
+        python_version => {
+            required => 1,
+            defined  => 1,
+            allow    =>  qr/ 
+                         ^( 2 | 3 )    # Assert that the python major version starts with 2 or 3
+                         \.            # Major version separator
+                         ( \d+$        # Assert that the minor version is a digit 
+                         | \d+\.\d+$ ) # Case when minor and patch version has been supplied, allow only digits 
+                         /xms,
+            store => \$python_version,
+        },
+        select_program_ref => {
+            required => 1,
+            default  => [],
+            store    => \$select_program_ref,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    if (
+        $python_version =~
+          m/ 
+          3\.\d+ |    # Python 3 release with minor version eg 3.6
+          3\.\d+\.\d+ # Python 3 release with minor and patch e.g. 3.6.2
+          /xms
+        and not any { $_ =~ m/ chanjo | genmod | variant_integrity /xms }
+        @{$select_program_ref}
+      )
+    {
+        $log->fatal(
+q{A python 3 env has been specified. Please use a python 2 environment for all programs except Chanjo and Genmod and Variant_integrity}
+        );
+        exit 1;
+    }
+    return;
+}
+
+sub _assure_python_2_compability {
+
+## Function : Exclude programs that are not compatible with python 2 and exit when a program with python 3 dependency has been selected.
+## Returns  :
+## Arguments: $log            => Log
+##          : $parameter_href => Parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $log;
+    my $parameter_href;
+
+    my $tmpl = {
+        log => {
+            required => 1,
+            defined  => 1,
+            store    => \$log,
+        },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    if (
+        $parameter_href->{conda_packages}{python} =~
+        m/ 2\.\d+ |    # Python 2 release with minor version eg 2.7.14        
+           2\.\d+\.\d+ # Python 3 release with minor and patch e.g. 3.6.2
+        /xms
+      )
+    {
+        delete $parameter_href->{pip}{chanjo};
+        delete $parameter_href->{pip}{genmod};
+        delete $parameter_href->{pip}{variant_integrity};
+
+        ## Check if Chanjo and genmod has been selected for installation in a python 2 environment
+        if (
+            any { $_ =~ m/ chanjo | genmod | variant_integrity /xms }
+            @{ $parameter_href->{select_program} }
+          )
+        {
+            $log->fatal(
+q{Please specify a python 3 environment for Chanjo, Genmod and Variant_integrity}
+            );
+            exit 1;
+        }
+    }
+
+    return $parameter_href;
+}
+
 sub get_programs_for_shell_installation {
 
 ## Function  : Get the programs that are to be installed via SHELL
@@ -628,3 +814,56 @@ sub get_programs_for_shell_installation {
 
     return @shell_programs;
 }
+
+sub display_final_message {
+
+## Function : Displays a final message to the user at the end of the installation process
+## Returns  :
+## Arguments: $FILEHANDLE         => Filehandle to write to
+##          : $select_program_ref => Array with programs that has been selected for installation {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $select_program_ref;
+
+    my $tmpl = {
+        FILEHANDLE => {
+            required => 1,
+            store    => \$FILEHANDLE,
+        },
+        select_program_ref => {
+            default => [],
+            store   => \$select_program_ref,
+        },
+
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    say $FILEHANDLE
+q{echo -e '\n##############################################################\n'};
+    if ( any { $_ eq q{cnvnator} } @{$select_program_ref} ) {
+        say $FILEHANDLE
+q{echo -e '\tCNVnator has been installed in the specified conda environment'};
+        say $FILEHANDLE
+          q{echo -e '\tPlease exit the current session before continuing'};
+    }
+    elsif (
+        any { $_ =~ / chanjo | genmod | variant_integrity /xms }
+        @{$select_program_ref}
+      )
+    {
+        say $FILEHANDLE q{echo -e "\tMIP's python 3 tools has been installed"};
+    }
+    else {
+        say $FILEHANDLE
+          q{echo -e '\tMIP and its dependencies has been installed'};
+        say $FILEHANDLE q{echo -e '\tin the specified conda environment'};
+    }
+    say $FILEHANDLE
+q{echo -e '\n##############################################################\n'};
+
+    return;
+}
+
