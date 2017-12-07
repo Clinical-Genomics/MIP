@@ -114,7 +114,7 @@ use MIP::Recipes::Qc::Qccollect qw{ analysis_qccollect };
 use MIP::Recipes::Analysis::Rankvariant
   qw{ analysis_rankvariant analysis_rankvariant_rio analysis_rankvariant_rio_unaffected analysis_rankvariant_unaffected analysis_sv_rankvariant analysis_sv_rankvariant_unaffected };
 use MIP::Recipes::Analysis::Rcoverageplots qw{ analysis_rcoverageplots };
-use MIP::Recipes::Analysis::Rhocall qw{ analysis_rhocall_annotate };
+use MIP::Recipes::Analysis::Rhocall qw{ analysis_rhocall_annotate analysis_rhocall_annotate_rio };
 use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
 use MIP::Recipes::Analysis::Bcftools_mpileup qw { analysis_bcftools_mpileup };
 use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
@@ -7101,7 +7101,7 @@ sub variantannotationblock {
             $$family_id_ref, $$outaligner_dir_ref );
         my $outfamily_directory = $infamily_directory;
 
-        ($xargs_file_counter) = analysis_rhocall_rio(
+        ($xargs_file_counter) = analysis_rhocall_annotate_rio(
             {
                 active_parameter_href   => $active_parameter_href,
                 call_type               => $call_type,
