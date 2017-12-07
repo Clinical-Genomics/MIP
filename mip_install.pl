@@ -575,7 +575,7 @@ sub get_programs_for_installation {
         delete $parameter_href->{shell}{cnvnator};
     }
 
-    ## Exclude Chanjo, Genmod and Variant integrity unless a python 3 env has been specified
+    ## Exclude Chanjo, Genmod and Variant_integrity unless a python 3 env has been specified
     $parameter_href = _assure_python_2_compability(
         {
             log            => $log,
@@ -628,8 +628,13 @@ sub _assure_python_3_compability {
         python_version => {
             required => 1,
             defined  => 1,
-            allow    => qr/ ^(2|3)\.(\d+$|\d+\.\d+$) /xms,
-            store    => \$python_version,
+            allow    =>  qr/ 
+                         ^( 2 | 3 )    # Assert that the python major version starts with 2 or 3
+                         \.            # Major version separator
+                         ( \d+$        # Assert that the minor version is a digit 
+                         | \d+\.\d+$ ) # Case when minor and patch version has been supplied, allow only digits 
+                         /xms,
+            store => \$python_version,
         },
         select_program_ref => {
             required => 1,
@@ -641,17 +646,20 @@ sub _assure_python_3_compability {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     if (
-        $python_version =~ m/ 3\.\d+ | 3\.\d+\.\d+ /xms
+        $python_version =~
+          m/ 
+          3\.\d+ |    # Python 3 release with minor version eg 3.6
+          3\.\d+\.\d+ # Python 3 release with minor and patch e.g. 3.6.2
+          /xms
         and not any { $_ =~ m/ chanjo | genmod | variant_integrity /xms }
         @{$select_program_ref}
       )
     {
         $log->fatal(
-q{A python 3 env has been specified. Please use a python 2 environment for all programs except Chanjo and Genmod and Variant integrity}
+q{A python 3 env has been specified. Please use a python 2 environment for all programs except Chanjo and Genmod and Variant_integrity}
         );
         exit 1;
     }
-
     return;
 }
 
@@ -685,8 +693,12 @@ sub _assure_python_2_compability {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    if ( $parameter_href->{conda_packages}{python} =~
-        m/ 2\.\d+ | 2\.\d+\.\d+ /xms )
+    if (
+        $parameter_href->{conda_packages}{python} =~
+        m/ 2\.\d+ |    # Python 2 release with minor version eg 2.7.14        
+           2\.\d+\.\d+ # Python 3 release with minor and patch e.g. 3.6.2
+        /xms
+      )
     {
         delete $parameter_href->{pip}{chanjo};
         delete $parameter_href->{pip}{genmod};
@@ -699,7 +711,7 @@ sub _assure_python_2_compability {
           )
         {
             $log->fatal(
-q{Please specify a python 3 environment for Chanjo, Genmod and Variant integrity}
+q{Please specify a python 3 environment for Chanjo, Genmod and Variant_integrity}
             );
             exit 1;
         }
@@ -837,8 +849,10 @@ q{echo -e '\tCNVnator has been installed in the specified conda environment'};
         say $FILEHANDLE
           q{echo -e '\tPlease exit the current session before continuing'};
     }
-    elsif ( any { $_ =~ / chanjo | genmod | variant_integrity /xms }
-        @{$select_program_ref} )
+    elsif (
+        any { $_ =~ / chanjo | genmod | variant_integrity /xms }
+        @{$select_program_ref}
+      )
     {
         say $FILEHANDLE q{echo -e "\tMIP's python 3 tools has been installed"};
     }
