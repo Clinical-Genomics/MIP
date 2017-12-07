@@ -175,6 +175,7 @@ sub analysis_rhocall_annotate {
 
     use MIP::Cluster qw{ get_core_number };
     use MIP::Get::File qw{ get_file_suffix };
+    use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::Set::File qw{ set_file_suffix };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Processmanagement::Slurm_processes
@@ -527,6 +528,7 @@ sub analysis_rhocall_annotate_rio {
 
     use MIP::Cluster qw{ get_core_number };
     use MIP::Get::File qw{ get_file_suffix };
+    use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::Set::File qw{ set_file_suffix };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Processmanagement::Slurm_processes
