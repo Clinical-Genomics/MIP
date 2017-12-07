@@ -15,7 +15,7 @@ use utf8;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
-use autodie;
+use autodie qw { :all };
 use Modern::Perl qw{ 2014 };
 use Readonly;
 

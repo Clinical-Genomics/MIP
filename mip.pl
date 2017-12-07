@@ -123,7 +123,7 @@ use MIP::Recipes::Analysis::Tiddit qw{ analysis_tiddit };
 use MIP::Recipes::Analysis::Variant_integrity qw{ analysis_variant_integrity };
 use MIP::Recipes::Analysis::Vep
   qw{ analysis_vep analysis_vep_rio analysis_vep_sv };
-use MIP::Recipes::Analysis::Vt qw{ analysis_vt };
+use MIP::Recipes::Analysis::Vt qw{ analysis_vt analysis_vt_rio };
 use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core analysis_vt_core_rio};
 use MIP::Recipes::Pipeline::Wts qw{ pipeline_wts };
 use MIP::Recipes::Qc::Multiqc qw{ analysis_multiqc };
@@ -2728,9 +2728,11 @@ else {
             }
         );
     }
-    if ( $active_parameter{pvt} > 0 ) {    #Run vt. Done per family
 
-        $log->info("[Vt]\n");
+    ## Run vt. Done per family
+    if ( $active_parameter{pvt} ) {
+
+        $log->info(q{[Vt]});
 
         my $program_name = q{vt};
 
@@ -7442,7 +7444,8 @@ sub variantannotationblock {
             }
         );
     }
-    if ( $active_parameter_href->{pvt} > 0 ) {    #Run vt. Done per family
+    ## Run vt. Done per family
+    if ( $active_parameter_href->{pvt} ) {
 
         my $program_name = q{vt};
 
@@ -7450,7 +7453,7 @@ sub variantannotationblock {
             $$family_id_ref, $$outaligner_dir_ref );
         my $outfamily_directory = $infamily_directory;
 
-        ($xargs_file_counter) = analysis_vt(
+        ($xargs_file_counter) = analysis_vt_rio(
             {
                 parameter_href          => $parameter_href,
                 active_parameter_href   => $active_parameter_href,
@@ -7466,7 +7469,7 @@ sub variantannotationblock {
                 program_info_path       => $program_info_path,
                 FILEHANDLE              => $FILEHANDLE,
                 xargs_file_counter      => $xargs_file_counter,
-                stderr_path             => $program_info_path . ".stderr.txt",
+                stderr_path => $program_info_path . $DOT . q{stderr.txt},
             }
         );
     }
