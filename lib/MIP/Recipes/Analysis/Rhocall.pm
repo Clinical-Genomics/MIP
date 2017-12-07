@@ -206,19 +206,30 @@ sub analysis_rhocall_annotate {
     my $FILEHANDLE      = IO::Handle->new();
     my $XARGSFILEHANDLE = IO::Handle->new();
 
+    ## Get core number depending on user supplied input exists or not and max number of cores
+    $core_number = get_core_number(
+        {
+            module_core_number   => $core_number,
+            modifier_core_number => scalar @{ $file_info_href->{contigs} },
+            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+        }
+    );
+
+
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     ( $file_path, $program_info_path ) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            call_type             => $call_type,
-            core_number           => $core_number,
-            directory_id          => $family_id,
-            FILEHANDLE            => $FILEHANDLE,
-            job_id_href           => $job_id_href,
-            process_time          => $time,
-            program_directory     => $outaligner_dir,
-            program_name          => $program_name,
-            temp_directory        => $temp_directory,
+            active_parameter_href           => $active_parameter_href,
+            call_type                       => $call_type,
+            core_number                     => $core_number,
+            directory_id                    => $family_id,
+            FILEHANDLE                      => $FILEHANDLE,
+            job_id_href                     => $job_id_href,
+            process_time                    => $time,
+            program_directory               => $outaligner_dir,
+            program_name                    => $program_name,
+            source_environment_commands_ref => [$source_environment_cmd],
+            temp_directory                  => $temp_directory,
         }
     );
 
@@ -557,6 +568,15 @@ sub analysis_rhocall_annotate_rio {
     ## Filehandles
     # Create anonymous filehandle
     my $XARGSFILEHANDLE = IO::Handle->new();
+
+    ## Get core number depending on user supplied input exists or not and max number of cores
+    $core_number = get_core_number(
+        {
+            module_core_number   => $core_number,
+            modifier_core_number => scalar @{ $file_info_href->{contigs} },
+            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+        }
+    );
 
     # Used downstream
     $parameter_href->{$mip_program_name}{indirectory} = $outfamily_directory;
