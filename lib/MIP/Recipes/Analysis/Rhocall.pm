@@ -215,7 +215,6 @@ sub analysis_rhocall_annotate {
         }
     );
 
-
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     ( $file_path, $program_info_path ) = setup_script(
         {
@@ -314,7 +313,7 @@ sub analysis_rhocall_annotate {
             push @sample_ids, $parameter_href->{dynamic_parameter}{affected}[0];
         }
         else {
-            #No affected - pick any sample_id
+            # No affected - pick any sample_id
             push @sample_ids, $active_parameter_href->{sample_ids}[0];
         }
 
@@ -333,9 +332,9 @@ sub analysis_rhocall_annotate {
                   . $DOT . q{roh},
 
                 samples_ref => \@sample_ids,
-                skip_indels =>
-                  1,    #Skip indels as their genotypes are enriched for errors
 
+                # Skip indels as their genotypes are enriched for errors
+                skip_indels => 1,
             }
         );
         print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
@@ -392,10 +391,8 @@ sub analysis_rhocall_annotate {
                 sbatch_file_name => $file_path,
             }
         );
-
     }
     return;
-
 }
 
 sub analysis_rhocall_annotate_rio {
@@ -640,7 +637,7 @@ sub analysis_rhocall_annotate_rio {
             push @sample_ids, $parameter_href->{dynamic_parameter}{affected}[0];
         }
         else {
-            #No affected - pick any sample_id
+            # No affected - pick any sample_id
             push @sample_ids, $active_parameter_href->{sample_ids}[0];
         }
 
@@ -659,9 +656,9 @@ sub analysis_rhocall_annotate_rio {
                   . $DOT . q{roh},
 
                 samples_ref => \@sample_ids,
-                skip_indels =>
-                  1,    #Skip indels as their genotypes are enriched for errors
 
+                # Skip indels as their genotypes are enriched for errors
+                skip_indels => 1,
             }
         );
         print {$XARGSFILEHANDLE} $SEMICOLON . $SPACE;
@@ -682,7 +679,6 @@ sub analysis_rhocall_annotate_rio {
                   . $contig
                   . $DOT . q{roh},
                 v14 => 1,
-
             }
         );
         say {$XARGSFILEHANDLE} $NEWLINE;

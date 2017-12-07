@@ -2712,7 +2712,8 @@ else {
             }
         );
     }
-    if ( $active_parameter{prhocall} > 0 ) {    #Run rhocall. Done per family
+    # Run rhocall. Done per family
+    if ( $active_parameter{prhocall} > 0 ) {
 
         $log->info( q{[Rhocall]} );
 
@@ -7029,7 +7030,8 @@ sub variantannotationblock {
     }
     if ( $active_parameter_href->{pvt} > 0 ) {
 
-        $log->info("\t[Vt]\n");            #Run vt. Done per family
+        # Run vt. Done per family
+        $log->info("\t[Vt]\n");
     }
 
     # Run varianteffectpredictor. Family-level
@@ -7092,7 +7094,7 @@ sub variantannotationblock {
             }
         );
     }
-    #Run vt. Done per family
+    # Run vt. Done per family
     if ( $active_parameter_href->{prhocall} > 0 ) {
 
         my $program_name = q{rhocall};
