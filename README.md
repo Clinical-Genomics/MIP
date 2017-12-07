@@ -95,23 +95,27 @@ MIP is written in perl and therefore requires that perl is installed on your OS.
 
 #### Automated Installation \(Linux x86\_64\)
 1. Clone the official git repository
+
 ```Bash
 $ git clone https://github.com/Clinical-Genomics/MIP.git
 $ cd MIP
 ```
 2. Install required modules from cpan
+
 ```Bash
 $ cd definitions
 $ cpanm --installdeps .
 $ cd -
 ```
 3. Test conda and mip_install (optional)
+
 ```Bash
 $ cd t; prove mip_install.t
 $ cd -
 ```
 
 4. Create the install instructions for MIP
+
 ```
 $ perl mip_install.pl
 ```
@@ -126,6 +130,7 @@ This will generate a batch script "mip.sh" for the install in your working direc
   For a full list of parameter defaults, run: ``$ perl mip_install.pl -ppd``
 
 5. Run the bash script
+
 ```Bash
 $ bash mip.sh
 ```
@@ -134,23 +139,25 @@ This will install all the dependencies of MIP and other modules included in MIP 
   ###### *Note:*  
   Some references are quite large and will take time to download. You might want to run this using screen or tmux.
 
-6. Test your MIP installation (optional)  
-  Make sure to activate your conda environment if that option was used above.  
+6. Test your MIP installation (optional)
 
-  ```Bash
-  $ cd t; prove run_tests.t
-  $ cd -
-  ```
-
-7. Installing tools with conflicting dependencies
-Create seperate environment for each tool that has to have a seperate dependecy demands. For instance a tools that require python v3 or higher and are not compatible with older versions of pyton. 
+Make sure to activate your conda environment if that option was used above.  
 
 ```Bash
-$ perl develop/modules/MIP/mip_install.pl -env mip_pyv3.6 --select_program genmod --select_program chanjo --select_program variant_integrity --python_version 3.6
+$ cd t; prove run_tests.t
+$ cd -
+```
+7. Installing tools with conflicting dependencies
+
+Create seperate a environment for each tool that has to have a seperate dependency demands.
+For instance a tools that require python v3 or higher and are not compatible with older versions of pyton required by another program.
+
+```Bash
+$ mip_install -env mip_pyv3.6 --select_program genmod --select_program chanjo --select_program variant_integrity --python_version 3.6
 $ bash mip.sh
 ```
 
-In your config you will have to supply the ``module_source_environment_command`` parameter to activate the conda environment specific for the tool. Here is an example with three python tools in their own environment and VEP and cnvnator in each own, with some extra initilization:
+In your config yaml file or on the command line you will have to supply the ``module_source_environment_command`` parameter to activate the conda environment specific for the tool. Here is an example with three python tools in their own environment and VEP and cnvnator in each own, with some extra initilization:
 
 ```
 module_source_environment_command:
@@ -158,12 +165,12 @@ module_source_environment_command:
   prankvariant: "source activate mip_pyv3.6"
   psv_rankvariant: "source activate mip_pyv3.6"
   pvariant_integrity: "source activate mip_pyv3.6"
-  pvarianteffectpredictor: "LD_LIBRARY_PATH=/mnt/hds/proj/cust003/develop/modules/miniconda2/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source activate mip_vep"
-  psv_varianteffectpredictor: "LD_LIBRARY_PATH=/mnt/hds/proj/cust003/develop/modules/miniconda2/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source activate mip_vep"
-  pcnvnator: "LD_LIBRARY_PATH=/mnt/hds/proj/cust003/develop/modules/miniconda2/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source /mnt/hds/proj/cust003/develop/modules/miniconda2/envs/mip_cnvnator/root/bin/thisroot.sh; source activate mip_cnvnator"
+  pvarianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source activate mip_vep"
+  psv_varianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source activate mip_vep"
+  pcnvnator: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source [CONDA_PATH]/envs/mip_cnvnator/root/bin/thisroot.sh; source activate mip_cnvnator"
 ```
 
-MIP will execute this on the node before executing the programs and then revert to the ``source_main_environment_command`` if set. Otherwise ``source deactivate`` is used.
+MIP will execute this on the node before executing the program and then revert to the ``--source_main_environment_command`` if set. Otherwise ``source deactivate`` is used to return to the conda root environment.
 
 ### Usage
 
