@@ -29,9 +29,9 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $PIPE    => q{|};
-Readonly my $DQUOTE  => q{"};
+Readonly my $SPACE  => q{ };
+Readonly my $PIPE   => q{|};
+Readonly my $DQUOTE => q{"};
 
 sub vardict {
 
@@ -69,9 +69,9 @@ sub vardict {
     my $stderrfile_path_append;
     my $stdoutfile_path;
 
-
     ## Default(s)
     my $af_threshold;
+    my $infile_paths_ref;
 
     my $tmpl = {
         referencefile_path => {
@@ -83,7 +83,7 @@ sub vardict {
         af_threshold => {
             required => 1,
             defined  => 1,
-            default => 0.01,
+            default  => 0.01,
             ## Exactly 2 decimal points after 0 or 1
             allow       => qr/ ^0.\d{1,2}$ | ^1$ /xsm,
             strict_type => 1,
@@ -158,6 +158,8 @@ sub vardict {
         },
     };
 
+    my @infile_paths_ref = ( $infile_path_normal, $infile_path_tumor );
+
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
@@ -169,12 +171,9 @@ sub vardict {
 
     push @commands, q{-N} . $SPACE . $sample_name;
 
-    ## Vardict requires input in form of "tumor_file_name|normal_file_name" or tumor_file_name (without double quote)
-    if ($infile_path_normal) {
-        push @commands, q{-b} . $SPACE . $infile_path_tumor;
-    } else {
-        push @commands, q{-b} . $SPACE . $DQUOTE . $infile_path_tumor . $PIPE . $infile_path_normal . $DQUOTE;
-    }
+    ## Vardict requires input in form of "tumor_file_name|normal_file_name" or "tumor_file_name"
+    push @commands,
+      q{-b} . $SPACE . $DQUOTE . join( $PIPE, @infile_paths_ref ) . $DQUOTE;
 
     push @commands, q{-c} . $SPACE . $out_chrom_start;
 
