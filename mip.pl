@@ -4933,7 +4933,7 @@ sub snpeff {
                       . $vcfparser_analysis_type
                       . $infile_suffix . "."
                       . $annotation_infile_number,
-                    outfile_path => $outfile_path_prefix . "_"
+                    stdoutfile_path => $outfile_path_prefix . "_"
                       . $contig
                       . $vcfparser_analysis_type
                       . $outfile_suffix,
@@ -5349,7 +5349,7 @@ sub mvcfparser {
                 infile_path => $file_path_prefix . "_"
                   . $contig
                   . $infile_suffix,
-                outfile_path => $outfile_path_prefix . "_"
+                stdoutfile_path => $outfile_path_prefix . "_"
                   . $contig
                   . $infile_suffix,
                 stderrfile_path => $xargs_file_path_prefix . "."
@@ -6707,7 +6707,7 @@ sub sv_vcfparser {
                     $$temp_directory_ref,
                     $vcfparser_infile_prefix . $file_suffix
                 ),
-                outfile_path => catfile(
+                stdoutfile_path => catfile(
                     $$temp_directory_ref,
                     $vcfparser_outfile_prefix . $file_suffix
                 ),
