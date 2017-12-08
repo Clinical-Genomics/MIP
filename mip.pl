@@ -4563,7 +4563,7 @@ sub snpeff {
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use Program::Variantcalling::Snpeff qw(ann);
     use Program::Variantcalling::Snpsift qw(annotate dbnsfp);
-    use Program::Variantcalling::Mip qw(vcfparser);
+    use MIP::Program::Variantcalling::Mip_vcfparser qw(mip_vcfparser);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
@@ -4926,7 +4926,7 @@ sub snpeff {
 
         foreach my $contig (@$vcfparser_contigs_ref) {
 
-            vcfparser(
+            mip_vcfparser(
                 {
                     infile_path => $file_path_prefix . "_"
                       . $contig
@@ -4940,7 +4940,9 @@ sub snpeff {
                     stderrfile_path => $xargs_file_path_prefix . "."
                       . $contig
                       . ".stderr.txt ",
-                    append_stderr_info => 1,
+                    stderrfile_path_append => $xargs_file_path_prefix . "."
+                      . $contig
+                      . ".stderr.txt ",
                     FILEHANDLE         => $XARGSFILEHANDLE,
                 }
             );
@@ -5159,7 +5161,7 @@ sub mvcfparser {
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use Program::Variantcalling::Mip qw(vcfparser);
+    use MIP::Program::Variantcalling::Mip_vcfparser qw(mip_vcfparser);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
@@ -5336,7 +5338,7 @@ sub mvcfparser {
             }
         }
 
-        vcfparser(
+        mip_vcfparser(
             {
                 range_feature_annotation_columns_ref => \@{
                     $active_parameter_href
@@ -6494,7 +6496,7 @@ sub sv_vcfparser {
     use MIP::Delete::List qw{ delete_contig_elements delete_male_contig};
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
-    use Program::Variantcalling::Mip qw(vcfparser);
+    use MIP::Program::Variantcalling::Mip_vcfparser qw(mip_vcfparser);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
@@ -6693,7 +6695,7 @@ sub sv_vcfparser {
             }
         }
 
-        vcfparser(
+        mip_vcfparser(
             {
                 range_feature_annotation_columns_ref => \@{
                     $active_parameter_href
