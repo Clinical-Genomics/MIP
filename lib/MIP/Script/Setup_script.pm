@@ -479,10 +479,11 @@ sub write_return_to_conda_environment {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Package_manager::Conda qw{ conda_source_deactivate };
-    use MIP::Script::Setup_script qw{ write_source_environment_command };
 
     ## Return to main environment
-    if ( @{$source_main_environment_commands_ref} ) {
+    if ( @{$source_main_environment_commands_ref}
+        && $source_main_environment_commands_ref->[0] )
+    {
 
         write_source_environment_command(
             {
@@ -501,7 +502,7 @@ sub write_return_to_conda_environment {
                 FILEHANDLE => $FILEHANDLE,
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        print {$FILEHANDLE} $NEWLINE;
     }
     return;
 }

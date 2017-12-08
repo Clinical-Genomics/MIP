@@ -13,6 +13,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
+use List::MoreUtils qw { any };
 use Readonly;
 
 BEGIN {
@@ -149,15 +150,14 @@ sub analysis_chanjo_sex_check {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use List::MoreUtils qw { any };
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_dead_end };
     use MIP::Program::Alignment::Chanjo qw{ chanjo_sex };
-    use MIP::Script::Setup_script qw{ setup_script };
     use MIP::QC::Record
       qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info };
+    use MIP::Script::Setup_script qw{ setup_script };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -199,16 +199,16 @@ sub analysis_chanjo_sex_check {
     ## Get infile_suffix from baserecalibration jobid chain
     my $infile_suffix = get_file_suffix(
         {
+            jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain},
             parameter_href => $parameter_href,
             suffix_key     => q{alignment_file_suffix},
-            jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain},
         }
     );
     my $outfile_suffix = get_file_suffix(
         {
             parameter_href => $parameter_href,
-            suffix_key     => q{outfile_suffix},
             program_name   => $mip_program_name,
+            suffix_key     => q{outfile_suffix},
         }
     );
 
@@ -226,14 +226,14 @@ sub analysis_chanjo_sex_check {
     my ( $file_name, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
+            core_number           => $core_number,
             directory_id          => $sample_id,
-            program_name          => $program_name,
+            FILEHANDLE            => $FILEHANDLE,
+            job_id_href           => $job_id_href,
+            process_time          => $time,
             program_directory =>
               catfile( lc($outaligner_dir), q{coveragereport} ),
-            core_number                     => $core_number,
-            process_time                    => $time,
+            program_name                    => $program_name,
             source_environment_commands_ref => [$source_environment_cmd],
         }
     );
@@ -251,12 +251,12 @@ sub analysis_chanjo_sex_check {
     }
     chanjo_sex(
         {
-            infile_path  => $infile_path,
-            outfile_path => $outfile_path,
-            log_level    => $active_parameter_href->{chanjo_sexcheck_log_level},
+            chr_prefix  => $chr_prefix,
+            FILEHANDLE  => $FILEHANDLE,
+            infile_path => $infile_path,
+            log_level   => $active_parameter_href->{chanjo_sexcheck_log_level},
             log_file_path => $log_file_path,
-            chr_prefix    => $chr_prefix,
-            FILEHANDLE    => $FILEHANDLE,
+            outfile_path  => $outfile_path,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -267,38 +267,37 @@ sub analysis_chanjo_sex_check {
         ## Collect QC metadata info for later use
         add_program_outfile_to_sample_info(
             {
-                sample_info_href => $sample_info_href,
-                sample_id        => $sample_id,
-                program_name     => q{chanjo_sexcheck},
                 infile           => $merged_infile_prefix,
                 outdirectory     => $outsample_directory,
                 outfile          => $outfile_name,
+                program_name     => q{chanjo_sexcheck},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
             }
         );
         add_program_metafile_to_sample_info(
             {
-                sample_info_href => $sample_info_href,
-                sample_id        => $sample_id,
-                program_name     => q{chanjo_sexcheck},
+                file => $infile_prefix . $UNDERSCORE . q{chanjo_sexcheck.log},
+                directory        => $outsample_directory,
                 infile           => $merged_infile_prefix,
                 metafile_tag     => q{log},
-                directory        => $outsample_directory,
-                file => $infile_prefix . $UNDERSCORE . q{chanjo_sexcheck.log},
+                program_name     => q{chanjo_sexcheck},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
             }
         );
         slurm_submit_job_sample_id_dependency_dead_end(
             {
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
                 family_id               => $family_id,
-                sample_id               => $sample_id,
-                path                    => $job_id_chain,
-                sbatch_file_name        => $file_name,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
                 log                     => $log,
+                path                    => $job_id_chain,
+                sample_id               => $sample_id,
+                sbatch_file_name        => $file_name,
             }
         );
     }
-
     return;
 }
 

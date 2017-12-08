@@ -152,7 +152,7 @@ sub analysis_sv_combinevariantcallsets {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
-    use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Get::Parameter qw{ get_module_parameters get_program_parameters };
     use MIP::Gnu::Coreutils qw(gnu_mv);
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Processmanagement::Slurm_processes
@@ -320,7 +320,7 @@ sub analysis_sv_combinevariantcallsets {
         {
             FILEHANDLE       => $FILEHANDLE,
             infile_paths_ref => \@infile_paths,
-            stdoutfile_path     => $merged_file_path_prefix . $outfile_suffix,
+            stdoutfile_path  => $merged_file_path_prefix . $outfile_suffix,
             priority => $active_parameter_href->{sv_svdb_merge_prioritize},
         }
     );
@@ -380,13 +380,13 @@ sub analysis_sv_combinevariantcallsets {
             }
             svdb_query(
                 {
-                    bnd_distance  => 25_000,
-                    dbfile_path   => $query_db_file,
-                    FILEHANDLE    => $FILEHANDLE,
-                    frequency_tag => $query_db_tag . q{AF},
-                    hit_tag       => $query_db_tag,
-                    infile_path   => $infile_path,
-                    stdoutfile_path  => $merged_file_path_prefix
+                    bnd_distance    => 25_000,
+                    dbfile_path     => $query_db_file,
+                    FILEHANDLE      => $FILEHANDLE,
+                    frequency_tag   => $query_db_tag . q{AF},
+                    hit_tag         => $query_db_tag,
+                    infile_path     => $infile_path,
+                    stdoutfile_path => $merged_file_path_prefix
                       . $alt_file_tag
                       . $outfile_suffix
                       . $DOT
@@ -465,6 +465,13 @@ sub analysis_sv_combinevariantcallsets {
     ## Remove common variants
     if ( $active_parameter_href->{sv_genmod_filter} ) {
 
+        my $program_source_command = get_program_parameters(
+            {
+                active_parameter_href => $active_parameter_href,
+                mip_program_name      => q{pgenmod},
+            }
+        );
+
         say {$FILEHANDLE} q{## Remove common variants};
         genmod_annotate(
             {
@@ -473,7 +480,8 @@ sub analysis_sv_combinevariantcallsets {
                   . $alt_file_tag
                   . $outfile_suffix,
                 outfile_path => catfile( dirname( devnull() ), q{stdout} ),
-                temp_directory_path => $temp_directory,
+                program_source_command => $program_source_command,
+                temp_directory_path    => $temp_directory,
                 thousand_g_file_path =>
                   $active_parameter_href->{sv_genmod_filter_1000g},
                 verbosity => q{v},
@@ -486,17 +494,20 @@ sub analysis_sv_combinevariantcallsets {
 
         genmod_filter(
             {
-                FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $DASH,
-                outfile_path => $outfile_path_prefix
+                deactive_program_source => 1,
+                FILEHANDLE              => $FILEHANDLE,
+                infile_path             => $DASH,
+                outfile_path            => $outfile_path_prefix
                   . $alt_file_tag
                   . $outfile_suffix,
+                source_main_environment_commands_ref =>
+                  [$source_environment_cmd],
                 threshold =>
                   $active_parameter_href->{sv_genmod_filter_threshold},
                 verbosity => q{v},
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        print {$FILEHANDLE} $NEWLINE;
     }
 
     ## Annotate 1000G structural variants

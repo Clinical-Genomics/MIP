@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.0;
+our $VERSION = 1.0.1;
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -133,6 +133,12 @@ my %specific_argument = (
     infile_path => {
         input           => catfile(qw{ a test infile }),
         expected_output => catfile(qw{ a test infile }),
+    },
+    outfile_path => {
+        input           => catfile(qw{ a test outfile }),
+        expected_output => q{--outfile}
+          . $SPACE
+          . catfile(qw{ a test outfile }),
     },
     threshold => {
         input           => q{0.1},

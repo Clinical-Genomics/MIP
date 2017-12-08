@@ -21,7 +21,7 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ get_module_parameters };
+    our @EXPORT_OK = qw{ get_module_parameters get_program_parameters };
 }
 
 ## Constants
@@ -82,6 +82,52 @@ sub get_module_parameters {
     my $time = $active_parameter_href->{module_time}{$mip_program_name};
 
     return $core_number, $time, $source_environment_cmd;
+}
+
+sub get_program_parameters {
+
+##Function : Get specific source environment command for program
+##Returns  : $source_environment_cmd
+##Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
+##         : $mip_program_name      => MIP program name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $mip_program_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$active_parameter_href
+        },
+        mip_program_name => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$mip_program_name
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Initilize variable
+    my $source_environment_cmd;
+
+    if (
+        exists $active_parameter_href->{program_source_environment_command}
+        {$mip_program_name} )
+    {
+
+        $source_environment_cmd =
+          $active_parameter_href->{program_source_environment_command}
+          {$mip_program_name};
+    }
+    return $source_environment_cmd;
 }
 
 1;

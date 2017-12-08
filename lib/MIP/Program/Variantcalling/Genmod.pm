@@ -14,6 +14,8 @@ use warnings qw{ FATAL utf8 };
 use Readonly;
 
 ## MIPs lib/
+use MIP::Script::Setup_script
+  qw{ write_return_to_conda_environment write_source_environment_command };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -30,35 +32,42 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $DASH  => q{-};
-Readonly my $SPACE => q{ };
+Readonly my $DASH    => q{-};
+Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => q{ };
 
 sub genmod_annotate {
 
 ## Function : Perl wrapper for writing Genmod annotate recipe to $FILEHANDLE or return commands array. Based on genmod 3.7.0.
 ## Returns  : @commands
-## Arguments: $annotate_region        => Annotate what regions a variant belongs to
-##          : $append_stderr_info     => Append stderr info to file
-##          : $cadd_file_paths_ref    => Specify the path to a bgzipped cadd file (with index) with variant scores
-##          : $FILEHANDLE             => Filehandle to write to
-##          : $infile_path            => Infile path to read from
-##          : $max_af                 => If the MAX AF should be annotated
-##          : $outfile_path           => Outfile path to write to
-##          : $spidex_file_path       => Specify the path to a bgzipped tsv file (with index) with spidex information
-##          : $stderrfile_path        => Stderrfile path
-##          : $stderrfile_path_append => Append stderr info to file path
-##          : $stdoutfile_path        => Stdoutfile path
-##          : $temp_directory_path    => Directory for storing intermediate files
-##          : $thousand_g_file_path   => Specify the path to a bgzipped vcf file (with index) with 1000g variants
-##          : $verbosity              => Increase output verbosity
+## Arguments: $annotate_region                      => Annotate what regions a variant belongs to
+##          : $append_stderr_info                   => Append stderr info to file
+##          : $cadd_file_paths_ref                  => Specify the path to a bgzipped cadd file (with index) with variant scores
+##          : $deactive_program_source              => Deactivate program specific environment
+##          : $FILEHANDLE                           => Filehandle to write to
+##          : $infile_path                          => Infile path to read from
+##          : $max_af                               => If the MAX AF should be annotated
+##          : $outfile_path                         => Outfile path to write to
+##          : $program_source_command               => Program specific source environment commmand
+##          : $source_main_environment_commands_ref => Source main environment command {REF}
+##          : $spidex_file_path                     => Specify the path to a bgzipped tsv file (with index) with spidex information
+##          : $stderrfile_path                      => Stderrfile path
+##          : $stderrfile_path_append               => Append stderr info to file path
+##          : $stdoutfile_path                      => Stdoutfile path
+##          : $temp_directory_path                  => Directory for storing intermediate files
+##          : $thousand_g_file_path                 => Specify the path to a bgzipped vcf file (with index) with 1000g variants
+##          : $verbosity                            => Increase output verbosity
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $cadd_file_paths_ref;
+    my $deactive_program_source;
     my $FILEHANDLE;
     my $infile_path;
     my $outfile_path;
+    my $program_source_command;
+    my $source_main_environment_commands_ref;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
@@ -87,6 +96,11 @@ sub genmod_annotate {
         },
         cadd_file_paths_ref =>
           { default => [], strict_type => 1, store => \$cadd_file_paths_ref, },
+        deactive_program_source => {
+            allow       => [ undef, 0, 1 ],
+            strict_type => 1,
+            store       => \$deactive_program_source
+        },
         FILEHANDLE  => { store => \$FILEHANDLE, },
         infile_path => {
             required    => 1,
@@ -100,7 +114,14 @@ sub genmod_annotate {
             strict_type => 1,
             store       => \$max_af,
         },
-        outfile_path    => { strict_type => 1, store => \$outfile_path, },
+        outfile_path => { strict_type => 1, store => \$outfile_path, },
+        program_source_command =>
+          { strict_type => 1, store => \$program_source_command },
+        source_main_environment_commands_ref => {
+            default     => [],
+            strict_type => 1,
+            store       => \$source_main_environment_commands_ref,
+        },
         stderrfile_path => {
             strict_type => 1,
             store       => \$stderrfile_path,
@@ -126,6 +147,17 @@ sub genmod_annotate {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Write source program specific environment
+    if ($program_source_command) {
+
+        write_source_environment_command(
+            {
+                FILEHANDLE                      => $FILEHANDLE,
+                source_environment_commands_ref => [$program_source_command],
+            }
+        );
+    }
 
     ## Genmod annotate
     my @commands = q{genmod};
@@ -190,6 +222,19 @@ sub genmod_annotate {
 
         }
     );
+
+    if ($deactive_program_source) {
+
+        say {$FILEHANDLE} $NEWLINE;
+        write_return_to_conda_environment(
+            {
+                FILEHANDLE => $FILEHANDLE,
+                source_main_environment_commands_ref =>
+                  $source_main_environment_commands_ref,
+            }
+        );
+    }
+
     return @commands;
 }
 
@@ -322,21 +367,28 @@ sub genmod_filter {
 
 ## Function : Perl wrapper for writing Genmod filter recipe to $FILEHANDLE or return commands array. Based on genmod 3.7.0.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
-##          : $infile_path            => Infile path to read from
-##          : $outfile_path           => Outfile path to write to
-##          : $stderrfile_path        => Stderrfile path
-##          : $stderrfile_path_append => Append stderr info to file path
-##          : $stdoutfile_path        => Stdoutfile path
-##          : $threshold              => Directory for storing intermediate files
-##          : $verbosity              => Increase output verbosity
+## Arguments: $FILEHANDLE                           => Filehandle to write to
+
+##          : $deactive_program_source              => Deactivate program specific environment
+##          : $infile_path                          => Infile path to read from
+##          : $outfile_path                         => Outfile path to write to
+##          : $program_source_command               => Program specific source environment commmand
+##          : $source_main_environment_commands_ref => Source main environment command {REF}
+##          : $stderrfile_path                      => Stderrfile path
+##          : $stderrfile_path_append               => Append stderr info to file path
+##          : $stdoutfile_path                      => Stdoutfile path
+##          : $threshold                            => Directory for storing intermediate files
+##          : $verbosity                            => Increase output verbosity
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $FILEHANDLE;
+    my $deactive_program_source;
     my $infile_path;
     my $outfile_path;
+    my $program_source_command;
+    my $source_main_environment_commands_ref;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
@@ -347,6 +399,11 @@ sub genmod_filter {
     my $verbosity;
 
     my $tmpl = {
+        deactive_program_source => {
+            allow       => [ undef, 0, 1 ],
+            strict_type => 1,
+            store       => \$deactive_program_source
+        },
         FILEHANDLE  => { store => \$FILEHANDLE },
         infile_path => {
             required    => 1,
@@ -354,7 +411,14 @@ sub genmod_filter {
             strict_type => 1,
             store       => \$infile_path
         },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
+        outfile_path => { strict_type => 1, store => \$outfile_path },
+        program_source_command =>
+          { strict_type => 1, store => \$program_source_command },
+        source_main_environment_commands_ref => {
+            default     => [],
+            strict_type => 1,
+            store       => \$source_main_environment_commands_ref,
+        },
         stderrfile_path => {
             strict_type => 1,
             store       => \$stderrfile_path,
@@ -381,6 +445,17 @@ sub genmod_filter {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    ## Write source program specific environment
+    if ($program_source_command) {
+
+        write_source_environment_command(
+            {
+                FILEHANDLE                      => $FILEHANDLE,
+                source_environment_commands_ref => [$program_source_command],
+            }
+        );
+    }
+
     ## Genmod filter
     my @commands = q{genmod};
 
@@ -394,6 +469,10 @@ sub genmod_filter {
     if ($threshold) {
 
         push @commands, q{--threshold} . $SPACE . $threshold;
+    }
+    if ($outfile_path) {
+
+        push @commands, q{--outfile} . $SPACE . $outfile_path;
     }
 
     ## Infile
@@ -416,6 +495,18 @@ sub genmod_filter {
 
         }
     );
+
+    if ($deactive_program_source) {
+
+        say {$FILEHANDLE} $NEWLINE;
+        write_return_to_conda_environment(
+            {
+                FILEHANDLE => $FILEHANDLE,
+                source_main_environment_commands_ref =>
+                  $source_main_environment_commands_ref,
+            }
+        );
+    }
     return @commands;
 }
 
