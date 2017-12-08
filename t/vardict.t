@@ -15,7 +15,7 @@ use utf8;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
-use autodie;
+use autodie qw{ :all };
 use Modern::Perl qw{ 2014 };
 use Readonly;
 
@@ -32,6 +32,8 @@ our $VERSION = 1.0.0;
 Readonly my $COMMA   => q{,};
 Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
+Readonly my $DQUOTE  => q{"};
+Readonly my $PIPE    => q{|};
 
 ### User Options
 GetOptions(
@@ -86,7 +88,7 @@ BEGIN {
     }
 }
 
-use MIP::PATH::TO::MODULE qw{ SUB_ROUTINE };
+use MIP::Program::Variantcalling::Vardict qw{ SUB_ROUTINE };
 use MIP::Test::Commands qw{ test_function };
 
 diag(   q{Test vardict from Vardict.pm v}
@@ -124,42 +126,61 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     referencefile_path => {
-        inputs          => q{ref_file},
-        expected_output => q{-G ref_file},
+        input           => catfile(qw{ a test reference file }),
+        expected_output => q{-G}
+          . $SPACE
+          . catfile(qw{ a test reference file }),
     },
     af_threshold => {
-        input           => q{af_thr},
-        expetced_output => q{-f af_thrd}
+        input           => q{0.01},
+        expetced_output => q{-f} . $SPACE . q{0.01},
     },
     sample_name => {
         input           => q{sample_name},
-        expected_output => q{-N sample_name}
+        expected_output => q{-N} . $SPACE . q{sample_name},
     },
-    infile_path => {
-        input           => q{infile_path},
-        expected_output => q{-b infile_path}
+    infile_path_tumor => {
+        input           => q{an_input_tumor_bam},
+        expected_output => q{an_input_tumor_bam},
     },
     out_chrom_start => {
         input           => q{out_chrom_start},
-        expected_output => q{-c out_chrom_start}
+        expected_output => q{-c} . $SPACE . q{1},
     },
     out_region_start => {
         input           => q{out_region_start},
-        expected_output => q{-S out_region_start}
+        expected_output => q{-S} . $SPACE . q{2},
     },
     out_region_end => {
         input           => q{out_region_end},
-        expected_output => q{-E out_region_end}
+        expected_output => q{-E} . $SPACE . q{3},
     },
-    out_segment_annot => {
+    out_segment_annotn => {
         input           => q{out_segment_annot},
-        expected_output => q{-g out_segment_annot}
+        expected_output => q{-g} . $SPACE . q{4},
     },
     infile_bed_region_info => {
-        input           => q{infile_bed_region_info},
-        expected_output => $SPACE . q{infile_bed_region_info}
+        input           => catfile(qw{ an input bed }),
+        expected_output => catfile(qw{ an input bed }),
     }
 );
+
+my %specific_argument = (
+    infile_path_normal => {
+        input           => q{an_input_normal_bam},
+        expected_output => q{an_input_normal_bam},
+    }
+);
+
+my @infile_paths_ref = (
+    $required_argument{infile_path_tumor}{input},
+    $specific_argument{infile_path_tumor}{input}
+);
+
+$required_argument{infile_path_tumor}{input} =
+  $DQUOTE . join( $PIPE, @infile_paths_ref ) . $DQUOTE;
+$required_argument{infile_path_tumor}{expected_output} =
+  q{-b} . $SPACE . $DQUOTE . join( $PIPE, @infile_paths_ref ) . $DQUOTE;
 
 ## Coderef - enables generalized use of generate call
 my $module_function_cref = \&vardict;
