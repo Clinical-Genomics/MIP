@@ -848,6 +848,9 @@ ptiddit:
   file_tag: _tiddit
   outdir_name: tiddit
   outfile_suffix: ".vcf"
+  program_name_path:
+   - TIDDIT.py
+   - svdb
   program_type: structural_variant_callers
   type: program
 tiddit_minimum_number_supporting_pairs:
@@ -867,6 +870,7 @@ psv_combinevariantcallsets:
   program_name_path:
    - vt
    - bcftools
+   - svdb
   type: program
 sv_vt_decompose:
   associated_program:
@@ -1429,6 +1433,7 @@ prhocall:
   default: 0
   file_tag: rhocall_
   program_name_path:
+   - rhocall
    - bcftools
   file_endings:
    - .vcf
@@ -1913,6 +1918,8 @@ prankvariant:
   default: 0
   file_tag: ranked_
   outfile_suffix: ".vcf"
+  program_name_path:
+   - genmod
   type: program
 genmod_annotate_regions:
   associated_program:
