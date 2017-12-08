@@ -144,19 +144,19 @@ my %required_argument = (
         expected_output => q{an_input_tumor_bam},
     },
     out_chrom_start => {
-        input           => q{out_chrom_start},
+        input           => q{1},
         expected_output => q{-c} . $SPACE . q{1},
     },
     out_region_start => {
-        input           => q{out_region_start},
+        input           => q{2},
         expected_output => q{-S} . $SPACE . q{2},
     },
     out_region_end => {
-        input           => q{out_region_end},
+        input           => q{3},
         expected_output => q{-E} . $SPACE . q{3},
     },
     out_segment_annotn => {
-        input           => q{out_segment_annot},
+        input           => q{4},
         expected_output => q{-g} . $SPACE . q{4},
     },
     infile_bed_region_info => {
