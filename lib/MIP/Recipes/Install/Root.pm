@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_root };
@@ -139,25 +139,11 @@ sub install_root {
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    my $binary_regexp = catdir( $conda_prefix_path, qw{ root bin } );
-    if ( not $ENV{PATH} =~ m{$binary_regexp}xms ) {
-
-        ## Export path
-        say {$FILEHANDLE} q{## Export path};
-        say {$FILEHANDLE}
-          q{echo '# Added by mip_installer ' "$(date)" >> ~/.bashrc};
-        say {$FILEHANDLE} q{echo 'source}
-          . $SPACE
-          . catfile( $conda_prefix_path, qw{ root bin thisroot.sh } )
-          . q{' >> ~/.bashrc}
-          . $NEWLINE;
-
-        ## Use newly installed root
-        say {$FILEHANDLE} q{source}
-          . $SPACE
-          . catfile( $conda_prefix_path, qw{ root bin thisroot.sh } )
-          . $NEWLINE;
-    }
+    ## Use newly installed root during installation 
+    say {$FILEHANDLE} q{source}
+      . $SPACE
+      . catfile( $conda_prefix_path, qw{ root bin thisroot.sh } )
+      . $NEWLINE;
 
     ## Remove ROOT archive
     say {$FILEHANDLE} q{## Removing ROOT archive};
