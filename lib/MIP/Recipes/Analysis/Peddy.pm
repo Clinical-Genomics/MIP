@@ -201,8 +201,7 @@ sub analysis_peddy {
             process_time                    => $time,
             program_directory               => $program_directory,
             program_name                    => $program_name,
-            source_environment_commands_ref => []
-            , # Peddy fails if sourcing conda env on node - this makes sure that does not happen
+            source_environment_commands_ref => [$source_environment_cmd],
         }
     );
 

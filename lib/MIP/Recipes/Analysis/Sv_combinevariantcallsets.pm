@@ -320,7 +320,7 @@ sub analysis_sv_combinevariantcallsets {
         {
             FILEHANDLE       => $FILEHANDLE,
             infile_paths_ref => \@infile_paths,
-            outfile_path     => $merged_file_path_prefix . $outfile_suffix,
+            stdoutfile_path     => $merged_file_path_prefix . $outfile_suffix,
             priority => $active_parameter_href->{sv_svdb_merge_prioritize},
         }
     );
@@ -386,7 +386,7 @@ sub analysis_sv_combinevariantcallsets {
                     frequency_tag => $query_db_tag . q{AF},
                     hit_tag       => $query_db_tag,
                     infile_path   => $infile_path,
-                    outfile_path  => $merged_file_path_prefix
+                    stdoutfile_path  => $merged_file_path_prefix
                       . $alt_file_tag
                       . $outfile_suffix
                       . $DOT
