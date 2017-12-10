@@ -79,6 +79,7 @@ use MIP::Recipes::Analysis::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
 use MIP::Recipes::Analysis::Cnvnator qw{ analysis_cnvnator };
 use MIP::Recipes::Analysis::Delly_call qw{ analysis_delly_call };
 use MIP::Recipes::Analysis::Delly_reformat qw{ analysis_delly_reformat };
+use MIP::Recipes::Analysis::Endvariantannotationblock qw{ analysis_endvariantannotationblock analysis_endvariantannotationblock_rio };
 use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
 use MIP::Recipes::Analysis::Freebayes qw { analysis_freebayes_calling };
 use MIP::Recipes::Analysis::Gatk_baserecalibration
@@ -2880,7 +2881,7 @@ q{Only unaffected sample in pedigree - skipping genmod 'models', 'score' and 'co
 
 	my $program_name = lc q{endvariantannotationblock};
 
-        endvariantannotationblock(
+        analysis_endvariantannotationblock(
             {
                 parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
@@ -6551,12 +6552,12 @@ sub variantannotationblock {
     if ( $active_parameter_href->{prhocall} > 0 )
     {                                      #Run rhocall. Done per family
 
-        $log->info("\t[rhocall]\n");
+        $log->info( $TAB . q{[rhocall]});
     }
     if ( $active_parameter_href->{pvt} > 0 ) {
 
         # Run vt. Done per family
-        $log->info("\t[Vt]\n");
+        $log->info( $TAB . q{[Vt]});
     }
 
     # Run varianteffectpredictor. Family-level
@@ -6578,10 +6579,10 @@ sub variantannotationblock {
 
         $log->info( $TAB . q{[Rankvariant]} );
     }
-    if ( $active_parameter{pendvariantannotationblock} > 0 )
-    {    #Run endvariantannotationblock. Done per family
+    ## Run endvariantannotationblock. Done per family
+    if ( $active_parameter{pendvariantannotationblock}) {
 
-        $log->info("\t[Endvariantannotationblock]\n");
+        $log->info( $TAB . q{[Endvariantannotationblock]});
     }
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
@@ -6792,11 +6793,13 @@ q{Only unaffected sample in pedigree - skipping genmod 'models', 'score' and 'co
             );
         }
     }
-    if ( $active_parameter{pendvariantannotationblock} > 0 )
-    {    #Run endvariantannotationblock. Done per family
+    ## Run endvariantannotationblock. Done per family
+    if ( $active_parameter{pendvariantannotationblock}) {
+
+      my $program_name = q{endvariantannotationblock};
 
         ## Run endvariantannotationblock. Done per family
-        ($xargs_file_counter) = endvariantannotationblock(
+        ($xargs_file_counter) = analysis_endvariantannotationblock_rio(
             {
                 parameter_href          => $parameter_href,
                 active_parameter_href   => $active_parameter_href,
@@ -6805,7 +6808,7 @@ q{Only unaffected sample in pedigree - skipping genmod 'models', 'score' and 'co
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 call_type               => $call_type,
-                program_name            => "endvariantannotationblock",
+                program_name            => $program_name,
                 file_path               => $file_path,
                 program_info_path       => $program_info_path,
                 FILEHANDLE              => $FILEHANDLE,
@@ -6813,6 +6816,7 @@ q{Only unaffected sample in pedigree - skipping genmod 'models', 'score' and 'co
             }
         );
     }
+return;
 }
 
 sub read_yaml_pedigree_file {
