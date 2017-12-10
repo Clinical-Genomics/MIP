@@ -101,7 +101,7 @@ sub install_snpeff {
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
     use MIP::Program::Compression::Zip qw{ unzip };
     use MIP::Program::Download::Wget qw{ wget };
-    use MIP::Program::Variantcalling::SnpEff qw{ snpeff_download };
+    use MIP::Program::Variantcalling::Snpeff qw{ snpeff_download };
     use MIP::Script::Utils qw{ create_temp_dir };
 
     ## Unpack parameters
@@ -279,9 +279,9 @@ sub install_snpeff {
             }
         );
 
-        my $genome_version_directory_path = 
+        my $genome_version_directory_path =
           catdir( $snpeff_install_path, q{data}, $genome_version );
-        
+
         next GENOME_VERSION if ( -d $genome_version_directory_path );
         ## Write instructions to download SnpEff database.
         ## This is done by install script to avoid race conditin when doing first analysis run in MIP
