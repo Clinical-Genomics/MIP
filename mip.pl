@@ -79,7 +79,8 @@ use MIP::Recipes::Analysis::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
 use MIP::Recipes::Analysis::Cnvnator qw{ analysis_cnvnator };
 use MIP::Recipes::Analysis::Delly_call qw{ analysis_delly_call };
 use MIP::Recipes::Analysis::Delly_reformat qw{ analysis_delly_reformat };
-use MIP::Recipes::Analysis::Endvariantannotationblock qw{ analysis_endvariantannotationblock analysis_endvariantannotationblock_rio };
+use MIP::Recipes::Analysis::Endvariantannotationblock
+  qw{ analysis_endvariantannotationblock analysis_endvariantannotationblock_rio };
 use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
 use MIP::Recipes::Analysis::Freebayes qw { analysis_freebayes_calling };
 use MIP::Recipes::Analysis::Gatk_baserecalibration
@@ -2875,11 +2876,11 @@ q{Only unaffected sample in pedigree - skipping genmod 'models', 'score' and 'co
         }
     }
     ## Run endvariantannotationblock. Done per family
-    if ( $active_parameter{pendvariantannotationblock}) {
+    if ( $active_parameter{pendvariantannotationblock} ) {
 
         $log->info(q{[Endvariantannotationblock]});
 
-	my $program_name = lc q{endvariantannotationblock};
+        my $program_name = lc q{endvariantannotationblock};
 
         analysis_endvariantannotationblock(
             {
@@ -4088,8 +4089,9 @@ sub snpeff {
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Program::Variantcalling::Snpeff qw{ snpeff_ann };
-    use MIP::Program::Variantcalling::Snpsift qw(snpsift_annotate snpsift_dbnsfp);
-    use MIP::Program::Variantcalling::Mip qw(mip_vcfparser);
+    use MIP::Program::Variantcalling::Snpsift
+      qw(snpsift_annotate snpsift_dbnsfp);
+    use MIP::Program::Variantcalling::Mip_vcfparser qw(mip_vcfparser);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
@@ -4341,8 +4343,8 @@ sub snpeff {
                 }
                 snpsift_annotate(
                     {
-                        verbosity    => "v",
-                        infile_path  => $infile_path,
+                        verbosity       => "v",
+                        infile_path     => $infile_path,
                         stdoutfile_path => $file_path_prefix . "_"
                           . $contig
                           . $vcfparser_analysis_type
@@ -4361,7 +4363,7 @@ sub snpeff {
                         stderrfile_path_append => $xargs_file_path_prefix . "."
                           . $contig
                           . ".stderr.txt",
-                        FILEHANDLE         => $XARGSFILEHANDLE,
+                        FILEHANDLE => $XARGSFILEHANDLE,
                     }
                 );
                 say {$XARGSFILEHANDLE} "\n";
@@ -4427,8 +4429,8 @@ sub snpeff {
                         stderrfile_path_append => $xargs_file_path_prefix . "."
                           . $contig
                           . ".stderr.txt",
-                        FILEHANDLE         => $XARGSFILEHANDLE,
-                        verbosity          => "v",
+                        FILEHANDLE => $XARGSFILEHANDLE,
+                        verbosity  => "v",
                     }
                 );
                 say {$XARGSFILEHANDLE} "\n";
@@ -4473,7 +4475,7 @@ sub snpeff {
                     stderrfile_path_append => $xargs_file_path_prefix . "."
                       . $contig
                       . ".stderr.txt ",
-                    FILEHANDLE         => $XARGSFILEHANDLE,
+                    FILEHANDLE => $XARGSFILEHANDLE,
                 }
             );
             say {$XARGSFILEHANDLE} "\n";
@@ -6558,12 +6560,12 @@ sub variantannotationblock {
     if ( $active_parameter_href->{prhocall} > 0 )
     {                                      #Run rhocall. Done per family
 
-        $log->info( $TAB . q{[rhocall]});
+        $log->info( $TAB . q{[rhocall]} );
     }
     if ( $active_parameter_href->{pvt} > 0 ) {
 
         # Run vt. Done per family
-        $log->info( $TAB . q{[Vt]});
+        $log->info( $TAB . q{[Vt]} );
     }
 
     # Run varianteffectpredictor. Family-level
@@ -6586,9 +6588,9 @@ sub variantannotationblock {
         $log->info( $TAB . q{[Rankvariant]} );
     }
     ## Run endvariantannotationblock. Done per family
-    if ( $active_parameter{pendvariantannotationblock}) {
+    if ( $active_parameter{pendvariantannotationblock} ) {
 
-        $log->info( $TAB . q{[Endvariantannotationblock]});
+        $log->info( $TAB . q{[Endvariantannotationblock]} );
     }
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
@@ -6800,9 +6802,9 @@ q{Only unaffected sample in pedigree - skipping genmod 'models', 'score' and 'co
         }
     }
     ## Run endvariantannotationblock. Done per family
-    if ( $active_parameter{pendvariantannotationblock}) {
+    if ( $active_parameter{pendvariantannotationblock} ) {
 
-      my $program_name = q{endvariantannotationblock};
+        my $program_name = q{endvariantannotationblock};
 
         ## Run endvariantannotationblock. Done per family
         ($xargs_file_counter) = analysis_endvariantannotationblock_rio(
@@ -6822,7 +6824,7 @@ q{Only unaffected sample in pedigree - skipping genmod 'models', 'score' and 'co
             }
         );
     }
-return;
+    return;
 }
 
 sub read_yaml_pedigree_file {
