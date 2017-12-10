@@ -279,9 +279,9 @@ sub install_snpeff {
             }
         );
 
-        my $genome_version_directory_path = 
+        my $genome_version_directory_path =
           catdir( $snpeff_install_path, q{data}, $genome_version );
-        
+
         next GENOME_VERSION if ( -d $genome_version_directory_path );
         ## Write instructions to download SnpEff database.
         ## This is done by install script to avoid race conditin when doing first analysis run in MIP

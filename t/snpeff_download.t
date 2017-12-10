@@ -84,12 +84,12 @@ BEGIN {
 }
 
 use File::Spec::Functions qw{ catfile };
-use MIP::Program::Variantcalling::SnpEff qw{ snpeff_download };
+use MIP::Program::Variantcalling::Snpeff qw{ snpeff_download };
 use MIP::Language::Java qw{java_core};
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test snpeff_download from SnpEff v}
-      . $MIP::Program::Variantcalling::SnpEff::VERSION
+diag(   q{Test snpeff_download from Snpeff.pm v}
+      . $MIP::Program::Variantcalling::Snpeff::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
