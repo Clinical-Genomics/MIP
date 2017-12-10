@@ -184,6 +184,7 @@ slurm_sacct.t
 slurm_sbatch.t
 slurm_build_sbatch_header.t
 slurm_reformat_sacct_output.t
+snpeff_ann.t
 svdb_merge.t
 svdb_query.t
 tar.t

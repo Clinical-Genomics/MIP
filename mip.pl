@@ -4563,7 +4563,7 @@ sub snpeff {
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use Program::Variantcalling::Snpeff qw(ann);
+    use MIP::Program::Variantcalling::Snpeff qw{ snpeff_ann };
     use Program::Variantcalling::Snpsift qw(annotate dbnsfp);
     use Program::Variantcalling::Mip qw(vcfparser);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
@@ -4719,7 +4719,7 @@ sub snpeff {
 
             foreach my $contig (@$vcfparser_contigs_ref) {
 
-                Program::Variantcalling::Snpeff::ann(
+                snpeff_ann(
                     {
                         verbosity => "v",
                         genome_build_version =>
@@ -4732,7 +4732,7 @@ sub snpeff {
                           . $contig
                           . $vcfparser_analysis_type
                           . $infile_suffix,
-                        outfile_path => $file_path_prefix . "_"
+                        stdoutfile_path => $file_path_prefix . "_"
                           . $contig
                           . $vcfparser_analysis_type
                           . $infile_suffix . "."

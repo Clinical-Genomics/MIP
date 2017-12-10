@@ -1,21 +1,22 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{ 2014 };
-use warnings qw{ FATAL utf8 };
-use autodie;
-use 5.018;    #Require at least perl 5.18
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
+use 5.018;
 use Carp;
+use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-
-use FindBin qw{ $Bin };    #Find directory of script
-use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{catdir};
+use File::Basename qw{ basename dirname  };
+use File::Spec::Functions qw{ catdir catfile };
+use FindBin qw{ $Bin };
 use Getopt::Long;
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
+
+## CPANM
+use autodie qw{ :all };
+use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ## MIPs lib/
@@ -25,20 +26,24 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.1;
+our $VERSION = 1.0.0;
 
 ## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
 Readonly my $COMMA   => q{,};
+Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => q{ };
 
-###User Options
+### User Options
 GetOptions(
+
+    # Display help text
     q{h|help} => sub {
         done_testing();
         say {*STDOUT} $USAGE;
         exit;
-    },    #Display help text
+    },
+
+    # Display version number
     q{v|version} => sub {
         done_testing();
         say {*STDOUT} $NEWLINE
@@ -47,7 +52,7 @@ GetOptions(
           . $VERSION
           . $NEWLINE;
         exit;
-    },    #Display version number
+    },
     q{vb|verbose} => $VERBOSE,
   )
   or (
@@ -63,32 +68,28 @@ GetOptions(
 BEGIN {
 
 ### Check all internal dependency modules and imports
-##Modules with import
-    my %perl_module;
+## Modules with import
+    my %perl_module = ( q{MIP::Script::Utils} => [qw{ help }], );
 
-    $perl_module{q{MIP::Script::Utils}} = [qw{ help }];
-
-  PERL_MODULES:
+  PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
         use_ok( $module, @{$module_import} )
           or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 
-##Modules
-    my @modules = (q{MIP::Program::Variantcalling::SnpEff});
+## Modules
+    my @modules = (q{MIP::Program::Variantcalling::Snpeff});
 
-  MODULES:
+  MODULE:
     for my $module (@modules) {
         require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 }
 
-use File::Spec::Functions qw{ catfile };
-use MIP::Program::Variantcalling::Snpeff qw{ snpeff_download };
-use MIP::Language::Java qw{java_core};
+use MIP::Program::Variantcalling::Snpeff qw{ snpeff_ann };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test snpeff_download from Snpeff.pm v}
+diag(   q{Test snpeff_ann from Snpeff.pm v}
       . $MIP::Program::Variantcalling::Snpeff::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -98,21 +99,12 @@ diag(   q{Test snpeff_download from Snpeff.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{java};
-
-my $snpeff_download_base = join $SPACE,
-  java_core(
-    {
-        memory_allocation => q{Xmx2g},
-        java_jar          => catfile(qw{ path to jar }),
-    }
-  ),
-  qw{ download };
+my $function_base_command = q{ann};
 
 my %base_argument = (
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
+    FILEHANDLE => {
+        input           => undef,
+        expected_output => $function_base_command,
     },
     stderrfile_path => {
         input           => q{stderrfile.test},
@@ -122,51 +114,45 @@ my %base_argument = (
         input           => q{stderrfile.test},
         expected_output => q{2>> stderrfile.test},
     },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
+    stdoutfile_path => {
+        input           => q{stdoutfile.test},
+        expected_output => q{1> stdoutfile.test},
     },
 );
 
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    genome_version_database => {
-        input           => q{test_database},
-        expected_output => q{test_database},
-    },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
-    },
-    jar_path => {
-        input           => catfile(qw{ path to jar }),
-        expected_output => $snpeff_download_base,
+    genome_build_version => {
+        input           => q{GRCh37},
+        expected_output => q{GRCh37},
     },
 );
 
 my %specific_argument = (
     config_file_path => {
-        input           => catfile(qw{ path to config }),
-        expected_output => q{-c} . $SPACE . catfile( qw { path to config }),
+        input           => catfile(qw{ snpeff_path snpEff.config }),
+        expected_output => q{-config}
+          . $SPACE
+          . catfile(qw{ snpeff_path snpEff.config }),
     },
-    verbose => {
-        input           => 1,
+    infile_path => {
+        input           => catfile(qw{ path_to_infile contig_analysisType }),
+        expected_output => catfile(qw{ path_to_infile contig_analysisType }),
+    },
+    verbosity => {
+        input           => q{v},
         expected_output => q{-v},
-    },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&snpeff_download;
+my $module_function_cref = \&snpeff_ann;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
 
-HASHES_OF_ARGUMENTS:
+ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
@@ -187,12 +173,9 @@ done_testing();
 
 sub build_usage {
 
-## build_usage
-
 ## Function  : Build the USAGE instructions
-## Returns   : ""
-## Arguments : $program_name
-##           : $program_name => Name of the script
+## Returns   :
+## Arguments : $program_name => Name of the script
 
     my ($arg_href) = @_;
 
