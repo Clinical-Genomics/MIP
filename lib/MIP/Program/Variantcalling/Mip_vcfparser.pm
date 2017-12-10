@@ -80,48 +80,46 @@ sub mip_vcfparser {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$infile_path
+            store       => \$infile_path,
         },
-
-        #outfile_path => { strict_type => 1, store => \$outfile_path },
         padding => {
             allow       => [ undef, qr/^\d+$/ ],
             strict_type => 1,
-            store       => \$padding
+            store       => \$padding,
         },
         parse_vep => {
             default     => 0,
             allow       => [ undef, 0, 1, 2 ],
             strict_type => 1,
-            store       => \$parse_vep
+            store       => \$parse_vep,
         },
         per_gene => {
             default     => 0,
             allow       => [ undef, 0, 1 ],
             strict_type => 1,
-            store       => \$per_gene
+            store       => \$per_gene,
         },
         range_feature_annotation_columns_ref => {
             default     => [],
             strict_type => 1,
-            store       => \$range_feature_annotation_columns_ref
+            store       => \$range_feature_annotation_columns_ref,
         },
         range_feature_file_path =>
-          { strict_type => 1, store => \$range_feature_file_path },
+          { strict_type => 1, store => \$range_feature_file_path, },
 
         select_feature_annotation_columns_ref => {
             default     => [],
             strict_type => 1,
-            store       => \$select_feature_annotation_columns_ref
+            store       => \$select_feature_annotation_columns_ref,
         },
         select_feature_file_path =>
-          { strict_type => 1, store => \$select_feature_file_path },
+          { strict_type => 1, store => \$select_feature_file_path, },
         select_feature_matching_column => {
             allow       => [ undef, qr/^\d+$/ ],
             strict_type => 1,
-            store       => \$select_feature_matching_column
+            store       => \$select_feature_matching_column,
         },
-        select_outfile  => { strict_type => 1, store => \$select_outfile },
+        select_outfile  => { strict_type => 1, store => \$select_outfile, },
         stderrfile_path => {
             strict_type => 1,
             store       => \$stderrfile_path,
@@ -155,7 +153,7 @@ sub mip_vcfparser {
         push @commands, q{--per_gene};
     }
 
-    if ( defined $padding ) {
+    if ( $padding ) {
 
         push @commands, q{--padding} . $SPACE . $padding;
     }
@@ -166,7 +164,7 @@ sub mip_vcfparser {
           q{--range_feature_file} . $SPACE . $range_feature_file_path;
     }
 
-    #Limit output to regions
+    # Limit output to regions
     if ( @{$range_feature_annotation_columns_ref} ) {
 
         push @commands,
@@ -188,7 +186,7 @@ sub mip_vcfparser {
           . $select_feature_matching_column;
     }
 
-    #Limit output to regions
+    # Limit output to regions
     if ( @{$select_feature_annotation_columns_ref} ) {
 
         push @commands,
