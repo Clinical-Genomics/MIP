@@ -47,7 +47,7 @@ use MIP::Recipes::Install::Plink2 qw{ install_plink2 };
 use MIP::Recipes::Install::Reference qw{ download_genome_references };
 use MIP::Recipes::Install::Rhocall qw{ install_rhocall };
 use MIP::Recipes::Install::Sambamba qw{ install_sambamba };
-use MIP::Recipes::Install::Snpeff qw{ install_snpeff };
+use MIP::Recipes::Install::SnpEff qw{ install_snpeff };
 use MIP::Recipes::Install::Svdb qw{ install_svdb };
 use MIP::Recipes::Install::Tiddit qw{ install_tiddit };
 use MIP::Recipes::Install::Vep qw{ install_vep };

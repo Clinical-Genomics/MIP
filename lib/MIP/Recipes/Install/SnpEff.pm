@@ -101,7 +101,7 @@ sub install_snpeff {
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
     use MIP::Program::Compression::Zip qw{ unzip };
     use MIP::Program::Download::Wget qw{ wget };
-    use MIP::Program::Variantcalling::SnpEff qw{ snpeff_download };
+    use MIP::Program::Variantcalling::Snpeff qw{ snpeff_download };
     use MIP::Script::Utils qw{ create_temp_dir };
 
     ## Unpack parameters
