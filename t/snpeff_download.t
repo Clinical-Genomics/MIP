@@ -75,7 +75,7 @@ BEGIN {
     }
 
 ##Modules
-    my @modules = (q{MIP::Program::Variantcalling::SnpEff});
+    my @modules = (q{MIP::Program::Variantcalling::Snpeff});
 
   MODULES:
     for my $module (@modules) {
