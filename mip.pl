@@ -114,7 +114,8 @@ use MIP::Recipes::Qc::Qccollect qw{ analysis_qccollect };
 use MIP::Recipes::Analysis::Rankvariant
   qw{ analysis_rankvariant analysis_rankvariant_rio analysis_rankvariant_rio_unaffected analysis_rankvariant_unaffected analysis_sv_rankvariant analysis_sv_rankvariant_unaffected };
 use MIP::Recipes::Analysis::Rcoverageplots qw{ analysis_rcoverageplots };
-use MIP::Recipes::Analysis::Rhocall qw{ analysis_rhocall_annotate analysis_rhocall_annotate_rio };
+use MIP::Recipes::Analysis::Rhocall
+  qw{ analysis_rhocall_annotate analysis_rhocall_annotate_rio };
 use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
 use MIP::Recipes::Analysis::Bcftools_mpileup qw { analysis_bcftools_mpileup };
 use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
@@ -960,7 +961,7 @@ if (
 
 ## Parameters that have keys as MIP program names
 my @parameter_keys_to_check =
-  (qw(module_time module_core_number module_source_environment_command));
+  (qw{ module_time module_core_number module_source_environment_command });
 foreach my $parameter_name (@parameter_keys_to_check) {
 
     ## Test if key from query hash exists truth hash
@@ -2712,10 +2713,11 @@ else {
             }
         );
     }
+
     # Run rhocall. Done per family
     if ( $active_parameter{prhocall} > 0 ) {
 
-        $log->info( q{[Rhocall]} );
+        $log->info(q{[Rhocall]});
 
         my $program_name = q{rhocall};
 
@@ -4561,9 +4563,9 @@ sub snpeff {
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use Program::Variantcalling::Snpeff qw(ann);
-    use Program::Variantcalling::Snpsift qw(annotate dbnsfp);
-    use MIP::Program::Variantcalling::Mip_vcfparser qw(mip_vcfparser);
+    use MIP::Program::Variantcalling::Snpeff qw{ snpeff_ann };
+    use MIP::Program::Variantcalling::Snpsift qw(snpsift_annotate snpsift_dbnsfp);
+    use MIP::Program::Variantcalling::Mip qw(mip_vcfparser);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
@@ -4717,7 +4719,7 @@ sub snpeff {
 
             foreach my $contig (@$vcfparser_contigs_ref) {
 
-                Program::Variantcalling::Snpeff::ann(
+                snpeff_ann(
                     {
                         verbosity => "v",
                         genome_build_version =>
@@ -4730,7 +4732,7 @@ sub snpeff {
                           . $contig
                           . $vcfparser_analysis_type
                           . $infile_suffix,
-                        outfile_path => $file_path_prefix . "_"
+                        stdoutfile_path => $file_path_prefix . "_"
                           . $contig
                           . $vcfparser_analysis_type
                           . $infile_suffix . "."
@@ -4813,11 +4815,11 @@ sub snpeff {
                       . $infile_suffix . "."
                       . $annotation_infile_number;   #Infile from previous round
                 }
-                Program::Variantcalling::Snpsift::annotate(
+                snpsift_annotate(
                     {
                         verbosity    => "v",
                         infile_path  => $infile_path,
-                        outfile_path => $file_path_prefix . "_"
+                        stdoutfile_path => $file_path_prefix . "_"
                           . $contig
                           . $vcfparser_analysis_type
                           . $infile_suffix . "."
@@ -4832,7 +4834,9 @@ sub snpeff {
                         stderrfile_path => $xargs_file_path_prefix . "."
                           . $contig
                           . ".stderr.txt",
-                        append_stderr_info => 1,
+                        stderrfile_path_append => $xargs_file_path_prefix . "."
+                          . $contig
+                          . ".stderr.txt",
                         FILEHANDLE         => $XARGSFILEHANDLE,
                     }
                 );
@@ -4872,7 +4876,7 @@ sub snpeff {
 
             foreach my $contig (@$vcfparser_contigs_ref) {
 
-                Program::Variantcalling::Snpsift::dbnsfp(
+                snpsift_dbnsfp(
                     {
                         annotate_fields_ref => \@{
                             $active_parameter_href->{snpsift_dbnsfp_annotations}
@@ -4882,7 +4886,7 @@ sub snpeff {
                           . $vcfparser_analysis_type
                           . $infile_suffix . "."
                           . $annotation_infile_number,
-                        outfile_path => $file_path_prefix . "_"
+                        stdoutfile_path => $file_path_prefix . "_"
                           . $contig
                           . $vcfparser_analysis_type
                           . $infile_suffix . "."
@@ -4896,7 +4900,9 @@ sub snpeff {
                         stderrfile_path => $xargs_file_path_prefix . "."
                           . $contig
                           . ".stderr.txt",
-                        append_stderr_info => 1,
+                        stderrfile_path_append => $xargs_file_path_prefix . "."
+                          . $contig
+                          . ".stderr.txt",
                         FILEHANDLE         => $XARGSFILEHANDLE,
                         verbosity          => "v",
                     }
@@ -7042,7 +7048,7 @@ sub variantannotationblock {
         $log->info( $TAB . q{[Varianteffectpredictor]} );
     }
     if ( $active_parameter_href->{pvcfparser} > 0 )
-    {                                      #Run pvcfparser. Done per family
+    {    #Run pvcfparser. Done per family
 
         $log->info("\t[Vcfparser]\n");
     }
@@ -7096,6 +7102,7 @@ sub variantannotationblock {
             }
         );
     }
+
     # Run vt. Done per family
     if ( $active_parameter_href->{prhocall} > 0 ) {
 
@@ -7120,8 +7127,8 @@ sub variantannotationblock {
                 program_info_path       => $program_info_path,
                 program_name            => $program_name,
                 sample_info_href        => $sample_info_href,
-                stderr_path             => $program_info_path . $DOT . q{stderr.txt},
-                xargs_file_counter      => $xargs_file_counter,
+                stderr_path        => $program_info_path . $DOT . q{stderr.txt},
+                xargs_file_counter => $xargs_file_counter,
             }
         );
     }

@@ -381,7 +381,7 @@ sub build_usage {
     -cnvnr/--cnvnator_root_binary   Set the cnvnator root binary (Default: "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz")
     -tid/--tiddit                   Set the tiddit version (Default: "1.1.6")
     -svdb/--svdb                    Set the svdb version (Default: "1.0.6")
-    
+
     ## Utility
     -rd/--reference_dir             Reference(s) directory (Default: "")
     -rd/--reference_genome_versions Reference versions to download ((Default: ["GRCh37", "hg38"]))
@@ -628,11 +628,11 @@ sub _assure_python_3_compability {
         python_version => {
             required => 1,
             defined  => 1,
-            allow    =>  qr/ 
+            allow    =>  qr/
                          ^( 2 | 3 )    # Assert that the python major version starts with 2 or 3
                          \.            # Major version separator
-                         ( \d+$        # Assert that the minor version is a digit 
-                         | \d+\.\d+$ ) # Case when minor and patch version has been supplied, allow only digits 
+                         ( \d+$        # Assert that the minor version is a digit
+                         | \d+\.\d+$ ) # Case when minor and patch version has been supplied, allow only digits
                          /xms,
             store => \$python_version,
         },
@@ -647,7 +647,7 @@ sub _assure_python_3_compability {
 
     if (
         $python_version =~
-          m/ 
+          m/
           3\.\d+ |    # Python 3 release with minor version eg 3.6
           3\.\d+\.\d+ # Python 3 release with minor and patch e.g. 3.6.2
           /xms
@@ -695,7 +695,7 @@ sub _assure_python_2_compability {
 
     if (
         $parameter_href->{conda_packages}{python} =~
-        m/ 2\.\d+ |    # Python 2 release with minor version eg 2.7.14        
+        m/ 2\.\d+ |    # Python 2 release with minor version eg 2.7.14
            2\.\d+\.\d+ # Python 3 release with minor and patch e.g. 3.6.2
         /xms
       )
@@ -866,4 +866,3 @@ q{echo -e '\n##############################################################\n'};
 
     return;
 }
-

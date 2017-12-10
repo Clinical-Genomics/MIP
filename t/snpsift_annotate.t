@@ -15,7 +15,7 @@ use utf8;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
-use autodie;
+use autodie qw{ :all };
 use Modern::Perl qw{ 2014 };
 use Readonly;
 
@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.1;
+our $VERSION = 1.0.0;
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -78,7 +78,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Program::Variantcalling::Genmod});
+    my @modules = (q{MIP::Program::Variantcalling::Snpsift});
 
   MODULE:
     for my $module (@modules) {
@@ -86,11 +86,11 @@ BEGIN {
     }
 }
 
-use MIP::Program::Variantcalling::Genmod qw{ genmod_filter };
+use MIP::Program::Variantcalling::Snpsift qw{ snpsift_annotate };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test genmod_filter from Genmod.pm v}
-      . $MIP::Program::Variantcalling::Genmod::VERSION
+diag(   q{Test snpsift_annotate from snpsift_annotate.pm v}
+      . $MIP::Program::Variantcalling::Snpsift::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -99,7 +99,7 @@ diag(   q{Test genmod_filter from Genmod.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{genmod};
+my $function_base_command = q{annotate};
 
 my %base_argument = (
     FILEHANDLE => {
@@ -123,26 +123,29 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    infile_path => {
-        input           => catfile(qw{ a test infile }),
-        expected_output => catfile(qw{ a test infile }),
+    database_path => {
+        input => catfile(qw{ path_to_annotation_file snpsift_annotation_file}),
+        expected_output =>
+          catfile(qw{ path_to_annotation_file snpsift_annotation_file}),
     },
 );
 
 my %specific_argument = (
+    config_file_path => {
+        input           => catfile( qw{ snpeff_path snpeff.config } ),
+        expected_output => q{-config} . $SPACE . catfile( qw{ snpeff_path snpeff.config } ),
+    },
     infile_path => {
-        input           => catfile(qw{ a test infile }),
-        expected_output => catfile(qw{ a test infile }),
+        input           => catfile(qw{ file_path prefix_contig_analysistype}),
+        expected_output => catfile(qw{ file_path prefix_contig_analysistype}),
     },
-    outfile_path => {
-        input           => catfile(qw{ a test outfile }),
-        expected_output => q{--outfile}
-          . $SPACE
-          . catfile(qw{ a test outfile }),
+    info => {
+        input           => q{( DP > 10 ) & ( AF1 = 0 )},
+        expected_output => q{-info ( DP > 10 ) & ( AF1 = 0 )},
     },
-    threshold => {
-        input           => q{0.1},
-        expected_output => q{--threshold} . $SPACE . q{0.1},
+    name_prefix => {
+        input           => q{info_tags_name},
+        expected_output => q{-name info_tags_name},
     },
     verbosity => {
         input           => q{v},
@@ -151,7 +154,7 @@ my %specific_argument = (
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&genmod_filter;
+my $module_function_cref = \&snpsift_annotate;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

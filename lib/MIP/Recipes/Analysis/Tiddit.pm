@@ -346,7 +346,7 @@ sub analysis_tiddit {
             FILEHANDLE       => $FILEHANDLE,
             infile_paths_ref => \@infile_paths,
             notag            => 1,
-            outfile_path     => $outfile_path_prefix . $outfile_suffix,
+            stdoutfile_path     => $outfile_path_prefix . $outfile_suffix,
         }
     );
     say {$FILEHANDLE} $NEWLINE;

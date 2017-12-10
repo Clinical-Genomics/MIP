@@ -69,7 +69,9 @@ genmod_models.t
 genmod_score.t
 get_exom_target_bed_file.t
 get_merged_infile_prefix.t
+get_module_parameters.t
 get_overall_analysis_type.t
+get_program_parameters.t
 get_select_file_contigs.t
 get_seq_dict_contigs.t
 git_clone.t
@@ -183,6 +185,9 @@ slurm_sacct.t
 slurm_sbatch.t
 slurm_build_sbatch_header.t
 slurm_reformat_sacct_output.t
+snpeff_ann.t
+snpsift_annotate.t
+snpsift_dbnsfp.t
 svdb_merge.t
 svdb_query.t
 tar.t

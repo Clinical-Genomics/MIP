@@ -359,6 +359,12 @@ slurm_quality_of_service:
   data_type: SCALAR
   default: normal
   type: mip
+program_source_environment_command:
+  associated_program:
+   - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
 module_source_environment_command:
   associated_program:
    - mip
@@ -846,11 +852,11 @@ ptiddit:
   data_type: SCALAR
   default: 0
   file_tag: _tiddit
-  program_name_path:
-   - TIDDIT
-   - svdb
   outdir_name: tiddit
   outfile_suffix: ".vcf"
+  program_name_path:
+   - TIDDIT.py
+   - svdb
   program_type: structural_variant_callers
   type: program
 tiddit_minimum_number_supporting_pairs:
