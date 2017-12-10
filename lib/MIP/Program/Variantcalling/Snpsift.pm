@@ -69,14 +69,14 @@ sub snpsift_annotate {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$database_path
+            store       => \$database_path,
         },
         FILEHANDLE => {
             store => \$FILEHANDLE,
         },
-        infile_path     => { strict_type => 1, store => \$infile_path },
-        info            => { strict_type => 1, store => \$info },
-        name_prefix     => { strict_type => 1, store => \$name_prefix },
+        infile_path     => { strict_type => 1, store => \$infile_path, },
+        info            => { strict_type => 1, store => \$info, },
+        name_prefix     => { strict_type => 1, store => \$name_prefix, },
         stderrfile_path => {
             strict_type => 1,
             store       => \$stderrfile_path,
@@ -92,7 +92,7 @@ sub snpsift_annotate {
         verbosity => {
             allow       => qr/^\w+$/,
             strict_type => 1,
-            store       => \$verbosity
+            store       => \$verbosity,
         },
     };
 
