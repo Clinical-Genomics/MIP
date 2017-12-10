@@ -4564,7 +4564,7 @@ sub snpeff {
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Program::Variantcalling::Snpeff qw{ snpeff_ann };
-    use Program::Variantcalling::Snpsift qw(annotate dbnsfp);
+    use MIP::Program::Variantcalling::Snpsift qw(snpsift_annotate snpsift_dbnsfp);
     use Program::Variantcalling::Mip qw(vcfparser);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
@@ -4815,11 +4815,11 @@ sub snpeff {
                       . $infile_suffix . "."
                       . $annotation_infile_number;   #Infile from previous round
                 }
-                Program::Variantcalling::Snpsift::annotate(
+                snpsift_annotate(
                     {
                         verbosity    => "v",
                         infile_path  => $infile_path,
-                        outfile_path => $file_path_prefix . "_"
+                        stdoutfile_path => $file_path_prefix . "_"
                           . $contig
                           . $vcfparser_analysis_type
                           . $infile_suffix . "."
@@ -4834,7 +4834,9 @@ sub snpeff {
                         stderrfile_path => $xargs_file_path_prefix . "."
                           . $contig
                           . ".stderr.txt",
-                        append_stderr_info => 1,
+                        stderrfile_path_append => $xargs_file_path_prefix . "."
+                          . $contig
+                          . ".stderr.txt",
                         FILEHANDLE         => $XARGSFILEHANDLE,
                     }
                 );
@@ -4874,7 +4876,7 @@ sub snpeff {
 
             foreach my $contig (@$vcfparser_contigs_ref) {
 
-                Program::Variantcalling::Snpsift::dbnsfp(
+                snpsift_dbnsfp(
                     {
                         annotate_fields_ref => \@{
                             $active_parameter_href->{snpsift_dbnsfp_annotations}
@@ -4884,7 +4886,7 @@ sub snpeff {
                           . $vcfparser_analysis_type
                           . $infile_suffix . "."
                           . $annotation_infile_number,
-                        outfile_path => $file_path_prefix . "_"
+                        stdoutfile_path => $file_path_prefix . "_"
                           . $contig
                           . $vcfparser_analysis_type
                           . $infile_suffix . "."
@@ -4898,7 +4900,9 @@ sub snpeff {
                         stderrfile_path => $xargs_file_path_prefix . "."
                           . $contig
                           . ".stderr.txt",
-                        append_stderr_info => 1,
+                        stderrfile_path_append => $xargs_file_path_prefix . "."
+                          . $contig
+                          . ".stderr.txt",
                         FILEHANDLE         => $XARGSFILEHANDLE,
                         verbosity          => "v",
                     }
