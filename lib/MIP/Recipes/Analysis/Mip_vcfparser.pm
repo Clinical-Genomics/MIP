@@ -950,7 +950,7 @@ sub _check_entry_hash_of_array {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Information on entry present
-    if ( defined ${ $hash_ref{$key} } ) {
+    if ( defined ${$hash_ref}{$key} ) {
 
         # If element is not part of array
         if ( !( any { $_ eq $element } @{ $hash_ref->{$key} } ) ) {
