@@ -729,6 +729,7 @@ sub analysis_snpeff_rio {
             strict_type => 1,
             store       => \$family_id,
         },
+        FILEHANDLE  => { required => 1, store => \$FILEHANDLE },
         file_info_href => {
             required    => 1,
             defined     => 1,
