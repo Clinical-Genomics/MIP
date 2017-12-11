@@ -158,6 +158,12 @@ sub analysis_mip_vcfparser {
             strict_type => 1,
             store       => \$sample_info_href,
         },
+        xargs_file_counter => {
+            default     => 0,
+            allow       => qr/ ^\d+$ /xsm,
+            strict_type => 1,
+            store       => \$xargs_file_counter,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -629,6 +635,12 @@ sub analysis_mip_vcfparser_rio {
             default     => {},
             strict_type => 1,
             store       => \$sample_info_href,
+        },
+        xargs_file_counter => {
+            default     => 0,
+            allow       => qr/ ^\d+$ /xsm,
+            strict_type => 1,
+            store       => \$xargs_file_counter,
         },
     };
 
