@@ -147,6 +147,7 @@ sub analysis_mip_vcfparser {
             strict_type => 1,
             store       => \$parameter_href,
         },
+        program_info_path => { strict_type => 1, store => \$program_info_path, },
         program_name => {
             required    => 1,
             defined     => 1,
@@ -159,6 +160,11 @@ sub analysis_mip_vcfparser {
             default     => {},
             strict_type => 1,
             store       => \$sample_info_href,
+        },
+        temp_directory => {
+            default     => $arg_href->{active_parameter_href}{temp_directory},
+            strict_type => 1,
+            store       => \$temp_directory,
         },
         xargs_file_counter => {
             default     => 0,
@@ -582,7 +588,7 @@ sub analysis_mip_vcfparser_rio {
             strict_type => 1,
             store       => \$file_info_href,
         },
-        file_path          => { strict_type => 1, store => \$file_path },
+        file_path          => { strict_type => 1, store => \$file_path, },
         infamily_directory => {
             required    => 1,
             defined     => 1,
@@ -627,6 +633,7 @@ sub analysis_mip_vcfparser_rio {
             strict_type => 1,
             store       => \$parameter_href,
         },
+        program_info_path => { strict_type => 1, store => \$program_info_path },
         program_name => {
             required    => 1,
             defined     => 1,
@@ -639,6 +646,11 @@ sub analysis_mip_vcfparser_rio {
             default     => {},
             strict_type => 1,
             store       => \$sample_info_href,
+        },
+        temp_directory => {
+            default     => $arg_href->{active_parameter_href}{temp_directory},
+            strict_type => 1,
+            store       => \$temp_directory,
         },
         xargs_file_counter => {
             default     => 0,
