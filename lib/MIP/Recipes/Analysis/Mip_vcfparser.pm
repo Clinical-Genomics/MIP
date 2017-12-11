@@ -88,6 +88,8 @@ sub analysis_mip_vcfparser {
             strict_type => 1,
             store       => \$active_parameter_href,
         },
+        call_type =>
+          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
@@ -565,6 +567,8 @@ sub analysis_mip_vcfparser_rio {
             strict_type => 1,
             store       => \$active_parameter_href,
         },
+        call_type =>
+          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
         FILEHANDLE     => { store => \$FILEHANDLE, },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
