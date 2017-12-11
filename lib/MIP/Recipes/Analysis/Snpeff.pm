@@ -682,7 +682,6 @@ sub analysis_snpeff_rio {
 ##          : $file_path               => File path
 ##          : $infamily_directory      => In family directory
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##          : $insample_directory      => In sample directory
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
 ##          : $outfamily_directory     => Out family directory
@@ -701,7 +700,6 @@ sub analysis_snpeff_rio {
     my $file_path;
     my $infamily_directory;
     my $infile_lane_prefix_href;
-    my $insample_directory;
     my $job_id_href;
     my $outfamily_directory;
     my $parameter_href;
@@ -751,12 +749,6 @@ sub analysis_snpeff_rio {
             default     => {},
             strict_type => 1,
             store       => \$infile_lane_prefix_href,
-        },
-        insample_directory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$insample_directory,
         },
         job_id_href => {
             required    => 1,
