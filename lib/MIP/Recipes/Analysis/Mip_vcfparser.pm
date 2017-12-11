@@ -147,7 +147,8 @@ sub analysis_mip_vcfparser {
             strict_type => 1,
             store       => \$parameter_href,
         },
-        program_info_path => { strict_type => 1, store => \$program_info_path, },
+        program_info_path =>
+          { strict_type => 1, store => \$program_info_path, },
         program_name => {
             required    => 1,
             defined     => 1,
@@ -321,7 +322,7 @@ sub analysis_mip_vcfparser {
         if ( $active_parameter_href->{vcfparser_select_file} ) {
 
             if (
-                !check_entry_hash_of_array(
+                !_check_entry_hash_of_array(
                     {
                         element  => $contig,
                         hash_ref => $file_info_href,
@@ -575,8 +576,8 @@ sub analysis_mip_vcfparser_rio {
         },
         call_type =>
           { default => q{BOTH}, strict_type => 1, store => \$call_type, },
-        FILEHANDLE     => { store => \$FILEHANDLE, },
-        family_id => {
+        FILEHANDLE => { store => \$FILEHANDLE, },
+        family_id  => {
             default     => $arg_href->{active_parameter_href}{family_id},
             strict_type => 1,
             store       => \$family_id,
@@ -634,7 +635,7 @@ sub analysis_mip_vcfparser_rio {
             store       => \$parameter_href,
         },
         program_info_path => { strict_type => 1, store => \$program_info_path },
-        program_name => {
+        program_name      => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
@@ -772,7 +773,7 @@ sub analysis_mip_vcfparser_rio {
         if ( $active_parameter_href->{vcfparser_select_file} ) {
 
             if (
-                !check_entry_hash_of_array(
+                !_check_entry_hash_of_array(
                     {
                         element  => $contig,
                         hash_ref => $file_info_href,
@@ -914,6 +915,48 @@ sub analysis_mip_vcfparser_rio {
 
     # Track the number of created xargs scripts per module for Block algorithm
     return $xargs_file_counter;
+}
+
+sub _check_entry_hash_of_array {
+
+## Function : Test element for being part of hash of array at supplied key.
+## Returns  : Return "1" if element is not part of array
+
+##Arguments: $element  => Element to look for in hash of array
+##         : $hash_ref => Hash {REF}
+##         : $key      => The key pointing to the array in the $hash_ref
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $hash_ref;
+    my $key;
+    my $element;
+
+    my $tmpl = {
+        hash_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$hash_ref
+        },
+        key =>
+          { required => 1, defined => 1, strict_type => 1, store => \$key },
+        element =>
+          { required => 1, defined => 1, strict_type => 1, store => \$element },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    # Information on entry present
+    if ( defined ${ $hash_ref{$key} } ) {
+
+        # If element is not part of array
+        if ( !( any { $_ eq $element } @{ $hash_ref->{$key} } ) ) {
+            return 1;
+        }
+    }
 }
 
 1;
