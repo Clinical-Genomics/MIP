@@ -38,8 +38,8 @@ Readonly my $UNDERSCORE => q{_};
 
 sub analysis_snpeff {
 
-## Function : snpeff annotates variants from different sources.
-## Returns  : |$xargs_file_counter
+## Function : Snpeff annotates variants from different sources.
+## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $call_type               => Variant call type
 ##          : $family_id               => Family id
@@ -184,6 +184,9 @@ sub analysis_snpeff {
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Set::File qw{ set_file_suffix };
 
+    Readonly my $VCFPARSER_OUTFILE_COUNT =>
+      $active_parameter_href->{vcfparser_outfile_count} - 1;
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
@@ -200,6 +203,9 @@ sub analysis_snpeff {
             mip_program_name      => $mip_program_name,
         }
     );
+
+    my $config_file_path =
+      catfile( $active_parameter_href->{snpeff_path}, q{snpEff.config} );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -250,7 +256,6 @@ sub analysis_snpeff {
 
     ### Assign suffix
     ## Return the current infile vcf compression suffix for this jobid chain
-
     my $infile_suffix = get_file_suffix(
         {
             jobid_chain    => $job_id_chain,
@@ -273,13 +278,9 @@ sub analysis_snpeff {
     # Set default
     my $vcfparser_contigs_ref = \@{ $file_info_href->{contigs_size_ordered} };
 
-    for (
-        my $vcfparser_outfile_counter = 0 ;
-        $vcfparser_outfile_counter <
-        $active_parameter_href->{vcfparser_outfile_count} ;
-        $vcfparser_outfile_counter++
-      )
-    {
+    ## Determined by vcfparser output
+  VCFPARSER_OUTFILE:
+    for my $vcfparser_outfile_counter ( 0 .. $VCFPARSER_OUTFILE_COUNT ) {
 
         if ( $vcfparser_outfile_counter == 1 ) {
 
@@ -317,6 +318,9 @@ sub analysis_snpeff {
         my $annotation_file_counter = 0;
         my $xargs_file_path_prefix;
 
+        my $java_snpeff_jar =
+          catfile( $active_parameter_href->{snpeff_path}, q{snpEff.jar} );
+
         # Annotate using snpeff
         if ( $active_parameter_href->{snpeff_ann} == 1 ) {
             ## Create file commands for xargs
@@ -326,10 +330,7 @@ sub analysis_snpeff {
                     first_command => q{java},
                     FILEHANDLE    => $FILEHANDLE,
                     file_path     => $file_path,
-                    java_jar      => catfile(
-                        $active_parameter_href->{snpeff_path},
-                        q{snpEff.jar}
-                    ),
+                    java_jar      => $java_snpeff_jar,
                     java_use_large_pages =>
                       $active_parameter_href->{java_use_large_pages},
                     memory_allocation  => q{Xmx4g -XX:-UseConcMarkSweepGC},
@@ -340,36 +341,33 @@ sub analysis_snpeff {
                 }
             );
 
+          CONTIG:
             foreach my $contig ( @{$vcfparser_contigs_ref} ) {
+
+                my $snpeff_file_path_prefix =
+                    $file_path_prefix
+                  . $UNDERSCORE
+                  . $contig
+                  . $vcfparser_analysis_type;
 
                 snpeff_ann(
                     {
-                        config_file_path => catfile(
-                            $active_parameter_href->{snpeff_path},
-                            q{snpEff.config}
-                        ),
-                        FILEHANDLE => $XARGSFILEHANDLE,
+                        config_file_path => $config_file_path,
+                        FILEHANDLE       => $XARGSFILEHANDLE,
                         genome_build_version =>
                           $active_parameter_href->{snpeff_genome_build_version},
-                        infile_path => $file_path_prefix
-                          . $UNDERSCORE
-                          . $contig
-                          . $vcfparser_analysis_type
+                        infile_path => $snpeff_file_path_prefix
                           . $infile_suffix,
                         stderrfile_path => $xargs_file_path_prefix
                           . $UNDERSCORE
                           . $contig
                           . $DOT
                           . q{stderr.txt},
-                        stdoutfile_path => $file_path_prefix
-                          . $UNDERSCORE
-                          . $contig
-                          . $vcfparser_analysis_type
+                        stdoutfile_path => $snpeff_file_path_prefix
                           . $infile_suffix
                           . $DOT
                           . $xargs_file_counter,
                         verbosity => q{v},
-
                     }
                 );
                 say {$XARGSFILEHANDLE} $NEWLINE;
@@ -377,6 +375,7 @@ sub analysis_snpeff {
             $annotation_file_counter = $xargs_file_counter;
         }
 
+      ANNOTATION:
         while ( my ( $annotation_file, $annotation_info_key ) =
             each %{ $active_parameter_href->{snpsift_annotation_files} } )
         {
@@ -408,10 +407,10 @@ sub analysis_snpeff {
 
                 ## Apply specific INFO field output key for easier downstream processing
                 if (
-                    defined(
-                        $active_parameter_href->{snpsift_annotation_outinfo_key}
-                          {$annotation_file}
-                    )
+                    defined
+                    $active_parameter_href->{snpsift_annotation_outinfo_key}
+                    {$annotation_file}
+
                   )
                 {
 
@@ -419,16 +418,19 @@ sub analysis_snpeff {
                       $active_parameter_href->{snpsift_annotation_outinfo_key}
                       {$annotation_file};
                 }
-                $info_key = $annotation_info_key;    #Database
+
+                # Database
+                $info_key = $annotation_info_key;
             }
 
+          CONTIG:
             foreach my $contig ( @{$vcfparser_contigs_ref} ) {
 
                 ## Get contig specific parameters
                 my $infile_path;
 
                 # First file per contig
-                if ( !$annotation_file_counter ) {
+                if ( not $annotation_file_counter ) {
 
                     $infile_path =
                         $file_path_prefix
@@ -451,21 +453,13 @@ sub analysis_snpeff {
                 }
                 snpsift_annotate(
                     {
-                        config_file_path => catfile(
-                            $active_parameter_href->{snpeff_path},
-                            q{snpEff.config}
-                        ),
-                        database_path   => $annotation_file,
-                        FILEHANDLE      => $XARGSFILEHANDLE,
-                        infile_path     => $infile_path,
-                        info            => $info_key,
-                        name_prefix     => $name_prefix,
-                        stderrfile_path => $xargs_file_path_prefix
-                          . $DOT
-                          . $contig
-                          . $DOT
-                          . q{stderr.txt},
-                        stderrfile_path_append => $xargs_file_path_prefix
+                        config_file_path => $config_file_path,
+                        database_path    => $annotation_file,
+                        FILEHANDLE       => $XARGSFILEHANDLE,
+                        infile_path      => $infile_path,
+                        info             => $info_key,
+                        name_prefix      => $name_prefix,
+                        stderrfile_path  => $xargs_file_path_prefix
                           . $DOT
                           . $contig
                           . $DOT
@@ -516,6 +510,7 @@ sub analysis_snpeff {
 
             my $annotation_infile_number = $xargs_file_counter - 1;
 
+          CONTIG:
             foreach my $contig ( @{$vcfparser_contigs_ref} ) {
 
                 snpsift_dbnsfp(
@@ -523,10 +518,7 @@ sub analysis_snpeff {
                         annotate_fields_ref => \@{
                             $active_parameter_href->{snpsift_dbnsfp_annotations}
                         },
-                        config_file_path => catfile(
-                            $active_parameter_href->{snpeff_path},
-                            q{snpEff.config}
-                        ),
+                        config_file_path => $config_file_path,
                         database_path =>
                           $active_parameter_href->{snpsift_dbnsfp_file},
                         FILEHANDLE  => $XARGSFILEHANDLE,
@@ -538,11 +530,6 @@ sub analysis_snpeff {
                           . $DOT
                           . $annotation_infile_number,
                         stderrfile_path => $xargs_file_path_prefix
-                          . $DOT
-                          . $contig
-                          . $DOT
-                          . q{stderr.txt},
-                        stderrfile_path_append => $xargs_file_path_prefix
                           . $DOT
                           . $contig
                           . $DOT
@@ -580,6 +567,7 @@ sub analysis_snpeff {
 
         my $annotation_infile_number = $xargs_file_counter - 1;
 
+      CONTIG:
         foreach my $contig ( @{$vcfparser_contigs_ref} ) {
 
             mip_vcfparser(
@@ -593,12 +581,6 @@ sub analysis_snpeff {
                       . $DOT
                       . $annotation_infile_number,
                     stderrfile_path => $xargs_file_path_prefix
-                      . $DOT
-                      . $contig
-                      . $DOT
-                      . q{stderr.txt}
-                      . $SPACE,
-                    stderrfile_path_append => $xargs_file_path_prefix
                       . $DOT
                       . $contig
                       . $DOT
@@ -646,33 +628,30 @@ sub analysis_snpeff {
           . $outfile_suffix;
         add_program_outfile_to_sample_info(
             {
-                sample_info_href => $sample_info_href,
+                path => catfile( $outfamily_directory, $qc_snpeff_outfile ),
                 program_name     => $program_name,
-                outdirectory     => $outfamily_directory,
-                outfile          => $qc_snpeff_outfile,
+                sample_info_href => $sample_info_href,
             }
         );
 
         slurm_submit_job_sample_id_dependency_add_to_family(
             {
-                job_id_href             => $job_id_href,
+                family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                log                     => $log,
+                path                    => $job_id_chain,
                 sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                family_id        => $family_id,
-                path             => $job_id_chain,
-                log              => $log,
                 sbatch_file_name => $file_path,
             }
         );
-
     }
-
     return;
 }
 
 sub analysis_snpeff_rio {
 
-## Function : snpeff annotates variants from different sources.
+## Function : Snpeff annotates variants from different sources.
 ## Returns  : |$xargs_file_counter
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $call_type               => Variant call type
@@ -729,7 +708,7 @@ sub analysis_snpeff_rio {
             strict_type => 1,
             store       => \$family_id,
         },
-        FILEHANDLE  => { required => 1, store => \$FILEHANDLE },
+        FILEHANDLE     => { required => 1, store => \$FILEHANDLE },
         file_info_href => {
             required    => 1,
             defined     => 1,
@@ -821,6 +800,9 @@ sub analysis_snpeff_rio {
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Set::File qw{ set_file_suffix };
 
+    Readonly my $VCFPARSER_OUTFILE_COUNT =>
+      $active_parameter_href->{vcfparser_outfile_count} - 1;
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
@@ -837,6 +819,9 @@ sub analysis_snpeff_rio {
             mip_program_name      => $mip_program_name,
         }
     );
+
+    my $config_file_path =
+      catfile( $active_parameter_href->{snpeff_path}, q{snpEff.config} );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -869,7 +854,6 @@ sub analysis_snpeff_rio {
 
     ### Assign suffix
     ## Return the current infile vcf compression suffix for this jobid chain
-
     my $infile_suffix = get_file_suffix(
         {
             jobid_chain    => $job_id_chain,
@@ -892,13 +876,9 @@ sub analysis_snpeff_rio {
     # Set default
     my $vcfparser_contigs_ref = \@{ $file_info_href->{contigs_size_ordered} };
 
-    for (
-        my $vcfparser_outfile_counter = 0 ;
-        $vcfparser_outfile_counter <
-        $active_parameter_href->{vcfparser_outfile_count} ;
-        $vcfparser_outfile_counter++
-      )
-    {
+    ## Determined by vcfparser output
+  VCFPARSER_OUTFILE:
+    for my $vcfparser_outfile_counter ( 0 .. $VCFPARSER_OUTFILE_COUNT ) {
 
         if ( $vcfparser_outfile_counter == 1 ) {
 
@@ -916,6 +896,9 @@ sub analysis_snpeff_rio {
         my $annotation_file_counter = 0;
         my $xargs_file_path_prefix;
 
+        my $java_snpeff_jar =
+          catfile( $active_parameter_href->{snpeff_path}, q{snpEff.jar} );
+
         # Annotate using snpeff
         if ( $active_parameter_href->{snpeff_ann} == 1 ) {
             ## Create file commands for xargs
@@ -925,10 +908,7 @@ sub analysis_snpeff_rio {
                     first_command => q{java},
                     FILEHANDLE    => $FILEHANDLE,
                     file_path     => $file_path,
-                    java_jar      => catfile(
-                        $active_parameter_href->{snpeff_path},
-                        q{snpEff.jar}
-                    ),
+                    java_jar      => $java_snpeff_jar,
                     java_use_large_pages =>
                       $active_parameter_href->{java_use_large_pages},
                     memory_allocation  => q{Xmx4g -XX:-UseConcMarkSweepGC},
@@ -939,36 +919,33 @@ sub analysis_snpeff_rio {
                 }
             );
 
+          CONTIG:
             foreach my $contig ( @{$vcfparser_contigs_ref} ) {
+
+                my $snpeff_file_path_prefix =
+                    $file_path_prefix
+                  . $UNDERSCORE
+                  . $contig
+                  . $vcfparser_analysis_type;
 
                 snpeff_ann(
                     {
-                        config_file_path => catfile(
-                            $active_parameter_href->{snpeff_path},
-                            q{snpEff.config}
-                        ),
-                        FILEHANDLE => $XARGSFILEHANDLE,
+                        config_file_path => $config_file_path,
+                        FILEHANDLE       => $XARGSFILEHANDLE,
                         genome_build_version =>
                           $active_parameter_href->{snpeff_genome_build_version},
-                        infile_path => $file_path_prefix
-                          . $UNDERSCORE
-                          . $contig
-                          . $vcfparser_analysis_type
+                        infile_path => $snpeff_file_path_prefix
                           . $infile_suffix,
                         stderrfile_path => $xargs_file_path_prefix
                           . $UNDERSCORE
                           . $contig
                           . $DOT
                           . q{stderr.txt},
-                        stdoutfile_path => $file_path_prefix
-                          . $UNDERSCORE
-                          . $contig
-                          . $vcfparser_analysis_type
+                        stdoutfile_path => $snpeff_file_path_prefix
                           . $infile_suffix
                           . $DOT
                           . $xargs_file_counter,
                         verbosity => q{v},
-
                     }
                 );
                 say {$XARGSFILEHANDLE} $NEWLINE;
@@ -976,6 +953,7 @@ sub analysis_snpeff_rio {
             $annotation_file_counter = $xargs_file_counter;
         }
 
+      ANNOTATION:
         while ( my ( $annotation_file, $annotation_info_key ) =
             each %{ $active_parameter_href->{snpsift_annotation_files} } )
         {
@@ -1007,27 +985,28 @@ sub analysis_snpeff_rio {
 
                 ## Apply specific INFO field output key for easier downstream processing
                 if (
-                    defined(
-                        $active_parameter_href->{snpsift_annotation_outinfo_key}
-                          {$annotation_file}
-                    )
-                  )
+                    defined
+                    $active_parameter_href->{snpsift_annotation_outinfo_key}
+                    {$annotation_file} )
                 {
 
                     $name_prefix =
                       $active_parameter_href->{snpsift_annotation_outinfo_key}
                       {$annotation_file};
                 }
-                $info_key = $annotation_info_key;    #Database
+
+                # Database
+                $info_key = $annotation_info_key;
             }
 
+          CONTIG:
             foreach my $contig ( @{$vcfparser_contigs_ref} ) {
 
                 ## Get contig specific parameters
                 my $infile_path;
 
                 # First file per contig
-                if ( !$annotation_file_counter ) {
+                if ( not $annotation_file_counter ) {
 
                     $infile_path =
                         $file_path_prefix
@@ -1050,21 +1029,13 @@ sub analysis_snpeff_rio {
                 }
                 snpsift_annotate(
                     {
-                        config_file_path => catfile(
-                            $active_parameter_href->{snpeff_path},
-                            q{snpEff.config}
-                        ),
-                        database_path   => $annotation_file,
-                        FILEHANDLE      => $XARGSFILEHANDLE,
-                        infile_path     => $infile_path,
-                        info            => $info_key,
-                        name_prefix     => $name_prefix,
-                        stderrfile_path => $xargs_file_path_prefix
-                          . $DOT
-                          . $contig
-                          . $DOT
-                          . q{stderr.txt},
-                        stderrfile_path_append => $xargs_file_path_prefix
+                        config_file_path => $config_file_path,
+                        database_path    => $annotation_file,
+                        FILEHANDLE       => $XARGSFILEHANDLE,
+                        infile_path      => $infile_path,
+                        info             => $info_key,
+                        name_prefix      => $name_prefix,
+                        stderrfile_path  => $xargs_file_path_prefix
                           . $DOT
                           . $contig
                           . $DOT
@@ -1115,6 +1086,7 @@ sub analysis_snpeff_rio {
 
             my $annotation_infile_number = $xargs_file_counter - 1;
 
+          CONTIG:
             foreach my $contig ( @{$vcfparser_contigs_ref} ) {
 
                 snpsift_dbnsfp(
@@ -1122,10 +1094,7 @@ sub analysis_snpeff_rio {
                         annotate_fields_ref => \@{
                             $active_parameter_href->{snpsift_dbnsfp_annotations}
                         },
-                        config_file_path => catfile(
-                            $active_parameter_href->{snpeff_path},
-                            q{snpEff.config}
-                        ),
+                        config_file_path => $config_file_path,
                         database_path =>
                           $active_parameter_href->{snpsift_dbnsfp_file},
                         FILEHANDLE  => $XARGSFILEHANDLE,
@@ -1137,11 +1106,6 @@ sub analysis_snpeff_rio {
                           . $DOT
                           . $annotation_infile_number,
                         stderrfile_path => $xargs_file_path_prefix
-                          . $DOT
-                          . $contig
-                          . $DOT
-                          . q{stderr.txt},
-                        stderrfile_path_append => $xargs_file_path_prefix
                           . $DOT
                           . $contig
                           . $DOT
@@ -1197,12 +1161,6 @@ sub analysis_snpeff_rio {
                       . $DOT
                       . q{stderr.txt}
                       . $SPACE,
-                    stderrfile_path_append => $xargs_file_path_prefix
-                      . $DOT
-                      . $contig
-                      . $DOT
-                      . q{stderr.txt}
-                      . $SPACE,
                     stdoutfile_path => $outfile_path_prefix
                       . $UNDERSCORE
                       . $contig
@@ -1240,10 +1198,7 @@ sub analysis_snpeff_rio {
           . $outfile_suffix;
         add_program_outfile_to_sample_info(
             {
-                sample_info_href => $sample_info_href,
-                program_name     => $program_name,
-                outdirectory     => $outfamily_directory,
-                outfile          => $qc_snpeff_outfile,
+                path => catfile( $outfamily_directory, $qc_snpeff_outfile ),
                 program_name     => $program_name,
                 sample_info_href => $sample_info_href,
             }
