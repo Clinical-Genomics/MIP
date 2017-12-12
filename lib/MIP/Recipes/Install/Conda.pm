@@ -511,7 +511,7 @@ sub finish_bioconda_package_install {
     use MIP::Gnu::Coreutils qw{ gnu_cp gnu_chmod gnu_rm };
     use MIP::Package_manager::Conda
       qw{ conda_source_activate conda_source_deactivate };
-    use MIP::Program::Variantcalling::SnpEff qw{ snpeff_download };
+    use MIP::Program::Variantcalling::Snpeff qw{ snpeff_download };
     use MIP::Recipes::Install::Gatk qw{ gatk_download };
     use MIP::Recipes::Install::SnpEff qw{ check_mt_codon_table };
 
