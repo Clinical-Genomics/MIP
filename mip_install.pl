@@ -67,7 +67,7 @@ Readonly my $UNDERSCORE => q{_};
 my $config_file = catfile( $Bin, qw{ definitions install_parameters.yaml} );
 my %parameter = load_yaml( { yaml_file => $config_file } );
 
-our $VERSION = q{1.2.27};
+our $VERSION = q{1.2.28};
 
 GetOptions(
     q{see|bash_set_errexit}    => \$parameter{bash_set_errexit},
@@ -315,8 +315,12 @@ if ( $parameter{reference_dir} ) {
 ## Add final message to FILEHANDLE
 display_final_message(
     {
-        FILEHANDLE         => $FILEHANDLE,
-        select_program_ref => $parameter{select_program},
+        bioconda_programs_href => $parameter{bioconda},
+        conda_env_name         => $parameter{conda_environment},
+        conda_programs_href    => $parameter{conda_packages},
+        FILEHANDLE             => $FILEHANDLE,
+        pip_programs_href      => $parameter{pip},
+        shell_programs_ref     => $parameter{shell_programs_to_install},
     }
 );
 
@@ -569,10 +573,25 @@ sub get_programs_for_installation {
             delete $parameter_href->{pip}{$program};
         }
     }
-    ## Exclude CNVnator from installation unless explicitly included
-    if ( not any { $_ eq q{cnvnator} } @{ $parameter_href->{select_program} } )
-    {
-        delete $parameter_href->{shell}{cnvnator};
+
+    ## Some programs have conflicting dependencies and require seperate environments to function properly
+    ## These are excluded from installation unless specified with the select_program flag
+    my @conflicting_programs = qw{ cnvnator peddy };
+  CONFLICTING_PROGRAM:
+    foreach my $conflicting_program (@conflicting_programs) {
+        if (
+            not any { $_ eq $conflicting_program }
+            @{ $parameter_href->{select_program} }
+          )
+        {
+            delete $parameter_href->{shell}{$conflicting_program};
+            delete $parameter_href->{bioconda}{$conflicting_program};
+        }
+    }
+
+    ## Assure a gcc version of 4.8 in the case of a cnvnator installation
+    if ( any { $_ eq q{cnvnator} } @{ $parameter_href->{select_program} } ) {
+        $parameter_href->{conda_packages}{gcc} = q{4.8};
     }
 
     ## Exclude Chanjo, Genmod and Variant_integrity unless a python 3 env has been specified
@@ -615,7 +634,7 @@ sub _assure_python_3_compability {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $log;
+    my $sub_log;
     my $python_version;
     my $select_program_ref;
 
@@ -623,17 +642,17 @@ sub _assure_python_3_compability {
         log => {
             required => 1,
             defined  => 1,
-            store    => \$log,
+            store    => \$sub_log,
         },
         python_version => {
             required => 1,
             defined  => 1,
-            allow    =>  qr/
+            allow    => qr{ 
                          ^( 2 | 3 )    # Assert that the python major version starts with 2 or 3
                          \.            # Major version separator
-                         ( \d+$        # Assert that the minor version is a digit
-                         | \d+\.\d+$ ) # Case when minor and patch version has been supplied, allow only digits
-                         /xms,
+                         ( \d+$        # Assert that the minor version is a digit 
+                         | \d+\.\d+$ ) # Case when minor and patch version has been supplied, allow only digits 
+                         }xms,
             store => \$python_version,
         },
         select_program_ref => {
@@ -646,8 +665,7 @@ sub _assure_python_3_compability {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     if (
-        $python_version =~
-          m/
+        $python_version =~ m/ 
           3\.\d+ |    # Python 3 release with minor version eg 3.6
           3\.\d+\.\d+ # Python 3 release with minor and patch e.g. 3.6.2
           /xms
@@ -655,7 +673,7 @@ sub _assure_python_3_compability {
         @{$select_program_ref}
       )
     {
-        $log->fatal(
+        $sub_log->fatal(
 q{A python 3 env has been specified. Please use a python 2 environment for all programs except Chanjo and Genmod and Variant_integrity}
         );
         exit 1;
@@ -673,14 +691,14 @@ sub _assure_python_2_compability {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $log;
+    my $sub_log;
     my $parameter_href;
 
     my $tmpl = {
         log => {
             required => 1,
             defined  => 1,
-            store    => \$log,
+            store    => \$sub_log,
         },
         parameter_href => {
             required    => 1,
@@ -710,7 +728,7 @@ sub _assure_python_2_compability {
             @{ $parameter_href->{select_program} }
           )
         {
-            $log->fatal(
+            $sub_log->fatal(
 q{Please specify a python 3 environment for Chanjo, Genmod and Variant_integrity}
             );
             exit 1;
@@ -819,50 +837,85 @@ sub display_final_message {
 
 ## Function : Displays a final message to the user at the end of the installation process
 ## Returns  :
-## Arguments: $FILEHANDLE         => Filehandle to write to
-##          : $select_program_ref => Array with programs that has been selected for installation {REF}
+## Arguments: $bioconda_programs_href => Hash with bioconda programs {REF}
+##          : $conda_env_name         => Name of conda environment
+##          : $conda_programs_href    => Hash with conda programs {REF}
+##          : pip_programs_href       => Hash with pip programs {REF}
+##          : shell_programs_ref      => Array with shell programs {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $select_program_ref;
+    my $bioconda_programs_href;
+    my $conda_env_name;
+    my $conda_programs_href;
+    my $pip_programs_href;
+    my $shell_programs_ref;
 
     my $tmpl = {
+        bioconda_programs_href => {
+            default => {},
+            store   => \$bioconda_programs_href,
+        },
+        conda_env_name => {
+            store => \$conda_env_name,
+        },
+        conda_programs_href => {
+            default => {},
+            store   => \$conda_programs_href,
+        },
+        pip_programs_href => {
+            default => {},
+            store   => \$pip_programs_href,
+        },
         FILEHANDLE => {
             required => 1,
             store    => \$FILEHANDLE,
         },
-        select_program_ref => {
+        shell_programs_ref => {
             default => [],
-            store   => \$select_program_ref,
+            store   => \$shell_programs_ref,
         },
-
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+    use Array::Utils qw{ unique };
+
+    ## Get the programs that mip has tried to install
+    my @programs_to_install = unique(
+        keys %{$bioconda_programs_href},
+        keys %{$conda_programs_href},
+        keys %{$pip_programs_href},
+        @{$shell_programs_ref},
+    );
+
+    ## Set conda env variable to Root if no conda environment was specified
+    if ( not $conda_env_name ) {
+        $conda_env_name = q{Root environment};
+    }
 
     say $FILEHANDLE
 q{echo -e '\n##############################################################\n'};
-    if ( any { $_ eq q{cnvnator} } @{$select_program_ref} ) {
+    if ( any { $_ eq q{cnvnator} } @programs_to_install ) {
         say $FILEHANDLE
-q{echo -e '\tCNVnator has been installed in the specified conda environment'};
+q{echo -e "\tMIP's installation script has attempted to install CNVnator"};
+        say $FILEHANDLE q{echo -e "\tin the specified conda environment: }
+          . $conda_env_name . q{\n"};
         say $FILEHANDLE
-          q{echo -e '\tPlease exit the current session before continuing'};
-    }
-    elsif (
-        any { $_ =~ / chanjo | genmod | variant_integrity /xms }
-        @{$select_program_ref}
-      )
-    {
-        say $FILEHANDLE q{echo -e "\tMIP's python 3 tools has been installed"};
+          q{echo -e "\tPlease exit the current session before continuing"};
     }
     else {
+        say $FILEHANDLE q{echo -e "\tMIP's installation script has finished\n"};
         say $FILEHANDLE
-          q{echo -e '\tMIP and its dependencies has been installed'};
-        say $FILEHANDLE q{echo -e '\tin the specified conda environment'};
+          q{echo -e "\tMIP has attempted to install the following programs"};
+        say $FILEHANDLE q{echo -e "\tin the specified conda environment: }
+          . $conda_env_name . q{\n"};
+
+        foreach my $program_to_install ( sort @programs_to_install ) {
+            say $FILEHANDLE q{echo -e "\t"} . $program_to_install;
+        }
     }
     say $FILEHANDLE
 q{echo -e '\n##############################################################\n'};
-
     return;
 }

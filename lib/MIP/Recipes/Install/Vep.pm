@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vep };
@@ -96,16 +96,17 @@ sub install_vep {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Modules
+    use MIP::Check::Installation qw{ check_existing_installation };
     use MIP::Gnu::Bash qw(gnu_cd);
-    use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_mv gnu_rm };
+    use MIP::Gnu::Coreutils qw{ gnu_ln gnu_mkdir gnu_mv gnu_rm };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
     use MIP::Package_manager::Conda
       qw{ conda_source_activate conda_source_deactivate };
     use MIP::Program::Compression::Tar qw{ tar };
     use MIP::Program::Download::Wget qw{ wget };
-
     use MIP::Program::Variantcalling::Vep
       qw{ variant_effect_predictor_install };
+    use MIP::Recipes::Install::Conda qw{ get_conda_dir_path };
     use MIP::Versionmanager::Git qw{ git_checkout git_clone };
 
     ## Unpack parameters
@@ -136,49 +137,28 @@ sub install_vep {
     ## Store original working directory
     my $pwd = cwd();
 
-    my $miniconda_bin_dir = catdir( $conda_prefix_path, q{ensembl-vep} );
-
-    ## Check for existing vep installation
-    if ( -d $miniconda_bin_dir ) {
-
-        $log->info(
-q{Varianteffectpredictor is already installed in the specified conda environment: }
-              . $conda_environment );
-
-        if ($noupdate) {
-
-            $log->info(
-q{Skipping writting installation instructions for varianteffectpredictor}
-            );
-            return;
-        }
-        else {
-
-            $log->warn(
-q{This will overwrite the current varianteffectpredictor installation}
-            );
-
-            ## Removing varianteffectpredictor
-            say {$FILEHANDLE}
-              q{## Removing old varianteffectpredictor directory};
-            gnu_rm(
-                {
-                    infile_path => $miniconda_bin_dir,
-                    force       => 1,
-                    recursive   => 1,
-                    FILEHANDLE  => $FILEHANDLE,
-                }
-            );
-            say {$FILEHANDLE} $NEWLINE;
-        }
-    }
-    else {
-
-        $log->info(q{Writting install instructions for varianteffectpredictor});
-    }
-
     ## Install VEP
     say {$FILEHANDLE} q{### Install varianteffectpredictor};
+
+    ## Check if installation exists and remove directory unless a noupdate flag is provided
+    my $vep_dir_path = catdir( $conda_prefix_path, q{ensembl-vep} );
+    my $install_check = check_existing_installation(
+        {
+            conda_environment      => $conda_environment,
+            conda_prefix_path      => $conda_prefix_path,
+            FILEHANDLE             => $FILEHANDLE,
+            log                    => $log,
+            noupdate               => $noupdate,
+            program_directory_path => $vep_dir_path,
+            program_name           => q{VEP},
+        }
+    );
+
+    # Return if the directory is found and a noupdate flag has been provided
+    if ($install_check) {
+        say {$FILEHANDLE} $NEWLINE;
+        return;
+    }
 
     ## Only activate conda environment if supplied by user
     if ($conda_environment) {
@@ -194,12 +174,23 @@ q{This will overwrite the current varianteffectpredictor installation}
         say {$FILEHANDLE} $NEWLINE;
     }
 
+    ## Set LD_LIBRARY_PATH for VEP isntallation
+    my $conda_dir_path = get_conda_dir_path(
+        {
+            log => $log
+        }
+    );
+    say $FILEHANDLE q{LD_LIBRARY_PATH=}
+      . $conda_dir_path
+      . q{/lib/:$LD_LIBRARY_PATH};
+    say $FILEHANDLE q{export LD_LIBRARY_PATH} . $NEWLINE;
+
     ## Make sure that the cache directory exists
     gnu_mkdir(
         {
+            FILEHANDLE       => $FILEHANDLE,
             indirectory_path => $cache_directory,
             parents          => 1,
-            FILEHANDLE       => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -217,8 +208,8 @@ q{This will overwrite the current varianteffectpredictor installation}
     say {$FILEHANDLE} q{## Git clone VEP};
     git_clone(
         {
-            url        => q{https://github.com/Ensembl/ensembl-vep.git},
             FILEHANDLE => $FILEHANDLE,
+            url        => q{https://github.com/Ensembl/ensembl-vep.git},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -247,12 +238,12 @@ q{This will overwrite the current varianteffectpredictor installation}
 
     variant_effect_predictor_install(
         {
-            plugins_ref     => \@plugins,
-            species_ref     => [qw{ homo_sapiens }],
+            assembly        => $assemblies[0],
             auto            => $auto,
             cache_directory => $cache_directory,
-            assembly        => $assemblies[0],
             FILEHANDLE      => $FILEHANDLE,
+            plugins_ref     => \@plugins,
+            species_ref     => [qw{ homo_sapiens }],
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -274,11 +265,11 @@ q{This will overwrite the current varianteffectpredictor installation}
 
             variant_effect_predictor_install(
                 {
-                    species_ref     => [qw{ homo_sapiens }],
+                    assembly        => $assemblies[$assembly_version],
                     auto            => q{cf},
                     cache_directory => $cache_directory,
-                    assembly        => $assemblies[$assembly_version],
                     FILEHANDLE      => $FILEHANDLE,
+                    species_ref     => [qw{ homo_sapiens }],
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
@@ -296,11 +287,11 @@ q{This will overwrite the current varianteffectpredictor installation}
             say {$FILEHANDLE} q{## Add MaxEntScan required text file};
             wget(
                 {
-                    url =>
-q{http://genes.mit.edu/burgelab/maxent/download/fordownload.tar.gz},
                     FILEHANDLE => $FILEHANDLE,
                     quiet      => $quiet,
-                    verbose    => $verbose,
+                    url =>
+q{http://genes.mit.edu/burgelab/maxent/download/fordownload.tar.gz},
+                    verbose => $verbose,
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
@@ -309,19 +300,19 @@ q{http://genes.mit.edu/burgelab/maxent/download/fordownload.tar.gz},
             tar(
                 {
                     extract     => 1,
+                    FILEHANDLE  => $FILEHANDLE,
                     filter_gzip => 1,
                     file_path   => catfile(q{fordownload.tar.gz}),
-                    FILEHANDLE  => $FILEHANDLE,
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
 
             gnu_mv(
                 {
+                    FILEHANDLE   => $FILEHANDLE,
+                    force        => 1,
                     infile_path  => q{fordownload},
                     outfile_path => catfile( $cache_directory, ),
-                    force        => 1,
-                    FILEHANDLE   => $FILEHANDLE,
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
@@ -333,29 +324,44 @@ q{http://genes.mit.edu/burgelab/maxent/download/fordownload.tar.gz},
             say {$FILEHANDLE} q{## Add LofTool required text file};
             wget(
                 {
-                    url =>
-q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/LoFtool_scores.txt},
                     FILEHANDLE => $FILEHANDLE,
-                    quiet      => $quiet,
-                    verbose    => $verbose,
                     outfile_path =>
                       catfile( $vep_plugin_dir, q{LoFtool_scores.txt} ),
+                    quiet => $quiet,
+                    url =>
+q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/LoFtool_scores.txt},
+                    verbose => $verbose,
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
         }
     }
 
+    ## Make available from conda environment
+    say {$FILEHANDLE} q{## Make available from conda environment};
+    my $target_path = catfile( $vep_dir_path,      q{vep} );
+    my $link_path   = catfile( $conda_prefix_path, qw{ bin vep } );
+    gnu_ln(
+        {
+            FILEHANDLE  => $FILEHANDLE,
+            force       => 1,
+            link_path   => $link_path,
+            symbolic    => 1,
+            target_path => $target_path,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
     ## Clean up
     say {$FILEHANDLE} q{## Clean up};
     gnu_rm(
         {
+            FILEHANDLE  => $FILEHANDLE,
+            force       => 1,
             infile_path => catdir(
                 $conda_prefix_path,
                 q{VariantEffectPredictor-} . $vep_version . $DOT . q{zip}
             ),
-            force      => 1,
-            FILEHANDLE => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -369,6 +375,9 @@ q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/LoFtool_scores.tx
         }
     );
     say {$FILEHANDLE} $NEWLINE;
+
+    ## Unset LD_LIBRARY_PATH as to not pollute the rest of the installation
+    say {$FILEHANDLE} q{unset LD_LIBRARY_PATH} . $NEWLINE;
 
     ## Deactivate conda environment if conda_environment exists
     if ($conda_environment) {

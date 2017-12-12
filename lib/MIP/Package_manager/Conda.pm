@@ -30,59 +30,65 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ conda_create conda_source_activate conda_source_deactivate
-      conda_update conda_check_env_status conda_install conda_uninstall};
+      qw{ conda_check_env_status conda_create conda_install conda_source_activate conda_source_deactivate conda_uninstall conda_update };
 }
 
 sub conda_create {
 
 ##Function : Create Conda environment
 ##Returns  : @commands
-##Arguments: $packages_ref    => Packages to be installed
-##         : $FILEHANDLE      => Filehandle to write to
+##Arguments: $conda_channel   => Search for packages in specified conda channel
 ##         : $env_name        => Name of environment to create
-##         : $quiet           => Do not display progress bar
+##         : $FILEHANDLE      => Filehandle to write to
 ##         : $no_confirmation => Do not ask for confirmation
+##         : $packages_ref    => Packages to be installed
+##         : $quiet           => Do not display progress bar
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $conda_channel;
     my $env_name;
-    my $quiet;
+    my $FILEHANDLE;
     my $no_confirmation;
     my $packages_ref;
-    my $FILEHANDLE;
+    my $quiet;
 
     my $tmpl = {
-        packages_ref => {
-            default     => [],
+        conda_channel => {
+            defined     => 1,
             strict_type => 1,
-            store       => \$packages_ref
-        },
-        FILEHANDLE => {
-            required => 1,
-            store    => \$FILEHANDLE
+            store       => \$conda_channel
         },
         env_name => {
             default     => q{},
             strict_type => 1,
             store       => \$env_name
         },
-        quiet => {
-            default     => 1,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$quiet
+        FILEHANDLE => {
+            required => 1,
+            store    => \$FILEHANDLE
         },
         no_confirmation => {
             default     => 1,
             allow       => [ 0, 1 ],
             strict_type => 1,
             store       => \$no_confirmation
+        },
+        packages_ref => {
+            default     => [],
+            strict_type => 1,
+            store       => \$packages_ref
+        },
+        quiet => {
+            default     => 1,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$quiet
         },
     };
 
@@ -102,6 +108,10 @@ sub conda_create {
 
     if ($no_confirmation) {
         push @commands, q{--yes};
+    }
+
+    if ($conda_channel) {
+        push @commands, q{--channel} . $SPACE . $conda_channel;
     }
 
     if ( @{$packages_ref} ) {
@@ -129,18 +139,18 @@ sub conda_source_activate {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
     my $env_name;
+    my $FILEHANDLE;
 
     my $tmpl = {
-        FILEHANDLE => {
-            required => 1,
-            store    => \$FILEHANDLE
-        },
         env_name => {
             required    => 1,
             strict_type => 1,
             store       => \$env_name
+        },
+        FILEHANDLE => {
+            required => 1,
+            store    => \$FILEHANDLE
         },
     };
 
@@ -298,31 +308,24 @@ sub conda_install {
 
 ##Function : Install packages into conda environment
 ##Returns  : @commands
-##Arguments: $packages_ref    => Packages to be installed
-##         : $conda_channel   => Search for packages in specified conda channel
-##         : $FILEHANDLE      => Filehandle to write to
+##Arguments: $conda_channel   => Search for packages in specified conda channel
 ##         : $env_name        => Name of environment to create
-##         : $quiet           => Do not display progress bar
+##         : $FILEHANDLE      => Filehandle to write to
 ##         : $no_confirmation => Do not ask for confirmation
+##         : $packages_ref    => Packages to be installed
+##         : $quiet           => Do not display progress bar
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $packages_ref;
     my $conda_channel;
     my $env_name;
     my $FILEHANDLE;
-    my $quiet;
     my $no_confirmation;
+    my $packages_ref;
+    my $quiet;
 
     my $tmpl = {
-        packages_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$packages_ref
-        },
         conda_channel => {
             defined     => 1,
             strict_type => 1,
@@ -337,17 +340,24 @@ sub conda_install {
             required => 1,
             store    => \$FILEHANDLE
         },
-        quiet => {
-            default     => 1,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$quiet
-        },
         no_confirmation => {
             default     => 1,
             allow       => [ 0, 1 ],
             strict_type => 1,
             store       => \$no_confirmation
+        },
+        packages_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => [],
+            strict_type => 1,
+            store       => \$packages_ref
+        },
+        quiet => {
+            default     => 1,
+            allow       => [ undef, 0, 1 ],
+            strict_type => 1,
+            store       => \$quiet
         },
     };
 
@@ -389,31 +399,24 @@ sub conda_uninstall {
 
 ##Function : Uninstall packages from conda environment
 ##Returns  : @commands
-##Arguments: $packages_ref    => Packages to be installed
+##Arguments: $env_name        => Name of environment to create
 ##         : $FILEHANDLE      => Filehandle to write to
-##         : $env_name        => Name of environment to create
+##         : $no_confirmation => Do not ask for confirmation
+##         : $packages_ref    => Packages to be installed
 ##         : $quiet           => Do not display progress bar
 ##         : $verbose         => Verbose output
-##         : $no_confirmation => Do not ask for confirmation
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $packages_ref;
     my $env_name;
     my $FILEHANDLE;
+    my $no_confirmation;
+    my $packages_ref;
     my $quiet;
     my $verbose;
-    my $no_confirmation;
 
     my $tmpl = {
-        packages_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$packages_ref
-        },
         env_name => {
             default     => undef,
             strict_type => 1,
@@ -422,6 +425,19 @@ sub conda_uninstall {
         FILEHANDLE => {
             required => 1,
             store    => \$FILEHANDLE
+        },
+        no_confirmation => {
+            default     => 1,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$no_confirmation
+        },
+        packages_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => [],
+            strict_type => 1,
+            store       => \$packages_ref
         },
         quiet => {
             default     => 1,
@@ -434,12 +450,6 @@ sub conda_uninstall {
             allow       => [ undef, 0, 1 ],
             strict_type => 1,
             store       => \$verbose
-        },
-        no_confirmation => {
-            default     => 1,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$no_confirmation
         },
     };
 

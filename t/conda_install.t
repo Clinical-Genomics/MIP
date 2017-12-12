@@ -25,7 +25,7 @@ use MIP::Script::Utils qw{help};
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.1';
+our $VERSION = '1.0.2';
 
 ## Constants
 Readonly my $SPACE   => q{ };
@@ -112,13 +112,13 @@ my %required_argument = (
 );
 
 my %specific_argument = (
+    conda_channel => {
+        input           => q{test-channel},
+        expected_output => q{--channel test-channel},
+    },
     env_name => {
         input           => q{test_env},
         expected_output => q{--name test_env},
-    },
-    quiet => {
-        input           => 1,
-        expected_output => q{--quiet},
     },
     no_confirmation => {
         input           => 1,
@@ -127,6 +127,10 @@ my %specific_argument = (
     packages_ref => {
         inputs_ref      => [qw{ test_package_1 test_package_2}],
         expected_output => q{test_package_1 test_package_2},
+    },
+    quiet => {
+        input           => 1,
+        expected_output => q{--quiet},
     },
 );
 
