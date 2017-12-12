@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ basename dirname  };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catfile catdir };
 use FindBin qw{ $Bin };
 use Getopt::Long;
 use open qw{ :encoding(UTF-8) :std };
@@ -88,7 +88,7 @@ BEGIN {
     }
 }
 
-use MIP::Program::Variantcalling::Vardict qw{ SUB_ROUTINE };
+use MIP::Program::Variantcalling::Vardict qw{ vardict };
 use MIP::Test::Commands qw{ test_function };
 
 diag(   q{Test vardict from Vardict.pm v}
@@ -125,23 +125,25 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    referencefile_path => {
-        input           => catfile(qw{ a test reference file }),
-        expected_output => q{-G}
+    infile_paths_ref => {
+        inputs_ref      => [qw{tumor_bam normal_bam}],
+        expected_output => q{-b}
           . $SPACE
-          . catfile(qw{ a test reference file }),
+          . $DQUOTE
+          . join( $PIPE, qw{tumor_bam normal_bam} )
+          . $DQUOTE,
+    },
+    referencefile_path => {
+        input           => catfile(qw{ a_test_ref_file }),
+        expected_output => q{-G} . $SPACE . catfile(qw{ a_test_ref_file }),
     },
     af_threshold => {
         input           => q{0.01},
-        expetced_output => q{-f} . $SPACE . q{0.01},
+        expected_output => q{-f} . $SPACE . q{0.01},
     },
     sample_name => {
-        input           => q{sample_name},
-        expected_output => q{-N} . $SPACE . q{sample_name},
-    },
-    infile_path_tumor => {
-        input           => q{an_input_tumor_bam},
-        expected_output => q{an_input_tumor_bam},
+        input           => q{my_sample_name},
+        expected_output => q{-N} . $SPACE . q{my_sample_name},
     },
     out_chrom_start => {
         input           => q{1},
@@ -160,33 +162,16 @@ my %required_argument = (
         expected_output => q{-g} . $SPACE . q{4},
     },
     infile_bed_region_info => {
-        input           => catfile(qw{ an input bed }),
-        expected_output => catfile(qw{ an input bed }),
+        input           => catfile(qw{an_input_bed_file}),
+        expected_output => catfile(qw{an_input_bed_file}),
     }
 );
-
-my %specific_argument = (
-    infile_path_normal => {
-        input           => q{an_input_normal_bam},
-        expected_output => q{an_input_normal_bam},
-    }
-);
-
-my @infile_paths_ref = (
-    $required_argument{infile_path_tumor}{input},
-    $specific_argument{infile_path_tumor}{input}
-);
-
-$required_argument{infile_path_tumor}{input} =
-  $DQUOTE . join( $PIPE, @infile_paths_ref ) . $DQUOTE;
-$required_argument{infile_path_tumor}{expected_output} =
-  q{-b} . $SPACE . $DQUOTE . join( $PIPE, @infile_paths_ref ) . $DQUOTE;
 
 ## Coderef - enables generalized use of generate call
 my $module_function_cref = \&vardict;
 
 ## Test both base and function specific arguments
-my @arguments = ( \%base_argument, \%specific_argument );
+my @arguments = ( \%base_argument, \%required_argument );
 
 ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
