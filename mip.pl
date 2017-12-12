@@ -4599,7 +4599,6 @@ sub prepareforvariantannotationblock {
 
     ## Get core number depending on user supplied input exists or not and max number of cores
     my $core_number = get_core_number(
-<<<<<<< HEAD
         {
             module_core_number => $active_parameter_href->{module_core_number}
               { "p" . $program_name },
