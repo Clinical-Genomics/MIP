@@ -190,6 +190,9 @@ sub analysis_mip_vcfparser {
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Set::File qw{ set_file_suffix };
 
+    Readonly my $VCFPARSER_OUTFILE_COUNT =>
+      $active_parameter_href->{vcfparser_outfile_count} - 1;
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
@@ -306,6 +309,7 @@ sub analysis_mip_vcfparser {
         }
     );
 
+    CONTIG:
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
         ## Get parameters
@@ -333,13 +337,14 @@ sub analysis_mip_vcfparser {
                 )
               )
             {
-
+                # List of genes to analyse separately
                 $select_file =
                   catfile( $active_parameter_href->{vcfparser_select_file} )
-                  ;    #List of genes to analyse separately
+                  ;
+                # Column of HGNC Symbol in SelectFile (-sf)
                 $select_file_matching_column = $active_parameter_href
                   ->{vcfparser_select_file_matching_column}
-                  ;    #Column of HGNC Symbol in SelectFile (-sf)
+                  ;
 
                 if (
                     (
@@ -430,6 +435,8 @@ sub analysis_mip_vcfparser {
             range_file  => q{vcfparser_range_feature_file},
             select_file => q{vcfparser_select_file},
         );
+
+        GENE_PANEL:
         while ( my ( $gene_panel_key, $gene_panel_file ) = each %gene_panels ) {
 
             ## Collect databases(s) from a potentially merged gene panel file and adds them to sample_info
@@ -453,8 +460,7 @@ sub analysis_mip_vcfparser {
           . $infile_suffix;
         add_program_outfile_to_sample_info(
             {
-                outdirectory     => $outfamily_directory,
-                outfile          => $qc_vcfparser_outfile,
+                path             => catfile($outfamily_directory, $qc_vcfparser_outfile),
                 program_name     => $program_name,
                 sample_info_href => $sample_info_href,
             }
@@ -466,13 +472,9 @@ sub analysis_mip_vcfparser {
     my $vcfparser_analysis_type = $EMPTY_STR;
     my @vcfparser_contigs_ref   = \@{ $file_info_href->{contigs_size_ordered} };
 
-    for (
-        my $vcfparser_outfile_counter = 0 ;
-        $vcfparser_outfile_counter <
-        $active_parameter_href->{vcfparser_outfile_count} ;
-        $vcfparser_outfile_counter++
-      )
-    {
+    ## Determined by vcfparser output
+  VCFPARSER_OUTFILE:
+    for my $vcfparser_outfile_counter ( 0 .. $VCFPARSER_OUTFILE_COUNT ) {
 
         if ( $vcfparser_outfile_counter == 1 ) {
 
@@ -516,9 +518,7 @@ sub analysis_mip_vcfparser {
                 sbatch_file_name => $file_path,
             }
         );
-
     }
-
     return;
 }
 
@@ -757,6 +757,7 @@ sub analysis_mip_vcfparser_rio {
         }
     );
 
+    CONTIG:
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
         ## Get parameters
@@ -774,7 +775,7 @@ sub analysis_mip_vcfparser_rio {
         if ( $active_parameter_href->{vcfparser_select_file} ) {
 
             if (
-                !_check_entry_hash_of_array(
+                not _check_entry_hash_of_array(
                     {
                         element  => $contig,
                         hash_ref => $file_info_href,
@@ -785,12 +786,15 @@ sub analysis_mip_vcfparser_rio {
               )
             {
 
+                 # List of genes to analyse separately
                 $select_file =
                   catfile( $active_parameter_href->{vcfparser_select_file} )
-                  ;    #List of genes to analyse separately
+                  ;
+
+                # Column of HGNC Symbol in SelectFile (-sf)
                 $select_file_matching_column = $active_parameter_href
                   ->{vcfparser_select_file_matching_column}
-                  ;    #Column of HGNC Symbol in SelectFile (-sf)
+                  ;
 
                 if (
                     (
@@ -881,6 +885,8 @@ sub analysis_mip_vcfparser_rio {
             range_file  => q{vcfparser_range_feature_file},
             select_file => q{vcfparser_select_file},
         );
+
+        GENE_PANEL:
         while ( my ( $gene_panel_key, $gene_panel_file ) = each %gene_panels ) {
 
             ## Collect databases(s) from a potentially merged gene panel file and adds them to sample_info
@@ -904,14 +910,12 @@ sub analysis_mip_vcfparser_rio {
           . $infile_suffix;
         add_program_outfile_to_sample_info(
             {
-                outdirectory     => $outfamily_directory,
-                outfile          => $qc_vcfparser_outfile,
+                path => catfile($outfamily_directory, $qc_vcfparser_outfile),
                 program_name     => $program_name,
                 sample_info_href => $sample_info_href,
             }
         );
     }
-
     close $XARGSFILEHANDLE;
 
     # Track the number of created xargs scripts per module for Block algorithm
@@ -954,7 +958,7 @@ sub _check_entry_hash_of_array {
     if ( defined ${$hash_ref}{$key} ) {
 
         # If element is not part of array
-        if ( !( any { $_ eq $element } @{ $hash_ref->{$key} } ) ) {
+        if ( not ( any { $_ eq $element } @{ $hash_ref->{$key} } ) ) {
             return 1;
         }
     }

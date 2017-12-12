@@ -120,8 +120,10 @@ use MIP::Recipes::Analysis::Rcoverageplots qw{ analysis_rcoverageplots };
 use MIP::Recipes::Analysis::Rhocall
   qw{ analysis_rhocall_annotate analysis_rhocall_annotate_rio };
 use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
+use MIP::Recipes::Analysis::Sv_reformat qw{ analysis_sv_reformat };
 use MIP::Recipes::Analysis::Bcftools_mpileup qw { analysis_bcftools_mpileup };
 use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
+use MIP::Recipes::Analysis::Snpeff qw{ analysis_snpeff analysis_snpeff_rio };
 use MIP::Recipes::Analysis::Sv_combinevariantcallsets
   qw{ analysis_sv_combinevariantcallsets };
 use MIP::Recipes::Analysis::Tiddit qw{ analysis_tiddit };
@@ -2255,11 +2257,14 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
     }
 }
 
-if ( $active_parameter{psv_reformat} > 0 ) {   #Run sv_reformat. Done per family
+## Run sv_reformat. Done per family
+if ( $active_parameter{psv_reformat} ) {
 
-    $log->info("[SV reformat]\n");
+    $log->info(q{[SV reformat]});
 
-    sv_reformat(
+    my $program_name = lc q{sv_reformat};
+
+    analysis_sv_reformat(
         {
             parameter_href          => \%parameter,
             active_parameter_href   => \%active_parameter,
@@ -2267,7 +2272,7 @@ if ( $active_parameter{psv_reformat} > 0 ) {   #Run sv_reformat. Done per family
             file_info_href          => \%file_info,
             infile_lane_prefix_href => \%infile_lane_prefix,
             job_id_href             => \%job_id,
-            program_name            => "sv_reformat",
+            program_name            => $program_name,
         }
     );
 }
@@ -2825,20 +2830,31 @@ else {
         );
     }
 
-    if ( $active_parameter{psnpeff} > 0 ) {    #Run snpEff. Done per family
+    # Run snpEff. Done per family
+    if ( $active_parameter{psnpeff} > 0 ) {
 
-        $log->info("[Snpeff]\n");
+        $log->info(q{[Snpeff]});
+        my $program_name = q{snpeff};
 
-        snpeff(
+        my $infamily_directory = catdir(
+            $active_parameter{outdata_dir},
+            $active_parameter{family_id},
+            $active_parameter{outaligner_dir}
+        );
+        my $outfamily_directory = $infamily_directory;
+
+        analysis_snpeff(
             {
-                parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
+                call_type               => q{BOTH},
                 file_info_href          => \%file_info,
+                infamily_directory      => $infamily_directory,
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
-                call_type               => q{BOTH},
-                program_name            => "snpeff",
+                outfamily_directory     => $outfamily_directory,
+                parameter_href          => \%parameter,
+                program_name            => $program_name,
+                sample_info_href        => \%sample_info,
             }
         );
     }
@@ -3973,11 +3989,11 @@ sub removeredundantfiles {
     close $FILEHANDLE;
 }
 
-sub snpeff {
+sub mvcfparser {
 
-##snpeff
+##mvcfparser
 
-##Function : snpeff annotates variants from different sources.
+##Function : Vcfparser performs parsing of varianteffectpredictor annotated variants
 ##Returns  : "|$xargs_file_counter"
 ##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => Parameter hash {REF}
@@ -3994,6 +4010,7 @@ sub snpeff {
 ##         : $temp_directory_ref         => Temporary directory {REF}
 ##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
 ##         : $call_type                  => Variant call type
+##         : $xargs_file_counter         => The xargs file counter
 
     my ($arg_href) = @_;
 
@@ -4011,8 +4028,8 @@ sub snpeff {
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $program_name;
     my $program_info_path;
+    my $program_name;
     my $file_path;
     my $FILEHANDLE;
 
@@ -4100,9 +4117,6 @@ sub snpeff {
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use MIP::Program::Variantcalling::Snpeff qw{ snpeff_ann };
-    use MIP::Program::Variantcalling::Snpsift
-      qw(snpsift_annotate snpsift_dbnsfp);
     use MIP::Program::Variantcalling::Mip_vcfparser qw(mip_vcfparser);
     use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
@@ -4141,10 +4155,10 @@ sub snpeff {
                 program_name          => $program_name,
                 program_directory     => catfile( lc($$outaligner_dir_ref) ),
                 call_type             => $call_type,
+                temp_directory        => $$temp_directory_ref,
                 core_number           => $core_number,
                 process_time =>
                   $active_parameter_href->{module_time}{ "p" . $program_name },
-                temp_directory => $$temp_directory_ref
             }
         );
     }
@@ -4158,7 +4172,8 @@ sub snpeff {
       $outfamily_directory;    #Used downstream
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{pvcfparser}{file_tag};
+    my $infile_tag =
+      $file_info_href->{$$family_id_ref}{pvarianteffectpredictor}{file_tag};
     my $outfile_tag =
       $file_info_href->{$$family_id_ref}{ "p" . $program_name }{file_tag};
     my $infile_prefix       = $$family_id_ref . $infile_tag . $call_type;
@@ -4185,375 +4200,233 @@ sub snpeff {
         }
     );
 
-    my $vcfparser_analysis_type = "";
-    my $vcfparser_contigs_ref =
-      \@{ $file_info_href->{contigs_size_ordered} };    #Set default
+    if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
-    for (
-        my $vcfparser_outfile_counter = 0 ;
-        $vcfparser_outfile_counter <
-        $active_parameter_href->{vcfparser_outfile_count} ;
-        $vcfparser_outfile_counter++
-      )
-    {
-
-        if ( $vcfparser_outfile_counter == 1 ) {
-
-            $vcfparser_analysis_type = ".selected";     #SelectFile variants
-            $vcfparser_contigs_ref =
-              \@{ $file_info_href->{sorted_select_file_contigs} }
-              ;                                         #Selectfile contigs
-        }
-
-        if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
-
-            ## Copy file(s) to temporary directory
-            say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-            ($xargs_file_counter) = xargs_migrate_contig_files(
-                {
-                    FILEHANDLE         => $FILEHANDLE,
-                    XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                    contigs_ref        => $vcfparser_contigs_ref,
-                    file_path          => $file_path,
-                    program_info_path  => $program_info_path,
-                    core_number        => $core_number,
-                    xargs_file_counter => $xargs_file_counter,
-                    infile             => $infile_prefix,
-                    file_ending        => $vcfparser_analysis_type
-                      . $infile_suffix . "*",
-                    indirectory    => $infamily_directory,
-                    temp_directory => $$temp_directory_ref,
-                }
-            );
-        }
-
-        ## SnpSift Annotation
-        say {$FILEHANDLE} "## SnpSift Annotation";
-
-        my $annotation_file_counter = 0;
-
-        if ( $active_parameter_href->{snpeff_ann} eq 1 )
-        {    #Annotate using snpeff
-
-            ## Create file commands for xargs
-            ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
-                {
-                    FILEHANDLE         => $FILEHANDLE,
-                    XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                    file_path          => $file_path,
-                    program_info_path  => $program_info_path,
-                    core_number        => $core_number,
-                    xargs_file_counter => $xargs_file_counter,
-                    first_command      => "java",
-                    memory_allocation  => "Xmx4g -XX:-UseConcMarkSweepGC",
-                    java_use_large_pages =>
-                      $active_parameter_href->{java_use_large_pages},
-                    temp_directory => $$temp_directory_ref,
-                    java_jar       => catfile(
-                        $active_parameter_href->{snpeff_path}, "snpEff.jar"
-                    ),
-                }
-            );
-
-            foreach my $contig (@$vcfparser_contigs_ref) {
-
-                snpeff_ann(
-                    {
-                        verbosity => "v",
-                        genome_build_version =>
-                          $active_parameter_href->{snpeff_genome_build_version},
-                        config_file_path => catfile(
-                            $active_parameter_href->{snpeff_path},
-                            "snpEff.config"
-                        ),
-                        infile_path => $file_path_prefix . "_"
-                          . $contig
-                          . $vcfparser_analysis_type
-                          . $infile_suffix,
-                        stdoutfile_path => $file_path_prefix . "_"
-                          . $contig
-                          . $vcfparser_analysis_type
-                          . $infile_suffix . "."
-                          . $xargs_file_counter,
-                        stderrfile_path => $xargs_file_path_prefix . "."
-                          . $contig
-                          . ".stderr.txt",
-                        FILEHANDLE => $XARGSFILEHANDLE,
-                    }
-                );
-                say {$XARGSFILEHANDLE} "\n";
+        ## Copy file(s) to temporary directory
+        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
+        ($xargs_file_counter) = xargs_migrate_contig_files(
+            {
+                FILEHANDLE      => $FILEHANDLE,
+                XARGSFILEHANDLE => $XARGSFILEHANDLE,
+                contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
+                file_path   => $file_path,
+                program_info_path  => $program_info_path,
+                core_number        => $core_number,
+                xargs_file_counter => $xargs_file_counter,
+                infile             => $infile_prefix,
+                indirectory        => $infamily_directory,
+                temp_directory     => $$temp_directory_ref,
             }
-            $annotation_file_counter = $xargs_file_counter;
+        );
+    }
+
+    ## vcfparser
+    say {$FILEHANDLE} "## vcfparser";
+
+    ## Create file commands for xargs
+    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
+        {
+            FILEHANDLE         => $FILEHANDLE,
+            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            file_path          => $file_path,
+            program_info_path  => $program_info_path,
+            core_number        => $core_number,
+            xargs_file_counter => $xargs_file_counter,
+        }
+    );
+
+    foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
+
+        ## Get parameters
+        my $padding;
+        if ( $contig =~ /MT|M/ ) {
+
+            $padding = 10;    #Special case for mitochondrial contig annotation
         }
 
-        while ( my ( $annotation_file, $annotation_info_key ) =
-            each( %{ $active_parameter_href->{snpsift_annotation_files} } ) )
-        {
+        my @select_feature_annotation_columns;
+        my $select_file;
+        my $select_file_matching_column;
+        my $select_outfile;
+        if ( $active_parameter_href->{vcfparser_select_file} ) {
 
-            ## Create file commands for xargs
-            ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
-                {
-                    FILEHANDLE         => $FILEHANDLE,
-                    XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                    file_path          => $file_path,
-                    program_info_path  => $program_info_path,
-                    core_number        => $core_number,
-                    xargs_file_counter => $xargs_file_counter,
-                    first_command      => "java",
-                    memory_allocation  => "Xmx2g -XX:-UseConcMarkSweepGC",
-                    java_use_large_pages =>
-                      $active_parameter_href->{java_use_large_pages},
-                    temp_directory => $$temp_directory_ref,
-                    java_jar       => catfile(
-                        $active_parameter_href->{snpeff_path},
-                        "SnpSift.jar"
-                    ),
-                }
-            );
-            ## Get parameters
-            my $name_prefix;
-            my $info_key;
-            if ( defined($annotation_info_key) ) {
+            if (
+                !check_entry_hash_of_array(
+                    {
+                        hash_ref => $file_info_href,
+                        key      => "select_file_contigs",
+                        element  => $contig,
+                    }
+                )
+              )
+            {
 
-                ## Apply specific INFO field output key for easier downstream processing
+                $select_file =
+                  catfile( $active_parameter_href->{vcfparser_select_file} )
+                  ;    #List of genes to analyse separately
+                $select_file_matching_column = $active_parameter_href
+                  ->{vcfparser_select_file_matching_column}
+                  ;    #Column of HGNC Symbol in SelectFile (-sf)
+
                 if (
-                    defined(
-                        $active_parameter_href->{snpsift_annotation_outinfo_key}
-                          {$annotation_file}
+                    (
+                        $active_parameter_href
+                        ->{vcfparser_select_feature_annotation_columns}
+                    )
+                    && (
+                        @{
+                            $active_parameter_href
+                              ->{vcfparser_select_feature_annotation_columns}
+                        }
                     )
                   )
                 {
 
-                    $name_prefix =
-                      $active_parameter_href->{snpsift_annotation_outinfo_key}
-                      {$annotation_file};
+                    @select_feature_annotation_columns =
+                      @{ $active_parameter_href
+                          ->{vcfparser_select_feature_annotation_columns} };
                 }
-                $info_key = $annotation_info_key;    #Database
+                $select_outfile =
+                    $outfile_path_prefix . "_"
+                  . $contig
+                  . ".selected"
+                  . $infile_suffix;
             }
-
-            foreach my $contig (@$vcfparser_contigs_ref) {
-
-                ##Get contig specific parameters
-                my $infile_path;
-                if ( !$annotation_file_counter ) {    #First file per contig
-
-                    $infile_path =
-                        $file_path_prefix . "_"
-                      . $contig
-                      . $vcfparser_analysis_type
-                      . $infile_suffix;
-                }
-                else {
-
-                    my $annotation_infile_number = $xargs_file_counter - 1;
-                    $infile_path =
-                        $file_path_prefix . "_"
-                      . $contig
-                      . $vcfparser_analysis_type
-                      . $infile_suffix . "."
-                      . $annotation_infile_number;   #Infile from previous round
-                }
-                snpsift_annotate(
-                    {
-                        verbosity       => "v",
-                        infile_path     => $infile_path,
-                        stdoutfile_path => $file_path_prefix . "_"
-                          . $contig
-                          . $vcfparser_analysis_type
-                          . $infile_suffix . "."
-                          . $xargs_file_counter,
-                        config_file_path => catfile(
-                            $active_parameter_href->{snpeff_path},
-                            "snpEff.config"
-                        ),
-                        database_path   => $annotation_file,
-                        name_prefix     => $name_prefix,
-                        info            => $info_key,
-                        stderrfile_path => $xargs_file_path_prefix . "."
-                          . $contig
-                          . ".stderr.txt",
-                        stderrfile_path_append => $xargs_file_path_prefix . "."
-                          . $contig
-                          . ".stderr.txt",
-                        FILEHANDLE => $XARGSFILEHANDLE,
-                    }
-                );
-                say {$XARGSFILEHANDLE} "\n";
-            }
-            $annotation_file_counter++;    #Increment counter
-            close $XARGSFILEHANDLE;
         }
 
-        if ( @{ $active_parameter_href->{snpsift_dbnsfp_annotations} } ) {
-
-            ## SnpSiftDbNSFP Annotation
-            say {$FILEHANDLE} "## SnpSiftDnNSFP Annotation";
-
-            ## Create file commands for xargs
-            ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
-                {
-                    FILEHANDLE         => $FILEHANDLE,
-                    XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                    file_path          => $file_path,
-                    program_info_path  => $program_info_path,
-                    core_number        => $core_number,
-                    xargs_file_counter => $xargs_file_counter,
-                    first_command      => "java",
-                    memory_allocation  => "Xmx2g -XX:-UseConcMarkSweepGC",
-                    java_use_large_pages =>
-                      $active_parameter_href->{java_use_large_pages},
-                    temp_directory => $$temp_directory_ref,
-                    java_jar       => catfile(
-                        $active_parameter_href->{snpeff_path},
-                        "SnpSift.jar"
-                    ),
-                }
-            );
-
-            my $annotation_infile_number = $xargs_file_counter - 1;
-
-            foreach my $contig (@$vcfparser_contigs_ref) {
-
-                snpsift_dbnsfp(
-                    {
-                        annotate_fields_ref => \@{
-                            $active_parameter_href->{snpsift_dbnsfp_annotations}
-                        },
-                        infile_path => $file_path_prefix . "_"
-                          . $contig
-                          . $vcfparser_analysis_type
-                          . $infile_suffix . "."
-                          . $annotation_infile_number,
-                        stdoutfile_path => $file_path_prefix . "_"
-                          . $contig
-                          . $vcfparser_analysis_type
-                          . $infile_suffix . "."
-                          . $xargs_file_counter,
-                        config_file_path => catfile(
-                            $active_parameter_href->{snpeff_path},
-                            "snpEff.config"
-                        ),
-                        database_path =>
-                          $active_parameter_href->{snpsift_dbnsfp_file},
-                        stderrfile_path => $xargs_file_path_prefix . "."
-                          . $contig
-                          . ".stderr.txt",
-                        stderrfile_path_append => $xargs_file_path_prefix . "."
-                          . $contig
-                          . ".stderr.txt",
-                        FILEHANDLE => $XARGSFILEHANDLE,
-                        verbosity  => "v",
-                    }
-                );
-                say {$XARGSFILEHANDLE} "\n";
-            }
-            close $XARGSFILEHANDLE;
-        }
-
-        ## Add INFO headers and FIX_INFO for annotations using vcfparser
-        say {$FILEHANDLE}
-          "## Add INFO headers and FIX_INFO for annotations using vcfparser";
-
-        ## Create file commands for xargs
-        ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
+        mip_vcfparser(
             {
-                FILEHANDLE         => $FILEHANDLE,
-                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                file_path          => $file_path,
-                program_info_path  => $program_info_path,
-                core_number        => $core_number,
-                xargs_file_counter => $xargs_file_counter,
+                range_feature_annotation_columns_ref => \@{
+                    $active_parameter_href
+                      ->{vcfparser_range_feature_annotation_columns}
+                },
+                select_feature_annotation_columns_ref =>
+                  \@select_feature_annotation_columns,
+                infile_path => $file_path_prefix . "_"
+                  . $contig
+                  . $infile_suffix,
+                stdoutfile_path => $outfile_path_prefix . "_"
+                  . $contig
+                  . $infile_suffix,
+                stderrfile_path => $xargs_file_path_prefix . "."
+                  . $contig
+                  . ".stderr.txt ",
+                range_feature_file_path =>
+                  $active_parameter_href->{vcfparser_range_feature_file},
+                select_feature_file_path       => $select_file,
+                select_feature_matching_column => $select_file_matching_column,
+                select_outfile                 => $select_outfile,
+                parse_vep  => $active_parameter_href->{pvarianteffectpredictor},
+                padding    => $padding,
+                FILEHANDLE => $XARGSFILEHANDLE,
             }
         );
-
-        my $annotation_infile_number = $xargs_file_counter - 1;
-
-        foreach my $contig (@$vcfparser_contigs_ref) {
-
-            mip_vcfparser(
-                {
-                    infile_path => $file_path_prefix . "_"
-                      . $contig
-                      . $vcfparser_analysis_type
-                      . $infile_suffix . "."
-                      . $annotation_infile_number,
-                    stdoutfile_path => $outfile_path_prefix . "_"
-                      . $contig
-                      . $vcfparser_analysis_type
-                      . $outfile_suffix,
-                    stderrfile_path => $xargs_file_path_prefix . "."
-                      . $contig
-                      . ".stderr.txt ",
-                    stderrfile_path_append => $xargs_file_path_prefix . "."
-                      . $contig
-                      . ".stderr.txt ",
-                    FILEHANDLE => $XARGSFILEHANDLE,
-                }
-            );
-            say {$XARGSFILEHANDLE} "\n";
-        }
-
-        if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
-
-            ## Copies file from temporary directory. Per contig
-            say {$FILEHANDLE} q{## Copy file from temporary directory};
-            ($xargs_file_counter) = xargs_migrate_contig_files(
-                {
-                    FILEHANDLE        => $FILEHANDLE,
-                    XARGSFILEHANDLE   => $XARGSFILEHANDLE,
-                    contigs_ref       => $vcfparser_contigs_ref,
-                    file_path         => $file_path,
-                    program_info_path => $program_info_path,
-                    core_number => $active_parameter_href->{max_cores_per_node},
-                    xargs_file_counter => $xargs_file_counter,
-                    outfile            => $outfile_prefix,
-                    file_ending        => $vcfparser_analysis_type
-                      . $outfile_suffix . "*",
-                    outdirectory   => $outfamily_directory,
-                    temp_directory => $$temp_directory_ref,
-                }
-            );
-        }
-        else {
-
-            ## QC Data File(s)
-            migrate_file(
-                {
-                    infile_path => $outfile_path_prefix . "_"
-                      . $file_info_href->{contigs_size_ordered}[0]
-                      . $vcfparser_analysis_type
-                      . $outfile_suffix,
-                    outfile_path => $outfamily_directory,
-                    FILEHANDLE   => $FILEHANDLE,
-                }
-            );
-            say {$FILEHANDLE} q{wait}, "\n";
-        }
+        say {$XARGSFILEHANDLE} "\n";
     }
+
+    ## QC Data File(s)
+    migrate_file(
+        {
+            infile_path => $outfile_path_prefix . q{_}
+              . $file_info_href->{contigs_size_ordered}[0]
+              . $infile_suffix,
+            outfile_path => $outfamily_directory,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} q{wait}, "\n";
 
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
+        ## Clear old vcfparser entry if present
+        if ( defined( $sample_info_href->{$program_name} ) ) {
+
+            delete( $sample_info_href->{$program_name} );
+        }
+
+        my %gene_panels = (
+            range_file  => "vcfparser_range_feature_file",
+            select_file => "vcfparser_select_file",
+        );
+        while ( my ( $gene_panel_key, $gene_panel_file ) = each(%gene_panels) )
+        {
+
+            ## Collect databases(s) from a potentially merged gene panel file and adds them to sample_info
+            collect_gene_panels(
+                {
+                    sample_info_href => $sample_info_href,
+                    family_id_ref    => $family_id_ref,
+                    program_name_ref => \$program_name,
+                    aggregate_gene_panel_file =>
+                      $active_parameter_href->{$gene_panel_file},
+                    aggregate_gene_panels_key => $gene_panel_key,
+                }
+            );
+        }
+
         ## Collect QC metadata info for later use
-        my $qc_snpeff_outfile =
+        my $qc_vcfparser_outfile =
             $outfile_prefix . q{_}
           . $file_info_href->{contigs_size_ordered}[0]
-          . $vcfparser_analysis_type
-          . $outfile_suffix;
+          . $infile_suffix;
         add_program_outfile_to_sample_info(
             {
                 sample_info_href => $sample_info_href,
                 program_name     => $program_name,
                 outdirectory     => $outfamily_directory,
-                outfile          => $qc_snpeff_outfile,
+                outfile          => $qc_vcfparser_outfile,
             }
         );
     }
 
+    close $XARGSFILEHANDLE;
+
     if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
-        close $FILEHANDLE;
+        my $vcfparser_analysis_type = "";
+        my @vcfparser_contigs_ref =
+          \@{ $file_info_href->{contigs_size_ordered} };
 
-        if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
+        for (
+            my $vcfparser_outfile_counter = 0 ;
+            $vcfparser_outfile_counter <
+            $active_parameter_href->{vcfparser_outfile_count} ;
+            $vcfparser_outfile_counter++
+          )
+        {
+
+            if ( $vcfparser_outfile_counter == 1 ) {
+
+                $vcfparser_analysis_type = ".selected";    #SelectFile variants
+                @vcfparser_contigs_ref =
+                  \@{ $file_info_href->{sorted_select_file_contigs} };
+            }
+
+            ## Copies file from temporary directory.
+            say {$FILEHANDLE} "## Copy file(s) from temporary directory";
+            ($xargs_file_counter) = xargs_migrate_contig_files(
+                {
+                    FILEHANDLE         => $FILEHANDLE,
+                    XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+                    contigs_ref        => @vcfparser_contigs_ref,
+                    file_path          => $file_path,
+                    program_info_path  => $program_info_path,
+                    core_number        => $core_number,
+                    xargs_file_counter => $xargs_file_counter,
+                    outfile            => $outfile_prefix,
+                    file_ending        => $vcfparser_analysis_type
+                      . $infile_suffix . "*",
+                    outdirectory   => $outfamily_directory,
+                    temp_directory => $$temp_directory_ref,
+                }
+            );
+        }
+        close $FILEHANDLE;
+    }
+
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
+
+        if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
             slurm_submit_job_sample_id_dependency_add_to_family(
                 {
@@ -4726,6 +4599,7 @@ sub prepareforvariantannotationblock {
 
     ## Get core number depending on user supplied input exists or not and max number of cores
     my $core_number = get_core_number(
+<<<<<<< HEAD
         {
             module_core_number => $active_parameter_href->{module_core_number}
               { "p" . $program_name },
@@ -5234,228 +5108,198 @@ sub sv_reformat {
         my $concatenate_ending = "";
         if (   ( $consensus_analysis_type eq "wgs" )
             || ( $consensus_analysis_type eq "mixed" ) )
+=======
+>>>>>>> 8df03023831861c7a7197c517e4821bf11757339
         {
-
-            $concatenate_ending = "_cat";
-
-            ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
-            gatk_concatenate_variants(
-                {
-                    active_parameter_href => $active_parameter_href,
-                    FILEHANDLE            => $FILEHANDLE,
-                    elements_ref          => \@contigs,
-                    infile_prefix         => $file_path_prefix . "_",
-                    infile_postfix => $vcfparser_analysis_type . $file_suffix,
-                    outfile_path_prefix => $file_path_prefix
-                      . $vcfparser_analysis_type
-                      . $concatenate_ending,
-                    outfile_suffix => $file_suffix,
-                }
-            );
+            module_core_number => $active_parameter_href->{module_core_number}
+              { "p" . $program_name },
+            modifier_core_number => scalar( @{ $file_info_href->{contigs} } ),
+            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
         }
+    );
 
-        ## Writes sbatch code to supplied filehandle to sort variants in vcf format
-        sort_vcf(
+    if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
+
+        use MIP::Script::Setup_script qw(setup_script);
+
+        ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+        ( $file_path, $program_info_path ) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
+                job_id_href           => $job_id_href,
                 FILEHANDLE            => $FILEHANDLE,
-                sequence_dict_file    => catfile(
-                    $$reference_dir_ref,
-                    $file_info_href->{human_genome_reference_name_prefix}
-                      . ".dict"
-                ),
-                infile_paths_ref => [
-                        $file_path_prefix
-                      . $vcfparser_analysis_type
-                      . $concatenate_ending
-                      . $file_suffix
-                ],
-                outfile => $outfile_path_prefix
-                  . $vcfparser_analysis_type
-                  . $file_suffix,
+                directory_id          => $$family_id_ref,
+                program_name          => $program_name,
+                program_directory     => catfile( lc($$outaligner_dir_ref) ),
+                call_type             => $call_type,
+                core_number           => $core_number,
+                process_time =>
+                  $active_parameter_href->{module_time}{ "p" . $program_name },
+                temp_directory => $$temp_directory_ref,
             }
         );
+        $stderr_path = $program_info_path . ".stderr.txt";
+    }
+    my ( $volume, $directory, $stderr_file ) = splitpath($stderr_path)
+      ;    #Split to enable submission to &sample_info_qc later
 
-        print {$FILEHANDLE} "\n";
+    ## Assign directories
+    my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
+        $$family_id_ref, $$outaligner_dir_ref );
+    my $outfamily_directory = catdir( $active_parameter_href->{outdata_dir},
+        $$family_id_ref, $$outaligner_dir_ref );
+    $parameter_href->{ "p" . $program_name }{indirectory} =
+      $outfamily_directory;    #Used downstream in removal of files
 
-        ## Remove variants in hgnc_id list from vcf
-        if ( $active_parameter_href->{sv_reformat_remove_genes_file} ) {
+    ## Assign file_tags
+    my $infile_tag =
+      $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}
+      {file_tag};
+    my $infile_prefix = $$family_id_ref . $infile_tag . $call_type;
+    my $file_path_prefix = catfile( $$temp_directory_ref, $infile_prefix );
 
-            ## Removes contig_names from contigs array if no male or other found
-            gnu_grep(
-                {
-                    filter_file_path => catfile(
-                        $$reference_dir_ref,
-                        $active_parameter_href->{sv_reformat_remove_genes_file}
-                    ),
-                    infile_path => $outfile_path_prefix
-                      . $vcfparser_analysis_type
-                      . $file_suffix,
-                    outfile_path => $outfile_path_prefix
-                      . $vcfparser_analysis_type
-                      . "_filtered"
-                      . $file_suffix,
-                    invert_match => 1,
-                    FILEHANDLE   => $FILEHANDLE,
-                }
-            );
-            say {$FILEHANDLE} "\n";
-
-            if ( $vcfparser_outfile_counter == 1 ) {
-
-                $sample_info_href->{program}{$program_name}
-                  {sv_reformat_remove_genes_file}{clinical}{path} =
-                    $final_path_prefix
-                  . $vcfparser_analysis_type
-                  . "_filtered"
-                  . $file_suffix;    #Save filtered file
-            }
-            else {
-
-                $sample_info_href->{program}{$program_name}
-                  {sv_reformat_remove_genes_file}{research}{path} =
-                    $final_path_prefix
-                  . $vcfparser_analysis_type
-                  . "_filtered"
-                  . $file_suffix;    #Save filtered file
-            }
-
-            ## Copies file from temporary directory.
-            say {$FILEHANDLE} q{## Copy file from temporary directory};
-            migrate_file(
-                {
-                    infile_path => $outfile_path_prefix
-                      . $vcfparser_analysis_type
-                      . q{_filtered}
-                      . $file_suffix,
-                    outfile_path => $outfamily_directory,
-                    FILEHANDLE   => $FILEHANDLE,
-                }
-            );
-            say {$FILEHANDLE} q{wait}, "\n";
+    ## Assign suffix
+    my $infile_suffix = get_file_suffix(
+        {
+            parameter_href => $parameter_href,
+            suffix_key     => q{variant_file_suffix},
+            jobid_chain    => $job_id_chain,
         }
-
-        if ( $active_parameter_href->{sv_rankvariant_binary_file} ) {
-
-            ## Compress or decompress original file or stream to outfile (if supplied)
-            htslib_bgzip(
-                {
-                    FILEHANDLE  => $FILEHANDLE,
-                    infile_path => $outfile_path_prefix
-                      . $vcfparser_analysis_type
-                      . $file_suffix,
-                    stdoutfile_path => $outfile_path_prefix
-                      . $vcfparser_analysis_type
-                      . $file_suffix . ".gz",
-                    write_to_stdout => 1,
-                }
-            );
-            say {$FILEHANDLE} "\n";
-
-            ## Index file using tabix
-            htslib_tabix(
-                {
-                    FILEHANDLE  => $FILEHANDLE,
-                    infile_path => $outfile_path_prefix
-                      . $vcfparser_analysis_type
-                      . $file_suffix . ".gz",
-                    force  => 1,
-                    preset => substr( $file_suffix, 1 ),
-                }
-            );
-            say {$FILEHANDLE} "\n";
+    );
+    my $outfile_suffix = set_file_suffix(
+        {
+            parameter_href => $parameter_href,
+            suffix_key     => q{variant_file_suffix},
+            job_id_chain   => $job_id_chain,
+            file_suffix =>
+              $parameter_href->{ "p" . $program_name }{outfile_suffix},
         }
+    );
+
+    ## Copy file(s) to temporary directory
+    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
+    migrate_file(
+        {
+            FILEHANDLE  => $FILEHANDLE,
+            infile_path => catfile(
+                $infamily_directory, $infile_prefix . $infile_suffix . q{*}
+            ),
+            outfile_path => $$temp_directory_ref
+        }
+    );
+    say {$FILEHANDLE} q{wait}, "\n";
+
+    ## Compress or decompress original file or stream to outfile (if supplied)
+    htslib_bgzip(
+        {
+            FILEHANDLE      => $FILEHANDLE,
+            infile_path     => $file_path_prefix . $infile_suffix,
+            stdoutfile_path => $file_path_prefix . $outfile_suffix,
+            write_to_stdout => 1,
+        }
+    );
+    say {$FILEHANDLE} "\n";
+
+    ## Index file using tabix
+    htslib_tabix(
+        {
+            FILEHANDLE  => $FILEHANDLE,
+            infile_path => $file_path_prefix . $outfile_suffix,
+            force       => 1,
+            preset      => "vcf",
+        }
+    );
+    say {$FILEHANDLE} "\n";
+
+    ## Create file commands for xargs
+    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
+        {
+            FILEHANDLE         => $FILEHANDLE,
+            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+            file_path          => $file_path,
+            core_number        => $core_number,
+            xargs_file_counter => $xargs_file_counter,
+        }
+    );
+
+    ## Split vcf into contigs
+    foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
+
+        htslib_tabix(
+            {
+                regions_ref => [$contig],
+                infile_path => $file_path_prefix . $outfile_suffix,
+                with_header => 1,
+                FILEHANDLE  => $XARGSFILEHANDLE,
+            }
+        );
+        print $XARGSFILEHANDLE "| ";
+
+        ## Compress or decompress original file or stream to outfile (if supplied)
+        htslib_bgzip(
+            {
+                FILEHANDLE      => $XARGSFILEHANDLE,
+                stdoutfile_path => $file_path_prefix . "_"
+                  . $contig
+                  . $outfile_suffix,
+                write_to_stdout => 1,
+            }
+        );
+        print $XARGSFILEHANDLE "; ";
+
+        ## Index file using tabix
+        htslib_tabix(
+            {
+                FILEHANDLE  => $XARGSFILEHANDLE,
+                infile_path => $file_path_prefix . "_"
+                  . $contig
+                  . $outfile_suffix,
+                force  => 1,
+                preset => "vcf",
+            }
+        );
+        print $XARGSFILEHANDLE "\n";
+    }
+
+    if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
         ## Copies file from temporary directory.
         say {$FILEHANDLE} q{## Copy file from temporary directory};
         migrate_file(
             {
-                infile_path => $outfile_path_prefix
-                  . $vcfparser_analysis_type
-                  . $file_suffix . q{*},
+                infile_path => $file_path_prefix . q{_*}
+                  . $infile_suffix . q{*},
                 outfile_path => $outfamily_directory,
                 FILEHANDLE   => $FILEHANDLE,
             }
         );
         say {$FILEHANDLE} q{wait}, "\n";
 
-        ## Adds the most complete vcf file to sample_info
-        add_most_complete_vcf(
-            {
-                active_parameter_href => $active_parameter_href,
-                sample_info_href      => $sample_info_href,
-                program_name          => $program_name,
-                path                  => $final_path_prefix
-                  . $vcfparser_analysis_type
-                  . $file_suffix,
-                vcfparser_outfile_counter => $vcfparser_outfile_counter,
-                vcf_file_key => "sv_" . substr( $file_suffix, 1 ) . "_file",
-            }
-        );
-
-        if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-            if ( $vcfparser_outfile_counter == 1 ) {
-
-                # Save clinical candidate list path
-                my $clinical_candidate_path =
-                  $final_path_prefix . $vcfparser_analysis_type . $file_suffix;
-                add_program_metafile_to_sample_info(
-                    {
-                        sample_info_href => $sample_info_href,
-                        program_name     => $program_name,
-                        metafile_tag     => q{clinical},
-                        path             => $clinical_candidate_path,
-                    }
-                );
-
-                if ( $active_parameter_href->{sv_rankvariant_binary_file} ) {
-
-                    $sample_info_href->{sv_vcf_binary_file}{clinical}{path} =
-                        $final_path_prefix
-                      . $vcfparser_analysis_type
-                      . $file_suffix . ".gz";
-                }
-            }
-            else {
-
-                # Save research candidate list path
-                my $research_candidate_path =
-                  $final_path_prefix . $vcfparser_analysis_type . $file_suffix;
-                add_program_metafile_to_sample_info(
-                    {
-                        sample_info_href => $sample_info_href,
-                        program_name     => $program_name,
-                        metafile_tag     => q{research},
-                        path             => $research_candidate_path,
-                    }
-                );
-
-                if ( $active_parameter_href->{sv_rankvariant_binary_file} ) {
-
-                    $sample_info_href->{sv_vcf_binary_file}{research}{path} =
-                        $final_path_prefix
-                      . $vcfparser_analysis_type
-                      . $file_suffix . ".gz";
-                }
-            }
-        }
+        close $FILEHANDLE;
     }
-    close $FILEHANDLE;
-
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
-        slurm_submit_job_sample_id_dependency_add_to_family(
-            {
-                job_id_href             => $job_id_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                family_id        => $$family_id_ref,
-                path             => $job_id_chain,
-                log              => $log,
-                sbatch_file_name => $file_path,
-            }
-        );
+        if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
+
+            slurm_submit_job_sample_id_dependency_add_to_family(
+                {
+                    job_id_href             => $job_id_href,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    sample_ids_ref =>
+                      \@{ $active_parameter_href->{sample_ids} },
+                    family_id        => $$family_id_ref,
+                    path             => $job_id_chain,
+                    log              => $log,
+                    sbatch_file_name => $file_path,
+                }
+            );
+        }
+    }
+    if ($$reduce_io_ref) {
+
+        return
+          $xargs_file_counter
+          ; #Track the number of created xargs scripts per module for Block algorithm
     }
 }
 
@@ -6293,19 +6137,27 @@ sub variantannotationblock {
     }
     if ( $active_parameter_href->{psnpeff} > 0 ) {  #Run snpEff. Done per family
 
-        ($xargs_file_counter) = snpeff(
+        my $program_name = q{snpeff};
+
+        my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
+            $$family_id_ref, $$outaligner_dir_ref );
+        my $outfamily_directory = $infamily_directory;
+
+        ($xargs_file_counter) = analysis_snpeff_rio(
             {
-                parameter_href          => $parameter_href,
                 active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
                 call_type               => $call_type,
-                program_name            => "snpeff",
-                file_path               => $file_path,
-                program_info_path       => $program_info_path,
                 FILEHANDLE              => $FILEHANDLE,
+                file_info_href          => $file_info_href,
+                file_path               => $file_path,
+                job_id_href             => $job_id_href,
+                infamily_directory      => $infamily_directory,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                outfamily_directory     => $outfamily_directory,
+                parameter_href          => $parameter_href,
+                program_info_path       => $program_info_path,
+                program_name            => $program_name,
+                sample_info_href        => $sample_info_href,
                 xargs_file_counter      => $xargs_file_counter,
             }
         );
