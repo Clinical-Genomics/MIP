@@ -56,8 +56,7 @@ sub vardict {
 
     ## Flatten argument(s)
     my $infile_bed_region_info;
-    my $infile_path_normal;
-    my $infile_path_tumor;
+    my $infile_paths_ref;
     my $out_chrom_start;
     my $out_region_start;
     my $out_region_end;
@@ -71,7 +70,6 @@ sub vardict {
 
     ## Default(s)
     my $af_threshold;
-    my $infile_paths_ref;
 
     my $tmpl = {
         referencefile_path => {
@@ -87,25 +85,20 @@ sub vardict {
             ## Exactly 2 decimal points after 0 or 1
             allow       => qr/ ^0.\d{1,2}$ | ^1$ /xsm,
             strict_type => 1,
-            strore      => \$af_threshold,
+            store       => \$af_threshold,
         },
         sample_name => {
             required    => 1,
             allow       => qr/ ^\w+$ /xsm,
             strict_type => 1,
-            strore      => \$sample_name,
+            store       => \$sample_name,
         },
-        infile_path_tumor => {
+        infile_paths_ref => {
             required    => 1,
             strict_type => 1,
+            default     => [],
             defined     => 1,
-            store       => \$infile_path_tumor,
-        },
-        infile_path_normal => {
-            required    => 0,
-            strict_type => 1,
-            defined     => 1,
-            store       => \$infile_path_normal,
+            store       => \$infile_paths_ref,
         },
         out_chrom_start => {
             required    => 1,
@@ -158,8 +151,6 @@ sub vardict {
         },
     };
 
-    my @infile_paths_ref = ( $infile_path_normal, $infile_path_tumor );
-
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
@@ -173,7 +164,7 @@ sub vardict {
 
     ## Vardict requires input in form of "tumor_file_name|normal_file_name" or "tumor_file_name"
     push @commands,
-      q{-b} . $SPACE . $DQUOTE . join( $PIPE, @infile_paths_ref ) . $DQUOTE;
+      q{-b} . $SPACE . $DQUOTE . join( $PIPE, @{$infile_paths_ref} ) . $DQUOTE;
 
     push @commands, q{-c} . $SPACE . $out_chrom_start;
 
@@ -183,7 +174,7 @@ sub vardict {
 
     push @commands, q{-g} . $SPACE . $out_segment_annotn;
 
-    push @commands, $SPACE . $infile_bed_region_info;
+    push @commands, $infile_bed_region_info;
 
     push @commands,
       unix_standard_streams(
