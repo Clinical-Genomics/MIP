@@ -274,6 +274,7 @@ GetOptions(
     q{at|analysis_type:s}     => \%{ $active_parameter{analysis_type} },
     q{pl|platform:s}          => \$active_parameter{platform},
     q{ec|expected_coverage:s} => \%{ $active_parameter{expected_coverage} },
+    q{sao|sample_origin:s}    => \%{ $active_parameter{sample_origin} },
     q{c|config_file:s}        => \$active_parameter{config_file},
     q{ccp|cluster_constant_path:s} => \$active_parameter{cluster_constant_path},
     q{acp|analysis_constant_path:s} =>
@@ -1052,7 +1053,9 @@ check_sample_id_in_parameter(
     {
         active_parameter_href => \%active_parameter,
         sample_ids_ref        => \@{ $active_parameter{sample_ids} },
-        parameter_names_ref   => [qw{ expected_coverage analysis_type }],
+        parameter_names_ref =>
+          [qw{ analysis_type expected_coverage sample_origin }],
+        parameter_href => \%parameter,
     }
 );
 
@@ -3112,6 +3115,7 @@ sub build_usage {
     -at/--analysis_type Type of analysis to perform (sample_id=analysis_type, defaults to "wgs";Valid entries: "wgs", "wes", "wts")
     -pl/--platform Platform/technology used to produce the reads (defaults to "ILLUMINA")
     -ec/--expected_coverage Expected mean target coverage for analysis (sample_id=expected_coverage, defaults to "")
+    -sao/--sample_origin Sample origin for analysis (sample_id=sample_origin, defaults to "")
     -c/--config_file YAML config file for analysis parameters (defaults to "")
     -ccp/--cluster_constant_path Set the cluster constant path (defaults to "")
     -acp/--analysis_constant_path Set the analysis constant path (defaults to "analysis")
@@ -5446,8 +5450,8 @@ sub read_yaml_pedigree_file {
 
     my %user_supply_switch = get_user_supplied_info(
         {
-            parameter_href        => $parameter_href,
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
         }
     );
 
@@ -5461,7 +5465,7 @@ sub read_yaml_pedigree_file {
   MANDATORY_KEY:
     foreach my $key (@mandatory_family_keys) {
 
-        if ( !$pedigree_href->{$key} ) {
+        if ( not exists $pedigree_href->{$key} ) {
 
             $log->fatal( q{File: }
                   . $file_path
@@ -8146,12 +8150,9 @@ sub detect_sample_id_gender {
 
 sub remove_pedigree_elements {
 
-##remove_pedigree_elements
-
-##Function : Removes ALL keys at third level except keys in allowed_entries hash.
-##Returns  : ""
-##Arguments: $hash_ref
-##         : $hash_ref => Hash {REF}
+## Function : Removes ALL keys at third level except keys in allowed_entries hash.
+## Returns  :
+## Arguments: $hash_ref => Hash {REF}
 
     my ($arg_href) = @_;
 
@@ -8170,20 +8171,14 @@ sub remove_pedigree_elements {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @allowed_entries = (
-        "family",        "default_gene_panels",
-        "sample",        "sample_id",
-        "sample_name",   "capture_kit",
-        "sex",           "mother",
-        "father",        "phenotype",
-        "sequence_type", "expected_coverage",
-    );
+    my @allowed_entries =
+      qw{ family default_gene_panels sample sample_id sample_name capture_kit sex mother father phenotype sequence_type expected_coverage sample_origin };
 
   FAMILY_INFO:
-    for my $key ( keys %$hash_ref ) {
+    for my $key ( keys %{$hash_ref} ) {
 
-        if ( !any { $_ eq $key } @allowed_entries )
-        {    #If element is not part of array
+        ## If element is not part of array
+        if ( not any { $_ eq $key } @allowed_entries ) {
 
             delete( $hash_ref->{$key} );
         }
@@ -8195,8 +8190,8 @@ sub remove_pedigree_elements {
       SAMPLE_INFO:
         for my $pedigree_element ( keys %{ $hash_ref->{sample}{$sample_id} } ) {
 
-            if ( !any { $_ eq $pedigree_element } @allowed_entries )
-            {    #If element is not part of array
+            ## If element is not part of array
+            if ( not any { $_ eq $pedigree_element } @allowed_entries ) {
 
                 delete( $hash_ref->{sample}{$sample_id}{$pedigree_element} );
             }
@@ -9015,6 +9010,11 @@ sub add_to_sample_info {
 
         $sample_info_href->{expected_coverage} =
           $active_parameter_href->{expected_coverage};
+    }
+    if ( exists $active_parameter_href->{sample_origin} ) {
+
+        $sample_info_href->{sample_origin} =
+          $active_parameter_href->{sample_origin};
     }
     if ( exists $active_parameter_href->{gatk_path} ) {
 
@@ -10324,22 +10324,20 @@ sub check_sample_id_in_parameter_path {
 
 sub check_sample_id_in_parameter {
 
-##check_sample_id_in_parameter
-
-##Function : Check sample_id provided in hash parameter is included in the analysis and only represented once
-##Returns  : ""
-##Tags     : check, sampleids, hash
-##Arguments: $active_parameter_href, $sample_ids_ref, $parameter_name
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $sample_ids_ref        => Array to loop in for parameter {REF}
-##         : $parameter_names_ref   => Parameter name list {REF}
+## Function : Check sample_id provided in hash parameter is included in the analysis and only represented once
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $parameter_href        => Holds all parameters {REF}
+##          : $parameter_names_ref   => Parameter name list {REF}
+##          : $sample_ids_ref        => Array to loop in for parameter {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $sample_ids_ref;
     my $parameter_names_ref;
+    my $parameter_href;
+    my $sample_ids_ref;
 
     my $tmpl = {
         active_parameter_href => {
@@ -10349,18 +10347,25 @@ sub check_sample_id_in_parameter {
             strict_type => 1,
             store       => \$active_parameter_href,
         },
-        sample_ids_ref => {
+        parameter_href => {
             required    => 1,
             defined     => 1,
-            default     => [],
+            default     => {},
             strict_type => 1,
-            store       => \$sample_ids_ref
+            store       => \$parameter_href,
         },
         parameter_names_ref => {
             required => 1,
             defined  => 1,
             default  => [],
             store    => \$parameter_names_ref
+        },
+        sample_ids_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => [],
+            strict_type => 1,
+            store       => \$sample_ids_ref
         },
     };
 
@@ -10369,12 +10374,13 @@ sub check_sample_id_in_parameter {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    foreach my $parameter_name (@$parameter_names_ref)
-    {    #Lopp through all hash parameters supplied
+    ## Loop through all hash parameters supplied
+  PARAMETER:
+    foreach my $parameter_name ( @{$parameter_names_ref} ) {
 
-        if ( defined( $active_parameter_href->{$parameter_name} ) ) {
+        if ( defined $active_parameter_href->{$parameter_name} ) {
 
-            foreach my $sample_id (@$sample_ids_ref) {
+            foreach my $sample_id ( @{$sample_ids_ref} ) {
 
                 ## Check that a value exists
                 if (
@@ -10383,6 +10389,10 @@ sub check_sample_id_in_parameter {
                     )
                   )
                 {
+
+                    next PARAMETER
+                      if ( $parameter_href->{$parameter_name}{mandatory} eq
+                        q{no} );
 
                     $log->fatal(
                         "Could not find value for "
@@ -10515,6 +10525,7 @@ sub get_user_supplied_info {
         exome_target_bed  => 0,
         analysis_type     => 0,
         expected_coverage => 0,
+        sample_origin     => 0,
     );
 
     ## Detect user supplied info
@@ -10555,55 +10566,34 @@ sub get_pedigree_sample_info {
 
 ## Function : Reformat pedigree keys to plink format and collect sample info to various hashes
 ## Returns  :
-## Arguments: $parameter_href                         => Parameter hash {REF}
-##          : $active_parameter_href                  => Active parameters for this analysis hash {REF}
-##          : $sample_info_href                       => Info on samples and family hash {REF}
-##          : $file_info_href                         => The associated reference file endings {REF}
+## Arguments: $active_parameter_href                  => Active parameters for this analysis hash {REF}
 ##          : $exom_target_bed_test_file_tracker_href => Collect which sample_ids have used a certain capture_kit
+##          : $file_info_href                         => The associated reference file endings {REF}
+##          : $parameter_href                         => Parameter hash {REF}
 ##          : $pedigree_sample_href                   => YAML sample info hash {REF}
-##          : $user_supply_switch_href                => The user supplied info switch {REF}
 ##          : $sample_id                              => Sample ID
+##          : $sample_info_href                       => Info on samples and family hash {REF}
+##          : $user_supply_switch_href                => The user supplied info switch {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
     my $exom_target_bed_test_file_tracker_href;
+    my $file_info_href;
+    my $parameter_href;
     my $pedigree_sample_href;
-    my $user_supply_switch_href;
     my $sample_id;
+    my $sample_info_href;
+    my $user_supply_switch_href;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
             store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href,
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href,
         },
         exom_target_bed_test_file_tracker_href => {
             required    => 1,
@@ -10612,12 +10602,39 @@ sub get_pedigree_sample_info {
             strict_type => 1,
             store       => \$exom_target_bed_test_file_tracker_href
         },
+        file_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$file_info_href,
+        },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
         pedigree_sample_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
             store       => \$pedigree_sample_href
+        },
+        sample_id => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$sample_id,
+        },
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href,
         },
         user_supply_switch_href => {
             required    => 1,
@@ -10626,17 +10643,12 @@ sub get_pedigree_sample_info {
             strict_type => 1,
             store       => \$user_supply_switch_href
         },
-        sample_id => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$sample_id,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Add input to sample_info hash for at sample level
+  PEDIGREE_SAMPLE_KEY:
     foreach my $key ( keys %{$pedigree_sample_href} ) {
 
         $sample_info_href->{sample}{$sample_id}{$key} =
@@ -10714,6 +10726,18 @@ sub get_pedigree_sample_info {
               $sample_info_href->{sample}{$sample_id}{expected_coverage};
             $active_parameter_href->{expected_coverage}{$sample_id} =
               $expected_coverage;
+        }
+    }
+    ## Add sample origin for each individual
+    if ( $sample_info_href->{sample}{$sample_id}{sample_origin} ) {
+
+        if ( not $user_supply_switch_href->{sample_origin} ) {
+
+            ## Alias
+            my $sample_origin =
+              $sample_info_href->{sample}{$sample_id}{sample_origin};
+            $active_parameter_href->{sample_origin}{$sample_id} =
+              $sample_origin;
         }
     }
 
@@ -10795,7 +10819,7 @@ sub check_founder_id {
 
             if ($founder) {
 
-                if ( !( any { $_ eq $founder } @$pedigree_sample_ids_ref ) )
+                if ( !( any { $_ eq $founder } @{$pedigree_sample_ids_ref} ) )
                 {    #If element is not part of array
 
                     $log->fatal( "Could not find founder sample_id: "

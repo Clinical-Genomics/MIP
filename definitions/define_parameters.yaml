@@ -122,6 +122,12 @@ expected_coverage:
   data_type: HASH
   mandatory: no
   type: mip
+sample_origin:
+  associated_program:
+   - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
 infile_dirs:
   associated_program:
    - mip
