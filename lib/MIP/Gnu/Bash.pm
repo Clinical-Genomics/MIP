@@ -53,18 +53,18 @@ sub gnu_cd {
     my $tmpl = {
         directory_path => {
             strict_type => 1,
-            store       => \$directory_path
+            store       => \$directory_path,
         },
         FILEHANDLE => {
-            store => \$FILEHANDLE
+            store => \$FILEHANDLE,
         },
         stderrfile_path => {
             strict_type => 1,
-            store       => \$stderrfile_path
+            store       => \$stderrfile_path,
         },
         stderrfile_path_append => {
             strict_type => 1,
-            store       => \$stderrfile_path_append
+            store       => \$stderrfile_path_append,
         },
     };
 
@@ -122,19 +122,19 @@ sub gnu_trap {
 
     my $tmpl = {
         FILEHANDLE => {
-            store => \$FILEHANDLE
+            store => \$FILEHANDLE,
         },
         stderrfile_path => {
             strict_type => 1,
-            store       => \$stderrfile_path
+            store       => \$stderrfile_path,
         },
         stderrfile_path_append => {
             strict_type => 1,
-            store       => \$stderrfile_path_append
+            store       => \$stderrfile_path_append,
         },
         trap_function_call => {
             strict_type => 1,
-            store       => \$trap_function_call
+            store       => \$trap_function_call,
         },
         trap_signals_ref => {
             default => [],
@@ -149,7 +149,7 @@ sub gnu_trap {
                 }
             ],
             strict_type => 1,
-            store       => \$trap_signals_ref
+            store       => \$trap_signals_ref,
         },
     };
 
@@ -215,38 +215,38 @@ sub gnu_set {
 
     my $tmpl = {
         FILEHANDLE => {
-            store => \$FILEHANDLE
+            store => \$FILEHANDLE,
         },
         stderrfile_path => {
             strict_type => 1,
-            store       => \$stderrfile_path
+            store       => \$stderrfile_path,
         },
         stderrfile_path_append => {
             strict_type => 1,
-            store       => \$stderrfile_path_append
+            store       => \$stderrfile_path_append,
         },
         set_errexit => {
             default     => 0,
             allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$set_errexit
+            store       => \$set_errexit,
         },
         set_nounset => {
             default     => 0,
             allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$set_nounset
+            store       => \$set_nounset,
         },
         set_pipefail => {
             default     => 0,
             allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$set_pipefail
+            store       => \$set_pipefail,
         },
         separator => {
             default     => $NEWLINE,
             strict_type => 1,
-            store       => \$separator
+            store       => \$separator,
         },
     };
 
@@ -312,20 +312,20 @@ sub gnu_wait {
 
     my $tmpl = {
         FILEHANDLE => {
-            store => \$FILEHANDLE
+            store => \$FILEHANDLE,
         },
         processes_ref => {
             default     => [],
             strict_type => 1,
-            store       => \$processes_ref
+            store       => \$processes_ref,
         },
         stderrfile_path => {
             strict_type => 1,
-            store       => \$stderrfile_path
+            store       => \$stderrfile_path,
         },
         stderrfile_path_append => {
             strict_type => 1,
-            store       => \$stderrfile_path_append
+            store       => \$stderrfile_path_append,
         },
     };
 
@@ -360,7 +360,7 @@ sub gnu_wait {
 
 sub gnu_unset {
 
-## Function : Perl wrapper for writing set recipe to already open $FILEHANDLE or return commands array. Based on set 4.0
+## Function : Perl wrapper for writing unset recipe to already open $FILEHANDLE or return commands array. Based on unset 4.0
 ## Returns  : @commands
 ## Arguments: $bash_variable          => Variable to unset
 ##          : $FILEHANDLE             => Filehandle to write to
