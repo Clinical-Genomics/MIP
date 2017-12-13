@@ -5432,21 +5432,16 @@ sub read_yaml_pedigree_file {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Defines which values are allowed
-    my %allowed_values = (
-        sex       => [qw{ male female unknown }],
-        phenotype => [qw{ affected unaffected unknown }],
-    );
-
     ## Use to collect which sample_ids have used a certain capture_kit
+    my $family_id = $pedigree_href->{family};
     my %exom_target_bed_test_file_tracker;
     my @pedigree_sample_ids;
-    my $family_id             = $pedigree_href->{family};
     my @mandatory_family_keys = qw{ family samples };
     my @mandatory_sample_keys = qw{ sample_id father mother sex phenotype };
     my @user_input_sample_ids;
 
     ### Check input
+    check_pedigree_allowed_values( { pedigree_href => \%{$pedigree_href}, } );
 
     my %user_supply_switch = get_user_supplied_info(
         {
@@ -5489,7 +5484,7 @@ sub read_yaml_pedigree_file {
         exit 1;
     }
 
-    ## Check sample keys and values
+    ## Check sample keys
   SAMPLE_KEY:
     foreach my $pedigree_sample_href ( @{ $pedigree_href->{samples} } ) {
 
@@ -5505,30 +5500,6 @@ sub read_yaml_pedigree_file {
                       . $key
                       . q{ in file} );
                 exit 1;
-            }
-            elsif ( $allowed_values{$key} ) {
-                ## Check allowed values
-
-                if (
-                    not any { $_ eq $pedigree_sample_href->{$key} }
-                    @{ $allowed_values{$key} }
-                  )
-                {
-                    ## If element is not part of array
-
-                    $log->fatal(
-                        q{File: }
-                          . $file_path
-                          . q{ found illegal value: }
-                          . $pedigree_sample_href->{$key}
-                          . q{ allowed values are '}
-                          . join q{' '},
-                        @{ $allowed_values{$key} }
-                    );
-                    $log->fatal(q{Please correct the entry before analysis.});
-                    $log->fatal(q{MIP: Aborting run.});
-                    exit 1;
-                }
             }
         }
     }
@@ -11047,7 +11018,7 @@ sub check_element_exists_in_hash {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    foreach my $element (@$queryies) {
+    foreach my $element ( @{$queryies} ) {
 
         if ( !exists( $truth_href->{$element} ) ) {
 
@@ -11058,6 +11029,72 @@ sub check_element_exists_in_hash {
             exit 1;
         }
     }
+}
+
+sub check_pedigree_allowed_values {
+
+    ## Function : Check that the pedigree values are allowed
+    ## Returns  :
+    ## Arguments: $pedigree_href => YAML pedigree info hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $pedigree_href;
+
+    my $tmpl = {
+        pedigree_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$pedigree_href
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger(q{MIP});
+
+    my %allowed_values = (
+        analysis_type => [qw{ wes wgs wts cancer}],
+        phenotype     => [qw{ affected unaffected unknown }],
+        sample_origin => [qw{ normal tumor }],
+        sex           => [qw{ female male other unknown }],
+    );
+
+    ## Check input to sample_info hash for at sample level
+    foreach my $pedigree_sample_href ( @{ $pedigree_href->{samples} } ) {
+
+      SAMPLE_KEY:
+        foreach my $key ( keys %{$pedigree_sample_href} ) {
+
+            ## No defined allowed values
+            next SAMPLE_KEY if ( not exists $allowed_values{$key} );
+
+            ## If element is not part of array
+            next SAMPLE_KEY
+              if (
+                any { $_ eq $pedigree_sample_href->{$key} }
+                @{ $allowed_values{$key} }
+              );
+
+            $log->fatal(
+                q{Pedigree file key: }
+                  . $key
+                  . q{ found illegal value: }
+                  . $pedigree_sample_href->{$key}
+                  . q{ allowed values are '}
+                  . join q{' '},
+                @{ $allowed_values{$key} }
+            );
+            $log->fatal(q{Please correct the entry before analysis.});
+            $log->fatal(q{MIP: Aborting run.});
+            exit 1;
+        }
+    }
+    return;
 }
 
 ##Investigate potential autodie error
