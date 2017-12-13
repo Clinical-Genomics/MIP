@@ -9,7 +9,6 @@ use charnames qw{ :full :short };
 use Carp;
 use autodie;
 use Params::Check qw{ check allow last_error };
-$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 
 ## MIPs lib/
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
