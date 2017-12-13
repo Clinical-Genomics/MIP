@@ -72,12 +72,6 @@ sub vardict {
     my $af_threshold;
 
     my $tmpl = {
-        referencefile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$referencefile_path,
-        },
         af_threshold => {
             required => 1,
             defined  => 1,
@@ -87,11 +81,11 @@ sub vardict {
             strict_type => 1,
             store       => \$af_threshold,
         },
-        sample_name => {
+        infile_bed_region_info => {
             required    => 1,
-            allow       => qr/ ^\w+$ /xsm,
             strict_type => 1,
-            store       => \$sample_name,
+            defined     => 1,
+            store       => \$infile_bed_region_info,
         },
         infile_paths_ref => {
             required    => 1,
@@ -128,11 +122,17 @@ sub vardict {
             strict_type => 1,
             store       => \$out_segment_annotn,
         },
-        infile_bed_region_info => {
+        referencefile_path => {
             required    => 1,
-            strict_type => 1,
             defined     => 1,
-            store       => \$infile_bed_region_info,
+            strict_type => 1,
+            store       => \$referencefile_path,
+        },
+        sample_name => {
+            required    => 1,
+            allow       => qr/ ^\w+$ /xsm,
+            strict_type => 1,
+            store       => \$sample_name,
         },
         FILEHANDLE => {
             store => \$FILEHANDLE,
@@ -156,11 +156,7 @@ sub vardict {
     ## Stores commands depending on input parameters
     my @commands = q{vardict};
 
-    push @commands, q{-G} . $SPACE . $referencefile_path;
-
     push @commands, q{-f} . $SPACE . $af_threshold;
-
-    push @commands, q{-N} . $SPACE . $sample_name;
 
     ## Vardict requires input in form of "tumor_file_name|normal_file_name" or "tumor_file_name"
     push @commands,
@@ -173,6 +169,10 @@ sub vardict {
     push @commands, q{-E} . $SPACE . $out_region_end;
 
     push @commands, q{-g} . $SPACE . $out_segment_annotn;
+
+    push @commands, q{-G} . $SPACE . $referencefile_path;
+
+    push @commands, q{-N} . $SPACE . $sample_name;
 
     push @commands, $infile_bed_region_info;
 
