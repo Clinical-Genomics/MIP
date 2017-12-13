@@ -20,7 +20,8 @@ bioconda:
   htslib: 1.6
   manta: 1.1.0
   multiqc: 0.9.1a0
-  peddy: 0.2.9
+  peddy: 0.3.1
+  numpy: 1.9.3
   picard: 2.14.1
   plink2: 1.90b3.35
   rtg-tools: 3.8.4
@@ -61,6 +62,12 @@ pip:
 # Prefer installation via shell instead of via conda, 
 # only applicaple for shell programs that overlap with existing conda packages
 prefer_shell: ~
+
+# Python 3 packages
+py3_packages: 
+  - chanjo
+  - genmod
+  - variant_integrity
 
 # Specify python version
 python_version: ~
@@ -116,7 +123,7 @@ shell:
       - UpDownDistance
       - LoFtool
       - MaxEntScan
-    version: 90
+    version: 91
   vt:
     version: gitRepo
 

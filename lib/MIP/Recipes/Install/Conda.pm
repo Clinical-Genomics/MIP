@@ -29,11 +29,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.0.11;
+    our $VERSION = 1.0.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ check_conda_installation setup_conda_env install_bioconda_packages };
+      qw{ check_conda_installation get_conda_dir_path setup_conda_env install_bioconda_packages };
 
 }
 
@@ -100,7 +100,7 @@ sub check_conda_installation {
     );
 
     ## Establish path to conda, Exit if not found
-    $conda_dir_path = _get_conda_dir_path(
+    $conda_dir_path = get_conda_dir_path(
         {
             conda_dir_path => $conda_dir_path,
             log            => $log,
@@ -228,8 +228,8 @@ sub setup_conda_env {
               . q{ and install packages};
             conda_create(
                 {
-                    FILEHANDLE   => $FILEHANDLE,
                     env_name     => $conda_env,
+                    FILEHANDLE   => $FILEHANDLE,
                     packages_ref => \@packages,
                 }
             );
@@ -323,9 +323,9 @@ sub install_bioconda_packages {
             store => \$quiet,
         },
         snpeff_genome_versions_ref => {
-            required    => 1,
-            default => [],
-            store       => \$snpeff_genome_versions_ref
+            required => 1,
+            default  => [],
+            store    => \$snpeff_genome_versions_ref
         },
         verbose => {
             allow => [ undef, 0, 1 ],
@@ -335,6 +335,7 @@ sub install_bioconda_packages {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments};
 
+    use MIP::Gnu::Bash qw{ gnu_unset };
     use MIP::Gnu::Coreutils qw{ gnu_ln };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
     use MIP::Package_manager::Conda qw{ conda_install };
@@ -428,7 +429,13 @@ sub install_bioconda_packages {
         # Check if the program has been set to be installed via shell and
         # thus has been removed from the bioconda_packages hash
         next PROGRAM if ( not $bioconda_packages_href->{$program} );
-        say {$FILEHANDLE} q{unset} . $SPACE . $program_path_aliases{$program};
+        gnu_unset(
+            {
+                bash_variable => $program_path_aliases{$program},
+                FILEHANDLE    => $FILEHANDLE,
+            }
+        );
+        print {$FILEHANDLE} $NEWLINE;
     }
     say {$FILEHANDLE} $NEWLINE;
 
@@ -493,9 +500,9 @@ sub finish_bioconda_package_install {
             store => \$quiet,
         },
         snpeff_genome_versions_ref => {
-            required    => 1,
-            default => [],
-            store       => \$snpeff_genome_versions_ref
+            required => 1,
+            default  => [],
+            store    => \$snpeff_genome_versions_ref
         },
         verbose => {
             allow => [ undef, 0, 1 ],
@@ -557,8 +564,6 @@ sub finish_bioconda_package_install {
         ## Get the full version, including patch for snpeff
         my $version = _get_full_snpeff_version(
             {
-                conda_env      => $conda_env,
-                conda_env_path => $conda_env_path,
                 log            => $log,
                 snpeff_version => $bioconda_packages_href->{snpeff},
             }
@@ -816,7 +821,7 @@ sub _create_target_link_paths {
         gnu_tail(
             {
                 FILEHANDLE => $FILEHANDLE,
-                lines => q{1},
+                lines      => q{1},
             }
         );
         say {$FILEHANDLE} $BACKTICK;
@@ -843,7 +848,7 @@ sub _create_target_link_paths {
     return %target_link_paths;
 }
 
-sub _get_conda_dir_path {
+sub get_conda_dir_path {
 
 ## Function : Finds the conda directory path and returns it
 ## Returns  : $conda_dir_path
@@ -858,7 +863,6 @@ sub _get_conda_dir_path {
 
     my $tmpl = {
         conda_dir_path => {
-            required    => 1,
             strict_type => 1,
             store       => \$conda_dir_path,
         },
@@ -909,30 +913,16 @@ sub _get_full_snpeff_version {
 
 ## Function  : Get the snpeff version together with patch that are to be installed via Conda
 ## Returns   : $version
-## Arguments : $conda_env      => Name of conda environment
-##           : $conda_env_path => Path to conda environment (default: conda root)
-##           : $log            => Log
+## Arguments : $log            => Log
 ##           : snpeff_version  => Main snpeff version number
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $conda_env;
-    my $conda_env_path;
     my $snpeff_version;
     my $log;
 
     my $tmpl = {
-        conda_env => {
-            required => 1,
-            store    => \$conda_env,
-        },
-        conda_env_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$conda_env_path,
-        },
         log => {
             required => 1,
             defined  => 1,
@@ -948,72 +938,40 @@ sub _get_full_snpeff_version {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use List::MoreUtils qw{ first_index };
+
     ## Store shell query
-    my $command;
+    my $command =
 
-    ## Check if environment exists already and isn't root
-    if ( -d $conda_env_path && $conda_env ) {
-        $command =
+      # Get the snpeff version that will be installed
+      qq{conda search --spec snpeff=$snpeff_version}
 
-          # Get packages that will be installed
-          qq{conda install --dry-run -n $conda_env snpeff=$snpeff_version}
+      # Isolate the version with the latest sub patch
+      . q{ | tail -1 };
 
-          # Isolate the snpeff installation and print/return line as array
-          . q{ | perl -nae 'if ($_=~/snpeff/){print $_}' };
-    }
-    ## New environment
-    else {
-        $command =
-
-          # Get packages that will be installed
-          qq{conda install --dry-run snpeff=$snpeff_version}
-
-          # Isolate the snpeff installation and print/return line as array
-          . q{ | perl -nae 'if ($_=~/snpeff/){print $_}' };
-    }
-
-    my $snpeff_installation_output;
+    ## Capture output in string
+    my $snpeff_search_output;
 
     run(
         command => $command,
-        buffer  => \$snpeff_installation_output
+        buffer  => \$snpeff_search_output
     );
 
-    my @snpeff_array = split $SPACE, $snpeff_installation_output;
+    my @snpeff_array = split $SPACE, $snpeff_search_output;
 
-    my $version;
+    ## Get the index of the element matching the snpeff version
+    my $version_index = first_index { m/$snpeff_version/xms } @snpeff_array;
 
-    # New installation
-    # Pattern ex: "snpeff: 4.3.1r-0 bioconda"
-    if ( scalar @snpeff_array == 3
-        && $snpeff_array[1] =~ m/$snpeff_version/xms )
-    {
-        $version = $snpeff_array[1];
-    }
+    ## Concatenate the version and sub patch based on their indexes in the array
+    my $version = $snpeff_array[$version_index] . q{-}
+      . $snpeff_array[ $version_index + 1 ];
 
-    # Existing installation
-    # Pattern ex: "snpeff 4.3.1r 0 bioconda"
-    elsif ( scalar @snpeff_array == 4
-        && $snpeff_array[1] =~ m/$snpeff_version/xms )
-    {
-        $version = $snpeff_array[1] . q{-} . $snpeff_array[2];
-    }
-
-    # Update existing installation
-    # Pattern ex: snpeff: "4.3.1q-0 bioconda --> 4.3.1r-0 bioconda"
-    elsif ( scalar @snpeff_array == 6
-        && $snpeff_array[4] =~ m/$snpeff_version/xms )
-    {
-        $version = $snpeff_array[4];
-    }
-
-    # Unknown pattern
-    else {
+    ## Something went wrong
+    if ( not $version ) {
         $log->logcroak(
             q{Could not find the snpeff version and subpatch from string: }
-              . $snpeff_installation_output );
+              . $snpeff_search_output );
     }
-
     return $version;
 }
 1;
