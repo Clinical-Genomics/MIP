@@ -127,7 +127,6 @@ sample_origin:
    - mip
   data_type: HASH
   mandatory: no
-  default: "KALLE"
   type: mip
 infile_dirs:
   associated_program:
