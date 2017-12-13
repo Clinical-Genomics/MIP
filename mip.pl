@@ -112,6 +112,8 @@ use MIP::Recipes::Analysis::Picardtools_genotypeconcordance
 use MIP::Recipes::Analysis::Picardtools_mergesamfiles
   qw{ analysis_picardtools_mergesamfiles };
 use MIP::Recipes::Analysis::Plink qw{ analysis_plink };
+use MIP::Recipes::Analysis::Prepareforvariantannotationblock
+  qw{ analysis_prepareforvariantannotationblock analysis_prepareforvariantannotationblock_rio };
 use MIP::Recipes::Qc::Qccollect qw{ analysis_qccollect };
 use MIP::Recipes::Analysis::Rankvariant
   qw{ analysis_rankvariant analysis_rankvariant_rio analysis_rankvariant_rio_unaffected analysis_rankvariant_unaffected analysis_sv_rankvariant analysis_sv_rankvariant_unaffected };
@@ -2702,11 +2704,13 @@ if ( $active_parameter{reduce_io} ) {    #Run consecutive models
 }
 else {
 
-    if ( $active_parameter{pprepareforvariantannotationblock} > 0 ) {
+    if ( $active_parameter{pprepareforvariantannotationblock} ) {
 
-        $log->info("[Prepareforvariantannotationblock]\n");
+        $log->info(q{[Prepareforvariantannotationblock]});
 
-        prepareforvariantannotationblock(
+        my $program_name = lc q{prepareforvariantannotationblock};
+
+        analysis_prepareforvariantannotationblock(
             {
                 parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
@@ -2715,7 +2719,7 @@ else {
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
                 call_type               => q{BOTH},
-                program_name            => "prepareforvariantannotationblock",
+                program_name            => $program_name,
             }
         );
     }
@@ -5030,348 +5034,6 @@ sub mvcfparser {
     }
 }
 
-sub prepareforvariantannotationblock {
-
-##prepareforvariantannotationblock
-
-##Function : Copy files for variantannotationblock to enable restart and skip of modules within block
-##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_path, $stderr_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => File info hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $program_name               => Program name
-##         : $program_info_path          => The program info path
-##         : $file_path                  => File path
-##         : $stderr_path                => The stderr path of the block script
-##         : $FILEHANDLE                 => Filehandle to write to
-##         : $family_id_ref              => Family id {REF}
-##         : $temp_directory_ref         => Temporary directory {REF}
-##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => Variant call type
-##         : $xargs_file_counter         => The xargs file counter
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-    my $outaligner_dir_ref;
-    my $call_type;
-    my $xargs_file_counter;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $program_name;
-    my $program_info_path;
-    my $file_path;
-    my $stderr_path;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href,
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href,
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href,
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href,
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name,
-        },
-        program_info_path => { strict_type => 1, store => \$program_info_path },
-        file_path         => { strict_type => 1, store => \$file_path },
-        stderr_path       => { strict_type => 1, store => \$stderr_path },
-        FILEHANDLE    => { store => \$FILEHANDLE, },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref,
-        },
-        temp_directory_ref => {
-            default     => \$arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
-            store       => \$temp_directory_ref,
-        },
-        outaligner_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir_ref,
-        },
-        call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
-        xargs_file_counter => {
-            default     => 0,
-            allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
-            store       => \$xargs_file_counter,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Cluster qw(get_core_number);
-    use MIP::IO::Files qw(migrate_files);
-    use MIP::Set::File qw{set_file_suffix};
-    use MIP::Get::File qw{get_file_suffix};
-    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use MIP::Program::Utility::Htslib qw(htslib_bgzip htslib_tabix);
-    use MIP::Processmanagement::Slurm_processes
-      qw(slurm_submit_job_sample_id_dependency_add_to_family);
-
-    my $reduce_io_ref = \$active_parameter_href->{reduce_io};
-    my $xargs_file_path_prefix;
-    my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
-
-    ## Filehandles
-    my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    unless ( defined($FILEHANDLE) ) {           #Run as individual sbatch script
-
-        $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
-    }
-
-    ## Get core number depending on user supplied input exists or not and max number of cores
-    my $core_number = get_core_number(
-        {
-            module_core_number => $active_parameter_href->{module_core_number}
-              { "p" . $program_name },
-            modifier_core_number => scalar( @{ $file_info_href->{contigs} } ),
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-        }
-    );
-
-    if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
-
-        use MIP::Script::Setup_script qw(setup_script);
-
-        ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-        ( $file_path, $program_info_path ) = setup_script(
-            {
-                active_parameter_href => $active_parameter_href,
-                job_id_href           => $job_id_href,
-                FILEHANDLE            => $FILEHANDLE,
-                directory_id          => $$family_id_ref,
-                program_name          => $program_name,
-                program_directory     => catfile( lc($$outaligner_dir_ref) ),
-                call_type             => $call_type,
-                core_number           => $core_number,
-                process_time =>
-                  $active_parameter_href->{module_time}{ "p" . $program_name },
-                temp_directory => $$temp_directory_ref,
-            }
-        );
-        $stderr_path = $program_info_path . ".stderr.txt";
-    }
-    my ( $volume, $directory, $stderr_file ) = splitpath($stderr_path)
-      ;    #Split to enable submission to &sample_info_qc later
-
-    ## Assign directories
-    my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $$family_id_ref, $$outaligner_dir_ref );
-    my $outfamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $$family_id_ref, $$outaligner_dir_ref );
-    $parameter_href->{ "p" . $program_name }{indirectory} =
-      $outfamily_directory;    #Used downstream in removal of files
-
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}
-      {file_tag};
-    my $infile_prefix = $$family_id_ref . $infile_tag . $call_type;
-    my $file_path_prefix = catfile( $$temp_directory_ref, $infile_prefix );
-
-    ## Assign suffix
-    my $infile_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
-            jobid_chain    => $job_id_chain,
-        }
-    );
-    my $outfile_suffix = set_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
-            job_id_chain   => $job_id_chain,
-            file_suffix =>
-              $parameter_href->{ "p" . $program_name }{outfile_suffix},
-        }
-    );
-
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . q{*}
-            ),
-            outfile_path => $$temp_directory_ref
-        }
-    );
-    say {$FILEHANDLE} q{wait}, "\n";
-
-    ## Compress or decompress original file or stream to outfile (if supplied)
-    htslib_bgzip(
-        {
-            FILEHANDLE      => $FILEHANDLE,
-            infile_path     => $file_path_prefix . $infile_suffix,
-            stdoutfile_path => $file_path_prefix . $outfile_suffix,
-            write_to_stdout => 1,
-        }
-    );
-    say {$FILEHANDLE} "\n";
-
-    ## Index file using tabix
-    htslib_tabix(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $file_path_prefix . $outfile_suffix,
-            force       => 1,
-            preset      => "vcf",
-        }
-    );
-    say {$FILEHANDLE} "\n";
-
-    ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
-        {
-            FILEHANDLE         => $FILEHANDLE,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-            file_path          => $file_path,
-            core_number        => $core_number,
-            xargs_file_counter => $xargs_file_counter,
-        }
-    );
-
-    ## Split vcf into contigs
-    foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
-
-        htslib_tabix(
-            {
-                regions_ref => [$contig],
-                infile_path => $file_path_prefix . $outfile_suffix,
-                with_header => 1,
-                FILEHANDLE  => $XARGSFILEHANDLE,
-            }
-        );
-        print $XARGSFILEHANDLE "| ";
-
-        ## Compress or decompress original file or stream to outfile (if supplied)
-        htslib_bgzip(
-            {
-                FILEHANDLE      => $XARGSFILEHANDLE,
-                stdoutfile_path => $file_path_prefix . "_"
-                  . $contig
-                  . $outfile_suffix,
-                write_to_stdout => 1,
-            }
-        );
-        print $XARGSFILEHANDLE "; ";
-
-        ## Index file using tabix
-        htslib_tabix(
-            {
-                FILEHANDLE  => $XARGSFILEHANDLE,
-                infile_path => $file_path_prefix . "_"
-                  . $contig
-                  . $outfile_suffix,
-                force  => 1,
-                preset => "vcf",
-            }
-        );
-        print $XARGSFILEHANDLE "\n";
-    }
-
-    if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
-
-        ## Copies file from temporary directory.
-        say {$FILEHANDLE} q{## Copy file from temporary directory};
-        migrate_file(
-            {
-                infile_path => $file_path_prefix . q{_*}
-                  . $infile_suffix . q{*},
-                outfile_path => $outfamily_directory,
-                FILEHANDLE   => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} q{wait}, "\n";
-
-        close $FILEHANDLE;
-    }
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
-
-            slurm_submit_job_sample_id_dependency_add_to_family(
-                {
-                    job_id_href             => $job_id_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    sample_ids_ref =>
-                      \@{ $active_parameter_href->{sample_ids} },
-                    family_id        => $$family_id_ref,
-                    path             => $job_id_chain,
-                    log              => $log,
-                    sbatch_file_name => $file_path,
-                }
-            );
-        }
-    }
-    if ($$reduce_io_ref) {
-
-        return
-          $xargs_file_counter
-          ; #Track the number of created xargs scripts per module for Block algorithm
-    }
-}
-
 sub sv_vcfparser {
 
 ##sv_vcfparser
@@ -6015,25 +5677,22 @@ sub variantannotationblock {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Filehandles
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
+    # Create anonymous filehandle
+    my $FILEHANDLE = IO::Handle->new();
 
-    if ( $active_parameter_href->{pprepareforvariantannotationblock} > 0 ) {
+    if ( $active_parameter_href->{pprepareforvariantannotationblock} ) {
 
-        $log->info("\t[Prepareforvariantannotationblock]\n");
+        $log->info( $TAB . q{[Prepareforvariantannotationblock]} );
     }
-    if ( $active_parameter_href->{prhocall} > 0 )
-    {                                      #Run rhocall. Done per family
+    if ( $active_parameter_href->{prhocall} ) {
 
         $log->info( $TAB . q{[rhocall]} );
     }
-    if ( $active_parameter_href->{pvt} > 0 ) {
+    if ( $active_parameter_href->{pvt} ) {
 
-        # Run vt. Done per family
         $log->info( $TAB . q{[Vt]} );
     }
-
-    # Run varianteffectpredictor. Family-level
-    if ( $active_parameter_href->{pvarianteffectpredictor} > 0 ) {
+    if ( $active_parameter_href->{pvarianteffectpredictor} ) {
 
         $log->info( $TAB . q{[Varianteffectpredictor]} );
     }
@@ -6042,17 +5701,15 @@ sub variantannotationblock {
 
         $log->info("\t[Vcfparser]\n");
     }
-    if ( $active_parameter_href->{psnpeff} > 0 ) {  #Run snpEff. Done per family
+    if ( $active_parameter_href->{psnpeff} ) {
 
-        $log->info("\t[Snpeff]\n");
+        $log->info( $TAB . q{[Snpeff]} );
     }
-    ## Run rankvariant. Done per family
     if ( $active_parameter_href->{prankvariant} ) {
 
         $log->info( $TAB . q{[Rankvariant]} );
     }
-    ## Run endvariantannotationblock. Done per family
-    if ( $active_parameter{pendvariantannotationblock} ) {
+    if ( $active_parameter_href->{pendvariantannotationblock} ) {
 
         $log->info( $TAB . q{[Endvariantannotationblock]} );
     }
@@ -6061,40 +5718,40 @@ sub variantannotationblock {
     my ( $file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
+            core_number           => $core_number,
             FILEHANDLE            => $FILEHANDLE,
             directory_id          => $$family_id_ref,
-            program_name          => $program_name,
-            program_directory     => lc($$outaligner_dir_ref),
-            core_number           => $core_number,
+            job_id_href           => $job_id_href,
             process_time          => $time,
+            program_directory     => lc($$outaligner_dir_ref),
+            program_name          => $program_name,
         }
     );
 
     ## Copy files for variantannotationblock to enable restart and skip of modules within block
-    if ( $active_parameter_href->{pprepareforvariantannotationblock} > 0 ) {
+    if ( $active_parameter_href->{pprepareforvariantannotationblock} ) {
 
-        ($xargs_file_counter) = prepareforvariantannotationblock(
+        my $program_name = q{prepareforvariantannotationblock};
+
+        ($xargs_file_counter) = analysis_prepareforvariantannotationblock_rio(
             {
-                parameter_href          => $parameter_href,
                 active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
+                call_type               => $call_type,
+                FILEHANDLE              => $FILEHANDLE,
                 file_info_href          => $file_info_href,
+                file_path               => $file_path,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
-                call_type               => $call_type,
-                program_name            => "prepareforvariantannotationblock",
-                file_path               => $file_path,
+                parameter_href          => $parameter_href,
+                program_name            => $program_name,
                 program_info_path       => $program_info_path,
-                FILEHANDLE              => $FILEHANDLE,
+                sample_info_href        => $sample_info_href,
                 xargs_file_counter      => $xargs_file_counter,
-                stderr_path             => $program_info_path . ".stderr.txt",
+                stderr_path => $program_info_path . $DOT . q{stderr.txt},
             }
         );
     }
-
-    # Run vt. Done per family
-    if ( $active_parameter_href->{prhocall} > 0 ) {
+    if ( $active_parameter_href->{prhocall} ) {
 
         my $program_name = q{rhocall};
 
@@ -6122,7 +5779,6 @@ sub variantannotationblock {
             }
         );
     }
-    ## Run vt. Done per family
     if ( $active_parameter_href->{pvt} ) {
 
         my $program_name = q{vt};
@@ -6151,11 +5807,9 @@ sub variantannotationblock {
             }
         );
     }
+    if ( $active_parameter_href->{pvarianteffectpredictor} ) {
 
-    # Run varianteffectpredictor. Family-level
-    if ( $active_parameter_href->{pvarianteffectpredictor} > 0 ) {
-
-        my $program_name = lc q{varianteffectpredictor};
+        my $program_name = q{varianteffectpredictor};
 
         ($xargs_file_counter) = analysis_vep_rio(
             {
@@ -6195,7 +5849,9 @@ sub variantannotationblock {
             }
         );
     }
-    if ( $active_parameter_href->{psnpeff} > 0 ) {  #Run snpEff. Done per family
+    if ( $active_parameter_href->{psnpeff} ) {
+
+        my $program_name = q{snpeff};
 
         ($xargs_file_counter) = snpeff(
             {
@@ -6206,7 +5862,7 @@ sub variantannotationblock {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 call_type               => $call_type,
-                program_name            => "snpeff",
+                program_name            => $program_name,
                 file_path               => $file_path,
                 program_info_path       => $program_info_path,
                 FILEHANDLE              => $FILEHANDLE,
@@ -6214,7 +5870,6 @@ sub variantannotationblock {
             }
         );
     }
-    ## Run rankvariant. Done per family
     if ( $active_parameter_href->{prankvariant} ) {
 
         my $program_name = lc q{rankvariant};
@@ -6265,12 +5920,10 @@ q{Only unaffected sample in pedigree - skipping genmod 'models', 'score' and 'co
             );
         }
     }
-    ## Run endvariantannotationblock. Done per family
-    if ( $active_parameter{pendvariantannotationblock} ) {
+    if ( $active_parameter_href->{pendvariantannotationblock} ) {
 
         my $program_name = q{endvariantannotationblock};
 
-        ## Run endvariantannotationblock. Done per family
         ($xargs_file_counter) = analysis_endvariantannotationblock_rio(
             {
                 parameter_href          => $parameter_href,
