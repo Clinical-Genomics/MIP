@@ -62,33 +62,33 @@ sub conda_create {
         conda_channel => {
             defined     => 1,
             strict_type => 1,
-            store       => \$conda_channel
+            store       => \$conda_channel,
         },
         env_name => {
             default     => q{},
             strict_type => 1,
-            store       => \$env_name
+            store       => \$env_name,
         },
         FILEHANDLE => {
             required => 1,
-            store    => \$FILEHANDLE
+            store    => \$FILEHANDLE,
         },
         no_confirmation => {
             default     => 1,
             allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$no_confirmation
+            store       => \$no_confirmation,
         },
         packages_ref => {
             default     => [],
             strict_type => 1,
-            store       => \$packages_ref
+            store       => \$packages_ref,
         },
         quiet => {
             default     => 1,
             allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$quiet
+            store       => \$quiet,
         },
     };
 
@@ -146,11 +146,11 @@ sub conda_source_activate {
         env_name => {
             required    => 1,
             strict_type => 1,
-            store       => \$env_name
+            store       => \$env_name,
         },
         FILEHANDLE => {
             required => 1,
-            store    => \$FILEHANDLE
+            store    => \$FILEHANDLE,
         },
     };
 
@@ -189,7 +189,7 @@ sub conda_source_deactivate {
         FILEHANDLE => {
             required => 1,
             defined  => 1,
-            store    => \$FILEHANDLE
+            store    => \$FILEHANDLE,
         },
     };
 
@@ -223,13 +223,13 @@ sub conda_update {
     my $tmpl = {
         FILEHANDLE => {
             required => 1,
-            store    => \$FILEHANDLE
+            store    => \$FILEHANDLE,
         },
         no_confirmation => {
             default     => 1,
             allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$no_confirmation
+            store       => \$no_confirmation,
         },
     };
 
@@ -267,7 +267,7 @@ sub conda_check_env_status {
         log => {
             required => 1,
             defined  => 1,
-            store    => \$log
+            store    => \$log,
         },
     };
 
@@ -329,35 +329,35 @@ sub conda_install {
         conda_channel => {
             defined     => 1,
             strict_type => 1,
-            store       => \$conda_channel
+            store       => \$conda_channel,
         },
         env_name => {
             default     => undef,
             strict_type => 1,
-            store       => \$env_name
+            store       => \$env_name,
         },
         FILEHANDLE => {
             required => 1,
-            store    => \$FILEHANDLE
+            store    => \$FILEHANDLE,
         },
         no_confirmation => {
             default     => 1,
             allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$no_confirmation
+            store       => \$no_confirmation,
         },
         packages_ref => {
             required    => 1,
             defined     => 1,
             default     => [],
             strict_type => 1,
-            store       => \$packages_ref
+            store       => \$packages_ref,
         },
         quiet => {
             default     => 1,
             allow       => [ undef, 0, 1 ],
             strict_type => 1,
-            store       => \$quiet
+            store       => \$quiet,
         },
     };
 
@@ -420,36 +420,36 @@ sub conda_uninstall {
         env_name => {
             default     => undef,
             strict_type => 1,
-            store       => \$env_name
+            store       => \$env_name,
         },
         FILEHANDLE => {
             required => 1,
-            store    => \$FILEHANDLE
+            store    => \$FILEHANDLE,
         },
         no_confirmation => {
             default     => 1,
             allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$no_confirmation
+            store       => \$no_confirmation,
         },
         packages_ref => {
             required    => 1,
             defined     => 1,
             default     => [],
             strict_type => 1,
-            store       => \$packages_ref
+            store       => \$packages_ref,
         },
         quiet => {
             default     => 1,
             allow       => [ undef, 0, 1 ],
             strict_type => 1,
-            store       => \$quiet
+            store       => \$quiet,
         },
         verbose => {
             default     => 1,
             allow       => [ undef, 0, 1 ],
             strict_type => 1,
-            store       => \$verbose
+            store       => \$verbose,
         },
     };
 

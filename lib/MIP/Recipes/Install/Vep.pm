@@ -97,7 +97,7 @@ sub install_vep {
 
     ## Modules
     use MIP::Check::Installation qw{ check_existing_installation };
-    use MIP::Gnu::Bash qw(gnu_cd);
+    use MIP::Gnu::Bash qw{ gnu_cd gnu_unset };
     use MIP::Gnu::Coreutils qw{ gnu_ln gnu_mkdir gnu_mv gnu_rm };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
     use MIP::Package_manager::Conda
@@ -377,7 +377,13 @@ q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/LoFtool_scores.tx
     say {$FILEHANDLE} $NEWLINE;
 
     ## Unset LD_LIBRARY_PATH as to not pollute the rest of the installation
-    say {$FILEHANDLE} q{unset LD_LIBRARY_PATH} . $NEWLINE;
+    gnu_unset(
+        {
+            bash_variable => q{LD_LIBRARY_PATH},
+            FILEHANDLE    => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
     ## Deactivate conda environment if conda_environment exists
     if ($conda_environment) {

@@ -2,34 +2,29 @@ package MIP::Gnu::Bash;
 
 use strict;
 use warnings;
-use warnings qw(FATAL utf8);
-use utf8;    #Allow unicode characters in this script
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
+use warnings qw{ FATAL utf8 };
+use utf8;
+use open qw{ :encoding(UTF-8) :std };
+use charnames qw{ :full :short };
 use Carp;
 use autodie;
-use Params::Check qw[check allow last_error];
+use Params::Check qw{ check allow last_error };
 $Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 
-use FindBin qw($Bin);                 #Find directory of script
-use File::Basename qw(dirname);
-use File::Spec::Functions qw(catdir);
-
 ## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
-use MIP::Unix::Standard_streams qw(unix_standard_streams);
-use MIP::Unix::Write_to_file qw(unix_write_to_file);
+use MIP::Unix::Standard_streams qw{ unix_standard_streams };
+use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
 
-    use base qw(Exporter);
+    use base qw{ Exporter };
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(gnu_cd gnu_trap gnu_set gnu_wait);
+    our @EXPORT_OK = qw{ gnu_cd gnu_trap gnu_set gnu_unset gnu_wait };
 
 }
 
@@ -40,13 +35,10 @@ my $NEWLINE    = q{\n};
 
 sub gnu_cd {
 
-##gnu_cd
-
 ##Function : Perl wrapper for writing cd recipe to already open $FILEHANDLE or return commands array. Based on cd 4.0
 ##Returns  : "@commands"
-##Arguments: $FILEHANDLE, $directory_path, $stderrfile_path, $stderrfile_path_append
+##Arguments: $directory_path         => Directory path
 ##         : $FILEHANDLE             => Filehandle to write to
-##         : $directory_path         => Directory path
 ##         : $stderrfile_path        => Stderrfile path
 ##         : $stderrfile_path_append => Append stderr info to file
 
@@ -59,18 +51,28 @@ sub gnu_cd {
     my $stderrfile_path_append;
 
     my $tmpl = {
-        FILEHANDLE      => { store       => \$FILEHANDLE },
-        directory_path  => { strict_type => 1, store => \$directory_path },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
+        directory_path => {
+            strict_type => 1,
+            store       => \$directory_path
+        },
+        FILEHANDLE => {
+            store => \$FILEHANDLE
+        },
+        stderrfile_path => {
+            strict_type => 1,
+            store       => \$stderrfile_path
+        },
+        stderrfile_path_append => {
+            strict_type => 1,
+            store       => \$stderrfile_path_append
+        },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ### cd
     ##Stores commands depending on input parameters
-    my @commands = qw(cd);
+    my @commands = q{cd};
 
     ## Options
     if ($directory_path) {
@@ -88,8 +90,8 @@ sub gnu_cd {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
     return @commands;
@@ -97,16 +99,13 @@ sub gnu_cd {
 
 sub gnu_trap {
 
-##gnu_trap
-
 ##Function : Perl wrapper for writing trap recipe to already open $FILEHANDLE or return commands array. Based on trap 4.0
 ##Returns  : "@commands"
-##Arguments: $trap_signals_ref, $FILEHANDLE, $stderrfile_path, $stderrfile_path_append, $trap_function_call
-##         : $trap_signals_ref       => Array with signals to enable trap for {REF}
-##         : $trap_function_call     => The trap function argument
-##         : $FILEHANDLE             => Filehandle to write to
+##Arguments: $FILEHANDLE             => Filehandle to write to
 ##         : $stderrfile_path        => Stderrfile path
 ##         : $stderrfile_path_append => Append stderr info to file
+##         : $trap_function_call     => The trap function argument
+##         : $trap_signals_ref       => Array with signals to enable trap for {REF}
 
     my ($arg_href) = @_;
 
@@ -122,6 +121,21 @@ sub gnu_trap {
     use MIP::Check::Parameter qw(check_allowed_array_values);
 
     my $tmpl = {
+        FILEHANDLE => {
+            store => \$FILEHANDLE
+        },
+        stderrfile_path => {
+            strict_type => 1,
+            store       => \$stderrfile_path
+        },
+        stderrfile_path_append => {
+            strict_type => 1,
+            store       => \$stderrfile_path_append
+        },
+        trap_function_call => {
+            strict_type => 1,
+            store       => \$trap_function_call
+        },
         trap_signals_ref => {
             default => [],
             allow   => [
@@ -137,21 +151,13 @@ sub gnu_trap {
             strict_type => 1,
             store       => \$trap_signals_ref
         },
-        FILEHANDLE      => { store       => \$FILEHANDLE },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        trap_function_call => {
-            strict_type => 1,
-            store       => \$trap_function_call
-        },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ### trap
     ##Stores commands depending on input parameters
-    my @commands = qw(trap);
+    my @commands = q{trap};
 
     ## Options
 
@@ -184,26 +190,23 @@ sub gnu_trap {
 
 sub gnu_set {
 
-##gnu_set
-
 ##Function : Perl wrapper for writing set recipe to already open $FILEHANDLE or return commands array. Based on set 4.0
 ##Returns  : "@commands"
-##Arguments: $FILEHANDLE, $stderrfile_path, $stderrfile_path_append, $set_errexit, $set_nounset, $set_pipefail, $separator
-##         : $FILEHANDLE             => Filehandle to write to
-##         : $stderrfile_path        => Stderrfile path
-##         : $stderrfile_path_append => Append stderr info to file
+##Arguments: $FILEHANDLE             => Filehandle to write to
+##         : $separator              => Separator to use when writing
 ##         : $set_errexit            => Halt script if command has non-zero exit code (-e)
 ##         : $set_nounset            => Halt script if variable is uninitialised (-u)
 ##         : $set_pipefail           => Detect errors within pipes (-o pipefail)
-##         : $separator              => Separator to use when writing
+##         : $stderrfile_path        => Stderrfile path
+##         : $stderrfile_path_append => Append stderr info to file
 
     my ($arg_href) = @_;
 
     ## Default(s)
+    my $separator;
     my $set_errexit;
     my $set_nounset;
     my $set_pipefail;
-    my $separator;
 
     ## Flatten argument(s)
     my $FILEHANDLE;
@@ -211,10 +214,17 @@ sub gnu_set {
     my $stderrfile_path_append;
 
     my $tmpl = {
-        FILEHANDLE      => { store       => \$FILEHANDLE },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
+        FILEHANDLE => {
+            store => \$FILEHANDLE
+        },
+        stderrfile_path => {
+            strict_type => 1,
+            store       => \$stderrfile_path
+        },
+        stderrfile_path_append => {
+            strict_type => 1,
+            store       => \$stderrfile_path_append
+        },
         set_errexit => {
             default     => 0,
             allow       => [ 0, 1 ],
@@ -240,9 +250,7 @@ sub gnu_set {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
-
-    use MIP::Unix::Write_to_file qw(unix_write_to_file);
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ### set
     ##Stores commands depending on input parameters
@@ -287,38 +295,45 @@ sub gnu_set {
 
 sub gnu_wait {
 
-##gnu_wait
-
 ##Function : Perl wrapper for writing wait recipe to already open $FILEHANDLE or return commands array. Based on wait 4.0
 ##Returns  : "@commands"
-##Arguments: $processes_ref, $FILEHANDLE, $stderrfile_path, $stderrfile_path_append
+##Arguments: $FILEHANDLE             => Filehandle to write to
 ##         : $processes_ref          => Specified processes to write to
-##         : $FILEHANDLE             => Filehandle to write to
 ##         : $stderrfile_path        => Stderrfile path
 ##         : $stderrfile_path_append => Append stderr info to file
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $processes_ref;
     my $FILEHANDLE;
+    my $processes_ref;
     my $stderrfile_path;
     my $stderrfile_path_append;
 
     my $tmpl = {
-        processes_ref =>
-          { default => [], strict_type => 1, store => \$processes_ref },
-        FILEHANDLE      => { store       => \$FILEHANDLE },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
+        FILEHANDLE => {
+            store => \$FILEHANDLE
+        },
+        processes_ref => {
+            default     => [],
+            strict_type => 1,
+            store       => \$processes_ref
+        },
+        stderrfile_path => {
+            strict_type => 1,
+            store       => \$stderrfile_path
+        },
+        stderrfile_path_append => {
+            strict_type => 1,
+            store       => \$stderrfile_path_append
+        },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ### wait
     ##Stores commands depending on input parameters
-    my @commands = qw(wait);
+    my @commands = q{wait};
 
     ## Options
     if ( @{$processes_ref} ) {
@@ -343,4 +358,73 @@ sub gnu_wait {
     return @commands;
 }
 
+sub gnu_unset {
+
+## Function : Perl wrapper for writing set recipe to already open $FILEHANDLE or return commands array. Based on set 4.0
+## Returns  : @commands
+## Arguments: $bash_variable          => Variable to unset
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $bash_variable;
+    my $FILEHANDLE;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+
+    my $tmpl = {
+        bash_variable => {
+            defined     => 1,
+            required    => 1,
+            strict_type => 1,
+            store       => \$bash_variable,
+        },
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        stderrfile_path => {
+            strict_type => 1,
+            store       => \$stderrfile_path,
+        },
+        stderrfile_path_append => {
+            strict_type => 1,
+            store       => \$stderrfile_path_append,
+        },
+        stdoutfile_path => {
+            strict_type => 1,
+            store       => \$stdoutfile_path,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Stores command
+    my @commands = q{unset};
+
+    push @commands, $bash_variable;
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            FILEHANDLE   => $FILEHANDLE,
+            commands_ref => \@commands,
+            separator    => $SPACE,
+
+        }
+    );
+    return @commands;
+}
 1;

@@ -63,6 +63,12 @@ pip:
 # only applicaple for shell programs that overlap with existing conda packages
 prefer_shell: ~
 
+# Python 3 packages
+py3_packages: 
+  - chanjo
+  - genmod
+  - variant_integrity
+
 # Specify python version
 python_version: ~
 

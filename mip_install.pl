@@ -61,6 +61,7 @@ Readonly my $COMMA      => q{,};
 Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
+Readonly my $TAB        => qq{\t};
 Readonly my $UNDERSCORE => q{_};
 
 ### Set parameter default
@@ -551,6 +552,7 @@ sub get_programs_for_installation {
     _assure_python_3_compability(
         {
             log                => $log,
+            py3_packages_ref   => $parameter_href->{py3_packages},
             python_version     => $parameter_href->{conda_packages}{python},
             select_program_ref => $parameter_href->{select_program}
         }
@@ -627,7 +629,8 @@ sub _assure_python_3_compability {
 
 ## Function : Test if specified programs are to be installed in a python 3 environment
 ## Returns  :
-## Arguments: $log                => Log
+## Arguments: $sub_log            => Log
+##          : $py3_packages_ref   => Array with packages that requires python 3 {REF}
 ##          : $python_version     => The python version that are to be used for the environment
 ##          : $select_program_ref => Programs selected for installation by the user {REF}
 
@@ -635,6 +638,7 @@ sub _assure_python_3_compability {
 
     ## Flatten argument(s)
     my $sub_log;
+    my $py3_packages_ref;
     my $python_version;
     my $select_program_ref;
 
@@ -643,6 +647,13 @@ sub _assure_python_3_compability {
             required => 1,
             defined  => 1,
             store    => \$sub_log,
+        },
+        py3_packages_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            strict_type => 1,
+            store       => \$py3_packages_ref,
         },
         python_version => {
             required => 1,
@@ -664,17 +675,22 @@ sub _assure_python_3_compability {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use Array::Utils qw{ array_minus };
+
+    ## Check if a python 3 environment has been specified and a python 2 program has been specified for installation
     if (
         $python_version =~ m/ 
-          3\.\d+ |    # Python 3 release with minor version eg 3.6
-          3\.\d+\.\d+ # Python 3 release with minor and patch e.g. 3.6.2
-          /xms
-        and not any { $_ =~ m/ chanjo | genmod | variant_integrity /xms }
-        @{$select_program_ref}
+        3\.\d+ |    # Python 3 release with minor version eg 3.6
+        3\.\d+\.\d+ # Python 3 release with minor and patch e.g. 3.6.2
+        /xms
+        and array_minus( @{$select_program_ref}, @{$py3_packages_ref} )
       )
     {
         $sub_log->fatal(
-q{A python 3 env has been specified. Please use a python 2 environment for all programs except Chanjo and Genmod and Variant_integrity}
+q{A python 3 env has been specified. Please use a python 2 environment for all programs except:}
+              . $NEWLINE
+              . join $TAB,
+            @{$py3_packages_ref}
         );
         exit 1;
     }
@@ -684,7 +700,7 @@ q{A python 3 env has been specified. Please use a python 2 environment for all p
 sub _assure_python_2_compability {
 
 ## Function : Exclude programs that are not compatible with python 2 and exit when a program with python 3 dependency has been selected.
-## Returns  :
+## Returns  : $parameter_href
 ## Arguments: $log            => Log
 ##          : $parameter_href => Parameter hash {REF}
 
@@ -711,6 +727,8 @@ sub _assure_python_2_compability {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use Array::Utils qw{ intersect };
+
     if (
         $parameter_href->{conda_packages}{python} =~
         m/ 2\.\d+ |    # Python 2 release with minor version eg 2.7.14
@@ -718,18 +736,24 @@ sub _assure_python_2_compability {
         /xms
       )
     {
-        delete $parameter_href->{pip}{chanjo};
-        delete $parameter_href->{pip}{genmod};
-        delete $parameter_href->{pip}{variant_integrity};
+        ## Delete python 3 packages if a python 2 env has been specified
+        foreach my $py3_package ( @{ $parameter_href->{py3_packages} } ) {
+            delete $parameter_href->{pip}{$py3_package};
+        }
 
-        ## Check if Chanjo and genmod has been selected for installation in a python 2 environment
+        ## Check if a python 3 package has been selected for installation in a python 2 environment
         if (
-            any { $_ =~ m/ chanjo | genmod | variant_integrity /xms }
-            @{ $parameter_href->{select_program} }
+            intersect(
+                @{ $parameter_href->{select_program} },
+                @{ $parameter_href->{py3_packages} }
+            )
           )
         {
             $sub_log->fatal(
-q{Please specify a python 3 environment for Chanjo, Genmod and Variant_integrity}
+                q{Please specify a python 3 environment for:}
+                  . $NEWLINE
+                  . join $TAB,
+                @{ $parameter_href->{py3_packages} }
             );
             exit 1;
         }

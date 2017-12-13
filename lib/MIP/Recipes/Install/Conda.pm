@@ -335,6 +335,7 @@ sub install_bioconda_packages {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments};
 
+    use MIP::Gnu::Bash qw{ gnu_unset };
     use MIP::Gnu::Coreutils qw{ gnu_ln };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
     use MIP::Package_manager::Conda qw{ conda_install };
@@ -428,7 +429,13 @@ sub install_bioconda_packages {
         # Check if the program has been set to be installed via shell and
         # thus has been removed from the bioconda_packages hash
         next PROGRAM if ( not $bioconda_packages_href->{$program} );
-        say {$FILEHANDLE} q{unset} . $SPACE . $program_path_aliases{$program};
+        gnu_unset(
+            {
+                bash_variable => $program_path_aliases{$program},
+                FILEHANDLE    => $FILEHANDLE,
+            }
+        );
+        print {$FILEHANDLE} $NEWLINE;
     }
     say {$FILEHANDLE} $NEWLINE;
 
