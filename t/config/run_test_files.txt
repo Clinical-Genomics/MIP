@@ -15,6 +15,7 @@ bwa_mem.t
 bwa_index.t
 bzip2.t
 check_cmd_config_vs_definition_file.t
+check_element_exist_hash_of_array.t
 check_filesystem_objects_existance.t
 check_parameter_hash.t
 check_perl_modules.t

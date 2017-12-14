@@ -178,14 +178,14 @@ sub analysis_mip_vcfparser {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw(get_core_number);
+    use MIP::Cluster qw{ get_core_number };
     use MIP::Get::File qw{ get_file_suffix };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
     use MIP::Program::Variantcalling::Mip_vcfparser qw{ mip_vcfparser };
-    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
+    use MIP::QC::Record qw{ add_gene_panel add_program_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Set::File qw{ set_file_suffix };
@@ -327,7 +327,7 @@ sub analysis_mip_vcfparser {
         if ( $active_parameter_href->{vcfparser_select_file} ) {
 
             if (
-                !_check_entry_hash_of_array(
+                not check_element_exist_hash_of_array(
                     {
                         element  => $contig,
                         hash_ref => $file_info_href,
@@ -346,24 +346,8 @@ sub analysis_mip_vcfparser {
                   ->{vcfparser_select_file_matching_column}
                   ;
 
-                if (
-                    (
-                        $active_parameter_href
-                        ->{vcfparser_select_feature_annotation_columns}
-                    )
-                    && (
-                        @{
-                            $active_parameter_href
-                              ->{vcfparser_select_feature_annotation_columns}
-                        }
-                    )
-                  )
-                {
+                @select_feature_annotation_columns = @{ $active_parameter_href->{vcfparser_select_feature_annotation_columns} };
 
-                    @select_feature_annotation_columns =
-                      @{ $active_parameter_href
-                          ->{vcfparser_select_feature_annotation_columns} };
-                }
                 $select_outfile =
                     $outfile_path_prefix
                   . $UNDERSCORE
@@ -440,7 +424,7 @@ sub analysis_mip_vcfparser {
         while ( my ( $gene_panel_key, $gene_panel_file ) = each %gene_panels ) {
 
             ## Collect databases(s) from a potentially merged gene panel file and adds them to sample_info
-            collect_gene_panels(
+            add_gene_panel(
                 {
                     aggregate_gene_panel_file =>
                       $active_parameter_href->{$gene_panel_file},
@@ -466,8 +450,7 @@ sub analysis_mip_vcfparser {
             }
         );
     }
-
-    close $XARGSFILEHANDLE;
+    close $XARGSFILEHANDLE or $log->logcroak(q{Could not close $XARGSFILEHANDLE});
 
     my $vcfparser_analysis_type = $EMPTY_STR;
     my @vcfparser_contigs_ref   = \@{ $file_info_href->{contigs_size_ordered} };
@@ -504,7 +487,9 @@ sub analysis_mip_vcfparser {
             }
         );
     }
-    close $FILEHANDLE;
+
+    close $FILEHANDLE or $log->logcroak(q{Could not close $FILEHANDLE});
+
 
     if ( $mip_program_mode == 1 ) {
         slurm_submit_job_sample_id_dependency_add_to_family(
@@ -664,14 +649,15 @@ sub analysis_mip_vcfparser_rio {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw(get_core_number);
+    use MIP::Check::Hash qw{ check_element_exist_hash_of_array };
+    use MIP::Cluster qw{ get_core_number };
     use MIP::Get::File qw{ get_file_suffix };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
     use MIP::Program::Variantcalling::Mip_vcfparser qw{ mip_vcfparser };
-    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
+    use MIP::QC::Record qw{ add_gene_panel add_program_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Set::File qw{ set_file_suffix };
@@ -775,7 +761,7 @@ sub analysis_mip_vcfparser_rio {
         if ( $active_parameter_href->{vcfparser_select_file} ) {
 
             if (
-                not _check_entry_hash_of_array(
+                not check_element_exist_hash_of_array(
                     {
                         element  => $contig,
                         hash_ref => $file_info_href,
@@ -796,24 +782,11 @@ sub analysis_mip_vcfparser_rio {
                   ->{vcfparser_select_file_matching_column}
                   ;
 
-                if (
-                    (
-                        $active_parameter_href
-                        ->{vcfparser_select_feature_annotation_columns}
-                    )
-                    && (
-                        @{
-                            $active_parameter_href
-                              ->{vcfparser_select_feature_annotation_columns}
-                        }
-                    )
-                  )
-                {
 
                     @select_feature_annotation_columns =
                       @{ $active_parameter_href
                           ->{vcfparser_select_feature_annotation_columns} };
-                }
+
                 $select_outfile =
                     $outfile_path_prefix
                   . $UNDERSCORE
@@ -890,7 +863,7 @@ sub analysis_mip_vcfparser_rio {
         while ( my ( $gene_panel_key, $gene_panel_file ) = each %gene_panels ) {
 
             ## Collect databases(s) from a potentially merged gene panel file and adds them to sample_info
-            collect_gene_panels(
+            add_gene_panel(
                 {
                     aggregate_gene_panel_file =>
                       $active_parameter_href->{$gene_panel_file},
@@ -916,52 +889,10 @@ sub analysis_mip_vcfparser_rio {
             }
         );
     }
-    close $XARGSFILEHANDLE;
+    close $XARGSFILEHANDLE or $log->logcroak(q{Could not close $XARGSFILEHANDLE});
 
     # Track the number of created xargs scripts per module for Block algorithm
     return $xargs_file_counter;
-}
-
-sub _check_entry_hash_of_array {
-
-## Function : Test element for being part of hash of array at supplied key.
-## Returns  : Return "1" if element is not part of array
-
-##Arguments: $element  => Element to look for in hash of array
-##         : $hash_ref => Hash {REF}
-##         : $key      => The key pointing to the array in the $hash_ref
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $hash_ref;
-    my $key;
-    my $element;
-
-    my $tmpl = {
-        hash_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$hash_ref
-        },
-        key =>
-          { required => 1, defined => 1, strict_type => 1, store => \$key },
-        element =>
-          { required => 1, defined => 1, strict_type => 1, store => \$element },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    # Information on entry present
-    if ( defined ${$hash_ref}{$key} ) {
-
-        # If element is not part of array
-        if ( not ( any { $_ eq $element } @{ $hash_ref->{$key} } ) ) {
-            return 1;
-        }
-    }
 }
 
 1;

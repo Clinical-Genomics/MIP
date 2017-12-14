@@ -24,8 +24,158 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ add_most_complete_vcf add_program_outfile_to_sample_info add_processing_metafile_to_sample_info add_program_metafile_to_sample_info };
+      qw{ add_gene_panel add_most_complete_vcf add_processing_metafile_to_sample_info add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
 
+}
+
+## Constants
+Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => q{ };
+
+sub add_gene_panel {
+
+##collect_gene_panels
+
+##Function : Collect databases(s) from a database file and adds them to sample_info
+##Returns  :
+##Arguments: $aggregate_gene_panel_file => The database file
+##         : $aggregate_gene_panels_key => The database key i.e. select or range
+##         : $family_id_ref             => The family ID {REF}
+##         : $program_name_ref          => Program name {REF}
+##         : $sample_info_href          => Info on samples and family hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $aggregate_gene_panel_file;
+    my $aggregate_gene_panels_key;
+    my $family_id_ref;
+    my $program_name_ref;
+    my $sample_info_href;
+
+    my $tmpl = {
+        aggregate_gene_panel_file =>
+          { strict_type => 1, store => \$aggregate_gene_panel_file },
+        aggregate_gene_panels_key => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$aggregate_gene_panels_key
+        },
+        family_id_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => \$$,
+            strict_type => 1,
+            store       => \$family_id_ref,
+        },
+        program_name_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => \$$,
+            strict_type => 1,
+            store       => \$program_name_ref
+        },
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href,
+        },
+    };
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    if ( defined $aggregate_gene_panel_file ) {
+
+        ## Retrieve logger object
+        my $log = Log::Log4perl->get_logger(q{MIP});
+
+        my %gene_panel;    #Collect each gene panel features
+        my %header = (
+            display_name => q{display_name},
+            gene_panel   => q{gene_panel},
+            updated_at   => q{updated_at},
+            version      => q{version},
+
+        );
+
+        # Execute perl
+        my $sub_database_regexp = q?perl -nae '?;
+
+        # If line starts with gene panel comment
+        $sub_database_regexp .= q?if ($_=~/^##gene_panel=/)? . $SPACE;
+
+        # Remove newline char and split fields
+        $sub_database_regexp .=
+          q?{chomp($_);my @entries=split(/,/, $_);? . $SPACE;
+
+   # Join fields with comma separator appending ":". Skip rest if it's a comment
+        $sub_database_regexp .=
+q?my $entry = join(",", $_); print $entry.":" } if($_=~/^#\w/) {last;}'?;
+
+        # Collect header_lines(s) from select_file header
+        my $ret = `$sub_database_regexp $aggregate_gene_panel_file`;
+
+        # Split each gene panel meta data header line into array element
+        my @header_lines = split /:/, $ret;
+
+      LINE:
+        foreach my $line (@header_lines) {
+
+            # Split each memember database line into features
+            my @features = split /,/, $line;
+
+          ELEMENT:
+            foreach my $feature_element (@features) {
+
+              KEY_VALUE:
+                foreach my $gene_panel_header_element ( keys %header ) {
+
+                    # Parse the features using defined header keys
+                    if ( $feature_element =~ /$gene_panel_header_element=/ ) {
+
+                        my @temps = split /=/, $feature_element;
+
+                        # Value
+                        $gene_panel{ $header{$gene_panel_header_element} } =
+                          $temps[1];
+                        last;
+                    }
+                }
+            }
+
+            if ( defined $gene_panel{gene_panel} ) {
+
+                # Create unique gene panel ID
+                my $gene_panel_name = $gene_panel{gene_panel};
+
+                ## Add new entries
+                foreach my $feature ( keys %gene_panel ) {
+
+                    $sample_info_href->{ ${$program_name_ref} }
+                      {$aggregate_gene_panels_key}{gene_panel}
+                      {$gene_panel_name}{$feature} = $gene_panel{$feature};
+                }
+            }
+            else {
+
+                $log->warn( q{Unable to write}
+                      . $SPACE
+                      . $aggregate_gene_panels_key
+                      . $SPACE
+                      . q{aggregate gene panel(s) to qc_sample_info. Lacking ##gene_panel=<ID=[?] or version=[?] in aggregate gene panel(s) header.}
+                      . $NEWLINE );
+            }
+
+            # Reset hash for next line
+            %gene_panel = ();
+        }
+        $sample_info_href->{ ${$program_name_ref} }{$aggregate_gene_panels_key}
+          {path} = $aggregate_gene_panel_file;
+    }
+
+    return;
 }
 
 sub add_most_complete_vcf {
