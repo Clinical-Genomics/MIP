@@ -83,6 +83,8 @@ use MIP::Recipes::Analysis::Endvariantannotationblock
   qw{ analysis_endvariantannotationblock analysis_endvariantannotationblock_rio };
 use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
 use MIP::Recipes::Analysis::Freebayes qw { analysis_freebayes_calling };
+use MIP::Recipes::Analysis::Frequency_filter
+  qw{ analysis_frequency_filter analysis_frequency_filter_rio };
 use MIP::Recipes::Analysis::Gatk_baserecalibration
   qw{ analysis_gatk_baserecalibration };
 use MIP::Recipes::Analysis::Gatk_combinevariantcallsets
@@ -534,13 +536,15 @@ GetOptions(
     q{vtunq|vt_uniq=n}       => \$active_parameter{vt_uniq},
     q{vtmaa|vt_missing_alt_allele=n} =>
       \$active_parameter{vt_missing_alt_allele},
-    q{vtgmf|vt_genmod_filter=n} => \$active_parameter{vt_genmod_filter},
-    q{vtgfr|vt_genmod_filter_1000g:s} =>
-      \$active_parameter{vt_genmod_filter_1000g},
-    q{vtmaf|vt_genmod_filter_max_af=n} =>
-      \$active_parameter{vt_genmod_filter_max_af},
-    q{vtgft|vt_genmod_filter_threshold:s} =>
-      \$active_parameter{vt_genmod_filter_threshold},
+    q{pfqf|pfrequency_filter=n} => \$active_parameter{pfrequency_filter},
+    q{fqfgmf|frequency_genmod_filter=n} =>
+      \$active_parameter{frequency_genmod_filter},
+    q{fqfgfr|frequency_genmod_filter_1000g:s} =>
+      \$active_parameter{frequency_genmod_filter_1000g},
+    q{fqfmaf|frequency_genmod_filter_max_af=n} =>
+      \$active_parameter{frequency_genmod_filter_max_af},
+    q{fqfgft|frequency_genmod_filter_threshold:s} =>
+      \$active_parameter{frequency_genmod_filter_threshold},
     q{pvep|pvarianteffectpredictor=n} =>
       \$active_parameter{pvarianteffectpredictor},
     q{vepp|vep_directory_path:s}  => \$active_parameter{vep_directory_path},
@@ -2784,6 +2788,34 @@ else {
             }
         );
     }
+    if ( $active_parameter{pfrequency_filter} ) {
+
+        $log->info(q{[Frequency_filter]});
+
+        my $program_name = q{frequency_filter};
+
+        my $infamily_directory = catdir(
+            $active_parameter{outdata_dir},
+            $active_parameter{family_id},
+            $active_parameter{outaligner_dir}
+        );
+        my $outfamily_directory = $infamily_directory;
+
+        analysis_frequency_filter(
+            {
+                parameter_href          => \%parameter,
+                active_parameter_href   => \%active_parameter,
+                sample_info_href        => \%sample_info,
+                file_info_href          => \%file_info,
+                infile_lane_prefix_href => \%infile_lane_prefix,
+                infamily_directory      => $infamily_directory,
+                job_id_href             => \%job_id,
+                call_type               => q{BOTH},
+                outfamily_directory     => $outfamily_directory,
+                program_name            => $program_name,
+            }
+        );
+    }
     ## Run varianteffectpredictor {family-level}
     if ( $active_parameter{pvarianteffectpredictor} > 0 ) {
 
@@ -3098,7 +3130,7 @@ sub build_usage {
     -osd/--outscript_dir The script files (.sh) output directory (mandatory)
     -f/--family_id Group id of samples to be compared (defaults to "", (Ex: 1 for IDN 1-1-1A))
     -sck/--supported_capture_kit Set the capture kit acronym shortcut in pedigree file
-    -dnr/--decompose_normalize_references Set the references to be decomposed and normalized (defaults: "gatk_realigner_indel_known_sites", "gatk_baserecalibration_known_sites","gatk_haplotypecaller_snp_known_set", "gatk_variantrecalibration_resource_snv", "gatk_variantrecalibration_resource_indel", "vt_genmod_filter_1000g", "sv_vcfanno_config_file", "gatk_varianteval_gold", "gatk_varianteval_dbsnp","snpsift_annotation_files")
+    -dnr/--decompose_normalize_references Set the references to be decomposed and normalized (defaults: "gatk_realigner_indel_known_sites", "gatk_baserecalibration_known_sites","gatk_haplotypecaller_snp_known_set", "gatk_variantrecalibration_resource_snv", "gatk_variantrecalibration_resource_indel", "frequency_genmod_filter_1000g", "sv_vcfanno_config_file", "gatk_varianteval_gold", "gatk_varianteval_dbsnp","snpsift_annotation_files")
     -ped/--pedigree_file Meta data on samples (defaults to "")
     -hgr/--human_genome_reference Fasta file for the human genome reference (defaults to "GRCh37_homo_sapiens_-d5-.fasta;1000G decoy version 5")
     -ald/--outaligner_dir Setting which aligner out directory was used for alignment in previous analysis (defaults to "{outdata_dir}{outaligner_dir}")
@@ -3285,10 +3317,10 @@ sub build_usage {
       -vtnor/--vt_normalize Normalize variants (defaults to "1" (=yes))
       -vtunq/--vt_uniq Remove variant duplicates (defaults to "1" (=yes))
       -vtmaa/--vt_missing_alt_allele Remove missing alternative alleles '*' (defaults to "1" (=yes))
-      -vtgmf/--vt_genmod_filter Remove common variants from vcf file (defaults to "1" (=yes))
-      -vtgfr/--vt_genmod_filter_1000g Genmod annotate 1000G reference (defaults to "GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz")
-      -vtmaf/--vt_genmod_filter_max_af Annotate MAX_AF from reference (defaults to "")
-      -vtgft/--vt_genmod_filter_threshold Threshold for filtering variants (defaults to "0.10")
+      -fqfgmf/--frequency_genmod_filter Remove common variants from vcf file (defaults to "1" (=yes))
+      -fqfgfr/--frequency_genmod_filter_1000g Genmod annotate 1000G reference (defaults to "GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz")
+      -fqfmaf/--frequency_genmod_filter_max_af Annotate MAX_AF from reference (defaults to "")
+      -fqfgft/--frequency_genmod_filter_threshold Threshold for filtering variants (defaults to "0.10")
     -pvep/--pvarianteffectpredictor Annotate variants using VEP (defaults to "0" (=no))
       -vepp/--vep_directory_path Path to VEP script directory (defaults to "")
       -vepc/--vep_directory_cache Specify the cache directory to use (defaults to "")
@@ -4922,6 +4954,10 @@ sub variantannotationblock {
 
         $log->info( $TAB . q{[Vt]} );
     }
+    if ( $active_parameter_href->{pfrequency_filter} ) {
+
+        $log->info( $TAB . q{[Frequency filter]} );
+    }
     if ( $active_parameter_href->{pvarianteffectpredictor} ) {
 
         $log->info( $TAB . q{[Varianteffectpredictor]} );
@@ -5018,6 +5054,34 @@ sub variantannotationblock {
         my $outfamily_directory = $infamily_directory;
 
         ($xargs_file_counter) = analysis_vt_rio(
+            {
+                parameter_href          => $parameter_href,
+                active_parameter_href   => $active_parameter_href,
+                sample_info_href        => $sample_info_href,
+                file_info_href          => $file_info_href,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                infamily_directory      => $infamily_directory,
+                job_id_href             => $job_id_href,
+                call_type               => $call_type,
+                program_name            => $program_name,
+                file_path               => $file_path,
+                outfamily_directory     => $outfamily_directory,
+                program_info_path       => $program_info_path,
+                FILEHANDLE              => $FILEHANDLE,
+                xargs_file_counter      => $xargs_file_counter,
+                stderr_path => $program_info_path . $DOT . q{stderr.txt},
+            }
+        );
+    }
+    if ( $active_parameter_href->{pfrequency_filter} ) {
+
+        my $program_name = q{frequency_filter};
+
+        my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
+            $$family_id_ref, $$outaligner_dir_ref );
+        my $outfamily_directory = $infamily_directory;
+
+        ($xargs_file_counter) = analysis_frequency_filter_rio(
             {
                 parameter_href          => $parameter_href,
                 active_parameter_href   => $active_parameter_href,

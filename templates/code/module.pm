@@ -11,6 +11,7 @@ use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
+use autodie qw{ :all };
 use Readonly;
 
 BEGIN {

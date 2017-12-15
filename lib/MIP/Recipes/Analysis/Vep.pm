@@ -236,7 +236,7 @@ sub analysis_vep {
     $parameter_href->{$mip_program_name}{indirectory} = $outfamily_directory;
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$family_id}{pvt}{file_tag};
+    my $infile_tag = $file_info_href->{$family_id}{pfrequency_filter}{file_tag};
     my $outfile_tag =
       $file_info_href->{$family_id}{$mip_program_name}{file_tag};
     my $infile_prefix       = $family_id . $infile_tag . $call_type;
@@ -683,7 +683,7 @@ sub analysis_vep_rio {
     $parameter_href->{$mip_program_name}{indirectory} = $outfamily_directory;
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$family_id}{pvt}{file_tag};
+    my $infile_tag = $file_info_href->{$family_id}{pfrequency_filter}{file_tag};
     my $outfile_tag =
       $file_info_href->{$family_id}{$mip_program_name}{file_tag};
     my $infile_prefix       = $family_id . $infile_tag . $call_type;
