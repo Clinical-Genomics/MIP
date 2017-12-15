@@ -34,11 +34,11 @@ Readonly my $SPACE   => q{ };
 #############################################################################
 ############### SHORT INSTRUCTIONS ON HOW TO USE THE TEMPLATE ###############
 #############################################################################
-# This is a genereric template for writing installation commands for
-# installation of progrmas via SHELL. The installation proccess required by
-# the program in question might call for more or less extensive modifications
-# to the template. This template is based on a straight forward download of a
-# zip file to the specified conda environment using wget. This is followed by
+# This is a genereric template for writing commands for installation of 
+# programs via SHELL. The installation proccess required by the program in 
+# question might call for more or less extensive modifications to the 
+# template. This template is based on a straight forward download of a zip 
+# file to the specified conda environment using wget. This is followed by
 # unpacking, building and linking the binary. Other programs might for
 # example require cloning into a git repository and or setting up
 # LD_LIPRARY_PATH.
@@ -180,7 +180,7 @@ sub install_PROGRAM {
 
     ## Download
     say {$FILEHANDLE} q{## Download PROGRAM};
-    my $url = q{https://                 };
+    my $url = q{https://};
     my $PROGRAM_zip_path =
       catfile( $conda_prefix_path,
         q{PROGRAM-} . $PROGRAM_version . $DOT . q{zip} );
@@ -287,6 +287,5 @@ sub install_PROGRAM {
 
     print {$FILEHANDLE} $NEWLINE;
     return;
-
 }
 1;
