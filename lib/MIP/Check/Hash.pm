@@ -49,14 +49,18 @@ sub check_element_exist_hash_of_array {
     my $key;
 
     my $tmpl = {
-        element =>
-          { required => 1, defined => 1, strict_type => 1, store => \$element },
-        hash_ref => {
-            required    => 1,
+        element => {
             defined     => 1,
-            default     => {},
+            required    => 1,
+            store       => \$element,
             strict_type => 1,
-            store       => \$hash_ref
+        },
+        hash_ref => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$hash_ref,
+            strict_type => 1,
         },
         key =>
           { required => 1, defined => 1, strict_type => 1, store => \$key },

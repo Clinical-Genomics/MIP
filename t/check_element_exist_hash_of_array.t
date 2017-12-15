@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -110,7 +110,7 @@ my %file_info = (
 );
 
 # Test an existing key and an element not part of the array hash
-my ($not_exist) = check_element_exist_hash_of_array(
+my $not_exist = check_element_exist_hash_of_array(
     {
         element  => q{.another_file_ending},
         hash_ref => \%file_info,
@@ -120,7 +120,15 @@ my ($not_exist) = check_element_exist_hash_of_array(
 
 is( $not_exist, 1, q{Element not part of hash of arrays} );
 
-is( $not_exist, undef, q{Element is part of hash of arrays} );
+my $exist = check_element_exist_hash_of_array(
+    {
+        element  => q{.amb},
+        hash_ref => \%file_info,
+        key      => q{bwa_build_reference},
+    }
+);
+
+is( $exist, undef, q{Element is part of hash of arrays} );
 
 done_testing();
 
