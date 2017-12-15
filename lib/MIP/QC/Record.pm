@@ -34,23 +34,21 @@ Readonly my $SPACE   => q{ };
 
 sub add_gene_panel {
 
-##collect_gene_panels
-
-##Function : Collect databases(s) from a database file and adds them to sample_info
-##Returns  :
-##Arguments: $aggregate_gene_panel_file => The database file
-##         : $aggregate_gene_panels_key => The database key i.e. select or range
-##         : $family_id_ref             => The family ID {REF}
-##         : $program_name_ref          => Program name {REF}
-##         : $sample_info_href          => Info on samples and family hash {REF}
+## Function : Collect databases(s) from a database file and adds them to sample_info
+## Returns  :
+## Arguments: $aggregate_gene_panel_file => The database file
+##          : $aggregate_gene_panels_key => The database key i.e. select or range
+##          : $family_id                 => The family ID
+##          : $program_name              => Program name
+##          : $sample_info_href          => Info on samples and family hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $aggregate_gene_panel_file;
     my $aggregate_gene_panels_key;
-    my $family_id_ref;
-    my $program_name_ref;
+    my $family_id;
+    my $program_name;
     my $sample_info_href;
 
     my $tmpl = {
@@ -60,21 +58,19 @@ sub add_gene_panel {
             required    => 1,
             defined     => 1,
             strict_type => 1,
-            store       => \$aggregate_gene_panels_key
+            store       => \$aggregate_gene_panels_key,
         },
-        family_id_ref => {
+        family_id => {
             required    => 1,
             defined     => 1,
-            default     => \$$,
             strict_type => 1,
-            store       => \$family_id_ref,
+            store       => \$family_id,
         },
-        program_name_ref => {
+        program_name => {
             required    => 1,
             defined     => 1,
-            default     => \$$,
             strict_type => 1,
-            store       => \$program_name_ref
+            store       => \$program_name,
         },
         sample_info_href => {
             required    => 1,
@@ -86,18 +82,18 @@ sub add_gene_panel {
     };
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    if ( defined $aggregate_gene_panel_file ) {
+    if ($aggregate_gene_panel_file) {
 
         ## Retrieve logger object
         my $log = Log::Log4perl->get_logger(q{MIP});
 
-        my %gene_panel;    #Collect each gene panel features
+        # Collect each gene panel features
+        my %gene_panel;
         my %header = (
             display_name => q{display_name},
             gene_panel   => q{gene_panel},
             updated_at   => q{updated_at},
             version      => q{version},
-
         );
 
         # Execute perl
@@ -123,7 +119,7 @@ q?my $entry = join(",", $_); print $entry.":" } if($_=~/^#\w/) {last;}'?;
       LINE:
         foreach my $line (@header_lines) {
 
-            # Split each memember database line into features
+            # Split each member database line into features
             my @features = split /,/, $line;
 
           ELEMENT:
@@ -151,9 +147,10 @@ q?my $entry = join(",", $_); print $entry.":" } if($_=~/^#\w/) {last;}'?;
                 my $gene_panel_name = $gene_panel{gene_panel};
 
                 ## Add new entries
+              FEATURE:
                 foreach my $feature ( keys %gene_panel ) {
 
-                    $sample_info_href->{ ${$program_name_ref} }
+                    $sample_info_href->{$program_name}
                       {$aggregate_gene_panels_key}{gene_panel}
                       {$gene_panel_name}{$feature} = $gene_panel{$feature};
                 }
@@ -171,10 +168,16 @@ q?my $entry = join(",", $_); print $entry.":" } if($_=~/^#\w/) {last;}'?;
             # Reset hash for next line
             %gene_panel = ();
         }
-        $sample_info_href->{ ${$program_name_ref} }{$aggregate_gene_panels_key}
-          {path} = $aggregate_gene_panel_file;
-    }
 
+        # Call add_processing_metafile_to_sample_info with family parameter
+        add_processing_metafile_to_sample_info(
+            {
+                metafile_tag     => $aggregate_gene_panels_key,
+                sample_info_href => $sample_info_href,
+                path             => $aggregate_gene_panel_file,
+            }
+        );
+    }
     return;
 }
 

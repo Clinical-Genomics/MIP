@@ -68,10 +68,9 @@ sub check_element_exist_hash_of_array {
     if ( exists ${$hash_ref}{$key} ) {
 
         # If element is not part of array
-        if ( not( any { $_ eq $element } @{ $hash_ref->{$key} } ) ) {
+        if ( not any { $_ eq $element } @{ $hash_ref->{$key} } ) {
             return 1;
         }
-
     }
     return;
 }
