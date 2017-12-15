@@ -113,6 +113,8 @@ use MIP::Recipes::Analysis::Picardtools_genotypeconcordance
 use MIP::Recipes::Analysis::Picardtools_mergesamfiles
   qw{ analysis_picardtools_mergesamfiles };
 use MIP::Recipes::Analysis::Plink qw{ analysis_plink };
+use MIP::Recipes::Analysis::Prepareforvariantannotationblock
+  qw{ analysis_prepareforvariantannotationblock analysis_prepareforvariantannotationblock_rio };
 use MIP::Recipes::Qc::Qccollect qw{ analysis_qccollect };
 use MIP::Recipes::Analysis::Rankvariant
   qw{ analysis_rankvariant analysis_rankvariant_rio analysis_rankvariant_rio_unaffected analysis_rankvariant_unaffected analysis_sv_rankvariant analysis_sv_rankvariant_unaffected };
@@ -273,6 +275,7 @@ GetOptions(
     q{at|analysis_type:s}     => \%{ $active_parameter{analysis_type} },
     q{pl|platform:s}          => \$active_parameter{platform},
     q{ec|expected_coverage:s} => \%{ $active_parameter{expected_coverage} },
+    q{sao|sample_origin:s}    => \%{ $active_parameter{sample_origin} },
     q{c|config_file:s}        => \$active_parameter{config_file},
     q{ccp|cluster_constant_path:s} => \$active_parameter{cluster_constant_path},
     q{acp|analysis_constant_path:s} =>
@@ -607,9 +610,7 @@ GetOptions(
       \$active_parameter{qccollect_regexp_file},
     q{qccske|qccollect_skip_evaluation} =>
       \$active_parameter{qccollect_skip_evaluation},
-    q{pmqc|pmultiqc=n} => \$active_parameter{pmultiqc},
-    q{prem|premoveredundantfiles=n} =>
-      \$active_parameter{premoveredundantfiles},
+    q{pmqc|pmultiqc=n}           => \$active_parameter{pmultiqc},
     q{pars|panalysisrunstatus=n} => \$active_parameter{panalysisrunstatus},
     q{psac|psacct=n}             => \$active_parameter{psacct},
     q{sacfrf|sacct_format_fields:s} =>
@@ -1051,7 +1052,9 @@ check_sample_id_in_parameter(
     {
         active_parameter_href => \%active_parameter,
         sample_ids_ref        => \@{ $active_parameter{sample_ids} },
-        parameter_names_ref   => [qw{ expected_coverage analysis_type }],
+        parameter_names_ref =>
+          [qw{ analysis_type expected_coverage sample_origin }],
+        parameter_href => \%parameter,
     }
 );
 
@@ -1109,8 +1112,6 @@ set_dynamic_parameter(
             q{program_type:aligners},
             ## Collects all references in that are supposed to be in reference directory
             q{reference:reference_dir},
-            ## Collect all programs outfiles that are redundant
-            q{remove_redundant_file:yes},
         ],
     }
 );
@@ -2704,11 +2705,13 @@ if ( $active_parameter{reduce_io} ) {    #Run consecutive models
 }
 else {
 
-    if ( $active_parameter{pprepareforvariantannotationblock} > 0 ) {
+    if ( $active_parameter{pprepareforvariantannotationblock} ) {
 
-        $log->info("[Prepareforvariantannotationblock]\n");
+        $log->info(q{[Prepareforvariantannotationblock]});
 
-        prepareforvariantannotationblock(
+        my $program_name = lc q{prepareforvariantannotationblock};
+
+        analysis_prepareforvariantannotationblock(
             {
                 parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,
@@ -2717,7 +2720,7 @@ else {
                 infile_lane_prefix_href => \%infile_lane_prefix,
                 job_id_href             => \%job_id,
                 call_type               => q{BOTH},
-                program_name            => "prepareforvariantannotationblock",
+                program_name            => $program_name,
             }
         );
     }
@@ -3003,25 +3006,6 @@ if ( $active_parameter{pmultiqc} > 0 ) {
     );
 }
 
-if ( $active_parameter{premoveredundantfiles} > 0 )
-{    #Sbatch generation of removal of alignment files
-
-    $log->info("[Removal of redundant files]\n");
-
-    removeredundantfiles(
-        {
-            parameter_href          => \%parameter,
-            active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
-            file_info_href          => \%file_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            lane_href               => \%lane,
-            program_name            => "removeredundantfiles",
-        }
-    );
-}
-
 if (   ( $active_parameter{panalysisrunstatus} == 1 )
     && ( !$active_parameter{dry_run_all} ) )
 {
@@ -3104,6 +3088,7 @@ sub build_usage {
 
     return <<"END_USAGE";
  $program_name [options] -ifd [infile_dirs=sample_id] -rd [reference_dir] -p [project_id] -s [sample_ids,.,.,.,n] -em [email] -osd [outscript_dir] -odd [outdata_dir] -f [family_id] -p[program] -at [sample_id=analysis_type]
+
     ####MIP
     -ifd/--infile_dirs Infile directory(s) (Hash infile_dirs=sample_id; mandatory)
     -rd/--reference_dir Reference(s) directory (mandatory)
@@ -3120,6 +3105,7 @@ sub build_usage {
     -at/--analysis_type Type of analysis to perform (sample_id=analysis_type, defaults to "wgs";Valid entries: "wgs", "wes", "wts")
     -pl/--platform Platform/technology used to produce the reads (defaults to "ILLUMINA")
     -ec/--expected_coverage Expected mean target coverage for analysis (sample_id=expected_coverage, defaults to "")
+    -sao/--sample_origin Sample origin for analysis (sample_id=sample_origin, defaults to "")
     -c/--config_file YAML config file for analysis parameters (defaults to "")
     -ccp/--cluster_constant_path Set the cluster constant path (defaults to "")
     -acp/--analysis_constant_path Set the analysis constant path (defaults to "analysis")
@@ -3135,6 +3121,7 @@ sub build_usage {
     -l/--log_file Mip log file (defaults to "{outdata_dir}/{family_id}/mip_log/{date}/{scriptname}_{timestamp}.log")
     -h/--help Display this help message
     -v/--version Display version of MIP
+
     ####Bash
     -bse/--bash_set_errexit Set errexit in bash scripts (defaults to "0")
     -bsu/--bash_set_nounset Set nounset in bash scripts (defaults to "0")
@@ -3149,21 +3136,25 @@ sub build_usage {
     -em/--email E-mail (defaults to "")
     -emt/--email_types E-mail type (defaults to FAIL (=FAIL);Options: BEGIN (=BEGIN) and/or F (=FAIL) and/or END=(END))
     -qos/--slurm_quality_of_service SLURM quality of service command in sbatch scripts (defaults to "normal")
+
     ####Programs
     -psfq/--psplit_fastq_file Split fastq files in batches of X reads and exits (defaults to "0" (=no))
       -sfqrdb/--split_fastq_file_read_batch The number of sequence reads to place in each batch (defaults to "25,000,000")
     -pgz/--pgzip_fastq Gzip fastq files (defaults to "0" (=no))
     -pfqc/--pfastqc Sequence quality analysis using FastQC (defaults to "0" (=no))
     -pcta/--pcutadapt trim input reads using cutadapt (defaults to "0" (=no))
+
     ##BWA
     -pmem/--pbwa_mem Align reads using Bwa Mem (defaults to "0" (=no))
       -memhla/--bwa_mem_hla Apply HLA typing (defaults to "1" (=yes))
       -memcrm/--bwa_mem_cram Use CRAM-format for additional output file (defaults to "1" (=yes))
       -memsts/--bwa_mem_bamstats Collect statistics from BAM files (defaults to "1" (=yes))
       -memssm/--bwa_sambamba_sort_memory_limit Set the memory limit for Sambamba sort after bwa alignment (defaults to "32G")
+
     ##Picardtools
     -ptp/--picardtools_path Path to Picardtools. Mandatory for use of Picardtools (defaults to "")
     -pptm/--ppicardtools_mergesamfiles Merge (BAM file(s) ) using Picardtools mergesamfiles or rename single samples for downstream processing (defaults to "0" (=no))
+
     ##Markduplicates
     -pmd/--pmarkduplicates Markduplicates using either Picardtools markduplicates or sambamba markdup (defaults to "0" (=no))
     -mdpmd/--markduplicates_picardtools_markduplicates Markduplicates using Picardtools markduplicates (defaults to "1" (=yes))
@@ -3171,6 +3162,7 @@ sub build_usage {
       -mdshts/--markduplicates_sambamba_markdup_hash_table_size Sambamba size of hash table for finding read pairs (defaults to "262144")
       -mdsols/--markduplicates_sambamba_markdup_overflow_list_size Sambamba size of the overflow list (defaults to "200000")
       -mdsibs/--markduplicates_sambamba_markdup_io_buffer_size Sambamba size of the io buffer for reading and writing BAM during the second pass (defaults to "2048")
+
     ###Coverage calculations
     -pchs/--pchanjo_sexcheck Predicts gender from sex chromosome coverage (defaults to "0" (=no))
       -chslle/--chanjo_sexcheck_log_level Set chanjo sex log level (defaults to "DEBUG")
@@ -3188,6 +3180,7 @@ sub build_usage {
     -pptchs/--ppicardtools_collecthsmetrics Capture calculation using Picardtools Collecthsmetrics (defaults to "0" (=no))
       -extb/--exome_target_bed Exome target bed file per sample_id (defaults to "latest_supported_capturekit.bed"; -extb file.bed=Sample_idX,Sample_idY -extb file.bed=Sample_idZ)
     -prcp/--prcovplots Plots of genome coverage using rcovplots (defaults to "0" (=no))
+
     ###Structural variant callers
     -pcnv/--pcnvnator Structural variant calling using CNVnator (defaults to "0" (=no))
       -cnvhbs/--cnv_bin_size CNVnator bin size (defaults to "1000")
@@ -3233,11 +3226,14 @@ sub build_usage {
     -psvre/--psv_reformat Concatenating files (defaults to "0" (=no))
       -svrevbf/--sv_rankvariant_binary_file Produce binary file from the rank variant chromosome sorted vcfs (defaults to "1" (=yes))
       -svrergf/--sv_reformat_remove_genes_file Remove variants in hgnc_ids (defaults to "")
+
     ##Bcftools
     -pbmp/--pbcftools_mpileup Variant calling using bcftools mpileup (defaults to "0" (=no))
       -pbmpfv/--bcftools_mpileup_filter_variant (Supply flag to enable)
+
     ##Freebayes
     -pfrb/--pfreebayes Variant calling using Freebayes and bcftools (defaults to "0" (=no))
+
     ##GATK
     -gtp/--gatk_path  Path to GATK. Mandatory for use of GATK (defaults to "")
     -gll/--gatk_logging_level Set the GATK log level (defaults to "INFO")
@@ -3279,6 +3275,7 @@ sub build_usage {
     -pgvee/--pgatk_variantevalexome Variant evaluation using GATK varianteval for exonic variants  (defaults to "0" (=no))
       -gveedbs/--gatk_varianteval_dbsnp DbSNP file used in GATK varianteval (defaults to "dbsnp_GRCh37_138_esa_129.vcf")
       -gveedbg/--gatk_varianteval_gold Gold indel file used in GATK varianteval (defaults to "GRCh37_mills_and_1000g_indels_-gold_standard-.vcf")
+
     ###Annotation
     -ppvab/--pprepareforvariantannotationblock Prepare for variant annotation block by copying and splitting files per contig (defaults to "0" (=no))
     -prhc/--prhocall Rhocall performs annotation of variants in autozygosity regions (defaults to "0" (=no))
@@ -3314,6 +3311,7 @@ sub build_usage {
       -snesaoi/--snpsift_annotation_outinfo_key snpsift output INFO key (default to (GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf=1000G GRCh37_exac_reheader_-r0.3.1-.vcf.gz=EXAC GRCh37_anon-swegen_snp_-1000samples-.vcf.gz=SWEREF GRCh37_anon-swegen_indel_-1000samples-.vcf.gz=SWEREF); Hash flag i.e. --Flag key=value)
       -snesdbnsfp/--snpsift_dbnsfp_file DbNSFP File (defaults to "GRCh37_dbnsfp_-v2.9-.txt.gz")
       -snesdbnsfpa/--snpsift_dbnsfp_annotations DbNSFP annotations to use with snpsift (defaults to ("SIFT_pred","Polyphen2_HDIV_pred","Polyphen2_HVAR_pred","GERP++_NR","GERP++_RS","phastCons100way_vertebrate"); comma sep)
+
     ##Rankvariant
     -prav/--prankvariant Ranking of annotated variants (defaults to "0" (=no))
       -ravgft/--genmod_models_family_type Use one of the known setups (defaults to "mip")
@@ -3323,9 +3321,11 @@ sub build_usage {
       -ravwg/--genmod_models_whole_gene Allow compound pairs in intronic regions (defaults to "1" (=yes))
       -ravrpf/--genmod_models_reduced_penetrance_file File containg genes with reduced penetrance (defaults to "")
       -ravrm/--rank_model_file Rank model config file (defaults to "")
+
     -pevab/--pendvariantannotationblock End variant annotation block by concatenating files (defaults to "0" (=no))
       -ravbf/--rankvariant_binary_file Produce binary file from the rank variant chromosomal sorted vcfs (defaults to "1" (=yes))
       -evabrgf/--endvariantannotationblock_remove_genes_file Remove variants in hgnc_ids (defaults to "")
+
     ###Utility
     -pped/--ppeddy QC for familial-relationships and sexes (defaults to "0" (=no) )
     -pplink/--pplink QC for samples gender and relationship (defaults to "0" (=no) )
@@ -3339,7 +3339,6 @@ sub build_usage {
       -qccref/--qccollect_regexp_file Regular expression file containing the regular expression to be used for each program (defaults to "qc_regexp_-v1.13-.yaml")
       -qccske/--qccollect_skip_evaluation Skip evaluation step in qccollect (boolean)
     -pmqc/--pmultiqc Create aggregate bioinformatics analysis report across many samples (defaults to "0" (=no))
-    -prem/--premoveredundantfiles Generating sbatch script for deletion of redundant files (defaults to "0" (=no);Note: Must be submitted manually to SLURM)
     -pars/--panalysisrunstatus Sets the analysis run status flag to finished in sample_info_file (defaults to "0" (=no))
     -psac/--psacct Generating sbatch script for SLURM info on each submitted job (defaults to "0" (=no))
     -sacfrf/--sacct_format_fields Format and fields of sacct output (defaults to "jobid", "jobname%50", "account", "partition", "alloccpus", "TotalCPU", "elapsed", "start", "end", "state", "exitcode")
@@ -3804,184 +3803,13 @@ sub analysisrunstatus {
     return;
 }
 
-sub removeredundantfiles {
+sub mvcfparser {
 
-##removeredundantfiles
+##mvcfparser
 
-##Function : Generates a sbatch script, which removes redundant files.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $lane_href, $program_name, family_id_ref, $outaligner_dir_ref, $call_type
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => File info hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $lane_href                  => The lane info hash {REF}
-##         : $program_name               => Program name
-##         : $family_id_ref              => Family id {REF}
-##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => Variant call type
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $outaligner_dir_ref;
-    my $call_type;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $lane_href    = $arg_href->{lane_href};
-    my $program_name = $arg_href->{program_name};
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href,
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href,
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href,
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href,
-        },
-        lane_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$lane_href
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name,
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref,
-        },
-        outaligner_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir_ref,
-        },
-        call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Script::Setup_script qw(setup_script);
-
-    my $reduce_io_ref = \$active_parameter_href->{reduce_io};
-    my $xargs_file_path_prefix;
-
-    ## Filehandles
-    my $FILEHANDLE      = IO::Handle->new();    #Create anonymous filehandle
-    my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $$family_id_ref,
-            program_name          => $program_name,
-            program_directory     => $$outaligner_dir_ref,
-            core_number => $active_parameter_href->{module_core_number}
-              { "p" . $program_name },
-            process_time =>
-              $active_parameter_href->{module_time}{ "p" . $program_name },
-        }
-    );
-
-    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-        ## Sample files
-        ##Removes intermediate files from the MIP analysis depending on set MIP parameters
-        remove_redundant_files(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                sample_info_href        => $sample_info_href,
-                file_info_href          => $file_info_href,
-                lane_href               => $lane_href,
-                FILEHANDLE              => $FILEHANDLE,
-                sample_id               => $sample_id,
-                reduce_io_ref           => $reduce_io_ref,
-                outaligner_dir_ref      => $outaligner_dir_ref,
-            }
-        );
-    }
-
-    ## Family files
-    ##Removes intermediate files from the MIP analysis depending on set MIP parameters
-    remove_redundant_files(
-        {
-            parameter_href          => $parameter_href,
-            active_parameter_href   => $active_parameter_href,
-            infile_lane_prefix_href => $infile_lane_prefix_href,
-            sample_info_href        => $sample_info_href,
-            file_info_href          => $file_info_href,
-            lane_href               => $lane_href,
-            FILEHANDLE              => $FILEHANDLE,
-            reduce_io_ref           => $reduce_io_ref,
-            outaligner_dir_ref      => $outaligner_dir_ref,
-        }
-    );
-    close $FILEHANDLE;
-}
-
-sub prepareforvariantannotationblock {
-
-##prepareforvariantannotationblock
-
-##Function : Copy files for variantannotationblock to enable restart and skip of modules within block
+##Function : Vcfparser performs parsing of varianteffectpredictor annotated variants
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_path, $stderr_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $program_info_path, $file_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => Parameter hash {REF}
 ##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -3991,8 +3819,7 @@ sub prepareforvariantannotationblock {
 ##         : $program_name               => Program name
 ##         : $program_info_path          => The program info path
 ##         : $file_path                  => File path
-##         : $stderr_path                => The stderr path of the block script
-##         : $FILEHANDLE                 => Filehandle to write to
+##         : $FILEHANDLE                 => Sbatch filehandle to write to
 ##         : $family_id_ref              => Family id {REF}
 ##         : $temp_directory_ref         => Temporary directory {REF}
 ##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
@@ -4015,10 +3842,9 @@ sub prepareforvariantannotationblock {
     my $file_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $program_name;
     my $program_info_path;
+    my $program_name;
     my $file_path;
-    my $stderr_path;
     my $FILEHANDLE;
 
     my $tmpl = {
@@ -4072,7 +3898,6 @@ sub prepareforvariantannotationblock {
         },
         program_info_path => { strict_type => 1, store => \$program_info_path },
         file_path         => { strict_type => 1, store => \$file_path },
-        stderr_path       => { strict_type => 1, store => \$stderr_path },
         FILEHANDLE    => { store => \$FILEHANDLE, },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
@@ -4102,25 +3927,18 @@ sub prepareforvariantannotationblock {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw(get_core_number);
-    use MIP::IO::Files qw(migrate_files);
+    use MIP::IO::Files qw(migrate_file xargs_migrate_contig_files);
     use MIP::Set::File qw{set_file_suffix};
     use MIP::Get::File qw{get_file_suffix};
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use MIP::Program::Utility::Htslib qw(htslib_bgzip htslib_tabix);
+    use MIP::Program::Variantcalling::Mip_vcfparser qw(mip_vcfparser);
+    use MIP::QC::Record qw(add_program_outfile_to_sample_info);
     use MIP::Processmanagement::Slurm_processes
       qw(slurm_submit_job_sample_id_dependency_add_to_family);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $xargs_file_path_prefix;
     my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
-
-    ## Filehandles
-    my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    unless ( defined($FILEHANDLE) ) {           #Run as individual sbatch script
-
-        $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
-    }
 
     ## Get core number depending on user supplied input exists or not and max number of cores
     my $core_number = get_core_number(
@@ -4132,7 +3950,12 @@ sub prepareforvariantannotationblock {
         }
     );
 
-    if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
+    ## Filehandles
+    my $XARGSFILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
+
+    unless ( defined($FILEHANDLE) ) {           #Run as individual sbatch script
+
+        $FILEHANDLE = IO::Handle->new();        #Create anonymous filehandle
 
         use MIP::Script::Setup_script qw(setup_script);
 
@@ -4146,16 +3969,13 @@ sub prepareforvariantannotationblock {
                 program_name          => $program_name,
                 program_directory     => catfile( lc($$outaligner_dir_ref) ),
                 call_type             => $call_type,
+                temp_directory        => $$temp_directory_ref,
                 core_number           => $core_number,
                 process_time =>
                   $active_parameter_href->{module_time}{ "p" . $program_name },
-                temp_directory => $$temp_directory_ref,
             }
         );
-        $stderr_path = $program_info_path . ".stderr.txt";
     }
-    my ( $volume, $directory, $stderr_file ) = splitpath($stderr_path)
-      ;    #Split to enable submission to &sample_info_qc later
 
     ## Assign directories
     my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
@@ -4163,16 +3983,20 @@ sub prepareforvariantannotationblock {
     my $outfamily_directory = catdir( $active_parameter_href->{outdata_dir},
         $$family_id_ref, $$outaligner_dir_ref );
     $parameter_href->{ "p" . $program_name }{indirectory} =
-      $outfamily_directory;    #Used downstream in removal of files
+      $outfamily_directory;    #Used downstream
 
     ## Assign file_tags
     my $infile_tag =
-      $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}
-      {file_tag};
-    my $infile_prefix = $$family_id_ref . $infile_tag . $call_type;
-    my $file_path_prefix = catfile( $$temp_directory_ref, $infile_prefix );
+      $file_info_href->{$$family_id_ref}{pvarianteffectpredictor}{file_tag};
+    my $outfile_tag =
+      $file_info_href->{$$family_id_ref}{ "p" . $program_name }{file_tag};
+    my $infile_prefix       = $$family_id_ref . $infile_tag . $call_type;
+    my $file_path_prefix    = catfile( $$temp_directory_ref, $infile_prefix );
+    my $outfile_prefix      = $$family_id_ref . $outfile_tag . $call_type;
+    my $outfile_path_prefix = catfile( $$temp_directory_ref, $outfile_prefix );
 
-    ## Assign suffix
+    ### Assign suffix
+    ## Return the current infile vcf compression suffix for this jobid chain
     my $infile_suffix = get_file_suffix(
         {
             parameter_href => $parameter_href,
@@ -4190,40 +4014,28 @@ sub prepareforvariantannotationblock {
         }
     );
 
-    ## Copy file(s) to temporary directory
-    say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    migrate_file(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => catfile(
-                $infamily_directory, $infile_prefix . $infile_suffix . q{*}
-            ),
-            outfile_path => $$temp_directory_ref
-        }
-    );
-    say {$FILEHANDLE} q{wait}, "\n";
+    if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
-    ## Compress or decompress original file or stream to outfile (if supplied)
-    htslib_bgzip(
-        {
-            FILEHANDLE      => $FILEHANDLE,
-            infile_path     => $file_path_prefix . $infile_suffix,
-            stdoutfile_path => $file_path_prefix . $outfile_suffix,
-            write_to_stdout => 1,
-        }
-    );
-    say {$FILEHANDLE} "\n";
+        ## Copy file(s) to temporary directory
+        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
+        ($xargs_file_counter) = xargs_migrate_contig_files(
+            {
+                FILEHANDLE      => $FILEHANDLE,
+                XARGSFILEHANDLE => $XARGSFILEHANDLE,
+                contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
+                file_path   => $file_path,
+                program_info_path  => $program_info_path,
+                core_number        => $core_number,
+                xargs_file_counter => $xargs_file_counter,
+                infile             => $infile_prefix,
+                indirectory        => $infamily_directory,
+                temp_directory     => $$temp_directory_ref,
+            }
+        );
+    }
 
-    ## Index file using tabix
-    htslib_tabix(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $file_path_prefix . $outfile_suffix,
-            force       => 1,
-            preset      => "vcf",
-        }
-    );
-    say {$FILEHANDLE} "\n";
+    ## vcfparser
+    say {$FILEHANDLE} "## vcfparser";
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
@@ -4231,66 +4043,201 @@ sub prepareforvariantannotationblock {
             FILEHANDLE         => $FILEHANDLE,
             XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             file_path          => $file_path,
+            program_info_path  => $program_info_path,
             core_number        => $core_number,
             xargs_file_counter => $xargs_file_counter,
         }
     );
 
-    ## Split vcf into contigs
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
-        htslib_tabix(
-            {
-                regions_ref => [$contig],
-                infile_path => $file_path_prefix . $outfile_suffix,
-                with_header => 1,
-                FILEHANDLE  => $XARGSFILEHANDLE,
-            }
-        );
-        print $XARGSFILEHANDLE "| ";
+        ## Get parameters
+        my $padding;
+        if ( $contig =~ /MT|M/ ) {
 
-        ## Compress or decompress original file or stream to outfile (if supplied)
-        htslib_bgzip(
+            $padding = 10;    #Special case for mitochondrial contig annotation
+        }
+
+        my @select_feature_annotation_columns;
+        my $select_file;
+        my $select_file_matching_column;
+        my $select_outfile;
+        if ( $active_parameter_href->{vcfparser_select_file} ) {
+
+            if (
+                !check_entry_hash_of_array(
+                    {
+                        hash_ref => $file_info_href,
+                        key      => "select_file_contigs",
+                        element  => $contig,
+                    }
+                )
+              )
             {
-                FILEHANDLE      => $XARGSFILEHANDLE,
-                stdoutfile_path => $file_path_prefix . "_"
+
+                $select_file =
+                  catfile( $active_parameter_href->{vcfparser_select_file} )
+                  ;    #List of genes to analyse separately
+                $select_file_matching_column = $active_parameter_href
+                  ->{vcfparser_select_file_matching_column}
+                  ;    #Column of HGNC Symbol in SelectFile (-sf)
+
+                if (
+                    (
+                        $active_parameter_href
+                        ->{vcfparser_select_feature_annotation_columns}
+                    )
+                    && (
+                        @{
+                            $active_parameter_href
+                              ->{vcfparser_select_feature_annotation_columns}
+                        }
+                    )
+                  )
+                {
+
+                    @select_feature_annotation_columns =
+                      @{ $active_parameter_href
+                          ->{vcfparser_select_feature_annotation_columns} };
+                }
+                $select_outfile =
+                    $outfile_path_prefix . "_"
                   . $contig
-                  . $outfile_suffix,
-                write_to_stdout => 1,
+                  . ".selected"
+                  . $infile_suffix;
             }
-        );
-        print $XARGSFILEHANDLE "; ";
+        }
 
-        ## Index file using tabix
-        htslib_tabix(
+        mip_vcfparser(
             {
-                FILEHANDLE  => $XARGSFILEHANDLE,
+                range_feature_annotation_columns_ref => \@{
+                    $active_parameter_href
+                      ->{vcfparser_range_feature_annotation_columns}
+                },
+                select_feature_annotation_columns_ref =>
+                  \@select_feature_annotation_columns,
                 infile_path => $file_path_prefix . "_"
                   . $contig
-                  . $outfile_suffix,
-                force  => 1,
-                preset => "vcf",
+                  . $infile_suffix,
+                stdoutfile_path => $outfile_path_prefix . "_"
+                  . $contig
+                  . $infile_suffix,
+                stderrfile_path => $xargs_file_path_prefix . "."
+                  . $contig
+                  . ".stderr.txt ",
+                range_feature_file_path =>
+                  $active_parameter_href->{vcfparser_range_feature_file},
+                select_feature_file_path       => $select_file,
+                select_feature_matching_column => $select_file_matching_column,
+                select_outfile                 => $select_outfile,
+                parse_vep  => $active_parameter_href->{pvarianteffectpredictor},
+                padding    => $padding,
+                FILEHANDLE => $XARGSFILEHANDLE,
             }
         );
-        print $XARGSFILEHANDLE "\n";
+        say {$XARGSFILEHANDLE} "\n";
     }
+
+    ## QC Data File(s)
+    migrate_file(
+        {
+            infile_path => $outfile_path_prefix . q{_}
+              . $file_info_href->{contigs_size_ordered}[0]
+              . $infile_suffix,
+            outfile_path => $outfamily_directory,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} q{wait}, "\n";
+
+    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
+
+        ## Clear old vcfparser entry if present
+        if ( defined( $sample_info_href->{$program_name} ) ) {
+
+            delete( $sample_info_href->{$program_name} );
+        }
+
+        my %gene_panels = (
+            range_file  => "vcfparser_range_feature_file",
+            select_file => "vcfparser_select_file",
+        );
+        while ( my ( $gene_panel_key, $gene_panel_file ) = each(%gene_panels) )
+        {
+
+            ## Collect databases(s) from a potentially merged gene panel file and adds them to sample_info
+            add_gene_panel(
+                {
+                    aggregate_gene_panel_file =>
+                      $active_parameter_href->{$gene_panel_file},
+                    aggregate_gene_panels_key => $gene_panel_key,
+                    family_id        => $arg_href->{active_parameter_href}{family_id},
+                    program_name     => $program_name,
+                    sample_info_href => $sample_info_href,
+                }
+            );
+        }
+
+        ## Collect QC metadata info for later use
+        my $qc_vcfparser_outfile =
+            $outfile_prefix . q{_}
+          . $file_info_href->{contigs_size_ordered}[0]
+          . $infile_suffix;
+        add_program_outfile_to_sample_info(
+            {
+                sample_info_href => $sample_info_href,
+                program_name     => $program_name,
+                outdirectory     => $outfamily_directory,
+                outfile          => $qc_vcfparser_outfile,
+            }
+        );
+    }
+
+    close $XARGSFILEHANDLE;
 
     if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
 
-        ## Copies file from temporary directory.
-        say {$FILEHANDLE} q{## Copy file from temporary directory};
-        migrate_file(
-            {
-                infile_path => $file_path_prefix . q{_*}
-                  . $infile_suffix . q{*},
-                outfile_path => $outfamily_directory,
-                FILEHANDLE   => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} q{wait}, "\n";
+        my $vcfparser_analysis_type = "";
+        my @vcfparser_contigs_ref =
+          \@{ $file_info_href->{contigs_size_ordered} };
 
+        for (
+            my $vcfparser_outfile_counter = 0 ;
+            $vcfparser_outfile_counter <
+            $active_parameter_href->{vcfparser_outfile_count} ;
+            $vcfparser_outfile_counter++
+          )
+        {
+
+            if ( $vcfparser_outfile_counter == 1 ) {
+
+                $vcfparser_analysis_type = ".selected";    #SelectFile variants
+                @vcfparser_contigs_ref =
+                  \@{ $file_info_href->{sorted_select_file_contigs} };
+            }
+
+            ## Copies file from temporary directory.
+            say {$FILEHANDLE} "## Copy file(s) from temporary directory";
+            ($xargs_file_counter) = xargs_migrate_contig_files(
+                {
+                    FILEHANDLE         => $FILEHANDLE,
+                    XARGSFILEHANDLE    => $XARGSFILEHANDLE,
+                    contigs_ref        => @vcfparser_contigs_ref,
+                    file_path          => $file_path,
+                    program_info_path  => $program_info_path,
+                    core_number        => $core_number,
+                    xargs_file_counter => $xargs_file_counter,
+                    outfile            => $outfile_prefix,
+                    file_ending        => $vcfparser_analysis_type
+                      . $infile_suffix . "*",
+                    outdirectory   => $outfamily_directory,
+                    temp_directory => $$temp_directory_ref,
+                }
+            );
+        }
         close $FILEHANDLE;
     }
+
     if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
 
         if ( !$$reduce_io_ref ) {    #Run as individual sbatch script
@@ -4960,25 +4907,22 @@ sub variantannotationblock {
     my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Filehandles
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
+    # Create anonymous filehandle
+    my $FILEHANDLE = IO::Handle->new();
 
-    if ( $active_parameter_href->{pprepareforvariantannotationblock} > 0 ) {
+    if ( $active_parameter_href->{pprepareforvariantannotationblock} ) {
 
-        $log->info("\t[Prepareforvariantannotationblock]\n");
+        $log->info( $TAB . q{[Prepareforvariantannotationblock]} );
     }
-    if ( $active_parameter_href->{prhocall} > 0 )
-    {                                      #Run rhocall. Done per family
+    if ( $active_parameter_href->{prhocall} ) {
 
         $log->info( $TAB . q{[rhocall]} );
     }
-    if ( $active_parameter_href->{pvt} > 0 ) {
+    if ( $active_parameter_href->{pvt} ) {
 
-        # Run vt. Done per family
         $log->info( $TAB . q{[Vt]} );
     }
-
-    # Run varianteffectpredictor. Family-level
-    if ( $active_parameter_href->{pvarianteffectpredictor} > 0 ) {
+    if ( $active_parameter_href->{pvarianteffectpredictor} ) {
 
         $log->info( $TAB . q{[Varianteffectpredictor]} );
     }
@@ -4987,17 +4931,15 @@ sub variantannotationblock {
 
         $log->info("\t[Vcfparser]\n");
     }
-    if ( $active_parameter_href->{psnpeff} > 0 ) {  #Run snpEff. Done per family
+    if ( $active_parameter_href->{psnpeff} ) {
 
-        $log->info("\t[Snpeff]\n");
+        $log->info( $TAB . q{[Snpeff]} );
     }
-    ## Run rankvariant. Done per family
     if ( $active_parameter_href->{prankvariant} ) {
 
         $log->info( $TAB . q{[Rankvariant]} );
     }
-    ## Run endvariantannotationblock. Done per family
-    if ( $active_parameter{pendvariantannotationblock} ) {
+    if ( $active_parameter_href->{pendvariantannotationblock} ) {
 
         $log->info( $TAB . q{[Endvariantannotationblock]} );
     }
@@ -5006,40 +4948,40 @@ sub variantannotationblock {
     my ( $file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
+            core_number           => $core_number,
             FILEHANDLE            => $FILEHANDLE,
             directory_id          => $$family_id_ref,
-            program_name          => $program_name,
-            program_directory     => lc($$outaligner_dir_ref),
-            core_number           => $core_number,
+            job_id_href           => $job_id_href,
             process_time          => $time,
+            program_directory     => lc($$outaligner_dir_ref),
+            program_name          => $program_name,
         }
     );
 
     ## Copy files for variantannotationblock to enable restart and skip of modules within block
-    if ( $active_parameter_href->{pprepareforvariantannotationblock} > 0 ) {
+    if ( $active_parameter_href->{pprepareforvariantannotationblock} ) {
 
-        ($xargs_file_counter) = prepareforvariantannotationblock(
+        my $program_name = q{prepareforvariantannotationblock};
+
+        ($xargs_file_counter) = analysis_prepareforvariantannotationblock_rio(
             {
-                parameter_href          => $parameter_href,
                 active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
+                call_type               => $call_type,
+                FILEHANDLE              => $FILEHANDLE,
                 file_info_href          => $file_info_href,
+                file_path               => $file_path,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
-                call_type               => $call_type,
-                program_name            => "prepareforvariantannotationblock",
-                file_path               => $file_path,
+                parameter_href          => $parameter_href,
+                program_name            => $program_name,
                 program_info_path       => $program_info_path,
-                FILEHANDLE              => $FILEHANDLE,
+                sample_info_href        => $sample_info_href,
                 xargs_file_counter      => $xargs_file_counter,
-                stderr_path             => $program_info_path . ".stderr.txt",
+                stderr_path => $program_info_path . $DOT . q{stderr.txt},
             }
         );
     }
-
-    # Run vt. Done per family
-    if ( $active_parameter_href->{prhocall} > 0 ) {
+    if ( $active_parameter_href->{prhocall} ) {
 
         my $program_name = q{rhocall};
 
@@ -5067,7 +5009,6 @@ sub variantannotationblock {
             }
         );
     }
-    ## Run vt. Done per family
     if ( $active_parameter_href->{pvt} ) {
 
         my $program_name = q{vt};
@@ -5096,11 +5037,9 @@ sub variantannotationblock {
             }
         );
     }
+    if ( $active_parameter_href->{pvarianteffectpredictor} ) {
 
-    # Run varianteffectpredictor. Family-level
-    if ( $active_parameter_href->{pvarianteffectpredictor} > 0 ) {
-
-        my $program_name = lc q{varianteffectpredictor};
+        my $program_name = q{varianteffectpredictor};
 
         ($xargs_file_counter) = analysis_vep_rio(
             {
@@ -5149,7 +5088,7 @@ sub variantannotationblock {
             }
         );
     }
-    if ( $active_parameter_href->{psnpeff} > 0 ) {  #Run snpEff. Done per family
+    if ( $active_parameter_href->{psnpeff} ) {
 
         my $program_name = q{snpeff};
 
@@ -5176,7 +5115,6 @@ sub variantannotationblock {
             }
         );
     }
-    ## Run rankvariant. Done per family
     if ( $active_parameter_href->{prankvariant} ) {
 
         my $program_name = lc q{rankvariant};
@@ -5227,12 +5165,10 @@ q{Only unaffected sample in pedigree - skipping genmod 'models', 'score' and 'co
             );
         }
     }
-    ## Run endvariantannotationblock. Done per family
-    if ( $active_parameter{pendvariantannotationblock} ) {
+    if ( $active_parameter_href->{pendvariantannotationblock} ) {
 
         my $program_name = q{endvariantannotationblock};
 
-        ## Run endvariantannotationblock. Done per family
         ($xargs_file_counter) = analysis_endvariantannotationblock_rio(
             {
                 parameter_href          => $parameter_href,
@@ -5323,26 +5259,21 @@ sub read_yaml_pedigree_file {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    ## Defines which values are allowed
-    my %allowed_values = (
-        sex       => [qw{ male female unknown }],
-        phenotype => [qw{ affected unaffected unknown }],
-    );
-
     ## Use to collect which sample_ids have used a certain capture_kit
+    my $family_id = $pedigree_href->{family};
     my %exom_target_bed_test_file_tracker;
     my @pedigree_sample_ids;
-    my $family_id             = $pedigree_href->{family};
     my @mandatory_family_keys = qw{ family samples };
     my @mandatory_sample_keys = qw{ sample_id father mother sex phenotype };
     my @user_input_sample_ids;
 
     ### Check input
+    check_pedigree_allowed_values( { pedigree_href => \%{$pedigree_href}, } );
 
     my %user_supply_switch = get_user_supplied_info(
         {
-            parameter_href        => $parameter_href,
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
         }
     );
 
@@ -5356,7 +5287,7 @@ sub read_yaml_pedigree_file {
   MANDATORY_KEY:
     foreach my $key (@mandatory_family_keys) {
 
-        if ( !$pedigree_href->{$key} ) {
+        if ( not exists $pedigree_href->{$key} ) {
 
             $log->fatal( q{File: }
                   . $file_path
@@ -5380,7 +5311,7 @@ sub read_yaml_pedigree_file {
         exit 1;
     }
 
-    ## Check sample keys and values
+    ## Check sample keys
   SAMPLE_KEY:
     foreach my $pedigree_sample_href ( @{ $pedigree_href->{samples} } ) {
 
@@ -5396,30 +5327,6 @@ sub read_yaml_pedigree_file {
                       . $key
                       . q{ in file} );
                 exit 1;
-            }
-            elsif ( $allowed_values{$key} ) {
-                ## Check allowed values
-
-                if (
-                    not any { $_ eq $pedigree_sample_href->{$key} }
-                    @{ $allowed_values{$key} }
-                  )
-                {
-                    ## If element is not part of array
-
-                    $log->fatal(
-                        q{File: }
-                          . $file_path
-                          . q{ found illegal value: }
-                          . $pedigree_sample_href->{$key}
-                          . q{ allowed values are '}
-                          . join q{' '},
-                        @{ $allowed_values{$key} }
-                    );
-                    $log->fatal(q{Please correct the entry before analysis.});
-                    $log->fatal(q{MIP: Aborting run.});
-                    exit 1;
-                }
             }
         }
     }
@@ -7767,95 +7674,6 @@ sub check_entry_hash_of_array {
     }
 }
 
-sub check_most_complete_and_remove_file {
-
-##check_most_complete_and_remove_file
-
-##Function  : Checks if the file is recorded as the "most_complete_bam|vcf". If false writes removal of file(s) to supplied filehandle
-##Returns   : ""
-##Arguments : $FILEHANDLE, $file_path_ref, $file_ending, $most_complete_ref
-##          : $FILEHANDLE        => SBATCH script FILEHANDLE to print to
-##          : $file_path_ref     => Current file {REF}
-##          : $file_ending       => File ending of $file_path_ref
-##          : $most_complete_ref => The mostComplete file (BAM|VCF) {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $most_complete_ref;
-    my $FILEHANDLE;
-    my $file_path_ref;
-    my $file_ending;
-
-    my $tmpl = {
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE, },
-        file_path_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$file_path_ref
-        },
-        file_ending => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$file_ending
-        },
-        most_complete_ref => { store => \$most_complete_ref },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Gnu::Coreutils qw(gnu_rm);
-
-    if ( ( defined($$most_complete_ref) ) && ( defined($$file_path_ref) ) )
-    {    #Not to disturb first dry_run of analysis
-
-        unless ( $$most_complete_ref eq $$file_path_ref )
-        {    #Do not remove mostCompleteBAM|VCF
-
-            ## Modify fileending of file to include e.g. .bai for bams
-            my $file_name = modify_file_ending(
-                {
-                    file_path_ref => $file_path_ref,
-                    file_ending   => $file_ending,
-                }
-            );
-
-            ##Print removal of file to sbatch script
-            gnu_rm(
-                {
-                    infile_path => $file_name,
-                    force       => 1,
-                    FILEHANDLE  => $FILEHANDLE,
-                }
-            );
-            say {$FILEHANDLE} "\n";    #Remove file(s)
-        }
-    }
-    else {
-
-        ## Modify fileending of file to include e.g. .bai for bams
-        my $file_name = modify_file_ending(
-            {
-                file_path_ref => $file_path_ref,
-                file_ending   => $file_ending,
-            }
-        );
-
-        ##Print removal of file to sbatch script
-        gnu_rm(
-            {
-                infile_path => $file_name,
-                force       => 1,
-                FILEHANDLE  => $FILEHANDLE,
-            }
-        );
-        say {$FILEHANDLE} "\n";    #Remove file(s)
-    }
-}
-
 sub modify_file_ending {
 
 ##modify_file_ending
@@ -8041,12 +7859,9 @@ sub detect_sample_id_gender {
 
 sub remove_pedigree_elements {
 
-##remove_pedigree_elements
-
-##Function : Removes ALL keys at third level except keys in allowed_entries hash.
-##Returns  : ""
-##Arguments: $hash_ref
-##         : $hash_ref => Hash {REF}
+## Function : Removes ALL keys at third level except keys in allowed_entries hash.
+## Returns  :
+## Arguments: $hash_ref => Hash {REF}
 
     my ($arg_href) = @_;
 
@@ -8065,20 +7880,14 @@ sub remove_pedigree_elements {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @allowed_entries = (
-        "family",        "default_gene_panels",
-        "sample",        "sample_id",
-        "sample_name",   "capture_kit",
-        "sex",           "mother",
-        "father",        "phenotype",
-        "sequence_type", "expected_coverage",
-    );
+    my @allowed_entries =
+      qw{ family default_gene_panels sample sample_id sample_name capture_kit sex mother father phenotype sequence_type expected_coverage sample_origin };
 
   FAMILY_INFO:
-    for my $key ( keys %$hash_ref ) {
+    for my $key ( keys %{$hash_ref} ) {
 
-        if ( !any { $_ eq $key } @allowed_entries )
-        {    #If element is not part of array
+        ## If element is not part of array
+        if ( not any { $_ eq $key } @allowed_entries ) {
 
             delete( $hash_ref->{$key} );
         }
@@ -8090,8 +7899,8 @@ sub remove_pedigree_elements {
       SAMPLE_INFO:
         for my $pedigree_element ( keys %{ $hash_ref->{sample}{$sample_id} } ) {
 
-            if ( !any { $_ eq $pedigree_element } @allowed_entries )
-            {    #If element is not part of array
+            ## If element is not part of array
+            if ( not any { $_ eq $pedigree_element } @allowed_entries ) {
 
                 delete( $hash_ref->{sample}{$sample_id}{$pedigree_element} );
             }
@@ -8785,6 +8594,11 @@ sub add_to_sample_info {
         $sample_info_href->{expected_coverage} =
           $active_parameter_href->{expected_coverage};
     }
+    if ( exists $active_parameter_href->{sample_origin} ) {
+
+        $sample_info_href->{sample_origin} =
+          $active_parameter_href->{sample_origin};
+    }
     if ( exists $active_parameter_href->{gatk_path} ) {
 
         my $gatk_version;
@@ -8966,407 +8780,6 @@ sub check_vep_directories {
         }
     }
 
-}
-
-sub remove_redundant_files {
-
-##remove_redundant_files
-
-##Function : Removes intermediate files from the MIP analysis depending on set MIP parameters
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $lane_href, $infile_lane_prefix_href, $reduce_io_ref, $sample_id, $insample_directory, $FILEHANDLE, family_id_ref, $outaligner_dir_ref, $call_type
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => File info hash {REF}
-##         : $lane_href                  => The lane info hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $reduce_io_ref              => Reduce IO - modulates processBlocks {REF}
-##         : $sample_id                  => Sample id
-##         : $insample_directory         => The directory for in sample files to be removed
-##         : $FILEHANDLE                 => Filehandle to write to
-##         : $family_id_ref              => Family id {REF}
-##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => Variant call type
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $outaligner_dir_ref;
-    my $call_type;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $lane_href;
-    my $infile_lane_prefix_href;
-    my $reduce_io_ref;
-    my $sample_id;
-    my $insample_directory;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href,
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href,
-        },
-        lane_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$lane_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href,
-        },
-        reduce_io_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$reduce_io_ref
-        },
-        sample_id => { strict_type => 1, store => \$sample_id },
-        insample_directory =>
-          { strict_type => 1, store => \$insample_directory },
-        FILEHANDLE    => { store => \$FILEHANDLE, },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref,
-        },
-        outaligner_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir_ref,
-        },
-        call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $vcfparser_contigs_ref =
-      \@{ $file_info_href->{contigs_size_ordered} };    #Set default
-
-    ## Last modules in each processing block that should have the output data deleted
-    my $last_module_bamcalibrationblock    = "pgatk_haplotypecaller";
-    my $last_module_variantannotationblock = "psnpeff";
-
-    foreach my $program ( @{ $parameter_href->{dynamic_parameter}{program} } ) {
-
-        if ( $active_parameter_href->{$program} > 0 ) {
-
-            if (
-                (
-                    defined(
-                        $parameter_href->{$program}{remove_redundant_file}
-                    )
-                )
-                && ( $parameter_href->{$program}{remove_redundant_file} eq
-                    "yes" )
-              )
-            {
-
-                if ( defined($sample_id) ) {
-
-                    my $indirectory =
-                      $parameter_href->{$program}{$sample_id}{indirectory};
-                    my $outfile_tag =
-                      $file_info_href->{$sample_id}{$program}{file_tag};
-
-                    ## Single files
-                    if ( $parameter_href->{$program}
-                        {remove_redundant_file_setting} eq "single" )
-                    {    #Infiles for prior to potential merge
-
-                      INFILE:
-                        foreach my $infile (
-                            @{ $infile_lane_prefix_href->{$sample_id} } )
-                        {
-
-                          FILE_ENDINGS:
-                            foreach my $file_ending (
-                                @{ $parameter_href->{$program}{file_endings} } )
-                            {
-
-                                my $file_path;
-
-                                if ( defined($outfile_tag) ) {
-
-                                    $file_path = catfile( $indirectory,
-                                        $infile . $outfile_tag . $file_ending );
-                                }
-                                else {
-
-                                    $file_path = catfile( $indirectory,
-                                        $infile . $file_ending );
-                                }
-
-                                my $most_complete_ref;
-
-                                if ( $file_ending =~ /vcf|bam/ ) {
-
-                                    ## Detect which most_complete_path to use depending on file_ending
-                                    $most_complete_ref =
-                                      detect_most_complete_file(
-                                        {
-                                            sample_info_href =>
-                                              $sample_info_href,
-                                            file_ending_ref => \$file_ending,
-                                            sample_id_ref   => \$sample_id,
-                                        }
-                                      );
-                                }
-                                ## Checks if the file is recorded as the "most_complete_bam|vcf". If false writes removal of file(s) to supplied filehandle
-                                check_most_complete_and_remove_file(
-                                    {
-                                        FILEHANDLE        => $FILEHANDLE,
-                                        most_complete_ref => $most_complete_ref,
-                                        file_path_ref     => \$file_path,
-                                        file_ending       => $file_ending,
-                                    }
-                                );
-                            }
-                        }
-                    }
-                    ## Merged files
-                    if ( $parameter_href->{$program}
-                        {remove_redundant_file_setting} eq "merged" )
-                    {    #Merge infiles
-
-                        ## Add merged infile name after merging all BAM files per sample_id
-                        my $infile =
-                          $file_info_href->{$sample_id}{merged_infile};   #Alias
-
-                        if (   ( !$$reduce_io_ref )
-                            || ( $program eq $last_module_bamcalibrationblock )
-                          )
-                        { #Delete intermediate files or last module in processBlock
-
-                          FILE_ENDINGS:
-                            foreach my $file_ending (
-                                @{ $parameter_href->{$program}{file_endings} } )
-                            {
-
-                              CONTIGS:
-                                foreach my $contig (@$vcfparser_contigs_ref) {
-
-                                    my $file_path = catfile( $indirectory,
-                                            $infile
-                                          . $outfile_tag . "_"
-                                          . $contig
-                                          . $file_ending );
-
-                                    ## Detect which most_complete_path to use depending on file_ending
-                                    my $most_complete_ref =
-                                      detect_most_complete_file(
-                                        {
-                                            sample_info_href =>
-                                              $sample_info_href,
-                                            file_ending_ref => \$file_ending,
-                                            sample_id_ref   => \$sample_id,
-                                        }
-                                      );
-
-                                    ## Checks if the file is recorded as the "most_complete_bam|vcf". If false writes removal of file(s) to supplied filehandle
-                                    check_most_complete_and_remove_file(
-                                        {
-                                            FILEHANDLE => $FILEHANDLE,
-                                            most_complete_ref =>
-                                              $most_complete_ref,
-                                            file_path_ref => \$file_path,
-                                            file_ending   => $file_ending,
-                                        }
-                                    );
-                                }
-                            }
-                        }
-                    }
-                }
-                else
-                {    #Otherwise these files would be removed for every sample_id
-
-                    my $indirectory = $parameter_href->{$program}{indirectory};
-                    my $outfile_tag =
-                      $file_info_href->{$$family_id_ref}{$program}{file_tag};
-
-                    ## Family files
-                    if ( $parameter_href->{$program}
-                        {remove_redundant_file_setting} eq "family" )
-                    {
-
-                      FILE_ENDINGS:
-                        foreach my $file_ending (
-                            @{ $parameter_href->{$program}{file_endings} } )
-                        {
-
-                            my $file_path = catfile( $indirectory,
-                                    $$family_id_ref
-                                  . $outfile_tag
-                                  . $call_type . "*"
-                                  . $file_ending );
-
-                            ## Detect which most_complete_path to use depending on file_ending
-                            my $most_complete_ref = detect_most_complete_file(
-                                {
-                                    sample_info_href => $sample_info_href,
-                                    file_ending_ref  => \$file_ending,
-                                }
-                            );
-
-                            ## Checks if the file is recorded as the "most_complete_bam|vcf". If false writes removal of file(s) to supplied filehandle
-                            check_most_complete_and_remove_file(
-                                {
-                                    FILEHANDLE        => $FILEHANDLE,
-                                    most_complete_ref => $most_complete_ref,
-                                    file_path_ref     => \$file_path,
-                                    file_ending       => $file_ending,
-                                }
-                            );
-                        }
-                    }
-                    elsif ( $parameter_href->{$program}
-                        {remove_redundant_file_setting} eq
-                        "variant_annotation" )
-                    {
-
-                        if ( ( !$$reduce_io_ref )
-                            || ( $program eq
-                                $last_module_variantannotationblock ) )
-                        { #Delete intermediate files or last module in processBlock
-
-                            $outfile_tag =
-                              $file_info_href->{$$family_id_ref}{$program}
-                              {file_tag};
-
-                            foreach my $file_ending (
-                                @{ $parameter_href->{$program}{file_endings} } )
-                            {
-
-                                my $file_path = catfile( $indirectory,
-                                        $$family_id_ref
-                                      . $outfile_tag
-                                      . $call_type . "*"
-                                      . $file_ending );
-
-                                ## Detect which most_complete_path to use depending on file_ending
-                                my $most_complete_ref =
-                                  detect_most_complete_file(
-                                    {
-                                        sample_info_href => $sample_info_href,
-                                        file_ending_ref  => \$file_ending,
-                                    }
-                                  );
-
-                                ## Checks if the file is recorded as the "most_complete_bam|vcf". If false writes removal of file(s) to supplied filehandle
-                                check_most_complete_and_remove_file(
-                                    {
-                                        FILEHANDLE        => $FILEHANDLE,
-                                        most_complete_ref => $most_complete_ref,
-                                        file_path_ref     => \$file_path,
-                                        file_ending       => $file_ending,
-                                    }
-                                );
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-sub detect_most_complete_file {
-
-##detect_most_complete_file
-
-##Function : Detect which most_complete_path to use depending on file_ending
-##Returns  : ""
-##Arguments: $active_parameter_href, $file_ending_ref, $sample_id_ref
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $file_ending_ref       => File ending (.file_ending){REF}
-##         : $sample_id_ref         => Sample ID {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $sample_info_href;
-    my $file_ending_ref;
-    my $sample_id_ref;
-
-    my $tmpl = {
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href,
-        },
-        file_ending_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$file_ending_ref
-        },
-        sample_id_ref => { store => \$sample_id_ref },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Set mostcompletePaths
-    my $most_complete_bam_ref;
-    my $most_complete_vcf_ref = \$sample_info_href->{vcf_file}{ready_vcf}{path};
-
-    if ( defined($$sample_id_ref) ) {
-
-        $most_complete_bam_ref =
-          \$sample_info_href->{sample}{$$sample_id_ref}{most_complete_bam}
-          {path};
-    }
-
-    ## Decide which mostcompletePaths to use
-    if ( $$file_ending_ref eq q{.bam} ) {
-
-        return $most_complete_bam_ref;
-    }
-    if ( $$file_ending_ref eq ".vcf" ) {
-
-        return $most_complete_vcf_ref;
-    }
 }
 
 sub remove_array_element {
@@ -10093,22 +9506,20 @@ sub check_sample_id_in_parameter_path {
 
 sub check_sample_id_in_parameter {
 
-##check_sample_id_in_parameter
-
-##Function : Check sample_id provided in hash parameter is included in the analysis and only represented once
-##Returns  : ""
-##Tags     : check, sampleids, hash
-##Arguments: $active_parameter_href, $sample_ids_ref, $parameter_name
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $sample_ids_ref        => Array to loop in for parameter {REF}
-##         : $parameter_names_ref   => Parameter name list {REF}
+## Function : Check sample_id provided in hash parameter is included in the analysis and only represented once
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $parameter_href        => Holds all parameters {REF}
+##          : $parameter_names_ref   => Parameter name list {REF}
+##          : $sample_ids_ref        => Array to loop in for parameter {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $sample_ids_ref;
     my $parameter_names_ref;
+    my $parameter_href;
+    my $sample_ids_ref;
 
     my $tmpl = {
         active_parameter_href => {
@@ -10118,18 +9529,25 @@ sub check_sample_id_in_parameter {
             strict_type => 1,
             store       => \$active_parameter_href,
         },
-        sample_ids_ref => {
+        parameter_href => {
             required    => 1,
             defined     => 1,
-            default     => [],
+            default     => {},
             strict_type => 1,
-            store       => \$sample_ids_ref
+            store       => \$parameter_href,
         },
         parameter_names_ref => {
             required => 1,
             defined  => 1,
             default  => [],
             store    => \$parameter_names_ref
+        },
+        sample_ids_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => [],
+            strict_type => 1,
+            store       => \$sample_ids_ref
         },
     };
 
@@ -10138,12 +9556,13 @@ sub check_sample_id_in_parameter {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    foreach my $parameter_name (@$parameter_names_ref)
-    {    #Lopp through all hash parameters supplied
+    ## Loop through all hash parameters supplied
+  PARAMETER:
+    foreach my $parameter_name ( @{$parameter_names_ref} ) {
 
-        if ( defined( $active_parameter_href->{$parameter_name} ) ) {
+        if ( defined $active_parameter_href->{$parameter_name} ) {
 
-            foreach my $sample_id (@$sample_ids_ref) {
+            foreach my $sample_id ( @{$sample_ids_ref} ) {
 
                 ## Check that a value exists
                 if (
@@ -10152,6 +9571,10 @@ sub check_sample_id_in_parameter {
                     )
                   )
                 {
+
+                    next PARAMETER
+                      if ( $parameter_href->{$parameter_name}{mandatory} eq
+                        q{no} );
 
                     $log->fatal(
                         "Could not find value for "
@@ -10284,6 +9707,7 @@ sub get_user_supplied_info {
         exome_target_bed  => 0,
         analysis_type     => 0,
         expected_coverage => 0,
+        sample_origin     => 0,
     );
 
     ## Detect user supplied info
@@ -10324,55 +9748,34 @@ sub get_pedigree_sample_info {
 
 ## Function : Reformat pedigree keys to plink format and collect sample info to various hashes
 ## Returns  :
-## Arguments: $parameter_href                         => Parameter hash {REF}
-##          : $active_parameter_href                  => Active parameters for this analysis hash {REF}
-##          : $sample_info_href                       => Info on samples and family hash {REF}
-##          : $file_info_href                         => The associated reference file endings {REF}
+## Arguments: $active_parameter_href                  => Active parameters for this analysis hash {REF}
 ##          : $exom_target_bed_test_file_tracker_href => Collect which sample_ids have used a certain capture_kit
+##          : $file_info_href                         => The associated reference file endings {REF}
+##          : $parameter_href                         => Parameter hash {REF}
 ##          : $pedigree_sample_href                   => YAML sample info hash {REF}
-##          : $user_supply_switch_href                => The user supplied info switch {REF}
 ##          : $sample_id                              => Sample ID
+##          : $sample_info_href                       => Info on samples and family hash {REF}
+##          : $user_supply_switch_href                => The user supplied info switch {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
     my $exom_target_bed_test_file_tracker_href;
+    my $file_info_href;
+    my $parameter_href;
     my $pedigree_sample_href;
-    my $user_supply_switch_href;
     my $sample_id;
+    my $sample_info_href;
+    my $user_supply_switch_href;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
         active_parameter_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
             store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href,
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href,
         },
         exom_target_bed_test_file_tracker_href => {
             required    => 1,
@@ -10381,12 +9784,39 @@ sub get_pedigree_sample_info {
             strict_type => 1,
             store       => \$exom_target_bed_test_file_tracker_href
         },
+        file_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$file_info_href,
+        },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
+        },
         pedigree_sample_href => {
             required    => 1,
             defined     => 1,
             default     => {},
             strict_type => 1,
             store       => \$pedigree_sample_href
+        },
+        sample_id => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$sample_id,
+        },
+        sample_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$sample_info_href,
         },
         user_supply_switch_href => {
             required    => 1,
@@ -10395,17 +9825,12 @@ sub get_pedigree_sample_info {
             strict_type => 1,
             store       => \$user_supply_switch_href
         },
-        sample_id => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$sample_id,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Add input to sample_info hash for at sample level
+  PEDIGREE_SAMPLE_KEY:
     foreach my $key ( keys %{$pedigree_sample_href} ) {
 
         $sample_info_href->{sample}{$sample_id}{$key} =
@@ -10483,6 +9908,18 @@ sub get_pedigree_sample_info {
               $sample_info_href->{sample}{$sample_id}{expected_coverage};
             $active_parameter_href->{expected_coverage}{$sample_id} =
               $expected_coverage;
+        }
+    }
+    ## Add sample origin for each individual
+    if ( $sample_info_href->{sample}{$sample_id}{sample_origin} ) {
+
+        if ( not $user_supply_switch_href->{sample_origin} ) {
+
+            ## Alias
+            my $sample_origin =
+              $sample_info_href->{sample}{$sample_id}{sample_origin};
+            $active_parameter_href->{sample_origin}{$sample_id} =
+              $sample_origin;
         }
     }
 
@@ -10564,7 +10001,7 @@ sub check_founder_id {
 
             if ($founder) {
 
-                if ( !( any { $_ eq $founder } @$pedigree_sample_ids_ref ) )
+                if ( !( any { $_ eq $founder } @{$pedigree_sample_ids_ref} ) )
                 {    #If element is not part of array
 
                     $log->fatal( "Could not find founder sample_id: "
@@ -10792,7 +10229,7 @@ sub check_element_exists_in_hash {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
-    foreach my $element (@$queryies) {
+    foreach my $element ( @{$queryies} ) {
 
         if ( !exists( $truth_href->{$element} ) ) {
 
@@ -10803,6 +10240,72 @@ sub check_element_exists_in_hash {
             exit 1;
         }
     }
+}
+
+sub check_pedigree_allowed_values {
+
+    ## Function : Check that the pedigree values are allowed
+    ## Returns  :
+    ## Arguments: $pedigree_href => YAML pedigree info hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $pedigree_href;
+
+    my $tmpl = {
+        pedigree_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$pedigree_href
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger(q{MIP});
+
+    my %allowed_values = (
+        analysis_type => [qw{ wes wgs wts cancer}],
+        phenotype     => [qw{ affected unaffected unknown }],
+        sample_origin => [qw{ normal tumor }],
+        sex           => [qw{ female male other unknown }],
+    );
+
+    ## Check input to sample_info hash for at sample level
+    foreach my $pedigree_sample_href ( @{ $pedigree_href->{samples} } ) {
+
+      SAMPLE_KEY:
+        foreach my $key ( keys %{$pedigree_sample_href} ) {
+
+            ## No defined allowed values
+            next SAMPLE_KEY if ( not exists $allowed_values{$key} );
+
+            ## If element is not part of array
+            next SAMPLE_KEY
+              if (
+                any { $_ eq $pedigree_sample_href->{$key} }
+                @{ $allowed_values{$key} }
+              );
+
+            $log->fatal(
+                q{Pedigree file key: }
+                  . $key
+                  . q{ found illegal value: }
+                  . $pedigree_sample_href->{$key}
+                  . q{ allowed values are '}
+                  . join q{' '},
+                @{ $allowed_values{$key} }
+            );
+            $log->fatal(q{Please correct the entry before analysis.});
+            $log->fatal(q{MIP: Aborting run.});
+            exit 1;
+        }
+    }
+    return;
 }
 
 ##Investigate potential autodie error
