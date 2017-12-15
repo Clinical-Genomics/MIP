@@ -92,7 +92,7 @@ decompose_normalize_references:
    - gatk_haplotypecaller_snp_known_set
    - gatk_variantrecalibration_resource_snv
    - gatk_variantrecalibration_resource_indel
-   - vt_genmod_filter_1000g
+   - frequency_genmod_filter_1000g
    - sv_vcfanno_config_file
    - gatk_varianteval_gold
    - gatk_varianteval_dbsnp
@@ -248,6 +248,7 @@ module_time:
     pgatk_genotypegvcfs: 10
     pgatk_variantrecalibration: 10
     pfreebayes: 20
+    pfrequency_filter: 2
     pbcftools_mpileup: 40
     pgatk_combinevariantcallsets: 2
     pprepareforvariantannotationblock: 5
@@ -301,6 +302,7 @@ module_core_number:
     pgatk_genotypegvcfs: 4
     pgatk_variantrecalibration: 16
     pfreebayes: 16
+    pfrequency_filter: 16
     pbcftools_mpileup: 16
     pgatk_combinevariantcallsets: 1
     pendvariantannotationblock: 1
@@ -1476,29 +1478,40 @@ vt_missing_alt_allele:
   data_type: SCALAR
   default: 1
   type: program_argument
-vt_genmod_filter:
+pfrequency_filter:
   associated_program:
-   - pvt
+   - mip
+  chain: MAIN
+  data_type: SCALAR
+  default: 0
+  file_tag: frqf_
+  file_endings:
+   - .vcf
+  outfile_suffix: ".vcf"
+  type: program
+frequency_genmod_filter:
+  associated_program:
+   - pfrequency_filter
   data_type: SCALAR
   default: 1
   type: program_argument
-vt_genmod_filter_1000g:
+frequency_genmod_filter_1000g:
   associated_program:
-   - pvt
+   - pfrequency_filter
   data_type: SCALAR
   default: GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz
   exists_check: file
   reference: reference_dir
   type: path
-vt_genmod_filter_max_af:
+frequency_genmod_filter_max_af:
   associated_program:
-   - pvt
+   - pfrequency_filter
   data_type: SCALAR
   default: 1
   type: program_argument
-vt_genmod_filter_threshold:
+frequency_genmod_filter_threshold:
   associated_program:
-   - pvt
+   - pfrequency_filter
   data_type: SCALAR
   default: 0.10
   type: program_argument
