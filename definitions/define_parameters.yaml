@@ -122,6 +122,12 @@ expected_coverage:
   data_type: HASH
   mandatory: no
   type: mip
+sample_origin:
+  associated_program:
+   - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
 infile_dirs:
   associated_program:
    - mip
@@ -270,7 +276,6 @@ module_time:
     psv_reformat: 1
     pqccollect: 1
     pmultiqc: 1
-    premoveredundantfiles: 1
     panalysisrunstatus: 1
     psacct: 1
   type: mip
@@ -316,7 +321,6 @@ module_core_number:
     psv_reformat: 1
     pqccollect: 1
     pmultiqc: 1
-    premoveredundantfiles: 1
     panalysisrunstatus: 1
     psacct: 1
   type: mip
@@ -451,8 +455,6 @@ pbwa_mem:
   program_type: aligners
   file_endings:
    - .bam
-  remove_redundant_file: yes
-  remove_redundant_file_setting: single
   type: program
 bwa_mem_hla:
   associated_program:
@@ -512,8 +514,6 @@ ppicardtools_mergesamfiles:
   file_tag: _merged
   file_endings:
    - .bam
-  remove_redundant_file: yes
-  remove_redundant_file_setting: merged
   type: program
 pmarkduplicates:
   associated_program:
@@ -526,8 +526,6 @@ pmarkduplicates:
    - sambamba
   file_endings:
    - .bam
-  remove_redundant_file: yes
-  remove_redundant_file_setting: merged
   type: program
 markduplicates_picardtools_markduplicates:
   associated_program:
@@ -569,8 +567,6 @@ pgatk_realigner:
   file_tag: _rreal
   file_endings:
    - .bam
-  remove_redundant_file: yes
-  remove_redundant_file_setting: merged
   type: program
 gatk_realigner_indel_known_sites:
   associated_program:
@@ -592,8 +588,6 @@ pgatk_baserecalibration:
   file_tag: _brecal
   file_endings:
    - .bam
-  remove_redundant_file: yes
-  remove_redundant_file_setting: merged
   type: program
 gatk_baserecalibration_covariates:
   associated_program:
@@ -1155,8 +1149,6 @@ pbcftools_mpileup:
   file_endings:
    - .vcf
   outfile_suffix: ".vcf"
-  remove_redundant_file: yes
-  remove_redundant_file_setting: family
   type: program
 bcftools_mpileup_filter_variant:
   associated_program:
@@ -1180,8 +1172,6 @@ pfreebayes:
   file_endings:
    - .vcf
   outfile_suffix: ".vcf"
-  remove_redundant_file: yes
-  remove_redundant_file_setting: family
   type: program
 ## GATK Genotype
 pgatk_haplotypecaller:
@@ -1194,8 +1184,6 @@ pgatk_haplotypecaller:
   file_endings:
    - .vcf
   outfile_suffix: ".g.vcf"
-  remove_redundant_file: yes
-  remove_redundant_file_setting: merged
   type: program
 gatk_haplotypecaller_annotation:
   associated_program:
@@ -1267,8 +1255,6 @@ pgatk_genotypegvcfs:
   file_endings:
    - .vcf
   outfile_suffix: ".vcf"
-  remove_redundant_file: yes
-  remove_redundant_file_setting: family
   type: program
 gatk_genotypegvcfs_ref_gvcf:
   associated_program:
@@ -1303,8 +1289,6 @@ pgatk_variantrecalibration:
   file_endings:
    - .vcf
   outfile_suffix: ".vcf"
-  remove_redundant_file: yes
-  remove_redundant_file_setting: family
   type: program
 gatk_variantrecalibration_annotations:
   associated_program:
@@ -1389,8 +1373,6 @@ pgatk_combinevariantcallsets:
   file_endings:
    - .vcf
   outfile_suffix: ".vcf"
-  remove_redundant_file: yes
-  remove_redundant_file_setting: family
   type: program
 gatk_combinevariants_genotype_merge_option:
   associated_program:
@@ -1444,8 +1426,6 @@ prhocall:
   file_endings:
    - .vcf
   outfile_suffix: ".vcf"
-  remove_redundant_file: yes
-  remove_redundant_file_setting: variant_annotation
   type: program
 rhocall_frequency_file:
   associated_program:
@@ -1471,8 +1451,6 @@ pvt:
   file_endings:
    - .vcf
   outfile_suffix: ".vcf"
-  remove_redundant_file: yes
-  remove_redundant_file_setting: variant_annotation
   type: program
 vt_decompose:
   associated_program:
@@ -1606,8 +1584,6 @@ pvarianteffectpredictor:
   file_endings:
    - .vcf
   outfile_suffix: ".vcf"
-  remove_redundant_file: yes
-  remove_redundant_file_setting: variant_annotation
   type: program
 vep_directory_path:
   associated_program:
@@ -1676,8 +1652,6 @@ pvcfparser:
   file_endings:
    - .vcf
   outfile_suffix: ".vcf"
-  remove_redundant_file: yes
-  remove_redundant_file_setting: variant_annotation
   type: program
 vcfparser_vep_transcripts:
   associated_program:
@@ -1737,8 +1711,6 @@ psnpeff:
   file_endings:
    - .vcf
   outfile_suffix: ".vcf"
-  remove_redundant_file: yes
-  remove_redundant_file_setting: variant_annotation
   type: program
 snpeff_path:
   associated_program:
@@ -2038,15 +2010,6 @@ pmultiqc:
   default: 0
   file_tag: nofile_tag
   outdir_name: multiqc
-  type: program
-## RemoveRedundantFiles
-premoveredundantfiles:
-  associated_program:
-   - mip
-  chain: MAIN
-  data_type: SCALAR
-  default: 0
-  file_tag: nofile_tag
   type: program
 ## AnalysisRunStatus
 panalysisrunstatus:

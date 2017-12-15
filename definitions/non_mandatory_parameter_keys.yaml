@@ -38,17 +38,6 @@ outdir_name:
   key_data_type: SCALAR
 file_endings:
   key_data_type: ARRAY
-remove_redundant_file:
-  key_data_type: SCALAR
-  values:
-    - yes
-remove_redundant_file_setting:
-  key_data_type: SCALAR
-  values:
-    - single
-    - merged
-    - family
-    - variant_annotation
 reference:
   key_data_type: SCALAR
   values:

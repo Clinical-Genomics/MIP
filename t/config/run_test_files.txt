@@ -99,6 +99,7 @@ gnu_sort.t
 gnu_split.t
 gnu_tail.t
 gnu_trap.t
+gnu_unset.t
 gnu_wait.t
 gzip.t
 htslib_bgzip.t

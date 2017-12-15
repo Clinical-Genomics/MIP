@@ -4735,8 +4735,8 @@ sub sv_vcfparser {
                     aggregate_gene_panel_file =>
                       $active_parameter_href->{$gene_panel_file},
                     aggregate_gene_panels_key => $gene_panel_key,
-                    family_id    => $arg_href->{active_parameter_href}{family_id},
-                    program_name => $program_name,
+                    family_id        => $arg_href->{active_parameter_href}{family_id},
+                    program_name     => $program_name,
                     sample_info_href => $sample_info_href,
                 }
             );

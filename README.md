@@ -17,7 +17,7 @@ PMID:25495354
 
 ## Overview
 
-MIP performs whole genome or target region analysis of sequenced single-end and/or paired-end reads from the Illumina plattform in fastq\(.gz\) format to generate annotated ranked potential disease causing variants.
+MIP performs whole genome or target region analysis of sequenced single-end and/or paired-end reads from the Illumina platform in fastq\(.gz\) format to generate annotated ranked potential disease causing variants.
 
 MIP performs QC, alignment, coverage analysis, variant discovery and annotation, sample checks as well as ranking the found variants according to disease potential with a minimum of manual intervention. MIP is compatible with Scout for visualization of identified variants. MIP analyses snv, indels and SV.
 
@@ -68,7 +68,7 @@ $ mip --family_id [family_id] --pbwa_mem 1 --config_file [mip_config.yaml] --ped
   * Test data output existens and integrity using automated tests
 * Annotation
   * Gene annotation
-    * Summarise over all transcript and output on gene level
+    * Summarize over all transcript and output on gene level
   * Transcript level annotation
     * Separate pathogenic transcripts for correct downstream annotation
   * Annotate all alleles for a position
@@ -93,53 +93,57 @@ MIP is written in perl and therefore requires that perl is installed on your OS.
 * [Cpanm](http://search.cpan.org/~miyagawa/App-cpanminus-1.7043/lib/App/cpanminus.pm)
 * [Miniconda]
 
-#### Automated Installation \(Linux x86\_64\)
-1. Clone the official git repository
+#### Automated Installation \(Linux x86\_64\)  
+##### 1.Clone the official git repository
 
 ```Bash
 $ git clone https://github.com/Clinical-Genomics/MIP.git
 $ cd MIP
 ```
-2. Install required modules from cpan
+##### 2.Install required modules from cpan
 
 ```Bash
 $ cd definitions
 $ cpanm --installdeps .
 $ cd -
-```
-3. Test conda and mip_install (optional)
+```  
+  ###### *Note:*  
+  - Some versions of the cpan module List::MoreUtils has conflicts with certain versions of Perl. Perl v 5.18.2 has been confirmed to be compatible with version 0.4.13 of the List::MoreUtils module.
+  If you experience issues with that module, try to reinstall it by running: ``cpanm --reinstall List::MoreUtils@0.4.13 ``
+
+##### 3.Test conda and mip_installation (optional)
 
 ```Bash
 $ cd t; prove mip_install.t
 $ cd -
 ```
 
-4. Create the install instructions for MIP
-
+##### 4.Create the install instructions for MIP  
 ```
 $ perl mip_install.pl
 ```
 This will generate a batch script "mip.sh" for the install in your working directory.
 
   ###### *Note:*  
-  The batch script will install the MIP dependencies in Conda's root environment. Often it is beneficial to create a separate environment for each of your applications. In order to create a separate environment for MIP supply the ``-env [env_name]`` flag when running *mip_install.pl*.  
+  - The batch script will install the MIP dependencies in Conda's root environment. Often it is beneficial to create a separate environment for each of your applications. In order to create a separate environment for MIP supply the ``-env [env_name]`` flag when running *mip_install.pl*.  
 
-  There is currrently an issue with installing GATK via Conda causing the installation process to freeze. The solution at the moment is to turn of the GATK installation by running the install script together with the ``-skip gatk`` flag and install [GATK] manually.
+  - There is currently an issue with installing GATK via Conda causing the installation process to freeze. The solution at the moment is to turn of the GATK installation by running the install script together with the ``-skip gatk`` flag and install [GATK] manually.
 
-  For a full list of available options and parameters, run: ``$ perl mip_install.pl --help``.  
-  For a full list of parameter defaults, run: ``$ perl mip_install.pl -ppd``
+  - For a full list of available options and parameters, run: ``$ perl mip_install.pl --help``
 
-5. Run the bash script
+  - For a full list of parameter defaults, run: ``$ perl mip_install.pl -ppd``
+
+##### 5.Run the bash script
 
 ```Bash
 $ bash mip.sh
 ```
-This will install all the dependencies of MIP and other modules included in MIP into a conda environment.
+This will install MIP and most of its dependencies into a conda environment.
 
   ###### *Note:*  
-  Some references are quite large and will take time to download. You might want to run this using screen or tmux.
+  - Some references are quite large and will take time to download. You might want to run this using screen or tmux.
 
-6. Test your MIP installation (optional)
+##### 6.Test your MIP installation (optional)
 
 Make sure to activate your conda environment if that option was used above.  
 
@@ -147,30 +151,46 @@ Make sure to activate your conda environment if that option was used above.
 $ cd t; prove run_tests.t
 $ cd -
 ```
-7. Installing tools with conflicting dependencies
+##### 7.Install tools with conflicting dependencies  
+Tools that have conflicting dependencies needs to be installed in separate conda environments. Currently these programs requires separate environments:  
 
-Create seperate a environment for each tool that has to have a seperate dependency demands.
-For instance a tools that require python v3 or higher and are not compatible with older versions of pyton required by another program.
+  * Genmod, Chanjo and Variant_integrity
+    - requires python 3
+  * Peddy
+    - conflicts with SVDB dependencies  
+  * CNVnator  
+    - Requires access to ROOT which disturbs the normal linking of C libraries  
 
-```Bash
-$ mip_install -env mip_pyv3.6 --select_program genmod --select_program chanjo --select_program variant_integrity --python_version 3.6
-$ bash mip.sh
-```
 
-In your config yaml file or on the command line you will have to supply the ``module_source_environment_command`` parameter to activate the conda environment specific for the tool. Here is an example with three python tools in their own environment and VEP and cnvnator in each own, with some extra initilization:
+  ```bash
+  ## Python 3 tools
+  $ perl mip_install.pl -env mip_pyv3.6 --python_version 3.6 --select_program genmod --select_program chanjo --select_program variant_integrity
+  $ bash mip.sh
 
-```
-module_source_environment_command:
-  pchanjo_sexcheck: "source activate mip_pyv3.6"
-  prankvariant: "source activate mip_pyv3.6"
-  psv_rankvariant: "source activate mip_pyv3.6"
-  pvariant_integrity: "source activate mip_pyv3.6"
-  pvarianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source activate mip_vep"
-  psv_varianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source activate mip_vep"
-  pcnvnator: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source [CONDA_PATH]/envs/mip_cnvnator/root/bin/thisroot.sh; source activate mip_cnvnator"
-```
+  ## Peddy
+  $ perl mip_install.pl -env mip_peddy --select_program peddy
+  $ bash mip.sh
 
-MIP will execute this on the node before executing the program and then revert to the ``--source_main_environment_command`` if set. Otherwise ``source deactivate`` is used to return to the conda root environment.
+  ## CNVnator
+  $ perl mip_install.pl -env mip_cnvnator --select_program cnvnator
+  $ bash mip.sh
+  ```
+
+  In your config yaml file or on the command line you will have to supply the ``module_source_environment_command`` parameter to activate the conda environment specific for the tool. Here is an example with three Python 3 tools in their own environment and Peddy and VEP and CNVnator in each own, with some extra initialization:
+
+  ```Yml
+  module_source_environment_command:
+    pchanjo_sexcheck: "source activate mip_pyv3.6"
+    prankvariant: "source activate mip_pyv3.6"
+    psv_rankvariant: "source activate mip_pyv3.6"
+    pvariant_integrity: "source activate mip_pyv3.6"
+    ppeddy: "source activate mip_peddy"
+    pvarianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source activate mip_vep"
+    psv_varianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source activate mip_vep"
+    pcnvnator: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source [CONDA_PATH]/envs/mip_cnvnator/root/bin/thisroot.sh; source activate mip_cnvnator"
+  ```
+
+  MIP will execute this on the node before executing the program and then revert to the ``--source_main_environment_command`` if set. Otherwise ``source deactivate`` is used to return to the conda root environment.
 
 ### Usage
 
@@ -183,7 +203,7 @@ Program parameters always begins with "p" followed by a capital letter. Program 
 
 MIP will overwrite data files when reanalyzing, but keeps all "versioned" sbatch scripts for traceability.
 
-You can always supply `perl mip.pl -h` to list all availaible parameters and defaults.
+You can always supply `perl mip.pl -h` to list all available parameters and defaults.
 
 Example usage:
 ```
