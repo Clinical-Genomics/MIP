@@ -29,19 +29,19 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $SPACE  => q{ };
-Readonly my $PIPE   => q{|};
 Readonly my $DQUOTE => q{"};
+Readonly my $PIPE   => q{|};
+Readonly my $SPACE  => q{ };
 
 sub vardict {
 
 ## Function : Perl wrapper for Vardict, a variant caller. Based on vardict 2017.09.24
 ## Returns  : @commands
 ## Arguments: $af_threshold           => Threshold for allele frequency
+##          : $FILEHANDLE             => Filehandle to write to
 ##          : $infile_bed_region_info => Infile path for region info bed file
 ##          : $infile_path_normal     => Infile path normal
 ##          : $infile_path_tumor      => Infile path tumor
-##          : $FILEHANDLE             => Filehandle to write to
 ##          : $out_chrom_start        => Column for chromosome
 ##          : $out_region_start       => Column for region start
 ##          : $out_region_end         => Column for region end
@@ -55,6 +55,7 @@ sub vardict {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $FILEHANDLE;
     my $infile_bed_region_info;
     my $infile_paths_ref;
     my $out_chrom_start;
@@ -63,7 +64,6 @@ sub vardict {
     my $out_segment_annotn;
     my $referencefile_path;
     my $sample_name;
-    my $FILEHANDLE;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
@@ -73,81 +73,77 @@ sub vardict {
 
     my $tmpl = {
         af_threshold => {
-            required => 1,
-            defined  => 1,
-            default  => 0.01,
             ## Exactly 2 decimal points after 0 or 1
             allow       => qr/ ^0.\d{1,2}$ | ^1$ /xsm,
-            strict_type => 1,
+            defined  => 1,
+            default  => 0.01,
+            required => 1,
             store       => \$af_threshold,
+            strict_type => 1,
         },
         infile_bed_region_info => {
-            required    => 1,
-            strict_type => 1,
             defined     => 1,
+            required    => 1,
             store       => \$infile_bed_region_info,
+            strict_type => 1,
         },
         infile_paths_ref => {
-            required    => 1,
-            strict_type => 1,
             default     => [],
             defined     => 1,
+            required    => 1,
             store       => \$infile_paths_ref,
+            strict_type => 1,
         },
         out_chrom_start => {
-            required    => 1,
-            strict_type => 1,
             allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
+            required    => 1,
             store       => \$out_chrom_start,
+            strict_type => 1,
         },
         out_region_start => {
-            required    => 1,
-            strict_type => 1,
             allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
+            required    => 1,
             store       => \$out_region_start,
+            strict_type => 1,
         },
         out_region_end => {
-            required    => 1,
-            strict_type => 1,
             allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
+            required    => 1,
             store       => \$out_region_end,
+            strict_type => 1,
         },
         out_segment_annotn => {
-            required    => 1,
-            strict_type => 1,
             allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
+            required    => 1,
             store       => \$out_segment_annotn,
+            strict_type => 1,
         },
         referencefile_path => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$referencefile_path,
+            strict_type => 1,
         },
         sample_name => {
-            required    => 1,
             allow       => qr/ ^\w+$ /xsm,
-            strict_type => 1,
+            required    => 1,
             store       => \$sample_name,
+            strict_type => 1,
         },
         FILEHANDLE => {
             store => \$FILEHANDLE,
         },
         stderrfile_path => {
-            strict_type => 1,
             store       => \$stderrfile_path,
+            strict_type => 1,
         },
         stderrfile_path_append => {
-            strict_type => 1,
             store       => \$stderrfile_path_append,
+            strict_type => 1,
         },
         stdoutfile_path => {
-            strict_type => 1,
             store       => \$stdoutfile_path,
+            strict_type => 1,
         },
     };
 
