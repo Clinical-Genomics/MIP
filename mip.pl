@@ -70,6 +70,7 @@ use MIP::Update::Programs
 ## Recipes
 use MIP::Recipes::Analysis::Bamcalibrationblock
   qw{ analysis_bamcalibrationblock };
+use MIP::Recipes::Analysis::Bcftools_mpileup qw { analysis_bcftools_mpileup };
 use MIP::Recipes::Analysis::Bedtools_genomecov
   qw{ analysis_bedtools_genomecov };
 use MIP::Recipes::Analysis::Bwa_mem qw{ analysis_bwa_mem };
@@ -80,11 +81,10 @@ use MIP::Recipes::Analysis::Cnvnator qw{ analysis_cnvnator };
 use MIP::Recipes::Analysis::Delly_call qw{ analysis_delly_call };
 use MIP::Recipes::Analysis::Delly_reformat qw{ analysis_delly_reformat };
 use MIP::Recipes::Analysis::Endvariantannotationblock
-  qw{ analysis_endvariantannotationblock analysis_endvariantannotationblock_rio };
+  qw{ analysis_endvariantannotationblock };
 use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
 use MIP::Recipes::Analysis::Freebayes qw { analysis_freebayes_calling };
-use MIP::Recipes::Analysis::Frequency_filter
-  qw{ analysis_frequency_filter analysis_frequency_filter_rio };
+use MIP::Recipes::Analysis::Frequency_filter qw{ analysis_frequency_filter };
 use MIP::Recipes::Analysis::Gatk_baserecalibration
   qw{ analysis_gatk_baserecalibration };
 use MIP::Recipes::Analysis::Gatk_combinevariantcallsets
@@ -104,7 +104,7 @@ use MIP::Recipes::Analysis::Gatk_variantrecalibration
   qw{ analysis_gatk_variantrecalibration_wgs analysis_gatk_variantrecalibration_wes };
 use MIP::Recipes::Analysis::Manta qw{ analysis_manta };
 use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates };
-use MIP::Recipes::Analysis::Mip_vcfparser qw{ analysis_mip_vcfparser analysis_mip_vcfparser_rio };
+use MIP::Recipes::Analysis::Mip_vcfparser qw{ analysis_mip_vcfparser };
 use MIP::Recipes::Analysis::Peddy qw{ analysis_peddy };
 use MIP::Recipes::Analysis::Picardtools_collecthsmetrics
   qw{ analysis_picardtools_collecthsmetrics };
@@ -116,26 +116,25 @@ use MIP::Recipes::Analysis::Picardtools_mergesamfiles
   qw{ analysis_picardtools_mergesamfiles };
 use MIP::Recipes::Analysis::Plink qw{ analysis_plink };
 use MIP::Recipes::Analysis::Prepareforvariantannotationblock
-  qw{ analysis_prepareforvariantannotationblock analysis_prepareforvariantannotationblock_rio };
+  qw{ analysis_prepareforvariantannotationblock };
 use MIP::Recipes::Qc::Qccollect qw{ analysis_qccollect };
 use MIP::Recipes::Analysis::Rankvariant
-  qw{ analysis_rankvariant analysis_rankvariant_rio analysis_rankvariant_rio_unaffected analysis_rankvariant_unaffected analysis_sv_rankvariant analysis_sv_rankvariant_unaffected };
+  qw{ analysis_rankvariant analysis_rankvariant_unaffected analysis_sv_rankvariant analysis_sv_rankvariant_unaffected };
 use MIP::Recipes::Analysis::Rcoverageplots qw{ analysis_rcoverageplots };
-use MIP::Recipes::Analysis::Rhocall
-  qw{ analysis_rhocall_annotate analysis_rhocall_annotate_rio };
+use MIP::Recipes::Analysis::Rhocall qw{ analysis_rhocall_annotate };
 use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
 use MIP::Recipes::Analysis::Sv_reformat qw{ analysis_sv_reformat };
-use MIP::Recipes::Analysis::Bcftools_mpileup qw { analysis_bcftools_mpileup };
 use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
-use MIP::Recipes::Analysis::Snpeff qw{ analysis_snpeff analysis_snpeff_rio };
+use MIP::Recipes::Analysis::Snpeff qw{ analysis_snpeff };
 use MIP::Recipes::Analysis::Sv_combinevariantcallsets
   qw{ analysis_sv_combinevariantcallsets };
 use MIP::Recipes::Analysis::Tiddit qw{ analysis_tiddit };
+use MIP::Recipes::Analysis::Variantannotationblock
+  qw{ analysis_variantannotationblock };
 use MIP::Recipes::Analysis::Variant_integrity qw{ analysis_variant_integrity };
-use MIP::Recipes::Analysis::Vep
-  qw{ analysis_vep analysis_vep_rio analysis_vep_sv };
-use MIP::Recipes::Analysis::Vt qw{ analysis_vt analysis_vt_rio };
-use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core analysis_vt_core_rio};
+use MIP::Recipes::Analysis::Vep qw{ analysis_vep analysis_vep_sv };
+use MIP::Recipes::Analysis::Vt qw{ analysis_vt };
+use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core };
 use MIP::Recipes::Pipeline::Wts qw{ pipeline_wts };
 use MIP::Recipes::Qc::Multiqc qw{ analysis_multiqc };
 
@@ -2687,13 +2686,16 @@ foreach my $key (@file_info_contig_keys) {
         }
     );
 }
+## Run consecutive models
+if ( $active_parameter{reduce_io} ) {
 
-if ( $active_parameter{reduce_io} ) {    #Run consecutive models
+    $active_parameter{pvariantannotationblock} = 1;    # Enable as program
 
-    $active_parameter{pvariantannotationblock} = 1;    #Enable as program
-    $log->info("[Variantannotationblock]\n");
+    $log->info(q{[Variantannotationblock]});
 
-    variantannotationblock(
+    my $program_name = lc q{variantannotationblock};
+
+    analysis_variantannotationblock(
         {
             parameter_href          => \%parameter,
             active_parameter_href   => \%active_parameter,
@@ -2701,9 +2703,9 @@ if ( $active_parameter{reduce_io} ) {    #Run consecutive models
             file_info_href          => \%file_info,
             infile_lane_prefix_href => \%infile_lane_prefix,
             job_id_href             => \%job_id,
-            outaligner_dir_ref      => \$active_parameter{outaligner_dir},
+            outaligner_dir          => $active_parameter{outaligner_dir},
             call_type               => q{BOTH},
-            program_name            => "variantannotationblock",
+            program_name            => $program_name,
         }
     );
 }
@@ -2836,6 +2838,7 @@ else {
             }
         );
     }
+
     # Run pvcfparser. Done per family
     if ( $active_parameter{pvcfparser} > 0 ) {
 
@@ -4253,7 +4256,7 @@ sub sv_vcfparser {
                     aggregate_gene_panel_file =>
                       $active_parameter_href->{$gene_panel_file},
                     aggregate_gene_panels_key => $gene_panel_key,
-                    family_id        => $arg_href->{active_parameter_href}{family_id},
+                    family_id => $arg_href->{active_parameter_href}{family_id},
                     program_name     => $program_name,
                     sample_info_href => $sample_info_href,
                 }
@@ -4359,437 +4362,6 @@ sub sv_vcfparser {
             }
         );
     }
-}
-
-sub variantannotationblock {
-
-##variantannotationblock
-
-##Function : Run consecutive module
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, family_id_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => File info hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $program_name               => Program name
-##         : $family_id_ref              => Family id {REF}
-##         : $outaligner_dir_ref         => Outaligner_dir used in the analysis {REF}
-##         : $call_type                  => Variant call type
-##         : $xargs_file_counter         => The xargs file counter
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $outaligner_dir_ref;
-    my $call_type;
-    my $xargs_file_counter;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $program_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href,
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href,
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href,
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href,
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name,
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref,
-        },
-        outaligner_dir_ref => {
-            default     => \$arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir_ref,
-        },
-        call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
-        xargs_file_counter => {
-            default     => 0,
-            allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
-            store       => \$xargs_file_counter,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Script::Setup_script qw(setup_script);
-
-    my $core_number = $active_parameter_href->{max_cores_per_node};
-    my $xargs_file_path_prefix;
-    my $time = 80;
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    ## Filehandles
-    # Create anonymous filehandle
-    my $FILEHANDLE = IO::Handle->new();
-
-    if ( $active_parameter_href->{pprepareforvariantannotationblock} ) {
-
-        $log->info( $TAB . q{[Prepareforvariantannotationblock]} );
-    }
-    if ( $active_parameter_href->{prhocall} ) {
-
-        $log->info( $TAB . q{[rhocall]} );
-    }
-    if ( $active_parameter_href->{pvt} ) {
-
-        $log->info( $TAB . q{[Vt]} );
-    }
-    if ( $active_parameter_href->{pfrequency_filter} ) {
-
-        $log->info( $TAB . q{[Frequency filter]} );
-    }
-    if ( $active_parameter_href->{pvarianteffectpredictor} ) {
-
-        $log->info( $TAB . q{[Varianteffectpredictor]} );
-    }
-    if ( $active_parameter_href->{pvcfparser} > 0 )
-    {    #Run pvcfparser. Done per family
-
-        $log->info("\t[Vcfparser]\n");
-    }
-    if ( $active_parameter_href->{psnpeff} ) {
-
-        $log->info( $TAB . q{[Snpeff]} );
-    }
-    if ( $active_parameter_href->{prankvariant} ) {
-
-        $log->info( $TAB . q{[Rankvariant]} );
-    }
-    if ( $active_parameter_href->{pendvariantannotationblock} ) {
-
-        $log->info( $TAB . q{[Endvariantannotationblock]} );
-    }
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_path, $program_info_path ) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            core_number           => $core_number,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $$family_id_ref,
-            job_id_href           => $job_id_href,
-            process_time          => $time,
-            program_directory     => lc($$outaligner_dir_ref),
-            program_name          => $program_name,
-        }
-    );
-
-    ## Copy files for variantannotationblock to enable restart and skip of modules within block
-    if ( $active_parameter_href->{pprepareforvariantannotationblock} ) {
-
-        my $program_name = q{prepareforvariantannotationblock};
-
-        ($xargs_file_counter) = analysis_prepareforvariantannotationblock_rio(
-            {
-                active_parameter_href   => $active_parameter_href,
-                call_type               => $call_type,
-                FILEHANDLE              => $FILEHANDLE,
-                file_info_href          => $file_info_href,
-                file_path               => $file_path,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                parameter_href          => $parameter_href,
-                program_name            => $program_name,
-                program_info_path       => $program_info_path,
-                sample_info_href        => $sample_info_href,
-                xargs_file_counter      => $xargs_file_counter,
-                stderr_path => $program_info_path . $DOT . q{stderr.txt},
-            }
-        );
-    }
-    if ( $active_parameter_href->{prhocall} ) {
-
-        my $program_name = q{rhocall};
-
-        my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
-            $$family_id_ref, $$outaligner_dir_ref );
-        my $outfamily_directory = $infamily_directory;
-
-        ($xargs_file_counter) = analysis_rhocall_annotate_rio(
-            {
-                active_parameter_href   => $active_parameter_href,
-                call_type               => $call_type,
-                FILEHANDLE              => $FILEHANDLE,
-                file_info_href          => $file_info_href,
-                file_path               => $file_path,
-                infamily_directory      => $infamily_directory,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                outfamily_directory     => $outfamily_directory,
-                parameter_href          => $parameter_href,
-                program_info_path       => $program_info_path,
-                program_name            => $program_name,
-                sample_info_href        => $sample_info_href,
-                stderr_path        => $program_info_path . $DOT . q{stderr.txt},
-                xargs_file_counter => $xargs_file_counter,
-            }
-        );
-    }
-    if ( $active_parameter_href->{pvt} ) {
-
-        my $program_name = q{vt};
-
-        my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
-            $$family_id_ref, $$outaligner_dir_ref );
-        my $outfamily_directory = $infamily_directory;
-
-        ($xargs_file_counter) = analysis_vt_rio(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                infamily_directory      => $infamily_directory,
-                job_id_href             => $job_id_href,
-                call_type               => $call_type,
-                program_name            => $program_name,
-                file_path               => $file_path,
-                outfamily_directory     => $outfamily_directory,
-                program_info_path       => $program_info_path,
-                FILEHANDLE              => $FILEHANDLE,
-                xargs_file_counter      => $xargs_file_counter,
-                stderr_path => $program_info_path . $DOT . q{stderr.txt},
-            }
-        );
-    }
-    if ( $active_parameter_href->{pfrequency_filter} ) {
-
-        my $program_name = q{frequency_filter};
-
-        my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
-            $$family_id_ref, $$outaligner_dir_ref );
-        my $outfamily_directory = $infamily_directory;
-
-        ($xargs_file_counter) = analysis_frequency_filter_rio(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                infamily_directory      => $infamily_directory,
-                job_id_href             => $job_id_href,
-                call_type               => $call_type,
-                program_name            => $program_name,
-                file_path               => $file_path,
-                outfamily_directory     => $outfamily_directory,
-                program_info_path       => $program_info_path,
-                FILEHANDLE              => $FILEHANDLE,
-                xargs_file_counter      => $xargs_file_counter,
-                stderr_path => $program_info_path . $DOT . q{stderr.txt},
-            }
-        );
-    }
-    if ( $active_parameter_href->{pvarianteffectpredictor} ) {
-
-        my $program_name = q{varianteffectpredictor};
-
-        ($xargs_file_counter) = analysis_vep_rio(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                call_type               => $call_type,
-                program_name            => $program_name,
-                file_path               => $file_path,
-                program_info_path       => $program_info_path,
-                FILEHANDLE              => $FILEHANDLE,
-                xargs_file_counter      => $xargs_file_counter,
-                stderr_path => $program_info_path . $DOT . q{stderr.txt},
-            }
-        );
-    }
-    # Run vcfparser. Done per family
-    if ( $active_parameter_href->{pvcfparser} > 0 )
-    {
-        my $program_name = q{vcfparser};
-
-        my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
-        $$family_id_ref, $$outaligner_dir_ref );
-
-        my $outfamily_directory = $infamily_directory;
-
-        ($xargs_file_counter) = analysis_mip_vcfparser_rio(
-            {
-                active_parameter_href   => $active_parameter_href,
-                call_type               => $call_type,
-                FILEHANDLE              => $FILEHANDLE,
-                file_info_href          => $file_info_href,
-                file_path               => $file_path,
-                infamily_directory      => $infamily_directory,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                outfamily_directory     => $outfamily_directory,
-                parameter_href          => $parameter_href,
-                program_info_path       => $program_info_path,
-                program_name            => $program_name,
-                sample_info_href        => $sample_info_href,
-                xargs_file_counter      => $xargs_file_counter,
-            }
-        );
-    }
-    if ( $active_parameter_href->{psnpeff} ) {
-
-        my $program_name = q{snpeff};
-
-        my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
-            $$family_id_ref, $$outaligner_dir_ref );
-        my $outfamily_directory = $infamily_directory;
-
-        ($xargs_file_counter) = analysis_snpeff_rio(
-            {
-                active_parameter_href   => $active_parameter_href,
-                call_type               => $call_type,
-                FILEHANDLE              => $FILEHANDLE,
-                file_info_href          => $file_info_href,
-                file_path               => $file_path,
-                job_id_href             => $job_id_href,
-                infamily_directory      => $infamily_directory,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                outfamily_directory     => $outfamily_directory,
-                parameter_href          => $parameter_href,
-                program_info_path       => $program_info_path,
-                program_name            => $program_name,
-                sample_info_href        => $sample_info_href,
-                xargs_file_counter      => $xargs_file_counter,
-            }
-        );
-    }
-    if ( $active_parameter_href->{prankvariant} ) {
-
-        my $program_name = lc q{rankvariant};
-
-        if ( defined $parameter_href->{dynamic_parameter}{unaffected}
-            && @{ $parameter_href->{dynamic_parameter}{unaffected} } eq
-            @{ $active_parameter_href->{sample_ids} } )
-        {
-
-            $log->warn(
-q{Only unaffected sample in pedigree - skipping genmod 'models', 'score' and 'compound'}
-            );
-
-            ($xargs_file_counter) = analysis_rankvariant_rio_unaffected(
-                {
-                    active_parameter_href   => $active_parameter_href,
-                    call_type               => $call_type,
-                    FILEHANDLE              => $FILEHANDLE,
-                    file_info_href          => $file_info_href,
-                    file_path               => $file_path,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    parameter_href          => $parameter_href,
-                    program_name            => $program_name,
-                    program_info_path       => $program_info_path,
-                    sample_info_href        => $sample_info_href,
-                    xargs_file_counter      => $xargs_file_counter,
-                }
-            );
-        }
-        else {
-
-            ($xargs_file_counter) = analysis_rankvariant_rio(
-                {
-                    active_parameter_href   => $active_parameter_href,
-                    call_type               => $call_type,
-                    FILEHANDLE              => $FILEHANDLE,
-                    file_info_href          => $file_info_href,
-                    file_path               => $file_path,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    parameter_href          => $parameter_href,
-                    program_name            => $program_name,
-                    program_info_path       => $program_info_path,
-                    sample_info_href        => $sample_info_href,
-                    xargs_file_counter      => $xargs_file_counter,
-                }
-            );
-        }
-    }
-    if ( $active_parameter_href->{pendvariantannotationblock} ) {
-
-        my $program_name = q{endvariantannotationblock};
-
-        ($xargs_file_counter) = analysis_endvariantannotationblock_rio(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                call_type               => $call_type,
-                program_name            => $program_name,
-                file_path               => $file_path,
-                program_info_path       => $program_info_path,
-                FILEHANDLE              => $FILEHANDLE,
-                xargs_file_counter      => $xargs_file_counter,
-            }
-        );
-    }
-    return;
 }
 
 sub read_yaml_pedigree_file {

@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bamcalibrationblock };
@@ -43,7 +43,7 @@ sub analysis_bamcalibrationblock {
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $lane_href               => The lane info hash {REF}
 ##          : $log                     => Log object to write to
-##          : $outaligner_dir          => The outaligner_dir used
+##          : $outaligner_dir          => Outaligner dir used
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $sample_info_href        => Info on samples and family hash {REF}
@@ -141,14 +141,14 @@ sub analysis_bamcalibrationblock {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Recipes::Analysis::Markduplicates
-      qw{ analysis_markduplicates_rio };
-    use MIP::Recipes::Analysis::Picardtools_mergesamfiles
-      qw{ analysis_picardtools_mergesamfiles_rio };
     use MIP::Recipes::Analysis::Gatk_realigner
       qw{ analysis_gatk_realigner_rio };
     use MIP::Recipes::Analysis::Gatk_baserecalibration
       qw{ analysis_gatk_baserecalibration_rio };
+    use MIP::Recipes::Analysis::Markduplicates
+      qw{ analysis_markduplicates_rio };
+    use MIP::Recipes::Analysis::Picardtools_mergesamfiles
+      qw{ analysis_picardtools_mergesamfiles_rio };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
@@ -160,27 +160,27 @@ sub analysis_bamcalibrationblock {
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    ### Always run Picardtools mergesamfiles even for single samples to rename them correctly for standardised downstream processing.
-    ## Will also split alignment per contig and copy to temporary directory for '-rio 1' block to enable selective removal of block submodules.
-    if ( $active_parameter_href->{ppicardtools_mergesamfiles} ) {
+    # Set order of supplying user info
+    my @rio_program_order =
+      qw{ ppicardtools_mergesamfiles pmarkduplicates pgatk_realigner pgatk_baserecalibration };
 
-        $log->info( $TAB . q{[Picardtools mergesamfiles]} );
-    }
-    ## Markduplicates
-    if ( $active_parameter_href->{pmarkduplicates} ) {
+    # Store what to supply to user
+    my %rio_program = (
+        ppicardtools_mergesamfiles => q{[Picardtools mergesamfiles]},
+        pmarkduplicates            => q{[Markduplicates]},
+        pgatk_realigner => q{[GATK realignertargetcreator/indelrealigner]},
+        pgatk_baserecalibration => q{[GATK baserecalibrator/printreads]},
+    );
 
-        $log->info( $TAB . q{[Markduplicates]} );
-    }
+  RIO_PROGRAM:
+    foreach my $mip_program_name (@rio_program_order) {
 
-    ## Run GATK realignertargetcreator/indelrealigner
-    if ( $active_parameter_href->{pgatk_realigner} ) {
+        if ( $active_parameter_href->{$mip_program_name} ) {
 
-        $log->info( $TAB . q{[GATK realignertargetcreator/indelrealigner]} );
-    }
-    ## Run GATK baserecalibrator/printreads
-    if ( $active_parameter_href->{pgatk_baserecalibration} ) {
+            my $program_header = $rio_program{$mip_program_name};
 
-        $log->info( $TAB . q{[GATK baserecalibrator/printreads]} );
+            $log->info( $TAB . $program_header );
+        }
     }
 
   SAMPLE_ID:
