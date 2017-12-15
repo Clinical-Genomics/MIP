@@ -3593,7 +3593,7 @@ sub analysisrunstatus {
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_chain_job_ids_dependency_add_to_path };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Set::File qw{ collect_path_entries };
+    use MIP::Get::File qw{ get_path_entries };
 
     my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
 
@@ -3623,7 +3623,7 @@ sub analysisrunstatus {
     my @paths_ref;
 
     ## Collects all programs file path(s) created by MIP located in %sample_info
-    collect_path_entries(
+    get_path_entries(
         {
             sample_info_href => $sample_info_href,
             paths_ref        => \@paths_ref,

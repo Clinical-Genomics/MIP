@@ -72,6 +72,7 @@ get_exom_target_bed_file.t
 get_merged_infile_prefix.t
 get_module_parameters.t
 get_overall_analysis_type.t
+get_path_entries.t
 get_program_parameters.t
 get_select_file_contigs.t
 get_seq_dict_contigs.t

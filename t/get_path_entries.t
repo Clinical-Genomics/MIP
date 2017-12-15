@@ -78,7 +78,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Set::File});
+    my @modules = (q{MIP::Get::File});
 
   MODULE:
     for my $module (@modules) {
@@ -86,10 +86,10 @@ BEGIN {
     }
 }
 
-use MIP::Set::File qw{ collect_path_entries };
+use MIP::Get::File qw{ get_path_entries };
 
-diag(   q{Test collect_path_entries from File.pm v}
-      . $MIP::Set::File::VERSION
+diag(   q{Test get_path_entries from File.pm v}
+      . $MIP::Get::File::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -117,7 +117,7 @@ my %sample_info = (
 );
 
 ## Collects all programs file path(s) created by MIP located in %sample_info
-collect_path_entries(
+get_path_entries(
     {
         sample_info_href => \%sample_info,
         paths_ref        => \@paths,
