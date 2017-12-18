@@ -1311,14 +1311,6 @@ if ( $active_parameter{dry_run_all} == 0 ) {
 
         $sample_info{$key} = $value;
     }
-    ## Add analysis run status flag.
-    #  $sample_info{analysisrunstatus} = q{not_finished};
-
-    ## Add date
-    #    $sample_info{analysis_date} = $date_time_stamp;
-
-    ## Add MIP version
-    #    $sample_info{mip_version}   = $VERSION;
 }
 
 ### Build recipes
