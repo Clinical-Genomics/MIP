@@ -47,24 +47,24 @@ sub name_of_subroutine {
 
     my $tmpl = {
         arrays_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$arrays_ref,
+            strict_type => 1,
         },
         hash_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$hash_href,
+            strict_type => 1,
         },
         scalar => {
-            default     => 1,
             allow       => qr/ ^\d+$ /sxm,
-            strict_type => 1,
+            default     => 1,
             store       => \$scalar,
+            strict_type => 1,
         },
     };
 
