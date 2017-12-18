@@ -1,18 +1,18 @@
-package MIP::Recipes::Qc::Qccollect;
+package MIP::Recipes::Analysis::Multiqc;
 
-use Carp;
-use charnames qw{ :full :short };
-use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile };
-use open qw{ :encoding(UTF-8) :std };
-use Params::Check qw{ check allow last_error };
 use strict;
-use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
+use utf8;
+use open qw{ :encoding(UTF-8) :std };
+use autodie qw{ :all };
+use charnames qw{ :full :short };
+use Carp;
+use English qw{ -no_match_vars };
+use Params::Check qw{ check allow last_error };
+use File::Spec::Functions qw{ catdir catfile };
 
 ## CPANM
-use autodie qw{ :all };
 use Readonly;
 
 BEGIN {
@@ -24,29 +24,29 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_qccollect };
+    our @EXPORT_OK = qw{ analysis_multiqc };
+
 }
 
 ## Constants
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $UNDERSCORE => q{_};
+Readonly my $NEWLINE => qq{\n};
 
-sub analysis_qccollect {
+sub analysis_multiqc {
 
-## Function : Collect qc metrics for this analysis run.
+## Function : Aggregate bioinforamtics reports per case
 ## Returns  :
 ## Arguments: $parameter_href          => Parameter hash {REF}
 ##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $infile_path             => Infile path
-##          : $outfamily_directory     => Out family directory
 ##          : $program_name            => Program name
 ##          : $family_id               => Family id
-##          : $outaligner_dir          => Outaligner_dir used in the analysis
 
     my ($arg_href) = @_;
+
+    ## Default(s)
+    my $family_id;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -54,13 +54,7 @@ sub analysis_qccollect {
     my $sample_info_href;
     my $infile_lane_prefix_href;
     my $job_id_href;
-    my $infile_path;
-    my $outfamily_directory;
     my $program_name;
-
-    ## Default(s)
-    my $family_id;
-    my $outaligner_dir;
 
     my $tmpl = {
         parameter_href => {
@@ -98,18 +92,6 @@ sub analysis_qccollect {
             strict_type => 1,
             store       => \$job_id_href,
         },
-        infile_path => {
-            default =>
-              $arg_href->{active_parameter_href}{qccollect_sampleinfo_file},
-            strict_type => 1,
-            store       => \$infile_path,
-        },
-        outfamily_directory => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$outfamily_directory,
-        },
         program_name => {
             required    => 1,
             defined     => 1,
@@ -121,20 +103,13 @@ sub analysis_qccollect {
             strict_type => 1,
             store       => \$family_id,
         },
-        outaligner_dir => {
-            default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
-            store       => \$outaligner_dir,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_chain_job_ids_dependency_add_to_path };
-    use MIP::Program::Qc::Qccollect qw{ qccollect };
-    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
+    use MIP::Program::Qc::Multiqc qw{ multiqc };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Retrieve logger object
@@ -144,7 +119,7 @@ sub analysis_qccollect {
     my $mip_program_name = q{p} . $program_name;
     my $mip_program_mode = $active_parameter_href->{$mip_program_name};
 
-    ## Unpack parameters
+    ## Alias
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
     my $core_number =
       $active_parameter_href->{module_core_number}{$mip_program_name};
@@ -168,39 +143,33 @@ sub analysis_qccollect {
         }
     );
 
-    my $outfile_path = catfile( $outfamily_directory,
-        $family_id . $UNDERSCORE . q{qc_metrics.yaml} );
-    my $log_file_path = catfile( $outfamily_directory,
-        $family_id . $UNDERSCORE . q{qccollect.log} );
+    ## Assign directories
+    my $program_outdirectory_name =
+      $parameter_href->{$mip_program_name}{outdir_name};
 
-    qccollect(
-        {
-            infile_path      => $infile_path,
-            outfile_path     => $outfile_path,
-            log_file_path    => $log_file_path,
-            regexp_file_path => $active_parameter_href->{qccollect_regexp_file},
-            skip_evaluation =>
-              $active_parameter_href->{qccollect_skip_evaluation},
-            FILEHANDLE => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
+  SAMPLE:
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
-    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+        ## Assign directories
+        my $insample_directory =
+          catdir( $active_parameter_href->{outdata_dir}, $sample_id );
+        my $outsample_directory = catdir( $active_parameter_href->{outdata_dir},
+            $sample_id, $program_outdirectory_name );
 
-    if ( $mip_program_mode == 1 ) {
-
-        ## Collect QC metadata info for later use
-        my $qc_metric_outfile = $family_id . $UNDERSCORE . q{qc_metrics.yaml};
-        my $path = catfile( $outfamily_directory, $qc_metric_outfile );
-
-        add_program_outfile_to_sample_info(
+        multiqc(
             {
-                sample_info_href => $sample_info_href,
-                program_name     => q{qccollect},
-                path             => $path,
+                indir_path  => $insample_directory,
+                outdir_path => $outsample_directory,
+                force       => 1,
+                FILEHANDLE  => $FILEHANDLE,
             }
         );
+        say {$FILEHANDLE} $NEWLINE;
+    }
+
+    close $FILEHANDLE;
+
+    if ( $mip_program_mode == 1 ) {
 
         slurm_submit_chain_job_ids_dependency_add_to_path(
             {
