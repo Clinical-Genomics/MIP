@@ -68,6 +68,7 @@ use MIP::Update::Programs
   qw{ update_program_mode_with_dry_run_all update_program_mode update_prioritize_flag };
 
 ## Recipes
+use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
 use MIP::Recipes::Analysis::Bamcalibrationblock
   qw{ analysis_bamcalibrationblock };
 use MIP::Recipes::Analysis::Bcftools_mpileup qw { analysis_bcftools_mpileup };
@@ -3041,26 +3042,24 @@ if ( $active_parameter{pmultiqc} > 0 ) {
     );
 }
 
-if (   ( $active_parameter{panalysisrunstatus} == 1 )
-    && ( !$active_parameter{dry_run_all} ) )
-{
+if ( $active_parameter{panalysisrunstatus} ) {
 
-    $sample_info{analysisrunstatus} =
-      "not_finished";    #Add analysis run status flag.
+    ## Add analysis run status flag.
+    $sample_info{analysisrunstatus} = q{not_finished};
 }
 
-if ( $active_parameter{panalysisrunstatus} > 0 ) {
+if ( $active_parameter{panalysisrunstatus} ) {
 
-    $log->info("[Analysis run status]\n");
+    $log->info(q{[Analysis run status]});
 
-    analysisrunstatus(
+    analysis_analysisrunstatus(
         {
-            parameter_href          => \%parameter,
             active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
             infile_lane_prefix_href => \%infile_lane_prefix,
             job_id_href             => \%job_id,
-            program_name            => "analysisrunstatus",
+            parameter_href          => \%parameter,
+            program_name            => q{analysisrunstatus},
+            sample_info_href        => \%sample_info,
         }
     );
 }
@@ -3509,334 +3508,6 @@ sub msacct {
             }
         );
     }
-}
-
-sub analysisrunstatus {
-
-##analysisrunstatus
-
-##Function : Execute last in MAIN chain, tests that all recorded files exists, have a file sixe greater than zero, checks QC-metrics for PASS or FAIL and sets analysis run status flag to finished.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_prefix_href, $job_id_href, $program_name, $family_id_ref,
-##         : $parameter_href             => Parameter hash {REF}
-##         : $active_parameter_href      => Active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
-##         : $job_id_href                => Job id hash {REF}
-##         : $program_name               => Program name
-##         : $family_id_ref              => Family id {REF}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $infile_lane_prefix_href;
-    my $job_id_href;
-    my $program_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href,
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$infile_lane_prefix_href,
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$job_id_href,
-        },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name,
-        },
-        family_id_ref => {
-            default     => \$arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id_ref,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_chain_job_ids_dependency_add_to_path };
-    use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Get::File qw{ get_path_entries };
-
-    my $job_id_chain = $parameter_href->{ "p" . $program_name }{chain};
-
-    ## Filehandles
-    my $FILEHANDLE = IO::Handle->new();    #Create anonymous filehandle
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_path) = setup_script(
-        {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $$family_id_ref,
-            program_name          => $program_name,
-            program_directory     => lc($program_name),
-            core_number => $active_parameter_href->{module_core_number}
-              { "p" . $program_name },
-            process_time =>
-              $active_parameter_href->{module_time}{ "p" . $program_name },
-        }
-    );
-
-    say $FILEHANDLE q?STATUS="0"?
-      ;  #Set status flagg so that perl not_finished remains in sample_info_file
-
-    ###Test all file that are supposed to exists as they are present in the sample_info file
-    my @paths_ref;
-
-    ## Collects all programs file path(s) created by MIP located in %sample_info
-    get_path_entries(
-        {
-            sample_info_href => $sample_info_href,
-            paths_ref        => \@paths_ref,
-        }
-    );
-
-    print {$FILEHANDLE} q?readonly FILES=(?;    #Create bash array
-    foreach my $path (@paths_ref) {
-
-        if ( defined($path) )
-        { #First analysis and dry run will otherwise cause try to print uninitialized values
-
-            print {$FILEHANDLE} q?"? . $path . q?" ?;    #Add to array
-        }
-    }
-    say $FILEHANDLE ")";                           #Close bash array
-    say $FILEHANDLE q?for file in "${FILES[@]}"?;  #loop over files
-    say $FILEHANDLE "do ";                         #for each element in array do
-    say $FILEHANDLE "\t"
-      . q?if [ -s "$file" ]; then?;    #file exists and is larger than zero
-    say $FILEHANDLE "\t\t" . q?echo "Found file $file"?;    #Echo
-    say $FILEHANDLE "\t" . q?else?;
-    say $FILEHANDLE "\t\t"
-      . q?echo "Could not find $file" >&2?;                 #Redirect to STDERR
-    say $FILEHANDLE "\t\t"
-      . q?STATUS="1"?
-      ;   #Set status flagg so that perl notFinished remains in sample_info_file
-    say $FILEHANDLE "\t" . q?fi?;
-    say $FILEHANDLE q?done ?, "\n";
-
-    ## Test varianteffectpredictor fork status. If varianteffectpredictor is unable to fork it will prematurely end the analysis and we will lose variants.
-    if (
-        defined(
-            $sample_info_href->{program}{varianteffectpredictor}{stderrfile}
-              {path}
-        )
-      )
-    {
-
-        my $variant_effect_predictor_file = catfile(
-            $sample_info_href->{program}{varianteffectpredictor}{stderrfile}
-              {path},
-        );
-
-        print {$FILEHANDLE}
-          q?if grep -q "WARNING Unable to fork" ?
-          ;    #not output the matched text only return the exit status code
-        say $FILEHANDLE $variant_effect_predictor_file . q?; then?;    #Infile
-        say $FILEHANDLE "\t" . q?STATUS="1"?;    #Found pattern
-        say $FILEHANDLE "\t"
-          . q?echo "variant_effector_predictor fork status=FAILED for file: ?
-          . $variant_effect_predictor_file
-          . q?" >&2?;                            #Echo
-        say $FILEHANDLE q?else?;                 #Infile is clean
-        say $FILEHANDLE "\t"
-          . q?echo "variant_effector_predictor fork status=PASSED for file: ?
-          . $variant_effect_predictor_file
-          . q?" >&2?;                            #Echo
-        say $FILEHANDLE q?fi?, "\n";
-    }
-
-    ## Test if FAIL exists in qccollect file i.e. issues with samples e.g. Sex and seq data correlation, relationship etc
-    if ( !$active_parameter_href->{qccollect_skip_evaluation} ) {
-
-        if ( defined( $sample_info_href->{program}{qccollect}{outfile} ) ) {
-
-            my $qccollect_file = catfile(
-                $sample_info_href->{program}{qccollect}{outdirectory},
-                $sample_info_href->{program}{qccollect}{outfile}
-            );
-
-            print {$FILEHANDLE}
-              q?if grep -q "FAIL" ?
-              ;    #not output the matched text only return the exit status code
-            say $FILEHANDLE $qccollect_file . q?; then?;    #Infile
-            say $FILEHANDLE "\t" . q?STATUS="1"?;           #Found pattern
-            say $FILEHANDLE "\t"
-              . q?echo "qccollect status=FAILED for file: ?
-              . $qccollect_file
-              . q?" >&2?;                                   #Echo
-            say $FILEHANDLE q?else?;                        #Infile is clean
-            say $FILEHANDLE "\t"
-              . q?echo "qccollect status=PASSED for file: ?
-              . $qccollect_file
-              . q?" >&2?;                                   #Echo
-            say $FILEHANDLE q?fi?, "\n";
-        }
-    }
-
-    ## Test integrity of vcf data keys in header and body
-    if (   ( defined( $sample_info_href->{vcf_file}{clinical}{path} ) )
-        || ( defined( $sample_info_href->{vcf_file}{research}{path} ) )
-        || ( defined( $sample_info_href->{sv_vcf_file}{clinical}{path} ) )
-        || ( defined( $sample_info_href->{sv_vcf_file}{research}{path} ) ) )
-    {
-
-        print {$FILEHANDLE} q?perl -MTest::Harness -e ' ?;    #Execute on cmd
-        print {$FILEHANDLE} q?my %args = (?; #Adjust arguments to harness object
-        print {$FILEHANDLE}
-          q?verbosity => 1, ?;    #Print individual test results to STDOUT
-        print {$FILEHANDLE} q?test_args => { ?;    #Argument to test script
-
-        if ( defined( $sample_info_href->{vcf_file}{clinical}{path} ) ) {
-
-            print {$FILEHANDLE}
-              q?"test select file" => [ ?; #Add test for select file using alias
-            print {$FILEHANDLE} q?"?
-              . $sample_info_href->{vcf_file}{clinical}{path}
-              . q?", ?;                    #Infile
-            print {$FILEHANDLE} q?"?
-              . $active_parameter_href->{config_file_analysis}
-              . q?", ?;                    #ConfigFile
-            print {$FILEHANDLE} q?], ?;
-        }
-
-        if ( defined( $sample_info_href->{vcf_file}{research}{path} ) ) {
-
-            print {$FILEHANDLE}
-              q?"test research file" => [ ?; #Add test research file using alias
-            print {$FILEHANDLE} q?"?
-              . $sample_info_href->{vcf_file}{research}{path}
-              . q?", ?;                      #Infile
-            print {$FILEHANDLE} q?"?
-              . $active_parameter_href->{config_file_analysis}
-              . q?", ?;                      #ConfigFile
-            print {$FILEHANDLE} q?], ?;
-        }
-        if ( defined( $sample_info_href->{sv_vcf_file}{clinical}{path} ) ) {
-
-            print {$FILEHANDLE}
-              q?"test sv select file" => [ ?
-              ;    #Add test for select file using alias
-            print {$FILEHANDLE} q?"?
-              . $sample_info_href->{vcf_file}{clinical}{path}
-              . q?", ?;    #Infile
-            print {$FILEHANDLE} q?"?
-              . $active_parameter_href->{config_file_analysis}
-              . q?", ?;    #ConfigFile
-            print {$FILEHANDLE} q?], ?;
-        }
-
-        if ( defined( $sample_info_href->{sv_vcf_file}{research}{path} ) ) {
-
-            print {$FILEHANDLE}
-              q?"test sv research file" => [ ?
-              ;            #Add test research file using alias
-            print {$FILEHANDLE} q?"?
-              . $sample_info_href->{vcf_file}{research}{path}
-              . q?", ?;    #Infile
-            print {$FILEHANDLE} q?"?
-              . $active_parameter_href->{config_file_analysis}
-              . q?", ?;    #ConfigFile
-            print {$FILEHANDLE} q?], ?;
-        }
-
-        print {$FILEHANDLE} q?}); ?;
-        print {$FILEHANDLE}
-          q?my $harness = TAP::Harness->new( \%args ); ?
-          ;                #Create harness using arguments provided
-        print {$FILEHANDLE} q?$harness->runtests( ?;    #Execute test(s)
-
-        if ( defined( $sample_info_href->{vcf_file}{clinical}{path} ) ) {
-
-            print {$FILEHANDLE} q?["?
-              . catfile( $Bin, "t", "mip_analysis.t" )
-              . q?", "test select file"], ?;
-        }
-
-        if ( defined( $sample_info_href->{vcf_file}{research}{path} ) ) {
-
-            print {$FILEHANDLE} q?["?
-              . catfile( $Bin, "t", "mip_analysis.t" )
-              . q?", "test research file"], ?;
-        }
-        if ( defined( $sample_info_href->{sv_vcf_file}{clinical}{path} ) ) {
-
-            print {$FILEHANDLE} q?["?
-              . catfile( $Bin, "t", "mip_analysis.t" )
-              . q?", "test sv select file"], ?;
-        }
-
-        if ( defined( $sample_info_href->{sv_vcf_file}{research}{path} ) ) {
-
-            print {$FILEHANDLE} q?["?
-              . catfile( $Bin, "t", "mip_analysis.t" )
-              . q?", "test sv research file"], ?;
-        }
-        print {$FILEHANDLE} q?)'?;
-        say $FILEHANDLE "\n";
-    }
-
-    say $FILEHANDLE q?if [ $STATUS -ne 1 ]; then?;    #eval status flag
-    say $FILEHANDLE "\t"
-      . q?perl -i -p -e 'if($_=~/analysisrunstatus\:/) { s/not_finished/finished/g }' ?
-      . $active_parameter_href->{sample_info_file} . q? ?;
-    say $FILEHANDLE q?else?;    #Found discrepancies - exit
-    say $FILEHANDLE "\t" . q?exit 1?;
-    say $FILEHANDLE q?fi?, "\n";
-
-    close $FILEHANDLE;
-
-    if ( $active_parameter_href->{ "p" . $program_name } == 1 ) {
-
-        slurm_submit_chain_job_ids_dependency_add_to_path(
-            {
-                job_id_href      => $job_id_href,
-                path             => $job_id_chain,
-                log              => $log,
-                sbatch_file_name => $file_path,
-            }
-        );
-    }
-    return;
 }
 
 sub sv_vcfparser {
