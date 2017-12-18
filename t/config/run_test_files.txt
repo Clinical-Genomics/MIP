@@ -195,7 +195,8 @@ snpsift_dbnsfp.t
 svdb_merge.t
 svdb_query.t
 tar.t
-tiddit.t
+tiddit_coverage.t
+tiddit_sv.t
 unix_standard_streams.t
 unix_write_to_file.t
 unzip.t
