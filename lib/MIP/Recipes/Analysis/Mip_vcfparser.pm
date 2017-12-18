@@ -430,8 +430,8 @@ sub analysis_mip_vcfparser {
                     aggregate_gene_panel_file =>
                       $active_parameter_href->{$gene_panel_file},
                     aggregate_gene_panels_key => $gene_panel_key,
-                    family_id_ref             => $family_id,
-                    program_name_ref          => \$program_name,
+                    family_id                 => $family_id,
+                    program_name              => $program_name,
                     sample_info_href          => $sample_info_href,
                 }
             );
@@ -1326,8 +1326,7 @@ sub analysis_sv_vcfparser {
             select_file => q{sv_vcfparser_select_file},
         );
       GENE_PANEL:
-        while ( my ( $gene_panel_key, $gene_panel_file ) = each %gene_panels )
-        {
+        while ( my ( $gene_panel_key, $gene_panel_file ) = each %gene_panels ) {
 
             ## Collect databases(s) from a potentially merged gene panel file and adds them to sample_info
             add_gene_panel(

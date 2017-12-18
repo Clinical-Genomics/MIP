@@ -1597,9 +1597,6 @@ q{Only unaffected sample in pedigree - skipping genmod 'models', 'score' and 'co
 
         $log->info(q{[Analysis run status]});
 
-        ## Add analysis run status flag.
-        $sample_info_href->{analysisrunstatus} = q{not_finished};
-
         analysis_analysisrunstatus(
             {
                 active_parameter_href   => $active_parameter_href,

@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_reformat };
@@ -75,85 +75,85 @@ sub analysis_sv_reformat {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         call_type =>
-          { default => q{SV}, strict_type => 1, store => \$call_type, },
+          { default => q{SV}, store => \$call_type, strict_type => 1, },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
             store       => \$family_id,
+            strict_type => 1,
         },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$file_info_href,
+            strict_type => 1,
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$infile_lane_prefix_href,
+            strict_type => 1,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$job_id_href,
+            strict_type => 1,
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
             store       => \$outaligner_dir,
+            strict_type => 1,
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
             store       => \$outaligner_dir,
+            strict_type => 1,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
         },
         program_name => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
         reference_dir => {
             default     => $arg_href->{active_parameter_href}{reference_dir},
-            strict_type => 1,
             store       => \$reference_dir,
+            strict_type => 1,
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
             store       => \$temp_directory,
+            strict_type => 1,
         },
         xargs_file_counter => {
-            default     => 0,
             allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
+            default     => 0,
             store       => \$xargs_file_counter,
+            strict_type => 1,
         },
     };
 
@@ -169,7 +169,8 @@ sub analysis_sv_reformat {
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
     use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
     use MIP::Program::Variantcalling::Picardtools qw{ sort_vcf };
-    use MIP::QC::Record qw{ add_most_complete_vcf };
+    use MIP::QC::Record
+      qw{ add_most_complete_vcf add_program_metafile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constant
@@ -562,8 +563,11 @@ sub analysis_sv_reformat {
                       . $DOT . q{gz};
                     add_most_complete_vcf(
                         {
+                            active_parameter_href => $active_parameter_href,
                             path         => $sv_rankvariant_binary_file_path,
-                            vcf_file_key => q{sv_vcf_binary_file},
+                            program_name => $program_name,
+                            sample_info_href => $sample_info_href,
+                            vcf_file_key     => q{sv_vcf_binary_file},
                             vcfparser_outfile_counter =>
                               $vcfparser_outfile_counter,
                         }
@@ -593,8 +597,11 @@ sub analysis_sv_reformat {
                       . $DOT . q{gz};
                     add_most_complete_vcf(
                         {
+                            active_parameter_href => $active_parameter_href,
                             path         => $sv_rankvariant_binary_file_path,
-                            vcf_file_key => q{sv_vcf_binary_file},
+                            program_name => $program_name,
+                            sample_info_href => $sample_info_href,
+                            vcf_file_key     => q{sv_vcf_binary_file},
                             vcfparser_outfile_counter =>
                               $vcfparser_outfile_counter,
                         }

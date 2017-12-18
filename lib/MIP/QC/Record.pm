@@ -53,31 +53,31 @@ sub add_gene_panel {
 
     my $tmpl = {
         aggregate_gene_panel_file =>
-          { strict_type => 1, store => \$aggregate_gene_panel_file },
+          { store => \$aggregate_gene_panel_file, strict_type => 1, },
         aggregate_gene_panels_key => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$aggregate_gene_panels_key,
+            strict_type => 1,
         },
         family_id => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$family_id,
+            strict_type => 1,
         },
         program_name => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
         },
     };
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -206,37 +206,37 @@ sub add_most_complete_vcf {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         path =>
-          { required => 1, defined => 1, strict_type => 1, store => \$path },
+          { defined => 1, required => 1, store => \$path, strict_type => 1, },
         program_name => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
         },
         vcf_file_key => {
+            allow       => [qw{ vcf_file sv_vcf_file sv_vcf_binary_file }],
             default     => q{vcf_file},
-            allow       => [qw{ vcf_file sv_vcf_file}],
+            store       => \$vcf_file_key,
             strict_type => 1,
-            store       => \$vcf_file_key
         },
         vcfparser_outfile_counter => {
             default     => 0,
+            store       => \$vcfparser_outfile_counter,
             strict_type => 1,
-            store       => \$vcfparser_outfile_counter
         },
     };
 

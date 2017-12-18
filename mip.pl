@@ -1300,8 +1300,25 @@ add_to_sample_info(
 
 if ( $active_parameter{dry_run_all} == 0 ) {
 
-    $sample_info{analysis_date} = $date_time_stamp;
-    $sample_info{mip_version}   = $VERSION;
+    my %no_dry_run_info = (
+        analysisrunstatus => q{not_finished},
+        analysis_date     => $date_time_stamp,
+        mip_version       => $VERSION,
+    );
+
+  KEY_VALUE_PAIR:
+    while ( my ( $key, $value ) = each %no_dry_run_info ) {
+
+        $sample_info{$key} = $value;
+    }
+    ## Add analysis run status flag.
+    #  $sample_info{analysisrunstatus} = q{not_finished};
+
+    ## Add date
+    #    $sample_info{analysis_date} = $date_time_stamp;
+
+    ## Add MIP version
+    #    $sample_info{mip_version}   = $VERSION;
 }
 
 ### Build recipes
@@ -1540,7 +1557,7 @@ if (   $consensus_analysis_type eq q{wgs}
 
 ## Write QC for programs used in analysis
 # Write SampleInfo to yaml file
-if ( not $active_parameter{sample_info_file} ) {
+if ( $active_parameter{sample_info_file} ) {
 
     ## Writes a YAML hash to file
     write_yaml(
