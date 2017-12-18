@@ -143,7 +143,7 @@ sub analysis_sacct {
             FILEHANDLE            => $FILEHANDLE,
             job_id_href           => $job_id_href,
             process_time          => $time,
-            program_directory     => lc($program_name),
+            program_directory     => $program_name,
             program_name          => $program_name,
         }
     );

@@ -360,11 +360,12 @@ sub _check_mip_analysis_files {
 
 sub _check_string_within_file {
 
-    ## Function : Test presence of string within file
+## Function : Test presence of string within file
 ## Returns  :
 ## Arguments: $FILEHANDLE      => Filehandle to write to
 ##          : $file            => Files to check
 ##          : $string_to_match => String to match within file
+
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
@@ -379,7 +380,6 @@ sub _check_string_within_file {
             store    => \$FILEHANDLE,
         },
         file => {
-            defined     => 1,
             required    => 1,
             store       => \$file,
             strict_type => 1,
