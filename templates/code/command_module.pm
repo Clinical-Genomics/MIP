@@ -56,16 +56,16 @@ sub name_of_subroutine {
             store => \$FILEHANDLE,
         },
         stderrfile_path => {
-            strict_type => 1,
             store       => \$stderrfile_path,
+            strict_type => 1,
         },
         stderrfile_path_append => {
-            strict_type => 1,
             store       => \$stderrfile_path_append,
+            strict_type => 1,
         },
         stdoutfile_path => {
-            strict_type => 1,
             store       => \$stdoutfile_path,
+            strict_type => 1,
         },
     };
 

@@ -34,10 +34,10 @@ Readonly my $SPACE   => q{ };
 #############################################################################
 ############### SHORT INSTRUCTIONS ON HOW TO USE THE TEMPLATE ###############
 #############################################################################
-# This is a genereric template for writing commands for installation of 
-# programs via SHELL. The installation proccess required by the program in 
-# question might call for more or less extensive modifications to the 
-# template. This template is based on a straight forward download of a zip 
+# This is a genereric template for writing commands for installation of
+# programs via SHELL. The installation proccess required by the program in
+# question might call for more or less extensive modifications to the
+# template. This template is based on a straight forward download of a zip
 # file to the specified conda environment using wget. This is followed by
 # unpacking, building and linking the binary. Other programs might for
 # example require cloning into a git repository and or setting up
@@ -77,41 +77,40 @@ sub install_PROGRAM {
 
     my $tmpl = {
         conda_environment => {
-            strict_type => 1,
             store       => \$conda_environment,
+            strict_type => 1,
         },
         conda_prefix_path => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$conda_prefix_path,
+            strict_type => 1,
         },
         FILEHANDLE => {
-            required => 1,
             defined  => 1,
+            required => 1,
             store    => \$FILEHANDLE,
         },
         noupdate => {
-            strict_type => 1,
             store       => \$noupdate,
+            strict_type => 1,
         },
         program_parameters_href => {
-            required    => 1,
             default     => {},
-            strict_type => 1,
+            required    => 1,
             store       => \$PROGRAM_parameters_href,
+            strict_type => 1,
         },
         quiet => {
             allow       => [ undef, 0, 1 ],
-            strict_type => 1,
             store       => \$quiet,
+            strict_type => 1,
         },
         verbose => {
             allow       => [ undef, 0, 1 ],
-            strict_type => 1,
             store       => \$verbose,
+            strict_type => 1,
         },
-
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -149,17 +148,17 @@ sub install_PROGRAM {
       catdir( $conda_prefix_path, q{PROGRAM} . $PROGRAM_version );
     my $install_check = check_existing_installation(
         {
-            program_directory_path => $PROGRAM_dir,
-            program_name           => q{PROGRAM},
             conda_environment      => $conda_environment,
             conda_prefix_path      => $conda_prefix_path,
-            noupdate               => $noupdate,
-            log                    => $log,
             FILEHANDLE             => $FILEHANDLE,
+            log                    => $log,
+            noupdate               => $noupdate,
+            program_directory_path => $PROGRAM_dir,
+            program_name           => q{PROGRAM},
         }
     );
 
-    # Return if the directory is found and a noupdate flag has been provided
+    ## Return if the directory is found and a noupdate flag has been provided
     if ($install_check) {
         say {$FILEHANDLE} $NEWLINE;
         return;
@@ -168,14 +167,14 @@ sub install_PROGRAM {
     ## Only activate conda environment if supplied by user
     if ($conda_environment) {
         ## Activate conda environment
-        say $FILEHANDLE q{## Activate conda environment};
+        say {$FILEHANDLE} q{## Activate conda environment};
         conda_source_activate(
             {
                 env_name   => $conda_environment,
                 FILEHANDLE => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE $NEWLINE;
+        say {$FILEHANDLE} $NEWLINE;
     }
 
     ## Download
@@ -276,16 +275,17 @@ sub install_PROGRAM {
 
     ## Deactivate conda environment if conda_environment exists
     if ($conda_environment) {
-        say $FILEHANDLE q{## Deactivate conda environment};
+        say {$FILEHANDLE} q{## Deactivate conda environment};
         conda_source_deactivate(
             {
                 FILEHANDLE => $FILEHANDLE,
             }
         );
-        say $FILEHANDLE $NEWLINE;
+        say {$FILEHANDLE} $NEWLINE;
     }
 
     print {$FILEHANDLE} $NEWLINE;
     return;
 }
+
 1;

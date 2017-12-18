@@ -48,7 +48,6 @@ use MIP::Check::Parameter
 use MIP::Check::Path qw{ check_target_bed_file_exist check_parameter_files };
 use MIP::Check::Reference
   qw{ check_bwa_prerequisites check_capture_file_prerequisites check_file_endings_to_build check_human_genome_file_endings check_human_genome_prerequisites check_parameter_metafiles check_references_for_vt };
-use MIP::Delete::List qw{ delete_non_wes_contig delete_male_contig };
 use MIP::File::Format::Pedigree
   qw{ create_fam_file reload_previous_pedigree_info };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
@@ -68,77 +67,10 @@ use MIP::Update::Programs
   qw{ update_program_mode_with_dry_run_all update_program_mode update_prioritize_flag };
 
 ## Recipes
-use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
-use MIP::Recipes::Analysis::Bamcalibrationblock
-  qw{ analysis_bamcalibrationblock };
-use MIP::Recipes::Analysis::Bcftools_mpileup qw { analysis_bcftools_mpileup };
-use MIP::Recipes::Analysis::Bedtools_genomecov
-  qw{ analysis_bedtools_genomecov };
-use MIP::Recipes::Analysis::Bwa_mem qw{ analysis_bwa_mem };
-use MIP::Recipes::Build::Human_genome_prerequisites
-  qw{ build_human_genome_prerequisites };
-use MIP::Recipes::Analysis::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
-use MIP::Recipes::Analysis::Cnvnator qw{ analysis_cnvnator };
-use MIP::Recipes::Analysis::Delly_call qw{ analysis_delly_call };
-use MIP::Recipes::Analysis::Delly_reformat qw{ analysis_delly_reformat };
-use MIP::Recipes::Analysis::Endvariantannotationblock
-  qw{ analysis_endvariantannotationblock };
-use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
-use MIP::Recipes::Analysis::Freebayes qw { analysis_freebayes_calling };
-use MIP::Recipes::Analysis::Frequency_filter qw{ analysis_frequency_filter };
-use MIP::Recipes::Analysis::Gatk_baserecalibration
-  qw{ analysis_gatk_baserecalibration };
-use MIP::Recipes::Analysis::Gatk_combinevariantcallsets
-  qw{ analysis_gatk_combinevariantcallsets };
-use MIP::Recipes::Analysis::Gatk_concatenate_genotypegvcfs
-  qw{ analysis_gatk_concatenate_genotypegvcfs };
-use MIP::Recipes::Analysis::Gatk_genotypegvcfs
-  qw{ analysis_gatk_genotypegvcfs };
-use MIP::Recipes::Analysis::Gatk_haplotypecaller
-  qw{ analysis_gatk_haplotypecaller };
-use MIP::Recipes::Analysis::Gatk_realigner qw{ analysis_gatk_realigner };
-use MIP::Recipes::Analysis::Gatk_variantevalall
-  qw{ analysis_gatk_variantevalall };
-use MIP::Recipes::Analysis::Gatk_variantevalexome
-  qw{ analysis_gatk_variantevalexome };
-use MIP::Recipes::Analysis::Gatk_variantrecalibration
-  qw{ analysis_gatk_variantrecalibration_wgs analysis_gatk_variantrecalibration_wes };
-use MIP::Recipes::Analysis::Manta qw{ analysis_manta };
-use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates };
-use MIP::Recipes::Analysis::Mip_vcfparser
-  qw{ analysis_mip_vcfparser analysis_sv_vcfparser };
-use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
-use MIP::Recipes::Analysis::Peddy qw{ analysis_peddy };
-use MIP::Recipes::Analysis::Picardtools_collecthsmetrics
-  qw{ analysis_picardtools_collecthsmetrics };
-use MIP::Recipes::Analysis::Picardtools_collectmultiplemetrics
-  qw{ analysis_picardtools_collectmultiplemetrics };
-use MIP::Recipes::Analysis::Picardtools_genotypeconcordance
-  qw{ analysis_picardtools_genotypeconcordance };
-use MIP::Recipes::Analysis::Picardtools_mergesamfiles
-  qw{ analysis_picardtools_mergesamfiles };
-use MIP::Recipes::Analysis::Plink qw{ analysis_plink };
-use MIP::Recipes::Analysis::Prepareforvariantannotationblock
-  qw{ analysis_prepareforvariantannotationblock };
-use MIP::Recipes::Analysis::Qccollect qw{ analysis_qccollect };
-use MIP::Recipes::Analysis::Rankvariant
-  qw{ analysis_rankvariant analysis_rankvariant_unaffected analysis_sv_rankvariant analysis_sv_rankvariant_unaffected };
-use MIP::Recipes::Analysis::Rcoverageplots qw{ analysis_rcoverageplots };
-use MIP::Recipes::Analysis::Rhocall qw{ analysis_rhocall_annotate };
-use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
-use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
-use MIP::Recipes::Analysis::Sv_reformat qw{ analysis_sv_reformat };
+use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
 use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
-use MIP::Recipes::Analysis::Snpeff qw{ analysis_snpeff };
-use MIP::Recipes::Analysis::Sv_combinevariantcallsets
-  qw{ analysis_sv_combinevariantcallsets };
-use MIP::Recipes::Analysis::Tiddit qw{ analysis_tiddit };
-use MIP::Recipes::Analysis::Variantannotationblock
-  qw{ analysis_variantannotationblock };
-use MIP::Recipes::Analysis::Variant_integrity qw{ analysis_variant_integrity };
-use MIP::Recipes::Analysis::Vep qw{ analysis_vep analysis_vep_sv };
-use MIP::Recipes::Analysis::Vt qw{ analysis_vt };
 use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core };
+use MIP::Recipes::Pipeline::Wgs qw{ pipeline_wgs };
 use MIP::Recipes::Pipeline::Wts qw{ pipeline_wts };
 
 our $USAGE = build_usage( {} );
@@ -1368,37 +1300,46 @@ add_to_sample_info(
 
 if ( $active_parameter{dry_run_all} == 0 ) {
 
-    $sample_info{analysis_date} = $date_time_stamp;
-    $sample_info{mip_version}   = $VERSION;
+    my %no_dry_run_info = (
+        analysisrunstatus => q{not_finished},
+        analysis_date     => $date_time_stamp,
+        mip_version       => $VERSION,
+    );
+
+  KEY_VALUE_PAIR:
+    while ( my ( $key, $value ) = each %no_dry_run_info ) {
+
+        $sample_info{$key} = $value;
+    }
 }
 
 ### Build recipes
 $log->info(q{[Reference check - Reference prerequisites]});
 ## Check capture file prerequistes exists
+PROGRAM:
 foreach
   my $program_name ( @{ $parameter{exome_target_bed}{associated_program} } )
 {
 
-    if ( $active_parameter{$program_name} > 0 ) {
+    next PROGRAM if ( not $active_parameter{$program_name} );
 
-        ## Remove initial "p" from program_name
-        substr( $program_name, 0, 1 ) = $EMPTY_STR;
+    ## Remove initial "p" from program_name
+    substr( $program_name, 0, 1 ) = $EMPTY_STR;
 
-        check_capture_file_prerequisites(
-            {
-                parameter_href              => \%parameter,
-                active_parameter_href       => \%active_parameter,
-                sample_info_href            => \%sample_info,
-                infile_lane_prefix_href     => \%infile_lane_prefix,
-                job_id_href                 => \%job_id,
-                infile_list_suffix          => $file_info{exome_target_bed}[0],
-                padded_infile_list_suffix   => $file_info{exome_target_bed}[1],
-                padded_interval_list_suffix => $file_info{exome_target_bed}[2],
-                program_name                => $program_name,
-                log                         => $log,
-            }
-        );
-    }
+    check_capture_file_prerequisites(
+        {
+            parameter_href              => \%parameter,
+            active_parameter_href       => \%active_parameter,
+            sample_info_href            => \%sample_info,
+            infile_lane_prefix_href     => \%infile_lane_prefix,
+            job_id_href                 => \%job_id,
+            infile_list_suffix          => $file_info{exome_target_bed}[0],
+            padded_infile_list_suffix   => $file_info{exome_target_bed}[1],
+            padded_interval_list_suffix => $file_info{exome_target_bed}[2],
+            program_name                => $program_name,
+            log                         => $log,
+        }
+    );
 }
 
 ## Check human genome prerequistes exists
@@ -1409,32 +1350,29 @@ foreach my $program_name (
 
     next PROGRAM if ( $program_name eq q{mip} );
 
-    if ( $active_parameter{$program_name} ) {
+    next PROGRAM if ( not $active_parameter{$program_name} );
 
-        ## Remove initial "p" from program_name
-        substr( $program_name, 0, 1 ) = $EMPTY_STR;
+    ## Remove initial "p" from program_name
+    substr( $program_name, 0, 1 ) = $EMPTY_STR;
 
-        my $is_finished = check_human_genome_prerequisites(
-            {
-                parameter_href          => \%parameter,
-                active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
-                file_info_href          => \%file_info,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                program_name            => $program_name,
-                log                     => $log,
-            }
-        );
-        last PROGRAM if ($is_finished);
-    }
+    my $is_finished = check_human_genome_prerequisites(
+        {
+            parameter_href          => \%parameter,
+            active_parameter_href   => \%active_parameter,
+            sample_info_href        => \%sample_info,
+            file_info_href          => \%file_info,
+            infile_lane_prefix_href => \%infile_lane_prefix,
+            job_id_href             => \%job_id,
+            program_name            => $program_name,
+            log                     => $log,
+        }
+    );
+    last PROGRAM if ($is_finished);
 }
 
 ## Check BWA build prerequisites
 
 if ( $active_parameter{pbwa_mem} ) {
-
-    my $program_name = lc q{bwa_mem};
 
     check_bwa_prerequisites(
         {
@@ -1444,7 +1382,7 @@ if ( $active_parameter{pbwa_mem} ) {
             file_info_href          => \%file_info,
             infile_lane_prefix_href => \%infile_lane_prefix,
             job_id_href             => \%job_id,
-            program_name            => $program_name,
+            program_name            => q{bwa_mem},
             parameter_build_name    => q{bwa_build_reference},
         }
     );
@@ -1490,12 +1428,11 @@ if (   $active_parameter{vt_decompose}
 }
 
 ## Split of fastq files in batches
-if ( $active_parameter{psplit_fastq_file} > 0 ) {
+if ( $active_parameter{psplit_fastq_file} ) {
 
     $log->info(q{[Split fastq files in batches]});
 
-    my $program_name = lc q{split_fastq_file};
-
+  SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
         ## Split input fastq files into batches of reads, versions and compress. Moves original file to subdirectory
@@ -1508,53 +1445,23 @@ if ( $active_parameter{psplit_fastq_file} > 0 ) {
                 insample_directory    => $indir_path{$sample_id},
                 outsample_directory   => $indir_path{$sample_id},
                 sample_id             => $sample_id,
-                program_name          => $program_name,
+                program_name          => q{split_fastq_file},
                 sequence_read_batch =>
                   $active_parameter{split_fastq_file_read_batch},
             }
         );
     }
 
-    # End here if this module is turned on
+    ## End here if this module is turned on
     exit;
 }
-
-### WTS
-if ( $parameter{dynamic_parameter}{consensus_analysis_type} eq q{wts} ) {
-
-    $log->info( q{Pipeline analysis type: }
-          . $parameter{dynamic_parameter}{consensus_analysis_type} );
-
-    ## Pipeline recipe for wts data
-    pipeline_wts(
-        {
-            parameter_href          => \%parameter,
-            active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
-            file_info_href          => \%file_info,
-            indir_path_href         => \%indir_path,
-            infile_href             => \%infile,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            lane_href               => \%lane,
-            job_id_href             => \%job_id,
-            outaligner_dir          => $active_parameter{outaligner_dir},
-            log                     => $log,
-        }
-    );
-
-    exit;
-}
-
-### WES|WGS
 
 ## GZip of fastq files
-if (   ( $active_parameter{pgzip_fastq} > 0 )
-    && ( $uncompressed_file_switch eq q{uncompressed} ) )
+if (   $active_parameter{pgzip_fastq}
+    && $uncompressed_file_switch eq q{uncompressed} )
 {
 
     $log->info(q{[Gzip for fastq files]});
-
-    my $program_name = lc q{gzip_fastq};
 
   SAMPLES:
     foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
@@ -1578,7 +1485,7 @@ if (   ( $active_parameter{pgzip_fastq} > 0 )
                         job_id_href             => \%job_id,
                         insample_directory      => $indir_path{$sample_id},
                         sample_id               => $sample_id,
-                        program_name            => $program_name,
+                        program_name            => q{gzip_fastq},
                     }
                 );
 
@@ -1589,1500 +1496,60 @@ if (   ( $active_parameter{pgzip_fastq} > 0 )
     }
 }
 
-# Run FastQC
-if ( $active_parameter{pfastqc} > 0 ) {
+my $consensus_analysis_type =
+  $parameter{dynamic_parameter}{consensus_analysis_type};
 
-    $log->info(q{[Fastqc]});
+### WTS
+if ( $consensus_analysis_type eq q{wts} ) {
 
-    foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
+    $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
 
-        my $program_name = lc q{fastqc};
-        my $outsample_directory =
-          catdir( $active_parameter{outdata_dir}, $sample_id, $program_name );
-        analysis_fastqc(
-            {
-                parameter_href        => \%parameter,
-                active_parameter_href => \%active_parameter,
-                sample_info_href      => \%sample_info,
-                infiles_ref           => \@{ $infile{$sample_id} },
-
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                insample_directory      => $indir_path{$sample_id},
-                outsample_directory     => $outsample_directory,
-                sample_id               => $sample_id,
-                program_name            => $program_name,
-            }
-        );
-    }
-}
-
-# Run BWA Mem
-if ( $active_parameter{pbwa_mem} > 0 ) {
-
-    $log->info(q{[BWA Mem]});
-
-    my $program_name = lc q{bwa_mem};
-
-  SAMPLE_ID:
-    foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-        my $outsample_directory = catdir( $active_parameter{outdata_dir},
-            $sample_id, $active_parameter{outaligner_dir} );
-
-        analysis_bwa_mem(
-            {
-                parameter_href          => \%parameter,
-                active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
-                file_info_href          => \%file_info,
-                infiles_ref             => \@{ $infile{$sample_id} },
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                insample_directory      => $indir_path{$sample_id},
-                outsample_directory     => $outsample_directory,
-                sample_id               => $sample_id,
-                program_name            => $program_name,
-            }
-        );
-    }
-}
-
-## Run consecutive models
-if ( $active_parameter{reduce_io} ) {
-
-    ## Enable as program
-    $active_parameter{pbamcalibrationblock} = 1;
-    $log->info(q{[Bamcalibrationblock]});
-
-    my $program_name = lc q{bamcalibrationblock};
-
-    analysis_bamcalibrationblock(
+    ## Pipeline recipe for wts data
+    pipeline_wts(
         {
             parameter_href          => \%parameter,
             active_parameter_href   => \%active_parameter,
             sample_info_href        => \%sample_info,
             file_info_href          => \%file_info,
+            indir_path_href         => \%indir_path,
+            infile_href             => \%infile,
             infile_lane_prefix_href => \%infile_lane_prefix,
             lane_href               => \%lane,
             job_id_href             => \%job_id,
             outaligner_dir          => $active_parameter{outaligner_dir},
-            program_name            => q{bamcalibrationblock},
             log                     => $log,
         }
     );
-
-}
-else {
-
-    ## Always run even for single samples to rename them correctly for standardised downstream processing.
-    ## Will also split alignment per contig and copy to temporary directory for '-rio 1' block to enable selective removal of block submodules.
-    if ( $active_parameter{ppicardtools_mergesamfiles} > 0 ) {
-
-        $log->info(q{[Picardtools mergesamfiles]});
-
-        my $program_name = lc q{picardtools_mergesamfiles};
-
-        foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-            my $insample_directory = catdir( $active_parameter{outdata_dir},
-                $sample_id, $active_parameter{outaligner_dir} );
-            my $outsample_directory = catdir( $active_parameter{outdata_dir},
-                $sample_id, $active_parameter{outaligner_dir} );
-
-            analysis_picardtools_mergesamfiles(
-                {
-                    parameter_href          => \%parameter,
-                    active_parameter_href   => \%active_parameter,
-                    sample_info_href        => \%sample_info,
-                    file_info_href          => \%file_info,
-                    infile_lane_prefix_href => \%infile_lane_prefix,
-                    lane_href               => \%lane,
-                    job_id_href             => \%job_id,
-                    insample_directory      => $insample_directory,
-                    outsample_directory     => $outsample_directory,
-                    sample_id               => $sample_id,
-                    program_name            => $program_name,
-                }
-            );
-        }
-    }
-
-    # Markduplicates
-    if ( $active_parameter{pmarkduplicates} > 0 ) {
-
-        $log->info(q{[Markduplicates]});
-
-        my $program_name = lc q{markduplicates};
-
-      SAMPLE_ID:
-        foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-            ## Assign directories
-            my $insample_directory = catdir( $active_parameter{outdata_dir},
-                $sample_id, $active_parameter{outaligner_dir} );
-            my $outsample_directory = catdir( $active_parameter{outdata_dir},
-                $sample_id, $active_parameter{outaligner_dir} );
-
-            analysis_markduplicates(
-                {
-                    parameter_href          => \%parameter,
-                    active_parameter_href   => \%active_parameter,
-                    sample_info_href        => \%sample_info,
-                    file_info_href          => \%file_info,
-                    infile_lane_prefix_href => \%infile_lane_prefix,
-                    job_id_href             => \%job_id,
-                    insample_directory      => $insample_directory,
-                    outsample_directory     => $outsample_directory,
-                    sample_id               => $sample_id,
-                    program_name            => $program_name,
-                }
-            );
-        }
-    }
-
-    #Run GATK realignertargetcreator/indelrealigner
-    if ( $active_parameter{pgatk_realigner} > 0 ) {
-
-        $log->info(q{[GATK realignertargetcreator/indelrealigner]});
-
-        my $program_name = lc q{gatk_realigner};
-
-      SAMPLE_ID:
-        foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-            ## Assign directories
-            my $insample_directory = catdir( $active_parameter{outdata_dir},
-                $sample_id, $active_parameter{outaligner_dir} );
-            my $outsample_directory = catdir( $active_parameter{outdata_dir},
-                $sample_id, $active_parameter{outaligner_dir} );
-
-            analysis_gatk_realigner(
-                {
-                    parameter_href          => \%parameter,
-                    active_parameter_href   => \%active_parameter,
-                    sample_info_href        => \%sample_info,
-                    file_info_href          => \%file_info,
-                    infile_lane_prefix_href => \%infile_lane_prefix,
-                    job_id_href             => \%job_id,
-                    sample_id               => $sample_id,
-                    insample_directory      => $insample_directory,
-                    outsample_directory     => $outsample_directory,
-                    program_name            => $program_name,
-                }
-            );
-        }
-    }
-
-    ## Run GATK baserecalibrator/printreads
-    if ( $active_parameter{pgatk_baserecalibration} > 0 ) {
-
-        $log->info(q{[GATK baserecalibrator/printreads]});
-
-        my $program_name = lc q{gatk_baserecalibration};
-
-      SAMPLE_ID:
-        foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-            ## Assign directories
-            my $insample_directory = catdir( $active_parameter{outdata_dir},
-                $sample_id, $active_parameter{outaligner_dir} );
-            my $outsample_directory = catdir( $active_parameter{outdata_dir},
-                $sample_id, $active_parameter{outaligner_dir} );
-
-            analysis_gatk_baserecalibration(
-                {
-                    parameter_href          => \%parameter,
-                    active_parameter_href   => \%active_parameter,
-                    sample_info_href        => \%sample_info,
-                    file_info_href          => \%file_info,
-                    infile_lane_prefix_href => \%infile_lane_prefix,
-                    job_id_href             => \%job_id,
-                    sample_id               => $sample_id,
-                    insample_directory      => $insample_directory,
-                    outsample_directory     => $outsample_directory,
-                    program_name            => $program_name,
-                }
-            );
-        }
-    }
 }
 
-if ( $active_parameter{pchanjo_sexcheck} > 0 ) {
+### WES|WGS
+if (   $consensus_analysis_type eq q{wgs}
+    || $consensus_analysis_type eq q{wes} )
+{
 
-    $log->info(q{[Chanjo sexcheck]});
+    $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
 
-    my $program_name = lc q{chanjo_sexcheck};
-
-  SAMPLE_IDS:
-    foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-        my $insample_directory = catdir( $active_parameter{outdata_dir},
-            $sample_id, $active_parameter{outaligner_dir} );
-        my $outsample_directory = catdir(
-            $active_parameter{outdata_dir},    $sample_id,
-            $active_parameter{outaligner_dir}, q{coveragereport}
-        );
-
-        analysis_chanjo_sex_check(
-            {
-                parameter_href          => \%parameter,
-                active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
-                file_info_href          => \%file_info,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                sample_id               => $sample_id,
-                insample_directory      => $insample_directory,
-                outsample_directory     => $outsample_directory,
-                program_name            => $program_name,
-            }
-        );
-    }
-}
-
-if ( $active_parameter{psambamba_depth} > 0 ) {
-
-    $log->info(q{[Sambamba depth]});
-
-    my $program_name = lc q{sambamba_depth};
-
-  SAMPLE_ID:
-    foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-        my $insample_directory = catdir( $active_parameter{outdata_dir},
-            $sample_id, $active_parameter{outaligner_dir} );
-        my $outsample_directory = catdir(
-            $active_parameter{outdata_dir},    $sample_id,
-            $active_parameter{outaligner_dir}, q{coveragereport}
-        );
-
-        analysis_sambamba_depth(
-            {
-                parameter_href          => \%parameter,
-                active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
-                file_info_href          => \%file_info,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                sample_id               => $sample_id,
-                insample_directory      => $insample_directory,
-                outsample_directory     => $outsample_directory,
-                program_name            => $program_name,
-            }
-        );
-    }
-}
-
-# Run bedtools genomecov
-if ( $active_parameter{pbedtools_genomecov} > 0 ) {
-
-    $log->info(q{[Bedtools genomecov]});
-
-    my $program_name = lc q{bedtools_genomecov};
-
-  SAMPLE_ID:
-    foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-        ## Assign directories
-        my $insample_directory = catdir( $active_parameter{outdata_dir},
-            $sample_id, $active_parameter{outaligner_dir} );
-        my $outsample_directory = catdir(
-            $active_parameter{outdata_dir},    $sample_id,
-            $active_parameter{outaligner_dir}, q{coveragereport}
-        );
-
-        analysis_bedtools_genomecov(
-            {
-                parameter_href          => \%parameter,
-                active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
-                file_info_href          => \%file_info,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                sample_id               => $sample_id,
-                insample_directory      => $insample_directory,
-                outsample_directory     => $outsample_directory,
-                program_name            => $program_name,
-            }
-        );
-    }
-}
-
-## Run picardtools_collectmultiplemetrics
-if ( $active_parameter{ppicardtools_collectmultiplemetrics} > 0 ) {
-
-    $log->info(q{[Picardtools collectmultiplemetrics]});
-
-    my $program_name = lc q{picardtools_collectmultiplemetrics};
-
-  SAMPLE_ID:
-    foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-        ## Assign directories
-        my $insample_directory = catdir( $active_parameter{outdata_dir},
-            $sample_id, $active_parameter{outaligner_dir} );
-        my $outsample_directory = catdir(
-            $active_parameter{outdata_dir},    $sample_id,
-            $active_parameter{outaligner_dir}, q{coveragereport}
-        );
-
-        analysis_picardtools_collectmultiplemetrics(
-            {
-                parameter_href          => \%parameter,
-                active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
-                file_info_href          => \%file_info,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                sample_id               => $sample_id,
-                insample_directory      => $insample_directory,
-                outsample_directory     => $outsample_directory,
-                program_name            => $program_name,
-            }
-        );
-    }
-}
-
-## Run Picardtools_collecthsmetrics
-if ( $active_parameter{ppicardtools_collecthsmetrics} > 0 ) {
-
-    $log->info(q{[Picardtools collecthsmetrics]});
-
-    my $program_name = lc q{picardtools_collecthsmetrics};
-
-  SAMPLE_ID:
-    foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-        ## Assign directories
-        my $insample_directory = catdir( $active_parameter{outdata_dir},
-            $sample_id, $active_parameter{outaligner_dir} );
-        my $outsample_directory = catdir(
-            $active_parameter{outdata_dir},    $sample_id,
-            $active_parameter{outaligner_dir}, q{coveragereport}
-        );
-
-        analysis_picardtools_collecthsmetrics(
-            {
-                parameter_href          => \%parameter,
-                active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
-                file_info_href          => \%file_info,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                sample_id               => $sample_id,
-                insample_directory      => $insample_directory,
-                outsample_directory     => $outsample_directory,
-                program_name            => $program_name,
-            }
-        );
-    }
-}
-
-## Run Rcovplot scripts
-if ( $active_parameter{prcovplots} > 0 ) {
-
-    if ( $active_parameter{pbedtools_genomecov} > 0 ) {
-
-        $log->info(q{[Rcovplots]});
-
-        my $program_name = lc q{rcovplots};
-
-      SAMPLE_ID:
-        foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-            ## Assign directories
-            my $insample_directory = catdir( $active_parameter{outdata_dir},
-                $sample_id, $active_parameter{outaligner_dir} );
-            my $outsample_directory = catdir(
-                $active_parameter{outdata_dir},    $sample_id,
-                $active_parameter{outaligner_dir}, q{coveragereport}
-            );
-            analysis_rcoverageplots(
-                {
-                    parameter_href          => \%parameter,
-                    active_parameter_href   => \%active_parameter,
-                    sample_info_href        => \%sample_info,
-                    file_info_href          => \%file_info,
-                    lane_href               => \%lane,
-                    infile_lane_prefix_href => \%infile_lane_prefix,
-                    job_id_href             => \%job_id,
-                    sample_id               => $sample_id,
-                    insample_directory      => $insample_directory,
-                    outsample_directory     => $outsample_directory,
-                    program_name            => $program_name,
-                }
-            );
-        }
-    }
-}
-
-#Run CNVnator
-if ( $active_parameter{pcnvnator} > 0 ) {
-
-    $log->info(q{[CNVnator]});
-
-    my $program_name = lc q{cnvnator};
-
-    foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-        ## Assign directories
-        my $insample_directory = catdir( $active_parameter{outdata_dir},
-            $sample_id, $active_parameter{outaligner_dir} );
-
-        my $outsample_directory = catdir(
-            $active_parameter{outdata_dir},    $sample_id,
-            $active_parameter{outaligner_dir}, $program_name
-        );
-
-        analysis_cnvnator(
-            {
-                parameter_href          => \%parameter,
-                active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
-                file_info_href          => \%file_info,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                sample_id               => $sample_id,
-                insample_directory      => $insample_directory,
-                outsample_directory     => $outsample_directory,
-                program_name            => $program_name,
-            }
-        );
-    }
-}
-
-if ( $active_parameter{pdelly_call} > 0 ) {    #Run delly_call
-
-    $log->info(q{[Delly_call]});
-
-    my $program_name = q{delly_call};
-    my $program_outdirectory_name =
-      $parameter{ q{p} . $program_name }{outdir_name};
-
-    foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-        my $insample_directory = catdir( $active_parameter{outdata_dir},
-            $sample_id, $active_parameter{outaligner_dir} );
-        my $outsample_directory = catdir(
-            $active_parameter{outdata_dir},    $sample_id,
-            $active_parameter{outaligner_dir}, $program_outdirectory_name
-        );
-
-        analysis_delly_call(
-            {
-                active_parameter_href   => \%active_parameter,
-                file_info_href          => \%file_info,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                insample_directory      => $insample_directory,
-                job_id_href             => \%job_id,
-                outsample_directory     => $outsample_directory,
-                parameter_href          => \%parameter,
-                program_name            => $program_name,
-                sample_id               => $sample_id,
-                sample_info_href        => \%sample_info,
-            }
-        );
-    }
-}
-
-if ( $active_parameter{pdelly_reformat} > 0 )
-{    #Run Delly merge, regenotype, bcftools merge
-
-    $log->info(q{[Delly_reformat]});
-
-    my $program_name = q{delly_reformat};
-    my $program_outdirectory_name =
-      $parameter{ q{p} . $program_name }{outdir_name};
-
-    my $outfamily_directory = catfile(
-        $active_parameter{outdata_dir},    $active_parameter{family_id},
-        $active_parameter{outaligner_dir}, $program_outdirectory_name
-    );
-
-    analysis_delly_reformat(
-        {
-            active_parameter_href   => \%active_parameter,
-            file_info_href          => \%file_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            outfamily_directory     => $outfamily_directory,
-            parameter_href          => \%parameter,
-            program_name            => $program_name,
-            sample_info_href        => \%sample_info,
-        }
-    );
-}
-
-if ( $active_parameter{pmanta} > 0 ) {    #Run Manta
-
-    $log->info(q{[Manta]});
-    my $program_name = lc q{manta};
-
-    my $outfamily_directory = catfile(
-        $active_parameter{outdata_dir},    $active_parameter{family_id},
-        $active_parameter{outaligner_dir}, $program_name,
-    );
-
-    analysis_manta(
+    ## Pipeline recipe for wts data
+    pipeline_wgs(
         {
             parameter_href          => \%parameter,
             active_parameter_href   => \%active_parameter,
             sample_info_href        => \%sample_info,
             file_info_href          => \%file_info,
+            indir_path_href         => \%indir_path,
+            infile_href             => \%infile,
             infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            program_name            => $program_name,
-            outfamily_directory     => $outfamily_directory,
-        }
-    );
-}
-
-if ( $active_parameter{ptiddit} > 0 ) {    #Run Tiddit
-
-    $log->info(q{[Tiddit]});
-
-    my $program_name = lc q{tiddit};
-
-    my $outfamily_directory = catfile(
-        $active_parameter{outdata_dir},    $active_parameter{family_id},
-        $active_parameter{outaligner_dir}, $program_name,
-    );
-
-    analysis_tiddit(
-        {
-            parameter_href          => \%parameter,
-            active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
-            file_info_href          => \%file_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            program_name            => $program_name,
-            outfamily_directory     => $outfamily_directory,
-        }
-    );
-}
-
-if ( $active_parameter{psv_combinevariantcallsets} > 0 )
-{   #Run combinevariantcallsets. For all Sample_ids and StructuralVariantCallers
-
-    $log->info(q{[SV combinevariantcallsets]});
-
-    my $program_name = lc q{sv_combinevariantcallsets};
-
-    analysis_sv_combinevariantcallsets(
-        {
-            parameter_href          => \%parameter,
-            active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
-            file_info_href          => \%file_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            program_name            => $program_name,
-        }
-    );
-}
-
-# Run sv_varianteffectpredictor. Family-level
-if ( $active_parameter{psv_varianteffectpredictor} > 0 ) {
-
-    $log->info(q{[SV varianteffectpredictor]});
-
-    my $program_name = lc q{sv_varianteffectpredictor};
-
-    analysis_vep_sv(
-        {
-            parameter_href          => \%parameter,
-            active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
-            file_info_href          => \%file_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            contigs_ref             => \@{ $file_info{contigs_sv} },
-            program_name            => $program_name,
-        }
-    );
-}
-
-if ( $active_parameter{psv_vcfparser} ) {
-
-    $log->info(q{[SV vcfparser]});
-
-    analysis_sv_vcfparser(
-        {
-            active_parameter_href   => \%active_parameter,
-            file_info_href          => \%file_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            parameter_href          => \%parameter,
-            program_name            => q{sv_vcfparser},
-            sample_info_href        => \%sample_info,
-        }
-    );
-}
-
-if ( $active_parameter{psv_rankvariant} ) {
-
-    $log->info(q{[SV rankvariant]});
-
-    my $program_name = lc q{sv_rankvariant};
-
-    if ( defined $parameter{dynamic_parameter}{unaffected}
-        && @{ $parameter{dynamic_parameter}{unaffected} } eq
-        @{ $active_parameter{sample_ids} } )
-    {
-
-        $log->warn(
-q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 'compound'}
-        );
-
-        analysis_sv_rankvariant_unaffected(
-            {
-                active_parameter_href   => \%active_parameter,
-                file_info_href          => \%file_info,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                parameter_href          => \%parameter,
-                program_name            => $program_name,
-                sample_info_href        => \%sample_info,
-            }
-        );
-    }
-    else {
-        analysis_sv_rankvariant(
-            {
-                active_parameter_href   => \%active_parameter,
-                file_info_href          => \%file_info,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                parameter_href          => \%parameter,
-                program_name            => $program_name,
-                sample_info_href        => \%sample_info,
-            }
-        );
-    }
-}
-
-## Run sv_reformat. Done per family
-if ( $active_parameter{psv_reformat} ) {
-
-    $log->info(q{[SV reformat]});
-
-    my $program_name = lc q{sv_reformat};
-
-    analysis_sv_reformat(
-        {
-            parameter_href          => \%parameter,
-            active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
-            file_info_href          => \%file_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            program_name            => $program_name,
-        }
-    );
-}
-
-## Run bcftools mpileup
-if ( $active_parameter{pbcftools_mpileup} ) {
-
-    $log->info(q{[Bcftools mpileup]});
-    my $program_name = q{bcftools_mpileup};
-
-    my $program_outdirectory_name = $parameter{pbcftools_mpileup}{outdir_name};
-
-    my $outfamily_directory = catfile(
-        $active_parameter{outdata_dir},    $active_parameter{family_id},
-        $active_parameter{outaligner_dir}, $program_outdirectory_name,
-    );
-
-    analysis_bcftools_mpileup(
-        {
-            parameter_href          => \%parameter,
-            active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
-            file_info_href          => \%file_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            program_name            => $program_name,
-            outfamily_directory     => $outfamily_directory,
-        }
-    );
-}
-
-# Run Freebayes
-if ( $active_parameter{pfreebayes} > 0 ) {
-
-    $log->info(q{[Freebayes]});
-    my $program_name = q{freebayes};
-
-    my $program_outdirectory_name = $parameter{pfreebayes}{outdir_name};
-
-    my $outfamily_directory = catfile(
-        $active_parameter{outdata_dir},    $active_parameter{family_id},
-        $active_parameter{outaligner_dir}, $program_outdirectory_name
-    );
-
-    analysis_freebayes_calling(
-        {
-            parameter_href          => \%parameter,
-            active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
-            file_info_href          => \%file_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            program_name            => $program_name,
-            outfamily_directory     => $outfamily_directory,
-        }
-    );
-}
-
-## Run GATK haplotypecaller
-if ( $active_parameter{pgatk_haplotypecaller} > 0 ) {
-
-    $log->info(q{[GATK haplotypecaller]});
-    my $program_name = lc q{gatk_haplotypecaller};
-
-  SAMPLE_ID:
-    foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-        my $insample_directory = catdir( $active_parameter{outdata_dir},
-            $sample_id, $active_parameter{outaligner_dir} );
-        my $outsample_directory = catdir(
-            $active_parameter{outdata_dir},    $sample_id,
-            $active_parameter{outaligner_dir}, q{gatk}
-        );
-
-        analysis_gatk_haplotypecaller(
-            {
-                parameter_href          => \%parameter,
-                active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
-                file_info_href          => \%file_info,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                sample_id               => $sample_id,
-                insample_directory      => $insample_directory,
-                outsample_directory     => $outsample_directory,
-                program_name            => $program_name,
-            }
-        );
-    }
-}
-
-## Run GATK genotypegvcfs. Done per family
-if ( $active_parameter{pgatk_genotypegvcfs} > 0 ) {
-
-    $log->info(q{[GATK genotypegvcfs]});
-
-    my $program_name = lc q{gatk_genotypegvcfs};
-
-    my $family_analysis_directory = catfile(
-        $active_parameter{outdata_dir},
-        $active_parameter{family_id},
-        $active_parameter{outaligner_dir}, q{gatk},
-    );
-
-    my $outfamily_file_directory =
-      catdir( $active_parameter{outdata_dir}, $active_parameter{family_id}, );
-
-    analysis_gatk_genotypegvcfs(
-        {
-            parameter_href           => \%parameter,
-            active_parameter_href    => \%active_parameter,
-            sample_info_href         => \%sample_info,
-            file_info_href           => \%file_info,
-            infile_lane_prefix_href  => \%infile_lane_prefix,
-            job_id_href              => \%job_id,
-            program_name             => $program_name,
-            family_id                => $active_parameter{family_id},
-            outfamily_directory      => $family_analysis_directory,
-            outfamily_file_directory => $outfamily_file_directory,
-        }
-    );
-
-    $log->info(q{[GATK concatenate genotypegvcfs files]});
-
-    analysis_gatk_concatenate_genotypegvcfs(
-        {
-            parameter_href          => \%parameter,
-            active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
-            file_info_href          => \%file_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            infamily_directory      => $family_analysis_directory,
-            outfamily_directory     => $family_analysis_directory,
-            program_name            => $program_name,
-        }
-    );
-}
-
-## Run GATK VariantRecalibrator/ApplyRecalibration. Done per family
-if ( $active_parameter{pgatk_variantrecalibration} > 0 ) {
-
-    $log->info(q{[GATK variantrecalibrator/applyrecalibration]});
-
-    my $program_name = lc q{gatk_variantrecalibration};
-
-    my $program_outdirectory_name =
-      $parameter{pgatk_variantrecalibration}{outdir_name};
-
-    my $infamily_directory = catfile(
-        $active_parameter{outdata_dir},    $active_parameter{family_id},
-        $active_parameter{outaligner_dir}, $program_outdirectory_name
-    );
-    my $outfamily_directory = $infamily_directory;
-    my $consensus_analysis_type =
-      $parameter{dynamic_parameter}{consensus_analysis_type};
-
-    if ( $consensus_analysis_type eq q{wes} ) {
-
-        analysis_gatk_variantrecalibration_wes(
-            {
-                parameter_href          => \%parameter,
-                active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
-                file_info_href          => \%file_info,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                infamily_directory      => $infamily_directory,
-                outfamily_directory     => $outfamily_directory,
-                program_name            => $program_name,
-            }
-        );
-    }
-    else {
-
-        ## WGS and WES/WGS
-        analysis_gatk_variantrecalibration_wgs(
-            {
-                parameter_href          => \%parameter,
-                active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
-                file_info_href          => \%file_info,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                infamily_directory      => $infamily_directory,
-                outfamily_directory     => $outfamily_directory,
-                program_name            => $program_name,
-            }
-        );
-    }
-}
-
-## Run gatk_combinevariantcallsets. Done per family
-if ( $active_parameter{pgatk_combinevariantcallsets} > 0 ) {
-
-    $log->info(q{[GATK combinevariantcallsets]});
-
-    my $program_name = lc q{gatk_combinevariantcallsets};
-
-    my $outfamily_directory = catfile(
-        $active_parameter{outdata_dir},
-        $active_parameter{family_id},
-        $active_parameter{outaligner_dir}
-    );
-    analysis_gatk_combinevariantcallsets(
-        {
-            parameter_href          => \%parameter,
-            active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
-            file_info_href          => \%file_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            outfamily_directory     => $outfamily_directory,
-            program_name            => $program_name,
-        }
-    );
-}
-
-# Run Peddy. Done per family
-if ( $active_parameter{ppeddy} > 0 ) {
-
-    $log->info(q{[Peddy]});
-    my $program_name = q{peddy};
-
-    my $infamily_directory = catdir(
-        $active_parameter{outdata_dir},
-        $active_parameter{family_id},
-        $active_parameter{outaligner_dir}
-    );
-
-    my $outfamily_directory = catfile(
-        $active_parameter{outdata_dir},
-        $active_parameter{family_id},
-        $active_parameter{outaligner_dir},
-        q{casecheck}, $program_name
-    );
-
-    analysis_peddy(
-        {
-            parameter_href          => \%parameter,
-            active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
-            file_info_href          => \%file_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            program_name            => $program_name,
-            infamily_directory      => $infamily_directory,
-            outfamily_directory     => $outfamily_directory,
-        }
-    );
-}
-
-if ( $active_parameter{pplink} > 0 ) {    #Run plink. Done per family
-
-    $log->info(q{[Plink]});
-    my $program_name       = q{plink};
-    my $infamily_directory = catdir(
-        $active_parameter{outdata_dir},
-        $active_parameter{family_id},
-        $active_parameter{outaligner_dir}
-    );
-
-    my $outfamily_directory = catfile(
-        $active_parameter{outdata_dir},
-        $active_parameter{family_id},
-        $active_parameter{outaligner_dir},
-        q{casecheck}, $program_name
-    );
-
-    analysis_plink(
-        {
-            parameter_href          => \%parameter,
-            active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
-            file_info_href          => \%file_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            program_name            => $program_name,
-            infamily_directory      => $infamily_directory,
-            outfamily_directory     => $outfamily_directory,
-        }
-    );
-}
-
-if ( $active_parameter{pvariant_integrity} > 0 ) {
-
-    #Run variant_integrity. Done per family
-    $log->info(q{[Variant_integrity]});
-
-    my $program_name = lc q{variant_integrity};
-
-    my $infamily_directory = catdir(
-        $active_parameter{outdata_dir},
-        $active_parameter{family_id},
-        $active_parameter{outaligner_dir}
-    );
-    my $outfamily_directory = catfile(
-        $active_parameter{outdata_dir},
-        $active_parameter{family_id},
-        $active_parameter{outaligner_dir},
-        q{casecheck}, $program_name
-    );
-
-    analysis_variant_integrity(
-        {
-            parameter_href          => \%parameter,
-            active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
-            file_info_href          => \%file_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            program_name            => $program_name,
-            infamily_directory      => $infamily_directory,
-            outfamily_directory     => $outfamily_directory,
-        }
-    );
-}
-
-if ( $active_parameter{pevaluation} > 0 ) {    #Run evaluation. Done per family
-
-    foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-        if ( $sample_id =~ /$active_parameter{nist_id}/ ) {
-
-            $log->info("[Evaluation]\n");
-
-            my $program_name = lc q{evaluation};
-
-            ## Assign directories
-            my $infamily_directory = catdir(
-                $active_parameter{outdata_dir},
-                $active_parameter{family_id},
-                $active_parameter{outaligner_dir}
-            );
-            my $outfamily_directory = catfile(
-                $active_parameter{outdata_dir},
-                $active_parameter{family_id},
-                $active_parameter{outaligner_dir},
-                $program_name
-            );
-            analysis_picardtools_genotypeconcordance(
-                {
-                    parameter_href          => \%parameter,
-                    active_parameter_href   => \%active_parameter,
-                    sample_info_href        => \%sample_info,
-                    file_info_href          => \%file_info,
-                    infile_lane_prefix_href => \%infile_lane_prefix,
-                    job_id_href             => \%job_id,
-                    sample_id               => $sample_id,
-                    call_type               => q{BOTH},
-                    infamily_directory      => $infamily_directory,
-                    outfamily_directory     => $outfamily_directory,
-                    program_name            => $program_name,
-                }
-            );
-        }
-
-    }
-}
-
-## Run GATK varianteval for all variants. Done per sample_id
-if ( $active_parameter{pgatk_variantevalall} > 0 ) {
-
-    $log->info(q{[GATK variantevalall]});
-
-    my $program_name = lc q{gatk_variantevalall};
-
-  SAMPLE_ID:
-    foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-        ## Assign directories
-        my $insample_directory = catdir( $active_parameter{outdata_dir},
-            $sample_id, $active_parameter{outaligner_dir} );
-
-        my $outsample_directory = catdir(
-            $active_parameter{outdata_dir},    $sample_id,
-            $active_parameter{outaligner_dir}, $program_name
-        );
-
-        analysis_gatk_variantevalall(
-            {
-                parameter_href          => \%parameter,
-                active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
-                file_info_href          => \%file_info,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                sample_id               => $sample_id,
-                insample_directory      => $insample_directory,
-                outsample_directory     => $outsample_directory,
-                program_name            => $program_name,
-            }
-        );
-    }
-}
-
-### If no males or other remove contig Y from all downstream analysis
-my @file_info_contig_keys = ( "contigs_size_ordered", "contigs" );
-
-foreach my $key (@file_info_contig_keys) {
-
-    ## Removes contig_names from contigs array if no male or 'other' found
-    @{ $file_info{$key} } = delete_male_contig(
-        {
-            contigs_ref => \@{ $file_info{$key} },
-            found_male  => $active_parameter{found_male},
-        }
-    );
-}
-## Run consecutive models
-if ( $active_parameter{reduce_io} ) {
-
-    $active_parameter{pvariantannotationblock} = 1;    # Enable as program
-
-    $log->info(q{[Variantannotationblock]});
-
-    my $program_name = lc q{variantannotationblock};
-
-    analysis_variantannotationblock(
-        {
-            parameter_href          => \%parameter,
-            active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
-            file_info_href          => \%file_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
+            lane_href               => \%lane,
             job_id_href             => \%job_id,
             outaligner_dir          => $active_parameter{outaligner_dir},
-            call_type               => q{BOTH},
-            program_name            => $program_name,
-        }
-    );
-}
-else {
-
-    if ( $active_parameter{pprepareforvariantannotationblock} ) {
-
-        $log->info(q{[Prepareforvariantannotationblock]});
-
-        my $program_name = lc q{prepareforvariantannotationblock};
-
-        analysis_prepareforvariantannotationblock(
-            {
-                parameter_href          => \%parameter,
-                active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
-                file_info_href          => \%file_info,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                call_type               => q{BOTH},
-                program_name            => $program_name,
-            }
-        );
-    }
-
-    # Run rhocall. Done per family
-    if ( $active_parameter{prhocall} > 0 ) {
-
-        $log->info(q{[Rhocall]});
-
-        my $program_name = q{rhocall};
-
-        my $infamily_directory = catdir(
-            $active_parameter{outdata_dir},
-            $active_parameter{family_id},
-            $active_parameter{outaligner_dir}
-        );
-        my $outfamily_directory = $infamily_directory;
-
-        analysis_rhocall_annotate(
-            {
-                active_parameter_href   => \%active_parameter,
-                call_type               => q{BOTH},
-                file_info_href          => \%file_info,
-                infamily_directory      => $infamily_directory,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                outfamily_directory     => $outfamily_directory,
-                parameter_href          => \%parameter,
-                program_name            => $program_name,
-                sample_info_href        => \%sample_info,
-            }
-        );
-    }
-
-    ## Run vt. Done per family
-    if ( $active_parameter{pvt} ) {
-
-        $log->info(q{[Vt]});
-
-        my $program_name = q{vt};
-
-        my $infamily_directory = catdir(
-            $active_parameter{outdata_dir},
-            $active_parameter{family_id},
-            $active_parameter{outaligner_dir}
-        );
-        my $outfamily_directory = $infamily_directory;
-
-        analysis_vt(
-            {
-                parameter_href          => \%parameter,
-                active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
-                file_info_href          => \%file_info,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                infamily_directory      => $infamily_directory,
-                job_id_href             => \%job_id,
-                call_type               => q{BOTH},
-                outfamily_directory     => $outfamily_directory,
-                program_name            => $program_name,
-            }
-        );
-    }
-    if ( $active_parameter{pfrequency_filter} ) {
-
-        $log->info(q{[Frequency_filter]});
-
-        my $program_name = q{frequency_filter};
-
-        my $infamily_directory = catdir(
-            $active_parameter{outdata_dir},
-            $active_parameter{family_id},
-            $active_parameter{outaligner_dir}
-        );
-        my $outfamily_directory = $infamily_directory;
-
-        analysis_frequency_filter(
-            {
-                parameter_href          => \%parameter,
-                active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
-                file_info_href          => \%file_info,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                infamily_directory      => $infamily_directory,
-                job_id_href             => \%job_id,
-                call_type               => q{BOTH},
-                outfamily_directory     => $outfamily_directory,
-                program_name            => $program_name,
-            }
-        );
-    }
-    ## Run varianteffectpredictor {family-level}
-    if ( $active_parameter{pvarianteffectpredictor} > 0 ) {
-
-        $log->info(q{[Varianteffectpredictor]});
-
-        my $program_name = lc q{varianteffectpredictor};
-
-        analysis_vep(
-            {
-                parameter_href          => \%parameter,
-                active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
-                file_info_href          => \%file_info,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                call_type               => q{BOTH},
-                program_name            => $program_name,
-            }
-        );
-    }
-
-    # Run pvcfparser. Done per family
-    if ( $active_parameter{pvcfparser} > 0 ) {
-
-        $log->info(q{[Vcfparser]});
-
-        my $program_name = q{vcfparser};
-
-        my $infamily_directory = catdir(
-            $active_parameter{outdata_dir},
-            $active_parameter{family_id},
-            $active_parameter{outaligner_dir}
-        );
-        my $outfamily_directory = $infamily_directory;
-
-        analysis_mip_vcfparser(
-            {
-                active_parameter_href   => \%active_parameter,
-                call_type               => q{BOTH},
-                file_info_href          => \%file_info,
-                infamily_directory      => $infamily_directory,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                outfamily_directory     => $outfamily_directory,
-                parameter_href          => \%parameter,
-                program_name            => $program_name,
-                sample_info_href        => \%sample_info,
-            }
-        );
-    }
-
-    # Run snpEff. Done per family
-    if ( $active_parameter{psnpeff} > 0 ) {
-
-        $log->info(q{[Snpeff]});
-        my $program_name = q{snpeff};
-
-        my $infamily_directory = catdir(
-            $active_parameter{outdata_dir},
-            $active_parameter{family_id},
-            $active_parameter{outaligner_dir}
-        );
-        my $outfamily_directory = $infamily_directory;
-
-        analysis_snpeff(
-            {
-                active_parameter_href   => \%active_parameter,
-                call_type               => q{BOTH},
-                file_info_href          => \%file_info,
-                infamily_directory      => $infamily_directory,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                outfamily_directory     => $outfamily_directory,
-                parameter_href          => \%parameter,
-                program_name            => $program_name,
-                sample_info_href        => \%sample_info,
-            }
-        );
-    }
-    ## Run rankvariant. Done per family
-    if ( $active_parameter{prankvariant} ) {
-
-        $log->info(q{[Rankvariant]});
-
-        my $program_name = lc q{rankvariant};
-
-        if ( defined $parameter{dynamic_parameter}{unaffected}
-            && @{ $parameter{dynamic_parameter}{unaffected} } eq
-            @{ $active_parameter{sample_ids} } )
-        {
-
-            $log->warn(
-q{Only unaffected sample in pedigree - skipping genmod 'models', 'score' and 'compound'}
-            );
-
-            analysis_rankvariant_unaffected(
-                {
-                    parameter_href          => \%parameter,
-                    active_parameter_href   => \%active_parameter,
-                    sample_info_href        => \%sample_info,
-                    file_info_href          => \%file_info,
-                    infile_lane_prefix_href => \%infile_lane_prefix,
-                    job_id_href             => \%job_id,
-                    call_type               => q{BOTH},
-                    program_name            => $program_name,
-                }
-            );
-        }
-        else {
-
-            analysis_rankvariant(
-                {
-                    parameter_href          => \%parameter,
-                    active_parameter_href   => \%active_parameter,
-                    sample_info_href        => \%sample_info,
-                    file_info_href          => \%file_info,
-                    infile_lane_prefix_href => \%infile_lane_prefix,
-                    job_id_href             => \%job_id,
-                    call_type               => q{BOTH},
-                    program_name            => $program_name,
-                }
-            );
-        }
-    }
-    ## Run endvariantannotationblock. Done per family
-    if ( $active_parameter{pendvariantannotationblock} ) {
-
-        $log->info(q{[Endvariantannotationblock]});
-
-        my $program_name = lc q{endvariantannotationblock};
-
-        analysis_endvariantannotationblock(
-            {
-                parameter_href          => \%parameter,
-                active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
-                file_info_href          => \%file_info,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                call_type               => q{BOTH},
-                program_name            => $program_name,
-            }
-        );
-    }
-}
-
-## Run GATK varianteval for exome variants. Done per sample_id
-if ( $active_parameter{pgatk_variantevalexome} > 0 ) {
-
-    $log->info(q{[GATK variantevalexome]});
-
-    my $program_name = lc q{gatk_variantevalexome};
-
-    ## Assign directories
-    my $infamily_directory = catdir(
-        $active_parameter{outdata_dir},
-        $active_parameter{family_id},
-        $active_parameter{outaligner_dir}
-    );
-
-  SAMPLE_ID:
-    foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-        ## Assign directories
-        my $outsample_directory = catdir(
-            $active_parameter{outdata_dir},    $sample_id,
-            $active_parameter{outaligner_dir}, $program_name
-        );
-
-        analysis_gatk_variantevalexome(
-            {
-                parameter_href          => \%parameter,
-                active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
-                file_info_href          => \%file_info,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                sample_id               => $sample_id,
-                infamily_directory      => $infamily_directory,
-                outsample_directory     => $outsample_directory,
-                program_name            => $program_name,
-            }
-        );
-    }
-}
-
-if ( $active_parameter{pqccollect} > 0 ) {    #Run qccollect. Done per family
-
-    $log->info(q{[Qccollect]});
-    my $program_name = q{qccollect};
-    my $outfamily_directory =
-      catdir( $active_parameter{outdata_dir}, $active_parameter{family_id} );
-
-    analysis_qccollect(
-        {
-            parameter_href          => \%parameter,
-            active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            program_name            => $program_name,
-            outfamily_directory     => $outfamily_directory,
+            log                     => $log,
         }
     );
 }
 
-if ( $active_parameter{pmultiqc} > 0 ) {
-
-    $log->info(q{[Multiqc]});
-    my $program_name = q{multiqc};
-
-    analysis_multiqc(
-        {
-            parameter_href          => \%parameter,
-            active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            program_name            => $program_name,
-        }
-    );
-}
-
-if ( $active_parameter{panalysisrunstatus} ) {
-
-    ## Add analysis run status flag.
-    $sample_info{analysisrunstatus} = q{not_finished};
-}
-
-if ( $active_parameter{panalysisrunstatus} ) {
-
-    $log->info(q{[Analysis run status]});
-
-    analysis_analysisrunstatus(
-        {
-            active_parameter_href   => \%active_parameter,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            parameter_href          => \%parameter,
-            program_name            => q{analysisrunstatus},
-            sample_info_href        => \%sample_info,
-        }
-    );
-}
-
-if ( $active_parameter{psacct} ) {
-
-    $log->info(q{[Sacct]});
-
-    analysis_sacct(
-        {
-            active_parameter_href   => \%active_parameter,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            parameter_href          => \%parameter,
-            program_name            => q{sacct},
-            sample_info_href        => \%sample_info,
-        }
-    );
-}
-
-#Write QC for programs used in analysis
-if ( $active_parameter{sample_info_file} ne 0 ) { #Write SampleInfo to yaml file
+## Write QC for programs used in analysis
+# Write SampleInfo to yaml file
+if ( $active_parameter{sample_info_file} ) {
 
     ## Writes a YAML hash to file
     write_yaml(
@@ -3091,7 +1558,7 @@ if ( $active_parameter{sample_info_file} ne 0 ) { #Write SampleInfo to yaml file
             yaml_file_path => $active_parameter{sample_info_file},
         }
     );
-    $log->info( "Wrote: " . $active_parameter{sample_info_file}, "\n" );
+    $log->info( q{Wrote: } . $active_parameter{sample_info_file} );
 }
 
 ######################
