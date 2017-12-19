@@ -887,7 +887,7 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
         );
     }
 
-
+## TODO: Add varDict variant caller recipe here
 
     if ( $active_parameter_href->{pgatk_combinevariantcallsets} ) {
 
@@ -950,20 +950,6 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
         }
     }
 
-### If no males or other remove contig Y from all downstream analysis
-    my @file_info_contig_keys = (qw{ contigs_size_ordered contigs });
-
-  KEY:
-    foreach my $key (@file_info_contig_keys) {
-
-        ## Removes contig_names from contigs array if no male or 'other' found
-        @{ $file_info_href->{$key} } = delete_male_contig(
-            {
-                contigs_ref => \@{ $file_info_href->{$key} },
-                found_male  => $active_parameter_href->{found_male},
-            }
-        );
-    }
 
     if ( $active_parameter_href->{reduce_io} ) {
 
