@@ -25,7 +25,7 @@ MIP has been in use in the clinical production at the Clinical Genomics facility
 
 ## Example Usage
 
-```
+```Bash
 $ mip --family_id [family_id] --pbwa_mem 1 --config_file [mip_config.yaml] --pedigree_file [family_id_pedigree.yaml]
 ```
 
@@ -34,6 +34,7 @@ $ mip --family_id [family_id] --pbwa_mem 1 --config_file [mip_config.yaml] --ped
 * Installation
   * Simple automated install of all programs using conda/SHELL via supplied install script
   * Downloads and prepares references in the installation process
+  * Handle conflicting tool dependencies
 * Autonomous
   * Checks that all dependencies are fulfilled before launching
   * Builds and prepares references and/or files missing before launching
@@ -119,7 +120,7 @@ $ cd -
 ```
 
 ##### 4.Create the install instructions for MIP  
-```
+```Bash
 $ perl mip_install.pl
 ```
 This will generate a batch script "mip.sh" for the install in your working directory.
@@ -194,7 +195,7 @@ Tools that have conflicting dependencies needs to be installed in separate conda
 
 ### Usage
 
-MIP is called from the command line and takes input from the command line \(precedence\ or falls back on defaults where applicable.
+MIP is called from the command line and takes input from the command line \(precedence\) or falls back on defaults where applicable.
 
 Lists are supplied as repeated flag entries on the command line or in the config using the yaml format for arrays.  
 Only flags that will actually be used needs to be specified and MIP will check that all required parameters are set before submitting to SLURM.
@@ -203,18 +204,18 @@ Program parameters always begins with "p" followed by a capital letter. Program 
 
 MIP will overwrite data files when reanalyzing, but keeps all "versioned" sbatch scripts for traceability.
 
-You can always supply `perl mip.pl -h` to list all available parameters and defaults.
+You can always supply `perl mip.pl --help` to list all available parameters and defaults.
 
 Example usage:
-```
-$ mip -f 3 -sampleid 3-1-1A,3-2-1U -sampleid 3-2-2U -pfqc 0 --pbwa_mem 2 -c 3_config.yaml
+```Bash
+$ mip -f 3 --sample_ids 3-1-1A --sample_ids 3-2-1U --sample_ids 3-2-2U -pfqc 0 --pbwa_mem 2 -c 3_config.yaml
 ```
 
 This will analyse family 3 using 3 individuals from that family and begin the analysis with programs after Bwa mem and use all parameter values as specified in the config file except those supplied on the command line, which has precedence.
 
 #### Input
 
-All references and template files should be placed directly in the reference directory specified by `--reference_dir`, except for ANNOVAR db files, which should be located in annovar/humandb.
+All references and template files should be placed directly in the reference directory specified by `--reference_dir`.
 
 ##### Meta-Data
 
