@@ -66,41 +66,41 @@ sub vcf2cytosure_convert {
 
     my $tmpl = {
         coverage_file => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$coverage_file,
+            strict_type => 1,
         },
         FILEHANDLE => {
             store => \$FILEHANDLE,
         },
         frequency => {
             default     => 0.01,
-            strict_type => 1,
             store       => \$frequency,
+            strict_type => 1,
         },
         frequency_tag => {
             default     => q{FRQ},
-            strict_type => 1,
             store       => \$frequency_tag,
+            strict_type => 1,
         },
         no_filter => {
-            default     => 0,
             allow       => [ 0, 1 ],
-            strict_type => 1,
+            default     => 0,
             store       => \$no_filter,
+            strict_type => 1,
         },
         stderrfile_path => {
-            strict_type => 1,
             store       => \$stderrfile_path,
+            strict_type => 1,
         },
         stderrfile_path_append => {
-            strict_type => 1,
             store       => \$stderrfile_path_append,
+            strict_type => 1,
         },
         stdoutfile_path => {
-            strict_type => 1,
             store       => \$stdoutfile_path,
+            strict_type => 1,
         },
         variant_size => {
             allow       => qr/ ^\d+$ /xsm,
@@ -109,10 +109,10 @@ sub vcf2cytosure_convert {
             strict_type => 1,
         },
         vcf_infile_path => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$vcf_infile_path,
+            strict_type => 1,
         },
     };
 
@@ -158,8 +158,8 @@ sub vcf2cytosure_convert {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
         }
     );

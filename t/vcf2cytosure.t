@@ -15,7 +15,7 @@ use utf8;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
-use autodie;
+use autodie qw{ :all };
 use Modern::Perl qw{ 2014 };
 use Readonly;
 
@@ -29,10 +29,11 @@ my $VERBOSE = 1;
 our $VERSION = 1.0.0;
 
 ## Constants
-Readonly my $COMMA              => q{,};
-Readonly my $NEWLINE            => qq{\n};
-Readonly my $SPACE              => q{ };
-Readonly my $N_SUPPORTING_PAIRS => 50;
+Readonly my $COMMA         => q{,};
+Readonly my $MAX_FREQUENCY => 0.01;
+Readonly my $NEWLINE       => qq{\n};
+Readonly my $SPACE         => q{ };
+Readonly my $VARIANT_SIZE  => 5000;
 
 ### User Options
 GetOptions(
@@ -79,7 +80,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Program::Variantcalling::Tiddit});
+    my @modules = (q{MIP::Program::Variantcalling::Vcf2cytosure});
 
   MODULE:
     for my $module (@modules) {
@@ -87,11 +88,11 @@ BEGIN {
     }
 }
 
-use MIP::Program::Variantcalling::Tiddit qw{ tiddit_sv };
+use MIP::Program::Variantcalling::Vcf2cytosure qw{ vcf2cytosure_convert };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test tiddit_sv from Tiddit.pm v}
-      . $MIP::Program::Variantcalling::Tiddit::VERSION
+diag(   q{Test vcf2cytosure_convert from Vcf2cytosure.pm v}
+      . $MIP::Program::Variantcalling::Vcf2cytosure::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -100,7 +101,7 @@ diag(   q{Test tiddit_sv from Tiddit.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{TIDDIT.py};
+my $function_base_command = q{vcf2cytosure};
 
 my %base_argument = (
     FILEHANDLE => {
@@ -124,41 +125,39 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    infile_path => {
-        input           => q{infile_path},
-        expected_output => q{--bam infile_path},
-    },
-    referencefile_path => {
-        input           => catfile(qw{ a test reference_path }),
-        expected_output => q{--ref}
+    coverage_file => {
+        input           => catfile(qw{ path_to_tiddit_outfiles prefix.tab }),
+        expected_output => q{--coverage}
           . $SPACE
-          . catfile(qw{ a test reference_path }),
+          . catfile(qw{ path_to_tiddit_outfiles prefix.tab }),
+    },
+    vcf_infile_path => {
+        input           => catfile(qw{ path_to_SV_output merged_sv.vcf }),
+        expected_output => catfile(qw{ path_to_SV_output merged_sv.vcf }),
     },
 );
 
 my %specific_argument = (
-    infile_path => {
-        input           => q{infile_path},
-        expected_output => q{--bam infile_path},
+    frequency => {
+        input           => $MAX_FREQUENCY,
+        expected_output => q{--frequency} . $SPACE . $MAX_FREQUENCY,
     },
-    minimum_number_supporting_pairs => {
-        input           => $N_SUPPORTING_PAIRS,
-        expected_output => q{-p} . $SPACE . $N_SUPPORTING_PAIRS,
+    frequency_tag => {
+        input           => q{FRQ},
+        expected_output => q{--frequency_tag FRQ},
     },
-    outfile_path_prefix => {
-        input           => q{outfile_path_prefix},
-        expected_output => q{-o outfile_path_prefix},
+    no_filter => {
+        input           => 1,
+        expected_output => q{--no-filter},
     },
-    referencefile_path => {
-        input           => catfile(qw{ a test reference_path }),
-        expected_output => q{--ref}
-          . $SPACE
-          . catfile(qw{ a test reference_path }),
+    variant_size => {
+        input           => $VARIANT_SIZE,
+        expected_output => q{--size} . $SPACE . $VARIANT_SIZE,
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&tiddit_sv;
+my $module_function_cref = \&vcf2cytosure_convert;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
@@ -184,12 +183,9 @@ done_testing();
 
 sub build_usage {
 
-## build_usage
-
 ## Function  : Build the USAGE instructions
-## Returns   : ""
-## Arguments : $program_name
-##           : $program_name => Name of the script
+## Returns   :
+## Arguments : $program_name => Name of the script
 
     my ($arg_href) = @_;
 
@@ -199,8 +195,8 @@ sub build_usage {
     my $tmpl = {
         program_name => {
             default     => basename($PROGRAM_NAME),
-            strict_type => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
     };
 

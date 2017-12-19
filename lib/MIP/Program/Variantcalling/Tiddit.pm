@@ -61,31 +61,31 @@ sub tiddit_coverage {
         bin_size => {
             allow       => qr/ ^\d+$ /sxm,
             default     => 500,
-            strict_type => 1,
             store       => \$bin_size,
+            strict_type => 1,
         },
         FILEHANDLE => {
             store => \$FILEHANDLE,
         },
         infile_path => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$infile_path,
+            strict_type => 1,
         },
         outfile_path_prefix =>
-          { strict_type => 1, store => \$outfile_path_prefix, },
+          { store => \$outfile_path_prefix, strict_type => 1, },
         stderrfile_path => {
-            strict_type => 1,
             store       => \$stderrfile_path,
+            strict_type => 1,
         },
         stderrfile_path_append => {
-            strict_type => 1,
             store       => \$stderrfile_path_append,
+            strict_type => 1,
         },
         stdoutfile_path => {
-            strict_type => 1,
             store       => \$stdoutfile_path,
+            strict_type => 1,
         },
     };
 
@@ -120,8 +120,8 @@ sub tiddit_coverage {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
 
         }
@@ -157,35 +157,35 @@ sub tiddit_sv {
     my $tmpl = {
         FILEHANDLE  => { store => \$FILEHANDLE },
         infile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$infile_path
         },
         minimum_number_supporting_pairs => {
             allow       => qr/ ^\d+$ /sxm,
+            store       => \$minimum_number_supporting_pairs,
             strict_type => 1,
-            store       => \$minimum_number_supporting_pairs
         },
         outfile_path_prefix =>
-          { strict_type => 1, store => \$outfile_path_prefix },
+          { store => \$outfile_path_prefix, strict_type => 1, },
         referencefile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$referencefile_path,
             strict_type => 1,
-            store       => \$referencefile_path
         },
         stderrfile_path => {
-            strict_type => 1,
             store       => \$stderrfile_path,
+            strict_type => 1,
         },
         stderrfile_path_append => {
-            strict_type => 1,
             store       => \$stderrfile_path_append,
+            strict_type => 1,
         },
         stdoutfile_path => {
-            strict_type => 1,
             store       => \$stdoutfile_path,
+            strict_type => 1,
         },
     };
 
@@ -224,8 +224,8 @@ sub tiddit_sv {
       unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
       );
     return @commands;

@@ -208,6 +208,7 @@ variant_effect_predictor.t
 vardict.t
 variant_integrity_father.t
 variant_integrity_mendel.t
+vcf2cytosure.t
 vcfanno.t
 vt_decompose.t
 vt_normalize.t
