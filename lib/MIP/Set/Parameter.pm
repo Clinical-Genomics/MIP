@@ -19,7 +19,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -46,18 +46,18 @@ sub set_config_to_active_parameters {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         config_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$config_parameter_href,
+            strict_type => 1,
         },
     };
 
@@ -78,9 +78,8 @@ sub set_config_to_active_parameters {
 
         ## Cmd initilized scalar
         next PARAMETER
-          if ( $active_parameter_href->{$parmeter_name}
-            && ref( $active_parameter_href->{$parmeter_name} ) !~
-            / HASH | ARRAY /sxm );
+          if ( defined $active_parameter_href->{$parmeter_name}
+            and not ref $active_parameter_href->{$parmeter_name} );
 
         ### No input from cmd
         ## Add to active_parameter
@@ -107,30 +106,31 @@ sub set_default_config_dynamic_parameters {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
         },
         parameter_names_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_names_ref,
             strict_type => 1,
-            store       => \$parameter_names_ref
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+  PARAMETER:
     foreach my $parameter_name ( @{$parameter_names_ref} ) {
 
         if ( exists $parameter_href->{$parameter_name}{default}
@@ -160,18 +160,18 @@ sub set_dynamic_parameter {
 
     my $tmpl = {
         aggregates_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$aggregates_ref,
             strict_type => 1,
-            store       => \$aggregates_ref
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
         },
     };
 
@@ -229,17 +229,17 @@ sub set_parameter_reference_dir_path {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         parameter_name => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$parameter_name,
+            strict_type => 1,
         },
     };
 
@@ -320,32 +320,32 @@ sub set_parameter_to_broadcast {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         broadcasts_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$broadcasts_ref,
+            strict_type => 1,
         },
         order_parameters_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$order_parameters_ref,
+            strict_type => 1,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
         },
     };
 
