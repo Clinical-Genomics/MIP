@@ -180,7 +180,7 @@ my %file_info = (
 #### Staging Area
 ### Get and/or set input parameters
 
-## Pprint usage help if no arguments
+## Print usage help if no arguments
 if ( not @ARGV ) {
 
     help(
@@ -1849,43 +1849,29 @@ sub read_yaml_pedigree_file {
 
 ## Function : Reads family_id_pedigree file in YAML format. Checks for pedigree data for allowed entries and correct format. Add data to sample_info depending on user info.
 ## Returns  :
-## Arguments: $parameter_href        => Parameter hash {REF}
-##          : $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $sample_info_href      => Info on samples and family hash {REF}
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $file_info_href        => The associated reference file endings {REF}
-##          : $pedigree_href         => Pedigree hash {REF}
 ##          : $file_path             => Pedigree file path
+##          : $parameter_href        => Parameter hash {REF}
+##          : $pedigree_href         => Pedigree hash {REF}
+##          : $sample_info_href      => Info on samples and family hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
     my $file_info_href;
-    my $pedigree_href;
     my $file_path;
+    my $parameter_href;
+    my $pedigree_href;
+    my $sample_info_href;
 
     my $tmpl = {
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
         active_parameter_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
             strict_type => 1,
         },
         file_info_href => {
@@ -1895,6 +1881,19 @@ sub read_yaml_pedigree_file {
             store       => \$file_info_href,
             strict_type => 1,
         },
+        file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_path,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
         pedigree_href => {
             default     => {},
             defined     => 1,
@@ -1902,17 +1901,19 @@ sub read_yaml_pedigree_file {
             store       => \$pedigree_href,
             strict_type => 1,
         },
-        file_path => {
+        sample_info_href => {
+            default     => {},
             defined     => 1,
             required    => 1,
-            store       => \$file_path,
+            store       => \$sample_info_href,
             strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Pedigree qw{ check_pedigree_sample_allowed_values };
+    use MIP::Check::Pedigree
+      qw{ check_pedigree_mandatory_key check_pedigree_sample_allowed_values };
     use MIP::Get::Parameter qw{ get_user_supplied_info };
 
     ## Retrieve logger object
@@ -1922,13 +1923,12 @@ sub read_yaml_pedigree_file {
     my $family_id = $pedigree_href->{family};
     my %exom_target_bed_test_file_tracker;
     my @pedigree_sample_ids;
-    my @mandatory_family_keys = qw{ family samples };
-    my @mandatory_sample_keys = qw{ sample_id father mother sex phenotype };
     my @user_input_sample_ids;
 
     ### Check input
     check_pedigree_sample_allowed_values(
         {
+            file_path     => $file_path,
             log           => $log,
             pedigree_href => \%{$pedigree_href},
         }
@@ -1946,20 +1946,13 @@ sub read_yaml_pedigree_file {
         @user_input_sample_ids = @{ $active_parameter_href->{sample_ids} };
     }
 
-    ## Check that we find mandatory family keys
-  MANDATORY_KEY:
-    foreach my $key (@mandatory_family_keys) {
-
-        if ( not exists $pedigree_href->{$key} ) {
-
-            $log->fatal( q{File: }
-                  . $file_path
-                  . q{ cannot find mandatory key: }
-                  . $key
-                  . q{ in file} );
-            exit 1;
+    check_pedigree_mandatory_key(
+        {
+            file_path     => $file_path,
+            log           => $log,
+            pedigree_href => \%{$pedigree_href},
         }
-    }
+    );
 
     ## Check that supplied cmd and YAML pedigree family_id match
     if ( $pedigree_href->{family} ne $active_parameter_href->{family_id} ) {
@@ -1972,26 +1965,6 @@ sub read_yaml_pedigree_file {
               . $active_parameter_href->{family_id}
               . q{' does not match} );
         exit 1;
-    }
-
-    ## Check sample keys
-  SAMPLE_KEY:
-    foreach my $pedigree_sample_href ( @{ $pedigree_href->{samples} } ) {
-
-        ## Check that we find mandatory family keys
-      MANDATORY_KEY:
-        foreach my $key (@mandatory_sample_keys) {
-
-            if ( not defined( $pedigree_sample_href->{$key} ) ) {
-
-                $log->fatal( q{File: }
-                      . $file_path
-                      . q{ cannot find mandatory key: }
-                      . $key
-                      . q{ in file} );
-                exit 1;
-            }
-        }
     }
 
     ### Add values family level info

@@ -90,10 +90,10 @@ BEGIN {
     }
 }
 
-use MIP::Check::Pedigree qw{ check_pedigree_sample_allowed_values };
+use MIP::Check::Pedigree qw{ check_pedigree_mandatory_key };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 
-diag(   q{Test check_pedigree_sample_allowed_values from Pedigree.pm v}
+diag(   q{Test check_pedigree_mandatory_key from Pedigree.pm v}
       . $MIP::Check::Pedigree::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -115,32 +115,45 @@ my $log = initiate_logger(
 );
 
 my %pedigree = (
+    family  => q{family_1},
     samples => [
         {
             analysis_type => q{wes},
+            father        => 0,
+            mother        => 0,
             phenotype     => q{affected},
+            sample_id     => q{sample_1},
             sample_origin => q{normal},
             sex           => q{female},
         },
         {
             analysis_type => q{wgs},
+            father        => 0,
+            mother        => 0,
             phenotype     => q{unaffected},
+            sample_id     => q{sample_2},
             sample_origin => q{tumor},
             sex           => q{male},
         },
         {
             analysis_type => q{wts},
+            father        => 0,
+            mother        => 0,
             phenotype     => q{unknown},
+            sample_id     => q{sample_3},
             sex           => q{other},
         },
         {
             analysis_type => q{cancer},
+            father        => q{sample_1},
+            mother        => q{sample_2},
             phenotype     => q{unknown},
+            sample_id     => q{sample_4},
             sex           => q{unknown},
         },
     ],
 );
-my $success = check_pedigree_sample_allowed_values(
+my $success = check_pedigree_mandatory_key(
     {
         file_path     => $Bin,
         log           => $log,
@@ -148,7 +161,7 @@ my $success = check_pedigree_sample_allowed_values(
     }
 );
 
-is( $success, 1, q{Only allowed values in pedigree yaml file} );
+is( $success, 1, q{Found all mandatory keys in pedigree yaml file} );
 
 done_testing();
 
