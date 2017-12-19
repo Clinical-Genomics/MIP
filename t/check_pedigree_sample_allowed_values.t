@@ -71,9 +71,8 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::File::Format::Yaml} => [qw{ load_yaml }],
-        q{MIP::Log::MIP_log4perl}  => [qw{ initiate_logger }],
-        q{MIP::Script::Utils}      => [qw{ help }],
+        q{MIP::Log::MIP_log4perl} => [qw{ initiate_logger }],
+        q{MIP::Script::Utils}     => [qw{ help }],
     );
 
   PERL_MODULE:
@@ -92,7 +91,6 @@ BEGIN {
 }
 
 use MIP::Check::Pedigree qw{ check_pedigree_sample_allowed_values };
-use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 
 diag(   q{Test check_pedigree_sample_allowed_values from pedigree.pm v}
@@ -116,10 +114,32 @@ my $log = initiate_logger(
     }
 );
 
-my $pedigree_file_path =
-  catfile( $Bin, qw{ data 643594-miptest 643594-miptest_pedigree.yaml } );
-my %pedigree = load_yaml( { yaml_file => $pedigree_file_path, } );
-
+my %pedigree = (
+    samples => [
+        {
+            analysis_type => q{wes},
+            phenotype     => q{affected},
+            sample_origin => q{normal},
+            sex           => q{female},
+        },
+        {
+            analysis_type => q{wgs},
+            phenotype     => q{unaffected},
+            sample_origin => q{tumor},
+            sex           => q{male},
+        },
+        {
+            analysis_type => q{wts},
+            phenotype     => q{unknown},
+            sex           => q{other},
+        },
+        {
+            analysis_type => q{cancer},
+            phenotype     => q{unknown},
+            sex           => q{unknown},
+        },
+    ],
+);
 my $success = check_pedigree_sample_allowed_values(
     {
         log           => $log,
@@ -127,7 +147,7 @@ my $success = check_pedigree_sample_allowed_values(
     }
 );
 
-is( $success, 1, q{Only allowd values in pedigree yaml file} );
+is( $success, 1, q{Only allowed values in pedigree yaml file} );
 
 done_testing();
 

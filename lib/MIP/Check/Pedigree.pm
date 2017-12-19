@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_pedigree_sample_allowed_values };
@@ -54,9 +54,6 @@ sub check_pedigree_sample_allowed_values {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    #    my $log = Log::Log4perl->get_logger(q{MIP});
 
     my %allowed_values = (
         analysis_type => [qw{ wes wgs wts cancer}],
