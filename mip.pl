@@ -1868,49 +1868,51 @@ sub read_yaml_pedigree_file {
 
     my $tmpl = {
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
         },
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
         },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$file_info_href,
+            strict_type => 1,
         },
         pedigree_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$pedigree_href,
+            strict_type => 1,
         },
         file_path => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$file_path,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Check::Pedigree qw{ check_pedigree_sample_allowed_values };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -1924,7 +1926,12 @@ sub read_yaml_pedigree_file {
     my @user_input_sample_ids;
 
     ### Check input
-    check_pedigree_allowed_values( { pedigree_href => \%{$pedigree_href}, } );
+    check_pedigree_sample_allowed_values(
+        {
+            log           => $log,
+            pedigree_href => \%{$pedigree_href},
+        }
+    );
 
     my %user_supply_switch = get_user_supplied_info(
         {
@@ -6649,72 +6656,6 @@ sub check_element_exists_in_hash {
             exit 1;
         }
     }
-}
-
-sub check_pedigree_allowed_values {
-
-    ## Function : Check that the pedigree values are allowed
-    ## Returns  :
-    ## Arguments: $pedigree_href => YAML pedigree info hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $pedigree_href;
-
-    my $tmpl = {
-        pedigree_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$pedigree_href
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    my %allowed_values = (
-        analysis_type => [qw{ wes wgs wts cancer}],
-        phenotype     => [qw{ affected unaffected unknown }],
-        sample_origin => [qw{ normal tumor }],
-        sex           => [qw{ female male other unknown }],
-    );
-
-    ## Check input to sample_info hash for at sample level
-    foreach my $pedigree_sample_href ( @{ $pedigree_href->{samples} } ) {
-
-      SAMPLE_KEY:
-        foreach my $key ( keys %{$pedigree_sample_href} ) {
-
-            ## No defined allowed values
-            next SAMPLE_KEY if ( not exists $allowed_values{$key} );
-
-            ## If element is not part of array
-            next SAMPLE_KEY
-              if (
-                any { $_ eq $pedigree_sample_href->{$key} }
-                @{ $allowed_values{$key} }
-              );
-
-            $log->fatal(
-                q{Pedigree file key: }
-                  . $key
-                  . q{ found illegal value: }
-                  . $pedigree_sample_href->{$key}
-                  . q{ allowed values are '}
-                  . join q{' '},
-                @{ $allowed_values{$key} }
-            );
-            $log->fatal(q{Please correct the entry before analysis.});
-            $log->fatal(q{MIP: Aborting run.});
-            exit 1;
-        }
-    }
-    return;
 }
 
 ##Investigate potential autodie error

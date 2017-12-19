@@ -866,8 +866,8 @@ sub analysis_mip_vcfparser_rio {
                     aggregate_gene_panel_file =>
                       $active_parameter_href->{$gene_panel_file},
                     aggregate_gene_panels_key => $gene_panel_key,
-                    family_id_ref             => $family_id,
-                    program_name_ref          => \$program_name,
+                    family_id                 => $family_id,
+                    program_name              => $program_name,
                     sample_info_href          => $sample_info_href,
                 }
             );
