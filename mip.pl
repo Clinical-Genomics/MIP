@@ -1913,6 +1913,7 @@ sub read_yaml_pedigree_file {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Pedigree qw{ check_pedigree_sample_allowed_values };
+    use MIP::Get::Parameter qw{ get_user_supplied_info };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -1936,7 +1937,6 @@ sub read_yaml_pedigree_file {
     my %user_supply_switch = get_user_supplied_info(
         {
             active_parameter_href => $active_parameter_href,
-            parameter_href        => $parameter_href,
         }
     );
 
@@ -6083,81 +6083,6 @@ sub get_matching_values_key {
 
         return $reversed{$$query_value_ref};
     }
-}
-
-sub get_user_supplied_info {
-
-## Function : Detect if user supplied info on parameters otherwise collected from pedigree
-## Returns  : "user_supply_switchHash where 1=user input and 0=no user input"
-## Arguments: $parameter_href        => Holds all parameters {REF}
-##          : $active_parameter_href => Active parameters for this analysis hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Define what should be checked
-    my %user_supply_switch = (
-        sample_ids        => 0,
-        exome_target_bed  => 0,
-        analysis_type     => 0,
-        expected_coverage => 0,
-        sample_origin     => 0,
-    );
-
-    ## Detect user supplied info
-  USER_PARAMETER:
-    foreach my $parameter ( keys %user_supply_switch ) {
-
-        ## If hash and supplied
-        if ( ref $active_parameter_href->{$parameter} eq q{HASH}
-            && keys %{ $active_parameter_href->{$parameter} } )
-        {
-
-            $user_supply_switch{$parameter} = 1;
-        }
-        elsif ( ref $active_parameter_href->{$parameter} eq q{ARRAY}
-            && @{ $active_parameter_href->{$parameter} } )
-        {
-            ## If array and supplied
-
-            $user_supply_switch{$parameter} = 1;
-        }
-        elsif ( defined $active_parameter_href->{$parameter}
-            && ref $active_parameter_href->{$parameter} !~ / HASH | ARRAY /xsm )
-        {
-            ## If scalar and supplied
-
-            $user_supply_switch{$parameter} = 1;
-        }
-        else {
-
-            ## No user defined input for parameter
-            $user_supply_switch{$parameter} = 0;
-        }
-    }
-    return %user_supply_switch;
 }
 
 sub get_pedigree_sample_info {

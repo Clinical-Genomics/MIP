@@ -21,7 +21,8 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ get_module_parameters get_program_parameters };
+    our @EXPORT_OK =
+      qw{ get_module_parameters get_program_parameters get_user_supplied_info };
 }
 
 ## Constants
@@ -42,17 +43,17 @@ sub get_module_parameters {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
             strict_type => 1,
-            store       => \$active_parameter_href
         },
         mip_program_name => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$mip_program_name,
             strict_type => 1,
-            store       => \$mip_program_name
         },
     };
 
@@ -99,17 +100,17 @@ sub get_program_parameters {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
             strict_type => 1,
-            store       => \$active_parameter_href
         },
         mip_program_name => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$mip_program_name,
             strict_type => 1,
-            store       => \$mip_program_name
         },
     };
 
@@ -128,6 +129,70 @@ sub get_program_parameters {
           {$mip_program_name};
     }
     return $source_environment_cmd;
+}
+
+sub get_user_supplied_info {
+
+## Function : Detect if user supplied info on parameters otherwise collected from pedigree
+## Returns  : %user_supply_switch - Hash where 1=user input and 0=no user input
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Define what should be checked
+    my %user_supply_switch = (
+        analysis_type     => 0,
+        exome_target_bed  => 0,
+        expected_coverage => 0,
+        sample_ids        => 0,
+        sample_origin     => 0,
+    );
+
+    ## Detect user supplied info
+  USER_PARAMETER:
+    foreach my $parameter ( keys %user_supply_switch ) {
+
+        ## If hash and supplied
+        if ( ref $active_parameter_href->{$parameter} eq q{HASH}
+            && keys %{ $active_parameter_href->{$parameter} } )
+        {
+
+            $user_supply_switch{$parameter} = 1;
+        }
+        elsif ( ref $active_parameter_href->{$parameter} eq q{ARRAY}
+            && @{ $active_parameter_href->{$parameter} } )
+        {
+            ## If array and supplied
+            $user_supply_switch{$parameter} = 1;
+        }
+        elsif ( defined $active_parameter_href->{$parameter}
+            and not ref $active_parameter_href->{$parameter} )
+        {
+            ## If scalar and supplied
+            $user_supply_switch{$parameter} = 1;
+        }
+        else {
+
+            ## No user defined input for parameter
+            $user_supply_switch{$parameter} = 0;
+        }
+    }
+    return %user_supply_switch;
 }
 
 1;

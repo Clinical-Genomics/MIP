@@ -18,6 +18,7 @@ check_cmd_config_vs_definition_file.t
 check_element_exist_hash_of_array.t
 check_filesystem_objects_existance.t
 check_parameter_hash.t
+check_pedigree_sample_allowed_values.t
 check_perl_modules.t
 check_if_processed_by_vt.t
 chanjo_sex.t
@@ -76,6 +77,7 @@ get_path_entries.t
 get_program_parameters.t
 get_select_file_contigs.t
 get_seq_dict_contigs.t
+get_user_supplied_info.t
 git_clone.t
 git_checkout.t
 gnu_cat.t
