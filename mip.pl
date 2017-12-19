@@ -1915,6 +1915,7 @@ sub read_yaml_pedigree_file {
     use MIP::Check::Pedigree
       qw{ check_pedigree_mandatory_key check_pedigree_sample_allowed_values };
     use MIP::Get::Parameter qw{ get_user_supplied_info };
+    use MIP::Get::Pedigree qw{ get_pedigree_family_info };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -1925,32 +1926,12 @@ sub read_yaml_pedigree_file {
     my @pedigree_sample_ids;
     my @user_input_sample_ids;
 
-    ### Check input
-    check_pedigree_sample_allowed_values(
-        {
-            file_path     => $file_path,
-            log           => $log,
-            pedigree_href => \%{$pedigree_href},
-        }
-    );
-
-    my %user_supply_switch = get_user_supplied_info(
-        {
-            active_parameter_href => $active_parameter_href,
-        }
-    );
-
-    if ( not $user_supply_switch{sample_ids} ) {
-
-        ## Set cmd supplied sample_ids
-        @user_input_sample_ids = @{ $active_parameter_href->{sample_ids} };
-    }
-
+    ## Check pedigree mandatory keys
     check_pedigree_mandatory_key(
         {
             file_path     => $file_path,
             log           => $log,
-            pedigree_href => \%{$pedigree_href},
+            pedigree_href => $pedigree_href,
         }
     );
 
@@ -1967,14 +1948,34 @@ sub read_yaml_pedigree_file {
         exit 1;
     }
 
-    ### Add values family level info
-    foreach my $key ( keys %{$pedigree_href} ) {
-
-        if ( not $key eq q{samples} ) {
-
-            $sample_info_href->{$key} = $pedigree_href->{$key};
+    ### Check sample keys values
+    check_pedigree_sample_allowed_values(
+        {
+            file_path     => $file_path,
+            log           => $log,
+            pedigree_href => $pedigree_href,
         }
+    );
+
+    ## Get potential input from user
+    my %user_supply_switch = get_user_supplied_info(
+        {
+            active_parameter_href => $active_parameter_href,
+        }
+    );
+
+    if ( not $user_supply_switch{sample_ids} ) {
+
+        ## Set cmd supplied sample_ids
+        @user_input_sample_ids = @{ $active_parameter_href->{sample_ids} };
     }
+
+    get_pedigree_family_info(
+        {
+            pedigree_href    => $pedigree_href,
+            sample_info_href => $sample_info_href,
+        }
+    );
 
     ### Add values sample level info
   SAMPLE_KEY:
@@ -1984,31 +1985,30 @@ sub read_yaml_pedigree_file {
         # Alias
         my $sample_id = $pedigree_sample_href->{sample_id};
 
-        ## Save pedigree sample_id info
+        ## Save pedigree sample_id info for later check
         push @pedigree_sample_ids, $sample_id;
 
         if ( not $user_supply_switch{sample_ids} ) {
 
-            ## Save sample_id info
+            ## Save sample_id info for analysis
             push @{ $active_parameter_href->{sample_ids} }, $sample_id;
 
             ## Reformat pedigree keys to plink format and collect sample info to various hashes
             get_pedigree_sample_info(
                 {
-                    parameter_href        => $parameter_href,
                     active_parameter_href => $active_parameter_href,
-                    sample_info_href      => $sample_info_href,
-                    file_info_href        => $file_info_href,
                     exom_target_bed_test_file_tracker_href =>
                       \%exom_target_bed_test_file_tracker,
+                    file_info_href          => $file_info_href,
+                    parameter_href          => $parameter_href,
                     pedigree_sample_href    => $pedigree_sample_href,
-                    user_supply_switch_href => \%user_supply_switch,
                     sample_id               => $sample_id,
+                    sample_info_href        => $sample_info_href,
+                    user_supply_switch_href => \%user_supply_switch,
                 }
             );
         }
         else {
-            ## Save sample_ids in pedigree to check that user supplied info and sample_id in pedigree match
 
             ## Update sample_id info
             if ( any { $_ eq $sample_id } @user_input_sample_ids ) {
@@ -2016,15 +2016,15 @@ sub read_yaml_pedigree_file {
                 ## Reformat pedigree keys to plink format and collect sample info to various hashes
                 get_pedigree_sample_info(
                     {
-                        parameter_href        => $parameter_href,
                         active_parameter_href => $active_parameter_href,
-                        sample_info_href      => $sample_info_href,
-                        file_info_href        => $file_info_href,
                         exom_target_bed_test_file_tracker_href =>
                           \%exom_target_bed_test_file_tracker,
+                        file_info_href          => $file_info_href,
+                        parameter_href          => $parameter_href,
                         pedigree_sample_href    => $pedigree_sample_href,
-                        user_supply_switch_href => \%user_supply_switch,
                         sample_id               => $sample_id,
+                        sample_info_href        => $sample_info_href,
+                        user_supply_switch_href => \%user_supply_switch,
                     }
                 );
             }
@@ -6085,59 +6085,59 @@ sub get_pedigree_sample_info {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
             defined     => 1,
             default     => {},
-            strict_type => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         exom_target_bed_test_file_tracker_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$exom_target_bed_test_file_tracker_href,
             strict_type => 1,
-            store       => \$exom_target_bed_test_file_tracker_href
         },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$file_info_href,
+            strict_type => 1,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
         },
         pedigree_sample_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$pedigree_sample_href,
             strict_type => 1,
-            store       => \$pedigree_sample_href
         },
         sample_id => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$sample_id,
+            strict_type => 1,
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
         },
         user_supply_switch_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$user_supply_switch_href,
             strict_type => 1,
-            store       => \$user_supply_switch_href
         },
     };
 
