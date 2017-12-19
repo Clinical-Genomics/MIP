@@ -41,7 +41,6 @@ You only need to install the dependencies that are required for the modules that
 - [Vcfanno] (version: 0.1.0)
 - [VEP] (version: 88) with plugin "UpDownDistance, LoFtool, LoF"
 - [SnpEff] (version: 4.3.1)
-- [ANNOVAR] (version: 2013-08-23)
 - [GENMOD] (version: 3.7.1)
 - [Variant_integrity] (version: 0.0.4)
 - [Bcftools] (version: 1.4.1)
@@ -66,7 +65,7 @@ BWA:
  1. The BWA index of the human genome. 
 
 #### *Note*
-If you do not supply these parameters (Mosaik/BWA) MIP will create these from scratch using the supplied human reference genom as template. 
+If you do not supply these parameters (Bwa) MIP will create these from scratch using the supplied human reference genom as template. 
 
 Capture target files:
  1. The "infile_list" and .pad100.infile_list files used in ``pPicardToolsCollectHSMetrics``.
@@ -75,12 +74,6 @@ Capture target files:
 #### *Note*
 If you do not supply these parameters MIP will create these from scratch using the supplied "latest" supported capture kit ".bed" file and the supplied human reference genome as template.
    
-#### ANNOVAR:
-The choosen Annovar databases are downloaded before use if lacking in the annovar/humandb directory using Annovars built-in download function.
-
-#### *Note*
-This applies only to the supported annovar databases. Supply flag ``--annovarSupportedTableNames`` to list the MIP supported databases.
-
 [Pedigree file]: https://github.com/henrikstranneheim/MIP/tree/master/templates/643594-miptest_pedigree.yaml
 [Configuration file]: https://github.com/henrikstranneheim/MIP/blob/master/templates/mip_config.yaml
 [BWA]: https://github.com/lh3/bwa
@@ -103,7 +96,6 @@ This applies only to the supported annovar databases. Supply flag ``--annovarSup
 [Vcfanno]: https://github.com/brentp/vcfanno
 [VEP]: https://github.com/Ensembl/ensembl-vep
 [SnpEff]: http://snpeff.sourceforge.net/
-[ANNOVAR]: http://annovar.openbioinformatics.org/en/latest/
 [GENMOD]: https://github.com/moonso/genmod/
 [Variant_integrity]: https://github.com/moonso/variant_integrity
 [Bcftools]: http://www.htslib.org/
