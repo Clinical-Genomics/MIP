@@ -49,7 +49,7 @@ use MIP::Check::Path qw{ check_target_bed_file_exist check_parameter_files };
 use MIP::Check::Reference
   qw{ check_bwa_prerequisites check_capture_file_prerequisites check_file_endings_to_build check_human_genome_file_endings check_human_genome_prerequisites check_parameter_metafiles check_references_for_vt };
 use MIP::File::Format::Pedigree
-  qw{ create_fam_file reload_previous_pedigree_info };
+  qw{ create_fam_file parse_yaml_pedigree_file reload_previous_pedigree_info };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
 use MIP::Get::Analysis qw{ get_overall_analysis_type print_program };
 use MIP::Get::File qw{ get_select_file_contigs };
@@ -653,23 +653,21 @@ my $log = initiate_logger(
 );
 
 ## Parse pedigree file
-## Reads family_id_pedigree file in PLINK|YAML format. Checks for pedigree data for allowed entries and correct format. Add data to sample_info depending on user info.
+## Reads family_id_pedigree file in YAML format. Checks for pedigree data for allowed entries and correct format. Add data to sample_info depending on user info.
 # Meta data in YAML format
-if ( defined $active_parameter{pedigree_file}
-    && $active_parameter{pedigree_file} =~ /[.]yaml$/ )
-{
+if ( defined $active_parameter{pedigree_file} ) {
 
     ## Loads a YAML file into an arbitrary hash and returns it. Load parameters from previous run from sample_info_file
     my %pedigree =
       load_yaml( { yaml_file => $active_parameter{pedigree_file}, } );
+
     $log->info( q{Loaded: } . $active_parameter{pedigree_file} );
 
-    read_yaml_pedigree_file(
+    parse_yaml_pedigree_file(
         {
             parameter_href        => \%parameter,
             active_parameter_href => \%active_parameter,
             sample_info_href      => \%sample_info,
-            file_info_href        => \%file_info,
             file_path             => $active_parameter{pedigree_file},
             pedigree_href         => \%pedigree,
         }
@@ -1843,251 +1841,6 @@ sub build_usage {
     -psac/--psacct Generating sbatch script for SLURM info on each submitted job (defaults to "0" (=no))
     -sacfrf/--sacct_format_fields Format and fields of sacct output (defaults to "jobid", "jobname%50", "account", "partition", "alloccpus", "TotalCPU", "elapsed", "start", "end", "state", "exitcode")
 END_USAGE
-}
-
-sub read_yaml_pedigree_file {
-
-## Function : Reads family_id_pedigree file in YAML format. Checks for pedigree data for allowed entries and correct format. Add data to sample_info depending on user info.
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $file_info_href        => The associated reference file endings {REF}
-##          : $file_path             => Pedigree file path
-##          : $parameter_href        => Parameter hash {REF}
-##          : $pedigree_href         => Pedigree hash {REF}
-##          : $sample_info_href      => Info on samples and family hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $file_info_href;
-    my $file_path;
-    my $parameter_href;
-    my $pedigree_href;
-    my $sample_info_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        file_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$file_info_href,
-            strict_type => 1,
-        },
-        file_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$file_path,
-            strict_type => 1,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-        pedigree_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$pedigree_href,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Check::Pedigree
-      qw{ check_pedigree_mandatory_key check_pedigree_sample_allowed_values };
-    use MIP::Get::Parameter qw{ get_capture_kit get_user_supplied_info };
-    use MIP::Set::Pedigree
-      qw{ set_active_parameter_pedigree_keys set_pedigree_capture_kit_info set_pedigree_family_info set_pedigree_phenotype_info set_pedigree_sex_info };
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    ## Use to collect which sample_ids have used a certain capture_kit
-    my $family_id = $pedigree_href->{family};
-    my %exom_target_bed_test_file_tracker;
-    my @pedigree_sample_ids;
-    my @user_input_sample_ids;
-
-    ## Check pedigree mandatory keys
-    check_pedigree_mandatory_key(
-        {
-            file_path     => $file_path,
-            log           => $log,
-            pedigree_href => $pedigree_href,
-        }
-    );
-
-    ## Check that supplied cmd and YAML pedigree family_id match
-    if ( $pedigree_href->{family} ne $active_parameter_href->{family_id} ) {
-
-        $log->fatal( q{File: }
-              . $file_path
-              . q{ for  pedigree family_id: '}
-              . $pedigree_href->{family}
-              . q{' and supplied family: '}
-              . $active_parameter_href->{family_id}
-              . q{' does not match} );
-        exit 1;
-    }
-
-    ### Check sample keys values
-    check_pedigree_sample_allowed_values(
-        {
-            file_path     => $file_path,
-            log           => $log,
-            pedigree_href => $pedigree_href,
-        }
-    );
-
-    ## Get potential input from user
-    my %user_supply_switch = get_user_supplied_info(
-        {
-            active_parameter_href => $active_parameter_href,
-        }
-    );
-
-    if ( not $user_supply_switch{sample_ids} ) {
-
-        ## Set cmd or config supplied sample_ids
-        @user_input_sample_ids = @{ $active_parameter_href->{sample_ids} };
-    }
-
-    set_pedigree_family_info(
-        {
-            pedigree_href    => $pedigree_href,
-            sample_info_href => $sample_info_href,
-        }
-    );
-
-    ### Add values sample level info
-  SAMPLE_KEY:
-    foreach my $pedigree_sample_href ( @{ $pedigree_href->{samples} } ) {
-
-        ## Sample_id
-        # Alias
-        my $sample_id = $pedigree_sample_href->{sample_id};
-
-        ## Save pedigree sample_id info for later check
-        push @pedigree_sample_ids, $sample_id;
-
-        if ( not $user_supply_switch{sample_ids} ) {
-
-            ## Save sample_id info for analysis
-            push @{ $active_parameter_href->{sample_ids} }, $sample_id;
-
-            ## Set pedigree sample info
-            get_pedigree_sample_info(
-                {
-                    pedigree_sample_href => $pedigree_sample_href,
-                    sample_id            => $sample_id,
-                    sample_info_href     => $sample_info_href,
-                }
-            );
-        }
-        else {
-
-            ## Update sample_id info
-            if ( any { $_ eq $sample_id } @user_input_sample_ids ) {
-
-                ## Set pedigree sample info
-                get_pedigree_sample_info(
-                    {
-                        pedigree_sample_href => $pedigree_sample_href,
-                        sample_id            => $sample_id,
-                        sample_info_href     => $sample_info_href,
-                    }
-                );
-            }
-        }
-    }
-
-    ## Add sex to dynamic parameters
-    set_pedigree_sex_info(
-        {
-            pedigree_href  => $pedigree_href,
-            parameter_href => $parameter_href,
-        }
-    );
-
-    ## Add phenotype to dynamic parameters
-    set_pedigree_phenotype_info(
-        {
-            pedigree_href  => $pedigree_href,
-            parameter_href => $parameter_href,
-        }
-    );
-
-    set_active_parameter_pedigree_keys(
-        {
-            active_parameter_href   => $active_parameter_href,
-            pedigree_href           => $pedigree_href,
-            sample_info_href        => $sample_info_href,
-            user_supply_switch_href => \%user_supply_switch,
-        }
-    );
-
-    set_pedigree_capture_kit_info(
-        {
-            active_parameter_href   => $active_parameter_href,
-            parameter_href          => $parameter_href,
-            pedigree_href           => $pedigree_href,
-            sample_info_href        => $sample_info_href,
-            user_supply_switch_href => \%user_supply_switch,
-        }
-    );
-
-    ## Check that founder_ids are included in the pedigree info and the analysis run
-    check_founder_id(
-        {
-            pedigree_href => $pedigree_href,
-            pedigree_sample_ids_ref =>
-              \@{ $active_parameter_href->{sample_ids} },
-        }
-    );
-
-    if ( not $user_supply_switch{sample_ids} ) {
-
-        ## Lexiographical sort to determine the correct order of ids indata
-        @{ $active_parameter_href->{sample_ids} } =
-          sort @{ $active_parameter_href->{sample_ids} };
-    }
-    else {
-        ## Check that CLI supplied sample_id exists in pedigree
-
-        foreach my $sample_id (@user_input_sample_ids) {
-
-            if ( not any { $_ eq $sample_id } @pedigree_sample_ids ) {
-                ## If element is not part of array
-
-                $log->fatal( q{File: }
-                      . $file_path
-                      . q{ provided sample_id: }
-                      . $sample_id
-                      . q{ is not present in file} );
-                exit 1;
-            }
-        }
-    }
-    return;
 }
 
 sub collect_infiles {
@@ -5997,119 +5750,6 @@ sub get_matching_values_key {
     if ( exists $reversed{$$query_value_ref} ) {
 
         return $reversed{$$query_value_ref};
-    }
-}
-
-sub get_pedigree_sample_info {
-
-## Function : Reformat pedigree keys to plink format and collect sample info to various hashes
-## Returns  :
-## Arguments: $pedigree_sample_href                   => YAML sample info hash {REF}
-##          : $sample_id                              => Sample ID
-##          : $sample_info_href                       => Info on samples and family hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $pedigree_sample_href;
-    my $sample_id;
-    my $sample_info_href;
-
-    my $tmpl = {
-        pedigree_sample_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$pedigree_sample_href,
-            strict_type => 1,
-        },
-        sample_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Add input to sample_info hash for at sample level
-  PEDIGREE_SAMPLE_KEY:
-    foreach my $key ( keys %{$pedigree_sample_href} ) {
-
-        $sample_info_href->{sample}{$sample_id}{$key} =
-          $pedigree_sample_href->{$key};
-
-    }
-    return;
-}
-
-sub check_founder_id {
-
-##check_founder_id
-
-##Function : Check that founder_ids are included in the pedigree info
-##Returns  : ""
-##Arguments: $pedigree_href, $pedigree_sample_ids_ref
-##         : $pedigree_href           => Pedigree info {REF}
-##         : $pedigree_sample_ids_ref => Array of pedigree samples {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $pedigree_href;
-    my $pedigree_sample_ids_ref;
-
-    my $tmpl = {
-        pedigree_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$pedigree_href
-        },
-        pedigree_sample_ids_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$pedigree_sample_ids_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-  SAMPLE:
-    foreach my $pedigree_sample_href ( @{ $pedigree_href->{samples} } ) {
-
-        my @founders =
-          ( $pedigree_sample_href->{father}, $pedigree_sample_href->{mother} );
-
-      FOUNDER:
-        foreach my $founder (@founders) {
-
-            if ($founder) {
-
-                if ( !( any { $_ eq $founder } @{$pedigree_sample_ids_ref} ) )
-                {    #If element is not part of array
-
-                    $log->fatal( "Could not find founder sample_id: "
-                          . $founder
-                          . " in pedigree file\n" );
-                    exit 1;
-                }
-            }
-        }
     }
 }
 

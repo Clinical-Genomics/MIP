@@ -17,7 +17,9 @@ bzip2.t
 check_cmd_config_vs_definition_file.t
 check_element_exist_hash_of_array.t
 check_filesystem_objects_existance.t
+check_founder_id.t
 check_parameter_hash.t
+check_pedigree_vs_user_input_sample_ids.t
 check_pedigree_mandatory_key.t
 check_pedigree_sample_allowed_values.t
 check_perl_modules.t
@@ -189,6 +191,7 @@ set_dynamic_parameter.t
 set_pedigree_capture_kit_info.t
 set_pedigree_family_info.t
 set_pedigree_phenotype_info.t
+set_pedigree_sample_info.t
 set_pedigree_sex_info.t
 shell_build_shebang.t
 shell_create_housekeeping_function.t

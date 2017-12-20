@@ -24,11 +24,11 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ create_fam_file gatk_pedigree_flag reload_previous_pedigree_info };
+      qw{ create_fam_file gatk_pedigree_flag parse_yaml_pedigree_file reload_previous_pedigree_info };
 }
 
 ## Constants
@@ -69,48 +69,48 @@ sub create_fam_file {
     my $tmpl = {
         parameter_href => {
             default     => {},
+            store       => \$parameter_href,
             strict_type => 1,
-            store       => \$parameter_href
         },
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
             strict_type => 1,
-            store       => \$active_parameter_href
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
             strict_type => 1,
-            store       => \$sample_info_href
         },
         fam_file_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$fam_file_path,
             strict_type => 1,
-            store       => \$fam_file_path
         },
         FILEHANDLE => {
             store => \$FILEHANDLE
         },
         execution_mode => {
-            default     => q{sbatch},
             allow       => [qw{sbatch system}],
+            default     => q{sbatch},
+            store       => \$execution_mode,
             strict_type => 1,
-            store       => \$execution_mode
         },
         include_header => {
-            default     => 1,
             allow       => [ 0, 1 ],
+            default     => 1,
+            store       => \$include_header,
             strict_type => 1,
-            store       => \$include_header
         },
         family_id_ref => {
             default     => \$arg_href->{active_parameter_href}{family_id},
+            store       => \$family_id_ref,
             strict_type => 1,
-            store       => \$family_id_ref
         },
     };
 
@@ -238,22 +238,22 @@ sub gatk_pedigree_flag {
 
     my $tmpl = {
         fam_file_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$fam_file_path,
             strict_type => 1,
-            store       => \$fam_file_path
         },
         program_name => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
         pedigree_validation_type => {
-            default     => q{SILENT},
             allow       => [qw{ SILENT STRICT }],
+            default     => q{SILENT},
+            store       => \$pedigree_validation_type,
             strict_type => 1,
-            store       => \$pedigree_validation_type
         },
     };
 
@@ -291,6 +291,202 @@ sub gatk_pedigree_flag {
     return %command;
 }
 
+sub parse_yaml_pedigree_file {
+
+## Function : Parse family info in YAML pedigree file. Check pedigree data for allowed entries and correct format. Add data to sample_info and active_parameter depending on user info.
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $file_path             => Pedigree file path
+##          : $parameter_href        => Parameter hash {REF}
+##          : $pedigree_href         => Pedigree hash {REF}
+##          : $sample_info_href      => Info on samples and family hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $file_path;
+    my $parameter_href;
+    my $pedigree_href;
+    my $sample_info_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_path,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        pedigree_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$pedigree_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Check::Pedigree
+      qw{ check_founder_id check_pedigree_mandatory_key check_pedigree_sample_allowed_values check_pedigree_vs_user_input_sample_ids };
+    use MIP::Get::Parameter qw{ get_capture_kit get_user_supplied_info };
+    use MIP::Set::Pedigree
+      qw{ set_active_parameter_pedigree_keys set_pedigree_capture_kit_info set_pedigree_family_info set_pedigree_phenotype_info set_pedigree_sample_info set_pedigree_sex_info };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger(q{MIP});
+
+    ## Use to collect which sample_ids have used a certain capture_kit
+    my $family_id = $pedigree_href->{family};
+    ## User supplied sample_ids via cmd or config
+    my @user_input_sample_ids;
+
+    ## Check pedigree mandatory keys
+    check_pedigree_mandatory_key(
+        {
+            file_path     => $file_path,
+            log           => $log,
+            pedigree_href => $pedigree_href,
+        }
+    );
+
+    ## Check that supplied cmd and YAML pedigree family_id match
+    if ( $pedigree_href->{family} ne $active_parameter_href->{family_id} ) {
+
+        $log->fatal( q{Pedigree file: }
+              . $file_path
+              . q{ for  pedigree family_id: '}
+              . $pedigree_href->{family}
+              . q{' and supplied family: '}
+              . $active_parameter_href->{family_id}
+              . q{' does not match} );
+        exit 1;
+    }
+
+    ### Check sample keys values
+    check_pedigree_sample_allowed_values(
+        {
+            file_path     => $file_path,
+            log           => $log,
+            pedigree_href => $pedigree_href,
+        }
+    );
+
+    ## Get potential input from user
+    my %user_supply_switch = get_user_supplied_info(
+        {
+            active_parameter_href => $active_parameter_href,
+        }
+    );
+
+    if ( not $user_supply_switch{sample_ids} ) {
+
+        ## Set cmd or config supplied sample_ids
+        @user_input_sample_ids = @{ $active_parameter_href->{sample_ids} };
+    }
+
+    set_pedigree_family_info(
+        {
+            pedigree_href    => $pedigree_href,
+            sample_info_href => $sample_info_href,
+        }
+    );
+
+    my @pedigree_sample_ids = set_pedigree_sample_info(
+        {
+            active_parameter_href     => $active_parameter_href,
+            pedigree_href             => $pedigree_href,
+            sample_info_href          => $sample_info_href,
+            user_supply_switch_href   => \%user_supply_switch,
+            user_input_sample_ids_ref => \@user_input_sample_ids,
+        }
+    );
+
+    ## Add sex to dynamic parameters
+    set_pedigree_sex_info(
+        {
+            pedigree_href  => $pedigree_href,
+            parameter_href => $parameter_href,
+        }
+    );
+
+    ## Add phenotype to dynamic parameters
+    set_pedigree_phenotype_info(
+        {
+            pedigree_href  => $pedigree_href,
+            parameter_href => $parameter_href,
+        }
+    );
+
+    set_active_parameter_pedigree_keys(
+        {
+            active_parameter_href   => $active_parameter_href,
+            pedigree_href           => $pedigree_href,
+            sample_info_href        => $sample_info_href,
+            user_supply_switch_href => \%user_supply_switch,
+        }
+    );
+
+    set_pedigree_capture_kit_info(
+        {
+            active_parameter_href   => $active_parameter_href,
+            parameter_href          => $parameter_href,
+            pedigree_href           => $pedigree_href,
+            sample_info_href        => $sample_info_href,
+            user_supply_switch_href => \%user_supply_switch,
+        }
+    );
+
+    ## Check that founder_ids are included in the pedigree info and the analysis run
+    check_founder_id(
+        {
+            log                   => $log,
+            pedigree_href         => $pedigree_href,
+            active_sample_ids_ref => \@{ $active_parameter_href->{sample_ids} },
+        }
+    );
+
+    if ( not $user_supply_switch{sample_ids} ) {
+
+        ## Lexiographical sort to determine the correct order of ids indata
+        @{ $active_parameter_href->{sample_ids} } =
+          sort @{ $active_parameter_href->{sample_ids} };
+    }
+    else {
+
+        ## Check that CLI supplied sample_id exists in pedigree
+        check_pedigree_vs_user_input_sample_ids(
+            {
+                pedigree_sample_ids_ref   => \@pedigree_sample_ids,
+                user_input_sample_ids_ref => \@user_input_sample_ids,
+            }
+        );
+    }
+    return;
+}
+
 sub reload_previous_pedigree_info {
 
 ## Function : Updates sample_info hash with previous run pedigree info
@@ -308,24 +504,24 @@ sub reload_previous_pedigree_info {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
         },
         sample_info_file_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$sample_info_file_path,
             strict_type => 1,
-            store       => \$sample_info_file_path
         },
     };
 
@@ -374,8 +570,8 @@ sub _build_parent_child_counter_regexp {
 
     my $tmpl = {
         family_member => {
-            required => 1,
             defined  => 1,
+            required => 1,
             store    => \$family_member,
         },
     };
@@ -417,18 +613,18 @@ sub _update_sample_info_hash {
 
     my $tmpl = {
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
         },
         previous_sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$previous_sample_info_href,
             strict_type => 1,
-            store       => \$previous_sample_info_href
         },
     };
 
