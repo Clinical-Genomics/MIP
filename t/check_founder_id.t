@@ -6,7 +6,8 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use File::Basename qw{ basename dirname };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
+use File::Temp;
 use FindBin qw{ $Bin };
 use Getopt::Long;
 use Params::Check qw{ allow check last_error };
@@ -69,7 +70,10 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = ( q{MIP::Script::Utils} => [qw{ help }], );
+    my %perl_module = (
+        q{MIP::Log::MIP_log4perl} => [qw{ initiate_logger }],
+        q{MIP::Script::Utils}     => [qw{ help }],
+    );
 
   PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
@@ -78,7 +82,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Get::Pedigree});
+    my @modules = (q{MIP::Check::Pedigree});
 
   MODULE:
     for my $module (@modules) {
@@ -86,10 +90,11 @@ BEGIN {
     }
 }
 
-use MIP::Get::Pedigree qw{ get_pedigree_family_info };
+use MIP::Check::Pedigree qw{ check_founder_id };
+use MIP::Log::MIP_log4perl qw{ initiate_logger };
 
-diag(   q{Test get_pedigree_family_info from Pedigree.pm v}
-      . $MIP::Get::Pedigree::VERSION
+diag(   q{Test check_founder_id from Pedigree.pm v}
+      . $MIP::Check::Pedigree::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -97,17 +102,74 @@ diag(   q{Test get_pedigree_family_info from Pedigree.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my %sample_info;
-my %pedigree = ( family => q{family_1}, );
+## Create temp logger
+my $test_dir = File::Temp->newdir();
+my $test_log_path = catfile( $test_dir, q{test.log} );
 
-get_pedigree_family_info(
+## Creates log object
+my $log = initiate_logger(
     {
-        pedigree_href    => \%pedigree,
-        sample_info_href => \%sample_info,
+        file_path => $test_log_path,
+        log_name  => q{TEST},
     }
 );
 
-is( $sample_info{family}, q{family_1}, q{Got family key and value} );
+my %pedigree = (
+    family  => q{family_1},
+    samples => [
+        {
+            analysis_type => q{wes},
+            father        => 0,
+            mother        => 0,
+            phenotype     => q{affected},
+            sample_id     => q{sample_1},
+            sample_origin => q{normal},
+            sex           => q{female},
+        },
+        {
+            analysis_type => q{wgs},
+            father        => 0,
+            mother        => 0,
+            phenotype     => q{unaffected},
+            sample_id     => q{sample_2},
+            sample_origin => q{tumor},
+            sex           => q{male},
+        },
+        {
+            analysis_type => q{wts},
+            father        => 0,
+            mother        => 0,
+            phenotype     => q{unknown},
+            sample_id     => q{sample_3},
+            sex           => q{other},
+        },
+        {
+            analysis_type => q{cancer},
+            father        => q{sample_1},
+            mother        => q{sample_2},
+            phenotype     => q{unknown},
+            sample_id     => q{sample_4},
+            sex           => q{unknown},
+        },
+    ],
+);
+my @pedigree_sample_ids;
+
+SAMPLE:
+foreach my $pedigree_sample_href ( @{ $pedigree{samples} } ) {
+
+    push @pedigree_sample_ids, $pedigree_sample_href->{sample_id};
+}
+
+my $success = check_founder_id(
+    {
+        log                   => $log,
+        pedigree_href         => \%pedigree,
+        active_sample_ids_ref => \@pedigree_sample_ids,
+    }
+);
+
+is( $success, 1, q{Found all founders in pedigree file} );
 
 done_testing();
 

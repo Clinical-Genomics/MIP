@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_wgs };
@@ -888,6 +888,33 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 program_name            => q{sv_reformat},
+            }
+        );
+    }
+    if ( $active_parameter_href->{pbcftools_mpileup} ) {
+
+        $log->info(q{[Bcftools mpileup]});
+
+        my $program_outdirectory_name =
+          $parameter_href->{pbcftools_mpileup}{outdir_name};
+
+        my $outfamily_directory = catfile(
+            $active_parameter_href->{outdata_dir},
+            $active_parameter_href->{family_id},
+            $active_parameter_href->{outaligner_dir},
+            $program_outdirectory_name
+        );
+
+        analysis_bcftools_mpileup(
+            {
+                parameter_href          => $parameter_href,
+                active_parameter_href   => $active_parameter_href,
+                sample_info_href        => $sample_info_href,
+                file_info_href          => $file_info_href,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                program_name            => q{bcftools_mpileup},
+                outfamily_directory     => $outfamily_directory,
             }
         );
     }
