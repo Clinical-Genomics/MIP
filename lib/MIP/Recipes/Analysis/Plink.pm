@@ -363,7 +363,7 @@ sub analysis_plink {
     my $allow_no_sex;
 
     ## If not all samples have a known sex
-    if ( $active_parameter_href->{other_found_count} ) {
+    if ( $active_parameter_href->{found_other_count} ) {
 
         $allow_no_sex = 1;
     }
@@ -417,7 +417,7 @@ sub analysis_plink {
         say {$FILEHANDLE} $NEWLINE;
     }
 
-    if ( $active_parameter_href->{other_found_count} ne
+    if ( $active_parameter_href->{found_other_count} ne
         scalar @{ $active_parameter_href->{sample_ids} } )
     {
 
@@ -511,7 +511,7 @@ sub analysis_plink {
             );
         }
 
-        if ( $active_parameter_href->{other_found_count} ne
+        if ( $active_parameter_href->{found_other_count} ne
             scalar @{ $active_parameter_href->{sample_ids} } )
         {
 
