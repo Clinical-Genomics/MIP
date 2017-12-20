@@ -30,9 +30,10 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $DQUOATE    => q{"};
+Readonly my $STDOUT     => q{>};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
+Readonly my $PIPE       => q{|};
 Readonly my $UNDERSCORE => q{_};
 
 sub analysis_vardict {
@@ -236,6 +237,49 @@ sub analysis_vardict {
             source_environment_commands_ref => [$source_environment_cmd],
         }
     );
+
+    ## Create input filename bam file for $infile_paths_ref in vardict module. This has to be an array where first
+    ## is tumor and the second one is normal tissue.
+    ##TODO: sort alphabetically
+    my $referencefile_path = $active_parameter_href->{human_genome_reference};
+    my $af_threshold = $active_parameter_href->{af_threshold};
+    my $sample_name = $active_parameter_href->{sample_name};
+    my $chrom_start = $active_parameter_href->{chrom_start};
+    my $region_start = $active_parameter_href->{region_start};
+    my $region_end = $active_parameter_href->{region_end};
+    my $segment_annotn = $active_parameter_href->{segment_annotn};
+    my $input_bed_file = $active_parameter_href->{input_bed_file};
+
+    vardict(
+        {
+            af_threshold           => $af_threshold,
+            FILEHANDLE             => $FILEHANDLE,
+            infile_paths_ref       => $infile_path,
+            out_chrom_start        => $chrom_start,
+            out_region_start       => $region_start,
+            out_region_end         => $region_end,
+            out_segment_annotn     => $segment_annotn,
+            referencefile_path     => $referencefile_path,
+            sample_name            => $sample_name,
+            infile_bed_region_info => $input_bed_file,
+        }
+    );
+
+    ## TODO: condition if the input is array use different R script: teststrandbias.R vs testsomatic.R
+    ## TODO: var2vcf_paired.pl needs its own module
+
+    print {$FILEHANDLE} $PIPE
+      . q{ testsomatic.R }
+      . $PIPE
+      . q{var2vcf_paired.pl -N}
+      . $SPACE
+      . $sample_name
+      . $SPACE . q{-f}
+      . $SPACE
+      . $af_threshold
+      . $STDOUT
+      . $SPACE
+      . $outfile_name;
 
 ###############################
 ###RECIPE TOOL COMMANDS HERE###
