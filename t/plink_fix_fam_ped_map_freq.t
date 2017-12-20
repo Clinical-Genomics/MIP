@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 ## Constants
 Readonly my $SPACE   => q{ };
@@ -89,8 +89,7 @@ BEGIN {
 use MIP::Program::Variantcalling::Plink qw{ plink_fix_fam_ped_map_freq };
 use MIP::Test::Commands qw{ test_function };
 
-diag(
-q{Test plink_fix_fam_ped_map_freq from MIP::Program::Variantcalling::Plink v}
+diag(   q{Test plink_fix_fam_ped_map_freq from Plink.pm v}
       . $MIP::Program::Variantcalling::Plink::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -103,24 +102,43 @@ q{Test plink_fix_fam_ped_map_freq from MIP::Program::Variantcalling::Plink v}
 my $function_base_command = q{plink2};
 
 my %base_argument = (
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
-    },
     FILEHANDLE => {
         input           => undef,
         expected_output => $function_base_command,
+    },
+    stderrfile_path => {
+        input           => q{stderrfile.test},
+        expected_output => q{2> stderrfile.test},
     },
 );
 
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
+    binary_fileset_prefix => {
+        input           => catfile(qw{ temp_directory $family_id _data }),
+        expected_output => q{--bfile}
+          . $SPACE
+          . catfile(qw{ temp_directory $family_id _data }),
+    },
+    fam_file_path => {
+        input => catfile(qw{ outfamily_file_directory family_id .fam }),
+        expected_output => q{--fam}
+          . $SPACE
+          . catfile(qw{ outfamily_file_directory family_id .fam }),
+    },
     outfile_prefix => {
         input           => catfile(qw{ temp_directory $family_id _data }),
         expected_output => q{--out}
           . $SPACE
           . catfile(qw{ temp_directory $family_id _data }),
+    },
+);
+
+my %specific_argument = (
+    allow_no_sex => {
+        input           => 1,
+        expected_output => q{--allow-no-sex},
     },
     binary_fileset_prefix => {
         input           => catfile(qw{ temp_directory $family_id _data }),
@@ -134,21 +152,23 @@ my %required_argument = (
           . $SPACE
           . catfile(qw{ outfamily_file_directory family_id .fam }),
     },
-
-);
-
-my %specific_argument = (
+    freqx => {
+        input           => 1,
+        expected_output => q{--freqx},
+    },
     make_just_fam => {
         input           => 1,
         expected_output => q{--make-just-fam},
     },
+    outfile_prefix => {
+        input           => catfile(qw{ temp_directory $family_id _data }),
+        expected_output => q{--out}
+          . $SPACE
+          . catfile(qw{ temp_directory $family_id _data }),
+    },
     recode => {
         input           => 1,
         expected_output => q{--recode},
-    },
-    freqx => {
-        input           => 1,
-        expected_output => q{--freqx},
     },
 );
 
