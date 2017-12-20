@@ -37,91 +37,90 @@ sub plink_variant_pruning {
 
 ## Function : Perl wrapper for writing Plink recipe to prune variants and create unique IDs. Based on Plink 1.90p 64-bit (25 Mar 2016).
 ## Returns  : @commands
-## Arguments: $vcffile_path        => Vcf file path
-##          : $outfile_prefix      => Outfile prefix
-##          : $stderrfile_path     => Stderrfile path
-##          : $vcf_require_gt      => Skip variants where the GT field is absent
-##          : $vcf_half_call       => Specify how '0/.' and similar VCF GT values should be handled
-##          : $set_missing_var_ids => Assign chromosome-and-position-based IDs
-##          : $const_fid           => Assign family id to all samples in file
-##          : $make_bed            => Save data in plink binary format
+## Arguments: $const_fid           => Assign family id to all samples in file
+##          : $FILEHANDLE          => Filehandle to write to
 ##          : $indep               => Produce a pruned subset of markers that are in approximate linkage equilibrium with each other
-##          : $indep_window_size   => Indep window size (kb)
 ##          : $indep_step_size     => Indep step size (variant ct)
 ##          : $indep_vif_threshold => Indep vif threshold
-##          : $FILEHANDLE          => Filehandle to write to
+##          : $indep_window_size   => Indep window size (kb)
+##          : $make_bed            => Save data in plink binary format
+##          : $outfile_prefix      => Outfile prefix
+##          : $set_missing_var_ids => Assign chromosome-and-position-based IDs
+##          : $stderrfile_path     => Stderrfile path
+##          : $vcf_half_call       => Specify how '0/.' and similar VCF GT values should be handled
+##          : $vcf_require_gt      => Skip variants where the GT field is absent
+##          : $vcffile_path        => Vcf file path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $const_fid;
+    my $FILEHANDLE;
+    my $indep;
+    my $indep_step_size;
+    my $indep_vif_threshold;
+    my $indep_window_size;
+    my $make_bed;
     my $outfile_prefix;
+    my $set_missing_var_ids;
     my $stderrfile_path;
     my $vcffile_path;
     my $vcf_half_call;
-    my $set_missing_var_ids;
-    my $const_fid;
-    my $make_bed;
-    my $indep;
-    my $indep_window_size;
-    my $indep_step_size;
-    my $indep_vif_threshold;
-    my $FILEHANDLE;
 
     ## Default(s)
     my $vcf_require_gt;
 
     my $tmpl = {
-        vcffile_path => {
+        const_fid => {
             required    => 1,
-            defined     => 1,
+            store       => \$const_fid,
             strict_type => 1,
-            store       => \$vcffile_path,
+        },
+        FILEHANDLE => { store => \$FILEHANDLE, },
+        indep      => {
+            required    => 1,
+            store       => \$indep,
+            strict_type => 1,
+        },
+        indep_step_size =>
+          { required => 1, store => \$indep_step_size, strict_type => 1, },
+        indep_vif_threshold =>
+          { required => 1, store => \$indep_vif_threshold, strict_type => 1, },
+        indep_window_size =>
+          { required => 1, store => \$indep_window_size, strict_type => 1, },
+        make_bed => {
+            store       => \$make_bed,
+            strict_type => 1,
         },
         outfile_prefix => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$outfile_prefix,
-        },
-        vcf_require_gt => {
-            default     => 0,
-            allow       => [ undef, 0, 1 ],
             strict_type => 1,
-            store       => \$vcf_require_gt,
-        },
-        vcf_half_call => {
-            allow       => [ undef, qw{ error haploid missing reference } ],
-            strict_type => 1,
-            store => \$vcf_half_call,
         },
         set_missing_var_ids => {
             required    => 1,
-            strict_type => 1,
             store       => \$set_missing_var_ids,
+            strict_type => 1,
         },
-        const_fid => {
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
+        vcffile_path    => {
+            defined     => 1,
             required    => 1,
+            store       => \$vcffile_path,
             strict_type => 1,
-            store       => \$const_fid
         },
-        make_bed => {
+        vcf_half_call => {
+            allow       => [ undef, qw{ error haploid missing reference } ],
+            store       => \$vcf_half_call,
             strict_type => 1,
-            store       => \$make_bed,
         },
-        indep => {
-            required    => 1,
+        vcf_require_gt => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$vcf_require_gt,
             strict_type => 1,
-            store       => \$indep,
         },
-        indep_window_size =>
-          { required => 1, strict_type => 1, store => \$indep_window_size, },
-        indep_step_size =>
-          { required => 1, strict_type => 1, store => \$indep_step_size, },
-        indep_vif_threshold =>
-          { required => 1, strict_type => 1, store => \$indep_vif_threshold, },
-        FILEHANDLE      => { store       => \$FILEHANDLE, },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -179,66 +178,73 @@ sub plink_fix_fam_ped_map_freq {
 
 ## Function : Perl wrapper for writing Plink recipe to create ped, map, frequency report. Updates fam file as well. Based on Plink 1.90p 64-bit (25 Mar 2016).
 ## Returns  : @commands
-## Arguments: $binary_fileset_prefix => Specify .bed + .bim + .fam prefix
+## Arguments: $allow_no_sex          => Allow no sex for sample ids
+##          : $binary_fileset_prefix => Specify .bed + .bim + .fam prefix
 ##          : $fam_file_path         => Fam file path
-##          : $make_just_fam         => Just update fam file
-##          : $recode                => Create a new text fileset with all filters applied
-##          : $freqx                 => Writes a minor allele frequency report
-##          : $outfile_prefix        => Outfile prefix
 ##          : $FILEHANDLE            => Filehandle to write to
+##          : $freqx                 => Writes a minor allele frequency report
+##          : $make_just_fam         => Just update fam file
+##          : $outfile_prefix        => Outfile prefix
+##          : $recode                => Create a new text fileset with all filters applied
 ##          : $stderrfile_path       => Stderrfile path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $allow_no_sex;
     my $binary_fileset_prefix;
     my $fam_file_path;
+    my $FILEHANDLE;
     my $make_just_fam;
     my $outfile_prefix;
-    my $FILEHANDLE;
     my $stderrfile_path;
 
     ## Default(s)
-    my $recode;
     my $freqx;
+    my $recode;
 
     my $tmpl = {
+        allow_no_sex => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$allow_no_sex,
+            strict_type => 1,
+        },
         binary_fileset_prefix => {
             required    => 1,
-            strict_type => 1,
             store       => \$binary_fileset_prefix,
+            strict_type => 1,
         },
         fam_file_path => {
             required    => 1,
-            strict_type => 1,
             store       => \$fam_file_path,
+            strict_type => 1,
+        },
+        FILEHANDLE => { store => \$FILEHANDLE, },
+        freqx      => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$freqx,
+            strict_type => 1,
         },
         make_just_fam => {
-            default     => 0,
             allow       => [ 0, 1 ],
-            strict_type => 1,
+            default     => 0,
             store       => \$make_just_fam,
-        },
-        recode => {
-            default     => 0,
-            allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$recode,
-        },
-        freqx => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$freqx,
         },
         outfile_prefix => {
             required    => 1,
-            strict_type => 1,
             store       => \$outfile_prefix,
+            strict_type => 1,
         },
-        FILEHANDLE      => { store       => \$FILEHANDLE },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-
+        recode => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$recode,
+            strict_type => 1,
+        },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -264,6 +270,10 @@ sub plink_fix_fam_ped_map_freq {
 
         push @commands, q{--freqx};
     }
+    if ($allow_no_sex) {
+
+        push @commands, q{--allow-no-sex};
+    }
 
     push @commands, q{--out} . $SPACE . $outfile_prefix;
 
@@ -277,13 +287,12 @@ sub plink_fix_fam_ped_map_freq {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
 
     return @commands;
-
 }
 
 sub plink_calculate_inbreeding {
@@ -291,23 +300,23 @@ sub plink_calculate_inbreeding {
 ## Function : Perl wrapper for writing Plink recipe to calculate inbreeding coefficients per family. Based on Plink 1.90p 64-bit (25 Mar 2016).
 ## Returns  : @commands
 ## Arguments: $binary_fileset_prefix   => Specify .bed + .bim + .fam prefix
-##          : $outfile_prefix          => Outfile prefix
-##          : $het                     => Reports method-of-moments estimates
-##          : $small_sample            => Inlcude n/(n-1) multiplier in Nei's expected homozygosity formula
-##          : $inbreeding_coefficients => Estimate inbreeding coefficients
 ##          : $extract_file            => Exclude all variants not named in the file
 ##          : $FILEHANDLE              => Filehandle to write to
+##          : $het                     => Reports method-of-moments estimates
+##          : $inbreeding_coefficients => Estimate inbreeding coefficients
+##          : $outfile_prefix          => Outfile prefix
+##          : $small_sample            => Inlcude n/(n-1) multiplier in Nei's expected homozygosity formula
 ##          : $stderrfile_path         => Stderrfile path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $binary_fileset_prefix;
-    my $outfile_prefix;
-    my $stderrfile_path;
-    my $inbreeding_coefficients;
     my $extract_file;
     my $FILEHANDLE;
+    my $inbreeding_coefficients;
+    my $outfile_prefix;
+    my $stderrfile_path;
 
     ## Default(s)
     my $het;
@@ -316,39 +325,39 @@ sub plink_calculate_inbreeding {
     my $tmpl = {
         binary_fileset_prefix => {
             required    => 1,
+            store       => \$binary_fileset_prefix,
             strict_type => 1,
-            store       => \$binary_fileset_prefix
         },
         outfile_prefix => {
             required    => 1,
-            strict_type => 1,
             store       => \$outfile_prefix,
+            strict_type => 1,
         },
         het => {
-            default     => 0,
             allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$het,
             strict_type => 1,
-            store       => \$het
         },
         small_sample => {
-            default     => 0,
             allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$small_sample,
             strict_type => 1,
-            store       => \$small_sample
         },
         inbreeding_coefficients => {
-            default     => 0,
             allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$inbreeding_coefficients,
             strict_type => 1,
-            store       => \$inbreeding_coefficients
         },
         extract_file => {
             required    => 1,
+            store       => \$extract_file,
             strict_type => 1,
-            store       => \$extract_file
         },
-        FILEHANDLE      => { store       => \$FILEHANDLE },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+        FILEHANDLE      => { store => \$FILEHANDLE, },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
 
     };
 
@@ -388,34 +397,33 @@ sub plink_calculate_inbreeding {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
 
     return @commands;
-
 }
 
 sub plink_create_mibs {
 
 ## Function : Perl wrapper for writing Plink recipe to create .mibs per family. Based on Plink 1.90p 64-bit (25 Mar 2016).
 ## Returns  : @commands
-## Arguments: $ped_file_path   => Ped file path
-##          : $outfile_prefix  => Outfile prefix
-##          : $map_file_path   => Map file path
-##          : $cluster         => Perform IBS clustering
-##          : $matrix          => Create a N x N matrix of genome-wide average IBS pairwise identities
+## Arguments: $cluster         => Perform IBS clustering
 ##          : $FILEHANDLE      => Filehandle to write to
+##          : $map_file_path   => Map file path
+##          : $matrix          => Create a N x N matrix of genome-wide average IBS pairwise identities
+##          : $outfile_prefix  => Outfile prefix
+##          : $ped_file_path   => Ped file path
 ##          : $stderrfile_path => Stderrfile path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $ped_file_path;
-    my $outfile_prefix;
-    my $map_file_path;
     my $FILEHANDLE;
+    my $map_file_path;
+    my $outfile_prefix;
+    my $ped_file_path;
     my $stderrfile_path;
 
     ## Default(s)
@@ -424,25 +432,25 @@ sub plink_create_mibs {
 
     my $tmpl = {
         ped_file_path =>
-          { required => 1, strict_type => 1, store => \$ped_file_path },
+          { required => 1, store => \$ped_file_path, strict_type => 1, },
         map_file_path =>
-          { required => 1, strict_type => 1, store => \$map_file_path },
+          { required => 1, store => \$map_file_path, strict_type => 1, },
         cluster => {
-            default     => 0,
             allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$cluster,
             strict_type => 1,
-            store       => \$cluster
         },
         matrix => {
-            default     => 0,
             allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$matrix,
             strict_type => 1,
-            store       => \$matrix
         },
         outfile_prefix =>
-          { required => 1, strict_type => 1, store => \$outfile_prefix },
-        FILEHANDLE      => { store       => \$FILEHANDLE },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+          { required => 1, store => \$outfile_prefix, strict_type => 1, },
+        FILEHANDLE      => { store => \$FILEHANDLE, },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -476,8 +484,8 @@ sub plink_create_mibs {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
 
@@ -489,50 +497,53 @@ sub plink_check_sex_chroms {
 
 ## Function : Perl wrapper for writing Plink recipe to check sex chromosomes. Based on Plink 1.90p 64-bit (25 Mar 2016).
 ## Returns  : @commands
-## Arguments: $regions_ref           => The regions to process {REF}
-##          : $split_x               => Changes the chromosome codes of all variants in the region to XY
-##          : $no_fail               => Do not fail when no variants would be affected by split_x
-##          : $make_bed              => Save data in plink binary format
-##          : $binary_fileset_prefix => Specify .bed + .bim + .fam prefix
-##          : $outfile_prefix        => Outfile prefix
+## Arguments: $binary_fileset_prefix => Specify .bed + .bim + .fam prefix
 ##          : $FILEHANDLE            => Filehandle to write to
+##          : $make_bed              => Save data in plink binary format
+##          : $no_fail               => Do not fail when no variants would be affected by split_x
+##          : $outfile_prefix        => Outfile prefix
+##          : $regions_ref           => The regions to process {REF}
+##          : $split_x               => Changes the chromosome codes of all variants in the region to XY
 ##          : $stderrfile_path       => Stderrfile path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $binary_fileset_prefix;
+    my $FILEHANDLE;
+    my $make_bed;
+    my $outfile_prefix;
     my $regions_ref;
     my $split_x;
-    my $make_bed;
-    my $binary_fileset_prefix;
-    my $outfile_prefix;
-    my $FILEHANDLE;
     my $stderrfile_path;
 
     ## Default(s)
     my $no_fail;
 
     my $tmpl = {
-        regions_ref => {
+        binary_fileset_prefix => {
             required    => 1,
-            default     => [],
+            store       => \$binary_fileset_prefix,
             strict_type => 1,
-            store       => \$regions_ref
         },
-        split_x => { required => 1, strict_type => 1, store => \$split_x },
+        FILEHANDLE => { store => \$FILEHANDLE, },
+        make_bed   => { store => \$make_bed, strict_type => 1, },
         no_fail => {
-            default     => 0,
             allow       => [ 0, 1 ],
-            strict_type => 1,
+            default     => 0,
             store       => \$no_fail,
+            strict_type => 1,
         },
-        make_bed => { strict_type => 1, store => \$make_bed },
-        binary_fileset_prefix =>
-          { required => 1, strict_type => 1, store => \$binary_fileset_prefix },
         outfile_prefix =>
-          { required => 1, strict_type => 1, store => \$outfile_prefix },
-        FILEHANDLE      => { store       => \$FILEHANDLE },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+          { required => 1, store => \$outfile_prefix, strict_type => 1, },
+        regions_ref => {
+            default     => [],
+            required    => 1,
+            store       => \$regions_ref,
+            strict_type => 1,
+        },
+        split_x => { required => 1, store => \$split_x, strict_type => 1, },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -568,8 +579,8 @@ sub plink_check_sex_chroms {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
 
@@ -581,37 +592,40 @@ sub plink_sex_check {
 
 ## Function : Perl wrapper for writing Plink recipe to do sex check. Based on Plink 1.90p 64-bit (25 Mar 2016).
 ## Returns  : @commands
-## Arguments: $sex_check_min_f       => Sex check minimum F [female male]
+## Arguments: $binary_fileset_prefix => Specify .bed + .bim + .fam prefix
 ##          : $extract_file          => Exclude all variants not named in the file
-##          : $read_freqfile_path    => Read from frequency file path
-##          : $binary_fileset_prefix => Specify .bed + .bim + .fam prefix
-##          : $outfile_prefix        => Outfile prefix
 ##          : $FILEHANDLE            => Filehandle to write to
+##          : $outfile_prefix        => Outfile prefix
+##          : $read_freqfile_path    => Read from frequency file path
+##          : $sex_check_min_f       => Sex check minimum F [female male]
 ##          : $stderrfile_path       => Stderrfile path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $sex_check_min_f;
-    my $extract_file;
-    my $read_freqfile_path;
     my $binary_fileset_prefix;
-    my $outfile_prefix;
-    my $stderrfile_path;
+    my $extract_file;
     my $FILEHANDLE;
+    my $outfile_prefix;
+    my $read_freqfile_path;
+    my $sex_check_min_f;
+    my $stderrfile_path;
 
     my $tmpl = {
-        sex_check_min_f => { strict_type => 1, store => \$sex_check_min_f },
+        binary_fileset_prefix => {
+            required    => 1,
+            store       => \$binary_fileset_prefix,
+            strict_type => 1,
+        },
         extract_file =>
-          { required => 1, strict_type => 1, store => \$extract_file },
-        read_freqfile_path =>
-          { required => 1, strict_type => 1, store => \$read_freqfile_path },
-        binary_fileset_prefix =>
-          { required => 1, strict_type => 1, store => \$binary_fileset_prefix },
+          { required => 1, store => \$extract_file, strict_type => 1, },
+        FILEHANDLE => { store => \$FILEHANDLE, },
         outfile_prefix =>
-          { required => 1, strict_type => 1, store => \$outfile_prefix },
-        FILEHANDLE      => { store       => \$FILEHANDLE },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+          { required => 1, store => \$outfile_prefix, strict_type => 1, },
+        read_freqfile_path =>
+          { required => 1, store => \$read_freqfile_path, strict_type => 1, },
+        sex_check_min_f => { store => \$sex_check_min_f, strict_type => 1, },
+        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
 
     };
 
@@ -644,8 +658,8 @@ sub plink_sex_check {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
 

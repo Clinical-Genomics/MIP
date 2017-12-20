@@ -76,84 +76,84 @@ sub analysis_plink {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         call_type => {
             default     => q{BOTH},
-            strict_type => 1,
             store       => \$call_type,
+            strict_type => 1,
         },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
             store       => \$family_id,
+            strict_type => 1,
         },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$file_info_href,
+            strict_type => 1,
         },
         infamily_directory => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$infamily_directory,
+            strict_type => 1,
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$infile_lane_prefix_href,
+            strict_type => 1,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$job_id_href,
+            strict_type => 1,
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
             store       => \$outaligner_dir,
+            strict_type => 1,
         },
         outfamily_directory => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$outfamily_directory,
+            strict_type => 1,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
         },
         program_name => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
             store       => \$temp_directory,
+            strict_type => 1,
         },
     };
 
@@ -359,12 +359,20 @@ sub analysis_plink {
 
     say {$FILEHANDLE}
       q{## Update Plink fam. Create ped and map file and frequency report};
+    ## Get parameters
+    my $allow_no_sex;
 
+    ## If not all samples have a known sex
+    if ( $active_parameter_href->{found_other_count} ) {
+
+        $allow_no_sex = 1;
+    }
     my $binary_fileset_prefix =
       catfile( $temp_directory, $family_id . $UNDERSCORE . q{data} );
 
     plink_fix_fam_ped_map_freq(
         {
+            allow_no_sex          => $allow_no_sex,
             binary_fileset_prefix => $binary_fileset_prefix,
             FILEHANDLE            => $FILEHANDLE,
             fam_file_path         => $family_file,
@@ -409,68 +417,73 @@ sub analysis_plink {
         say {$FILEHANDLE} $NEWLINE;
     }
 
-    ### Plink sex-check
-    ## Get parameters
-    my $genome_build;
+    if ( $active_parameter_href->{found_other_count} ne
+        scalar @{ $active_parameter_href->{sample_ids} } )
+    {
 
-    if ( $human_genome_reference_source eq q{GRCh} ) {
+        ## Only if not all samples have unknown sex
+        ### Plink sex-check
+        ## Get parameters
+        my $genome_build;
 
-        $genome_build = q{b} . $human_genome_reference_version;
-    }
-    else {
+        if ( $human_genome_reference_source eq q{GRCh} ) {
 
-        $genome_build = q{hg} . $human_genome_reference_version;
-    }
-
-    $outfile_prefix =
-      catfile( $temp_directory, $family_id . $UNDERSCORE . q{data} );
-    Readonly my $CHR_X_NUMBER => 23;
-    Readonly my $CHR_Y_NUMBER => 24;
-
-    plink_check_sex_chroms(
-        {
-            binary_fileset_prefix => $binary_fileset_prefix,
-            FILEHANDLE            => $FILEHANDLE,
-            no_fail               => 1,
-            make_bed              => 1,
-            outfile_prefix        => $outfile_prefix . $UNDERSCORE . q{unsplit},
-            regions_ref           => [ $CHR_X_NUMBER, $CHR_Y_NUMBER ],
-            split_x               => $genome_build,
+            $genome_build = q{b} . $human_genome_reference_version;
         }
-    );
-    say {$FILEHANDLE} $NEWLINE;
+        else {
 
-    Readonly my $FEMALE_MAX_F => 0.2;
-    Readonly my $MALE_MIN_F   => 0.75;
-
-    ## Get parameters
-    my $sex_check_min_f;
-    if ( $consensus_analysis_type eq q{wes} ) {
-        $sex_check_min_f = $FEMALE_MAX_F . $SPACE . $MALE_MIN_F;
-    }
-    my $extract_file;
-
-    if ( scalar @{ $active_parameter_href->{sample_ids} } > 1 ) {
-
-        $extract_file = $binary_fileset_prefix . $DOT . q{prune.in};
-    }
-
-    $outfile_prefix = catfile( $outfamily_directory, $family_id );
-
-    plink_sex_check(
-        {
-            binary_fileset_prefix => $binary_fileset_prefix
-              . $UNDERSCORE
-              . q{unsplit},
-            extract_file       => $extract_file,
-            FILEHANDLE         => $FILEHANDLE,
-            outfile_prefix     => $outfile_prefix,
-            read_freqfile_path => $binary_fileset_prefix . $DOT . q{frqx},
-            sex_check_min_f    => $sex_check_min_f,
+            $genome_build = q{hg} . $human_genome_reference_version;
         }
-    );
-    say {$FILEHANDLE} $NEWLINE;
 
+        $outfile_prefix =
+          catfile( $temp_directory, $family_id . $UNDERSCORE . q{data} );
+        Readonly my $CHR_X_NUMBER => 23;
+        Readonly my $CHR_Y_NUMBER => 24;
+
+        plink_check_sex_chroms(
+            {
+                binary_fileset_prefix => $binary_fileset_prefix,
+                FILEHANDLE            => $FILEHANDLE,
+                no_fail               => 1,
+                make_bed              => 1,
+                outfile_prefix => $outfile_prefix . $UNDERSCORE . q{unsplit},
+                regions_ref    => [ $CHR_X_NUMBER, $CHR_Y_NUMBER ],
+                split_x        => $genome_build,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+
+        Readonly my $FEMALE_MAX_F => 0.2;
+        Readonly my $MALE_MIN_F   => 0.75;
+
+        ## Get parameters
+        my $sex_check_min_f;
+        if ( $consensus_analysis_type eq q{wes} ) {
+            $sex_check_min_f = $FEMALE_MAX_F . $SPACE . $MALE_MIN_F;
+        }
+        my $extract_file;
+
+        if ( scalar @{ $active_parameter_href->{sample_ids} } > 1 ) {
+
+            $extract_file = $binary_fileset_prefix . $DOT . q{prune.in};
+        }
+
+        $outfile_prefix = catfile( $outfamily_directory, $family_id );
+
+        plink_sex_check(
+            {
+                binary_fileset_prefix => $binary_fileset_prefix
+                  . $UNDERSCORE
+                  . q{unsplit},
+                extract_file       => $extract_file,
+                FILEHANDLE         => $FILEHANDLE,
+                outfile_prefix     => $outfile_prefix,
+                read_freqfile_path => $binary_fileset_prefix . $DOT . q{frqx},
+                sex_check_min_f    => $sex_check_min_f,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+    }
     if ( $mip_program_mode == 1 ) {
 
         # Only perform if more than 1 sample
@@ -498,16 +511,21 @@ sub analysis_plink {
             );
         }
 
-        ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
-            {
-                path => catfile(
-                    $outfamily_directory, $family_id . $DOT . q{sexcheck}
-                ),
-                program_name     => q{plink_sexcheck},
-                sample_info_href => $sample_info_href,
-            }
-        );
+        if ( $active_parameter_href->{found_other_count} ne
+            scalar @{ $active_parameter_href->{sample_ids} } )
+        {
+
+            ## Collect QC metadata info for later use
+            add_program_outfile_to_sample_info(
+                {
+                    path => catfile(
+                        $outfamily_directory, $family_id . $DOT . q{sexcheck}
+                    ),
+                    program_name     => q{plink_sexcheck},
+                    sample_info_href => $sample_info_href,
+                }
+            );
+        }
 
         ## Collect QC metadata info for later use
         add_program_outfile_to_sample_info(

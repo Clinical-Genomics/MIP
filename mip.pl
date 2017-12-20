@@ -4187,9 +4187,10 @@ sub detect_sample_id_gender {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my $found_male   = 0;
-    my $found_female = 0;
-    my $found_other  = 0;
+    my $found_male        = 0;
+    my $found_female      = 0;
+    my $found_other       = 0;
+    my $found_other_count = 0;
 
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
@@ -4207,9 +4208,10 @@ sub detect_sample_id_gender {
             $found_male =
               1;    #Include since it might be male to enable analysis of Y.
             $found_other = 1;
+            $found_other_count++;
         }
     }
-    return $found_male, $found_female, $found_other;
+    return $found_male, $found_female, $found_other, $found_other_count;
 }
 
 sub remove_pedigree_elements {
