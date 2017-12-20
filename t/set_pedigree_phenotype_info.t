@@ -78,7 +78,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Get::Pedigree});
+    my @modules = (q{MIP::Set::Pedigree});
 
   MODULE:
     for my $module (@modules) {
@@ -86,10 +86,10 @@ BEGIN {
     }
 }
 
-use MIP::Get::Pedigree qw{ get_pedigree_family_info };
+use MIP::Set::Pedigree qw{ set_pedigree_phenotype_info };
 
-diag(   q{Test get_pedigree_family_info from Pedigree.pm v}
-      . $MIP::Get::Pedigree::VERSION
+diag(   q{Test set_pedigree_phenotype_info from Pedigree.pm v}
+      . $MIP::Set::Pedigree::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -97,17 +97,78 @@ diag(   q{Test get_pedigree_family_info from Pedigree.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my %sample_info;
-my %pedigree = ( family => q{family_1}, );
-
-get_pedigree_family_info(
+my %pedigree = (
+    family  => q{family_1},
+    samples => [
+        {
+            analysis_type => q{wes},
+            father        => 0,
+            mother        => 0,
+            phenotype     => q{affected},
+            sample_id     => q{sample_1},
+            sample_origin => q{normal},
+            sex           => q{female},
+        },
+        {
+            analysis_type => q{wgs},
+            father        => 0,
+            mother        => 0,
+            phenotype     => q{unaffected},
+            sample_id     => q{sample_2},
+            sample_origin => q{tumor},
+            sex           => q{male},
+        },
+        {
+            analysis_type => q{wts},
+            father        => 0,
+            mother        => 0,
+            phenotype     => q{unknown},
+            sample_id     => q{sample_3},
+            sex           => q{other},
+        },
+        {
+            analysis_type => q{cancer},
+            father        => q{sample_1},
+            mother        => q{sample_2},
+            phenotype     => q{unknown},
+            sample_id     => q{sample_4},
+            sex           => q{unknown},
+        },
+    ],
+);
+my %parameter;
+set_pedigree_phenotype_info(
     {
-        pedigree_href    => \%pedigree,
-        sample_info_href => \%sample_info,
+        pedigree_href  => \%pedigree,
+        parameter_href => \%parameter,
     }
 );
 
-is( $sample_info{family}, q{family_1}, q{Got family key and value} );
+my @got_unaffected_samples = @{ $parameter{dynamic_parameter}{unaffected} };
+my @got_affected_samples   = @{ $parameter{dynamic_parameter}{affected} };
+my @got_unknown_samples    = @{ $parameter{dynamic_parameter}{unknown} };
+
+is( scalar @got_unaffected_samples,
+    1, q{Got all samples with unaffected phenotype} );
+
+is( scalar @got_affected_samples,
+    1, q{Got all samples with affected phenotype} );
+
+is( scalar @got_unknown_samples, 2, q{Got all samples with unknown phenotype} );
+
+my $affected_plink_phenotype =
+  $parameter{dynamic_parameter}{sample_1}{plink_phenotype};
+my $unaffected_plink_phenotype =
+  $parameter{dynamic_parameter}{sample_2}{plink_phenotype};
+my $unknown_plink_phenotype =
+  $parameter{dynamic_parameter}{sample_3}{plink_phenotype};
+
+is( $affected_plink_phenotype, 2, q{Reformated to plink affected phenotype} );
+
+is( $unaffected_plink_phenotype, 1,
+    q{Reformated to plink unaffected phenotype} );
+
+is( $unknown_plink_phenotype, 0, q{Reformated to plink unknown phenotype} );
 
 done_testing();
 

@@ -698,7 +698,7 @@ foreach my $parameter_name (@order_parameters) {
     ## If scalar and set - skip
     next PARAMETER
       if ( defined $active_parameter{$parameter_name}
-        && ref( $active_parameter{$parameter_name} ) !~ / HASH | ARRAY /sxm );
+        and not ref $active_parameter{$parameter_name} );
 
     ### Special case for parameters that are dependent on other parameters values
     my @custom_default_parameters =
@@ -1914,8 +1914,9 @@ sub read_yaml_pedigree_file {
 
     use MIP::Check::Pedigree
       qw{ check_pedigree_mandatory_key check_pedigree_sample_allowed_values };
-    use MIP::Get::Parameter qw{ get_user_supplied_info };
-    use MIP::Get::Pedigree qw{ get_pedigree_family_info };
+    use MIP::Get::Parameter qw{ get_capture_kit get_user_supplied_info };
+    use MIP::Set::Pedigree
+      qw{ set_active_parameter_pedigree_keys set_pedigree_capture_kit_info set_pedigree_family_info set_pedigree_phenotype_info set_pedigree_sex_info };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -1966,11 +1967,11 @@ sub read_yaml_pedigree_file {
 
     if ( not $user_supply_switch{sample_ids} ) {
 
-        ## Set cmd supplied sample_ids
+        ## Set cmd or config supplied sample_ids
         @user_input_sample_ids = @{ $active_parameter_href->{sample_ids} };
     }
 
-    get_pedigree_family_info(
+    set_pedigree_family_info(
         {
             pedigree_href    => $pedigree_href,
             sample_info_href => $sample_info_href,
@@ -1993,18 +1994,12 @@ sub read_yaml_pedigree_file {
             ## Save sample_id info for analysis
             push @{ $active_parameter_href->{sample_ids} }, $sample_id;
 
-            ## Reformat pedigree keys to plink format and collect sample info to various hashes
+            ## Set pedigree sample info
             get_pedigree_sample_info(
                 {
-                    active_parameter_href => $active_parameter_href,
-                    exom_target_bed_test_file_tracker_href =>
-                      \%exom_target_bed_test_file_tracker,
-                    file_info_href          => $file_info_href,
-                    parameter_href          => $parameter_href,
-                    pedigree_sample_href    => $pedigree_sample_href,
-                    sample_id               => $sample_id,
-                    sample_info_href        => $sample_info_href,
-                    user_supply_switch_href => \%user_supply_switch,
+                    pedigree_sample_href => $pedigree_sample_href,
+                    sample_id            => $sample_id,
+                    sample_info_href     => $sample_info_href,
                 }
             );
         }
@@ -2013,23 +2008,52 @@ sub read_yaml_pedigree_file {
             ## Update sample_id info
             if ( any { $_ eq $sample_id } @user_input_sample_ids ) {
 
-                ## Reformat pedigree keys to plink format and collect sample info to various hashes
+                ## Set pedigree sample info
                 get_pedigree_sample_info(
                     {
-                        active_parameter_href => $active_parameter_href,
-                        exom_target_bed_test_file_tracker_href =>
-                          \%exom_target_bed_test_file_tracker,
-                        file_info_href          => $file_info_href,
-                        parameter_href          => $parameter_href,
-                        pedigree_sample_href    => $pedigree_sample_href,
-                        sample_id               => $sample_id,
-                        sample_info_href        => $sample_info_href,
-                        user_supply_switch_href => \%user_supply_switch,
+                        pedigree_sample_href => $pedigree_sample_href,
+                        sample_id            => $sample_id,
+                        sample_info_href     => $sample_info_href,
                     }
                 );
             }
         }
     }
+
+    ## Add sex to dynamic parameters
+    set_pedigree_sex_info(
+        {
+            pedigree_href  => $pedigree_href,
+            parameter_href => $parameter_href,
+        }
+    );
+
+    ## Add phenotype to dynamic parameters
+    set_pedigree_phenotype_info(
+        {
+            pedigree_href  => $pedigree_href,
+            parameter_href => $parameter_href,
+        }
+    );
+
+    set_active_parameter_pedigree_keys(
+        {
+            active_parameter_href   => $active_parameter_href,
+            pedigree_href           => $pedigree_href,
+            sample_info_href        => $sample_info_href,
+            user_supply_switch_href => \%user_supply_switch,
+        }
+    );
+
+    set_pedigree_capture_kit_info(
+        {
+            active_parameter_href   => $active_parameter_href,
+            parameter_href          => $parameter_href,
+            pedigree_href           => $pedigree_href,
+            sample_info_href        => $sample_info_href,
+            user_supply_switch_href => \%user_supply_switch,
+        }
+    );
 
     ## Check that founder_ids are included in the pedigree info and the analysis run
     check_founder_id(
@@ -2061,18 +2085,6 @@ sub read_yaml_pedigree_file {
                       . q{ is not present in file} );
                 exit 1;
             }
-        }
-    }
-    if (%exom_target_bed_test_file_tracker) {
-        ## We have read capture kits from pedigree and need to transfer to active_parameters
-
-        foreach
-          my $exome_target_bed_file ( keys %exom_target_bed_test_file_tracker )
-        {
-
-            $active_parameter_href->{exome_target_bed}{$exome_target_bed_file}
-              = join q{,},
-              @{ $exom_target_bed_test_file_tracker{$exome_target_bed_file} };
         }
     }
     return;
@@ -3010,6 +3022,8 @@ sub set_custom_default_to_active_parameter {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Get::Parameter qw{ get_capture_kit };
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
@@ -3017,9 +3031,8 @@ sub set_custom_default_to_active_parameter {
     if ( $parameter_name eq q{exome_target_bed} ) {
 
         ## Return a default capture kit as user supplied no info
-        my $capture_kit = add_capture_kit(
+        my $capture_kit = get_capture_kit(
             {
-                file_info_href => $file_info_href,
                 supported_capture_kit_href =>
                   $parameter_href->{supported_capture_kit},
                 capture_kit => q{latest},
@@ -4567,77 +4580,6 @@ sub break_string {
     }
 }
 
-sub add_capture_kit {
-
-##add_capture_kit
-
-##Function : Return a capture kit depending on user info. If arg->{user_supplied_parameter_switchRef} is set, go a head and add capture kit no matter what the switch was.
-##Returns  : "Set capture kit or ''"
-##Arguments: $file_info_href, $supported_capture_kit_href, $capture_kit, $user_supplied_parameter_switch
-##         : $file_info_href                 => File info hash {REF}
-##         : $supported_capture_kit_href     => The supported capture kits hash {REF}
-##         : $capture_kit                    => The capture kit to add
-##         : $user_supplied_parameter_switch => Has user supplied parameter {OPTIONAL}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_info_href;
-    my $supported_capture_kit_href;
-    my $capture_kit;
-    my $user_supplied_parameter_switch;
-
-    my $tmpl = {
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href,
-        },
-        supported_capture_kit_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$supported_capture_kit_href
-        },
-        capture_kit => { strict_type => 1, store => \$capture_kit },
-        user_supplied_parameter_switch =>
-          { strict_type => 1, store => \$user_supplied_parameter_switch },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    unless ( defined($user_supplied_parameter_switch) )
-    {    #No detected supplied capture kit
-
-        if ( defined( $supported_capture_kit_href->{default}{$capture_kit} ) )
-        {    #Supported capture kit alias
-
-            return $supported_capture_kit_href->{default}{$capture_kit};
-        }
-        else {    #Return unchanged capture_kit string
-
-            return $capture_kit;
-        }
-    }
-    if (   ( defined($user_supplied_parameter_switch) )
-        && ( !$user_supplied_parameter_switch ) )
-    {             #Only add if user supplied no info on parameter
-
-        if ( defined( $supported_capture_kit_href->{default}{$capture_kit} ) )
-        {         #Supported capture kit alias
-
-            return $supported_capture_kit_href->{default}{$capture_kit};
-        }
-        else {    #Return unchanged capture_kit string
-
-            return $capture_kit;
-        }
-    }
-}
-
 sub split_bam {
 
 ##split_bam
@@ -6062,56 +6004,18 @@ sub get_pedigree_sample_info {
 
 ## Function : Reformat pedigree keys to plink format and collect sample info to various hashes
 ## Returns  :
-## Arguments: $active_parameter_href                  => Active parameters for this analysis hash {REF}
-##          : $exom_target_bed_test_file_tracker_href => Collect which sample_ids have used a certain capture_kit
-##          : $file_info_href                         => The associated reference file endings {REF}
-##          : $parameter_href                         => Parameter hash {REF}
-##          : $pedigree_sample_href                   => YAML sample info hash {REF}
+## Arguments: $pedigree_sample_href                   => YAML sample info hash {REF}
 ##          : $sample_id                              => Sample ID
 ##          : $sample_info_href                       => Info on samples and family hash {REF}
-##          : $user_supply_switch_href                => The user supplied info switch {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $active_parameter_href;
-    my $exom_target_bed_test_file_tracker_href;
-    my $file_info_href;
-    my $parameter_href;
     my $pedigree_sample_href;
     my $sample_id;
     my $sample_info_href;
-    my $user_supply_switch_href;
 
     my $tmpl = {
-        active_parameter_href => {
-            defined     => 1,
-            default     => {},
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        exom_target_bed_test_file_tracker_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$exom_target_bed_test_file_tracker_href,
-            strict_type => 1,
-        },
-        file_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$file_info_href,
-            strict_type => 1,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
         pedigree_sample_href => {
             default     => {},
             defined     => 1,
@@ -6132,13 +6036,6 @@ sub get_pedigree_sample_info {
             store       => \$sample_info_href,
             strict_type => 1,
         },
-        user_supply_switch_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$user_supply_switch_href,
-            strict_type => 1,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -6150,118 +6047,6 @@ sub get_pedigree_sample_info {
         $sample_info_href->{sample}{$sample_id}{$key} =
           $pedigree_sample_href->{$key};
 
-        ## Add sex to dynamic parameters
-        if ( $key eq q{sex} ) {
-
-            push @{ $parameter_href->{dynamic_parameter}
-                  { $pedigree_sample_href->{$key} } },
-              $sample_id;
-
-            ## Reformat to plink format
-            if ( $pedigree_sample_href->{$key} eq q{male} ) {
-
-                $parameter_href->{dynamic_parameter}{$sample_id}{plink_sex} = 1;
-            }
-            elsif ( $pedigree_sample_href->{$key} eq q{female} ) {
-
-                $parameter_href->{dynamic_parameter}{$sample_id}{plink_sex} = 2;
-            }
-            else {
-
-                $parameter_href->{dynamic_parameter}{$sample_id}{plink_sex} =
-                  q{other};
-            }
-        }
-
-        ## Add phenotype to dynamic parameters
-        if ( $key eq q{phenotype} ) {
-
-            push @{ $parameter_href->{dynamic_parameter}
-                  { $pedigree_sample_href->{$key} } },
-              $sample_id;
-
-            ## Reformat to plink format
-            if ( $pedigree_sample_href->{$key} eq q{unaffected} ) {
-
-                $parameter_href->{dynamic_parameter}{$sample_id}
-                  {plink_phenotype} = 1;
-            }
-            elsif ( $pedigree_sample_href->{$key} eq q{affected} ) {
-
-                $parameter_href->{dynamic_parameter}{$sample_id}
-                  {plink_phenotype} = 2;
-            }
-            else {
-
-                $parameter_href->{dynamic_parameter}{$sample_id}
-                  {plink_phenotype} = 0;
-            }
-        }
-    }
-
-    ## Add analysis_type for each individual
-    if ( $sample_info_href->{sample}{$sample_id}{analysis_type} ) {
-
-        if ( not $user_supply_switch_href->{analysis_type} ) {
-
-            ## Alias
-            my $analysis_type =
-              $sample_info_href->{sample}{$sample_id}{analysis_type};
-            $active_parameter_href->{analysis_type}{$sample_id} =
-              $analysis_type;
-        }
-    }
-
-    ## Add expected_coverage for each individual
-    if ( $sample_info_href->{sample}{$sample_id}{expected_coverage} ) {
-
-        if ( not $user_supply_switch_href->{expected_coverage} ) {
-
-            ## Alias
-            my $expected_coverage =
-              $sample_info_href->{sample}{$sample_id}{expected_coverage};
-            $active_parameter_href->{expected_coverage}{$sample_id} =
-              $expected_coverage;
-        }
-    }
-    ## Add sample origin for each individual
-    if ( $sample_info_href->{sample}{$sample_id}{sample_origin} ) {
-
-        if ( not $user_supply_switch_href->{sample_origin} ) {
-
-            ## Alias
-            my $sample_origin =
-              $sample_info_href->{sample}{$sample_id}{sample_origin};
-            $active_parameter_href->{sample_origin}{$sample_id} =
-              $sample_origin;
-        }
-    }
-
-    ## Add capture kit for each individual
-    if ( $sample_info_href->{sample}{$sample_id}{capture_kit} ) {
-
-        ## Alias
-        my $capture_kit =
-          $sample_info_href->{sample}{$sample_id}{capture_kit};
-
-        ## Return a capture kit depending on user info
-        my $exome_target_bed_file = add_capture_kit(
-            {
-                file_info_href => $file_info_href,
-                supported_capture_kit_href =>
-                  $parameter_href->{supported_capture_kit},
-                capture_kit => $capture_kit,
-                user_supplied_parameter_switch =>
-                  $user_supply_switch_href->{exome_target_bed},
-            }
-        );
-
-        if ($exome_target_bed_file) {
-
-            push @{ $exom_target_bed_test_file_tracker_href
-                  ->{$exome_target_bed_file} },
-              $sample_id;
-        }
     }
     return;
 }
