@@ -73,86 +73,86 @@ sub analysis_sambamba_depth {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
             strict_type => 1,
-            store       => \$active_parameter_href
         },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
+            store       => \$family_id,
             strict_type => 1,
-            store       => \$family_id
         },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
             strict_type => 1,
-            store       => \$file_info_href
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
         },
         insample_directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$insample_directory,
             strict_type => 1,
-            store       => \$insample_directory
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
             strict_type => 1,
-            store       => \$job_id_href
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
+            store       => \$outaligner_dir,
             strict_type => 1,
-            store       => \$outaligner_dir
         },
         outsample_directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$outsample_directory,
             strict_type => 1,
-            store       => \$outsample_directory
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
-            store       => \$parameter_href
         },
         program_name => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$program_name,
             strict_type => 1,
-            store       => \$program_name
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
             strict_type => 1,
-            store       => \$sample_info_href
         },
         sample_id => {
-            required    => 1,
-            defined     => 1,
             default     => 1,
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
             strict_type => 1,
-            store       => \$sample_id
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
+            store       => \$temp_directory,
             strict_type => 1,
-            store       => \$temp_directory
         },
     };
 
@@ -188,27 +188,13 @@ sub analysis_sambamba_depth {
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    ## Add merged infile name prefix after merging all BAM files per sample_id
+    ## Get merged infile name prefix after merging all BAM files per sample_id
     my $merged_infile_prefix = get_merged_infile_prefix(
         {
             file_info_href => $file_info_href,
             sample_id      => $sample_id,
         }
     );
-
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
-    my $outfile_tag =
-      $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
-
-    ## Files
-    my $infile_prefix  = $merged_infile_prefix . $infile_tag;
-    my $outfile_prefix = $merged_infile_prefix . $outfile_tag;
-
-    ## Paths
-    my $file_path_prefix = catfile( $temp_directory, $infile_prefix );
-    my $outfile_path_prefix = $file_path_prefix . $outfile_tag;
 
     ## Get infile_suffix from baserecalibration jobid chain
     my $infile_suffix = get_file_suffix(
@@ -226,9 +212,24 @@ sub analysis_sambamba_depth {
         }
     );
 
+    ## Assign file_tags
+    my $infile_tag =
+      $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
+    my $outfile_tag =
+      $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
+    my $infile_prefix  = $merged_infile_prefix . $infile_tag;
+    my $outfile_prefix = $merged_infile_prefix . $outfile_tag;
+
+    ## Files
+    my $infile_name  = $infile_prefix . $infile_suffix;
+    my $outfile_name = $outfile_prefix . $outfile_suffix;
+
+    ## Paths
     # q{.bam} -> ".b*" for getting index as well)
     my $infile_path = catfile( $insample_directory,
         $infile_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERIX );
+    my $file_path_prefix = catfile( $temp_directory, $infile_prefix );
+    my $outfile_path     = catfile( $temp_directory, $outfile_name );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_path) = setup_script(
@@ -263,14 +264,15 @@ sub analysis_sambamba_depth {
     ## Get parameters
     my $sambamba_filter =
         $SINGLE_QUOTE
-      . q{mapping_quality >= }
+      . q{mapping_quality >=}
+      . $SPACE
       . $active_parameter_href->{sambamba_depth_mapping_quality}
       . $SPACE;
 
     #Do not include duplicates in coverage calculation
     if ( $active_parameter_href->{sambamba_depth_noduplicates} ) {
 
-        $sambamba_filter .= q{and not duplicate };
+        $sambamba_filter .= q{and not duplicate} . $SPACE;
     }
 
     #Do not include failed quality control reads in coverage calculation
@@ -291,7 +293,7 @@ sub analysis_sambamba_depth {
             min_base_quality =>
               $active_parameter_href->{sambamba_depth_base_quality},
             mode         => $active_parameter_href->{sambamba_depth_mode},
-            outfile_path => $outfile_path_prefix . $outfile_suffix,
+            outfile_path => $outfile_path,
             region       => $active_parameter_href->{sambamba_depth_bed},
         }
     );
@@ -302,7 +304,7 @@ sub analysis_sambamba_depth {
     migrate_file(
         {
             FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $outfile_path_prefix . $outfile_suffix,
+            infile_path  => $outfile_path,
             outfile_path => $outsample_directory,
         }
     );
@@ -311,8 +313,8 @@ sub analysis_sambamba_depth {
 
     if ( $mip_program_mode == 1 ) {
 
-        my $qc_sambamba_path =
-          catfile( $outsample_directory, $outfile_prefix . $outfile_suffix );
+        my $qc_sambamba_path = catfile( $outsample_directory, $outfile_name );
+
         add_program_outfile_to_sample_info(
             {
                 infile           => $merged_infile_prefix,

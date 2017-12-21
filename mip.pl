@@ -4792,12 +4792,9 @@ sub add_to_sample_info {
     }
     if ( exists( $active_parameter_href->{pedigree_file} ) ) {
 
+        ## Add pedigree_file to sample_info
         $sample_info_href->{pedigree_file}{path} =
-          $active_parameter_href->{pedigree_file}
-          ;    #Add pedigree_file to sample_info
-        $sample_info_href->{pedigree_file_analysis}{path} =
-          catfile( $outdata_dir, $$family_id_ref, "qc_pedigree.yaml" )
-          ;    #Add pedigree_file info used in this analysis to sample_info_file
+          $active_parameter_href->{pedigree_file};
     }
     if ( exists( $active_parameter_href->{log_file} ) ) {
 

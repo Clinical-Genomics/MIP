@@ -244,6 +244,7 @@ module_time:
     ppicardtools_collectmultiplemetrics: 10
     ppicardtools_collecthsmetrics: 10
     pbedtools_genomecov: 15
+    prcovplots: 1
     pgatk_haplotypecaller: 30
     pgatk_genotypegvcfs: 10
     pgatk_variantrecalibration: 10
@@ -298,6 +299,7 @@ module_core_number:
     ppicardtools_collectmultiplemetrics: 2
     ppicardtools_collecthsmetrics: 2
     pbedtools_genomecov: 1
+    prcovplots: 1
     pgatk_haplotypecaller: 16
     pgatk_genotypegvcfs: 4
     pgatk_variantrecalibration: 16
