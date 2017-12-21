@@ -25,12 +25,109 @@ BEGIN {
     our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ tiddit_sv };
+    our @EXPORT_OK = qw{ tiddit_coverage tiddit_sv };
 
 }
 
 ## Constants
 Readonly my $SPACE => q{ };
+
+sub tiddit_coverage {
+
+## Function : Perl wrapper for Tiddit coverage. Based on Tiddit 1.0.2.
+## Returns  : @commands
+## Arguments: $bin_size               => Bin size
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $infile_path            => Infile path
+##          : $outfile_path_prefix    => Outfile path. Write documents to FILE
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $infile_path;
+    my $outfile_path_prefix;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+
+    ## Default(s)
+    my $bin_size;
+
+    my $tmpl = {
+        bin_size => {
+            allow       => qr/ ^\d+$ /sxm,
+            default     => 500,
+            store       => \$bin_size,
+            strict_type => 1,
+        },
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        outfile_path_prefix =>
+          { store => \$outfile_path_prefix, strict_type => 1, },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Stores commands depending on input parameters
+    my @commands = q{TIDDIT.py --cov};
+
+    # Option: specify output prefix
+    if ($outfile_path_prefix) {
+
+        push @commands, q{-o} . $SPACE . $outfile_path_prefix;
+    }
+
+    # Option: specify bin size
+    if ($bin_size) {
+
+        push @commands, q{-z} . $SPACE . $bin_size;
+    }
+
+    # Specify infile
+    push @commands, q{--bam} . $SPACE . $infile_path;
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
+
+        }
+    );
+    return @commands;
+}
 
 sub tiddit_sv {
 
@@ -40,10 +137,10 @@ sub tiddit_sv {
 ##          : $infile_path                     => Infile path
 ##          : $minimum_number_supporting_pairs => Minimum number of supporting pairs in order to call a variation event
 ##          : $outfile_path_prefix             => Outfile path. Write documents to FILE
-##          : $referencefile_path     => Genome reference file
-##          : $stderrfile_path        => Stderrfile path
-##          : $stderrfile_path_append => Append stderr info to file path
-##          : $stdoutfile_path        => Stdoutfile path
+##          : $referencefile_path              => Genome reference file
+##          : $stderrfile_path                 => Stderrfile path
+##          : $stderrfile_path_append          => Append stderr info to file path
+##          : $stdoutfile_path                 => Stdoutfile path
 
     my ($arg_href) = @_;
 
@@ -60,35 +157,35 @@ sub tiddit_sv {
     my $tmpl = {
         FILEHANDLE  => { store => \$FILEHANDLE },
         infile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$infile_path
         },
         minimum_number_supporting_pairs => {
             allow       => qr/ ^\d+$ /sxm,
+            store       => \$minimum_number_supporting_pairs,
             strict_type => 1,
-            store       => \$minimum_number_supporting_pairs
         },
         outfile_path_prefix =>
-          { strict_type => 1, store => \$outfile_path_prefix },
+          { store => \$outfile_path_prefix, strict_type => 1, },
         referencefile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$referencefile_path,
             strict_type => 1,
-            store       => \$referencefile_path
         },
         stderrfile_path => {
-            strict_type => 1,
             store       => \$stderrfile_path,
+            strict_type => 1,
         },
         stderrfile_path_append => {
-            strict_type => 1,
             store       => \$stderrfile_path_append,
+            strict_type => 1,
         },
         stdoutfile_path => {
-            strict_type => 1,
             store       => \$stdoutfile_path,
+            strict_type => 1,
         },
     };
 
@@ -127,8 +224,8 @@ sub tiddit_sv {
       unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
       );
     return @commands;
