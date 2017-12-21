@@ -218,6 +218,8 @@ update_prioritize_flag.t
 update_program_mode.t
 variant_effect_predictor.t
 vardict.t
+vardict_var2vcf_paired.t
+vardict_var2vcf_single.t
 variant_integrity_father.t
 variant_integrity_mendel.t
 vcf2cytosure.t
