@@ -20,7 +20,7 @@ use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-¨
+
     # Set the version for version checking
     our $VERSION = 1.00;
 
