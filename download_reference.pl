@@ -812,7 +812,6 @@ sub update_to_absolute_path {
                 {
                     path           => $parameter_href->{$parameter_name},
                     parameter_name => $parameter_name,
-                    log            => $log,
                 }
             );
         }

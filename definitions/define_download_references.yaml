@@ -119,7 +119,10 @@ clinvar:
       outfile_check: GRCh37_clinvar_-2017-10-29-.vcf.gz.md5
       outfile_index: GRCh37_clinvar_-2017-10-29-.vcf.gz.tbi
       outfile_check_method: md5sum
-      url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/
+      outfile_reformat_command: "perl -e ' print q{##INFO=<ID=CLNVID,Number=1,Type=Integer,Description=\"ClinVar Variation ID\">} ' > header_lines.txt; bcftools annotate -h header_lines.txt GRCh37_clinvar_-2017-10-29-.vcf.gz | perl -nae ' if($_=~/^#/) { print $_;} else { chomp; my $line = $_; say STDOUT $_ . q{;CLNVID=} . $F[2] }' > GRCh37_clinvar_reformat_-2017-10-29-.vcf"
+      outfile_bgzip_command: 'bgzip GRCh37_clinvar_reformat_-2017-10-29-.vcf'
+      outfile_tabix_command: 'tabix -p vcf GRCh37_clinvar_reformat_-2017-10-29-.vcf.gz'
+      url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/archive_2.0/2017/
   hg38:
     20170104:
       file: clinvar_20170104.vcf.gz
