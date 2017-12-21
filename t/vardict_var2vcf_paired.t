@@ -80,7 +80,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Program::Variantcalling::Vardict_var2vcf_paired});
+    my @modules = (q{MIP::Program::Variantcalling::Vardict});
 
   MODULE:
     for my $module (@modules) {
@@ -88,12 +88,12 @@ BEGIN {
     }
 }
 
-use MIP::Program::Variantcalling::Vardict_var2vcf_paired
+use MIP::Program::Variantcalling::Vardict
   qw{ vardict_var2vcf_paired };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test var2vcf_paired.pl from Vardict_var2vcf_paired.pm}
-      . $MIP::Program::Variantcalling::Vardict_var2vcf_paired::VERSION
+diag(   q{Test var2vcf_paired.pl from Vardict.pm}
+      . $MIP::Program::Variantcalling::Vardict::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
