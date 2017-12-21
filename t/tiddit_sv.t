@@ -168,10 +168,10 @@ foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
             argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
             do_test_base_command   => 1,
+            function_base_command  => $function_base_command,
+            module_function_cref   => $module_function_cref,
+            required_argument_href => \%required_argument,
         }
     );
 }
