@@ -18,6 +18,7 @@ requires qw{ List::Util 1.49 };                 # MIP
 requires qw{ Log::Log4perl 1.49 };              # MIP
 requires qw{ Modern::Perl 1.20170117 };         # MIP
 requires qw{ Module::Build 0.4224 };            # VEP
+requires qw{ Module::CPANfile 1.1002 };         # MIP
 requires qw{ Path::Iterator::Rule 1.012 };      # MIP
 requires qw{ PerlIO::gzip 0.20 };               # VEP
 requires qw{ Readonly 2.05 };                   # MIP

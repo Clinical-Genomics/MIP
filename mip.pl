@@ -78,13 +78,12 @@ our $USAGE = build_usage( {} );
 BEGIN {
 
     require MIP::Check::Modules;
+    use MIP::Check::Modules qw{ check_perl_modules parse_cpan_file };
 
-    my @modules = (
-        qw{ YAML Path::Iterator::Rule
-          List::Util Log::Log4perl
-          MIP::File::Format::Yaml MIP::Set::File
-          MIP::Log::MIP_log4perl  MIP::Script::Utils }
-    );
+    my @modules =
+      parse_cpan_file {
+        cpanfile_path => catfile( $Bin, qw{ definitions cpanfile } ),
+      };
 
     ## Evaluate that all modules required are installed
     check_perl_modules(
@@ -3429,12 +3428,12 @@ sub write_cmd_mip_log {
                         "-" . $order_parameter_element . " ",
                         map {
 "$_=$active_parameter_href->{$order_parameter_element}{$_} "
-                          } (
+                        } (
                             keys %{
                                 $active_parameter_href
                                   ->{$order_parameter_element}
                             }
-                          )
+                        )
                     );
                 }
                 else {
