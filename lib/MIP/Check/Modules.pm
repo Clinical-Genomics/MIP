@@ -3,6 +3,7 @@ package MIP::Check::Modules;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
+use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
@@ -18,7 +19,7 @@ BEGIN {
     our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ check_perl_modules };
+    our @EXPORT_OK = qw{ check_perl_modules parse_cpan_file };
 }
 
 sub check_perl_modules {
@@ -36,16 +37,16 @@ sub check_perl_modules {
 
     my $tmpl = {
         modules_ref => {
-            required    => 1,
             default     => [],
+            required    => 1,
+            store       => \$modules_ref,
             strict_type => 1,
-            store       => \$modules_ref
         },
         program_name => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$program_name,
             strict_type => 1,
-            store       => \$program_name
         },
     };
 
@@ -77,4 +78,39 @@ sub check_perl_modules {
     return;
 }
 
+sub parse_cpan_file {
+
+## Function :
+## Returns  : @cpanm_modules
+## Arguments: $cpanfile_path => Path to cpanfile
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $cpanfile_path;
+
+    my $tmpl = {
+        cpanfile_path => {
+            default     => 1,
+            required    => 1,
+            store       => \$cpanfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use Module::CPANfile;
+    use CPAN::Meta::Prereqs;
+
+    ## Load cpanfile
+    my $file = Module::CPANfile->load($cpanfile_path);
+    ## Get hash_ref without objects
+    my $file_href = $file->prereqs->as_string_hash;
+
+    ## Get cpanm modules
+    my @cpanm_modules = keys %{ $file_href->{runtime}{requires} };
+
+    return @cpanm_modules;
+}
 1;

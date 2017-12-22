@@ -35,40 +35,14 @@ our $USAGE = build_usage( {} );
 BEGIN {
 
     require MIP::Check::Modules;
+    use MIP::Check::Modules qw{ parse_cpan_file };
 
-    my @modules = (
-        q{Modern::Perl},               # MIP
-        q{autodie},                    # MIP
-        q{IPC::System::Simple},        # MIP
-        q{Path::Iterator::Rule},       # MIP
-        q{YAML},                       # MIP
-        q{MIP::File::Format::Yaml},    # MIP
-        q{Log::Log4perl},              # MIP
-        q{MIP::Log::MIP_log4perl},     # MIP
-        q{List::Util},                 # MIP
-        q{Readonly},                   # MIP
-        q{Try::Tiny},                  # MIP
-        q{Set::IntervalTree},          # MIP/vcfParser.pl
-        q{Net::SSLeay},                # VEP
-        q{LWP::Simple},                # VEP
-        q{LWP::Protocol::https},       # VEP
-        q{PerlIO::gzip},               # VEP
-        q{IO::Uncompress::Gunzip},     # VEP
-        q{HTML::Lint},                 # VEP
-        q{Archive::Zip},               # VEP
-        q{Archive::Extract},           # VEP
-        q{DBI},                        # VEP
-        q{JSON},                       # VEP
-        q{DBD::mysql},                 # VEP
-        q{CGI},                        # VEP
-        q{Sereal::Encoder},            # VEP
-        q{Sereal::Decoder},            # VEP
-        q{Bio::Root::Version},         # VEP
-        q{Module::Build},              # VEP
-        q{File::Copy::Recursive},      # VEP
-    );
+    my @modules =
+      parse_cpan_file {
+        cpanfile_path => catfile( dirname($Bin), qw{ definitions cpanfile } ),
+      };
 
-    ## Evaluate that all modules required are installed
+    ## Evaluate that all modules required throughout entire analysis are installed
     check_perl_modules(
         {
             modules_ref  => \@modules,
