@@ -166,7 +166,7 @@ reduce_io:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   type: mip
 replace_iupac:
   associated_program:
@@ -212,7 +212,7 @@ bash_set_errexit:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   type: mip
 bash_set_nounset:
   associated_program:
@@ -224,7 +224,7 @@ bash_set_pipefail:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   type: mip
 module_time:
   associated_program:
@@ -464,7 +464,7 @@ bwa_mem_hla:
   associated_program:
    - pbwa_mem
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 bwa_mem_cram:
   associated_program:
@@ -713,7 +713,7 @@ sambamba_depth_noduplicates:
   associated_program:
    - psambamba_depth
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 sambamba_depth_quality_control:
   associated_program:
@@ -880,7 +880,7 @@ sv_vt_decompose:
   associated_program:
    - psv_combinevariantcallsets
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 sv_svdb_merge_prioritize:
   associated_program:
@@ -892,13 +892,13 @@ sv_bcftools_view_filter:
   associated_program:
    - psv_combinevariantcallsets
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 sv_svdb_query:
   associated_program:
    - psv_combinevariantcallsets
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 sv_svdb_query_db_files:
   associated_program:
@@ -911,7 +911,7 @@ sv_vcfanno:
   associated_program:
    - psv_combinevariantcallsets
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 sv_vcfanno_lua:
   associated_program:
@@ -946,7 +946,7 @@ sv_genmod_filter:
   associated_program:
    - psv_combinevariantcallsets
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 sv_genmod_filter_1000g:
   associated_program:
@@ -966,7 +966,7 @@ sv_combinevariantcallsets_bcf_file:
   associated_program:
    - psv_combinevariantcallsets
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 psv_varianteffectpredictor:
   associated_program:

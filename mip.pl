@@ -212,10 +212,10 @@ GetOptions(
     q{cfa|config_file_analysis:s} => \$active_parameter{config_file_analysis},
     q{sif|sample_info_file:s}     => \$active_parameter{sample_info_file},
     q{dra|dry_run_all}          => \$active_parameter{dry_run_all},
-    q{jul|java_use_large_pages=n} => \$active_parameter{java_use_large_pages},
+    q{jul|java_use_large_pages} => \$active_parameter{java_use_large_pages},
     q{ges|genomic_set:s}          => \$active_parameter{genomic_set},
-    q{rio|reduce_io=n}            => \$active_parameter{reduce_io},
-    q{riu|replace_iupac=n}        => \$active_parameter{replace_iupac},
+    q{rio|reduce_io}            => \$active_parameter{reduce_io},
+    q{riu|replace_iupac}        => \$active_parameter{replace_iupac},
     q{ppm|print_program_mode=n}   => \$active_parameter{print_program_mode},
     q{pp|print_program}           => sub {
         ## Force ppm to be read before function call
@@ -238,9 +238,9 @@ GetOptions(
     },
 
     #### Bash
-    q{bse|bash_set_errexit:s}   => \$active_parameter{bash_set_errexit},
-    q{bsu|bash_set_nounset:s}   => \$active_parameter{bash_set_nounset},
-    q{bsp|bash_set_pipefail:s}  => \$active_parameter{bash_set_pipefail},
+    q{bse|bash_set_errexit}   => \$active_parameter{bash_set_errexit},
+    q{bsu|bash_set_nounset}   => \$active_parameter{bash_set_nounset},
+    q{bsp|bash_set_pipefail}  => \$active_parameter{bash_set_pipefail},
     q{em|email:s}               => \$active_parameter{email},
     q{emt|email_types:s}        => \@{ $active_parameter{email_types} },
     q{mcn|module_core_number:s} => \%{ $active_parameter{module_core_number} },
@@ -261,9 +261,9 @@ GetOptions(
     q{pfqc|pfastqc=n}            => \$active_parameter{pfastqc},
     q{pcta|pcutadapt=n}          => \$active_parameter{pcutadapt},
     q{pmem|pbwa_mem=n}           => \$active_parameter{pbwa_mem},
-    q{memhla|bwa_mem_hla=n}      => \$active_parameter{bwa_mem_hla},
-    q{memcrm|bwa_mem_cram=n}     => \$active_parameter{bwa_mem_cram},
-    q{memsts|bwa_mem_bamstats=n} => \$active_parameter{bwa_mem_bamstats},
+    q{memhla|bwa_mem_hla}      => \$active_parameter{bwa_mem_hla},
+    q{memcrm|bwa_mem_cram}     => \$active_parameter{bwa_mem_cram},
+    q{memsts|bwa_mem_bamstats} => \$active_parameter{bwa_mem_bamstats},
     q{memssm|bwa_sambamba_sort_memory_limit:s} =>
       \$active_parameter{bwa_sambamba_sort_memory_limit},
     q{ptp|picardtools_path:s} => \$active_parameter{picardtools_path},
@@ -292,9 +292,9 @@ GetOptions(
       \$active_parameter{sambamba_depth_base_quality},
     q{sdtmaq|sambamba_depth_mapping_quality=n} =>
       \$active_parameter{sambamba_depth_mapping_quality},
-    q{sdtndu|sambamba_depth_noduplicates=n} =>
+    q{sdtndu|sambamba_depth_noduplicates} =>
       \$active_parameter{sambamba_depth_noduplicates},
-    q{sdtfqc|sambamba_depth_quality_control=n} =>
+    q{sdtfqc|sambamba_depth_quality_control} =>
       \$active_parameter{sambamba_depth_quality_control},
     q{pbgc|pbedtools_genomecov=n} => \$active_parameter{pbedtools_genomecov},
     q{bgcmc|bedtools_genomecov_max_coverage=n} =>
@@ -317,34 +317,34 @@ GetOptions(
       \$active_parameter{tiddit_minimum_number_supporting_pairs},
     q{psvc|psv_combinevariantcallsets=n} =>
       \$active_parameter{psv_combinevariantcallsets},
-    q{svcvtd|sv_vt_decompose=n} => \$active_parameter{sv_vt_decompose},
+    q{svcvtd|sv_vt_decompose} => \$active_parameter{sv_vt_decompose},
     q{svsvdbmp|sv_svdb_merge_prioritize:s} =>
       \$active_parameter{sv_svdb_merge_prioritize},
-    q{svcbtv|sv_bcftools_view_filter=n} =>
+    q{svcbtv|sv_bcftools_view_filter} =>
       \$active_parameter{sv_bcftools_view_filter},
-    q{svcdbq|sv_svdb_query=n} => \$active_parameter{sv_svdb_query},
+    q{svcdbq|sv_svdb_query} => \$active_parameter{sv_svdb_query},
     q{svcdbqd|sv_svdb_query_db_files:s} =>
       \%{ $active_parameter{sv_svdb_query_db_files} },
-    q{svcvan|sv_vcfanno=n}        => \$active_parameter{sv_vcfanno},
+    q{svcvan|sv_vcfanno}        => \$active_parameter{sv_vcfanno},
     q{svcval|sv_vcfanno_lua:s}    => \$active_parameter{sv_vcfanno_lua},
     q{svcvac|sv_vcfanno_config:s} => \$active_parameter{sv_vcfanno_config},
     q{svcvacf|sv_vcfanno_config_file:s} =>
       \$active_parameter{sv_vcfanno_config_file},
     q{svcvah|sv_vcfannotation_header_lines_file:s} =>
       \$active_parameter{sv_vcfannotation_header_lines_file},
-    q{svcgmf|sv_genmod_filter=n} => \$active_parameter{sv_genmod_filter},
+    q{svcgmf|sv_genmod_filter} => \$active_parameter{sv_genmod_filter},
     q{svcgfr|sv_genmod_filter_1000g:s} =>
       \$active_parameter{sv_genmod_filter_1000g},
     q{svcgft|sv_genmod_filter_threshold:s} =>
       \$active_parameter{sv_genmod_filter_threshold},
-    q{svcbcf|sv_combinevariantcallsets_bcf_file=n} =>
+    q{svcbcf|sv_combinevariantcallsets_bcf_file} =>
       \$active_parameter{sv_combinevariantcallsets_bcf_file},
     q{psvv|psv_varianteffectpredictor=n} =>
       \$active_parameter{psv_varianteffectpredictor},
     q{svvepf|sv_vep_features:s} => \@{ $active_parameter{sv_vep_features} },
     q{svvepl|sv_vep_plugins:s}  => \@{ $active_parameter{sv_vep_plugins} },
     q{psvvcp|psv_vcfparser=n}   => \$active_parameter{psv_vcfparser},
-    q{svvcpvt|sv_vcfparser_vep_transcripts=n} =>
+    q{svvcpvt|sv_vcfparser_vep_transcripts} =>
       \$active_parameter{sv_vcfparser_vep_transcripts},
     q{svvcppg|sv_vcfparser_per_gene=n} =>
       \$active_parameter{sv_vcfparser_per_gene},
@@ -1603,10 +1603,10 @@ sub build_usage {
     -cfa/--config_file_analysis Write YAML configuration file for analysis parameters (defaults to "")
     -sif/--sample_info_file YAML file for sample info used in the analysis (defaults to "{outdata_dir}/{family_id}/{family_id}_qc_sample_info.yaml")
     -dra/--dry_run_all Sets all programs to dry run mode i.e. no sbatch submission (supply flag to enable)
-    -jul/--java_use_large_pages Use large page memory. (defaults to "0" (=no))
+    -jul/--java_use_large_pages Use large page memory. (supply flag to enable)
     -ges/--genomic_set Selection of relevant regions post alignment (Format=sorted BED; defaults to "")
-    -rio/--reduce_io Run consecutive models at nodes (defaults to "0" (=no))
-    -riu/--replace_iupac Replace IUPAC code in alternative alleles with N (defaults to "0" (=no))
+    -rio/--reduce_io Run consecutive models at nodes (supply flag to enable)
+    -riu/--replace_iupac Replace IUPAC code in alternative alleles with N (supply flag to enable)
     -pp/--print_program Print all programs that are supported
     -ppm/--print_program_mode Print all programs that are supported in: 0 (off mode), 1 (on mode), 2 (dry run mode; defaults to "2")
     -l/--log_file Mip log file (defaults to "{outdata_dir}/{family_id}/mip_log/{date}/{scriptname}_{timestamp}.log")
@@ -1614,9 +1614,9 @@ sub build_usage {
     -v/--version Display version of MIP
 
     ####Bash
-    -bse/--bash_set_errexit Set errexit in bash scripts (defaults to "0")
-    -bsu/--bash_set_nounset Set nounset in bash scripts (defaults to "0")
-    -bsp/--bash_set_pipefail Set pipefail in bash scripts (defaults to "0")
+    -bse/--bash_set_errexit Set errexit in bash scripts (supply flag to enable)
+    -bsu/--bash_set_nounset Set nounset in bash scripts (supply flag to enable)
+    -bsp/--bash_set_pipefail Set pipefail in bash scripts (supply flag to enable)
     -mot/--module_time Set the time allocation for each module (Format: module "program name"=time(Hours))
     -mcn/--module_core_number Set the number of cores for each module (Format: module "program_name"=X(cores))
     -mse/--module_source_environment_command Set environment variables specific for each module (Format: module "program_name"="command"
@@ -1637,9 +1637,9 @@ sub build_usage {
 
     ##BWA
     -pmem/--pbwa_mem Align reads using Bwa Mem (defaults to "0" (=no))
-      -memhla/--bwa_mem_hla Apply HLA typing (defaults to "1" (=yes))
-      -memcrm/--bwa_mem_cram Use CRAM-format for additional output file (defaults to "1" (=yes))
-      -memsts/--bwa_mem_bamstats Collect statistics from BAM files (defaults to "1" (=yes))
+      -memhla/--bwa_mem_hla Apply HLA typing (supply flag to enable)
+      -memcrm/--bwa_mem_cram Use CRAM-format for additional output file (supply flag to enable)
+      -memsts/--bwa_mem_bamstats Collect statistics from BAM files (supply flag to enable)
       -memssm/--bwa_sambamba_sort_memory_limit Set the memory limit for Sambamba sort after bwa alignment (defaults to "32G")
 
     ##Picardtools
@@ -1663,8 +1663,8 @@ sub build_usage {
       -sdtbed/--sambamba_depth_bed Reference database (defaults to "CCDS.current.bed")
       -sdtbaq/--sambamba_depth_base_quality Do not count bases with lower base quality (defaults to "10")
       -stdmaq/--sambamba_depth_mapping_quality  Do not count reads with lower mapping quality (defaults to "10")
-      -stdndu/--sambamba_depth_noduplicates Do not include duplicates in coverage calculation (defaults to "1" (=yes))
-      -stdfqc/--sambamba_depth_quality_control Do not include reads with failed quality control (defaults to "1" (=yes))
+      -stdndu/--sambamba_depth_noduplicates Do not include duplicates in coverage calculation (supply flag to enable)
+      -stdfqc/--sambamba_depth_quality_control Do not include reads with failed quality control (supply flag to enable)
     -pbgc/--pbedtools_genomecov Genome coverage calculation using bedtools genomecov (defaults to "0" (=no))
      -bgcmc/--bedtools_genomecov_max_coverage Max coverage depth when using '-pbedtools_genomecov' (defaults to "30")
     -pptcmm/--ppicardtools_collectmultiplemetrics Metrics calculation using Picardtools CollectMultipleMetrics (defaults to "0" (=no))
@@ -1683,25 +1683,25 @@ sub build_usage {
     -ptid/--ptiddit Structural variant calling using Tiddit (defaults to "0" (=no))
       -tidmsp/--tiddit_minimum_number_supporting_pairs The minimum number of supporting reads (defaults to "6")
     -psvc/--psv_combinevariantcallsets Combine variant call sets (defaults to "0" (=no))
-      -svcvtd/--sv_vt_decompose Split multi allelic records into single records (defaults to "1" (=yes))
+      -svcvtd/--sv_vt_decompose Split multi allelic records into single records (supply flag to enable)
       -svsvdbmp/--sv_svdb_merge_prioritize The prioritization order of structural variant callers.(defaults to ""; comma sep; Options: manta|delly|cnvnator|tiddit)
-      -svcbtv/--sv_bcftools_view_filter Include structural variants with PASS in FILTER column (defaults to "1" (=yes))
-      -svcdbq/--sv_svdb_query Annotate structural variants using svdb query (defaults to "1" (=yes))
+      -svcbtv/--sv_bcftools_view_filter Include structural variants with PASS in FILTER column (supply flag to enable)
+      -svcdbq/--sv_svdb_query Annotate structural variants using svdb query (supply flag to enable)
       -svcdbqd/--sv_svdb_query_db_files Database file(s) for annotation (defaults to "")
-      -svcvan/--sv_vcfanno Annotate structural variants (defaults to "1" (=yes)
+      -svcvan/--sv_vcfanno Annotate structural variants (supply flag to enable)
       -svcval/--sv_vcfanno_lua vcfAnno lua postscripting file (defaults to "")
       -svcvac/--sv_vcfanno_config vcfAnno toml config (defaults to "")
       -svcvacf/--sv_vcfanno_config_file Annotation file within vcfAnno config toml file (defaults to "GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz")
       -svcvah/--sv_vcfannotation_header_lines_file Adjust for postscript by adding required header lines to vcf (defaults to "")
-      -svcgmf/--sv_genmod_filter Remove common structural variants from vcf (defaults to "1" (=yes))
+      -svcgmf/--sv_genmod_filter Remove common structural variants from vcf (supply flag to enable)
       -svcgfr/--sv_genmod_filter_1000g Genmod annotate structural variants from 1000G reference (defaults to "GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz")
       -svcgft/--sv_genmod_filter_threshold Threshold for filtering structural variants (defaults to "0.10")
-      -svcbcf/--sv_combinevariantcallsets_bcf_file Produce a bcf from the CombineStructuralVariantCallSet vcf (defaults to "1" (=yes))
+      -svcbcf/--sv_combinevariantcallsets_bcf_file Produce a bcf from the CombineStructuralVariantCallSet vcf (supply flag to enable)
     -psvv/--psv_varianteffectpredictor Annotate SV variants using VEP (defaults to "0" (=no))
       -svvepf/--sv_vep_features VEP features (defaults to ("hgvs","symbol","numbers","sift","polyphen","humdiv","domains","protein","ccds","uniprot","biotype","regulatory", "tsl", "canonical", "per_gene", "appris"); comma sep)
-      -svveppl/--sv_vep_plugins VEP plugins (defaults to ("UpDownDistance, LoFtool, LoF"); comma sep)
+      -svveppl/--sv_vep_plugins VEP plugins (defaults to ("UpDownDistance, LoFtool"); comma sep)
     -psvvcp/--psv_vcfparser Parse structural variants using vcfParser.pl (defaults to "0" (=no))
-      -svvcpvt/--sv_vcfparser_vep_transcripts Parse VEP transcript specific entries (defaults to "0" (=no))
+      -svvcpvt/--sv_vcfparser_vep_transcripts Parse VEP transcript specific entries (supply flag to enable)
       -vcppg/--vcfparser_per_gene Keep only most severe consequence per gene (defaults to "1" (=yes))
       -svvcprff/--sv_vcfparser_range_feature_file Range annotations file (defaults to ""; tab-sep)
       -svvcprfa/--sv_vcfparser_range_feature_annotation_columns Range annotations feature columns (defaults to ""; comma sep)
