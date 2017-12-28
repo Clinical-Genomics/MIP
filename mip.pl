@@ -4,41 +4,35 @@
 
 #### Copyright 2011 Henrik Stranneheim
 
-# Require at least perl 5.18
 use 5.018;
-use Modern::Perl qw{ 2014 };
-use autodie qw{ open close :all };
-
-# Required for autodie :all
-use IPC::System::Simple;
-use English qw{ -no_match_vars };
 use Carp;
-
-## Unicode boilerplate
-use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
-
-use Getopt::Long;
-use POSIX;
-use Params::Check qw{ check allow last_error };
 use Cwd;
 use Cwd qw{ abs_path };
+use English qw{ -no_match_vars };
 use File::Basename qw{ dirname basename fileparse };
-use File::Spec::Functions qw{ catdir catfile devnull splitpath };
-use File::Path qw{ make_path };
 use File::Copy qw{ copy };
+use File::Path qw{ make_path };
+use File::Spec::Functions qw{ catdir catfile devnull splitpath };
 use FindBin qw{ $Bin };
+use Getopt::Long;
 use IPC::Cmd qw{ can_run run};
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
+use POSIX;
 use Time::Piece;
+use utf8;
+use warnings qw{ FATAL utf8 };
 
 ## Third party module(s)
-use Path::Iterator::Rule;
+use autodie qw{ open close :all };
+use IPC::System::Simple;
 use List::MoreUtils qw { any uniq all };
+use Modern::Perl qw{ 2014 };
+use Path::Iterator::Rule;
 use Readonly;
 
-##MIPs lib/
+## MIPs lib/
 # Add MIPs internal lib
 use lib catdir( $Bin, q{lib} );
 use MIP::Check::Cluster qw{ check_max_core_number };
@@ -217,7 +211,7 @@ GetOptions(
       \$active_parameter{analysis_constant_path},
     q{cfa|config_file_analysis:s} => \$active_parameter{config_file_analysis},
     q{sif|sample_info_file:s}     => \$active_parameter{sample_info_file},
-    q{dra|dry_run_all=i}          => \$active_parameter{dry_run_all},
+    q{dra|dry_run_all}          => \$active_parameter{dry_run_all},
     q{jul|java_use_large_pages=n} => \$active_parameter{java_use_large_pages},
     q{ges|genomic_set:s}          => \$active_parameter{genomic_set},
     q{rio|reduce_io=n}            => \$active_parameter{reduce_io},
@@ -1295,7 +1289,7 @@ add_to_sample_info(
 ####MAIN####
 ############
 
-if ( $active_parameter{dry_run_all} == 0 ) {
+if ( not $active_parameter{dry_run_all} ) {
 
     my %no_dry_run_info = (
         analysisrunstatus => q{not_finished},
@@ -1608,7 +1602,7 @@ sub build_usage {
     -acp/--analysis_constant_path Set the analysis constant path (defaults to "analysis")
     -cfa/--config_file_analysis Write YAML configuration file for analysis parameters (defaults to "")
     -sif/--sample_info_file YAML file for sample info used in the analysis (defaults to "{outdata_dir}/{family_id}/{family_id}_qc_sample_info.yaml")
-    -dra/--dry_run_all Sets all programs to dry run mode i.e. no sbatch submission (defaults to "0" (=no))
+    -dra/--dry_run_all Sets all programs to dry run mode i.e. no sbatch submission (supply flag to enable)
     -jul/--java_use_large_pages Use large page memory. (defaults to "0" (=no))
     -ges/--genomic_set Selection of relevant regions post alignment (Format=sorted BED; defaults to "")
     -rio/--reduce_io Run consecutive models at nodes (defaults to "0" (=no))
