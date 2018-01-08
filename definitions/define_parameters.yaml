@@ -651,8 +651,6 @@ pchanjo_sexcheck:
   default: 0
   file_tag: _sex
   outfile_suffix: ".tsv"
-#  program_name_path:
-#   - chanjo
   type: program
 chanjo_sexcheck_log_level:
   associated_program:
@@ -985,8 +983,6 @@ sv_vep_features:
    - hgvs
    - symbol
    - numbers
-   - "sift p"
-   - "polyphen p"
    - humdiv
    - domains
    - protein

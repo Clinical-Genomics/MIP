@@ -180,15 +180,33 @@ else {
     }
 }
 
+## SV files
+if ( $infile =~ /_SV[.]/sxm ) {
+
 ## Reads infile in vcf format and parses annotations
-read_infile_vcf(
-    {
-        active_parameter_href => \%active_parameter,
-        infile_vcf            => $infile,
-        parameter_href        => \%parameter,
-        vcfparser_data_href   => \%vcfparser_data,
-    }
-);
+    read_sv_infile_vcf(
+        {
+            active_parameter_href => \%active_parameter,
+            infile_vcf            => $infile,
+            parameter_href        => \%parameter,
+            vcfparser_data_href   => \%vcfparser_data,
+        }
+    );
+}
+else {
+
+##Snv/indel files
+
+## Reads infile in vcf format and parses annotations
+    read_infile_vcf(
+        {
+            active_parameter_href => \%active_parameter,
+            infile_vcf            => $infile,
+            parameter_href        => \%parameter,
+            vcfparser_data_href   => \%vcfparser_data,
+        }
+    );
+}
 
 # Reached the end safely
 Test::More::done_testing();
@@ -548,6 +566,14 @@ sub read_infile_vcf {
   VEP_KEY:
     foreach my $vep_key ( keys %vep_format_field ) {
 
+        ## Alias
+        my $vep_key_value = $vcf_info_csq_key{$vep_key};
+
+        if ( not $vep_key_value ) {
+
+            $vep_key_value = 0;
+        }
+
         my @todo_keys = qw{ APPRIS TSL Existing_variation
           LoF_flags MOTIF_NAME MOTIF_POS HIGH_INF_POS
           MOTIF_SCORE_CHANGE LoF_filter };
@@ -559,17 +585,278 @@ sub read_infile_vcf {
 
                 local $TODO = q{Check VEP CSQ currently not produced};
 
-                ok( $vcf_info_csq_key{$vep_key},
+                ok( $vep_key_value,
                     q{Found entry for CSQ field key for: } . $vep_key );
             }
         }
         else {
 
-            ok( $vcf_info_csq_key{$vep_key},
+            ok( $vep_key_value,
                     q{Found entry for CSQ field key for: }
                   . $vep_key
                   . q{ with key count: }
-                  . $vcf_info_csq_key{$vep_key} );
+                  . $vep_key_value );
+        }
+    }
+    return;
+}
+
+sub read_sv_infile_vcf {
+
+## Function : Reads SV infile in vcf format and adds and parses annotations
+## Returns  :
+## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
+##          : $infile_vcf            => Infile
+##          : $parameter_href        => The parameter hash {REF}
+##          : $vcfparser_data_href   => The keys from vcfParser i.e. range file and select file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $infile_vcf;
+    my $parameter_href;
+    my $vcfparser_data_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        infile_vcf => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_vcf,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        vcfparser_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$vcfparser_data_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Constants
+    Readonly my $MAX_LINE_TO_READ => 100_00;
+
+    ## Retrieve logger object now that log_file has been set
+    my $log = Log::Log4perl->get_logger(q{Test});
+
+    my $is_csq_found;
+    my @vep_format_fields;
+    my %vep_format_field;
+
+    # Catch vcf header #CHROM line
+    my @vcf_format_columns;
+    my %meta_data;
+    my %vcf_header;
+    my %vcf_info_key;
+    my %vcf_info_csq_key;
+
+    $log->info( q{Testing vcf header in file: } . $infile_vcf, $NEWLINE x 2 );
+
+    # Create anonymous filehandle
+    my $FILEHANDLE = IO::Handle->new();
+
+    ## Read file
+    open $FILEHANDLE, q{<},
+      $infile_vcf
+      or $log->logdie( q{Cannot open} . $SPACE . $infile_vcf . q{:} . $OS_ERROR,
+        $NEWLINE );
+  LINE:
+    while (<$FILEHANDLE>) {
+
+        chomp;
+
+        ## Quit reading
+        last LINE if ( $INPUT_LINE_NUMBER > $MAX_LINE_TO_READ );
+
+        # Avoid blank lines
+        next LINE if (m/ ^\s+$ /sxm);
+
+        # If meta data
+        if (/ ^\#\#\S+= /sxm) {
+
+            my $line = $_;
+            parse_meta_data(
+                {
+                    meta_data_href   => \%meta_data,
+                    meta_data_string => $line,
+                }
+            );
+
+            if (/ INFO\=\<ID\=([^,]+) /sxm) {
+
+                $vcf_header{INFO}{$1} = $1;
+            }
+
+            $is_csq_found = check_if_vep_csq_in_line(
+                {
+                    vep_format_field_href => \%vep_format_field,
+                    header_line           => $line,
+                }
+            );
+
+            if ($is_csq_found) {
+
+                ok(
+                    $active_parameter_href->{psv_varianteffectpredictor},
+                    q{VEP: CSQ in header and VEP should have been executed}
+                );
+            }
+            next LINE;
+        }
+        if (/ ^\#CHROM /xsm) {
+
+            # Split vcf format line
+            @vcf_format_columns = split $TAB;
+
+            ### Check Header now that we read all
+
+            ## Test Vt
+            _test_sv_combinevariantcallsets_in_vcf_header(
+                {
+                    sv_combinevariantcallsets_mode =>
+                      $active_parameter_href->{psv_combinevariantcallsets},
+                    sv_genmod_filter =>
+                      $active_parameter_href->{sv_genmod_filter},
+                    sv_genmod_filter_1000g =>
+                      $active_parameter_href->{sv_genmod_filter_1000g},
+                    sv_vt_decompose_mode =>
+                      $active_parameter_href->{sv_vt_decompose},
+                    vcf_header_href => \%vcf_header,
+                }
+            );
+
+            ## Test vcfparser
+            _test_vcfparser_in_vcf_header(
+                {
+                    vcf_header_href     => \%vcf_header,
+                    vcfparser_data_href => $vcfparser_data_href,
+                    vcfparser_mode => $active_parameter_href->{psv_vcfparser},
+                }
+            );
+
+            ## Test Rankvariants
+            _test_rankvariants_in_vcf_header(
+                {
+                    rankvariant_mode =>
+                      $active_parameter_href->{psv_rankvariant},
+                    sample_ids_ref =>
+                      \@{ $active_parameter_href->{sample_ids} },
+                    unaffected_samples_ref =>
+                      \@{ $parameter_href->{dynamic_parameter}{unaffected} },
+                    vcf_header_href => \%vcf_header,
+                }
+            );
+
+            next LINE;
+        }
+
+        ## VCF body lines
+        my %vcf_record =
+          parse_vcf_line( { vcf_format_columns_ref => \@vcf_format_columns, } );
+
+        ## Count incedence of keys
+      INFO_KEY:
+        foreach my $info_key ( keys %{ $vcf_record{INFO_key_value} } ) {
+
+            ## Increment
+            $vcf_info_key{$info_key}++;
+        }
+
+        my %csq_transcript_effect = parse_vep_csq_info(
+            {
+                vcf_record_href       => \%vcf_record,
+                vcf_info_csq_key_href => \%vcf_info_csq_key,
+                vep_format_field_href => \%vep_format_field,
+            }
+        );
+
+        ## Sum all CSQ vcf transcript effect keys
+      TRANSCRIPT_ID:
+        foreach my $transcript_id ( keys %csq_transcript_effect ) {
+
+          CSQ_TRANSCRIPT_EFFECTS:
+            while ( my ( $effect_key, $effect_value ) = each %vep_format_field )
+            {
+
+                if ( exists $csq_transcript_effect{$transcript_id}{$effect_key}
+                    && $csq_transcript_effect{$transcript_id}{$effect_key} )
+                {
+
+                    ## Increment
+                    $vcf_info_csq_key{$effect_key}++;
+                }
+            }
+        }
+    }
+    close $FILEHANDLE;
+
+    ## Check keys found in INFO field
+    $log->info(
+        q{Testing vcf INFO fields and presence in header: } . $infile_vcf,
+        $NEWLINE x 2 );
+
+  INFO_KEY:
+    foreach my $info_key ( keys %vcf_info_key ) {
+
+        ok(
+            exists $vcf_header{INFO}{$info_key},
+            q{Found both header and line field key for: }
+              . $info_key
+              . q{ with key count: }
+              . $vcf_info_key{$info_key}
+        );
+    }
+
+  VEP_KEY:
+    foreach my $vep_key ( keys %vep_format_field ) {
+
+        ## Alias
+        my $vep_key_value = $vcf_info_csq_key{$vep_key};
+
+        if ( not $vep_key_value ) {
+
+            $vep_key_value = 0;
+        }
+
+        my @todo_keys = qw{ APPRIS TSL Existing_variation
+          LoF_flags MOTIF_NAME MOTIF_POS HIGH_INF_POS
+          MOTIF_SCORE_CHANGE LoF_filter };
+
+        if ( any { $_ eq $vep_key } @todo_keys ) {
+
+            ## This will fail for Appris tcl etc which is only available in Grch38
+          TODO: {
+
+                local $TODO = q{Check VEP CSQ currently not produced};
+
+                ok( $vep_key_value,
+                    q{Found entry for CSQ field key for: } . $vep_key );
+            }
+        }
+        else {
+
+            ok( $vep_key_value,
+                    q{Found entry for CSQ field key for: }
+                  . $vep_key
+                  . q{ with key count: }
+                  . $vep_key_value );
         }
     }
     return;
@@ -842,6 +1129,82 @@ sub check_if_vep_csq_in_line {
     return;
 }
 
+sub _test_sv_combinevariantcallsets_in_vcf_header {
+
+## Function : Test if sv_combinevariantcallsets info keys are present in vcf header
+## Returns  :
+## Arguments: $sv_genmod_filter               => Genmod filter has been used or not
+##          : $sv_genmod_filter_1000g         => Genmod filter 1000G has been used or not
+##          : $sv_combinevariantcallsets_mode => sv_combinevariantcallsets has been used or not
+##          : $vcf_header_href                => Vcf header info
+##          : $sv_vt_decompose_mode           => Vt decompose has been used or not
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $sv_genmod_filter;
+    my $sv_genmod_filter_1000g;
+    my $sv_vt_decompose_mode;
+    my $vcf_header_href;
+    my $sv_combinevariantcallsets_mode;
+
+    my $tmpl = {
+        sv_genmod_filter => {
+            allow       => qr/ ^\d+$ /sxm,
+            defined     => 1,
+            required    => 1,
+            store       => \$sv_genmod_filter,
+            strict_type => 1,
+        },
+        sv_genmod_filter_1000g => {
+            store       => \$sv_genmod_filter_1000g,
+            strict_type => 1,
+        },
+        vcf_header_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$vcf_header_href,
+            strict_type => 1,
+        },
+        sv_combinevariantcallsets_mode => {
+            allow       => qr/ ^\d+$ /sxm,
+            defined     => 1,
+            required    => 1,
+            store       => \$sv_combinevariantcallsets_mode,
+            strict_type => 1,
+        },
+        sv_vt_decompose_mode => {
+            allow       => qr/ ^\d+$ /sxm,
+            defined     => 1,
+            required    => 1,
+            store       => \$sv_vt_decompose_mode,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## sv_combinevariantcallset has been used
+    if ($sv_combinevariantcallsets_mode) {
+
+        if ($sv_vt_decompose_mode) {
+
+            ok( exists $vcf_header_href->{INFO}{OLD_MULTIALLELIC},
+                q{VTDecompose key: OLD_MULTIALLELIC} );
+        }
+        if ($sv_genmod_filter) {
+
+            if ($sv_genmod_filter_1000g) {
+
+                ok( defined $vcf_header_href->{INFO}{q{1000GAF}},
+                    q{Genmod filter: 1000GAF key} );
+            }
+        }
+    }
+    return;
+}
+
 sub _test_vt_in_vcf_header {
 
 ## Function : Test if vt info keys are present in vcf header
@@ -914,7 +1277,7 @@ sub _test_frequency_filter_in_vcf_header {
 ## Function : Test if freuqency filter info keys are present in vcf header
 ## Returns  :
 ## Arguments: $frequency_genmod_filter       => Vt genmod filter has been used or not
-##          : $frequency_genmod_filter_1000g => Vt genmod filter 100G has been used or not
+##          : $frequency_genmod_filter_1000g => Vt genmod filter 1000G has been used or not
 ##          : $frequency_filter_mode         => Frequency filter has been used or not
 ##          : $vcf_header_href               => Vcf header info
 
@@ -973,9 +1336,7 @@ sub _test_frequency_filter_in_vcf_header {
 
 sub _test_vcfparser_in_vcf_header {
 
-## _test_vcfparser_in_vcf_header
-
-## Function :Test if vcfparser info keys are present in vcf header
+## Function : Test if vcfparser info keys are present in vcf header
 ## Returns  :
 ## Arguments: $vcfparser_data_href => Vcfparser keys hash {REF}
 ##          : $vcfparser_mode      => Vcfparser_Mode description
