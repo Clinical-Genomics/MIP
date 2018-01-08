@@ -381,9 +381,6 @@ sub vardict_testsomatic {
     my $stderrfile_path_append;
     my $stdoutfile_path;
 
-    ## Default(s)
-    my $af_threshold;
-
     my $tmpl = {
         FILEHANDLE => {
             store => \$FILEHANDLE,
@@ -445,8 +442,6 @@ sub vardict_teststrandbias {
     my $stderrfile_path_append;
     my $stdoutfile_path;
 
-    ## Default(s)
-    my $af_threshold;
 
     my $tmpl = {
         FILEHANDLE => {

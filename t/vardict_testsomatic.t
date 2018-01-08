@@ -32,8 +32,6 @@ our $VERSION = 1.0.0;
 Readonly my $COMMA   => q{,};
 Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
-Readonly my $DQUOTE  => q{"};
-Readonly my $PIPE    => q{|};
 
 ### User Options
 GetOptions(
