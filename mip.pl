@@ -270,9 +270,9 @@ GetOptions(
     q{pptm|ppicardtools_mergesamfiles=n} =>
       \$active_parameter{ppicardtools_mergesamfiles},
     q{pmd|pmarkduplicates=n} => \$active_parameter{pmarkduplicates},
-    q{mdpmd|markduplicates_picardtools_markduplicates=n} =>
+    q{mdpmd|markduplicates_picardtools_markduplicates} =>
       \$active_parameter{markduplicates_picardtools_markduplicates},
-    q{mdsmd|markduplicates_sambamba_markdup=n} =>
+    q{mdsmd|markduplicates_sambamba_markdup} =>
       \$active_parameter{markduplicates_sambamba_markdup},
     q{mdshts|markduplicates_sambamba_markdup_hash_table_size=n} =>
       \$active_parameter{markduplicates_sambamba_markdup_hash_table_size},
@@ -346,7 +346,7 @@ GetOptions(
     q{psvvcp|psv_vcfparser=n}   => \$active_parameter{psv_vcfparser},
     q{svvcpvt|sv_vcfparser_vep_transcripts} =>
       \$active_parameter{sv_vcfparser_vep_transcripts},
-    q{svvcppg|sv_vcfparser_per_gene=n} =>
+    q{svvcppg|sv_vcfparser_per_gene} =>
       \$active_parameter{sv_vcfparser_per_gene},
     q{svvcprff|sv_vcfparser_range_feature_file:s} =>
       \$active_parameter{sv_vcfparser_range_feature_file},
@@ -359,17 +359,17 @@ GetOptions(
     q{svvcpsfa|sv_vcfparser_select_feature_annotation_columns:s} =>
       \@{ $active_parameter{sv_vcfparser_select_feature_annotation_columns} },
     q{psvr|psv_rankvariant=n} => \$active_parameter{psv_rankvariant},
-    q{svravanr|sv_genmod_annotate_regions:n} =>
+    q{svravanr|sv_genmod_annotate_regions} =>
       \$active_parameter{sv_genmod_annotate_regions},
     q{svravgft|sv_genmod_models_family_type:s} =>
       \$active_parameter{sv_genmod_models_family_type},
     q{svravrpf|sv_genmod_models_reduced_penetrance_file:s} =>
       \$active_parameter{sv_genmod_models_reduced_penetrance_file},
-    q{svravwg|sv_genmod_models_whole_gene=n} =>
+    q{svravwg|sv_genmod_models_whole_gene} =>
       \$active_parameter{sv_genmod_models_whole_gene},
     q{svravrm|sv_rank_model_file:s} => \$active_parameter{sv_rank_model_file},
     q{psvre|psv_reformat=n}         => \$active_parameter{psv_reformat},
-    q{svrevbf|sv_rankvariant_binary_file=n} =>
+    q{svrevbf|sv_rankvariant_binary_file} =>
       \$active_parameter{sv_rankvariant_binary_file},
     q{svrergf|sv_reformat_remove_genes_file:s} =>
       \$active_parameter{sv_reformat_remove_genes_file},
@@ -383,7 +383,7 @@ GetOptions(
       \$active_parameter{gatk_bundle_download_version},
     q{gdco|gatk_downsample_to_coverage=n} =>
       \$active_parameter{gatk_downsample_to_coverage},
-    q{gdai|gatk_disable_auto_index_and_file_lock=n} =>
+    q{gdai|gatk_disable_auto_index_and_file_lock} =>
       \$active_parameter{gatk_disable_auto_index_and_file_lock},
     q{pgra|pgatk_realigner=n} => \$active_parameter{pgatk_realigner},
     q{graks|gatk_realigner_indel_known_sites:s} =>
@@ -396,7 +396,7 @@ GetOptions(
       \@{ $active_parameter{gatk_baserecalibration_known_sites} },
     q{gbrrf|gatk_baserecalibration_read_filters=s} =>
       \@{ $active_parameter{gatk_baserecalibration_read_filters} },
-    q{gbrdiq|gatk_baserecalibration_disable_indel_qual=n} =>
+    q{gbrdiq|gatk_baserecalibration_disable_indel_qual} =>
       \$active_parameter{gatk_baserecalibration_disable_indel_qual},
     q{gbrsqq|gatk_baserecalibration_static_quantized_quals:s} =>
       \@{ $active_parameter{gatk_baserecalibration_static_quantized_quals} },
@@ -406,16 +406,16 @@ GetOptions(
       \@{ $active_parameter{gatk_haplotypecaller_annotation} },
     q{ghckse|gatk_haplotypecaller_snp_known_set:s} =>
       \$active_parameter{gatk_haplotypecaller_snp_known_set},
-    q{ghcscb|gatk_haplotypecaller_no_soft_clipped_bases=n} =>
+    q{ghcscb|gatk_haplotypecaller_no_soft_clipped_bases} =>
       \$active_parameter{gatk_haplotypecaller_no_soft_clipped_bases},
     q{ghcpim|gatk_haplotypecaller_pcr_indel_model:s} =>
       \$active_parameter{gatk_haplotypecaller_pcr_indel_model},
     q{pggt|pgatk_genotypegvcfs=n} => \$active_parameter{pgatk_genotypegvcfs},
     q{ggtgrl|gatk_genotypegvcfs_ref_gvcf:s} =>
       \$active_parameter{gatk_genotypegvcfs_ref_gvcf},
-    q{ggtals|gatk_genotypegvcfs_all_sites=n} =>
+    q{ggtals|gatk_genotypegvcfs_all_sites} =>
       \$active_parameter{gatk_genotypegvcfs_all_sites},
-    q{ggbcf|gatk_concatenate_genotypegvcfs_bcf_file=n} =>
+    q{ggbcf|gatk_concatenate_genotypegvcfs_bcf_file} =>
       \$active_parameter{gatk_concatenate_genotypegvcfs_bcf_file},
     q{pgvr|pgatk_variantrecalibration=n} =>
       \$active_parameter{pgatk_variantrecalibration},
@@ -429,11 +429,11 @@ GetOptions(
       \$active_parameter{gatk_variantrecalibration_snv_tsfilter_level},
     q{gvritf|gatk_variantrecalibration_indel_tsfilter_level:s} =>
       \$active_parameter{gatk_variantrecalibration_indel_tsfilter_level},
-    q{gvrdpa|gatk_variantrecalibration_dp_annotation=n} =>
+    q{gvrdpa|gatk_variantrecalibration_dp_annotation} =>
       \$active_parameter{gatk_variantrecalibration_dp_annotation},
-    q{gvrsmg|gatk_variantrecalibration_snv_max_gaussians=n} =>
+    q{gvrsmg|gatk_variantrecalibration_snv_max_gaussians} =>
       \$active_parameter{gatk_variantrecalibration_snv_max_gaussians},
-    q{gvrimg|gatk_variantrecalibration_indel_max_gaussians=n} =>
+    q{gvrimg|gatk_variantrecalibration_indel_max_gaussians} =>
       \$active_parameter{gatk_variantrecalibration_indel_max_gaussians},
     q{gcgpss|gatk_calculategenotypeposteriors_support_set:s} =>
       \$active_parameter{gatk_calculategenotypeposteriors_support_set},
@@ -443,7 +443,7 @@ GetOptions(
       \$active_parameter{gatk_combinevariants_genotype_merge_option},
     q{gcvpc|gatk_combinevariants_prioritize_caller:s} =>
       \$active_parameter{gatk_combinevariants_prioritize_caller},
-    q{gcvbcf|gatk_combinevariantcallsets_bcf_file=n} =>
+    q{gcvbcf|gatk_combinevariantcallsets_bcf_file} =>
       \$active_parameter{gatk_combinevariantcallsets_bcf_file},
     q{pgvea|pgatk_variantevalall=n} => \$active_parameter{pgatk_variantevalall},
     q{pgvee|pgatk_variantevalexome=n} =>
@@ -458,13 +458,13 @@ GetOptions(
     q{rhcf|rhocall_frequency_file:s} =>
       \$active_parameter{rhocall_frequency_file},
     q{pvt|pvt=n}             => \$active_parameter{pvt},
-    q{vtddec|vt_decompose=n} => \$active_parameter{vt_decompose},
-    q{vtdnor|vt_normalize=n} => \$active_parameter{vt_normalize},
-    q{vtunq|vt_uniq=n}       => \$active_parameter{vt_uniq},
-    q{vtmaa|vt_missing_alt_allele=n} =>
+    q{vtddec|vt_decompose} => \$active_parameter{vt_decompose},
+    q{vtdnor|vt_normalize} => \$active_parameter{vt_normalize},
+    q{vtunq|vt_uniq}       => \$active_parameter{vt_uniq},
+    q{vtmaa|vt_missing_alt_allele} =>
       \$active_parameter{vt_missing_alt_allele},
     q{pfqf|pfrequency_filter=n} => \$active_parameter{pfrequency_filter},
-    q{fqfgmf|frequency_genmod_filter=n} =>
+    q{fqfgmf|frequency_genmod_filter} =>
       \$active_parameter{frequency_genmod_filter},
     q{fqfgfr|frequency_genmod_filter_1000g:s} =>
       \$active_parameter{frequency_genmod_filter_1000g},
@@ -476,11 +476,10 @@ GetOptions(
       \$active_parameter{pvarianteffectpredictor},
     q{vepp|vep_directory_path:s}  => \$active_parameter{vep_directory_path},
     q{vepc|vep_directory_cache:s} => \$active_parameter{vep_directory_cache},
-    q{vepr|vep_reference:n}       => \$active_parameter{vep_reference},
     q{vepf|vep_features:s}        => \@{ $active_parameter{vep_features} },
     q{veppl|vep_plugins:s}        => \@{ $active_parameter{vep_plugins} },
     q{pvcp|pvcfparser=n}          => \$active_parameter{pvcfparser},
-    q{vcpvt|vcfparser_vep_transcripts=n} =>
+    q{vcpvt|vcfparser_vep_transcripts} =>
       \$active_parameter{vcfparser_vep_transcripts},
     q{vcprff|vcfparser_range_feature_file:s} =>
       \$active_parameter{vcfparser_range_feature_file},
@@ -494,7 +493,7 @@ GetOptions(
       \@{ $active_parameter{vcfparser_select_feature_annotation_columns} },
     q{psne|psnpeff=n}      => \$active_parameter{psnpeff},
     q{snep|snpeff_path:s}  => \$active_parameter{snpeff_path},
-    q{sneann|snpeff_ann=n} => \$active_parameter{snpeff_ann},
+    q{sneann|snpeff_ann} => \$active_parameter{snpeff_ann},
     q{snegbv|snpeff_genome_build_version:s} =>
       \$active_parameter{snpeff_genome_build_version},
     q{snesaf|snpsift_annotation_files=s} =>
@@ -508,13 +507,13 @@ GetOptions(
     q{prav|prankvariant=n} => \$active_parameter{prankvariant},
     q{ravgft|genmod_models_family_type:s} =>
       \$active_parameter{genmod_models_family_type},
-    q{ravanr|genmod_annotate_regions:n} =>
+    q{ravanr|genmod_annotate_regions} =>
       \$active_parameter{genmod_annotate_regions},
     q{ravcad|genmod_annotate_cadd_files:s} =>
       \@{ $active_parameter{genmod_annotate_cadd_files} },
     q{ravspi|genmod_annotate_spidex_file:s} =>
       \$active_parameter{genmod_annotate_spidex_file},
-    q{ravwg|genmod_models_whole_gene=n} =>
+    q{ravwg|genmod_models_whole_gene} =>
       \$active_parameter{genmod_models_whole_gene},
     q{ravrpf|genmod_models_reduced_penetrance_file:s} =>
       \$active_parameter{genmod_models_reduced_penetrance_file},
@@ -523,7 +522,7 @@ GetOptions(
       \$active_parameter{pendvariantannotationblock},
     q{evabrgf|endvariantannotationblock_remove_genes_file:s} =>
       \$active_parameter{endvariantannotationblock_remove_genes_file},
-    q{ravbf|rankvariant_binary_file=n} =>
+    q{ravbf|rankvariant_binary_file} =>
       \$active_parameter{rankvariant_binary_file},
     q{pped|ppeddy=n}             => \$active_parameter{ppeddy},
     q{pplink|pplink=n}           => \$active_parameter{pplink},
@@ -553,6 +552,7 @@ GetOptions(
         exit_code => 1,
     }
   );
+
 
 ##Special case:Enable/activate MIP. Cannot be changed from cmd or config
 $active_parameter{mip} = $parameter{mip}{default};
@@ -631,9 +631,9 @@ $active_parameter{log_file} = set_default_log4perl_file(
     {
         active_parameter_href => \%active_parameter,
         cmd_input             => $active_parameter{log_file},
-        script                => $script,
         date                  => $date,
         date_time_stamp       => $date_time_stamp,
+        script                => $script,
     }
 );
 
@@ -1648,8 +1648,8 @@ sub build_usage {
 
     ##Markduplicates
     -pmd/--pmarkduplicates Markduplicates using either Picardtools markduplicates or sambamba markdup (defaults to "0" (=no))
-    -mdpmd/--markduplicates_picardtools_markduplicates Markduplicates using Picardtools markduplicates (defaults to "1" (=yes))
-    -mdsmd/--markduplicates_sambamba_markdup Markduplicates using Sambamba markduplicates (defaults to "0" (=no))
+    -mdpmd/--markduplicates_picardtools_markduplicates Markduplicates using Picardtools markduplicates (supply flag to enable)
+    -mdsmd/--markduplicates_sambamba_markdup Markduplicates using Sambamba markduplicates (supply flag to enable)
       -mdshts/--markduplicates_sambamba_markdup_hash_table_size Sambamba size of hash table for finding read pairs (defaults to "262144")
       -mdsols/--markduplicates_sambamba_markdup_overflow_list_size Sambamba size of the overflow list (defaults to "200000")
       -mdsibs/--markduplicates_sambamba_markdup_io_buffer_size Sambamba size of the io buffer for reading and writing BAM during the second pass (defaults to "2048")
@@ -1702,20 +1702,20 @@ sub build_usage {
       -svveppl/--sv_vep_plugins VEP plugins (defaults to ("UpDownDistance, LoFtool"); comma sep)
     -psvvcp/--psv_vcfparser Parse structural variants using vcfParser.pl (defaults to "0" (=no))
       -svvcpvt/--sv_vcfparser_vep_transcripts Parse VEP transcript specific entries (supply flag to enable)
-      -vcppg/--vcfparser_per_gene Keep only most severe consequence per gene (defaults to "1" (=yes))
+      -svvcppg/--sv_vcfparser_per_gene Keep only most severe consequence per gene (supply flag to enable)
       -svvcprff/--sv_vcfparser_range_feature_file Range annotations file (defaults to ""; tab-sep)
       -svvcprfa/--sv_vcfparser_range_feature_annotation_columns Range annotations feature columns (defaults to ""; comma sep)
       -svvcpsf/--sv_vcfparser_select_file File containging list of genes to analyse seperately (defaults to "";tab-sep file and HGNC Symbol required)
       -svvcpsfm/--sv_vcfparser_select_file_matching_column Position of HGNC Symbol column in select file (defaults to "")
       -svvcpsfa/--sv_vcfparser_select_feature_annotation_columns Feature columns to use in annotation (defaults to ""; comma sep)
     -psvr/--psv_rankvariant Ranking of annotated SV variants (defaults to "0" (=no))
-      -svravanr/--sv_genmod_annotate_regions Use predefined gene annotation supplied with genmod for defining genes (defaults to "1" (=yes))
+      -svravanr/--sv_genmod_annotate_regions Use predefined gene annotation supplied with genmod for defining genes (supply flag to enable)
       -svravgft/--sv_genmod_models_family_type Use one of the known setups (defaults to "mip")
-      -svravwg/--sv_genmod_models_whole_gene Allow compound pairs in intronic regions (defaults to "0" (=yes))
+      -svravwg/--sv_genmod_models_whole_gene Allow compound pairs in intronic regions (supply flag to enable)
       -svravrpf/--sv_genmod_models_reduced_penetrance_file File containg genes with reduced penetrance (defaults to "")
       -svravrm/--sv_rank_model_file Rank model config file (defaults to "")
     -psvre/--psv_reformat Concatenating files (defaults to "0" (=no))
-      -svrevbf/--sv_rankvariant_binary_file Produce binary file from the rank variant chromosome sorted vcfs (defaults to "1" (=yes))
+      -svrevbf/--sv_rankvariant_binary_file Produce binary file from the rank variant chromosome sorted vcfs (supply flag to enable)
       -svrergf/--sv_reformat_remove_genes_file Remove variants in hgnc_ids (defaults to "")
 
     ##Bcftools
@@ -1730,36 +1730,36 @@ sub build_usage {
     -gll/--gatk_logging_level Set the GATK log level (defaults to "INFO")
     -gbdv/--gatk_bundle_download_version  GATK FTP bundle download version.(defaults to "2.8")
     -gdco/--gatk_downsample_to_coverage Coverage to downsample to at any given locus (defaults to "1000")
-    -gdai/--gatk_disable_auto_index_and_file_lock Disable auto index creation and locking when reading rods (defaults to "0" (=no))
+    -gdai/--gatk_disable_auto_index_and_file_lock Disable auto index creation and locking when reading rods (supply flag to enable)
     -pgra/--pgatk_realigner Realignments of reads using GATK ReAlignerTargetCreator/IndelRealigner (defaults to "0" (=no))
       -graks/--gatk_realigner_indel_known_sites GATK ReAlignerTargetCreator/IndelRealigner known indel site (defaults to "GRCh37_1000g_indels_-phase1-.vcf", "GRCh37_mills_and_1000g_indels_-gold_standard-.vcf")
     -pgbr/--pgatk_baserecalibration Recalibration of bases using GATK BaseReCalibrator/PrintReads (defaults to "0" (=no))
       -gbrcov/--gatk_baserecalibration_covariates GATK BaseReCalibration covariates (defaults to "ReadGroupCovariate", "ContextCovariate", "CycleCovariate", "QualityScoreCovariate")
       -gbrkst/--gatk_baserecalibration_known_sites GATK BaseReCalibration known SNV and INDEL sites (defaults to "GRCh37_dbsnp_-138-.vcf", "GRCh37_1000g_indels_-phase1-.vcf", "GRCh37_mills_and_1000g_indels_-gold_standard-.vcf")
       -gbrrf/--gatk_baserecalibration_read_filters Filter out reads according to set filter (defaults to "1" (=yes))
-      -gbrdiq/--gatk_baserecalibration_disable_indel_qual Disable indel quality scores (defaults to "1" (=yes))
+      -gbrdiq/--gatk_baserecalibration_disable_indel_qual Disable indel quality scores (supply flag to enable)
       -gbrsqq/--gatk_baserecalibration_static_quantized_quals Static binning of base quality scores (defaults to "10,20,30,40"; comma sep)
     -pghc/--pgatk_haplotypecaller Variant discovery using GATK HaplotypeCaller (defaults to "0" (=no))
       -ghcann/--gatk_haplotypecaller_annotation GATK HaploTypeCaller annotations (defaults to "BaseQualityRankSumTest", "ChromosomeCounts", "Coverage", "DepthPerAlleleBySample", "FisherStrand", "MappingQualityRankSumTest", "QualByDepth", "RMSMappingQuality", "ReadPosRankSumTest", "StrandOddsRatio")
       -ghckse/--gatk_haplotypecaller_snp_known_set GATK HaplotypeCaller dbSNP set for annotating ID columns (defaults to "GRCh37_dbsnp_-138-.vcf")
-      -ghcscb/--gatk_haplotypecaller_no_soft_clipped_bases Do not include soft clipped bases in the variant calling (defaults to "1" (=yes))
+      -ghcscb/--gatk_haplotypecaller_no_soft_clipped_bases Do not include soft clipped bases in the variant calling (supply flag to enable)
       -ghcpim/--gatk_haplotypecaller_pcr_indel_model The PCR indel model to use (defaults to "None"; Set to "0" to disable)
     -pggt/--pgatk_genotypegvcfs Merge gVCF records using GATK GenotypeGVCFs (defaults to "0" (=no))
       -ggtgrl/--gatk_genotypegvcfs_ref_gvcf GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping (defaults to "")
-      -ggtals/--gatk_genotypegvcfs_all_sites Emit non-variant sites to the output vcf file (defaults to "0" (=no))
-      -ggbcf/gatk_concatenate_genotypegvcfs_bcf_file Produce a bcf from the GATK ConcatenateGenoTypeGVCFs vcf (defaults to "1" (=yes))
+      -ggtals/--gatk_genotypegvcfs_all_sites Emit non-variant sites to the output vcf file (supply flag to enable)
+      -ggbcf/gatk_concatenate_genotypegvcfs_bcf_file Produce a bcf from the GATK ConcatenateGenoTypeGVCFs vcf (supply flag to enable)
     -pgvr/--pgatk_variantrecalibration Variant recalibration using GATK VariantRecalibrator/ApplyRecalibration (defaults to "0" (=no))
       -gvrann/--gatk_variantrecalibration_annotations Annotations to use with GATK VariantRecalibrator (defaults to "QD", "MQRankSum", "ReadPosRankSum", "FS", "SOR", "DP")
       -gvrres/gatk_variantrecalibration_resource_snv Resource to use with GATK VariantRecalibrator in SNV|BOTH mode (defaults to "GRCh37_dbsnp_-138-.vcf: dbsnp,known=true,training=false,truth=false,prior=2.0, GRCh37_hapmap_-3.3-.vcf: hapmap,VCF,known=false,training=true,truth=true,prior=15.0, GRCh37_1000g_omni_-2.5-.vcf: omni,VCF,known=false,training=true,truth=false,prior=12.0, GRCh37_1000g_snps_high_confidence_-phase1-.vcf: 1000G,known=false,training=true,truth=false,prior=10.0")
       -gvrrei/gatk_variantrecalibration_resource_indel Resource to use with GATK VariantRecalibrator in INDEL|BOTH (defaults to "GRCh37_dbsnp_-138-.vcf: dbsnp,known=true,training=false,truth=false,prior=2.0, GRCh37_mills_and_1000g_indels_-gold_standard-.vcf: mills,VCF,known=true,training=true,truth=true,prior=12.0")
       -gvrstf/--gatk_variantrecalibration_snv_tsfilter_level The truth sensitivity level for snvs at which to start filtering used in GATK VariantRecalibrator (defaults to "99.9")
       -gvritf/--gatk_variantrecalibration_indel_tsfilter_level The truth sensitivity level for indels at which to start filtering used in GATK VariantRecalibrator (defaults to "99.9")
-      -gvrdpa/--gatk_variantrecalibration_dp_annotation Use the DP annotation in variant recalibration. (defaults to "1" (=yes))
-      -gvrsmg/--gatk_variantrecalibration_snv_max_gaussians Use hard filtering for snvs (defaults to "0" (=no))
-      -gvrimg/--gatk_variantrecalibration_indel_max_gaussians Use hard filtering for indels (defaults to "1" (=yes))
+      -gvrdpa/--gatk_variantrecalibration_dp_annotation Use the DP annotation in variant recalibration (supply flag to enable)
+      -gvrsmg/--gatk_variantrecalibration_snv_max_gaussians Use hard filtering for snvs (supply flag to enable)
+      -gvrimg/--gatk_variantrecalibration_indel_max_gaussians Use hard filtering for indels (supply flag to enable)
       -gcgpss/--gatk_calculategenotypeposteriors_support_set GATK CalculateGenotypePosteriors support set (defaults to "1000g_sites_GRCh37_phase3_v4_20130502.vcf")
     -pgcv/--pgatk_combinevariantcallsets Combine variant call sets (defaults to "0" (=no))
-      -gcvbcf/--gatk_combinevariantcallsets_bcf_file Produce a bcf from the GATK CombineVariantCallSet vcf (defaults to "1" (=yes))
+      -gcvbcf/--gatk_combinevariantcallsets_bcf_file Produce a bcf from the GATK CombineVariantCallSet vcf (supply flag to enable)
       -gcvgmo/--gatk_combinevariants_genotype_merge_option Type of merge to perform (defaults to "PRIORITIZE")
       -gcvpc/--gatk_combinevariants_prioritize_caller The prioritization order of variant callers.(defaults to ""; comma sep; Options: gatk|bcftools|freebayes)
     -pgvea/--pgatk_variantevalall Variant evaluation using GATK varianteval for all variants  (defaults to "0" (=no))
@@ -1772,22 +1772,21 @@ sub build_usage {
     -prhc/--prhocall Rhocall performs annotation of variants in autozygosity regions (defaults to "0" (=no))
       -rhcf/--rhocall_frequency_file Frequency file for bcftools roh calculation (defaults to "GRCh37_anon_swegen_snp_-2016-10-19-.tab.gz", tab sep)
     -pvt/--pvt VT decompose and normalize (defaults to "0" (=no))
-      -vtdec/--vt_decompose Split multi allelic records into single records (defaults to "1" (=yes))
-      -vtnor/--vt_normalize Normalize variants (defaults to "1" (=yes))
-      -vtunq/--vt_uniq Remove variant duplicates (defaults to "1" (=yes))
-      -vtmaa/--vt_missing_alt_allele Remove missing alternative alleles '*' (defaults to "1" (=yes))
-      -fqfgmf/--frequency_genmod_filter Remove common variants from vcf file (defaults to "1" (=yes))
+      -vtdec/--vt_decompose Split multi allelic records into single records (supply flag to enable)
+      -vtnor/--vt_normalize Normalize variants (supply flag to enable)
+      -vtunq/--vt_uniq Remove variant duplicates (supply flag to enable)
+      -vtmaa/--vt_missing_alt_allele Remove missing alternative alleles '*' (supply flag to enable)
+      -fqfgmf/--frequency_genmod_filter Remove common variants from vcf file (supply flag to enable)
       -fqfgfr/--frequency_genmod_filter_1000g Genmod annotate 1000G reference (defaults to "GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz")
       -fqfmaf/--frequency_genmod_filter_max_af Annotate MAX_AF from reference (defaults to "")
       -fqfgft/--frequency_genmod_filter_threshold Threshold for filtering variants (defaults to "0.10")
     -pvep/--pvarianteffectpredictor Annotate variants using VEP (defaults to "0" (=no))
       -vepp/--vep_directory_path Path to VEP script directory (defaults to "")
       -vepc/--vep_directory_cache Specify the cache directory to use (defaults to "")
-      -vepr/--vep_reference Use Human reference file with VEP (defaults to "0" (=no))
       -vepf/--vep_features VEP features (defaults to ("hgvs","symbol","numbers","sift","polyphen","humdiv","domains","protein","ccds","uniprot","biotype","regulatory", "tsl", "canonical", "appris"); comma sep)
       -veppl/--vep_plugins VEP plugins (defaults to ("UpDownDistance, LoFtool, LoF"); comma sep)
     -pvcp/--pvcfparser Parse variants using vcfParser.pl (defaults to "0" (=no))
-      -vcpvt/--vcfparser_vep_transcripts Parse VEP transcript specific entries (defaults to "0" (=no))
+      -vcpvt/--vcfparser_vep_transcripts Parse VEP transcript specific entries (supply flag to enable)
       -vcprff/--vcfparser_range_feature_file Range annotations file (defaults to ""; tab-sep)
       -vcprfa/--vcfparser_range_feature_annotation_columns Range annotations feature columns (defaults to ""; comma sep)
       -vcpsf/--vcfparser_select_file File containging list of genes to analyse seperately (defaults to "";tab-sep file and HGNC Symbol required)
@@ -1796,7 +1795,7 @@ sub build_usage {
     -psne/--psnpeff Variant annotation using snpEff (defaults to "0" (=no))
 #snpEffAnn
       -snep/--snpeff_path Path to snpEff. Mandatory for use of snpEff (defaults to "")
-      -sneann/--snpeff_ann Annotate variants using snpeff (defaults to "1" (=yes))
+      -sneann/--snpeff_ann Annotate variants using snpeff (supply flag to enable)
       -snegbv/--snpeff_genome_build_version snpeff genome build version (defaults to "GRCh37.75")
       -snesaf/--snpsift_annotation_files Annotation files to use with snpsift (default to (GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz=AF GRCh37_exac_reheader_-r0.3.1-.vcf.gz=AF GRCh37_anon-swegen_snp_-1000samples-.vcf.gz=AF GRCh37_anon-swegen_indel_-1000samples-.vcf.gz=AF); Hash flag i.e. --Flag key=value)
       -snesaoi/--snpsift_annotation_outinfo_key snpsift output INFO key (default to (GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf=1000G GRCh37_exac_reheader_-r0.3.1-.vcf.gz=EXAC GRCh37_anon-swegen_snp_-1000samples-.vcf.gz=SWEREF GRCh37_anon-swegen_indel_-1000samples-.vcf.gz=SWEREF); Hash flag i.e. --Flag key=value)
@@ -1806,15 +1805,15 @@ sub build_usage {
     ##Rankvariant
     -prav/--prankvariant Ranking of annotated variants (defaults to "0" (=no))
       -ravgft/--genmod_models_family_type Use one of the known setups (defaults to "mip")
-      -ravanr/--genmod_annotate_regions Use predefined gene annotation supplied with genmod for defining genes (defaults to "1" (=yes))
+      -ravanr/--genmod_annotate_regions Use predefined gene annotation supplied with genmod for defining genes (supply flag to enable)
       -ravcad/--genmod_annotate_cadd_files CADD score files (defaults to ""; comma sep)
       -ravspi/--genmod_annotate_spidex_file Spidex database for alternative splicing (defaults to "")
-      -ravwg/--genmod_models_whole_gene Allow compound pairs in intronic regions (defaults to "1" (=yes))
+      -ravwg/--genmod_models_whole_gene Allow compound pairs in intronic regions (supply flag to enable)
       -ravrpf/--genmod_models_reduced_penetrance_file File containg genes with reduced penetrance (defaults to "")
       -ravrm/--rank_model_file Rank model config file (defaults to "")
 
     -pevab/--pendvariantannotationblock End variant annotation block by concatenating files (defaults to "0" (=no))
-      -ravbf/--rankvariant_binary_file Produce binary file from the rank variant chromosomal sorted vcfs (defaults to "1" (=yes))
+      -ravbf/--rankvariant_binary_file Produce binary file from the rank variant chromosomal sorted vcfs (supply flag to enable)
       -evabrgf/--endvariantannotationblock_remove_genes_file Remove variants in hgnc_ids (defaults to "")
 
     ###Utility
@@ -1828,7 +1827,7 @@ sub build_usage {
     -pqcc/--pqccollect Collect QC metrics from programs processed (defaults to "0" (=no) )
       -qccsi/--qccollect_sampleinfo_file SampleInfo file containing info on what to parse from this analysis run (defaults to "{outdata_dir}/{family_id}/{family_id}_qc_sample_info.yaml")
       -qccref/--qccollect_regexp_file Regular expression file containing the regular expression to be used for each program (defaults to "qc_regexp_-v1.13-.yaml")
-      -qccske/--qccollect_skip_evaluation Skip evaluation step in qccollect (boolean)
+      -qccske/--qccollect_skip_evaluation Skip evaluation step in qccollect (supply flag to enable)
     -pmqc/--pmultiqc Create aggregate bioinformatics analysis report across many samples (defaults to "0" (=no))
     -pars/--panalysisrunstatus Sets the analysis run status flag to finished in sample_info_file (defaults to "0" (=no))
     -psac/--psacct Generating sbatch script for SLURM info on each submitted job (defaults to "0" (=no))
