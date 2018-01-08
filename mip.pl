@@ -553,8 +553,7 @@ GetOptions(
     }
   );
 
-
-##Special case:Enable/activate MIP. Cannot be changed from cmd or config
+## Special case:Enable/activate MIP. Cannot be changed from cmd or config
 $active_parameter{mip} = $parameter{mip}{default};
 
 ## Change relative path to absolute path for parameter with "update_path: absolute_path" in config
