@@ -285,10 +285,12 @@ sub analysis_vardict {
                 af_threshold => $af_threshold,
                 FILEHANDLE   => $FILEHANDLE,
                 sample_name  => $sample_name,
+                stdoutfile_path => $outfile_path,
             }
         );
 
-        print {$FILEHANDLE} $SPACE . $STDOUT . print{$outfile_path};
+        print {$FILEHANDLE} $NEWLINE
+        #$SPACE . $STDOUT . print{$outfile_path};
 
     }
 
