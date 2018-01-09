@@ -8,15 +8,11 @@ use utf8;    #Allow unicode characters in this script
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
 
-use FindBin qw{ $Bin };    # Find directory of script
-use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir catfile };
-
 BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Inherit from Exporter to export functions and variables
     use base qw{ Exporter };
@@ -28,12 +24,12 @@ BEGIN {
 }
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
 use MIP::Processmanagement::Processes qw{ print_wait };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
-use Params::Check qw{ check allow last_error };
+use File::Spec::Functions qw{ catdir catfile };
+use Params::Check qw{ allow check last_error };
 use Readonly;
 
 ## Constants
@@ -43,63 +39,63 @@ Readonly my $AMPERSAND => q{&};
 
 sub samtools_view {
 
-## samtools_view
-
 ## Function : Perl wrapper for writing samtools view recipe to $FILEHANDLE. Based on samtools 1.3.1 (using htslib 1.3.1).
 ## Returns  : "@commands"
-##          : $regions_ref              => The regions to process {REF}
+##          : $auto_detect_input_format => Ignored (input format is auto-detected)
+##          : $FILEHANDLE               => Sbatch filehandle to write to
+##          : $fraction                 => Subsample the file to only a fraction of the alignments
 ##          : $infile_path              => Infile path
 ##          : $outfile_path             => Outfile path
-##          : $stderrfile_path          => Stderrfile path
-##          : $FILEHANDLE               => Sbatch filehandle to write to
-##          : $thread_number            => Number of BAM/CRAM compression threads
-##          : $with_header              => Include header
 ##          : $output_format            => Output format
-##          : $auto_detect_input_format => Ignored (input format is auto-detected)
-##          : $uncompressed_bam_output  => Uncompressed bam output
+##          : $regions_ref              => The regions to process {REF}
+##          : $stderrfile_path          => Stderrfile path
 ##          : $stderrfile_path_append   => Stderrfile path append
+##          : $thread_number            => Number of BAM/CRAM compression threads
+##          : $uncompressed_bam_output  => Uncompressed bam output
+##          : $with_header              => Include header
 
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $with_header;
-    my $output_format;
     my $auto_detect_input_format;
+    my $output_format;
     my $uncompressed_bam_output;
+    my $with_header;
 
     ## Flatten argument(s)
-    my $regions_ref;
+    my $FILEHANDLE;
+    my $fraction;
     my $infile_path;
     my $outfile_path;
+    my $regions_ref;
     my $stderrfile_path;
-    my $FILEHANDLE;
-    my $thread_number;
     my $stderrfile_path_append;
+    my $thread_number;
 
     my $tmpl = {
-        regions_ref =>
-          { default => [], strict_type => 1, store => \$regions_ref },
+        auto_detect_input_format => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$auto_detect_input_format
+        },
+        FILEHANDLE => {
+            store => \$FILEHANDLE
+        },
+        fraction => {
+            defined     => 1,
+            strict_type => 1,
+            store       => \$fraction,
+        },
         infile_path => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
             store       => \$infile_path
         },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        thread_number => {
-            allow       => qr/^\d+$/,
+        outfile_path => {
             strict_type => 1,
-            store       => \$thread_number
-        },
-        FILEHANDLE  => { store => \$FILEHANDLE },
-        with_header => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$with_header
+            store       => \$outfile_path
         },
         output_format => {
             default     => q{bam},
@@ -107,11 +103,29 @@ sub samtools_view {
             strict_type => 1,
             store       => \$output_format
         },
-        auto_detect_input_format => {
+        regions_ref => {
+            default     => [],
+            strict_type => 1,
+            store       => \$regions_ref
+        },
+        stderrfile_path => {
+            strict_type => 1,
+            store       => \$stderrfile_path
+        },
+        stderrfile_path_append => {
+            strict_type => 1,
+            store       => \$stderrfile_path_append
+        },
+        thread_number => {
+            allow       => qr/^\d+$/, 
+            strict_type => 1,
+            store       => \$thread_number
+        },
+        with_header => {
             default     => 0,
             allow       => [ 0, 1 ],
             strict_type => 1,
-            store       => \$auto_detect_input_format
+            store       => \$with_header
         },
         uncompressed_bam_output => {
             default     => 0,
@@ -124,7 +138,7 @@ sub samtools_view {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Array @commands stores commands depending on input parameters
-    my @commands = qw{ samtools view };
+    my @commands = q{samtools view};
 
     ## Options
     if ($thread_number) {
@@ -159,6 +173,12 @@ sub samtools_view {
     if ($uncompressed_bam_output) {
 
         push @commands, q{-u};
+    }
+
+    if ($fraction) {
+
+        push @commands, q{-s} . $SPACE . $fraction;
+
     }
 
     ## Infile
