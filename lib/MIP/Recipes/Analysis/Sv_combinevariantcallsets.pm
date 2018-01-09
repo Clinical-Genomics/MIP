@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_combinevariantcallsets };
@@ -78,74 +78,74 @@ sub analysis_sv_combinevariantcallsets {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         call_type =>
-          { default => q{SV}, strict_type => 1, store => \$call_type, },
+          { default => q{SV}, store => \$call_type, strict_type => 1, },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
             store       => \$family_id,
+            strict_type => 1,
         },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$file_info_href,
+            strict_type => 1,
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$infile_lane_prefix_href,
+            strict_type => 1,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$job_id_href,
+            strict_type => 1,
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
             store       => \$outaligner_dir,
+            strict_type => 1,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
         },
         program_name => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
         },
         reference_dir => {
             default     => $arg_href->{active_parameter_href}{reference_dir},
-            strict_type => 1,
             store       => \$reference_dir,
+            strict_type => 1,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
             store       => \$temp_directory,
+            strict_type => 1,
         },
     };
 
@@ -545,8 +545,7 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
 
             add_program_outfile_to_sample_info(
                 {
-                    outdirectory     => $directory,
-                    outfile          => $stderr_file,
+                    path             => catfile( $directory, $stderr_file ),
                     program_name     => q{sv_combinevariantcallsets},
                     sample_info_href => $sample_info_href,
                 }
@@ -641,8 +640,7 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
           $family_id . $outfile_tag . $call_type . $outfile_suffix;
         add_program_outfile_to_sample_info(
             {
-                outdirectory     => $outfamily_directory,
-                outfile          => $qc_svdb_outfile,
+                path => catfile( $outfamily_directory, $qc_svdb_outfile ),
                 program_name     => q{svdb},
                 sample_info_href => $sample_info_href,
             }
@@ -690,17 +688,17 @@ sub _add_to_parallel_chain {
 
     my $tmpl = {
         parallel_chains_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parallel_chains_ref,
+            strict_type => 1,
         },
         structural_variant_caller_chain => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$structural_variant_caller_chain,
+            strict_type => 1,
         },
     };
 
@@ -756,71 +754,71 @@ sub _migrate_joint_callers_file {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         call_type =>
-          { default => q{SV}, strict_type => 1, store => \$call_type, },
+          { default => q{SV}, store => \$call_type, strict_type => 1, },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
             store       => \$family_id,
+            strict_type => 1,
         },
         FILEHANDLE     => { required => 1, store => \$FILEHANDLE, },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$file_info_href,
+            strict_type => 1,
         },
         file_path_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$file_path_prefix_href,
+            strict_type => 1,
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
             store       => \$outaligner_dir,
+            strict_type => 1,
         },
         parallel_chains_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parallel_chains_ref,
+            strict_type => 1,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
         },
         structural_variant_callers_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$structural_variant_callers_ref,
+            strict_type => 1,
         },
         suffix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$suffix_href,
+            strict_type => 1,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
             store       => \$temp_directory,
+            strict_type => 1,
         },
     };
 
@@ -943,64 +941,64 @@ sub _migrate_and_preprocess_single_callers_file {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         FILEHANDLE     => { required => 1, store => \$FILEHANDLE, },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$file_info_href,
+            strict_type => 1,
         },
         file_path_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$file_path_prefix_href,
+            strict_type => 1,
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
             store       => \$outaligner_dir,
+            strict_type => 1,
         },
         parallel_chains_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parallel_chains_ref,
+            strict_type => 1,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
         },
         structural_variant_callers_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$structural_variant_callers_ref,
+            strict_type => 1,
         },
         suffix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$suffix_href,
+            strict_type => 1,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
             store       => \$temp_directory,
+            strict_type => 1,
         },
     };
 
@@ -1135,62 +1133,62 @@ sub _merge_or_reformat_single_callers_file {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
             store       => \$family_id,
+            strict_type => 1,
         },
         FILEHANDLE            => { required => 1, store => \$FILEHANDLE, },
         file_path_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$file_path_prefix_href,
+            strict_type => 1,
         },
         outfile_suffix => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$outfile_suffix,
+            strict_type => 1,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
         },
         program_info_path => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$program_info_path,
+            strict_type => 1,
         },
         structural_variant_callers_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$structural_variant_callers_ref,
+            strict_type => 1,
         },
         suffix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$suffix_href,
+            strict_type => 1,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
             store       => \$temp_directory,
+            strict_type => 1,
         },
     };
 

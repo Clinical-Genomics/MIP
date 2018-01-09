@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -81,77 +81,78 @@ sub analysis_rankvariant {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
+          { default => q{BOTH}, store => \$call_type, strict_type => 1, },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
             store       => \$family_id,
+            strict_type => 1,
         },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$file_info_href,
-        },
-        file_path               => { strict_type => 1, store => \$file_path },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
             strict_type => 1,
+        },
+        file_path               => { store => \$file_path, strict_type => 1, },
+        infile_lane_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
             store       => \$infile_lane_prefix_href,
+            strict_type => 1,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$job_id_href,
+            strict_type => 1,
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
             store       => \$outaligner_dir,
+            strict_type => 1,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        program_info_path => { strict_type => 1, store => \$program_info_path },
-        program_name      => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
+        },
+        program_info_path =>
+          { store => \$program_info_path, strict_type => 1, },
+        program_name => {
+            defined     => 1,
+            required    => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
             store       => \$temp_directory,
+            strict_type => 1,
         },
         xargs_file_counter => {
-            default     => 0,
             allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
+            default     => 0,
             store       => \$xargs_file_counter,
+            strict_type => 1,
         },
     };
 
@@ -541,8 +542,7 @@ sub analysis_rankvariant {
           . $outfile_suffix;
         add_program_outfile_to_sample_info(
             {
-                outdirectory     => $outfamily_directory,
-                outfile          => $qc_genmod_outfile,
+                path => catfile( $outfamily_directory, $qc_genmod_outfile ),
                 program_name     => q{genmod},
                 sample_info_href => $sample_info_href,
             }
@@ -628,78 +628,79 @@ sub analysis_rankvariant_rio {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
+          { default => q{BOTH}, store => \$call_type, strict_type => 1, },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
             store       => \$family_id,
+            strict_type => 1,
         },
         FILEHANDLE     => { store => \$FILEHANDLE, },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$file_info_href,
-        },
-        file_path               => { strict_type => 1, store => \$file_path },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
             strict_type => 1,
+        },
+        file_path               => { store => \$file_path, strict_type => 1, },
+        infile_lane_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
             store       => \$infile_lane_prefix_href,
+            strict_type => 1,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$job_id_href,
+            strict_type => 1,
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
             store       => \$outaligner_dir,
+            strict_type => 1,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        program_info_path => { strict_type => 1, store => \$program_info_path },
-        program_name      => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
+        },
+        program_info_path =>
+          { store => \$program_info_path, strict_type => 1, },
+        program_name => {
+            defined     => 1,
+            required    => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
             store       => \$temp_directory,
+            strict_type => 1,
         },
         xargs_file_counter => {
-            default     => 0,
             allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
+            default     => 0,
             store       => \$xargs_file_counter,
+            strict_type => 1,
         },
     };
 
@@ -1065,8 +1066,7 @@ sub analysis_rankvariant_rio {
           . $outfile_suffix;
         add_program_outfile_to_sample_info(
             {
-                outdirectory     => $outfamily_directory,
-                outfile          => $qc_genmod_outfile,
+                path => catfile( $outfamily_directory, $qc_genmod_outfile ),
                 program_name     => q{genmod},
                 sample_info_href => $sample_info_href,
             }
@@ -1143,78 +1143,79 @@ sub analysis_rankvariant_rio_unaffected {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
+          { default => q{BOTH}, store => \$call_type, strict_type => 1, },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
             store       => \$family_id,
+            strict_type => 1,
         },
         FILEHANDLE     => { store => \$FILEHANDLE, },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$file_info_href,
-        },
-        file_path               => { strict_type => 1, store => \$file_path },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
             strict_type => 1,
+        },
+        file_path               => { store => \$file_path, strict_type => 1, },
+        infile_lane_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
             store       => \$infile_lane_prefix_href,
+            strict_type => 1,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$job_id_href,
+            strict_type => 1,
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
             store       => \$outaligner_dir,
+            strict_type => 1,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        program_info_path => { strict_type => 1, store => \$program_info_path },
-        program_name      => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
+        },
+        program_info_path =>
+          { store => \$program_info_path, strict_type => 1, },
+        program_name => {
+            defined     => 1,
+            required    => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
             store       => \$temp_directory,
+            strict_type => 1,
         },
         xargs_file_counter => {
-            default     => 0,
             allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
+            default     => 0,
             store       => \$xargs_file_counter,
+            strict_type => 1,
         },
     };
 
@@ -1491,8 +1492,7 @@ sub analysis_rankvariant_rio_unaffected {
           . $outfile_suffix;
         add_program_outfile_to_sample_info(
             {
-                outdirectory     => $outfamily_directory,
-                outfile          => $qc_genmod_outfile,
+                path => catfile( $outfamily_directory, $qc_genmod_outfile ),
                 program_name     => q{genmod},
                 sample_info_href => $sample_info_href,
             }
@@ -1567,77 +1567,78 @@ sub analysis_rankvariant_unaffected {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
+          { default => q{BOTH}, store => \$call_type, strict_type => 1, },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
             store       => \$family_id,
+            strict_type => 1,
         },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$file_info_href,
-        },
-        file_path               => { strict_type => 1, store => \$file_path },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
             strict_type => 1,
+        },
+        file_path               => { store => \$file_path, strict_type => 1, },
+        infile_lane_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
             store       => \$infile_lane_prefix_href,
+            strict_type => 1,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$job_id_href,
+            strict_type => 1,
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
             store       => \$outaligner_dir,
+            strict_type => 1,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        program_info_path => { strict_type => 1, store => \$program_info_path },
-        program_name      => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
+        },
+        program_info_path =>
+          { store => \$program_info_path, strict_type => 1, },
+        program_name => {
+            defined     => 1,
+            required    => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
             store       => \$temp_directory,
+            strict_type => 1,
         },
         xargs_file_counter => {
-            default     => 0,
             allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
+            default     => 0,
             store       => \$xargs_file_counter,
+            strict_type => 1,
         },
     };
 
@@ -1938,8 +1939,7 @@ sub analysis_rankvariant_unaffected {
           . $outfile_suffix;
         add_program_outfile_to_sample_info(
             {
-                outdirectory     => $outfamily_directory,
-                outfile          => $qc_genmod_outfile,
+                path => catfile( $outfamily_directory, $qc_genmod_outfile ),
                 program_name     => q{genmod},
                 sample_info_href => $sample_info_href,
             }
@@ -2022,80 +2022,80 @@ sub analysis_sv_rankvariant {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         call_type =>
-          { default => q{SV}, strict_type => 1, store => \$call_type, },
+          { default => q{SV}, store => \$call_type, strict_type => 1, },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
             store       => \$family_id,
+            strict_type => 1,
         },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$file_info_href,
+            strict_type => 1,
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$infile_lane_prefix_href,
+            strict_type => 1,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$job_id_href,
+            strict_type => 1,
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
             store       => \$outaligner_dir,
+            strict_type => 1,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
         },
         program_name => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
         reference_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{reference_dir},
-            strict_type => 1,
             store       => \$reference_dir_ref,
+            strict_type => 1,
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
             store       => \$temp_directory,
+            strict_type => 1,
         },
         xargs_file_counter => {
-            default     => 0,
             allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
+            default     => 0,
             store       => \$xargs_file_counter,
+            strict_type => 1,
         },
     };
 
@@ -2590,8 +2590,7 @@ sub analysis_sv_rankvariant {
           . $file_suffix;
         add_program_outfile_to_sample_info(
             {
-                outdirectory     => $outfamily_directory,
-                outfile          => $qc_sv_genmod_outfile,
+                path => catfile( $outfamily_directory, $qc_sv_genmod_outfile ),
                 program_name     => q{sv_genmod},
                 sample_info_href => $sample_info_href,
             }
@@ -2652,80 +2651,80 @@ sub analysis_sv_rankvariant_unaffected {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         call_type =>
-          { default => q{SV}, strict_type => 1, store => \$call_type, },
+          { default => q{SV}, store => \$call_type, strict_type => 1, },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
             store       => \$family_id,
+            strict_type => 1,
         },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$file_info_href,
+            strict_type => 1,
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$infile_lane_prefix_href,
+            strict_type => 1,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$job_id_href,
+            strict_type => 1,
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
             store       => \$outaligner_dir,
+            strict_type => 1,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
             strict_type => 1,
             store       => \$parameter_href,
         },
         program_name => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
         reference_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{reference_dir},
-            strict_type => 1,
             store       => \$reference_dir_ref,
+            strict_type => 1,
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
             store       => \$temp_directory,
+            strict_type => 1,
         },
         xargs_file_counter => {
-            default     => 0,
             allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
+            default     => 0,
             store       => \$xargs_file_counter,
+            strict_type => 1,
         },
     };
 
@@ -3143,8 +3142,7 @@ sub analysis_sv_rankvariant_unaffected {
           . $file_suffix;
         add_program_outfile_to_sample_info(
             {
-                outdirectory     => $outfamily_directory,
-                outfile          => $qc_sv_genmod_outfile,
+                path => catfile( $outfamily_directory, $qc_sv_genmod_outfile ),
                 program_name     => q{sv_genmod},
                 sample_info_href => $sample_info_href,
             }
@@ -3164,4 +3162,5 @@ sub analysis_sv_rankvariant_unaffected {
     }
     return;
 }
+
 1;
