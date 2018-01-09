@@ -1,52 +1,59 @@
 #!/usr/bin/env perl
 
-#### Copyright 2017 Henrik Stranneheim
-
-use Modern::Perl qw{2014};
-use warnings qw{FATAL utf8};
-use autodie;
-use 5.018;    #Require at least perl 5.18
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
+use 5.018;
 use Carp;
-use English qw{-no_match_vars};
-use Params::Check qw{check allow last_error};
-
-use FindBin qw{$Bin};    #Find directory of script
-use File::Basename qw{dirname basename};
-use File::Spec::Functions qw{catdir};
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Basename qw{ basename dirname  };
+use File::Spec::Functions qw{ catdir };
+use FindBin qw{ $Bin };
 use Getopt::Long;
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
+
+## CPANM
+use autodie qw{ :all };
+use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
-use MIP::Script::Utils qw{help};
-
-## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
+use lib catdir( dirname($Bin), q{lib} );
+use MIP::Script::Utils qw{ help };
 
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = 1.0.0;
 
-###User Options
+## Constants
+Readonly my $COMMA   => q{,};
+Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => q{ };
+
+### User Options
 GetOptions(
-    'h|help' => sub {
+
+    # Display help text
+    q{h|help} => sub {
         done_testing();
         say {*STDOUT} $USAGE;
         exit;
-    },    #Display help text
-    'v|version' => sub {
-        done_testing();
-        say {*STDOUT} basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
+    },
 
+    # Display version number
+    q{v|version} => sub {
+        done_testing();
+        say {*STDOUT} $NEWLINE
+          . basename($PROGRAM_NAME)
+          . $SPACE
+          . $VERSION
+          . $NEWLINE;
         exit;
-    },    #Display version number
-    'vb|verbose' => $VERBOSE,
+    },
+    q{vb|verbose} => $VERBOSE,
   )
   or (
     done_testing(),
@@ -61,36 +68,39 @@ GetOptions(
 BEGIN {
 
 ### Check all internal dependency modules and imports
+## Modules with import
+    my %perl_module = ( q{MIP::Script::Utils} => [qw{ help }], );
 
-    my %perl_module;
-
-    $perl_module{'MIP::Script::Utils'} = [qw{help}];
-
-  PERL_MODULES:
+  PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
-
         use_ok( $module, @{$module_import} )
-          or BAIL_OUT 'Cannot load ' . $module;
+          or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 
-    my @modules = ('MIP::Program::Alignment::Samtools');
+## Modules
+    my @modules = (q{MIP::Program::Alignment::Samtools});
 
   MODULES:
     for my $module (@modules) {
 
-        require_ok($module) or BAIL_OUT 'Cannot load ' . $module;
+        require_ok($module) or BAIL_OUT q{Cannot load } . $module;
     }
 }
 
-use MIP::Program::Alignment::Samtools qw{samtools_view};
-use MIP::Test::Commands qw{test_function};
+use MIP::Program::Alignment::Samtools qw{ samtools_view };
+use MIP::Test::Commands qw{ test_function };
 
-diag(
-"Test samtools_view $MIP::Program::Alignment::Samtools::VERSION, Perl $^V, $EXECUTABLE_NAME"
-);
+diag(   q{Test samtools_view from samtools.pl v}
+      . $MIP::Program::Alignment::Samtools::VERSION
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+      . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{samtools};
+my $function_base_command = q{samtools view};
 
 my %base_argument = (
     FILEHANDLE => {
@@ -113,41 +123,45 @@ my %required_argument = (
 
 ## Specific arguments
 my %specific_argument = (
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
+    auto_detect_input_format => {
+        input           => q{1},
+        expected_output => q{-S},
+    },
+    fraction => {
+        input           => q{2.5},
+        expected_output => q{-s 2.5},
     },
     outfile_path => {
         input           => q{outfilepath},
         expected_output => q{-o outfilepath},
     },
+    output_format => {
+        input           => q{sam},
+        expected_output => q{--output-fmt SAM},
+    },
     regions_ref => {
-        inputs_ref      => [qw{1:1000000-2000000 2:1000-5000}],
+        inputs_ref      => [qw{ 1:1000000-2000000 2:1000-5000 }],
         expected_output => q{1:1000000-2000000 2:1000-5000},
+    },
+    stderrfile_path => {
+        input           => q{stderrfile.test},
+        expected_output => q{2> stderrfile.test},
+    },
+    stderrfile_path_append => {
+        input           => q{stderrfile_path_append},
+        expected_output => q{2>> stderrfile_path_append},
     },
     thread_number => {
         input           => q{6},
         expected_output => q{--threads 6},
     },
-    with_header => {
-        input           => q{1},
-        expected_output => q{-h},
-    },
-    output_format => {
-        input           => q{sam},
-        expected_output => q{--output-fmt SAM},
-    },
-    auto_detect_input_format => {
-        input           => q{1},
-        expected_output => q{-S},
-    },
     uncompressed_bam_output => {
         input           => q{1},
         expected_output => q{-u},
     },
-    stderrfile_path_append => {
-        input           => q{stderrfile_path_append},
-        expected_output => q{2>> stderrfile_path_append},
+    with_header => {
+        input           => q{1},
+        expected_output => q{-h},
     },
 );
 
@@ -197,7 +211,7 @@ sub build_usage {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     return <<"END_USAGE";
  $program_name [options]
