@@ -82,9 +82,9 @@ sub install_pip_packages {
       qw{ conda_source_activate conda_source_deactivate };
     use MIP::Package_manager::Pip qw{ pip_install };
 
-    ## Return if no packages are to be installed 
+    ## Return if no packages are to be installed
     return if not keys %{$pip_packages_href};
-      
+
     ## Retrieve logger object
     my $log = retrieve_log(
         {
@@ -94,7 +94,7 @@ sub install_pip_packages {
         }
     );
 
-    $log->info(q{Writting install instructions for pip packages});
+    $log->info(q{Writing install instructions for pip packages});
     say {$FILEHANDLE} q{### Install PIP packages};
 
     ## Install PIP packages in conda environment
