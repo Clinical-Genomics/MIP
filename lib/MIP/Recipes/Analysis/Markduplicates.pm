@@ -81,94 +81,94 @@ sub analysis_markduplicates {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
             store       => \$family_id,
+            strict_type => 1,
         },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$file_info_href,
-        },
-        file_path               => { strict_type => 1, store => \$file_path, },
-        infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
             strict_type => 1,
+        },
+        file_path               => { store => \$file_path, strict_type => 1, },
+        infile_lane_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
             store       => \$infile_lane_prefix_href,
+            strict_type => 1,
         },
         insample_directory => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$insample_directory,
+            strict_type => 1,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$job_id_href,
+            strict_type => 1,
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
             store       => \$outaligner_dir,
+            strict_type => 1,
         },
         outsample_directory => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$outsample_directory,
+            strict_type => 1,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
         },
         program_info_path =>
-          { strict_type => 1, store => \$program_info_path, },
+          { store => \$program_info_path, strict_type => 1, },
         program_name => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
         sample_id => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$sample_id,
+            strict_type => 1,
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
             store       => \$temp_directory,
+            strict_type => 1,
         },
         xargs_file_counter => {
-            default     => 0,
             allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
+            default     => 0,
             store       => \$xargs_file_counter,
+            strict_type => 1,
         },
     };
 
@@ -478,9 +478,11 @@ sub analysis_markduplicates {
         ## Collect QC metadata info for later use
         add_program_outfile_to_sample_info(
             {
-                infile           => $merged_infile_prefix,
-                outdirectory     => $outsample_directory,
-                outfile          => $outfile_prefix . $UNDERSCORE . q{metric},
+                infile => $merged_infile_prefix,
+                path   => catfile(
+                    $outsample_directory,
+                    $outfile_prefix . $UNDERSCORE . q{metric}
+                ),
                 program_name     => q{markduplicates},
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
@@ -553,69 +555,69 @@ sub analysis_markduplicates_rio {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
             store       => \$family_id,
-        },
-        FILEHANDLE     => { store => \$FILEHANDLE, },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
             strict_type => 1,
-            store       => \$file_info_href,
         },
-        file_path      => { strict_type => 1, store => \$file_path, },
+        FILEHANDLE     => { required => 1, store => \$FILEHANDLE, },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        file_path      => { store => \$file_path, strict_type => 1, },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
             store       => \$outaligner_dir,
+            strict_type => 1,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
         },
         program_info_path =>
-          { strict_type => 1, store => \$program_info_path, },
+          { store => \$program_info_path, strict_type => 1, },
         program_name => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
         sample_id => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$sample_id,
+            strict_type => 1,
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
             store       => \$temp_directory,
+            strict_type => 1,
         },
         xargs_file_counter => {
-            default     => 0,
             allow       => qr/ ^\d+$ /xsm,
-            strict_type => 1,
+            default     => 0,
             store       => \$xargs_file_counter,
+            strict_type => 1,
         },
     };
 
@@ -629,10 +631,10 @@ sub analysis_markduplicates_rio {
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::Program::Alignment::Sambamba
-      qw{ sambamba_markdup sambamba_flagstat };
+      qw{ sambamba_flagstat sambamba_markdup };
     use MIP::Program::Alignment::Picardtools qw{ picardtools_markduplicates };
     use MIP::QC::Record
-      qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info };
+      qw{ add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
 
     ## Retrieve logger object
@@ -885,9 +887,11 @@ sub analysis_markduplicates_rio {
         ## Collect QC metadata info for later use
         add_program_outfile_to_sample_info(
             {
-                infile           => $merged_infile_prefix,
-                outdirectory     => $outsample_directory,
-                outfile          => $outfile_prefix . $UNDERSCORE . q{metric},
+                infile => $merged_infile_prefix,
+                path   => catfile(
+                    $outsample_directory,
+                    $outfile_prefix . $UNDERSCORE . q{metric}
+                ),
                 program_name     => q{markduplicates},
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
@@ -925,12 +929,12 @@ sub _calculate_fraction_duplicates_for_all_metric_files {
     my $outfile_path_prefix;
 
     my $tmpl = {
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE, },
+        FILEHANDLE => { defined => 1, required => 1, store => \$FILEHANDLE, },
         outfile_path_prefix => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$outfile_path_prefix,
+            strict_type => 1,
         },
     };
 

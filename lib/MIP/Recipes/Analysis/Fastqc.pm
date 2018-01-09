@@ -22,7 +22,7 @@ BEGIN {
     use base qw{Exporter};
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw(analysis_fastqc);
@@ -68,74 +68,74 @@ sub analysis_fastqc {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
             strict_type => 1,
-            store       => \$active_parameter_href
         },
         infiles_ref => {
-            defined     => 1,
             default     => [],
+            defined     => 1,
+            store       => \$infiles_ref,
             strict_type => 1,
-            store       => \$infiles_ref
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
         },
         insample_directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$insample_directory,
             strict_type => 1,
-            store       => \$insample_directory
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
             strict_type => 1,
-            store       => \$job_id_href
         },
         outsample_directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$outsample_directory,
             strict_type => 1,
-            store       => \$outsample_directory
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
-            store       => \$parameter_href
         },
         program_name => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$program_name,
             strict_type => 1,
-            store       => \$program_name
         },
         sample_id => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
             strict_type => 1,
-            store       => \$sample_id
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
             strict_type => 1,
-            store       => \$sample_info_href
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
+            store       => \$temp_directory,
             strict_type => 1,
-            store       => \$temp_directory
         },
     };
 
@@ -187,8 +187,8 @@ sub analysis_fastqc {
     ## Limit number of cores requested to the maximum number of cores available per node
     $core_number = check_max_core_number(
         {
-            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
             core_number_requested => $core_number,
+            max_cores_per_node => $active_parameter_href->{max_cores_per_node},
         }
     );
 
@@ -196,13 +196,13 @@ sub analysis_fastqc {
     my ($file_name) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            job_id_href                     => $job_id_href,
-            FILEHANDLE                      => $FILEHANDLE,
-            directory_id                    => $sample_id,
-            program_name                    => $program_name,
-            program_directory               => $program_name,
             core_number                     => $core_number,
+            directory_id                    => $sample_id,
+            FILEHANDLE                      => $FILEHANDLE,
+            job_id_href                     => $job_id_href,
             process_time                    => $time,
+            program_directory               => $program_name,
+            program_name                    => $program_name,
             source_environment_commands_ref => [$source_environment_cmd],
             temp_directory                  => $temp_directory,
         }
@@ -259,9 +259,11 @@ sub analysis_fastqc {
                 $file_at_lane_level . $UNDERSCORE . $program_name );
             add_program_outfile_to_sample_info(
                 {
-                    infile           => $infile,
-                    outdirectory     => $qc_fastqc_outdirectory,
-                    outfile          => q{fastqc_data.txt},
+                    infile       => $infile,
+                    outdirectory => $qc_fastqc_outdirectory,
+                    outfile      => q{fastqc_data.txt},
+                    path =>
+                      catfile( $qc_fastqc_outdirectory, q{fastqc_data.txt} ),
                     program_name     => $program_name,
                     sample_id        => $sample_id,
                     sample_info_href => $sample_info_href,

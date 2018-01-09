@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_chanjo_sex_check };
@@ -71,80 +71,80 @@ sub analysis_chanjo_sex_check {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
             strict_type => 1,
-            store       => \$active_parameter_href
         },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
+            store       => \$family_id,
             strict_type => 1,
-            store       => \$family_id
         },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
             strict_type => 1,
-            store       => \$file_info_href
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
         },
         insample_directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$insample_directory,
             strict_type => 1,
-            store       => \$insample_directory
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
             strict_type => 1,
-            store       => \$job_id_href
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
+            store       => \$outaligner_dir,
             strict_type => 1,
-            store       => \$outaligner_dir
         },
         outsample_directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$outsample_directory,
             strict_type => 1,
-            store       => \$outsample_directory
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
-            store       => \$parameter_href
         },
         program_name => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$program_name,
             strict_type => 1,
-            store       => \$program_name
         },
         sample_id => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
             strict_type => 1,
-            store       => \$sample_id
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
             strict_type => 1,
-            store       => \$sample_info_href
         },
     };
 
@@ -156,7 +156,7 @@ sub analysis_chanjo_sex_check {
       qw{ slurm_submit_job_sample_id_dependency_dead_end };
     use MIP::Program::Alignment::Chanjo qw{ chanjo_sex };
     use MIP::QC::Record
-      qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info };
+      qw{ add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Retrieve logger object
@@ -267,20 +267,21 @@ sub analysis_chanjo_sex_check {
         ## Collect QC metadata info for later use
         add_program_outfile_to_sample_info(
             {
-                infile           => $merged_infile_prefix,
-                outdirectory     => $outsample_directory,
-                outfile          => $outfile_name,
-                program_name     => q{chanjo_sexcheck},
-                sample_id        => $sample_id,
+                infile       => $merged_infile_prefix,
+                path         => catfile( $outsample_directory, $outfile_name ),
+                program_name => q{chanjo_sexcheck},
+                sample_id    => $sample_id,
                 sample_info_href => $sample_info_href,
             }
         );
         add_program_metafile_to_sample_info(
             {
-                file => $infile_prefix . $UNDERSCORE . q{chanjo_sexcheck.log},
-                directory        => $outsample_directory,
-                infile           => $merged_infile_prefix,
-                metafile_tag     => q{log},
+                infile       => $merged_infile_prefix,
+                metafile_tag => q{log},
+                path         => catfile(
+                    $outsample_directory,
+                    $infile_prefix . $UNDERSCORE . q{chanjo_sexcheck.log}
+                ),
                 program_name     => q{chanjo_sexcheck},
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
