@@ -269,19 +269,19 @@ install_pip_packages(
 ### Install shell programs
 ## Create dispatch table for shell installation subs
 my %shell_subs = (
-    picard      => \&install_picard,
-    sambamba    => \&install_sambamba,
-    bedtools    => \&install_bedtools,
-    vt          => \&install_vt,
-    snpeff      => \&install_snpeff,
-    plink2      => \&install_plink2,
-    rhocall     => \&install_rhocall,
-    mip_scripts => \&install_mip_scripts,
-    vep         => \&install_vep,
-    cnvnator    => \&install_cnvnator,
-    tiddit      => \&install_tiddit,
-    svdb        => \&install_svdb,
-    vcf2cytosure        => \&install_vcf2cytosure,
+    picard       => \&install_picard,
+    sambamba     => \&install_sambamba,
+    bedtools     => \&install_bedtools,
+    vt           => \&install_vt,
+    snpeff       => \&install_snpeff,
+    plink2       => \&install_plink2,
+    rhocall      => \&install_rhocall,
+    mip_scripts  => \&install_mip_scripts,
+    vep          => \&install_vep,
+    cnvnator     => \&install_cnvnator,
+    tiddit       => \&install_tiddit,
+    svdb         => \&install_svdb,
+    vcf2cytosure => \&install_vcf2cytosure,
 );
 
 ## Launch shell installation subroutines
@@ -389,7 +389,7 @@ sub build_usage {
     -cnvnr/--cnvnator_root_binary   Set the cnvnator root binary (Default: "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz")
     -tid/--tiddit                   Set the tiddit version (Default: "1.1.6")
     -svdb/--svdb                    Set the svdb version (Default: "1.0.6")
-    -v2cs/--vcf2cytosure            Set the svdb version (Default: "0.2.0")
+    -v2cs/--vcf2cytosure            Set the vcf2cytosure version (Default: "0.2.0")
 
     ## Utility
     -rd/--reference_dir             Reference(s) directory (Default: "")
