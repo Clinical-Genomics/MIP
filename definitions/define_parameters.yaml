@@ -166,7 +166,7 @@ reduce_io:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   type: mip
 replace_iupac:
   associated_program:
@@ -212,7 +212,7 @@ bash_set_errexit:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   type: mip
 bash_set_nounset:
   associated_program:
@@ -224,7 +224,7 @@ bash_set_pipefail:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   type: mip
 module_time:
   associated_program:
@@ -464,7 +464,7 @@ bwa_mem_hla:
   associated_program:
    - pbwa_mem
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 bwa_mem_cram:
   associated_program:
@@ -535,7 +535,7 @@ markduplicates_picardtools_markduplicates:
   associated_program:
    - pmarkduplicates
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 markduplicates_sambamba_markdup:
   associated_program:
@@ -628,7 +628,7 @@ gatk_baserecalibration_disable_indel_qual:
   associated_program:
    - pgatk_baserecalibration
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 gatk_baserecalibration_static_quantized_quals:
   associated_program:
@@ -651,8 +651,6 @@ pchanjo_sexcheck:
   default: 0
   file_tag: _sex
   outfile_suffix: ".tsv"
-#  program_name_path:
-#   - chanjo
   type: program
 chanjo_sexcheck_log_level:
   associated_program:
@@ -713,7 +711,7 @@ sambamba_depth_noduplicates:
   associated_program:
    - psambamba_depth
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 sambamba_depth_quality_control:
   associated_program:
@@ -880,7 +878,7 @@ sv_vt_decompose:
   associated_program:
    - psv_combinevariantcallsets
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 sv_svdb_merge_prioritize:
   associated_program:
@@ -892,13 +890,13 @@ sv_bcftools_view_filter:
   associated_program:
    - psv_combinevariantcallsets
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 sv_svdb_query:
   associated_program:
    - psv_combinevariantcallsets
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 sv_svdb_query_db_files:
   associated_program:
@@ -911,7 +909,7 @@ sv_vcfanno:
   associated_program:
    - psv_combinevariantcallsets
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 sv_vcfanno_lua:
   associated_program:
@@ -946,7 +944,7 @@ sv_genmod_filter:
   associated_program:
    - psv_combinevariantcallsets
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 sv_genmod_filter_1000g:
   associated_program:
@@ -966,7 +964,7 @@ sv_combinevariantcallsets_bcf_file:
   associated_program:
    - psv_combinevariantcallsets
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 psv_varianteffectpredictor:
   associated_program:
@@ -985,8 +983,6 @@ sv_vep_features:
    - hgvs
    - symbol
    - numbers
-   - "sift p"
-   - "polyphen p"
    - humdiv
    - domains
    - protein
@@ -1030,7 +1026,7 @@ sv_vcfparser_per_gene:
   associated_program:
    - psv_vcfparser
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 sv_vcfparser_range_feature_file:
   associated_program:
@@ -1085,7 +1081,7 @@ sv_genmod_annotate_regions:
   associated_program:
    - psv_rankvariant
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 sv_genmod_models_family_type:
   associated_program:
@@ -1128,7 +1124,7 @@ sv_rankvariant_binary_file:
   associated_program:
    - psv_reformat
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 sv_reformat_remove_genes_file:
   associated_program:
@@ -1228,7 +1224,7 @@ gatk_haplotypecaller_no_soft_clipped_bases:
   associated_program:
    - pgatk_haplotypecaller
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 gatk_haplotypecaller_pcr_indel_model:
   associated_program:
@@ -1345,7 +1341,7 @@ gatk_variantrecalibration_dp_annotation:
   associated_program:
    - pgatk_variantrecalibration
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 gatk_variantrecalibration_snv_max_gaussians:
   associated_program:
@@ -1357,7 +1353,7 @@ gatk_variantrecalibration_indel_max_gaussians:
   associated_program:
    - pgatk_variantrecalibration
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 gatk_calculategenotypeposteriors_support_set:
   associated_program:
@@ -1395,7 +1391,7 @@ gatk_combinevariantcallsets_bcf_file:
   associated_program:
    - pgatk_combinevariantcallsets
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 ## VariantAnnotationBlock
 pvariantannotationblock:
@@ -1460,25 +1456,25 @@ vt_decompose:
   associated_program:
    - pvt
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 vt_normalize:
   associated_program:
    - pvt
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 vt_uniq:
   associated_program:
    - pvt
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 vt_missing_alt_allele:
   associated_program:
    - pvt
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 pfrequency_filter:
   associated_program:
@@ -1495,7 +1491,7 @@ frequency_genmod_filter:
   associated_program:
    - pfrequency_filter
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 frequency_genmod_filter_1000g:
   associated_program:
@@ -1614,12 +1610,6 @@ vep_directory_cache:
   exists_check: directory
   type: path
   update_path: absolute_path
-vep_reference:
-  associated_program:
-   - pvarianteffectpredictor
-  data_type: SCALAR
-  default: 0
-  type: program_argument
 vep_features:
   associated_program:
    - pvarianteffectpredictor
@@ -1738,7 +1728,7 @@ snpeff_ann:
   associated_program:
    - psnpeff
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 snpeff_genome_build_version:
   associated_program:
@@ -1916,7 +1906,7 @@ genmod_annotate_regions:
   associated_program:
    - prankvariant
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 genmod_annotate_cadd_files:
   associated_program:
@@ -1938,7 +1928,7 @@ genmod_models_whole_gene:
   associated_program:
    - prankvariant
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 genmod_models_family_type:
   associated_program:
@@ -1977,7 +1967,7 @@ rankvariant_binary_file:
   associated_program:
    - pendvariantannotationblock
   data_type: SCALAR
-  default: 1
+  default: 0
   type: program_argument
 endvariantannotationblock_remove_genes_file:
   associated_program:

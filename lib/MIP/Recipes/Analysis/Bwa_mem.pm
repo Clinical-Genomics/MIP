@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bwa_mem };
@@ -80,92 +80,92 @@ sub analysis_bwa_mem {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
             strict_type => 1,
-            store       => \$active_parameter_href
         },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
+            store       => \$family_id,
             strict_type => 1,
-            store       => \$family_id
         },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
             strict_type => 1,
-            store       => \$file_info_href
         },
         infiles_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$infiles_ref,
             strict_type => 1,
-            store       => \$infiles_ref
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
         },
         insample_directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$insample_directory,
             strict_type => 1,
-            store       => \$insample_directory
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
             strict_type => 1,
-            store       => \$job_id_href
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
+            store       => \$outaligner_dir,
             strict_type => 1,
-            store       => \$outaligner_dir
         },
         outsample_directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$outsample_directory,
             strict_type => 1,
-            store       => \$outsample_directory
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
-            store       => \$parameter_href
         },
         program_name => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$program_name,
             strict_type => 1,
-            store       => \$program_name
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
             strict_type => 1,
-            store       => \$sample_info_href
         },
         sample_id => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
             strict_type => 1,
-            store       => \$sample_id
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
+            store       => \$temp_directory,
             strict_type => 1,
-            store       => \$temp_directory
         },
     };
 
@@ -176,10 +176,10 @@ sub analysis_bwa_mem {
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_step_in_parallel };
     use MIP::Program::Alignment::Bwa qw{ bwa_mem run_bwamem };
-    use MIP::Program::Alignment::Samtools qw{ samtools_view samtools_stats };
+    use MIP::Program::Alignment::Samtools qw{ samtools_stats samtools_view };
     use MIP::Program::Alignment::Sambamba qw{ sambamba_sort };
     use MIP::QC::Record
-      qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info add_processing_metafile_to_sample_info };
+      qw{ add_processing_metafile_to_sample_info add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
     use MIP::Set::File qw{ set_file_suffix };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -219,10 +219,10 @@ sub analysis_bwa_mem {
     ## Set file suffix for next module within jobid chain
     my $outfile_suffix = set_file_suffix(
         {
+            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{alignment_file_suffix},
-            job_id_chain   => $job_id_chain,
-            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
         }
     );
 
@@ -454,6 +454,8 @@ sub analysis_bwa_mem {
                 $file_path_prefix . $DOT . q{log} . $ASTERIX,
                 $file_path_prefix . $DOT . q{hla} . $ASTERIX,
             );
+
+          OUTFILE:
             foreach my $outfile (@outfiles) {
 
                 migrate_file(
@@ -571,9 +573,9 @@ sub analysis_bwa_mem {
                   $infile_prefix . $outfile_tag . $DOT . q{stats};
                 add_program_outfile_to_sample_info(
                     {
-                        infile           => $infile_prefix,
-                        outdirectory     => $outsample_directory,
-                        outfile          => $qc_stats_outfile,
+                        infile => $infile_prefix,
+                        path =>
+                          catfile( $outsample_directory, $qc_stats_outfile ),
                         program_name     => q{bamstats},
                         sample_id        => $sample_id,
                         sample_info_href => $sample_info_href,
@@ -586,8 +588,7 @@ sub analysis_bwa_mem {
                 add_program_outfile_to_sample_info(
                     {
                         infile           => $infile_prefix,
-                        outdirectory     => $directory,
-                        outfile          => $stderr_file,
+                        path             => catfile( $directory, $stderr_file ),
                         program_name     => $program_name,
                         sample_id        => $sample_id,
                         sample_info_href => $sample_info_href,
@@ -599,9 +600,8 @@ sub analysis_bwa_mem {
                 my $qc_bwa_log = $infile_prefix . $DOT . q{log.bwamem};
                 add_program_outfile_to_sample_info(
                     {
-                        infile           => $infile_prefix,
-                        outdirectory     => $outsample_directory,
-                        outfile          => $qc_bwa_log,
+                        infile => $infile_prefix,
+                        path   => catfile( $outsample_directory, $qc_bwa_log ),
                         program_name     => $program_name,
                         sample_id        => $sample_id,
                         sample_info_href => $sample_info_href,
@@ -641,16 +641,16 @@ sub _select_bwamem_binary {
 
     my $tmpl = {
         human_genome_reference_source => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$human_genome_reference_source,
             strict_type => 1,
-            store       => \$human_genome_reference_source
         },
         human_genome_reference_version => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$human_genome_reference_version,
             strict_type => 1,
-            store       => \$human_genome_reference_version
         },
     };
 
@@ -705,12 +705,12 @@ sub _add_percentage_mapped_reads_from_samtools {
     my $outfile_path;
 
     my $tmpl = {
-        FILEHANDLE   => { required => 1, defined => 1, store => \$FILEHANDLE },
+        FILEHANDLE   => { defined => 1, required => 1, store => \$FILEHANDLE, },
         outfile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
             strict_type => 1,
-            store       => \$outfile_path
         },
     };
 

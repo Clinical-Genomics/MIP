@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_variant_integrity };
@@ -74,81 +74,81 @@ sub analysis_variant_integrity {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
             strict_type => 1,
-            store       => \$active_parameter_href
         },
         call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type },
+          { default => q{BOTH}, store => \$call_type, strict_type => 1, },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
+            store       => \$family_id,
             strict_type => 1,
-            store       => \$family_id
         },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
             strict_type => 1,
-            store       => \$file_info_href
         },
         infamily_directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infamily_directory,
             strict_type => 1,
-            store       => \$infamily_directory
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
             strict_type => 1,
-            store       => \$job_id_href
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
+            store       => \$outaligner_dir,
             strict_type => 1,
-            store       => \$outaligner_dir
         },
         outfamily_directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$outfamily_directory,
             strict_type => 1,
-            store       => \$outfamily_directory
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
-            store       => \$parameter_href
         },
         program_name => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$program_name,
             strict_type => 1,
-            store       => \$program_name
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
             strict_type => 1,
-            store       => \$sample_info_href
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
+            store       => \$temp_directory,
             strict_type => 1,
-            store       => \$temp_directory
         },
     };
 
@@ -189,15 +189,15 @@ sub analysis_variant_integrity {
     my ( $file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
+            call_type             => $call_type,
+            core_number           => $core_number,
             directory_id          => $family_id,
-            program_name          => $program_name,
+            FILEHANDLE            => $FILEHANDLE,
+            job_id_href           => $job_id_href,
+            process_time          => $time,
             program_directory =>
               catfile( $outaligner_dir, q{casecheck}, $program_name ),
-            call_type                       => $call_type,
-            core_number                     => $core_number,
-            process_time                    => $time,
+            program_name                    => $program_name,
             source_environment_commands_ref => [$source_environment_cmd],
         }
     );
@@ -226,10 +226,10 @@ sub analysis_variant_integrity {
     ## Return the current infile vcf compression suffix for this jobid chain_vcf_data
     my $infile_suffix = get_file_suffix(
         {
-            parameter_href => $parameter_href,
-            suffix_key     => q{variant_file_suffix},
             jobid_chain =>
               $parameter_href->{pgatk_combinevariantcallsets}{chain},
+            parameter_href => $parameter_href,
+            suffix_key     => q{variant_file_suffix},
         }
     );
 
@@ -242,11 +242,11 @@ sub analysis_variant_integrity {
     ## Create .fam file to be used in variant calling analyses
     create_fam_file(
         {
-            parameter_href        => $parameter_href,
             active_parameter_href => $active_parameter_href,
-            sample_info_href      => $sample_info_href,
-            FILEHANDLE            => $FILEHANDLE,
             fam_file_path         => $family_file,
+            FILEHANDLE            => $FILEHANDLE,
+            parameter_href        => $parameter_href,
+            sample_info_href      => $sample_info_href,
         }
     );
 
@@ -262,22 +262,22 @@ sub analysis_variant_integrity {
     say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     ## Variant_integrity
-    if ( scalar @{ $active_parameter_href->{sample_ids} } > 1 )
-    {    #Only perform if more than 1 sample
+    if ( scalar @{ $active_parameter_href->{sample_ids} } > 1 ) {
+        ## Only perform if more than 1 sample
 
         if ( $parameter_href->{dynamic_parameter}{trio} ) {
 
             variant_integrity_mendel(
                 {
+                    family_file => $family_file,
+                    family_type =>
+                      $active_parameter_href->{genmod_models_family_type},
+                    FILEHANDLE   => $FILEHANDLE,
                     infile_path  => $file_path_prefix . $infile_suffix,
                     outfile_path => catfile(
                         $outfamily_directory,
                         $family_id . $UNDERSCORE . q{mendel.txt}
                     ),
-                    family_file => $family_file,
-                    family_type =>
-                      $active_parameter_href->{genmod_models_family_type},
-                    FILEHANDLE => $FILEHANDLE,
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
@@ -287,10 +287,12 @@ sub analysis_variant_integrity {
                 ## Collect QC metadata info for later use
                 add_program_outfile_to_sample_info(
                     {
-                        sample_info_href => $sample_info_href,
+                        path => catfile(
+                            $outfamily_directory,
+                            $family_id . $UNDERSCORE . q{mendel.txt}
+                        ),
                         program_name     => q{variant_integrity_mendel},
-                        outdirectory     => $outfamily_directory,
-                        outfile => $family_id . $UNDERSCORE . q{mendel.txt},
+                        sample_info_href => $sample_info_href,
                     }
                 );
             }
@@ -310,15 +312,15 @@ sub analysis_variant_integrity {
 
             variant_integrity_father(
                 {
+                    family_file => $family_file,
+                    family_type =>
+                      $active_parameter_href->{genmod_models_family_type},
+                    FILEHANDLE   => $FILEHANDLE,
                     infile_path  => $file_path_prefix . $infile_suffix,
                     outfile_path => catfile(
                         $outfamily_directory,
                         $family_id . $UNDERSCORE . q{father.txt}
                     ),
-                    family_file => $family_file,
-                    family_type =>
-                      $active_parameter_href->{genmod_models_family_type},
-                    FILEHANDLE => $FILEHANDLE,
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
@@ -328,10 +330,12 @@ sub analysis_variant_integrity {
                 ## Collect QC metadata info for later use
                 add_program_outfile_to_sample_info(
                     {
-                        sample_info_href => $sample_info_href,
+                        path => catfile(
+                            $outfamily_directory,
+                            $family_id . $UNDERSCORE . q{father.txt}
+                        ),
                         program_name     => q{variant_integrity_father},
-                        outdirectory     => $outfamily_directory,
-                        outfile => $family_id . $UNDERSCORE . q{father.txt},
+                        sample_info_href => $sample_info_href,
                     }
                 );
             }
@@ -344,12 +348,12 @@ sub analysis_variant_integrity {
 
         slurm_submit_job_sample_id_dependency_family_dead_end(
             {
-                job_id_href             => $job_id_href,
+                family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                log                     => $log,
+                path                    => $job_id_chain,
                 sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-                family_id        => $family_id,
-                path             => $job_id_chain,
-                log              => $log,
                 sbatch_file_name => $file_path,
             }
         );
