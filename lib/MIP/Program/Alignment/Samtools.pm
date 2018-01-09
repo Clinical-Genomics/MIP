@@ -74,64 +74,64 @@ sub samtools_view {
 
     my $tmpl = {
         auto_detect_input_format => {
-            default     => 0,
             allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$auto_detect_input_format,
             strict_type => 1,
-            store       => \$auto_detect_input_format
         },
         FILEHANDLE => {
-            store => \$FILEHANDLE
+            store => \$FILEHANDLE,
         },
         fraction => {
             defined     => 1,
-            strict_type => 1,
             store       => \$fraction,
+            strict_type => 1,
         },
         infile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$infile_path
         },
         outfile_path => {
+            store       => \$outfile_path,
             strict_type => 1,
-            store       => \$outfile_path
         },
         output_format => {
-            default     => q{bam},
             allow       => [qw{ sam bam cram json }],
+            default     => q{bam},
+            store       => \$output_format,
             strict_type => 1,
-            store       => \$output_format
         },
         regions_ref => {
             default     => [],
+            store       => \$regions_ref,
             strict_type => 1,
-            store       => \$regions_ref
         },
         stderrfile_path => {
+            store       => \$stderrfile_path,
             strict_type => 1,
-            store       => \$stderrfile_path
         },
         stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
             strict_type => 1,
-            store       => \$stderrfile_path_append
         },
         thread_number => {
-            allow       => qr/^\d+$/, 
+            allow       => qr/^\d+$/,
+            store       => \$thread_number,
             strict_type => 1,
-            store       => \$thread_number
         },
         with_header => {
-            default     => 0,
             allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$with_header,
             strict_type => 1,
-            store       => \$with_header
         },
         uncompressed_bam_output => {
-            default     => 0,
             allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$uncompressed_bam_output,
             strict_type => 1,
-            store       => \$uncompressed_bam_output
         },
     };
 

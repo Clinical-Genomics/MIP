@@ -1,52 +1,58 @@
 #!/usr/bin/env perl
 
-#### Copyright 2017 Henrik Stranneheim
-
-use Modern::Perl qw{ 2014 };
-use warnings qw{ FATAL utf8 };
-use autodie;
-use 5.018;    #Require at least perl 5.18
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
+use 5.018;
 use Carp;
+use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use Params::Check qw{ allow check last_error };
-
-use FindBin qw{ $Bin };    #Find directory of script
-use File::Basename qw{ basename dirname };
+use File::Basename qw{ basename dirname  };
 use File::Spec::Functions qw{ catdir };
+use FindBin qw{ $Bin };
 use Getopt::Long;
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
+
+## CPANM
+use autodie qw{ :all };
+use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Script::Utils qw{ help };
 
+our $USAGE = build_usage( {} );
+
+my $VERBOSE = 1;
+our $VERSION = 1.0.0;
+
 ## Constants
 Readonly my $COMMA   => q{,};
 Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
 
-our $USAGE = build_usage( {} );
-
-my $VERBOSE = 1;
-our $VERSION = '1.0.1';
-
-###User Options
+### User Options
 GetOptions(
+
+    # Display help text
     q{h|help} => sub {
         done_testing();
         say {*STDOUT} $USAGE;
         exit;
-    },    #Display help text
+    },
+
+    # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
-
+        say {*STDOUT} $NEWLINE
+          . basename($PROGRAM_NAME)
+          . $SPACE
+          . $VERSION
+          . $NEWLINE;
         exit;
-    },    #Display version number
+    },
     q{vb|verbose} => $VERBOSE,
   )
   or (
