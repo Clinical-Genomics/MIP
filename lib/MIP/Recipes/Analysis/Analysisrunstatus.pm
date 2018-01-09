@@ -176,27 +176,31 @@ sub analysis_analysisrunstatus {
     my $variant_effect_predictor_file =
       $sample_info_href->{program}{varianteffectpredictor}{stderrfile}{path};
 
-    _check_string_within_file(
-        {
-            file            => $variant_effect_predictor_file,
-            FILEHANDLE      => $FILEHANDLE,
-            string_to_match => q{WARNING Unable to fork},
-        }
-    );
+    ## Test peddy warnings
+    my $peddy_file =
+      $sample_info_href->{program}{peddy}{stderr}{path};
 
     ## Test if FAIL exists in qccollect file i.e. issues with samples e.g. Sex and seq data correlation, relationship etc
+    my $qccollect_file;
     if ( not $active_parameter_href->{qccollect_skip_evaluation} ) {
 
-        my $qccollect_file = $sample_info_href->{program}{qccollect}{path};
+        $qccollect_file = $sample_info_href->{program}{qccollect}{path};
+    }
+
+    my %files_to_check = (
+        q{WARNING Unable to fork} => $variant_effect_predictor_file,
+        q{pedigree warning:}      => $peddy_file,
+        q{FAIL}                   => $qccollect_file
+    );
+    while ( my ( $file_string_to_match, $file ) = each %files_to_check ) {
 
         _check_string_within_file(
             {
-                file            => $qccollect_file,
+                file            => $file,
                 FILEHANDLE      => $FILEHANDLE,
-                string_to_match => q{FAIL},
+                string_to_match => $file_string_to_match,
             }
         );
-
     }
 
     ## Test integrity of vcf data keys in header and body
