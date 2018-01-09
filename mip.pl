@@ -1514,7 +1514,8 @@ if ( $consensus_analysis_type eq q{wts} ) {
 
 ### WES|WGS
 if (   $consensus_analysis_type eq q{wgs}
-    || $consensus_analysis_type eq q{wes} )
+    || $consensus_analysis_type eq q{wes}
+       || $consensus_analysis_type eq q{mixed} )
 {
 
     $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
