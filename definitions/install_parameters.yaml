@@ -36,7 +36,7 @@ bioconda:
 # Path to conda
 conda_dir_path: ~
 
-# Optional name of conda envronment. Defaults to root 
+# Optional name of conda envronment. Defaults to root
 conda_environment: ~
 
 # Packages and versionsthat are to be installed via conda's default channels
@@ -44,13 +44,13 @@ conda_packages:
   pip: ~
   python: 2.7
 
-# Optionally update conda 
+# Optionally update conda
 conda_update: ~
 
 # Optional name of log file
 log_file: ~
 
-# Skip updating existing packages 
+# Skip updating existing packages
 noupdate: ~
 
 # Python packages to be installed via pip
@@ -59,12 +59,12 @@ pip:
   genmod: 3.7.2
   variant_integrity: 0.0.4
 
-# Prefer installation via shell instead of via conda, 
+# Prefer installation via shell instead of via conda,
 # only applicaple for shell programs that overlap with existing conda packages
 prefer_shell: ~
 
 # Python 3 packages
-py3_packages: 
+py3_packages:
   - chanjo
   - genmod
   - variant_integrity
@@ -83,11 +83,11 @@ reference_genome_versions:
   - GRCh37
   - hg38
 
-# Select programs that are to be installed via shell instead of conda 
+# Select programs that are to be installed via shell instead of conda
 shell_install: []
 
 # Shell programs
-shell:  
+shell:
   bedtools:
     version: 2.25.0
   cnvnator:
@@ -100,7 +100,7 @@ shell:
   plink2:
     version: 171013
   rhocall:
-    path: 
+    path:
     version: 0.4
   sambamba:
     version: 0.6.1
@@ -113,6 +113,8 @@ shell:
     version: 1.0.7
   tiddit:
     version: 2.0.3
+  vcf2cytosure:
+    version: 0.2.0
   vep:
     vep_assemblies:
       - GRCh37
