@@ -1,12 +1,22 @@
 package MIP::Program::Alignment::Samtools;
 
-use strict;
-use warnings;
-use warnings qw{ FATAL utf8 };
 use Carp;
-use utf8;    #Allow unicode characters in this script
-use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
+use open qw{ :encoding(UTF-8) :std };
+use strict;
+use utf8;    #Allow unicode characters in this script
+use warnings qw{ FATAL utf8 };
+use warnings;
+
+## CPANM
+use File::Spec::Functions qw{ catdir catfile };
+use Params::Check qw{ allow check last_error };
+use Readonly;
+
+## MIPs lib/
+use MIP::Processmanagement::Processes qw{ print_wait };
+use MIP::Unix::Standard_streams qw{ unix_standard_streams };
+use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
     require Exporter;
@@ -22,15 +32,6 @@ BEGIN {
       qw{ samtools_view samtools_index samtools_stats samtools_mpileup samtools_faidx samtools_create_chromosome_files };
 
 }
-
-## MIPs lib/
-use MIP::Processmanagement::Processes qw{ print_wait };
-use MIP::Unix::Standard_streams qw{ unix_standard_streams };
-use MIP::Unix::Write_to_file qw{ unix_write_to_file };
-
-use File::Spec::Functions qw{ catdir catfile };
-use Params::Check qw{ allow check last_error };
-use Readonly;
 
 ## Constants
 Readonly my $SPACE     => q{ };
