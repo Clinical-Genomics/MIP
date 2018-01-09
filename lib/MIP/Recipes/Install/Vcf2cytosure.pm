@@ -184,7 +184,7 @@ sub install_vcf2cytosure {
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    ## Pip install the downloaded SVDB package
+    ## Pip install the downloaded vcf2cytosure package
     say {$FILEHANDLE} q{## Install};
     pip_install(
         {
