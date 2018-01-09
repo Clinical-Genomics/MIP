@@ -182,117 +182,117 @@ sub pipeline_mip_c {
         }
     }
 
-## Aligning fastq files based on sample_id
-    if ( $active_parameter_href->{pbwa_mem} ) {
-
-        $log->info(q{[BWA Mem]});
-
-      SAMPLE_ID:
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-            my $outsample_directory =
-              catdir( $active_parameter_href->{outdata_dir},
-                $sample_id, $active_parameter_href->{outaligner_dir} );
-
-            analysis_bwa_mem(
-                {
-                    parameter_href          => $parameter_href,
-                    active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
-                    file_info_href          => $file_info_href,
-                    infiles_ref             => \@{ $infile_href->{$sample_id} },
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    insample_directory      => $indir_path_href->{$sample_id},
-                    outsample_directory     => $outsample_directory,
-                    sample_id               => $sample_id,
-                    program_name            => q{bwa_mem},
-                }
-            );
-        }
-    }
-
-## MarkDuplicates
-    if ( $active_parameter_href->{pmarkduplicates} ) {
-
-        $log->info(q{[Markduplicates]});
-
-      SAMPLE_ID:
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
-        {
-
-            ## Assign directories
-            my $insample_directory =
-              catdir( $active_parameter_href->{outdata_dir},
-                $sample_id, $active_parameter_href->{outaligner_dir} );
-            my $outsample_directory =
-              catdir( $active_parameter_href->{outdata_dir},
-                $sample_id, $active_parameter_href->{outaligner_dir} );
-
-            analysis_markduplicates(
-                {
-                    parameter_href          => $parameter_href,
-                    active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
-                    file_info_href          => $file_info_href,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    insample_directory      => $insample_directory,
-                    outsample_directory     => $outsample_directory,
-                    sample_id               => $sample_id,
-                    program_name            => q{markduplicates},
-                }
-            );
-        }
-    }
-
-    if ( $active_parameter_href->{pmultiqc} ) {
-
-        $log->info(q{[Multiqc]});
-
-        analysis_multiqc(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                program_name            => q{multiqc},
-            }
-        );
-    }
-
-    if ( $active_parameter_href->{panalysisrunstatus} ) {
-
-        $log->info(q{[Analysis run status]});
-
-        analysis_analysisrunstatus(
-            {
-                active_parameter_href   => $active_parameter_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                parameter_href          => $parameter_href,
-                program_name            => q{analysisrunstatus},
-                sample_info_href        => $sample_info_href,
-            }
-        );
-    }
-
-    if ( $active_parameter_href->{psacct} ) {
-
-        $log->info(q{[Sacct]});
-
-        analysis_sacct(
-            {
-                active_parameter_href   => $active_parameter_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                parameter_href          => $parameter_href,
-                program_name            => q{sacct},
-                sample_info_href        => $sample_info_href,
-            }
-        );
-    }
+### Aligning fastq files based on sample_id
+#    if ( $active_parameter_href->{pbwa_mem} ) {
+#
+#        $log->info(q{[BWA Mem]});
+#
+#      SAMPLE_ID:
+#        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+#
+#            my $outsample_directory =
+#              catdir( $active_parameter_href->{outdata_dir},
+#                $sample_id, $active_parameter_href->{outaligner_dir} );
+#
+#            analysis_bwa_mem(
+#                {
+#                    parameter_href          => $parameter_href,
+#                    active_parameter_href   => $active_parameter_href,
+#                    sample_info_href        => $sample_info_href,
+#                    file_info_href          => $file_info_href,
+#                    infiles_ref             => \@{ $infile_href->{$sample_id} },
+#                    infile_lane_prefix_href => $infile_lane_prefix_href,
+#                    job_id_href             => $job_id_href,
+#                    insample_directory      => $indir_path_href->{$sample_id},
+#                    outsample_directory     => $outsample_directory,
+#                    sample_id               => $sample_id,
+#                    program_name            => q{bwa_mem},
+#                }
+#            );
+#        }
+#    }
+#
+### MarkDuplicates
+#    if ( $active_parameter_href->{pmarkduplicates} ) {
+#
+#        $log->info(q{[Markduplicates]});
+#
+#      SAMPLE_ID:
+#        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
+#        {
+#
+#            ## Assign directories
+#            my $insample_directory =
+#              catdir( $active_parameter_href->{outdata_dir},
+#                $sample_id, $active_parameter_href->{outaligner_dir} );
+#            my $outsample_directory =
+#              catdir( $active_parameter_href->{outdata_dir},
+#                $sample_id, $active_parameter_href->{outaligner_dir} );
+#
+#            analysis_markduplicates(
+#                {
+#                    parameter_href          => $parameter_href,
+#                    active_parameter_href   => $active_parameter_href,
+#                    sample_info_href        => $sample_info_href,
+#                    file_info_href          => $file_info_href,
+#                    infile_lane_prefix_href => $infile_lane_prefix_href,
+#                    job_id_href             => $job_id_href,
+#                    insample_directory      => $insample_directory,
+#                    outsample_directory     => $outsample_directory,
+#                    sample_id               => $sample_id,
+#                    program_name            => q{markduplicates},
+#                }
+#            );
+#        }
+#    }
+#
+#    if ( $active_parameter_href->{pmultiqc} ) {
+#
+#        $log->info(q{[Multiqc]});
+#
+#        analysis_multiqc(
+#            {
+#                parameter_href          => $parameter_href,
+#                active_parameter_href   => $active_parameter_href,
+#                sample_info_href        => $sample_info_href,
+#                infile_lane_prefix_href => $infile_lane_prefix_href,
+#                job_id_href             => $job_id_href,
+#                program_name            => q{multiqc},
+#            }
+#        );
+#    }
+#
+#    if ( $active_parameter_href->{panalysisrunstatus} ) {
+#
+#        $log->info(q{[Analysis run status]});
+#
+#        analysis_analysisrunstatus(
+#            {
+#                active_parameter_href   => $active_parameter_href,
+#                infile_lane_prefix_href => $infile_lane_prefix_href,
+#                job_id_href             => $job_id_href,
+#                parameter_href          => $parameter_href,
+#                program_name            => q{analysisrunstatus},
+#                sample_info_href        => $sample_info_href,
+#            }
+#        );
+#    }
+#
+#    if ( $active_parameter_href->{psacct} ) {
+#
+#        $log->info(q{[Sacct]});
+#
+#        analysis_sacct(
+#            {
+#                active_parameter_href   => $active_parameter_href,
+#                infile_lane_prefix_href => $infile_lane_prefix_href,
+#                job_id_href             => $job_id_href,
+#                parameter_href          => $parameter_href,
+#                program_name            => q{sacct},
+#                sample_info_href        => $sample_info_href,
+#            }
+#        );
+#    }
     return;
 }
 
