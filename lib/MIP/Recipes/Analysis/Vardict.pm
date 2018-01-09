@@ -154,7 +154,8 @@ sub analysis_vardict {
 
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::Get::Parameter qw{ get_module_parameters };
-    use MIP::Program::Variantcalling::Vardict qw{ vardict };
+    use MIP::Program::Variantcalling::Vardict
+      qw{ vardict vardict_var2vcf_single vardict_var2vcf_paired vardict_testsomatic vardict_teststrandbias };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::QC::Record
@@ -242,44 +243,93 @@ sub analysis_vardict {
     ## is tumor and the second one is normal tissue.
     ##TODO: sort alphabetically
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
-    my $af_threshold = $active_parameter_href->{af_threshold};
-    my $sample_name = $active_parameter_href->{sample_name};
-    my $chrom_start = $active_parameter_href->{chrom_start};
-    my $region_start = $active_parameter_href->{region_start};
-    my $region_end = $active_parameter_href->{region_end};
-    my $segment_annotn = $active_parameter_href->{segment_annotn};
-    my $input_bed_file = $active_parameter_href->{input_bed_file};
+    my $af_threshold       = $active_parameter_href->{af_threshold};
+    my $sample_name        = $active_parameter_href->{sample_name};
+    my $chrom_start        = $active_parameter_href->{chrom_start};
+    my $region_start       = $active_parameter_href->{region_start};
+    my $region_end         = $active_parameter_href->{region_end};
+    my $segment_annotn     = $active_parameter_href->{segment_annotn};
+    my $input_bed_file     = $active_parameter_href->{input_bed_file};
 
-    vardict(
-        {
-            af_threshold           => $af_threshold,
-            FILEHANDLE             => $FILEHANDLE,
-            infile_paths_ref       => $infile_path,
-            out_chrom_start        => $chrom_start,
-            out_region_start       => $region_start,
-            out_region_end         => $region_end,
-            out_segment_annotn     => $segment_annotn,
-            referencefile_path     => $referencefile_path,
-            sample_name            => $sample_name,
-            infile_bed_region_info => $input_bed_file,
-        }
-    );
+    say {$FILEHANDLE} q{## varDict variant calling};
 
-    ## TODO: condition if the input is array use different R script: teststrandbias.R vs testsomatic.R
-    ## TODO: var2vcf_paired.pl needs its own module
+    if ( $active_parameter_href->{variantcall_varDict_PE} ) {
+        vardict(
+            {
+                af_threshold           => $af_threshold,
+                FILEHANDLE             => $FILEHANDLE,
+                infile_paths_ref       => $infile_path,
+                out_chrom_start        => $chrom_start,
+                out_region_start       => $region_start,
+                out_region_end         => $region_end,
+                out_segment_annotn     => $segment_annotn,
+                referencefile_path     => $referencefile_path,
+                sample_name            => $sample_name,
+                infile_bed_region_info => $input_bed_file,
+            }
+        );
 
-    print {$FILEHANDLE} $PIPE
-      . q{ testsomatic.R }
-      . $PIPE
-      . q{var2vcf_paired.pl -N}
-      . $SPACE
-      . $sample_name
-      . $SPACE . q{-f}
-      . $SPACE
-      . $af_threshold
-      . $STDOUT
-      . $SPACE
-      . $outfile_name;
+        print {$FILEHANDLE} $PIPE . $SPACE;
+
+        vardict_teststrandbias(
+            {
+                FILEHANDLE => $FILEHANDLE,
+
+            }
+        );
+
+        print {$FILEHANDLE} $PIPE . $SPACE;
+
+        vardict_var2vcf_paired(
+            {
+                af_threshold => $af_threshold,
+                FILEHANDLE   => $FILEHANDLE,
+                sample_name  => $sample_name,
+            }
+        );
+
+        print {$FILEHANDLE} $SPACE . $STDOUT . print{$outfile_path};
+
+    }
+
+    if ( $active_parameter_href->{variantcall_varDict_SE} ) {
+        vardict(
+            {
+                af_threshold           => $af_threshold,
+                FILEHANDLE             => $FILEHANDLE,
+                infile_paths_ref       => $infile_path,
+                out_chrom_start        => $chrom_start,
+                out_region_start       => $region_start,
+                out_region_end         => $region_end,
+                out_segment_annotn     => $segment_annotn,
+                referencefile_path     => $referencefile_path,
+                sample_name            => $sample_name,
+                infile_bed_region_info => $input_bed_file,
+            }
+        );
+
+        print {$FILEHANDLE} $PIPE . $SPACE;
+
+        vardict_testsomatic(
+            {
+                FILEHANDLE => $FILEHANDLE,
+
+            }
+        );
+
+        print {$FILEHANDLE} $PIPE . $SPACE;
+
+        vardict_var2vcf_single(
+            {
+                af_threshold => $af_threshold,
+                FILEHANDLE   => $FILEHANDLE,
+                sample_name  => $sample_name,
+            }
+        );
+
+        print {$FILEHANDLE} $SPACE . $STDOUT . print{$outfile_path};
+
+    }
 
 ###############################
 ###RECIPE TOOL COMMANDS HERE###
@@ -325,7 +375,7 @@ sub analysis_vardict {
                 log                     => $log,
                 path                    => $job_id_chain,
                 sample_id               => $sample_id,
-                sbatch_file_name        => $file_path
+                sbatch_file_name        => $file_name
             }
         );
     }
