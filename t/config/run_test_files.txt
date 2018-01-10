@@ -178,6 +178,7 @@ sambamba_markdup.t
 sambamba_sort.t
 sambamba_view.t
 samtools_faidx.t
+samtools_idxstats.t
 samtools_index.t
 samtools_mpileup.t
 samtools_stats.t

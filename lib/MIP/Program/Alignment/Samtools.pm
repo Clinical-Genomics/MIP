@@ -22,14 +22,14 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Inherit from Exporter to export functions and variables
     use base qw{ Exporter };
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ samtools_view samtools_index samtools_stats samtools_mpileup samtools_faidx samtools_create_chromosome_files };
+      qw{ samtools_view samtools_index samtools_stats samtools_mpileup samtools_faidx samtools_create_chromosome_files samtools_idxstats };
 
 }
 
@@ -672,4 +672,77 @@ sub samtools_create_chromosome_files {
     return;
 }
 
+sub samtools_idxstats {
+
+## Function : Perl wrapper for writing samtools idxstats recipe to $FILEHANDLE. Based on samtools 1.6 (using htslib 1.6).
+## Returns  : @commands
+## Arguments: $FILEHANDLE             => Filehandle to write to
+##          : $infile_path            => Infile path
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $infile_path;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+
+    ## Default(s)
+
+    my $tmpl = {
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        infile_path => {
+            defined => 1,
+            required => 1,
+            store => \$infile_path,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Stores commands depending on input parameters
+    my @commands = q{samtools idxstats};
+
+    ## Infile
+    push @commands, $infile_path;
+
+    ## Redirect stderr output to program specific stderr file
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            FILEHANDLE   => $FILEHANDLE,
+            commands_ref => \@commands,
+            separator    => $SPACE,
+
+        }
+    );
+    return @commands;
+}
 1;
