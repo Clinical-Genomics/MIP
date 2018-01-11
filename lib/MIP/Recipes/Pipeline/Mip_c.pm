@@ -182,36 +182,36 @@ sub pipeline_mip_c {
         }
     }
 
-### Aligning fastq files based on sample_id
-#    if ( $active_parameter_href->{pbwa_mem} ) {
-#
-#        $log->info(q{[BWA Mem]});
-#
-#      SAMPLE_ID:
-#        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-#
-#            my $outsample_directory =
-#              catdir( $active_parameter_href->{outdata_dir},
-#                $sample_id, $active_parameter_href->{outaligner_dir} );
-#
-#            analysis_bwa_mem(
-#                {
-#                    parameter_href          => $parameter_href,
-#                    active_parameter_href   => $active_parameter_href,
-#                    sample_info_href        => $sample_info_href,
-#                    file_info_href          => $file_info_href,
-#                    infiles_ref             => \@{ $infile_href->{$sample_id} },
-#                    infile_lane_prefix_href => $infile_lane_prefix_href,
-#                    job_id_href             => $job_id_href,
-#                    insample_directory      => $indir_path_href->{$sample_id},
-#                    outsample_directory     => $outsample_directory,
-#                    sample_id               => $sample_id,
-#                    program_name            => q{bwa_mem},
-#                }
-#            );
-#        }
-#    }
-#
+## Aligning fastq files based on sample_id
+    if ( $active_parameter_href->{pbwa_mem} ) {
+
+        $log->info(q{[BWA Mem]});
+
+      SAMPLE_ID:
+        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+            my $outsample_directory =
+              catdir( $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir} );
+
+            analysis_bwa_mem(
+                {
+                    parameter_href          => $parameter_href,
+                    active_parameter_href   => $active_parameter_href,
+                    sample_info_href        => $sample_info_href,
+                    file_info_href          => $file_info_href,
+                    infiles_ref             => \@{ $infile_href->{$sample_id} },
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    job_id_href             => $job_id_href,
+                    insample_directory      => $indir_path_href->{$sample_id},
+                    outsample_directory     => $outsample_directory,
+                    sample_id               => $sample_id,
+                    program_name            => q{bwa_mem},
+                }
+            );
+        }
+    }
+
 ### MarkDuplicates
 #    if ( $active_parameter_href->{pmarkduplicates} ) {
 #
