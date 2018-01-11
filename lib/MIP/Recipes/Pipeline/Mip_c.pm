@@ -156,20 +156,20 @@ sub pipeline_mip_c {
 
         $log->info(q{[Fastqc]});
 
-      SAMPLE_ID:
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+        SAMPLE_ID:
+        foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
 
             my $fastqc_program_name = q{fastqc};
 
             my $outsample_directory =
-              catdir( $active_parameter_href->{outdata_dir},
-                $sample_id, $fastqc_program_name );
+                catdir($active_parameter_href->{outdata_dir},
+                    $sample_id, $fastqc_program_name);
             analysis_fastqc(
                 {
-                    parameter_href        => $parameter_href,
-                    active_parameter_href => $active_parameter_href,
-                    sample_info_href      => $sample_info_href,
-                    infiles_ref           => \@{ $infile_href->{$sample_id} },
+                    parameter_href          => $parameter_href,
+                    active_parameter_href   => $active_parameter_href,
+                    sample_info_href        => $sample_info_href,
+                    infiles_ref             => \@{ $infile_href->{$sample_id} },
 
                     infile_lane_prefix_href => $infile_lane_prefix_href,
                     job_id_href             => $job_id_href,
@@ -180,6 +180,7 @@ sub pipeline_mip_c {
                 }
             );
         }
+    }
 
 ## Aligning fastq files based on sample_id
     if ( $active_parameter_href->{pbwa_mem} ) {
@@ -206,6 +207,40 @@ sub pipeline_mip_c {
                     outsample_directory     => $outsample_directory,
                     sample_id               => $sample_id,
                     program_name            => q{bwa_mem},
+                }
+            );
+        }
+    }
+
+## Merge bam files
+    if ( $active_parameter_href->{ppicardtools_mergesamfiles} ) {
+
+        $log->info(q{[Picardtools mergesamfiles]});
+
+      SAMPLE_ID:
+        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
+        {
+
+            my $insample_directory =
+              catdir( $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir} );
+            my $outsample_directory =
+              catdir( $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir} );
+
+            analysis_picardtools_mergesamfiles(
+                {
+                    parameter_href          => $parameter_href,
+                    active_parameter_href   => $active_parameter_href,
+                    sample_info_href        => $sample_info_href,
+                    file_info_href          => $file_info_href,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    lane_href               => $lane_href,
+                    job_id_href             => $job_id_href,
+                    insample_directory      => $insample_directory,
+                    outsample_directory     => $outsample_directory,
+                    sample_id               => $sample_id,
+                    program_name            => q{picardtools_mergesamfiles},
                 }
             );
         }
@@ -245,7 +280,198 @@ sub pipeline_mip_c {
         }
     }
 
-# MultiQC
+## Base recalibrator
+    if ( $active_parameter_href->{pgatk_baserecalibration} ) {
+
+        $log->info(q{[GATK baserecalibrator/printreads]});
+
+      SAMPLE_ID:
+        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
+        {
+
+            ## Assign directories
+            my $insample_directory =
+              catdir( $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir} );
+            my $outsample_directory =
+              catdir( $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir} );
+
+            analysis_gatk_baserecalibration(
+                {
+                    parameter_href          => $parameter_href,
+                    active_parameter_href   => $active_parameter_href,
+                    sample_info_href        => $sample_info_href,
+                    file_info_href          => $file_info_href,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    job_id_href             => $job_id_href,
+                    sample_id               => $sample_id,
+                    insample_directory      => $insample_directory,
+                    outsample_directory     => $outsample_directory,
+                    program_name            => q{gatk_baserecalibration},
+                }
+            );
+        }
+    }
+
+## Chanjo sex check
+    if ( $active_parameter_href->{pchanjo_sexcheck} ) {
+
+        $log->info(q{[Chanjo sexcheck]});
+
+      SAMPLE_IDS:
+        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+            my $insample_directory =
+              catdir( $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir} );
+            my $outsample_directory = catdir(
+                $active_parameter_href->{outdata_dir},    $sample_id,
+                $active_parameter_href->{outaligner_dir}, q{coveragereport}
+            );
+
+            analysis_chanjo_sex_check(
+                {
+                    parameter_href          => $parameter_href,
+                    active_parameter_href   => $active_parameter_href,
+                    sample_info_href        => $sample_info_href,
+                    file_info_href          => $file_info_href,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    job_id_href             => $job_id_href,
+                    sample_id               => $sample_id,
+                    insample_directory      => $insample_directory,
+                    outsample_directory     => $outsample_directory,
+                    program_name            => q{chanjo_sexcheck},
+                }
+            );
+        }
+    }
+
+## Sambamba depth
+    if ( $active_parameter_href->{psambamba_depth} ) {
+
+        $log->info(q{[Sambamba depth]});
+
+      SAMPLE_ID:
+        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+            my $insample_directory =
+              catdir( $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir} );
+            my $outsample_directory = catdir(
+                $active_parameter_href->{outdata_dir},    $sample_id,
+                $active_parameter_href->{outaligner_dir}, q{coveragereport}
+            );
+
+            analysis_sambamba_depth(
+                {
+                    parameter_href          => $parameter_href,
+                    active_parameter_href   => $active_parameter_href,
+                    sample_info_href        => $sample_info_href,
+                    file_info_href          => $file_info_href,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    job_id_href             => $job_id_href,
+                    sample_id               => $sample_id,
+                    insample_directory      => $insample_directory,
+                    outsample_directory     => $outsample_directory,
+                    program_name            => q{sambamba_depth},
+                }
+            );
+        }
+    }
+
+## Picard collect multiple metrics
+    if ( $active_parameter_href->{ppicardtools_collectmultiplemetrics} ) {
+
+        $log->info(q{[Picardtools collectmultiplemetrics]});
+
+      SAMPLE_ID:
+        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+            ## Assign directories
+            my $insample_directory =
+              catdir( $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir} );
+            my $outsample_directory = catdir(
+                $active_parameter_href->{outdata_dir},    $sample_id,
+                $active_parameter_href->{outaligner_dir}, q{coveragereport}
+            );
+
+            analysis_picardtools_collectmultiplemetrics(
+                {
+                    parameter_href          => $parameter_href,
+                    active_parameter_href   => $active_parameter_href,
+                    sample_info_href        => $sample_info_href,
+                    file_info_href          => $file_info_href,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    job_id_href             => $job_id_href,
+                    sample_id               => $sample_id,
+                    insample_directory      => $insample_directory,
+                    outsample_directory     => $outsample_directory,
+                    program_name => q{picardtools_collectmultiplemetrics},
+                }
+            );
+        }
+    }
+
+## Picard Collect HS metrics
+    if ( $active_parameter_href->{ppicardtools_collecthsmetrics} ) {
+
+        $log->info(q{[Picardtools collecthsmetrics]});
+
+      SAMPLE_ID:
+        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+            ## Assign directories
+            my $insample_directory =
+              catdir( $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir} );
+            my $outsample_directory = catdir(
+                $active_parameter_href->{outdata_dir},    $sample_id,
+                $active_parameter_href->{outaligner_dir}, q{coveragereport}
+            );
+
+            analysis_picardtools_collecthsmetrics(
+                {
+                    parameter_href          => $parameter_href,
+                    active_parameter_href   => $active_parameter_href,
+                    sample_info_href        => $sample_info_href,
+                    file_info_href          => $file_info_href,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    job_id_href             => $job_id_href,
+                    sample_id               => $sample_id,
+                    insample_directory      => $insample_directory,
+                    outsample_directory     => $outsample_directory,
+                    program_name            => q{picardtools_collecthsmetrics},
+                }
+            );
+        }
+    }
+
+## QC collect
+    if ( $active_parameter_href->{pqccollect} ) {
+
+        $log->info(q{[Qccollect]});
+
+        my $outfamily_directory = catdir(
+            $active_parameter_href->{outdata_dir},
+            $active_parameter_href->{family_id}
+        );
+
+        analysis_qccollect(
+            {
+                parameter_href          => $parameter_href,
+                active_parameter_href   => $active_parameter_href,
+                sample_info_href        => $sample_info_href,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                program_name            => q{qccollect},
+                outfamily_directory     => $outfamily_directory,
+            }
+        );
+    }
+
+## MultiQC
     if ( $active_parameter_href->{pmultiqc} ) {
 
         $log->info(q{[Multiqc]});
@@ -262,40 +488,38 @@ sub pipeline_mip_c {
         );
     }
 
-   }
 
+    if ( $active_parameter_href->{panalysisrunstatus} ) {
 
-#    if ( $active_parameter_href->{panalysisrunstatus} ) {
-#
-#        $log->info(q{[Analysis run status]});
-#
-#        analysis_analysisrunstatus(
-#            {
-#                active_parameter_href   => $active_parameter_href,
-#                infile_lane_prefix_href => $infile_lane_prefix_href,
-#                job_id_href             => $job_id_href,
-#                parameter_href          => $parameter_href,
-#                program_name            => q{analysisrunstatus},
-#                sample_info_href        => $sample_info_href,
-#            }
-#        );
-#    }
-#
-#    if ( $active_parameter_href->{psacct} ) {
-#
-#        $log->info(q{[Sacct]});
-#
-#        analysis_sacct(
-#            {
-#                active_parameter_href   => $active_parameter_href,
-#                infile_lane_prefix_href => $infile_lane_prefix_href,
-#                job_id_href             => $job_id_href,
-#                parameter_href          => $parameter_href,
-#                program_name            => q{sacct},
-#                sample_info_href        => $sample_info_href,
-#            }
-#        );
-#    }
+        $log->info(q{[Analysis run status]});
+
+        analysis_analysisrunstatus(
+            {
+                active_parameter_href   => $active_parameter_href,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                parameter_href          => $parameter_href,
+                program_name            => q{analysisrunstatus},
+                sample_info_href        => $sample_info_href,
+            }
+        );
+    }
+
+    if ( $active_parameter_href->{psacct} ) {
+
+        $log->info(q{[Sacct]});
+
+        analysis_sacct(
+            {
+                active_parameter_href   => $active_parameter_href,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                parameter_href          => $parameter_href,
+                program_name            => q{sacct},
+                sample_info_href        => $sample_info_href,
+            }
+        );
+    }
     return;
 }
 
