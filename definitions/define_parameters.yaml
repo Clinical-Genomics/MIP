@@ -906,7 +906,7 @@ vf2cytosure_no_filter:
    - pvcf2cytosure
   data_type: SCALAR
   default: 0
-  type:
+  type: program_argument
 vcf2cytosure_var_size:
   associated_program:
    - pvcf2cytosure
