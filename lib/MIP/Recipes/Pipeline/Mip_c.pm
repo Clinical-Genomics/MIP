@@ -180,7 +180,25 @@ sub pipeline_mip_c {
                 }
             );
         }
+
+# MultiQC
+    if ( $active_parameter_href->{pmultiqc} ) {
+
+        $log->info(q{[Multiqc]});
+
+        analysis_multiqc(
+            {
+                parameter_href          => $parameter_href,
+                active_parameter_href   => $active_parameter_href,
+                sample_info_href        => $sample_info_href,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                program_name            => q{multiqc},
+            }
+        );
     }
+
+   }
 
 ## Aligning fastq files based on sample_id
     if ( $active_parameter_href->{pbwa_mem} ) {
@@ -212,56 +230,40 @@ sub pipeline_mip_c {
         }
     }
 
-### MarkDuplicates
-#    if ( $active_parameter_href->{pmarkduplicates} ) {
-#
-#        $log->info(q{[Markduplicates]});
-#
-#      SAMPLE_ID:
-#        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
-#        {
-#
-#            ## Assign directories
-#            my $insample_directory =
-#              catdir( $active_parameter_href->{outdata_dir},
-#                $sample_id, $active_parameter_href->{outaligner_dir} );
-#            my $outsample_directory =
-#              catdir( $active_parameter_href->{outdata_dir},
-#                $sample_id, $active_parameter_href->{outaligner_dir} );
-#
-#            analysis_markduplicates(
-#                {
-#                    parameter_href          => $parameter_href,
-#                    active_parameter_href   => $active_parameter_href,
-#                    sample_info_href        => $sample_info_href,
-#                    file_info_href          => $file_info_href,
-#                    infile_lane_prefix_href => $infile_lane_prefix_href,
-#                    job_id_href             => $job_id_href,
-#                    insample_directory      => $insample_directory,
-#                    outsample_directory     => $outsample_directory,
-#                    sample_id               => $sample_id,
-#                    program_name            => q{markduplicates},
-#                }
-#            );
-#        }
-#    }
-#
-#    if ( $active_parameter_href->{pmultiqc} ) {
-#
-#        $log->info(q{[Multiqc]});
-#
-#        analysis_multiqc(
-#            {
-#                parameter_href          => $parameter_href,
-#                active_parameter_href   => $active_parameter_href,
-#                sample_info_href        => $sample_info_href,
-#                infile_lane_prefix_href => $infile_lane_prefix_href,
-#                job_id_href             => $job_id_href,
-#                program_name            => q{multiqc},
-#            }
-#        );
-#    }
-#
+## MarkDuplicates
+    if ( $active_parameter_href->{pmarkduplicates} ) {
+
+        $log->info(q{[Markduplicates]});
+
+      SAMPLE_ID:
+        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
+        {
+
+            ## Assign directories
+            my $insample_directory =
+              catdir( $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir} );
+            my $outsample_directory =
+              catdir( $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir} );
+
+            analysis_markduplicates(
+                {
+                    parameter_href          => $parameter_href,
+                    active_parameter_href   => $active_parameter_href,
+                    sample_info_href        => $sample_info_href,
+                    file_info_href          => $file_info_href,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    job_id_href             => $job_id_href,
+                    insample_directory      => $insample_directory,
+                    outsample_directory     => $outsample_directory,
+                    sample_id               => $sample_id,
+                    program_name            => q{markduplicates},
+                }
+            );
+        }
+    }
+
 #    if ( $active_parameter_href->{panalysisrunstatus} ) {
 #
 #        $log->info(q{[Analysis run status]});
