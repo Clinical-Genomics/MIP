@@ -1,12 +1,6 @@
 # Tests
 Each command module in MIP should be accompanied by a test that controls whether the command module yields the expected output. MIP uses the cpan module TEST::More, which is a framework for writing test.
-Basic templates for writing tests to new MIP modules is provided in:
-
-    MIP/
-    - templates/
-        - code/
-            - test.t
-            - test_commands.t
+Basic templates for writing tests to new MIP modules is provided in [code dir] and have the standard `.t` file suffix:
 
 ## test.t
 This is a basic template for writing tests for modules that do not return a commands array and thus do not utilize the MIP/lib/MIP/Test/Commands.pm module for testing. The template includes a test to check the availability of the module that is to be tested as well as the module required to display the help message.
@@ -69,3 +63,5 @@ env_name => {
     expected_output => q{--name test_env},
 },
 ```
+
+[code dir]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/code/
