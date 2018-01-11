@@ -282,7 +282,7 @@ sub conda_check_env_status {
     # Unless the active environment is root the expression will return true
     #   and print the environment name
     my $detect_active_conda_env =
-      q?perl -nae 'if( ($_!~/^root/) && ($_=~/\*/) ) {print $F[0]}'?;
+      q?perl -nae 'if( ($_!~/ ^root || ^base /xms) && ($_=~/\*/) ) {print $F[0]}'?;
 
     # Pipes the output from the shell command "conda info --envs"
     #   to $detect_active_conda_env.
