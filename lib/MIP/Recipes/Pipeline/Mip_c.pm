@@ -181,25 +181,6 @@ sub pipeline_mip_c {
             );
         }
 
-# MultiQC
-    if ( $active_parameter_href->{pmultiqc} ) {
-
-        $log->info(q{[Multiqc]});
-
-        analysis_multiqc(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                program_name            => q{multiqc},
-            }
-        );
-    }
-
-   }
-
 ## Aligning fastq files based on sample_id
     if ( $active_parameter_href->{pbwa_mem} ) {
 
@@ -263,6 +244,26 @@ sub pipeline_mip_c {
             );
         }
     }
+
+# MultiQC
+    if ( $active_parameter_href->{pmultiqc} ) {
+
+        $log->info(q{[Multiqc]});
+
+        analysis_multiqc(
+            {
+                parameter_href          => $parameter_href,
+                active_parameter_href   => $active_parameter_href,
+                sample_info_href        => $sample_info_href,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                program_name            => q{multiqc},
+            }
+        );
+    }
+
+   }
+
 
 #    if ( $active_parameter_href->{panalysisrunstatus} ) {
 #
