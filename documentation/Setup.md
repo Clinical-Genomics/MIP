@@ -3,9 +3,16 @@
 ## Fastq filename convention
 The permanent filename should follow the following format:
 
-``{LANE}_{DATE}_{FLOW CELL}_{SAMPLE_ID}_{BARCODE SEQ}_{DIRECTION 1/2}.fastq[.qz]``
+``{LANE}_{DATE}_{FLOW-CELL}_{SAMPLE-ID}_{BARCODE-SEQ}_{DIRECTION 1/2}.fastq[.qz]``
+
+Where some types or formats are required some each element:
+- LANE = Integer
+- DATE = YYMMDD
+- BARCODE-SEQ = A, C, G, T or integer
+- DIRECTION = 1 or 2
 
 The `familyID` and `sampleID(s)` needs to be unique and the sample id supplied should be equal to the {SAMPLE_ID} in the filename.
+Underscore cannot be part of any element in the file name as this is used as the seperator for each element.
 
 However, MIP will except filenames in other formats as long as the filename contains the sample id and the mandatory information can be collected from the fastq header.
 
@@ -73,8 +80,8 @@ Capture target files:
 
 #### *Note*
 If you do not supply these parameters MIP will create these from scratch using the supplied "latest" supported capture kit ".bed" file and the supplied human reference genome as template.
-   
-[Pedigree file]: https://github.com/henrikstranneheim/MIP/tree/master/templates/643594-miptest_pedigree.yaml
+
+[Pedigree file]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/643594-miptest_pedigree.yaml   
 [Configuration file]: https://github.com/henrikstranneheim/MIP/blob/master/templates/mip_config.yaml
 [BWA]: https://github.com/lh3/bwa
 [BWAKit]: https://github.com/lh3/bwa/tree/master/bwakit

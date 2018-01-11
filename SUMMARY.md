@@ -7,3 +7,4 @@
     * [API](documentation/Api.md)
       * [Identifiers](documentation/API/Identifiers.md)
       * [Modules](documentation/API/Modules.md)
+      * [Tests](documentation/API/Tests.md)

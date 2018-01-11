@@ -66,6 +66,7 @@ use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
 use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core };
 use MIP::Recipes::Pipeline::Wgs qw{ pipeline_wgs };
 use MIP::Recipes::Pipeline::Wts qw{ pipeline_wts };
+use MIP::Recipes::Pipeline::Mip_c qw{ pipeline_mip_c };
 
 our $USAGE = build_usage( {} );
 
@@ -211,11 +212,11 @@ GetOptions(
       \$active_parameter{analysis_constant_path},
     q{cfa|config_file_analysis:s} => \$active_parameter{config_file_analysis},
     q{sif|sample_info_file:s}     => \$active_parameter{sample_info_file},
-    q{dra|dry_run_all}          => \$active_parameter{dry_run_all},
-    q{jul|java_use_large_pages} => \$active_parameter{java_use_large_pages},
+    q{dra|dry_run_all}            => \$active_parameter{dry_run_all},
+    q{jul|java_use_large_pages}   => \$active_parameter{java_use_large_pages},
     q{ges|genomic_set:s}          => \$active_parameter{genomic_set},
-    q{rio|reduce_io}            => \$active_parameter{reduce_io},
-    q{riu|replace_iupac}        => \$active_parameter{replace_iupac},
+    q{rio|reduce_io}              => \$active_parameter{reduce_io},
+    q{riu|replace_iupac}          => \$active_parameter{replace_iupac},
     q{ppm|print_program_mode=n}   => \$active_parameter{print_program_mode},
     q{pp|print_program}           => sub {
         ## Force ppm to be read before function call
@@ -238,9 +239,9 @@ GetOptions(
     },
 
     #### Bash
-    q{bse|bash_set_errexit}   => \$active_parameter{bash_set_errexit},
-    q{bsu|bash_set_nounset}   => \$active_parameter{bash_set_nounset},
-    q{bsp|bash_set_pipefail}  => \$active_parameter{bash_set_pipefail},
+    q{bse|bash_set_errexit}     => \$active_parameter{bash_set_errexit},
+    q{bsu|bash_set_nounset}     => \$active_parameter{bash_set_nounset},
+    q{bsp|bash_set_pipefail}    => \$active_parameter{bash_set_pipefail},
     q{em|email:s}               => \$active_parameter{email},
     q{emt|email_types:s}        => \@{ $active_parameter{email_types} },
     q{mcn|module_core_number:s} => \%{ $active_parameter{module_core_number} },
@@ -257,10 +258,10 @@ GetOptions(
     q{psfq|psplit_fastq_file=n} => \$active_parameter{psplit_fastq_file},
     q{sfqrdb|split_fastq_file_read_batch=n} =>
       \$active_parameter{split_fastq_file_read_batch},
-    q{pgz|pgzip_fastq=n}         => \$active_parameter{pgzip_fastq},
-    q{pfqc|pfastqc=n}            => \$active_parameter{pfastqc},
-    q{pcta|pcutadapt=n}          => \$active_parameter{pcutadapt},
-    q{pmem|pbwa_mem=n}           => \$active_parameter{pbwa_mem},
+    q{pgz|pgzip_fastq=n}       => \$active_parameter{pgzip_fastq},
+    q{pfqc|pfastqc=n}          => \$active_parameter{pfastqc},
+    q{pcta|pcutadapt=n}        => \$active_parameter{pcutadapt},
+    q{pmem|pbwa_mem=n}         => \$active_parameter{pbwa_mem},
     q{memhla|bwa_mem_hla}      => \$active_parameter{bwa_mem_hla},
     q{memcrm|bwa_mem_cram}     => \$active_parameter{bwa_mem_cram},
     q{memsts|bwa_mem_bamstats} => \$active_parameter{bwa_mem_bamstats},
@@ -325,7 +326,7 @@ GetOptions(
     q{svcdbq|sv_svdb_query} => \$active_parameter{sv_svdb_query},
     q{svcdbqd|sv_svdb_query_db_files:s} =>
       \%{ $active_parameter{sv_svdb_query_db_files} },
-    q{svcvan|sv_vcfanno}        => \$active_parameter{sv_vcfanno},
+    q{svcvan|sv_vcfanno}          => \$active_parameter{sv_vcfanno},
     q{svcval|sv_vcfanno_lua:s}    => \$active_parameter{sv_vcfanno_lua},
     q{svcvac|sv_vcfanno_config:s} => \$active_parameter{sv_vcfanno_config},
     q{svcvacf|sv_vcfanno_config_file:s} =>
@@ -457,13 +458,12 @@ GetOptions(
     q{prhc|prhocall=n} => \$active_parameter{prhocall},
     q{rhcf|rhocall_frequency_file:s} =>
       \$active_parameter{rhocall_frequency_file},
-    q{pvt|pvt=n}             => \$active_parameter{pvt},
-    q{vtddec|vt_decompose} => \$active_parameter{vt_decompose},
-    q{vtdnor|vt_normalize} => \$active_parameter{vt_normalize},
-    q{vtunq|vt_uniq}       => \$active_parameter{vt_uniq},
-    q{vtmaa|vt_missing_alt_allele} =>
-      \$active_parameter{vt_missing_alt_allele},
-    q{pfqf|pfrequency_filter=n} => \$active_parameter{pfrequency_filter},
+    q{pvt|pvt=n}                   => \$active_parameter{pvt},
+    q{vtddec|vt_decompose}         => \$active_parameter{vt_decompose},
+    q{vtdnor|vt_normalize}         => \$active_parameter{vt_normalize},
+    q{vtunq|vt_uniq}               => \$active_parameter{vt_uniq},
+    q{vtmaa|vt_missing_alt_allele} => \$active_parameter{vt_missing_alt_allele},
+    q{pfqf|pfrequency_filter=n}    => \$active_parameter{pfrequency_filter},
     q{fqfgmf|frequency_genmod_filter} =>
       \$active_parameter{frequency_genmod_filter},
     q{fqfgfr|frequency_genmod_filter_1000g:s} =>
@@ -491,9 +491,9 @@ GetOptions(
       \$active_parameter{vcfparser_select_file_matching_column},
     q{vcpsfa|vcfparser_select_feature_annotation_columns:s} =>
       \@{ $active_parameter{vcfparser_select_feature_annotation_columns} },
-    q{psne|psnpeff=n}      => \$active_parameter{psnpeff},
-    q{snep|snpeff_path:s}  => \$active_parameter{snpeff_path},
-    q{sneann|snpeff_ann} => \$active_parameter{snpeff_ann},
+    q{psne|psnpeff=n}     => \$active_parameter{psnpeff},
+    q{snep|snpeff_path:s} => \$active_parameter{snpeff_path},
+    q{sneann|snpeff_ann}  => \$active_parameter{snpeff_ann},
     q{snegbv|snpeff_genome_build_version:s} =>
       \$active_parameter{snpeff_genome_build_version},
     q{snesaf|snpsift_annotation_files=s} =>
@@ -1489,6 +1489,31 @@ if (   $active_parameter{pgzip_fastq}
 my $consensus_analysis_type =
   $parameter{dynamic_parameter}{consensus_analysis_type};
 
+### mip_c
+if ( $consensus_analysis_type eq q{cancer} )
+
+{
+
+    $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
+
+    ## Pipeline recipe for cancer data
+    pipeline_mip_c(
+        {
+            parameter_href          => \%parameter,
+            active_parameter_href   => \%active_parameter,
+            sample_info_href        => \%sample_info,
+            file_info_href          => \%file_info,
+            indir_path_href         => \%indir_path,
+            infile_href             => \%infile,
+            infile_lane_prefix_href => \%infile_lane_prefix,
+            lane_href               => \%lane,
+            job_id_href             => \%job_id,
+            outaligner_dir          => $active_parameter{outaligner_dir},
+            log                     => $log,
+        }
+    );
+}
+
 ### WTS
 if ( $consensus_analysis_type eq q{wts} ) {
 
@@ -1515,7 +1540,7 @@ if ( $consensus_analysis_type eq q{wts} ) {
 ### WES|WGS
 if (   $consensus_analysis_type eq q{wgs}
     || $consensus_analysis_type eq q{wes}
-       || $consensus_analysis_type eq q{mixed} )
+    || $consensus_analysis_type eq q{mixed} )
 {
 
     $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
@@ -4677,7 +4702,9 @@ sub add_to_sample_info {
         $sample_info_href->{sample_origin} =
           $active_parameter_href->{sample_origin};
     }
-    if ( exists $active_parameter_href->{gatk_path} ) {
+    if ( exists $active_parameter_href->{gatk_path}
+        && $active_parameter_href->{gatk_path} )
+    {
 
         my $gatk_version;
         if ( $active_parameter_href->{gatk_path} =~ /GenomeAnalysisTK-([^,]+)/ )
@@ -4685,7 +4712,8 @@ sub add_to_sample_info {
 
             $gatk_version = $1;
         }
-        else {    #Fall back on actually calling program
+        else {
+            # Fall back on actually calling program
 
             my $jar_path = catfile( $active_parameter_href->{gatk_path},
                 "GenomeAnalysisTK.jar" );
@@ -4700,8 +4728,10 @@ sub add_to_sample_info {
             }
         );
     }
-    if ( exists $active_parameter_href->{picardtools_path} )
-    {    #To enable addition of version to sample_info
+    if ( exists $active_parameter_href->{picardtools_path}
+        && $active_parameter_href->{picardtools_path} )
+    {
+        ## To enable addition of version to sample_info
 
         my $picardtools_version;
         if ( $active_parameter_href->{picardtools_path} =~
