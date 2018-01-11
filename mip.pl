@@ -339,6 +339,7 @@ GetOptions(
       \$active_parameter{sv_genmod_filter_threshold},
     q{svcbcf|sv_combinevariantcallsets_bcf_file} =>
       \$active_parameter{sv_combinevariantcallsets_bcf_file},
+    q{pv2cs|pvcf2cytosure:n} => \$active_parameter{pvcf2cytosure},
     q{psvv|psv_varianteffectpredictor=n} =>
       \$active_parameter{psv_varianteffectpredictor},
     q{svvepf|sv_vep_features:s} => \@{ $active_parameter{sv_vep_features} },
@@ -1717,6 +1718,7 @@ sub build_usage {
     -psvre/--psv_reformat Concatenating files (defaults to "0" (=no))
       -svrevbf/--sv_rankvariant_binary_file Produce binary file from the rank variant chromosome sorted vcfs (supply flag to enable)
       -svrergf/--sv_reformat_remove_genes_file Remove variants in hgnc_ids (defaults to "")
+    -pv2cs/--vcf2cytosure convert a VCF with structural variants to the “.CGH” format used by the commercial Cytosure software
 
     ##Bcftools
     -pbmp/--pbcftools_mpileup Variant calling using bcftools mpileup (defaults to "0" (=no))
