@@ -24,7 +24,7 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_recipe };
+    our @EXPORT_OK = qw{ analysis_vcf2cytosure };
 
 }
 
@@ -217,7 +217,7 @@ sub analysis_vcf2cytosure {
     say {$FILEHANDLE} q{infile_tag:} . $file_info_href;
     say {$FILEHANDLE} q{$outfile_tag:} . $outfile_tag;
 
-    
+
 }
 
 1;
