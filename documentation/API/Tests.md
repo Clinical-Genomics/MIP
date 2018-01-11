@@ -23,6 +23,29 @@ To:
 ```Perl
 use MIP::Package_manager::Conda qw{conda_install};
 ```  
+#### Diagnose string
+Change:
+```Perl
+diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
+      . $MIP::PATH::TO::MODULE::VERSION
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+. $EXECUTABLE_NAME );
+```
+To:
+```Perl
+diag(   q{Test conda_install from Conda.pm v}
+      . $MIP::Package_manager::Conda::VERSION
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+. $EXECUTABLE_NAME );
+```
 #### Basic shell command
 Change:
 ```Perl
