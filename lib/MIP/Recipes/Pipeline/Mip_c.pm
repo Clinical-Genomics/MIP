@@ -144,32 +144,45 @@ sub pipeline_mip_c {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Recipes
+    use MIP::Recipes::Analysis::Analysisrunstatus
+      qw{ analysis_analysisrunstatus };
     use MIP::Recipes::Analysis::Bwa_mem qw{ analysis_bwa_mem };
+    use MIP::Recipes::Analysis::Chanjo_sex_check
+      qw{ analysis_chanjo_sex_check };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
+    use MIP::Recipes::Analysis::Gatk_baserecalibration
+      qw{ analysis_gatk_baserecalibration };
     use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates };
     use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
-    use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
+    use MIP::Recipes::Analysis::Picardtools_collecthsmetrics
+      qw{ analysis_picardtools_collecthsmetrics };
+    use MIP::Recipes::Analysis::Picardtools_collectmultiplemetrics
+      qw{ analysis_picardtools_collectmultiplemetrics };
+    use MIP::Recipes::Analysis::Picardtools_mergesamfiles
+      qw{ analysis_picardtools_mergesamfiles };
+    use MIP::Recipes::Analysis::Qccollect qw{ analysis_qccollect };
     use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
+    use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
 
 ## FastQC oer sample_id
     if ( $active_parameter_href->{pfastqc} ) {
 
         $log->info(q{[Fastqc]});
 
-        SAMPLE_ID:
-        foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
+      SAMPLE_ID:
+        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
             my $fastqc_program_name = q{fastqc};
 
             my $outsample_directory =
-                catdir($active_parameter_href->{outdata_dir},
-                    $sample_id, $fastqc_program_name);
+              catdir( $active_parameter_href->{outdata_dir},
+                $sample_id, $fastqc_program_name );
             analysis_fastqc(
                 {
-                    parameter_href          => $parameter_href,
-                    active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
-                    infiles_ref             => \@{ $infile_href->{$sample_id} },
+                    parameter_href        => $parameter_href,
+                    active_parameter_href => $active_parameter_href,
+                    sample_info_href      => $sample_info_href,
+                    infiles_ref           => \@{ $infile_href->{$sample_id} },
 
                     infile_lane_prefix_href => $infile_lane_prefix_href,
                     job_id_href             => $job_id_href,
@@ -218,8 +231,7 @@ sub pipeline_mip_c {
         $log->info(q{[Picardtools mergesamfiles]});
 
       SAMPLE_ID:
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
-        {
+        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
             my $insample_directory =
               catdir( $active_parameter_href->{outdata_dir},
@@ -252,8 +264,7 @@ sub pipeline_mip_c {
         $log->info(q{[Markduplicates]});
 
       SAMPLE_ID:
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
-        {
+        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
             ## Assign directories
             my $insample_directory =
@@ -286,8 +297,7 @@ sub pipeline_mip_c {
         $log->info(q{[GATK baserecalibrator/printreads]});
 
       SAMPLE_ID:
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } )
-        {
+        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
             ## Assign directories
             my $insample_directory =
@@ -487,7 +497,6 @@ sub pipeline_mip_c {
             }
         );
     }
-
 
     if ( $active_parameter_href->{panalysisrunstatus} ) {
 
