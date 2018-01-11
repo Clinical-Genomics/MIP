@@ -1,4 +1,4 @@
-package MIP::Recipes::Pipeline::mip_c;
+package MIP::Recipes::Pipeline::Mip_c;
 
 use strict;
 use warnings;

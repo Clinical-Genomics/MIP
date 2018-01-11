@@ -66,6 +66,7 @@ use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
 use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core };
 use MIP::Recipes::Pipeline::Wgs qw{ pipeline_wgs };
 use MIP::Recipes::Pipeline::Wts qw{ pipeline_wts };
+use MIP::Recipes::Pipeline::Mip_c qw{ pipeline_mip_c };
 
 our $USAGE = build_usage( {} );
 
@@ -1488,6 +1489,31 @@ if (   $active_parameter{pgzip_fastq}
 
 my $consensus_analysis_type =
   $parameter{dynamic_parameter}{consensus_analysis_type};
+
+### mip_c
+if ( $consensus_analysis_type eq q{cancer} )
+
+{
+
+    $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
+
+    ## Pipeline recipe for cancer data
+    pipeline_mip_c(
+        {
+            parameter_href          => \%parameter,
+            active_parameter_href   => \%active_parameter,
+            sample_info_href        => \%sample_info,
+            file_info_href          => \%file_info,
+            indir_path_href         => \%indir_path,
+            infile_href             => \%infile,
+            infile_lane_prefix_href => \%infile_lane_prefix,
+            lane_href               => \%lane,
+            job_id_href             => \%job_id,
+            outaligner_dir          => $active_parameter{outaligner_dir},
+            log                     => $log,
+        }
+    );
+}
 
 ### WTS
 if ( $consensus_analysis_type eq q{wts} ) {
