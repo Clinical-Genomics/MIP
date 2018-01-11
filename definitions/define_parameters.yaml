@@ -889,12 +889,6 @@ pvcf2cytosure:
     - vcf2cytosure
   program_type: structural_variant_callers
   type: program
-vcf2cytosure_freq:
-  associated_program:
-  - pvcf2cytosure
-  data_type: SCALAR
-  default: 0.01
-  type: program_argument
 vcf2cytosure_freq_tag:
   associated_program:
   - pvcf2cytosure
