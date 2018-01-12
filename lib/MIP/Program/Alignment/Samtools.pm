@@ -29,7 +29,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ samtools_view samtools_index samtools_stats samtools_mpileup samtools_faidx samtools_create_chromosome_files samtools_idxstats };
+      qw{ samtools_view samtools_index samtools_stats samtools_mpileup samtools_faidx samtools_create_chromosome_files samtools_idxstats samtools_depth };
 
 }
 
@@ -43,6 +43,7 @@ sub samtools_view {
 ## Function : Perl wrapper for writing samtools view recipe to $FILEHANDLE. Based on samtools 1.3.1 (using htslib 1.3.1).
 ## Returns  : "@commands"
 ##          : $auto_detect_input_format => Ignored (input format is auto-detected)
+##          : $F_flag                   => Do not output alignments that match the bits set
 ##          : $FILEHANDLE               => Sbatch filehandle to write to
 ##          : $fraction                 => Subsample the file to only a fraction of the alignments
 ##          : $infile_path              => Infile path
@@ -64,6 +65,7 @@ sub samtools_view {
     my $with_header;
 
     ## Flatten argument(s)
+    my $F_flag;
     my $FILEHANDLE;
     my $fraction;
     my $infile_path;
@@ -78,6 +80,11 @@ sub samtools_view {
             allow       => [ 0, 1 ],
             default     => 0,
             store       => \$auto_detect_input_format,
+            strict_type => 1,
+        },
+        F_flag => {
+            allow => qr/^\d+$/,
+            store => \$F_flag,
             strict_type => 1,
         },
         FILEHANDLE => {
@@ -163,6 +170,10 @@ sub samtools_view {
     if ($auto_detect_input_format) {
 
         push @commands, q{-S};
+    }
+
+    if ($F_flag) {
+        push @commands, q{-F} . $SPACE . $F_flag;
     }
 
     if ($outfile_path) {
@@ -745,4 +756,79 @@ sub samtools_idxstats {
     );
     return @commands;
 }
+
+sub samtools_depth {
+
+## Function : Perl wrapper for writing samtools depth recipe to $FILEHANDLE. Based on samtools 1.6 (using htslib 1.6).
+## Returns  : @commands
+## Arguments: $FILEHANDLE             => Filehandle to write to
+##          : $infile_path            => Infile path
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $infile_path;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+
+    ## Default(s)
+
+    my $tmpl = {
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        infile_path => {
+            defined => 1,
+            required => 1,
+            store => \$infile_path,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Stores commands depending on input parameters
+    my @commands = q{samtools depth};
+
+    ## Infile
+    push @commands, $infile_path;
+
+    ## Redirect stderr output to program specific stderr file
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            FILEHANDLE   => $FILEHANDLE,
+            commands_ref => \@commands,
+            separator    => $SPACE,
+
+        }
+    );
+    return @commands;
+}
+
 1;
