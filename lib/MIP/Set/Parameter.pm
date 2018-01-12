@@ -23,7 +23,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ set_config_to_active_parameters set_default_config_dynamic_parameters set_dynamic_parameter set_parameter_reference_dir_path set_parameter_to_broadcast };
+      qw{ set_config_to_active_parameters set_custom_default_to_active_parameter set_default_config_dynamic_parameters set_dynamic_parameter set_parameter_reference_dir_path set_parameter_to_broadcast };
 }
 
 ## Constants
@@ -85,6 +85,126 @@ sub set_config_to_active_parameters {
         ## Add to active_parameter
         $active_parameter_href->{$parmeter_name} =
           $config_parameter_href->{$parmeter_name};
+    }
+    return;
+}
+
+sub set_custom_default_to_active_parameter {
+
+## Function : Checks and sets user input or default values to active_parameters.
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+##          : $parameter_href        => Holds all parameters {REF}
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_href;
+    my $parameter_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        parameter_name =>
+          { defined => 1, required => 1, store => \$parameter_name, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Get::Parameter qw{ get_capture_kit };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger(q{MIP});
+
+    ## Build default for analysis_type
+    if ( $parameter_name eq q{analysis_type} ) {
+
+      SAMPLE_ID:
+        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+            $active_parameter_href->{$parameter_name}{$sample_id} = q{wgs};
+        }
+        return;
+    }
+
+    ## Set bwa build reference
+    if ( $parameter_name eq q{bwa_build_reference} ) {
+
+        ## Now we now what human genome reference to build from
+        $active_parameter_href->{$parameter_name} =
+          $active_parameter_href->{human_genome_reference};
+
+        return;
+    }
+
+    ## If capture kit is not set after cmd, config and reading pedigree
+    if ( $parameter_name eq q{exome_target_bed} ) {
+
+        ## Return a default capture kit as user supplied no info
+        my $capture_kit = get_capture_kit(
+            {
+                capture_kit => q{latest},
+                supported_capture_kit_href =>
+                  $parameter_href->{supported_capture_kit},
+            }
+        );
+
+        ## Set default
+        $active_parameter_href->{exome_target_bed}
+          {$capture_kit} = join q{,},
+          @{ $active_parameter_href->{sample_ids} };
+
+        $log->warn(
+q{Could not detect a supplied capture kit. Will Try to use 'latest' capture kit: }
+              . $capture_kit );
+        return;
+    }
+
+    ## Build default for infile_dirs
+    if ( $parameter_name eq q{infile_dirs} ) {
+
+      SAMPLE_ID:
+        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+            my $path = catfile(
+                $active_parameter_href->{cluster_constant_path},
+                $active_parameter_href->{family_id},
+                $active_parameter_href->{analysis_type}{$sample_id},
+                $sample_id,
+                q{fastq}
+            );
+
+            $active_parameter_href->{$parameter_name}{$path} = $sample_id;
+        }
+        return;
+    }
+    if ( $parameter_name eq q{sample_info_file} ) {
+
+        $parameter_href->{sample_info_file}{default} = catfile(
+            $active_parameter_href->{outdata_dir},
+            $active_parameter_href->{family_id},
+            $active_parameter_href->{family_id}
+              . $UNDERSCORE
+              . q{qc_sample_info.yaml}
+        );
+
+        $parameter_href->{qccollect_sampleinfo_file}{default} =
+          $parameter_href->{sample_info_file}{default};
+        return;
     }
     return;
 }
