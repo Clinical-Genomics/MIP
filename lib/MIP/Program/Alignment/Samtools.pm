@@ -29,7 +29,15 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ samtools_view samtools_index samtools_stats samtools_mpileup samtools_faidx samtools_create_chromosome_files samtools_idxstats samtools_depth };
+      qw{ 
+      samtools_create_chromosome_files 
+      samtools_depth
+      samtools_faidx 
+      samtools_idxstats 
+      samtools_index 
+      samtools_mpileup 
+      samtools_stats 
+      samtools_view };
 
 }
 
@@ -42,19 +50,19 @@ sub samtools_view {
 
 ## Function : Perl wrapper for writing samtools view recipe to $FILEHANDLE. Based on samtools 1.3.1 (using htslib 1.3.1).
 ## Returns  : "@commands"
-##          : $auto_detect_input_format => Ignored (input format is auto-detected)
-##          : $F_flag                   => Do not output alignments that match the bits set
-##          : $FILEHANDLE               => Sbatch filehandle to write to
-##          : $fraction                 => Subsample the file to only a fraction of the alignments
-##          : $infile_path              => Infile path
-##          : $outfile_path             => Outfile path
-##          : $output_format            => Output format
-##          : $regions_ref              => The regions to process {REF}
-##          : $stderrfile_path          => Stderrfile path
-##          : $stderrfile_path_append   => Stderrfile path append
-##          : $thread_number            => Number of BAM/CRAM compression threads
-##          : $uncompressed_bam_output  => Uncompressed bam output
-##          : $with_header              => Include header
+##          : $auto_detect_input_format       => Ignored (input format is auto-detected)
+##          : $exclude_reads_with_these_flags => Do not output alignments that match the bits set
+##          : $FILEHANDLE                     => Sbatch filehandle to write to
+##          : $fraction                       => Subsample the file to only a fraction of the alignments
+##          : $infile_path                    => Infile path
+##          : $outfile_path                   => Outfile path
+##          : $output_format                  => Output format
+##          : $regions_ref                    => The regions to process {REF}
+##          : $stderrfile_path                => Stderrfile path
+##          : $stderrfile_path_append         => Stderrfile path append
+##          : $thread_number                  => Number of BAM/CRAM compression threads
+##          : $uncompressed_bam_output        => Uncompressed bam output
+##          : $with_header                    => Include header
 
     my ($arg_href) = @_;
 
@@ -65,7 +73,7 @@ sub samtools_view {
     my $with_header;
 
     ## Flatten argument(s)
-    my $F_flag;
+    my $exclude_reads_with_these_flags;
     my $FILEHANDLE;
     my $fraction;
     my $infile_path;
@@ -82,9 +90,9 @@ sub samtools_view {
             store       => \$auto_detect_input_format,
             strict_type => 1,
         },
-        F_flag => {
+        exclude_reads_with_these_flags => {
             allow       => qr/^\d+$/,
-            store       => \$F_flag,
+            store       => \$exclude_reads_with_these_flags,
             strict_type => 1,
         },
         FILEHANDLE => {
@@ -172,8 +180,8 @@ sub samtools_view {
         push @commands, q{-S};
     }
 
-    if ($F_flag) {
-        push @commands, q{-F} . $SPACE . $F_flag;
+    if ($exclude_reads_with_these_flags) {
+        push @commands, q{-F} . $SPACE . $exclude_reads_with_these_flags;
     }
 
     if ($outfile_path) {
