@@ -169,7 +169,7 @@ sub analysis_vardict {
     my $mip_program_name = q{p} . $program_name;
     my $mip_program_mode = $active_parameter_href->{$mip_program_name};
 
-    ## Unpack parameters
+    ## Alias
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
     my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
         {
@@ -329,7 +329,7 @@ sub analysis_vardict {
             }
         );
 
-        print {$FILEHANDLE} $SPACE . $STDOUT . print{$outfile_path};
+        print {$FILEHANDLE} $NEWLINE
 
     }
 
