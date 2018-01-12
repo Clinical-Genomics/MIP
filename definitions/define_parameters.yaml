@@ -887,7 +887,6 @@ pvcf2cytosure:
   program_name_path:
     - TIDDIT.py
     - vcf2cytosure
-  program_type: structural_variant_callers
   type: program
 vcf2cytosure_freq:
   associated_program:
