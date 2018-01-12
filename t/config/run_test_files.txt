@@ -182,6 +182,7 @@ samtools_idxstats.t
 samtools_index.t
 samtools_mpileup.t
 samtools_stats.t
+samtools_depth.t
 samtools_view.t
 set_active_parameter_pedigree_keys.t
 set_config_to_active_parameters.t

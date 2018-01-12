@@ -223,17 +223,15 @@ sub check_pedigree_sample_allowed_values {
               );
 
             $log->fatal( q{Pedigree file: } . $file_path );
-            $log->fatal(
-                q{For key: }
+            $log->fatal( q{For key: }
                   . $key
-                  . q{ found illegal value: }
+                  . q{ found illegal value: '}
                   . $pedigree_sample_href->{$key}
-                  . q{ allowed values are '}
-                  . join q{' '},
-                @{ $allowed_values{$key} }
-            );
-            $log->fatal(q{Please correct the entry before analysis.});
-            $log->fatal(q{MIP: Aborting run.});
+                  . q{' allowed values are '}
+                  . join( q{' '}, @{ $allowed_values{$key} } )
+                  . q{'} );
+            $log->fatal(q{Please correct the entry before analysis});
+            $log->fatal(q{Aborting run});
             exit 1;
         }
     }
