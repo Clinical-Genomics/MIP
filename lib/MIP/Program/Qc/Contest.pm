@@ -36,10 +36,10 @@ Readonly my $SPACE => q{ };
 
 sub gatk_contest {
 
-## Function : Perl wrapper for generic commands module.
+## Function : Perl wrapper for writing GATK ContEst recipe to $FILEHANDLE. Based on GATK 3.8.0.
 ## Returns  : @commands
 ## Arguments: $FILEHANDLE             => Filehandle to write to
-##          : $referencefile_path      => Reference sequence file
+##          : $referencefile_path     => Reference sequence file
 ##          : $outfile_path           => Outfile path
 ##          : $popvcffilepath         => Population allele frequency vcf file path
 ##          : $infile_eval            => Input bam file for evaluation
@@ -232,7 +232,7 @@ sub gatk_contest {
     push @commands, q{--popfile} . $SPACE . $popvcffilepath;
 
     push @commands, q{--out} . $SPACE . $outfile_path;
-    
+
     push @commands,
       unix_standard_streams(
         {
