@@ -30,6 +30,7 @@ BEGIN {
 Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
 Readonly my $TAB     => qq{\t};
+Readonly my $UNDERSCORE => q{_};
 
 sub set_config_to_active_parameters {
 
