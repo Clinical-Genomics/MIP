@@ -83,8 +83,8 @@ sub samtools_view {
             strict_type => 1,
         },
         F_flag => {
-            allow => qr/^\d+$/,
-            store => \$F_flag,
+            allow       => qr/^\d+$/,
+            store       => \$F_flag,
             strict_type => 1,
         },
         FILEHANDLE => {
@@ -709,9 +709,9 @@ sub samtools_idxstats {
             store => \$FILEHANDLE,
         },
         infile_path => {
-            defined => 1,
-            required => 1,
-            store => \$infile_path,
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
         },
         stderrfile_path => {
@@ -783,9 +783,9 @@ sub samtools_depth {
             store => \$FILEHANDLE,
         },
         infile_path => {
-            defined => 1,
-            required => 1,
-            store => \$infile_path,
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
         },
         stderrfile_path => {

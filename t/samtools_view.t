@@ -127,6 +127,10 @@ my %specific_argument = (
         input           => q{1},
         expected_output => q{-S},
     },
+    F_flag => {
+        input           => q{1},
+        expected_output => q{-F 1},
+    },
     fraction => {
         input           => q{2.5},
         expected_output => q{-s 2.5},
