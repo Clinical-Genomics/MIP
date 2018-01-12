@@ -2,29 +2,29 @@
 
 #### Collects MPS QC from MIP. Loads information on files to examine and values to extract from in YAML format and outputs exracted metrics in YAML format.
 
-use Modern::Perl qw{ 2014 };
-use warnings qw{ FATAL utf8 };
-use autodie qw{ open close :all };
 use v5.18;
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
+use Carp;
 use charnames qw{ :full :short };
-use English qw{ -no_match_vars };
-
 use Cwd;
 use Cwd qw{ abs_path };
 use File::Basename qw{ dirname basename fileparse };
 use File::Spec::Functions qw{ catdir catfile devnull };
 use FindBin qw{ $Bin };
+use English qw{ -no_match_vars };
 use Getopt::Long;
+use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 use Pod::Usage;
 use Pod::Text;
 use POSIX;
-use Carp;
+use utf8;
+use warnings qw{ FATAL utf8 };
+
+$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 
 ## CPANM
+use autodie qw{ open close :all };
+use Modern::Perl qw{ 2017 };
 use Readonly;
 
 ##MIPs lib/
@@ -39,8 +39,13 @@ our $USAGE = build_usage( {} );
 BEGIN {
 
     require MIP::Check::Modules;
+    require MIP::Check::Modules;
+    use MIP::Check::Modules qw{ check_perl_modules parse_cpan_file };
 
-    my @modules = qw{ Modern::Perl autodie YAML Log::Log4perl };
+    my @modules =
+      parse_cpan_file {
+        cpanfile_path => catfile( $Bin, qw{ definitions cpanfile } ),
+      };
 
     ## Evaluate that all modules required are installed
     check_perl_modules(
@@ -242,56 +247,56 @@ sub family_qc {
 
 ## Function : Extracts all qcdata on family level using information in %sample_info_file and %regexp
 ## Returns  :
-## Arguments: $sample_info_href     => Info on samples and family hash {REF}
-##          : $regexp_href          => RegExp hash {REF}
-##          : $qc_data_href         => QCData hash {REF}
+## Arguments: $qc_data_href         => QCData hash {REF}
 ##          : $qc_header_href       => Save header(s) in each outfile {REF}
 ##          : $qc_program_data_href => Hash to save data in each outfile {REF}
+##          : $regexp_href          => RegExp hash {REF}
+##          : $sample_info_href     => Info on samples and family hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $sample_info_href;
-    my $regexp_href;
     my $qc_data_href;
     my $qc_header_href;
     my $qc_program_data_href;
+    my $regexp_href;
+    my $sample_info_href;
 
     my $tmpl = {
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
             strict_type => 1,
-            store       => \$sample_info_href
         },
         regexp_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$regexp_href,
             strict_type => 1,
-            store       => \$regexp_href
         },
         qc_data_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_data_href,
             strict_type => 1,
-            store       => \$qc_data_href
         },
         qc_header_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_header_href,
             strict_type => 1,
-            store       => \$qc_header_href
         },
         qc_program_data_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_program_data_href,
             strict_type => 1,
-            store       => \$qc_program_data_href
         },
     };
 
@@ -330,12 +335,12 @@ sub family_qc {
         ## Parses the RegExpHash structure to identify if the info is 1) Paragraf section(s) (both header and data line(s)); 2) Seperate data line.
         parse_regexp_hash_and_collect(
             {
-                regexp_href          => $regexp_href,
-                qc_program_data_href => $qc_program_data_href,
-                qc_header_href       => $qc_header_href,
-                program              => $program,
                 outdirectory         => $outdirectory,
                 outfile              => $outfile,
+                program              => $program,
+                qc_program_data_href => $qc_program_data_href,
+                qc_header_href       => $qc_header_href,
+                regexp_href          => $regexp_href,
             }
         );
 
@@ -491,49 +496,53 @@ sub parse_regexp_hash_and_collect {
 
 ## Function  : Parses the regexp hash structure to identify if the info is 1) Paragraf section(s) (both header and data line(s)); 2) Seperate data line.
 ## Returns   :
-## Arguments : $regexp_href          => Regexp hash {REF}
+## Arguments : $outdirectory         => Programs outdirectory
+##           : $outfile              => Programs outfile containing parameter to evaluate
 ##           : $qc_header_href       => Save header(s) in each outfile {REF}
 ##           : $qc_program_data_href => Hash to save data in each outfile {REF}
 ##           : $program              => The program to examine
-##           : $outdirectory         => Programs out directory
-##           : $outfile              => Programs out file containing parameter to evaluate
+##           : $regexp_href          => Regexp hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $regexp_href;
+    my $outdirectory;
+    my $outfile;
     my $qc_header_href;
     my $qc_program_data_href;
     my $program;
-    my $outdirectory;
-    my $outfile;
+    my $regexp_href;
 
     my $tmpl = {
         regexp_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$regexp_href,
             strict_type => 1,
-            store       => \$regexp_href
         },
         qc_header_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_header_href,
             strict_type => 1,
-            store       => \$qc_header_href
         },
         qc_program_data_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_program_data_href,
             strict_type => 1,
-            store       => \$qc_program_data_href
         },
-        program =>
-          { required => 1, defined => 1, strict_type => 1, store => \$program },
-        outdirectory => { strict_type => 1, store => \$outdirectory },
-        outfile      => { strict_type => 1, store => \$outfile },
+        program => {
+            defined     => 1,
+            required    => 1,
+            store       => \$program,
+            strict_type => 1,
+        },
+        outdirectory => { store => \$outdirectory, strict_type => 1, },
+        outfile      => { store => \$outfile,      strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -542,7 +551,7 @@ sub parse_regexp_hash_and_collect {
     my $regexp;
 
     ## Covers both whitespace and tab. Add other separators if required
-    my @separators = ( '\s+', '!', ',' );
+    my @separators = ( qw{ \s+ ! }, q{,} );
 
     ## Find the actual regular expression(s) for each program that is used
   REG_EXP:
@@ -661,67 +670,71 @@ sub add_to_qc_data {
 
 ## Function  : Add to qc_data hash to enable write to yaml format
 ## Returns   :
-## Arguments : $sample_info_href     => Info on samples and family hash {REF}
-##           : $regexp_href          => RegExp hash {REF}
+## Arguments : $infile               => infile to program
+##           : $program              => The program to examine
 ##           : $qc_data_href         => QCData hash {REF}
 ##           : $qc_header_href       => Save header(s) in each outfile {REF}
 ##           : $qc_program_data_href => Hash to save data in each outfile {REF}
+##           : $regexp_href          => RegExp hash {REF}
 ##           : $sample_id            => SampleID
-##           : $program              => The program to examine
-##           : $inFile               => infile to program
+##           : $sample_info_href     => Info on samples and family hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $sample_info_href;
-    my $regexp_href;
+    my $infile;
+    my $program;
     my $qc_data_href;
     my $qc_header_href;
     my $qc_program_data_href;
+    my $regexp_href;
     my $sample_id;
-    my $program;
-    my $infile;
+    my $sample_info_href;
 
     my $tmpl = {
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
             strict_type => 1,
-            store       => \$sample_info_href
         },
         regexp_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$regexp_href,
             strict_type => 1,
-            store       => \$regexp_href
         },
         qc_data_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_data_href,
             strict_type => 1,
-            store       => \$qc_data_href
         },
         qc_header_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_header_href,
             strict_type => 1,
-            store       => \$qc_header_href
         },
         qc_program_data_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_program_data_href,
             strict_type => 1,
-            store       => \$qc_program_data_href
         },
-        sample_id => { strict_type => 1, store => \$sample_id },
-        program =>
-          { required => 1, defined => 1, strict_type => 1, store => \$program },
-        infile => { strict_type => 1, store => \$infile },
+        sample_id => { store => \$sample_id, strict_type => 1, },
+        program   => {
+            defined     => 1,
+            required    => 1,
+            store       => \$program,
+            strict_type => 1,
+        },
+        infile => { store => \$infile, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -761,13 +774,13 @@ sub add_to_qc_data {
                       @{ $qc_program_data_href->{$program}{$regexp_key} }[0];
 
                     ## Check that assumed gender is supported by coverage on chrX and chrY
-                    gender_check(
+                    _chanjo_gender_check(
                         {
-                            sample_info_href           => $sample_info_href,
-                            qc_data_href               => $qc_data_href,
-                            sample_id_ref              => \$sample_id,
-                            infile_ref                 => \$infile,
-                            chanjo_sexcheck_gender_ref => \$chanjo_sexcheck,
+                            sample_info_href       => $sample_info_href,
+                            qc_data_href           => $qc_data_href,
+                            sample_id              => $sample_id,
+                            infile                 => $infile,
+                            chanjo_sexcheck_gender => $chanjo_sexcheck,
                         }
                     );
                 }
@@ -800,7 +813,7 @@ sub add_to_qc_data {
                           [$regexp_key_counter];
                     }
                     ## Check gender for sample_id
-                    if ( $program eq "plink_sexcheck" ) {
+                    if ( $program eq q{plink_sexcheck} ) {
 
                         ## Array ref
                         my @sexchecks = split(
@@ -1420,93 +1433,90 @@ sub relation_check {
     return;
 }
 
-sub gender_check {
+sub _chanjo_gender_check {
 
-##Function : Checks that the gender predicted by chanjo_sexcheck is confirmed in the pedigee for the sample
-##Returns  :
-##Arguments: $sample_info_href           => Info on samples and family hash {REF}
-##         : $qc_data_href               => QCData hash {REF}
-##         : $sample_id_ref              => SampleID {REF}
-##         : $infile_ref                 => Infile {REF}
-##         : $chanjo_sexcheck_gender_ref => Chanjo calculated gender {REF}
+## Function : Checks that the gender predicted by chanjo_sexcheck is confirmed in the pedigee for the sample
+## Returns  :
+## Arguments: $chanjo_sexcheck_gender => Chanjo calculated gender
+##          : $infile             => Infile {REF}
+##          : $qc_data_href           => QCData hash {REF}
+##          : $sample_id              => Sample ID
+##          : $sample_info_href       => Info on samples and family hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $sample_info_href;
+    my $chanjo_sexcheck_gender;
+    my $infile;
     my $qc_data_href;
-    my $sample_id_ref;
-    my $infile_ref;
-    my $chanjo_sexcheck_gender_ref;
+    my $sample_id;
+    my $sample_info_href;
 
     my $tmpl = {
-        sample_info_href => {
-            required    => 1,
+        chanjo_sexcheck_gender => {
             defined     => 1,
-            default     => {},
+            required    => 1,
+            store       => \$chanjo_sexcheck_gender,
             strict_type => 1,
-            store       => \$sample_info_href
+        },
+        infile => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile,
+            strict_type => 1,
         },
         qc_data_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$qc_data_href
-        },
-        sample_id_ref => {
-            required    => 1,
             defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$sample_id_ref
-        },
-        infile_ref => {
             required    => 1,
-            defined     => 1,
-            default     => \$$,
+            store       => \$qc_data_href,
             strict_type => 1,
-            store       => \$infile_ref
         },
-        chanjo_sexcheck_gender_ref => {
-            required    => 1,
+        sample_id => {
             defined     => 1,
-            default     => \$$,
+            required    => 1,
+            store       => \$sample_id,
             strict_type => 1,
-            store       => \$chanjo_sexcheck_gender_ref
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Alias
-    my $sample_id_sex_ref = \$sample_info_href->{sample}{$$sample_id_ref}{sex};
+    my $sample_id_sex_ref = \$sample_info_href->{sample}{$sample_id}{sex};
 
     ## Female
-    if (   ( $$chanjo_sexcheck_gender_ref eq "female" )
-        && ( $$sample_id_sex_ref =~ /2|female/ ) )
+    if (   $chanjo_sexcheck_gender eq q{female}
+        && $sample_id_sex_ref =~ /2|female/ )
     {
 
-        $qc_data_href->{sample}{$$sample_id_ref}{$$infile_ref}{gender_check} =
+        $qc_data_href->{sample}{$sample_id}{$infile}{gender_check} =
           q{PASS};
     }
-    elsif (( $$chanjo_sexcheck_gender_ref eq "male" )
-        && ( $$sample_id_sex_ref =~ /1|^male/ ) )
+    elsif ($chanjo_sexcheck_gender eq q{male}
+        && $sample_id_sex_ref =~ /1|^male/ )
     {
         ## Male
 
-        $qc_data_href->{sample}{$$sample_id_ref}{$$infile_ref}{gender_check} =
+        $qc_data_href->{sample}{$sample_id}{$infile}{gender_check} =
           q{PASS};
     }
-    elsif ( $$sample_id_sex_ref =~ /other|unknown/ ) {
+    elsif ( $sample_id_sex_ref =~ /other|unknown/ ) {
         ## Other|Unknown
 
-        $qc_data_href->{sample}{$$sample_id_ref}{$$infile_ref}{gender_check} =
+        $qc_data_href->{sample}{$sample_id}{$infile}{gender_check} =
           q{PASS};
     }
     else {
 
-        $qc_data_href->{sample}{$$sample_id_ref}{$$infile_ref}{gender_check} =
+        $qc_data_href->{sample}{$sample_id}{$infile}{gender_check} =
           q{FAIL};
     }
     return;

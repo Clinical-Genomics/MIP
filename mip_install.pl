@@ -50,6 +50,7 @@ use MIP::Recipes::Install::Sambamba qw{ install_sambamba };
 use MIP::Recipes::Install::SnpEff qw{ install_snpeff };
 use MIP::Recipes::Install::Svdb qw{ install_svdb };
 use MIP::Recipes::Install::Tiddit qw{ install_tiddit };
+use MIP::Recipes::Install::Vcf2cytosure qw{ install_vcf2cytosure };
 use MIP::Recipes::Install::Vep qw{ install_vep };
 use MIP::Recipes::Install::Vt qw{ install_vt };
 
@@ -92,6 +93,7 @@ GetOptions(
         @{ $parameter{shell}{snpeff}{snpeff_genome_versions} } =
           split /,/xms, $ARG[1];
     },
+    q{v2cs|vcf2cytosure:s}          => \$parameter{shell}{v2cs}{version},
     q{vep|varianteffectpredictor:i} => \$parameter{shell}{vep}{version},
     q{vepf|vep_auto_flag:s}         => \$parameter{shell}{vep}{vep_auto_flag},
     q{vepc|vep_cache_dir:s}         => \$parameter{shell}{vep}{vep_cache_dir},
@@ -267,18 +269,19 @@ install_pip_packages(
 ### Install shell programs
 ## Create dispatch table for shell installation subs
 my %shell_subs = (
-    picard      => \&install_picard,
-    sambamba    => \&install_sambamba,
-    bedtools    => \&install_bedtools,
-    vt          => \&install_vt,
-    snpeff      => \&install_snpeff,
-    plink2      => \&install_plink2,
-    rhocall     => \&install_rhocall,
-    mip_scripts => \&install_mip_scripts,
-    vep         => \&install_vep,
-    cnvnator    => \&install_cnvnator,
-    tiddit      => \&install_tiddit,
-    svdb        => \&install_svdb,
+    picard       => \&install_picard,
+    sambamba     => \&install_sambamba,
+    bedtools     => \&install_bedtools,
+    vt           => \&install_vt,
+    snpeff       => \&install_snpeff,
+    plink2       => \&install_plink2,
+    rhocall      => \&install_rhocall,
+    mip_scripts  => \&install_mip_scripts,
+    vep          => \&install_vep,
+    cnvnator     => \&install_cnvnator,
+    tiddit       => \&install_tiddit,
+    svdb         => \&install_svdb,
+    vcf2cytosure => \&install_vcf2cytosure,
 );
 
 ## Launch shell installation subroutines
@@ -386,6 +389,7 @@ sub build_usage {
     -cnvnr/--cnvnator_root_binary   Set the cnvnator root binary (Default: "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz")
     -tid/--tiddit                   Set the tiddit version (Default: "1.1.6")
     -svdb/--svdb                    Set the svdb version (Default: "1.0.6")
+    -v2cs/--vcf2cytosure            Set the vcf2cytosure version (Default: "0.2.0")
 
     ## Utility
     -rd/--reference_dir             Reference(s) directory (Default: "")
@@ -658,11 +662,11 @@ sub _assure_python_3_compability {
         python_version => {
             required => 1,
             defined  => 1,
-            allow    => qr{ 
+            allow    => qr{
                          ^( 2 | 3 )    # Assert that the python major version starts with 2 or 3
                          \.            # Major version separator
-                         ( \d+$        # Assert that the minor version is a digit 
-                         | \d+\.\d+$ ) # Case when minor and patch version has been supplied, allow only digits 
+                         ( \d+$        # Assert that the minor version is a digit
+                         | \d+\.\d+$ ) # Case when minor and patch version has been supplied, allow only digits
                          }xms,
             store => \$python_version,
         },
@@ -679,7 +683,7 @@ sub _assure_python_3_compability {
 
     ## Check if a python 3 environment has been specified and a python 2 program has been specified for installation
     if (
-        $python_version =~ m/ 
+        $python_version =~ m/
         3\.\d+ |    # Python 3 release with minor version eg 3.6
         3\.\d+\.\d+ # Python 3 release with minor and patch e.g. 3.6.2
         /xms

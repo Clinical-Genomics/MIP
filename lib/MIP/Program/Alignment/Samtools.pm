@@ -1,40 +1,37 @@
 package MIP::Program::Alignment::Samtools;
 
-use strict;
-use warnings;
-use warnings qw{ FATAL utf8 };
 use Carp;
-use utf8;    #Allow unicode characters in this script
-use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
+use open qw{ :encoding(UTF-8) :std };
+use strict;
+use utf8;    #Allow unicode characters in this script
+use warnings qw{ FATAL utf8 };
+use warnings;
 
-use FindBin qw{ $Bin };    # Find directory of script
-use File::Basename qw{ dirname };
+## CPANM
 use File::Spec::Functions qw{ catdir catfile };
+use Params::Check qw{ allow check last_error };
+use Readonly;
+
+## MIPs lib/
+use MIP::Processmanagement::Processes qw{ print_wait };
+use MIP::Unix::Standard_streams qw{ unix_standard_streams };
+use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.03;
 
     # Inherit from Exporter to export functions and variables
     use base qw{ Exporter };
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ samtools_view samtools_index samtools_stats samtools_mpileup samtools_faidx samtools_create_chromosome_files };
+      qw{ samtools_view samtools_index samtools_stats samtools_mpileup samtools_faidx samtools_create_chromosome_files samtools_idxstats };
 
 }
-
-## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
-use MIP::Processmanagement::Processes qw{ print_wait };
-use MIP::Unix::Standard_streams qw{ unix_standard_streams };
-use MIP::Unix::Write_to_file qw{ unix_write_to_file };
-
-use Params::Check qw{ check allow last_error };
-use Readonly;
 
 ## Constants
 Readonly my $SPACE     => q{ };
@@ -43,88 +40,106 @@ Readonly my $AMPERSAND => q{&};
 
 sub samtools_view {
 
-## samtools_view
-
 ## Function : Perl wrapper for writing samtools view recipe to $FILEHANDLE. Based on samtools 1.3.1 (using htslib 1.3.1).
 ## Returns  : "@commands"
-##          : $regions_ref              => The regions to process {REF}
+##          : $auto_detect_input_format => Ignored (input format is auto-detected)
+##          : $FILEHANDLE               => Sbatch filehandle to write to
+##          : $fraction                 => Subsample the file to only a fraction of the alignments
 ##          : $infile_path              => Infile path
 ##          : $outfile_path             => Outfile path
-##          : $stderrfile_path          => Stderrfile path
-##          : $FILEHANDLE               => Sbatch filehandle to write to
-##          : $thread_number            => Number of BAM/CRAM compression threads
-##          : $with_header              => Include header
 ##          : $output_format            => Output format
-##          : $auto_detect_input_format => Ignored (input format is auto-detected)
-##          : $uncompressed_bam_output  => Uncompressed bam output
+##          : $regions_ref              => The regions to process {REF}
+##          : $stderrfile_path          => Stderrfile path
 ##          : $stderrfile_path_append   => Stderrfile path append
+##          : $thread_number            => Number of BAM/CRAM compression threads
+##          : $uncompressed_bam_output  => Uncompressed bam output
+##          : $with_header              => Include header
 
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $with_header;
-    my $output_format;
     my $auto_detect_input_format;
+    my $output_format;
     my $uncompressed_bam_output;
+    my $with_header;
 
     ## Flatten argument(s)
-    my $regions_ref;
+    my $FILEHANDLE;
+    my $fraction;
     my $infile_path;
     my $outfile_path;
+    my $regions_ref;
     my $stderrfile_path;
-    my $FILEHANDLE;
-    my $thread_number;
     my $stderrfile_path_append;
+    my $thread_number;
 
     my $tmpl = {
-        regions_ref =>
-          { default => [], strict_type => 1, store => \$regions_ref },
-        infile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$infile_path
-        },
-        outfile_path    => { strict_type => 1, store => \$outfile_path },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        stderrfile_path_append =>
-          { strict_type => 1, store => \$stderrfile_path_append },
-        thread_number => {
-            allow       => qr/^\d+$/,
-            strict_type => 1,
-            store       => \$thread_number
-        },
-        FILEHANDLE  => { store => \$FILEHANDLE },
-        with_header => {
-            default     => 0,
+        auto_detect_input_format => {
             allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$auto_detect_input_format,
             strict_type => 1,
-            store       => \$with_header
+        },
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        fraction => {
+            defined     => 1,
+            store       => \$fraction,
+            strict_type => 1,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        outfile_path => {
+            store       => \$outfile_path,
+            strict_type => 1,
         },
         output_format => {
-            default     => q{bam},
             allow       => [qw{ sam bam cram json }],
+            default     => q{bam},
+            store       => \$output_format,
             strict_type => 1,
-            store       => \$output_format
         },
-        auto_detect_input_format => {
-            default     => 0,
-            allow       => [ 0, 1 ],
+        regions_ref => {
+            default     => [],
+            store       => \$regions_ref,
             strict_type => 1,
-            store       => \$auto_detect_input_format
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        thread_number => {
+            allow       => qr/^\d+$/,
+            store       => \$thread_number,
+            strict_type => 1,
+        },
+        with_header => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$with_header,
+            strict_type => 1,
         },
         uncompressed_bam_output => {
-            default     => 0,
             allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$uncompressed_bam_output,
             strict_type => 1,
-            store       => \$uncompressed_bam_output
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Array @commands stores commands depending on input parameters
-    my @commands = qw{ samtools view };
+    my @commands = q{samtools view};
 
     ## Options
     if ($thread_number) {
@@ -159,6 +174,12 @@ sub samtools_view {
     if ($uncompressed_bam_output) {
 
         push @commands, q{-u};
+    }
+
+    if ($fraction) {
+
+        push @commands, q{-s} . $SPACE . $fraction;
+
     }
 
     ## Infile
@@ -651,4 +672,77 @@ sub samtools_create_chromosome_files {
     return;
 }
 
+sub samtools_idxstats {
+
+## Function : Perl wrapper for writing samtools idxstats recipe to $FILEHANDLE. Based on samtools 1.6 (using htslib 1.6).
+## Returns  : @commands
+## Arguments: $FILEHANDLE             => Filehandle to write to
+##          : $infile_path            => Infile path
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $infile_path;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+
+    ## Default(s)
+
+    my $tmpl = {
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        infile_path => {
+            defined => 1,
+            required => 1,
+            store => \$infile_path,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Stores commands depending on input parameters
+    my @commands = q{samtools idxstats};
+
+    ## Infile
+    push @commands, $infile_path;
+
+    ## Redirect stderr output to program specific stderr file
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            FILEHANDLE   => $FILEHANDLE,
+            commands_ref => \@commands,
+            separator    => $SPACE,
+
+        }
+    );
+    return @commands;
+}
 1;

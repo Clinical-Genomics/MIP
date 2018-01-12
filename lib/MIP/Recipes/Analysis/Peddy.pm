@@ -162,8 +162,7 @@ sub analysis_peddy {
     use MIP::Program::Variantcalling::Peddy qw{ peddy };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_family_dead_end };
-    use MIP::QC::Record
-      qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info };
+    use MIP::QC::Record qw{ add_program_metafile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Retrieve logger object
@@ -315,6 +314,16 @@ sub analysis_peddy {
                 }
             );
         }
+
+        ## Collect QC metadata info for later use
+        add_program_metafile_to_sample_info(
+            {
+                metafile_tag     => q{stderr},
+                path             => catfile( $directory, $stderr_file ),
+                program_name     => $program_name,
+                sample_info_href => $sample_info_href,
+            }
+        );
 
         slurm_submit_job_sample_id_dependency_family_dead_end(
             {

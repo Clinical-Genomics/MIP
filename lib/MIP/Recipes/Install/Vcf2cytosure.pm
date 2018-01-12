@@ -178,7 +178,7 @@ sub install_vcf2cytosure {
     say {$FILEHANDLE} q{## Move to vcf2cytosure directory};
     gnu_cd(
         {
-            directory_path => catfile( $temp_dir , q{vcf2cytosure} ),
+            directory_path => $temp_dir,
             FILEHANDLE     => $FILEHANDLE,
         }
     );

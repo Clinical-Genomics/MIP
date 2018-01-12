@@ -16,6 +16,7 @@ use warnings qw{ FATAL utf8 };
 ## Third party module(s)
 use autodie;
 use List::MoreUtils qw{ all any };
+use Log::Log4perl;
 use Readonly;
 
 ## MIPs lib/
@@ -50,17 +51,20 @@ sub get_overall_analysis_type {
 
     my $tmpl = {
         analysis_type_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_type_href,
             strict_type => 1,
-            store       => \$analysis_type_href
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @analysis_types = (qw{ wes wgs wts });
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger(q{MIP});
+
+    my @analysis_types = (qw{ wes wgs wts cancer });
 
   ANALYSIS:
     foreach my $analysis_type (@analysis_types) {
@@ -69,6 +73,22 @@ sub get_overall_analysis_type {
         if ( all { $_ eq $analysis_type } values %{$analysis_type_href} ) {
 
             return $analysis_type;
+        }
+    }
+
+    ## Check that the user supplied analysis type is supported
+    foreach my $user_analysis_type ( values %{$analysis_type_href} ) {
+
+        if ( not any { $_ eq $user_analysis_type } @analysis_types ) {
+
+            $log->fatal( q{'}
+                  . $user_analysis_type
+                  . q{' is not a supported analysis_type} );
+            $log->fatal( q{Supported analysis types are '}
+                  . join( q{', '}, @analysis_types )
+                  . q(') );
+            $log->fatal(q{Aborting run});
+            exit 1;
         }
     }
 
