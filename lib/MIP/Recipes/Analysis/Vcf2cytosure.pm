@@ -207,9 +207,10 @@ sub analysis_vcf2cytosure {
         }
     );
 
+    #TIDDIT COVERAGE FIRST:
     ## Assign file_tags
     my $infile_tag =
-      $file_info_href->{$family_id}{psv_combinevariantcallsets}{file_tag};
+      $file_info_href->{$family_id}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag =
       $file_info_href->{$family_id}{$mip_program_name}{file_tag};
 
@@ -217,6 +218,13 @@ sub analysis_vcf2cytosure {
     say {$FILEHANDLE} q{########################################};
     say {$FILEHANDLE} q{infile_tag:} . $file_info_href;
     say {$FILEHANDLE} q{$outfile_tag:} . $outfile_tag;
+
+    #my $infile_prefix  = $merged_infile_prefix . $infile_tag;
+    #my $outfile_prefix = $merged_infile_prefix . $outfile_tag;
+
+
+
+
 
 
 }

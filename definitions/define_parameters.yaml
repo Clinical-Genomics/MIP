@@ -852,6 +852,7 @@ ptiddit:
   file_tag: _tiddit
   outdir_name: tiddit
   outfile_suffix: ".vcf"
+  coverage_file_suffix: ".cov"
   program_name_path:
    - TIDDIT.py
    - svdb
@@ -884,6 +885,7 @@ pvcf2cytosure:
   default: 0
   file_tag: _cyto
   outfile_suffix: ".cgh"
+  outdir_name: vcf2cytosure
   program_name_path:
     - TIDDIT.py
     - vcf2cytosure

@@ -211,7 +211,7 @@ sub pipeline_wgs {
     use MIP::Recipes::Analysis::Snpeff qw{ analysis_snpeff };
     use MIP::Recipes::Analysis::Sv_combinevariantcallsets
       qw{ analysis_sv_combinevariantcallsets };
-    use MIP::Recipes::Analysis::Tiddit qw{ analysis_tiddit };
+    use MIP::Recipes::Analysis::Tiddit qw{ analysis_tiddit analysis_tiddit_coverage };
     use MIP::Recipes::Analysis::Variantannotationblock
       qw{ analysis_variantannotationblock };
     use MIP::Recipes::Analysis::Variant_integrity
@@ -808,6 +808,29 @@ sub pipeline_wgs {
 
         $log->info(q{[Vcf2cytosure]});
 
+        # First generate coverage files using Tiddit coverage. It's a temporary step, soon to be removed.
+        my $tiddit_program_name = q{tiddit};
+
+        my $outfamily_directory = catfile(
+            $active_parameter_href->{outdata_dir},
+            $active_parameter_href->{family_id},
+            $active_parameter_href->{outaligner_dir},
+            $tiddit_program_name,
+        );
+
+        analysis_tiddit_coverage(
+            {
+                parameter_href          => $parameter_href,
+                active_parameter_href   => $active_parameter_href,
+                sample_info_href        => $sample_info_href,
+                file_info_href          => $file_info_href,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                program_name            => $tiddit_program_name,
+                outfamily_directory     => $outfamily_directory,
+            }
+        );
+
         my $v2cs_program_name = q{vcf2cytosure};
 
         my $infamily_directory = catfile(
@@ -816,13 +839,13 @@ sub pipeline_wgs {
             $active_parameter_href->{outaligner_dir}, $v2cs_program_name,
         );
 
-        my $outfamily_directory = catfile(
+        $outfamily_directory = catfile(
             $active_parameter_href->{outdata_dir},
             $active_parameter_href->{family_id},
             $active_parameter_href->{outaligner_dir},
             $v2cs_program_name,
         );
-        
+
         analysis_vcf2cytosure(
             {
                 parameter_href          => $parameter_href,
