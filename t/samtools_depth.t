@@ -82,15 +82,14 @@ BEGIN {
 
   MODULES:
     for my $module (@modules) {
-
-        require_ok($module) or BAIL_OUT q{Cannot load } . $module;
+        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 }
 
-use MIP::Program::Alignment::Samtools qw{ samtools_view };
+use MIP::Program::Alignment::Samtools qw{ samtools_depth };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test samtools_view from samtools.pl v}
+diag(   q{Test samtools_depth from Samtools.pm v}
       . $MIP::Program::Alignment::Samtools::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -100,12 +99,24 @@ diag(   q{Test samtools_view from samtools.pl v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{samtools view};
+my $function_base_command = q{samtools depth};
 
 my %base_argument = (
     FILEHANDLE => {
         input           => undef,
         expected_output => $function_base_command,
+    },
+    stderrfile_path => {
+        input           => q{stderrfile.test},
+        expected_output => q{2> stderrfile.test},
+    },
+    stderrfile_path_append => {
+        input           => q{stderrfile.test},
+        expected_output => q{2>> stderrfile.test},
+    },
+    stdoutfile_path => {
+        input           => q{stdoutfile.test},
+        expected_output => q{1> stdoutfile.test},
     },
 );
 
@@ -123,29 +134,13 @@ my %required_argument = (
 
 ## Specific arguments
 my %specific_argument = (
-    auto_detect_input_format => {
-        input           => q{1},
-        expected_output => q{-S},
+    FILEHANDLE => {
+        input           => undef,
+        expected_output => $function_base_command,
     },
-    F_flag => {
-        input           => q{1},
-        expected_output => q{-F 1},
-    },
-    fraction => {
-        input           => q{2.5},
-        expected_output => q{-s 2.5},
-    },
-    outfile_path => {
-        input           => q{outfilepath},
-        expected_output => q{-o outfilepath},
-    },
-    output_format => {
-        input           => q{sam},
-        expected_output => q{--output-fmt SAM},
-    },
-    regions_ref => {
-        inputs_ref      => [qw{ 1:1000000-2000000 2:1000-5000 }],
-        expected_output => q{1:1000000-2000000 2:1000-5000},
+    infile_path => {
+        input           => q{infile.test},
+        expected_output => q{infile.test},
     },
     stderrfile_path => {
         input           => q{stderrfile.test},
@@ -155,22 +150,14 @@ my %specific_argument = (
         input           => q{stderrfile_path_append},
         expected_output => q{2>> stderrfile_path_append},
     },
-    thread_number => {
-        input           => q{6},
-        expected_output => q{--threads 6},
-    },
-    uncompressed_bam_output => {
-        input           => q{1},
-        expected_output => q{-u},
-    },
-    with_header => {
-        input           => q{1},
-        expected_output => q{-h},
+    stdoutfile_path => {
+        input           => q{stdoutfile.test},
+        expected_output => q{1> stdoutfile.test},
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&samtools_view;
+my $module_function_cref = \&samtools_depth;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
