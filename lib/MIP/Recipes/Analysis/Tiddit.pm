@@ -434,7 +434,7 @@ sub analysis_tiddit_coverage {
           store       => \$active_parameter_href
       },
       bin_size => {
-          default     => $arg_href->{active_parameter_href}{bin_size},
+          default     => $arg_href->{active_parameter_href}{tiddit_bin_size},
           strict_type => 1,
           store       => \$bin_size
       },
