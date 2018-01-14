@@ -246,13 +246,14 @@ sub analysis_vcf2cytosure {
           $file_path_prefix{$sample_id}{out} =
             catfile( $temp_directory, $sample_outfile_prefix );
 
+          say {$FILEHANDLE} $NEWLINE;
           say {$FILEHANDLE} q{insample_directory:} . $insample_directory;
           say {$FILEHANDLE} q{merged_infile_prefix:} . $merged_infile_prefix;
           say {$FILEHANDLE} q{infile_tag:} . $infile_tag;
           say {$FILEHANDLE} q{infile_prefix:} . $infile_prefix;
           say {$FILEHANDLE} q{sample_outfile_prefix:} . $sample_outfile_prefix;
           say {$FILEHANDLE} q{infile_path:} . $infile_path;
-          
+
 
 
 
