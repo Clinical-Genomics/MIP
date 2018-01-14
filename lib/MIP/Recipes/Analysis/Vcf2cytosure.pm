@@ -263,26 +263,26 @@ sub analysis_vcf2cytosure {
 
 
 
-          #$process_batches_count = print_wait(
-          #    {
-          #        FILEHANDLE            => $FILEHANDLE,
-          #        max_process_number    => $core_number,
-          #        process_batches_count => $process_batches_count,
-          #        process_counter       => $sample_id_index,
-          #    }
-          #);
+          $process_batches_count = print_wait(
+             {
+                  FILEHANDLE            => $FILEHANDLE,
+                  max_process_number    => $core_number,
+                  process_batches_count => $process_batches_count,
+                  process_counter       => $sample_id_index,
+              }
+          );
 
           ## Copy file(s) to temporary directory
-          #say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-          #migrate_file(
-          #    {
-          #        FILEHANDLE   => $FILEHANDLE,
-          #        infile_path  => $infile_path,
-          #        outfile_path => $temp_directory,
-          #    }
-          #);
+          say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
+          migrate_file(
+              {
+                  FILEHANDLE   => $FILEHANDLE,
+                  infile_path  => $infile_path,
+                  outfile_path => $temp_directory,
+              }
+          );
       }
-      #say {$FILEHANDLE} q{wait}, $NEWLINE;
+      say {$FILEHANDLE} q{wait}, $NEWLINE;
 
       # Restart counter
       #$process_batches_count = 1;
