@@ -39,7 +39,6 @@ sub analysis_vcf2cytosure {
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File_info hash {REF}
-##          : $infamily_directory      => In family directory
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $outaligner_dir          => Outaligner_dir used in the analysis
@@ -54,7 +53,6 @@ sub analysis_vcf2cytosure {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
-    my $infamily_directory;
     my $infile_lane_prefix_href;
     my $job_id_href;
     my $outfamily_directory;
@@ -92,12 +90,6 @@ sub analysis_vcf2cytosure {
             defined     => 1,
             required    => 1,
             store       => \$infile_lane_prefix_href,
-            strict_type => 1,
-        },
-        infamily_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$infamily_directory,
             strict_type => 1,
         },
         job_id_href => {
@@ -150,7 +142,6 @@ sub analysis_vcf2cytosure {
     use MIP::Cluster qw{ get_core_number };
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_parameters };
-    use MIP::Program::Variantcalling::Tiddit qw{ tiddit_coverage };
     use MIP::Program::Variantcalling::Vcf2cytosure qw{ vcf2cytosure_convert };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
@@ -207,25 +198,166 @@ sub analysis_vcf2cytosure {
         }
     );
 
-    #TIDDIT COVERAGE FIRST:
-    ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$family_id}{pgatk_baserecalibration}{file_tag};
+    my %file_path_prefix;
     my $outfile_tag =
       $file_info_href->{$family_id}{$mip_program_name}{file_tag};
+    my $outfile_prefix = $family_id . $outfile_tag ;
+    my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
 
-    say {$FILEHANDLE} q{########################################};
-    say {$FILEHANDLE} q{########################################};
-    say {$FILEHANDLE} q{infile_tag:} . $file_info_href;
-    say {$FILEHANDLE} q{$outfile_tag:} . $outfile_tag;
+    ## Assign suffix
+    my $infile_suffix = get_file_suffix(
+        {
+            jobid_chain    => $parameter_href->{psv_combinevariantcallsets}{chain},
+            parameter_href => $parameter_href,
+            suffix_key     => q{variant_file_suffix},
+        }
+    );
 
-    #my $infile_prefix  = $merged_infile_prefix . $infile_tag;
-    #my $outfile_prefix = $merged_infile_prefix . $outfile_tag;
+    my $process_batches_count = 1;
+
+    ## Collect infiles for all sample_ids to enable migration to temporary directory
+      while ( my ( $sample_id_index, $sample_id ) =
+          each @{ $active_parameter_href->{sample_ids} } )
+      {
+
+          ## Assign directories
+          my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
+              $sample_id, $outaligner_dir );
+
+          ## Add merged infile name prefix after merging all BAM files per sample_id
+          my $merged_infile_prefix = get_merged_infile_prefix(
+              {
+                  file_info_href => $file_info_href,
+                  sample_id      => $sample_id,
+              }
+          );
+
+          ## Assign file_tags
+          my $infile_tag =
+            $file_info_href->{$sample_id}{psv_combinevariantcallsets}{file_tag};
+          my $infile_prefix         = $merged_infile_prefix . $infile_tag;
+          my $sample_outfile_prefix = $merged_infile_prefix . $outfile_tag;
+
+
+          my $infile_path = catfile( $insample_directory, $infile_prefix);
+
+          $file_path_prefix{$sample_id}{in} =
+            catfile( $temp_directory, $infile_prefix );
+          $file_path_prefix{$sample_id}{out} =
+            catfile( $temp_directory, $sample_outfile_prefix );
+
+          say {$FILEHANDLE} q{insample_directory:} . $insample_directory;
+          say {$FILEHANDLE} q{merged_infile_prefix:} . $merged_infile_prefix;
+          say {$FILEHANDLE} q{infile_tag:} . $infile_tag;
+          say {$FILEHANDLE} q{infile_prefix:} . $infile_prefix;
+          say {$FILEHANDLE} q{sample_outfile_prefix:} . $sample_outfile_prefix;
+          say {$FILEHANDLE} q{infile_path:} . $infile_path;
+          
 
 
 
 
 
+
+
+
+
+          #$process_batches_count = print_wait(
+          #    {
+          #        FILEHANDLE            => $FILEHANDLE,
+          #        max_process_number    => $core_number,
+          #        process_batches_count => $process_batches_count,
+          #        process_counter       => $sample_id_index,
+          #    }
+          #);
+
+          ## Copy file(s) to temporary directory
+          #say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
+          #migrate_file(
+          #    {
+          #        FILEHANDLE   => $FILEHANDLE,
+          #        infile_path  => $infile_path,
+          #        outfile_path => $temp_directory,
+          #    }
+          #);
+      }
+      #say {$FILEHANDLE} q{wait}, $NEWLINE;
+
+      # Restart counter
+      #$process_batches_count = 1;
+
+      ## Collect infiles for all sample_ids
+      #while ( my ( $sample_id_index, $sample_id ) =
+      #    each @{ $active_parameter_href->{sample_ids} } )
+      #{
+
+      #    $process_batches_count = print_wait(
+      #        {
+      #            FILEHANDLE            => $FILEHANDLE,
+      #            max_process_number    => $core_number,
+      #            process_batches_count => $process_batches_count,
+      #            process_counter       => $sample_id_index,
+      #        }
+      #    );
+
+          ## Vcf2cytosure convert
+      #    vcf2cytosure_convert(
+      #        {
+      #            coverage_file => ,
+      #            frequency   =>
+      #            frequency_tag =>
+      #            FILEHANDLE  => $FILEHANDLE,
+      #            infile_path => $file_path_prefix{$sample_id}{in}
+      #              . $infile_suffix,
+      #            no_filter =>
+      #            stdoutfile_path =>
+      #            variant_size =>
+      #            vcf_infile_path =>
+      #        }
+      #    );
+      #    say {$FILEHANDLE} $AMPERSAND . $SPACE . $NEWLINE;
+      #}
+      #say {$FILEHANDLE} q{wait}, $NEWLINE;
+
+      ## Copies file from temporary directory.
+      #say {$FILEHANDLE} q{## Copy file from temporary directory};
+      #migrate_file(
+      #    {
+      #        FILEHANDLE   => $FILEHANDLE,
+      #        infile_path  => $outfile_path_prefix . $outfile_suffix . $ASTERISK,
+      #        outfile_path => $outfamily_directory,
+      #    }
+      #);
+      #say {$FILEHANDLE} q{wait}, $NEWLINE;
+
+      #close $FILEHANDLE;
+
+      #if ( $mip_program_mode == 1 ) {
+
+      #add_program_outfile_to_sample_info(
+      #    {
+      #        path => catfile(
+      #            $outfamily_directory, $outfile_prefix . $outfile_suffix
+      #        ),
+      #        program_name     => q{vcf2cytosure},
+      #        sample_info_href => $sample_info_href,
+      #    }
+      #);
+
+      #slurm_submit_job_sample_id_dependency_add_to_family(
+      #    {
+      #        family_id               => $family_id,
+      #        infile_lane_prefix_href => $infile_lane_prefix_href,
+      #        job_id_href             => $job_id_href,
+      #        log                     => $log,
+      #        path                    => $job_id_chain,
+      #        sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
+      #        sbatch_file_name => $file_path,
+      #    }
+      #);
+  #}
+
+  return;
 
 }
 

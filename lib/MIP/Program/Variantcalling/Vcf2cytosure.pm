@@ -40,7 +40,6 @@ sub vcf2cytosure_convert {
 ##          : $FILEHANDLE             => Filehandle to write to
 ##          : $frequency              => Maximum frequency
 ##          : $frequency_tag          => Frequency tag of the info field
-##          : $infile_paths_ref       => VCF infiles paths {REF}
 ##          : $no_filter              => Disable any filtering
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path

@@ -434,7 +434,7 @@ sub analysis_tiddit_coverage {
           store       => \$active_parameter_href
       },
       bin_size => {
-          default     => $arg_href->{active_parameter_href}{tiddit_bin_size},
+          default     => $arg_href->{active_parameter_href}{bin_size},
           strict_type => 1,
           store       => \$bin_size
       },
@@ -574,7 +574,7 @@ sub analysis_tiddit_coverage {
   my %file_path_prefix;
   my $outfile_tag =
     $file_info_href->{$family_id}{$mip_program_name}{file_tag};
-  my $outfile_prefix = $family_id . $outfile_tag;
+  my $outfile_prefix = $family_id . $outfile_tag ;
   my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
 
   ## Assign suffix
