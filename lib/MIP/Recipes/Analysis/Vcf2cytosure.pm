@@ -143,6 +143,7 @@ sub analysis_vcf2cytosure {
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_parameters };
     use MIP::Program::Variantcalling::Vcf2cytosure qw{ vcf2cytosure_convert };
+    use MIP::Processmanagement::Processes qw{ print_wait };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
     use MIP::QC::Record
