@@ -140,6 +140,7 @@ sub analysis_vcf2cytosure {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_core_number };
+    use MIP::IO::Files qw{ migrate_file };
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_parameters };
     use MIP::Program::Variantcalling::Vcf2cytosure qw{ vcf2cytosure_convert };
