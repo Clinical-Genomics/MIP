@@ -244,8 +244,6 @@ sub analysis_vcf2cytosure {
     while ( my ( $sample_id_index, $sample_id ) =
         each @{ $active_parameter_href->{sample_ids} } )
     {
-        say {$FILEHANDLE} $NEWLINE . q{######################################################}; # remove this line after
-        say {$FILEHANDLE} q{Sample id index:} . $sample_id_index . q{, sample id:} . $sample_id; # remove this line after
 
         # Using tiddit coverage, create coverage file from .bam file of this sample
         my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
@@ -328,12 +326,11 @@ sub analysis_vcf2cytosure {
         say {$FILEHANDLE} q{wait}, $NEWLINE;
 
         # Extract SV from this sample from merged SV VCF file
-        say {$FILEHANDLE} q{Using bcftools_view to extract SV for sample} . $SPACE . $sample_id;
+        say {$FILEHANDLE} q{## Using bcftools_view to extract SV for sample} . $SPACE . $sample_id . $NEWLINE;
 
         $infile_tag = $file_info_href->{$sample_id}{psv_combinevariantcallsets}{file_tag};
         my $sample_vcf_file = $sample_id . $infile_tag . q{SV} . $DOT . q{vcf};
 
-        say {$FILEHANDLE} q{Splitted file for this sample goes to:} . catfile($temp_directory, $sample_vcf_file);  # remove this line after
         # Bcftools view
         bcftools_view(
             {
@@ -345,10 +342,7 @@ sub analysis_vcf2cytosure {
         );
         say {$FILEHANDLE} q{wait}, $NEWLINE;
 
-        say {$FILEHANDLE} q{Converting sample's SV VCF file into cytosure, using Vcf2cytosure};
-        say {$FILEHANDLE} q{Coverage file:} . $file_path_prefix{$sample_id}{out} . $DOT . q{cov}; # remove this line after
-        say {$FILEHANDLE} q{VCF infile path:} . catfile($temp_directory, $sample_vcf_file); # remove this line after
-        say {$FILEHANDLE} q{Outfile:} . catfile($temp_directory, $sample_id . $infile_tag . q{SV} . $DOT . q{cgh}); # remove this line after
+        say {$FILEHANDLE} q{## Converting sample's SV VCF file into cytosure, using Vcf2cytosure} . $NEWLINE;
 
         vcf2cytosure_convert(
           {
