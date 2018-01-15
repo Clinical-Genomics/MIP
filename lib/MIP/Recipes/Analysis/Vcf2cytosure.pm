@@ -293,11 +293,6 @@ sub analysis_vcf2cytosure {
         my $infile_path = catfile( $insample_directory,
             $infile_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK );
 
-        $file_path_prefix{$sample_id}{in} =
-          catfile( $temp_directory, $infile_prefix );
-        $file_path_prefix{$sample_id}{out} =
-          catfile( $temp_directory, $sample_outfile_prefix );
-
         $process_batches_count = print_wait(
             {
                 FILEHANDLE            => $FILEHANDLE,
