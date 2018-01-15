@@ -29,7 +29,9 @@ BEGIN {
 }
 
 ## Constants
+Readonly my $$DOT       => q{.};
 Readonly my $NEWLINE    => qq{\n};
+Readonly my $SPACE      => q{ };
 Readonly my $UNDERSCORE => q{_};
 
 sub analysis_vcf2cytosure {
