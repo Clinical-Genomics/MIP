@@ -221,27 +221,29 @@ sub analysis_vcf2cytosure {
     my $infile_tag;
     my $sample_outfile_prefix;
     my $outfile_tag;
-    my $infile_path;
+    my $merged_SV_VCF_path;
+    my $merged_SV_VCF;
 
-    # Copy family-merged SV VCF file on temporary directory:
+    # Copy family-merged SV VCF file in temporary directory:
     my $infamily_directory = catdir( $active_parameter_href->{outdata_dir}, $family_id, $outaligner_dir );
     $infile_tag = $file_info_href->{$family_id}{psv_combinevariantcallsets}{file_tag};
 
-    $infile_path = catfile($infamily_directory, $family_id . $infile_tag . q{SV} . $DOT . q{vcf});
 
-    say {$FILEHANDLE} q{$infamily_directory:} . $infamily_directory;
-    say {$FILEHANDLE} q{family_id:} . $family_id;
-    say {$FILEHANDLE} q{infile_tag:} . $infile_tag;
+    $merged_SV_VCF = $family_id . $infile_tag . q{SV} . $DOT . q{vcf};
+    $merged_SV_VCF_path = catfile($infamily_directory, $merged_SV_VCF);
+
+
+    #say {$FILEHANDLE} q{$infamily_directory:} . $infamily_directory;
+    #say {$FILEHANDLE} q{family_id:} . $family_id;
+    #say {$FILEHANDLE} q{infile_tag:} . $infile_tag;
 
     migrate_file(
         {
               FILEHANDLE   => $FILEHANDLE,
-              infile_path  => $infile_path,
+              infile_path  => $merged_SV_VCF_path,
               outfile_path => $temp_directory,
         }
     );
-
-
 
     my $process_batches_count = 1;
 
@@ -338,32 +340,34 @@ sub analysis_vcf2cytosure {
         # Extract SV from this sample from merged SV VCF file
         say {$FILEHANDLE} q{Using bcftools_view to extract SV for sample} . $SPACE . $sample_id;
 
-        $infile_tag = $file_info_href->{$sample_id}{psv_combinevariantcallsets}{file_tag};
+        #$infile_tag = $file_info_href->{$sample_id}{psv_combinevariantcallsets}{file_tag};
 
-        say {$FILEHANDLE} $NEWLINE;
-              say {$FILEHANDLE} q{insample_directory:} . $insample_directory;
-              say {$FILEHANDLE} q{merged_infile_prefix:} . $merged_infile_prefix;
-              say {$FILEHANDLE} q{infile_tag:} . $infile_tag;
-              say {$FILEHANDLE} q{infile_prefix:} . $infile_prefix;
-              say {$FILEHANDLE} q{sample_outfile_prefix:} . $sample_outfile_prefix;
-              say {$FILEHANDLE} q{infile_path:} . $infile_path;
+        #say {$FILEHANDLE} $NEWLINE;
+        #      say {$FILEHANDLE} q{insample_directory:} . $insample_directory;
+        #      say {$FILEHANDLE} q{merged_infile_prefix:} . $merged_infile_prefix;
+        #      say {$FILEHANDLE} q{infile_tag:} . $infile_tag;
+        #      say {$FILEHANDLE} q{infile_prefix:} . $infile_prefix;
+        #      say {$FILEHANDLE} q{sample_outfile_prefix:} . $sample_outfile_prefix;
+        #      say {$FILEHANDLE} q{infile_path:} . $infile_path;
 
-        $infile_path = catfile( $insample_directory, $merged_infile_prefix, $infile_tag ),
+        #$infile_path = catfile( $insample_directory, $merged_infile_prefix, $infile_tag ),
         #say {$FILEHANDLE} q{insample_directory:} . $insample_directory;
         #say {$FILEHANDLE} q{$infile_prefix:} .$infile_prefix;
         #say {$FILEHANDLE} q{VCF directory:} . $infile_path ;
         #say {$FILEHANDLE} q{infile tag from psv_combinevariantcallsets:} . $infile_tag;
 
+        $infile_tag = $file_info_href->{$sample_id}{psv_combinevariantcallsets}{file_tag};
 
+        say {$FILEHANDLE} q{Splitted file for this sample goes to:} . $temp_directory . q{/} . $infile_tag;
         #bcftools_view(
         #    {
         #        FILEHANDLE      => $FILEHANDLE,
-        #        infile_path     => $file_path_prefix . $infile_suffix,
+        #        infile_path     => catfile($temp_directory, $merged_SV_VCF),
         #        samples_ref     => [$sample_id],
-        #        stdoutfile_path => $sample_exonic_file_path,
+        #        stdoutfile_path => catfile()$temp_directory ,
         #    }
         #);
-        say {$FILEHANDLE} $NEWLINE;
+        #say {$FILEHANDLE} $NEWLINE;
 
 
 
