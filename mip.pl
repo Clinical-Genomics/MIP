@@ -52,7 +52,7 @@ use MIP::QC::Record qw{ add_gene_panel add_most_complete_vcf };
 use MIP::Script::Utils qw{ help };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter
-  qw{ set_config_to_active_parameters set_default_config_dynamic_parameters set_dynamic_parameter set_parameter_reference_dir_path set_parameter_to_broadcast };
+  qw{ set_config_to_active_parameters set_custom_default_to_active_parameter set_default_config_dynamic_parameters set_dynamic_parameter set_parameter_reference_dir_path set_parameter_to_broadcast };
 use MIP::Update::Contigs qw{ update_contigs_for_run };
 use MIP::Update::Parameters
   qw{ update_dynamic_config_parameters update_reference_parameters update_vcfparser_outfile_counter };
@@ -143,10 +143,10 @@ my %non_mandatory_key = load_yaml(
 ## Eval parameter hash
 check_parameter_hash(
     {
-        parameter_href         => \%parameter,
-        mandatory_key_href     => \%mandatory_key,
-        non_mandatory_key_href => \%non_mandatory_key,
         file_path              => $definitions_file,
+        non_mandatory_key_href => \%non_mandatory_key,
+        mandatory_key_href     => \%mandatory_key,
+        parameter_href         => \%parameter,
     }
 );
 
@@ -165,7 +165,7 @@ my %file_info = (
       [qw{ .infile_list .pad100.infile_list .pad100.interval_list }],
 
     # BWA human genome reference file endings
-    bwa_build_reference => [qw{ .amb .ann .bwt .pac .sa }],
+    bwa_build_reference => [qw{ .bwt .ann .amb .pac .sa }],
 
     # Human genome meta files
     human_genome_reference_file_endings => [qw{ .dict .fai }],
@@ -179,8 +179,8 @@ if ( not @ARGV ) {
 
     help(
         {
-            USAGE     => $USAGE,
             exit_code => 0,
+            USAGE     => $USAGE,
         }
     );
 }
@@ -549,8 +549,8 @@ GetOptions(
   )
   or help(
     {
-        USAGE     => $USAGE,
         exit_code => 1,
+        USAGE     => $USAGE,
     }
   );
 
@@ -560,8 +560,8 @@ $active_parameter{mip} = $parameter{mip}{default};
 ## Change relative path to absolute path for parameter with "update_path: absolute_path" in config
 update_to_absolute_path(
     {
-        parameter_href        => \%parameter,
         active_parameter_href => \%active_parameter,
+        parameter_href        => \%parameter,
     }
 );
 
@@ -588,8 +588,8 @@ if ( exists $active_parameter{config_file}
 ## has been supplied on the command line
     set_config_to_active_parameters(
         {
-            config_parameter_href => \%config_parameter,
             active_parameter_href => \%active_parameter,
+            config_parameter_href => \%config_parameter,
         }
     );
 
@@ -606,8 +606,8 @@ if ( exists $active_parameter{config_file}
     ## Replace config parameter with cmd info for config dynamic parameter
     set_default_config_dynamic_parameters(
         {
-            parameter_href        => \%parameter,
             active_parameter_href => \%active_parameter,
+            parameter_href        => \%parameter,
             parameter_names_ref   => \@config_dynamic_parameters,
         }
     );
@@ -658,11 +658,11 @@ if ( defined $active_parameter{pedigree_file} ) {
 
     parse_yaml_pedigree_file(
         {
-            parameter_href        => \%parameter,
             active_parameter_href => \%active_parameter,
-            sample_info_href      => \%sample_info,
             file_path             => $active_parameter{pedigree_file},
+            parameter_href        => \%parameter,
             pedigree_href         => \%pedigree,
+            sample_info_href      => \%sample_info,
         }
     );
 }
@@ -693,15 +693,14 @@ foreach my $parameter_name (@order_parameters) {
 
     ### Special case for parameters that are dependent on other parameters values
     my @custom_default_parameters =
-      qw{ exome_target_bed bwa_build_reference analysis_type infile_dirs sample_info_file };
+      qw{ analysis_type bwa_build_reference exome_target_bed infile_dirs sample_info_file };
 
     if ( any { $_ eq $parameter_name } @custom_default_parameters ) {
 
         set_custom_default_to_active_parameter(
             {
-                parameter_href        => \%parameter,
                 active_parameter_href => \%active_parameter,
-                file_info_href        => \%file_info,
+                parameter_href        => \%parameter,
                 parameter_name        => $parameter_name,
             }
         );
@@ -2745,128 +2744,6 @@ q?perl -nae 'chomp($_); if( ($_=~/^@\w+-\w+:\w+:\w+:\w+:\w+:\w+:\w+\/(\w+)/) && 
 
         $log->info( "Found interleaved fastq file: " . $file, "\n" );
         return 1;
-    }
-    return;
-}
-
-sub set_custom_default_to_active_parameter {
-
-    ## Function : Checks and sets user input or default values to active_parameters.
-## Returns  :
-## Arguments: $parameter_href        => Holds all parameters {REF}
-##          : $active_parameter_href => Holds all set parameter for analysis {REF}
-##          : $file_info_href         => File info hash {REF}
-##          : $parameter_name        => Parameter name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $file_info_href;
-    my $parameter_name;
-
-    my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href,
-        },
-        parameter_name =>
-          { required => 1, defined => 1, store => \$parameter_name, },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Get::Parameter qw{ get_capture_kit };
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    ## If capture kit is not set after cmd, config and reading pedigree
-    if ( $parameter_name eq q{exome_target_bed} ) {
-
-        ## Return a default capture kit as user supplied no info
-        my $capture_kit = get_capture_kit(
-            {
-                supported_capture_kit_href =>
-                  $parameter_href->{supported_capture_kit},
-                capture_kit => q{latest},
-            }
-        );
-
-        ## Set default
-        $active_parameter_href->{exome_target_bed}
-          {$capture_kit} = join q{,},
-          @{ $active_parameter_href->{sample_ids} };
-
-        $log->warn(
-q{Could not detect a supplied capture kit. Will Try to use 'latest' capture kit: }
-              . $capture_kit );
-        return;
-    }
-    if ( $parameter_name eq q{bwa_build_reference} ) {
-
-        ## Now we now what human genome reference to build from
-        $active_parameter_href->{$parameter_name} =
-          $active_parameter_href->{human_genome_reference};
-
-        return;
-    }
-    ## Build default for analysis_type
-    if ( $parameter_name eq q{analysis_type} ) {
-
-      SAMPLE_ID:
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-            $active_parameter_href->{$parameter_name}{$sample_id} = q{wgs};
-        }
-        return;
-    }
-    if ( $parameter_name eq q{infile_dirs} ) {
-        ## Build default for infile_dirs
-
-      SAMPLE_ID:
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-            my $path = catfile(
-                $active_parameter_href->{cluster_constant_path},
-                $active_parameter_href->{family_id},
-                $active_parameter_href->{analysis_type}{$sample_id},
-                $sample_id,
-                q{fastq}
-            );
-
-            $active_parameter_href->{$parameter_name}{$path} = $sample_id;
-        }
-        return;
-    }
-    if ( $parameter_name eq q{sample_info_file} ) {
-
-        $parameter_href->{sample_info_file}{default} = catfile(
-            $active_parameter_href->{outdata_dir},
-            $active_parameter_href->{family_id},
-            $active_parameter_href->{family_id} . q{_qc_sample_info.yaml}
-        );
-
-        $parameter_href->{qccollect_sampleinfo_file}{default} =
-          $parameter_href->{sample_info_file}{default};
-        return;
     }
     return;
 }

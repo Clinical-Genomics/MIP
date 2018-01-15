@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ basename dirname  };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use Getopt::Long;
 use open qw{ :encoding(UTF-8) :std };
@@ -78,20 +78,19 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Program::Alignment::Samtools});
+    my @modules = (q{MIP::Program::Qc::Contest});
 
-  MODULES:
+  MODULE:
     for my $module (@modules) {
-
-        require_ok($module) or BAIL_OUT q{Cannot load } . $module;
+        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 }
 
-use MIP::Program::Alignment::Samtools qw{ samtools_view };
+use MIP::Program::Qc::Contest qw{ gatk_contest };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test samtools_view from samtools.pl v}
-      . $MIP::Program::Alignment::Samtools::VERSION
+diag(   q{Test gatk_contest from Contest.pm v}
+      . $MIP::Program::Qc::Contest::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -100,7 +99,7 @@ diag(   q{Test samtools_view from samtools.pl v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{samtools view};
+my $function_base_command = q{--analysis_type ContEst};
 
 my %base_argument = (
     FILEHANDLE => {
@@ -109,80 +108,79 @@ my %base_argument = (
     },
 );
 
-## Can be duplicated with %base and/or %specific to enable testing of each individual argument
+## Can be duplicated with %base_argument and/or %specific_argument
+## to enable testing of each individual argument
 my %required_argument = (
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
+    infile_eval => {
+        input           => catfile(qw{path to input_bam_eval}),
+        expected_output => q{--input_file:eval}
+          . $SPACE
+          . catfile(qw{path to input_bam_eval}),
     },
-    infile_path => {
-        input           => q{infile.test},
-        expected_output => q{infile.test},
+    infile_genotype => {
+        input           => catfile(qw{path to input_bam_genotype}),
+        expected_output => q{--input_file:genotype}
+          . $SPACE
+          . catfile(qw{path to input_bam_genotype}),
+    },
+    outfile_path => {
+        input           => catfile(qw{path to output_file}),
+        expected_output => q{--out} . $SPACE . catfile(qw{path to output_file}),
+    },
+    pop_vcffile_path => {
+        input           => catfile(qw{path to population_vcf}),
+        expected_output => q{--popfile}
+          . $SPACE
+          . catfile(qw{path to population_vcf}),
+    },
+    referencefile_path => {
+        input           => catfile(qw{path to human_fasta_file}),
+        expected_output => q{--reference_sequence}
+          . $SPACE
+          . catfile(qw{path to human_fasta_file}),
     },
 );
 
-## Specific arguments
 my %specific_argument = (
-    auto_detect_input_format => {
-        input           => q{1},
-        expected_output => q{-S},
+    infile_eval => {
+        input           => catfile(qw{path to input_bam_eval}),
+        expected_output => q{--input_file:eval}
+          . $SPACE
+          . catfile(qw{path to input_bam_eval}),
     },
-    F_flag => {
-        input           => q{1},
-        expected_output => q{-F 1},
+    infile_genotype => {
+        input           => catfile(qw{path to input_bam_genotype}),
+        expected_output => q{--input_file:genotype}
+          . $SPACE
+          . catfile(qw{path to input_bam_genotype}),
     },
-    fraction => {
-        input           => q{2.5},
-        expected_output => q{-s 2.5},
+    min_genotype_ratio => {
+        input           => q{0.95},
+        expected_output => q{--min_genotype_ratio} . $SPACE . q{0.95},
     },
-    outfile_path => {
-        input           => q{outfilepath},
-        expected_output => q{-o outfilepath},
-    },
-    output_format => {
-        input           => q{sam},
-        expected_output => q{--output-fmt SAM},
-    },
-    regions_ref => {
-        inputs_ref      => [qw{ 1:1000000-2000000 2:1000-5000 }],
-        expected_output => q{1:1000000-2000000 2:1000-5000},
-    },
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
-    },
-    stderrfile_path_append => {
-        input           => q{stderrfile_path_append},
-        expected_output => q{2>> stderrfile_path_append},
-    },
-    thread_number => {
-        input           => q{6},
-        expected_output => q{--threads 6},
-    },
-    uncompressed_bam_output => {
-        input           => q{1},
-        expected_output => q{-u},
-    },
-    with_header => {
-        input           => q{1},
-        expected_output => q{-h},
+    pop_vcffile_path => {
+        input           => catfile(qw{path to population_vcf}),
+        expected_output => q{--popfile}
+          . $SPACE
+          . catfile(qw{path to population_vcf}),
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&samtools_view;
+my $module_function_cref = \&gatk_contest;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
 
+ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
-
     my @commands = test_function(
         {
             argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
+            do_test_base_command   => 1,
             function_base_command  => $function_base_command,
+            module_function_cref   => $module_function_cref,
+            required_argument_href => \%required_argument,
         }
     );
 }
@@ -195,12 +193,9 @@ done_testing();
 
 sub build_usage {
 
-##build_usage
-
-##Function : Build the USAGE instructions
-##Returns  : ""
-##Arguments: $program_name
-##         : $program_name => Name of the script
+## Function  : Build the USAGE instructions
+## Returns   :
+## Arguments : $program_name => Name of the script
 
     my ($arg_href) = @_;
 
@@ -210,8 +205,8 @@ sub build_usage {
     my $tmpl = {
         program_name => {
             default     => basename($PROGRAM_NAME),
-            strict_type => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
     };
 
