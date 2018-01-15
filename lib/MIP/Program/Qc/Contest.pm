@@ -39,12 +39,12 @@ sub gatk_contest {
 ## Function : Perl wrapper for writing GATK ContEst recipe to $FILEHANDLE. Based on GATK 3.8.0.
 ## Returns  : @commands
 ## Arguments: $FILEHANDLE             => Filehandle to write to
-##          : $referencefile_path     => Reference sequence file
-##          : $outfile_path           => Outfile path
-##          : $popvcffilepath         => Population allele frequency vcf file path
 ##          : $infile_eval            => Input bam file for evaluation
 ##          : $infile_genotype        => Input bam file for genotyping on the fly
+##          : $pop_vcffile_path       => Population allele frequency vcf file path
 ##          : $min_genotype_ratio     => The ratio of alt to other bases
+##          : $outfile_path           => Outfile path
+##          : $referencefile_path     => Reference sequence file
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
@@ -63,7 +63,7 @@ sub gatk_contest {
     my $min_genotype_ratio;
     my $outfile_path;
     my $pedigree;
-    my $popvcffilepath;
+    my $pop_vcffile_path;
     my $referencefile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -74,9 +74,6 @@ sub gatk_contest {
     my $gatk_disable_auto_index_and_file_lock;
     my $logging_level;
     my $pedigree_validation_type;
-
-    ## Default(s)
-    ## None
 
     my $tmpl = {
         downsample_to_coverage => {
@@ -135,7 +132,6 @@ sub gatk_contest {
             allow       => qr/ ^0.\d{1,2}$ | ^1$ /xsm,
             defined     => 1,
             default     => 0.01,
-            required    => 0,
             store       => \$min_genotype_ratio,
             strict_type => 1,
         },
@@ -155,10 +151,10 @@ sub gatk_contest {
             store       => \$pedigree_validation_type,
             strict_type => 1,
         },
-        popvcffilepath => {
+        pop_vcffile_path => {
             defined     => 1,
             required    => 1,
-            store       => \$popvcffilepath,
+            store       => \$pop_vcffile_path,
             strict_type => 1,
         },
         referencefile_path => {
@@ -204,32 +200,29 @@ sub gatk_contest {
     ### Gatk base args
     @commands = gatk_base(
         {
-            commands_ref             => \@commands,
-            analysis_type            => q{ContEst},
-            logging_level            => $logging_level,
-            intervals_ref            => $intervals_ref,
-            referencefile_path       => $referencefile_path,
-            pedigree                 => $pedigree,
-            pedigree_validation_type => $pedigree_validation_type,
-            downsample_to_coverage   => $downsample_to_coverage,
+            analysis_type          => q{ContEst},
+            downsample_to_coverage => $downsample_to_coverage,
+            commands_ref           => \@commands,
             gatk_disable_auto_index_and_file_lock =>
               $gatk_disable_auto_index_and_file_lock,
+            intervals_ref            => $intervals_ref,
+            logging_level            => $logging_level,
+            pedigree                 => $pedigree,
+            pedigree_validation_type => $pedigree_validation_type,
+            referencefile_path       => $referencefile_path,
         }
     );
 
-    ############################################
-    ## ADD COMMAND SPECIFIC FLAGS AND OPTIONS ##
-    ############################################
 
     if ($min_genotype_ratio) {
         push @commands, q{--min_genotype_ratio} . $SPACE . $min_genotype_ratio;
     }
 
-    push @commands, q{--input_file:eval} . $SPACE .  $infile_eval;
+    push @commands, q{--input_file:eval} . $SPACE . $infile_eval;
 
-    push @commands, q{--input_file:genotype} . $SPACE .  $infile_genotype;
+    push @commands, q{--input_file:genotype} . $SPACE . $infile_genotype;
 
-    push @commands, q{--popfile} . $SPACE . $popvcffilepath;
+    push @commands, q{--popfile} . $SPACE . $pop_vcffile_path;
 
     push @commands, q{--out} . $SPACE . $outfile_path;
 

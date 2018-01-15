@@ -112,57 +112,57 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     infile_eval => {
-        input           => catfile(qw{path_to_input_bam_eval}),
+        input           => catfile(qw{path to input_bam_eval}),
         expected_output => q{--input_file:eval}
           . $SPACE
-          . catfile(qw{path_to_input_bam_eval}),
+          . catfile(qw{path to input_bam_eval}),
     },
     infile_genotype => {
-        input           => catfile(qw{path_to_input_bam_genotype}),
+        input           => catfile(qw{path to input_bam_genotype}),
         expected_output => q{--input_file:genotype}
           . $SPACE
-          . catfile(qw{path_to_input_bam_genotype}),
+          . catfile(qw{path to input_bam_genotype}),
     },
     outfile_path => {
-        input           => catfile(qw{path_to_output_file}),
-        expected_output => q{--out} . $SPACE . catfile(qw{path_to_output_file}),
+        input           => catfile(qw{path to output_file}),
+        expected_output => q{--out} . $SPACE . catfile(qw{path to output_file}),
     },
-    popvcffilepath => {
-        input           => catfile(qw{path_to_population_vcf}),
+    pop_vcffile_path => {
+        input           => catfile(qw{path to population_vcf}),
         expected_output => q{--popfile}
           . $SPACE
-          . catfile(qw{path_to_population_vcf}),
+          . catfile(qw{path to population_vcf}),
     },
     referencefile_path => {
-        input           => catfile(qw{path_to_human_fasta_file}),
+        input           => catfile(qw{path to human_fasta_file}),
         expected_output => q{--reference_sequence}
           . $SPACE
-          . catfile(qw{path_to_human_fasta_file}),
+          . catfile(qw{path to human_fasta_file}),
     },
 );
 
 my %specific_argument = (
     infile_eval => {
-        input           => catfile(qw{path_to_input_bam_eval}),
+        input           => catfile(qw{path to input_bam_eval}),
         expected_output => q{--input_file:eval}
           . $SPACE
-          . catfile(qw{path_to_input_bam_eval}),
+          . catfile(qw{path to input_bam_eval}),
     },
     infile_genotype => {
-        input           => catfile(qw{path_to_input_bam_genotype}),
+        input           => catfile(qw{path to input_bam_genotype}),
         expected_output => q{--input_file:genotype}
           . $SPACE
-          . catfile(qw{path_to_input_bam_genotype}),
+          . catfile(qw{path to input_bam_genotype}),
     },
     min_genotype_ratio => {
         input           => q{0.95},
         expected_output => q{--min_genotype_ratio} . $SPACE . q{0.95},
     },
-    popvcffilepath => {
-        input           => catfile(qw{path_to_population_vcf}),
+    pop_vcffile_path => {
+        input           => catfile(qw{path to population_vcf}),
         expected_output => q{--popfile}
           . $SPACE
-          . catfile(qw{path_to_population_vcf}),
+          . catfile(qw{path to population_vcf}),
     },
 );
 
