@@ -357,8 +357,9 @@ sub analysis_vcf2cytosure {
         #say {$FILEHANDLE} q{infile tag from psv_combinevariantcallsets:} . $infile_tag;
 
         $infile_tag = $file_info_href->{$sample_id}{psv_combinevariantcallsets}{file_tag};
+        my $sample_vcf_file = $sample_id . $infile_tag . q{SV} . $DOT . q{vcf};
 
-        say {$FILEHANDLE} q{Splitted file for this sample goes to:} . $sample_id . $temp_directory . q{/} . $infile_tag . q{SV} . $DOT . q{vcf} ;
+        say {$FILEHANDLE} q{Splitted file for this sample goes to:} . catfile($temp_directory, $sample_vcf_file);
         #bcftools_view(
         #    {
         #        FILEHANDLE      => $FILEHANDLE,
