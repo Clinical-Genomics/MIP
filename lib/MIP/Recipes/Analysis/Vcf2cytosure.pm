@@ -158,6 +158,7 @@ sub analysis_vcf2cytosure {
     use MIP::Processmanagement::Processes qw{ print_wait };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
+    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
     use MIP::Program::Variantcalling::Tiddit qw{ tiddit_coverage };
     use MIP::QC::Record
       qw{ add_program_outfile_to_sample_info };
@@ -288,7 +289,7 @@ sub analysis_vcf2cytosure {
 
 
         ## Copy file(s) to temporary directory
-        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
+        say {$FILEHANDLE} q{## Copy bam file to temporary directory};
         migrate_file(
             {
                   FILEHANDLE   => $FILEHANDLE,
@@ -313,6 +314,24 @@ sub analysis_vcf2cytosure {
 
 
         # Extract SV from this sample from merged SV VCF file
+        say {$FILEHANDLE} q{Using bcftools_view to extract SV for sample} . $SPACE . $sample_id;
+
+        my $merged_sv_vcf_path = $sample_info_href->{sv_vcf_file}{ready_vcf}{path};
+        say {$FILEHANDLE} "path to merged VCF:$merged_sv_vcf_path";
+
+        #bcftools_view(
+        #    {
+        #        FILEHANDLE      => $FILEHANDLE,
+        #        infile_path     => $file_path_prefix . $infile_suffix,
+        #        samples_ref     => [$sample_id],
+        #        stdoutfile_path => $sample_exonic_file_path,
+        #    }
+        #);
+        say {$FILEHANDLE} $NEWLINE;
+
+
+
+
 
 
 
