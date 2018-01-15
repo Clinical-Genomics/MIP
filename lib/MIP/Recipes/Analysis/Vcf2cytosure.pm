@@ -302,7 +302,6 @@ sub analysis_vcf2cytosure {
             }
         );
 
-
         ## Copy file(s) to temporary directory
         say {$FILEHANDLE} q{## Copy bam file to temporary directory};
         migrate_file(
@@ -335,6 +334,7 @@ sub analysis_vcf2cytosure {
         my $sample_vcf_file = $sample_id . $infile_tag . q{SV} . $DOT . q{vcf};
 
         say {$FILEHANDLE} q{Splitted file for this sample goes to:} . catfile($temp_directory, $sample_vcf_file);  # remove this line after
+        # Bcftools view
         bcftools_view(
             {
                 FILEHANDLE   => $FILEHANDLE,
@@ -346,22 +346,18 @@ sub analysis_vcf2cytosure {
         say {$FILEHANDLE} q{wait}, $NEWLINE;
 
         say {$FILEHANDLE} q{Converting sample's SV VCF file into cytosure, using Vcf2cytosure};
-        say {$FILEHANDLE} q{Coverage file:} . $file_path_prefix{$sample_id}{out} . $DOT . q{cov};
-        say {$FILEHANDLE} q{VCF infile path:} . catfile($temp_directory, $sample_vcf_file);
-        say {$FILEHANDLE} q{Outfile:} . catfile($temp_directory, $sample_id . $infile_tag . q{SV} . $DOT . q{cgh});
+        say {$FILEHANDLE} q{Coverage file:} . $file_path_prefix{$sample_id}{out} . $DOT . q{cov}; # remove this line after
+        say {$FILEHANDLE} q{VCF infile path:} . catfile($temp_directory, $sample_vcf_file); # remove this line after
+        say {$FILEHANDLE} q{Outfile:} . catfile($temp_directory, $sample_id . $infile_tag . q{SV} . $DOT . q{cgh}); # remove this line after
 
-
-
-        #vcf2cytosure_convert(
-        #  {
-        #    coverage_file => $file_path_prefix{$sample_id}{out} . $UNDERSCORE . q{cov},
-        #    FILEHANDLE => $FILEHANDLE,
-
-        #  }
-
-
-
-        #);
+        vcf2cytosure_convert(
+          {
+            coverage_file => $file_path_prefix{$sample_id}{out} . $DOT . q{cov},
+            FILEHANDLE => $FILEHANDLE,
+            outfile_path => catfile($temp_directory, $sample_id . $infile_tag . q{SV} . $DOT . q{cgh}),
+            vcf_infile_path => catfile($temp_directory, $sample_vcf_file),
+          }
+        );
 
 
 
