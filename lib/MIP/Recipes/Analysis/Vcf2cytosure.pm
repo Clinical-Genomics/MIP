@@ -212,8 +212,12 @@ sub analysis_vcf2cytosure {
     # Split SV VCF file in single samples:
 
     # Create a samples_file to feed to to Bcftools_view:
-    my $samples_file;
+    ## Assign directories
+    my $outfamily_file_directory =
+      catfile( $active_parameter_href->{outdata_dir},
+        $family_id, $outaligner_dir, $program_outdirectory_name );
 
+    my $samples_file;
     my $constrain;
 
     # If it's a trio
@@ -225,8 +229,9 @@ sub analysis_vcf2cytosure {
           . $SPACE;
         $constrain = q{trio};
     }
+    # Else use the SV VCF file as it is, since has variants from one sample only
 
-    # Else using the SV VCF file as it is, since has variants from one sample only
+
 
 
 
