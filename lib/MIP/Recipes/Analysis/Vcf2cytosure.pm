@@ -332,7 +332,6 @@ sub analysis_vcf2cytosure {
             }
         );
         say {$FILEHANDLE} $AMPERSAND . $SPACE . $NEWLINE;
-        say {$FILEHANDLE} $NEWLINE;
 
         # Extract SV from this sample from merged SV VCF file
         say {$FILEHANDLE} q{## Using bcftools_view to extract SV for sample}
@@ -384,20 +383,21 @@ q{## Converting sample's SV VCF file into cytosure, using Vcf2cytosure}
         );
         say {$FILEHANDLE} q{wait}, $NEWLINE;
 
+        if ( $mip_program_mode == 1 ) {
 
-        #if ( $mip_program_mode == 1 ) {
+            add_program_outfile_to_sample_info(
+                {
+                    sample_id => $sample_id,
+                    path      => catfile(
+                        $outfamily_directory,
+                        $sample_id . $infile_tag . q{SV} . $DOT . q{cgh}
+                    ),
+                    program_name     => q{vcf2cytosure},
+                    sample_info_href => $sample_info_href,
+                }
+            );
 
-        #  add_program_outfile_to_sample_info(
-        #      {
-        #          sample_id => $sample_id,
-        #          path             => catfile("no idea what goes inside here"),
-        #          program_name     => q{vcf2cytosure},
-        #          sample_info_href => $sample_info_href,
-        #      }
-        #  );
-
-
-        #}
+        }
     }
 
     if ( $mip_program_mode == 1 ) {

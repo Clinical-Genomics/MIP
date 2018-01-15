@@ -1547,7 +1547,6 @@ sub bcftools_view {
 ##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
 ##          : $regions_ref            => Regions to process {REF}
 ##          : $samples_file_path      => File of samples to annotate
-
 ##          : $samples_ref            => Samples to include or exclude if prefixed with "^"
 ##          : $stderrfile_path        => Stderr file path to write to
 ##          : $stderrfile_path_append => Append stderr info to file path
