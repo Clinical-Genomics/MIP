@@ -231,7 +231,7 @@ sub analysis_vcf2cytosure {
     migrate_file(
         {
               FILEHANDLE   => $FILEHANDLE,
-              infile_path  => $infile_path,
+              infile_path  => $infamily_directory . q{/} . $family_id,
               outfile_path => $temp_directory,
         }
     );
