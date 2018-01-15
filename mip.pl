@@ -547,8 +547,8 @@ GetOptions(
       \@{ $active_parameter{sacct_format_fields} },
     q{pssmt|psamtools_subsample_mt=n} =>
       \$active_parameter{psamtools_subsample_mt},
-    q{pssmtd|psamtools_subsample_mt_depth=n} =>
-      \$active_parameter{psamtools_subsample_mt_depth},
+    q{ssmtd|samtools_subsample_mt_depth=n} =>
+      \$active_parameter{samtools_subsample_mt_depth},
   )
   or help(
     {
@@ -1846,7 +1846,7 @@ sub build_usage {
 
     ##Subsample the mitochondria
     -pssmt/--psamtools_subsample_mt Subsample the mitochondria (defaults to "0" (=no))
-    -pssmtd/--psamtools_subsample_mt_depth Set approximate coverage of subsampled bam file (defaults to "60")
+    -ssmtd/--samtools_subsample_mt_depth Set approximate coverage of subsampled bam file (defaults to "60")
 
     ###Utility
     -pped/--ppeddy QC for familial-relationships and sexes (defaults to "0" (=no) )
