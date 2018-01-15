@@ -241,6 +241,7 @@ module_time:
     pgatk_baserecalibration: 20
     psambamba_depth: 10
     pchanjo_sexcheck: 2
+    psamtools_subsample_mt: 1
     ppicardtools_collectmultiplemetrics: 10
     ppicardtools_collecthsmetrics: 10
     pbedtools_genomecov: 15
@@ -296,6 +297,7 @@ module_core_number:
     pgatk_baserecalibration: 16
     psambamba_depth: 2
     pchanjo_sexcheck: 1
+    psamtools_subsample_mt: 1
     ppicardtools_collectmultiplemetrics: 2
     ppicardtools_collecthsmetrics: 2
     pbedtools_genomecov: 1
@@ -657,6 +659,21 @@ chanjo_sexcheck_log_level:
    - pchanjo_sexcheck
   data_type: SCALAR
   default: DEBUG
+  type: program_argument
+psamtools_subsample_mt:
+  associated_program:
+   - mip
+  chain: subsample_mt
+  data_type: SCALAR
+  default: 0
+  file_tag: _subsample_MT
+  outfile_suffix: ".bam"
+  type: program
+samtools_subsample_mt_depth:
+  associated_program:
+   - psamtools_subsample_mt
+  data_type: SCALAR
+  default: 60
   type: program_argument
 psambamba_depth:
   associated_program:

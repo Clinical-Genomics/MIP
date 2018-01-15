@@ -151,7 +151,7 @@ check_parameter_hash(
 );
 
 ## Set MIP version
-our $VERSION = 'v5.0.12';
+our $VERSION = 'v5.0.13';
 
 ## Holds all active parameters
 my %active_parameter;
@@ -545,6 +545,10 @@ GetOptions(
     q{psac|psacct=n}             => \$active_parameter{psacct},
     q{sacfrf|sacct_format_fields:s} =>
       \@{ $active_parameter{sacct_format_fields} },
+    q{pssmt|psamtools_subsample_mt=n} =>
+      \$active_parameter{psamtools_subsample_mt},
+    q{ssmtd|samtools_subsample_mt_depth=n} =>
+      \$active_parameter{samtools_subsample_mt_depth},
   )
   or help(
     {
@@ -1839,6 +1843,10 @@ sub build_usage {
     -pevab/--pendvariantannotationblock End variant annotation block by concatenating files (defaults to "0" (=no))
       -ravbf/--rankvariant_binary_file Produce binary file from the rank variant chromosomal sorted vcfs (supply flag to enable)
       -evabrgf/--endvariantannotationblock_remove_genes_file Remove variants in hgnc_ids (defaults to "")
+
+    ##Subsample the mitochondria
+    -pssmt/--psamtools_subsample_mt Subsample the mitochondria (defaults to "0" (=no))
+    -ssmtd/--samtools_subsample_mt_depth Set approximate coverage of subsampled bam file (defaults to "60")
 
     ###Utility
     -pped/--ppeddy QC for familial-relationships and sexes (defaults to "0" (=no) )

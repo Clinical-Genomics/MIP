@@ -127,7 +127,7 @@ my %specific_argument = (
         input           => q{1},
         expected_output => q{-S},
     },
-    F_flag => {
+    exclude_reads_with_these_flags => {
         input           => q{1},
         expected_output => q{-F 1},
     },
