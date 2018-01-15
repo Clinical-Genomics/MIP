@@ -226,7 +226,10 @@ sub analysis_vcf2cytosure {
     while ( my ( $sample_id_index, $sample_id ) =
         each @{ $active_parameter_href->{sample_ids} } )
     {
+        say {$FILEHANDLE} $NEWLINE . q{######################################################};
         say {$FILEHANDLE} q{Sample id index:} . $sample_id_index . q{, sample id:} . $sample_id;
+
+        say {$FILEHANDLE} q{Creating coverage file with tiddit -cov for sample} . $SPACE . $sample_id;
 
         # Using tiddit coverage, create coverage file from .bam file of this sample
         my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
@@ -307,6 +310,12 @@ sub analysis_vcf2cytosure {
         );
         say {$FILEHANDLE} $AMPERSAND . $SPACE . $NEWLINE;
         say {$FILEHANDLE} q{wait}, $NEWLINE;
+
+
+        # Extract SV from this sample from merged SV VCF file
+
+
+
 
 
 
