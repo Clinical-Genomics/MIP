@@ -228,14 +228,8 @@ sub analysis_vcf2cytosure {
     my $infamily_directory = catdir( $active_parameter_href->{outdata_dir}, $family_id, $outaligner_dir );
     $infile_tag = $file_info_href->{$family_id}{psv_combinevariantcallsets}{file_tag};
 
-
     $merged_SV_VCF = $family_id . $infile_tag . q{SV} . $DOT . q{vcf};
     $merged_SV_VCF_path = catfile($infamily_directory, $merged_SV_VCF);
-
-
-    #say {$FILEHANDLE} q{$infamily_directory:} . $infamily_directory;
-    #say {$FILEHANDLE} q{family_id:} . $family_id;
-    #say {$FILEHANDLE} q{infile_tag:} . $infile_tag;
 
     migrate_file(
         {
@@ -251,8 +245,8 @@ sub analysis_vcf2cytosure {
     while ( my ( $sample_id_index, $sample_id ) =
         each @{ $active_parameter_href->{sample_ids} } )
     {
-        say {$FILEHANDLE} $NEWLINE . q{######################################################};
-        say {$FILEHANDLE} q{Sample id index:} . $sample_id_index . q{, sample id:} . $sample_id;
+        say {$FILEHANDLE} $NEWLINE . q{######################################################}; # remove this line after
+        say {$FILEHANDLE} q{Sample id index:} . $sample_id_index . q{, sample id:} . $sample_id; # remove this line after
 
         say {$FILEHANDLE} q{Creating coverage file with tiddit -cov for sample} . $SPACE . $sample_id;
 
@@ -340,35 +334,21 @@ sub analysis_vcf2cytosure {
         # Extract SV from this sample from merged SV VCF file
         say {$FILEHANDLE} q{Using bcftools_view to extract SV for sample} . $SPACE . $sample_id;
 
-        #$infile_tag = $file_info_href->{$sample_id}{psv_combinevariantcallsets}{file_tag};
-
-        #say {$FILEHANDLE} $NEWLINE;
-        #      say {$FILEHANDLE} q{insample_directory:} . $insample_directory;
-        #      say {$FILEHANDLE} q{merged_infile_prefix:} . $merged_infile_prefix;
-        #      say {$FILEHANDLE} q{infile_tag:} . $infile_tag;
-        #      say {$FILEHANDLE} q{infile_prefix:} . $infile_prefix;
-        #      say {$FILEHANDLE} q{sample_outfile_prefix:} . $sample_outfile_prefix;
-        #      say {$FILEHANDLE} q{infile_path:} . $infile_path;
-
-        #$infile_path = catfile( $insample_directory, $merged_infile_prefix, $infile_tag ),
-        #say {$FILEHANDLE} q{insample_directory:} . $insample_directory;
-        #say {$FILEHANDLE} q{$infile_prefix:} .$infile_prefix;
-        #say {$FILEHANDLE} q{VCF directory:} . $infile_path ;
-        #say {$FILEHANDLE} q{infile tag from psv_combinevariantcallsets:} . $infile_tag;
-
         $infile_tag = $file_info_href->{$sample_id}{psv_combinevariantcallsets}{file_tag};
         my $sample_vcf_file = $sample_id . $infile_tag . q{SV} . $DOT . q{vcf};
 
-        say {$FILEHANDLE} q{Splitted file for this sample goes to:} . catfile($temp_directory, $sample_vcf_file);
-        #bcftools_view(
-        #    {
-        #        FILEHANDLE      => $FILEHANDLE,
-        #        infile_path     => catfile($temp_directory, $merged_SV_VCF),
-        #        samples_ref     => [$sample_id],
-        #        stdoutfile_path => catfile()$temp_directory ,
-        #    }
-        #);
-        #say {$FILEHANDLE} $NEWLINE;
+        say {$FILEHANDLE} q{Splitted file for this sample goes to:} . catfile($temp_directory, $sample_vcf_file);  # remove this line after
+        bcftools_view(
+            {
+                FILEHANDLE      => $FILEHANDLE,
+                infile_path     => catfile($temp_directory, $merged_SV_VCF),
+                samples_ref     => [$sample_id],
+                stdoutfile_path => catfile($temp_directory, $sample_vcf_file),
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+
+        
 
 
 
