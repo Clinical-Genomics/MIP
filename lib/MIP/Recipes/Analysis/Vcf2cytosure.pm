@@ -346,9 +346,9 @@ sub analysis_vcf2cytosure {
         say {$FILEHANDLE} q{wait}, $NEWLINE;
 
         say {$FILEHANDLE} q{Converting sample's SV VCF file into cytosure, using Vcf2cytosure};
-        say {$FILEHANDLE} q{Coverage file:} . $file_path_prefix{$sample_id}{out} . $UNDERSCORE . q{cov};
+        say {$FILEHANDLE} q{Coverage file:} . $file_path_prefix{$sample_id}{out} . $DOT . q{cov};
         say {$FILEHANDLE} q{VCF infile path:} . catfile($temp_directory, $sample_vcf_file);
-        say {$FILEHANDLE} q{Outfile:} . catfile($temp_directory, $sample_vcf_file);
+        say {$FILEHANDLE} q{Outfile:} . catfile($temp_directory, $sample_id . $infile_tag . q{SV} . $DOT . q{cgh});
 
 
 
