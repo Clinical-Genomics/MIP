@@ -29,7 +29,9 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $DOT       => q{.};
+Readonly my $AMPERSAND  => q{&};
+Readonly my $ASTERISK   => q{*};
+Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
 Readonly my $UNDERSCORE => q{_};
@@ -39,6 +41,7 @@ sub analysis_vcf2cytosure {
 ## Function : Convert VCF with structural variations to the “.CGH” format used by the CytoSure Interpret Software
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $bin_size                => Bin size
 ##          : $family_id               => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
@@ -63,6 +66,7 @@ sub analysis_vcf2cytosure {
     my $sample_info_href;
 
     ## Default(s)
+    my $bin_size;
     my $family_id;
     my $outaligner_dir;
     my $temp_directory;
@@ -74,6 +78,11 @@ sub analysis_vcf2cytosure {
             required    => 1,
             store       => \$active_parameter_href,
             strict_type => 1,
+        },
+        bin_size => {
+            default     => $arg_href->{active_parameter_href}{tiddit_bin_size},
+            strict_type => 1,
+            store       => \$bin_size
         },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
@@ -202,12 +211,129 @@ sub analysis_vcf2cytosure {
         }
     );
 
-    ## Collect infiles for all sample_ids to enable migration to temporary directory
+    ## Assign file_tags
+    my %file_path_prefix;
+    my $infile_prefix;
+    my $infile_tag;
+    my $sample_outfile_prefix;
+    my $outfile_tag;
+
+    my $process_batches_count = 1;
+
+    # Loop over all samples
     while ( my ( $sample_id_index, $sample_id ) =
         each @{ $active_parameter_href->{sample_ids} } )
     {
-
         say {$FILEHANDLE} q{Sample id index:} . $sample_id_index . q{, sample id:} . $sample_id;
+
+        # Using tiddit coverage, create coverage file from .bam file of this sample
+        my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
+            $sample_id, $outaligner_dir );
+
+        ## Add merged infile name prefix after merging all BAM files per sample_id
+        my $merged_infile_prefix = get_merged_infile_prefix(
+            {
+                file_info_href => $file_info_href,
+                sample_id      => $sample_id,
+            }
+        );
+
+        ## Assign file_tags
+        $infile_tag = $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
+        $infile_prefix = $merged_infile_prefix . $infile_tag;
+        $outfile_tag = $file_info_href->{$family_id}{ptiddit}{file_tag};
+        $sample_outfile_prefix = $merged_infile_prefix . $outfile_tag;
+
+        ## Assign suffix
+        my $infile_suffix = get_file_suffix(
+            {
+                jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain},
+                parameter_href => $parameter_href,
+                suffix_key     => q{alignment_file_suffix},
+            }
+        );
+
+        ## Set file suffix for next module within jobid chain
+        my $outfile_suffix = set_file_suffix(
+            {
+                file_suffix => $parameter_href->{$mip_program_name}{coverage_file_suffix},
+                job_id_chain   => $job_id_chain,
+                parameter_href => $parameter_href,
+                suffix_key     => q{variant_file_suffix},
+            }
+        );
+
+        #q{.bam} -> ".b*" for getting index as well
+        my $infile_path = catfile( $insample_directory,
+            $infile_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK );
+
+        $file_path_prefix{$sample_id}{in} =
+          catfile( $temp_directory, $infile_prefix );
+        $file_path_prefix{$sample_id}{out} =
+          catfile( $temp_directory, $sample_outfile_prefix );
+
+        $process_batches_count = print_wait(
+            {
+                FILEHANDLE            => $FILEHANDLE,
+                max_process_number    => $core_number,
+                process_batches_count => $process_batches_count,
+                process_counter       => $sample_id_index,
+            }
+        );
+
+
+        ## Copy file(s) to temporary directory
+        say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
+        migrate_file(
+            {
+                  FILEHANDLE   => $FILEHANDLE,
+                  infile_path  => $infile_path,
+                  outfile_path => $temp_directory,
+            }
+        );
+        say {$FILEHANDLE} q{wait}, $NEWLINE;
+
+        ## Tiddit coverage
+        tiddit_coverage(
+            {
+                bin_size    => $bin_size,
+                FILEHANDLE  => $FILEHANDLE,
+                infile_path => $file_path_prefix{$sample_id}{in}
+                  . $infile_suffix,
+                outfile_path_prefix => $file_path_prefix{$sample_id}{out},
+            }
+        );
+        say {$FILEHANDLE} $AMPERSAND . $SPACE . $NEWLINE;
+        say {$FILEHANDLE} q{wait}, $NEWLINE;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     }
 
     say {$FILEHANDLE} q{wait}, $NEWLINE;
