@@ -160,8 +160,7 @@ sub analysis_vcf2cytosure {
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
     use MIP::Program::Variantcalling::Tiddit qw{ tiddit_coverage };
-    use MIP::QC::Record
-      qw{ add_program_outfile_to_sample_info };
+    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Set::File qw{ set_file_suffix };
 
@@ -173,7 +172,7 @@ sub analysis_vcf2cytosure {
     my $mip_program_mode = $active_parameter_href->{$mip_program_name};
 
     ## Unpack parameters
-    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
+    my $job_id_chain       = $parameter_href->{$mip_program_name}{chain};
     my $max_cores_per_node = $active_parameter_href->{max_cores_per_node};
     my $modifier_core_number =
       scalar( @{ $active_parameter_href->{sample_ids} } );
@@ -201,13 +200,14 @@ sub analysis_vcf2cytosure {
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ( $file_path, $program_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
-            directory_id                    => $family_id,
-            FILEHANDLE                      => $FILEHANDLE,
-            job_id_href                     => $job_id_href,
-            process_time                    => $time,
-            program_directory               => catfile($outaligner_dir, $program_outdirectory_name),
+            active_parameter_href => $active_parameter_href,
+            core_number           => $core_number,
+            directory_id          => $family_id,
+            FILEHANDLE            => $FILEHANDLE,
+            job_id_href           => $job_id_href,
+            process_time          => $time,
+            program_directory =>
+              catfile( $outaligner_dir, $program_outdirectory_name ),
             program_name                    => $program_name,
             source_environment_commands_ref => [$source_environment_cmd],
             temp_directory                  => $temp_directory,
@@ -220,21 +220,23 @@ sub analysis_vcf2cytosure {
     my $infile_tag;
     my $sample_outfile_prefix;
     my $outfile_tag;
-    my $merged_SV_VCF_path;
-    my $merged_SV_VCF;
+    my $merged_sv_vcf_path;
+    my $merged_sv_vcf;
 
     # Copy family-merged SV VCF file in temporary directory:
-    my $infamily_directory = catdir( $active_parameter_href->{outdata_dir}, $family_id, $outaligner_dir );
-    $infile_tag = $file_info_href->{$family_id}{psv_combinevariantcallsets}{file_tag};
+    my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
+        $family_id, $outaligner_dir );
+    $infile_tag =
+      $file_info_href->{$family_id}{psv_combinevariantcallsets}{file_tag};
 
-    $merged_SV_VCF = $family_id . $infile_tag . q{SV} . $DOT . q{vcf};
-    $merged_SV_VCF_path = catfile($infamily_directory, $merged_SV_VCF);
+    $merged_sv_vcf = $family_id . $infile_tag . q{SV} . $DOT . q{vcf};
+    $merged_sv_vcf_path = catfile( $infamily_directory, $merged_sv_vcf );
 
     migrate_file(
         {
-              FILEHANDLE   => $FILEHANDLE,
-              infile_path  => $merged_SV_VCF_path,
-              outfile_path => $temp_directory,
+            FILEHANDLE   => $FILEHANDLE,
+            infile_path  => $merged_sv_vcf_path,
+            outfile_path => $temp_directory,
         }
     );
 
@@ -245,9 +247,10 @@ sub analysis_vcf2cytosure {
         each @{ $active_parameter_href->{sample_ids} } )
     {
 
-        say {$FILEHANDLE} q{######## Processing sample} . $SPACE . $sample_id; # remove this line after
+        say {$FILEHANDLE} q{######## Processing sample} . $SPACE
+          . $sample_id;    # remove this line after
 
-        # Using tiddit coverage, create coverage file from .bam file of this sample
+     # Using tiddit coverage, create coverage file from .bam file of this sample
         my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
             $sample_id, $outaligner_dir );
 
@@ -260,15 +263,17 @@ sub analysis_vcf2cytosure {
         );
 
         ## Assign file_tags
-        $infile_tag = $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
+        $infile_tag =
+          $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
         $infile_prefix = $merged_infile_prefix . $infile_tag;
-        $outfile_tag = $file_info_href->{$family_id}{ptiddit}{file_tag};
+        $outfile_tag   = $file_info_href->{$family_id}{ptiddit}{file_tag};
         $sample_outfile_prefix = $merged_infile_prefix . $outfile_tag;
 
         ## Assign suffix
         my $infile_suffix = get_file_suffix(
             {
-                jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain},
+                jobid_chain =>
+                  $parameter_href->{pgatk_baserecalibration}{chain},
                 parameter_href => $parameter_href,
                 suffix_key     => q{alignment_file_suffix},
             }
@@ -306,13 +311,15 @@ sub analysis_vcf2cytosure {
         say {$FILEHANDLE} q{## Copy bam file to temporary directory};
         migrate_file(
             {
-                  FILEHANDLE   => $FILEHANDLE,
-                  infile_path  => $infile_path,
-                  outfile_path => $temp_directory,
+                FILEHANDLE   => $FILEHANDLE,
+                infile_path  => $infile_path,
+                outfile_path => $temp_directory,
             }
         );
         say {$FILEHANDLE} q{wait}, $NEWLINE;
-        say {$FILEHANDLE} q{Creating coverage file with tiddit -cov for sample} . $SPACE . $sample_id;
+        say {$FILEHANDLE} q{Creating coverage file with tiddit -cov for sample}
+          . $SPACE
+          . $sample_id;
 
         ## Tiddit coverage
         tiddit_coverage(
@@ -328,34 +335,43 @@ sub analysis_vcf2cytosure {
         say {$FILEHANDLE} $NEWLINE;
 
         # Extract SV from this sample from merged SV VCF file
-        say {$FILEHANDLE} q{## Using bcftools_view to extract SV for sample} . $SPACE . $sample_id . $NEWLINE;
+        say {$FILEHANDLE} q{## Using bcftools_view to extract SV for sample}
+          . $SPACE
+          . $sample_id
+          . $NEWLINE;
 
-        $infile_tag = $file_info_href->{$sample_id}{psv_combinevariantcallsets}{file_tag};
+        $infile_tag =
+          $file_info_href->{$sample_id}{psv_combinevariantcallsets}{file_tag};
         my $sample_vcf_file = $sample_id . $infile_tag . q{SV} . $DOT . q{vcf};
 
         # Bcftools view
         bcftools_view(
             {
                 FILEHANDLE   => $FILEHANDLE,
-                infile_path  => catfile($temp_directory, $merged_SV_VCF),
+                infile_path  => catfile( $temp_directory, $merged_sv_vcf ),
                 samples_ref  => [$sample_id],
-                outfile_path => catfile($temp_directory, $sample_vcf_file),
+                outfile_path => catfile( $temp_directory, $sample_vcf_file ),
             }
         );
         say {$FILEHANDLE} $NEWLINE;
 
-        say {$FILEHANDLE} q{## Converting sample's SV VCF file into cytosure, using Vcf2cytosure} . $NEWLINE;
+        say {$FILEHANDLE}
+q{## Converting sample's SV VCF file into cytosure, using Vcf2cytosure}
+          . $NEWLINE;
 
-        my $cgh_outile_path = catfile($temp_directory, $sample_id . $infile_tag . q{SV} . $DOT . q{cgh});
+        my $cgh_outile_path = catfile( $temp_directory,
+            $sample_id . $infile_tag . q{SV} . $DOT . q{cgh} );
 
         vcf2cytosure_convert(
-          {
-            coverage_file => $file_path_prefix{$sample_id}{out} . $DOT . q{cov},
-            FILEHANDLE => $FILEHANDLE,
-            outfile_path => $cgh_outile_path,
-            vcf_infile_path => catfile($temp_directory, $sample_vcf_file),
-          }
+            {
+                coverage_file => $file_path_prefix{$sample_id}{out}
+                  . $DOT . q{cov},
+                FILEHANDLE      => $FILEHANDLE,
+                outfile_path    => $cgh_outile_path,
+                vcf_infile_path => catfile( $temp_directory, $sample_vcf_file ),
+            }
         );
+        say {$FILEHANDLE} $NEWLINE;
 
         ## Copies file from temporary directory.
         say {$FILEHANDLE} q{## Copy file from temporary directory};
@@ -368,34 +384,37 @@ sub analysis_vcf2cytosure {
         );
         say {$FILEHANDLE} q{wait}, $NEWLINE;
 
+
+        #if ( $mip_program_mode == 1 ) {
+
+        #  add_program_outfile_to_sample_info(
+        #      {
+        #          sample_id => $sample_id,
+        #          path             => catfile("no idea what goes inside here"),
+        #          program_name     => q{vcf2cytosure},
+        #          sample_info_href => $sample_info_href,
+        #      }
+        #  );
+
+
+        #}
     }
 
-      if ( $mip_program_mode == 1 ) {
+    if ( $mip_program_mode == 1 ) {
+        slurm_submit_job_sample_id_dependency_add_to_family(
+            {
+                family_id               => $family_id,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                log                     => $log,
+                path                    => $job_id_chain,
+                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
+                sbatch_file_name => $file_path,
+            }
+        );
+    }
 
-      #add_program_outfile_to_sample_info(
-      #    {
-      #        path => catfile(
-      #            $outfamily_directory, $outfile_prefix . $outfile_suffix
-      #        ),
-      #        program_name     => q{vcf2cytosure},
-      #        sample_info_href => $sample_info_href,
-      #    }
-      #);
-
-      slurm_submit_job_sample_id_dependency_add_to_family(
-          {
-              family_id               => $family_id,
-              infile_lane_prefix_href => $infile_lane_prefix_href,
-              job_id_href             => $job_id_href,
-              log                     => $log,
-              path                    => $job_id_chain,
-              sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
-              sbatch_file_name => $file_path,
-          }
-      );
-  }
-
-  return;
+    return;
 
 }
 
