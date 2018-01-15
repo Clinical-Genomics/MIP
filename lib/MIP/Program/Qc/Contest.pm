@@ -135,7 +135,7 @@ sub gatk_contest {
             allow       => qr/ ^0.\d{1,2}$ | ^1$ /xsm,
             defined     => 1,
             default     => 0.01,
-            required    => 1,
+            required    => 0,
             store       => \$min_genotype_ratio,
             strict_type => 1,
         },
@@ -205,7 +205,7 @@ sub gatk_contest {
     @commands = gatk_base(
         {
             commands_ref             => \@commands,
-            analysis_type            => q{GenotypeGVCFs},
+            analysis_type            => q{ContEst},
             logging_level            => $logging_level,
             intervals_ref            => $intervals_ref,
             referencefile_path       => $referencefile_path,
@@ -227,7 +227,7 @@ sub gatk_contest {
 
     push @commands, q{--input_file:eval} . $SPACE .  $infile_eval;
 
-    push @commands, q{--input_file:genotype} . $SPACE .  $infile_eval;
+    push @commands, q{--input_file:genotype} . $SPACE .  $infile_genotype;
 
     push @commands, q{--popfile} . $SPACE . $popvcffilepath;
 
