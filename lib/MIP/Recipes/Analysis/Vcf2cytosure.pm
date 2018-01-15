@@ -226,8 +226,15 @@ sub analysis_vcf2cytosure {
     my $infamily_directory = catdir( $active_parameter_href->{outdata_dir}, $family_id, $outaligner_dir );
 
     say {$FILEHANDLE} q{$infamily_directory:} . $infamily_directory;
+    say {$FILEHANDLE} q{family_id:} . $family_id;
 
-
+    migrate_file(
+        {
+              FILEHANDLE   => $FILEHANDLE,
+              infile_path  => $infile_path,
+              outfile_path => $temp_directory,
+        }
+    );
 
 
 
