@@ -833,7 +833,8 @@ sub pipeline_wgs {
 
         my $v2cs_program_name = q{vcf2cytosure};
 
-        $outfamily_directory = catfile(
+
+        my $outfamily_directory = catfile(
             $active_parameter_href->{outdata_dir},
             $active_parameter_href->{family_id},
             $active_parameter_href->{outaligner_dir},
