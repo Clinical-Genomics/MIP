@@ -318,10 +318,19 @@ sub analysis_vcf2cytosure {
 
         $infile_tag = $file_info_href->{$sample_id}{psv_combinevariantcallsets}{file_tag};
 
-        $infile_path = catfile( $insample_directory, $infile_prefix ),
-        say {$FILEHANDLE} q{VCF directory:} . $infile_path ;
-        say {$FILEHANDLE} q{infile tag from psv_combinevariantcallsets:} . $infile_tag;
+        say {$FILEHANDLE} $NEWLINE;
+              say {$FILEHANDLE} q{insample_directory:} . $insample_directory;
+              say {$FILEHANDLE} q{merged_infile_prefix:} . $merged_infile_prefix;
+              say {$FILEHANDLE} q{infile_tag:} . $infile_tag;
+              say {$FILEHANDLE} q{infile_prefix:} . $infile_prefix;
+              say {$FILEHANDLE} q{sample_outfile_prefix:} . $sample_outfile_prefix;
+              say {$FILEHANDLE} q{infile_path:} . $infile_path;
 
+        #$infile_path = catfile( $insample_directory, $infile_prefix ),
+        #say {$FILEHANDLE} q{insample_directory:} . $insample_directory;
+        #say {$FILEHANDLE} q{$infile_prefix:} .$infile_prefix;
+        #say {$FILEHANDLE} q{VCF directory:} . $infile_path ;
+        #say {$FILEHANDLE} q{infile tag from psv_combinevariantcallsets:} . $infile_tag;
 
 
         #bcftools_view(
