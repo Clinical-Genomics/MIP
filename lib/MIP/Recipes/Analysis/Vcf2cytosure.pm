@@ -202,36 +202,20 @@ sub analysis_vcf2cytosure {
         }
     );
 
+    ## Collect infiles for all sample_ids to enable migration to temporary directory
+    while ( my ( $sample_id_index, $sample_id ) =
+        each @{ $active_parameter_href->{sample_ids} } )
+    {
 
-    # To do:
-    # 1) Split SV VCF file in single samples (bcftools view)
-
-    # Then loop over samples.
-    # 2) Create coverage files using tiddit coverage
-    # 3) Run Vcf2cytosure with 1 VCF and 1 .cov file
-
-
-    # Split SV VCF file in single samples:
-
-    # Create a samples_file to feed to to Bcftools_view:
-    ## Assign directories
-    my $outfamily_file_directory =
-      catfile( $active_parameter_href->{outdata_dir},
-        $family_id, $outaligner_dir, $program_outdirectory_name );
-
-    my $samples_file;
-    my $constrain;
-
-    # If it's a trio
-    if ( $parameter_href->{dynamic_parameter}{trio} ) {
-
-        say {$FILEHANDLE} "its a trio!";
-        $samples_file =
-          catfile( $outfamily_file_directory, $family_id . $DOT . q{fam} )
-          . $SPACE;
-        $constrain = q{trio};
+        say {$FILEHANDLE} q{Sample id index:} . $sample_id_index . q{, sample id:} . $sample_id;
     }
-    # Else use the SV VCF file as it is, since has variants from one sample only
+
+    say {$FILEHANDLE} q{wait}, $NEWLINE;
+
+
+
+
+
 
 
 
