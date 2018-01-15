@@ -257,7 +257,7 @@ sub analysis_vcf2cytosure {
         ## Set file suffix for next module within jobid chain
         my $outfile_suffix = set_file_suffix(
             {
-                file_suffix => $parameter_href->{$mip_program_name}{coverage_file_suffix},
+                file_suffix => $parameter_href->{ptiddit}{coverage_file_suffix},
                 job_id_chain   => $job_id_chain,
                 parameter_href => $parameter_href,
                 suffix_key     => q{variant_file_suffix},
