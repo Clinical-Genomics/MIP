@@ -262,7 +262,7 @@ sub analysis_samtools_subsample_MT {
 
     ## Get subsample depth
     my $mt_subsample_depth =
-      $active_parameter_href->{psamtools_subsample_mt_depth};
+      $active_parameter_href->{samtools_subsample_mt_depth};
 
     ## Get random seed
     my $seed = int rand $MAX_LIMIT_SEED;
@@ -339,7 +339,7 @@ sub analysis_samtools_subsample_MT {
 
 sub _awk_calculate_average_coverage {
 
-## Function : Writes an awk expression to an open filehandle. The awkexpression calculates the average coverage based on input from samtools depth and prints it.
+## Function : Writes an awk expression to an open filehandle. The awk expression calculates the average coverage based on input from samtools depth and prints it.
 ## Returns  : $awk_statment
 
     my $awk_statment =

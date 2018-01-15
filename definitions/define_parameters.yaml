@@ -669,7 +669,7 @@ psamtools_subsample_mt:
   file_tag: _subsample_MT
   outfile_suffix: ".bam"
   type: program
-psamtools_subsample_mt_depth:
+samtools_subsample_mt_depth:
   associated_program:
    - psamtools_subsample_mt
   data_type: SCALAR
