@@ -340,15 +340,15 @@ sub analysis_vcf2cytosure {
         say {$FILEHANDLE} q{Splitted file for this sample goes to:} . catfile($temp_directory, $sample_vcf_file);  # remove this line after
         bcftools_view(
             {
-                FILEHANDLE      => $FILEHANDLE,
-                infile_path     => catfile($temp_directory, $merged_SV_VCF),
-                samples_ref     => [$sample_id],
-                stdoutfile_path => catfile($temp_directory, $sample_vcf_file),
+                FILEHANDLE   => $FILEHANDLE,
+                infile_path  => catfile($temp_directory, $merged_SV_VCF),
+                samples_ref  => [$sample_id],
+                outfile_path => catfile($temp_directory, $sample_vcf_file),
             }
         );
         say {$FILEHANDLE} $NEWLINE;
 
-        
+
 
 
 
