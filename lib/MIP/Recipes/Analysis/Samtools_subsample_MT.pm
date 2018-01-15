@@ -29,11 +29,13 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $BACKTICK   => q{`};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $PIPE       => q{|};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
+Readonly my $BACKTICK                    => q{`};
+Readonly my $SAMTOOLS_UNMAPPED_READ_FLAG => 4;
+Readonly my $MAX_LIMIT_SEED              => 100;
+Readonly my $NEWLINE                     => qq{\n};
+Readonly my $PIPE                        => q{|};
+Readonly my $SPACE                       => q{ };
+Readonly my $UNDERSCORE                  => q{_};
 
 sub analysis_samtools_subsample_MT {
 
@@ -153,12 +155,10 @@ sub analysis_samtools_subsample_MT {
 
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::Get::Parameter qw{ get_module_parameters };
-    use MIP::Program::Alignment::Samtools
-      qw{ samtools_depth samtools_view };
+    use MIP::Program::Alignment::Samtools qw{ samtools_depth samtools_view };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_dead_end };
-    use MIP::QC::Record
-      qw{ add_program_outfile_to_sample_info };
+    use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Retrieve logger object
@@ -254,34 +254,46 @@ sub analysis_samtools_subsample_MT {
     # Pipe to AWK
     print $FILEHANDLE $PIPE . $SPACE;
 
-    # Run AWK for calculation of avgerage coverage
-    print $FILEHANDLE q?awk '{cov += $3 } END { if (NR > 0) print cov / NR }'?;
+    # Add AWK statment for calculation of avgerage coverage
+    print $FILEHANDLE _awk_calculate_average_coverage();
 
     # Close statment
     say $FILEHANDLE $BACKTICK;
 
     ## Get subsample depth
     my $mt_subsample_depth =
-      $parameter_href->{$mip_program_name}{mt_subsample_depth};
+      $active_parameter_href->{psamtools_subsample_mt_depth};
 
     ## Get random seed
-    my $seed = int rand 100;
+    my $seed = int rand $MAX_LIMIT_SEED;
 
     ## Add seed to fraction for ~100x
+    # Create bash variable
     say $FILEHANDLE q{SEED_FRACTION=}
+
+      # Open statment
       . $BACKTICK
+
+      # Lauch perl and print
       . q?perl -e "print ?
+
+      # Add the random seed number to..
       . $seed . q{ + }
+
+     # ...the subsample fraction, consisting of the desired subsample coverag...
       . $mt_subsample_depth
+
+      # ...divided by the starting coverage
       . q? / $MT_COVERAGE"?
-      . $BACKTICK
-      . $NEWLINE;
+
+      # Close statment
+      . $BACKTICK . $NEWLINE;
 
     ## Filter the bam file to only include a subset of reads that maps to the MT
     say $FILEHANDLE q{## Filter the BAM file};
     samtools_view(
         {
-            exclude_reads_with_these_flags => q{4},
+            exclude_reads_with_these_flags => $SAMTOOLS_UNMAPPED_READ_FLAG,
             FILEHANDLE                     => $FILEHANDLE,
             fraction                       => q{"$SEED_FRACTION"},
             infile_path                    => $infile_path,
@@ -304,7 +316,7 @@ sub analysis_samtools_subsample_MT {
             {
                 infile           => $merged_infile_prefix,
                 path             => $program_outfile_path,
-                program_name     => q{samtools_subsample_MT},
+                program_name     => q{samtools_subsample_mt},
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
@@ -324,4 +336,29 @@ sub analysis_samtools_subsample_MT {
     }
     return;
 }
+
+sub _awk_calculate_average_coverage {
+
+## Function : Writes an awk expression to an open filehandle. The awkexpression calculates the average coverage based on input from samtools depth and prints it.
+## Returns  : $awk_statment
+
+    my $awk_statment =
+
+      # Start awk
+      q?awk '?
+
+      # Sum the coverage data for each base ()
+      . q?{cov += $3}?
+
+      # Add end rule
+      . q?END?
+
+      # Divide the total coverage sum with the number of covered
+      # bases (rows of output from samtools depth),
+      # stored in the awk built in "NR"
+      . q?{ if (NR > 0) print cov / NR }'?;
+
+    return $awk_statment;
+}
+
 1;

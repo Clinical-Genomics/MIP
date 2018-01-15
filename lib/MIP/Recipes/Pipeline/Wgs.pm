@@ -469,7 +469,7 @@ sub pipeline_wgs {
             );
         }
     }
-    if ( $active_parameter_href->{psamtools_subsample_MT} ) {
+    if ( $active_parameter_href->{psamtools_subsample_mt} ) {
 
         $log->info(q{[Subsample MT]});
 
@@ -494,7 +494,7 @@ sub pipeline_wgs {
                     sample_id               => $sample_id,
                     insample_directory      => $insample_directory,
                     outsample_directory     => $outsample_directory,
-                    program_name            => q{samtools_subsample_MT},
+                    program_name            => q{samtools_subsample_mt},
                 }
             );
         }
