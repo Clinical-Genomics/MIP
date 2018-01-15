@@ -224,14 +224,16 @@ sub analysis_vcf2cytosure {
 
     # Copy family-merged SV VCF file on temporary directory:
     my $infamily_directory = catdir( $active_parameter_href->{outdata_dir}, $family_id, $outaligner_dir );
+    $infile_tag = $file_info_href->{$family_id}{psv_combinevariantcallsets}{file_tag};
 
     say {$FILEHANDLE} q{$infamily_directory:} . $infamily_directory;
     say {$FILEHANDLE} q{family_id:} . $family_id;
+    say {$FILEHANDLE} q{infile_tag:} . $infile_tag;
 
     migrate_file(
         {
               FILEHANDLE   => $FILEHANDLE,
-              infile_path  => $infamily_directory . q{/} . $family_id,
+              infile_path  => $infamily_directory . q{/} . $family_id . $infile_tag,
               outfile_path => $temp_directory,
         }
     );
