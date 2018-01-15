@@ -336,7 +336,7 @@ sub analysis_vcf2cytosure {
 
         $infile_tag =
           $file_info_href->{$sample_id}{psv_combinevariantcallsets}{file_tag};
-        my $sample_vcf_file = $sample_id . $infile_tag . q{SV} . $DOT . q{vcf};
+        my $sample_vcf_file = $sample_id . $infile_tag . q{SV} . $DOT . q{tab};
 
         # Bcftools view
         bcftools_view(
@@ -359,7 +359,7 @@ q{## Converting sample's SV VCF file into cytosure, using Vcf2cytosure}
         vcf2cytosure_convert(
             {
                 coverage_file => $file_path_prefix{$sample_id}{out}
-                  . $DOT . q{cov},
+                  . $DOT . q{tab},
                 FILEHANDLE      => $FILEHANDLE,
                 outfile_path    => $cgh_outile_path,
                 vcf_infile_path => catfile( $temp_directory, $sample_vcf_file ),
