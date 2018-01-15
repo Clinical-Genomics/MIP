@@ -245,6 +245,8 @@ sub analysis_vcf2cytosure {
         each @{ $active_parameter_href->{sample_ids} } )
     {
 
+        say {$FILEHANDLE} q{######## Processing sample} . $SPACE . $sample_id; # remove this line after
+
         # Using tiddit coverage, create coverage file from .bam file of this sample
         my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
             $sample_id, $outaligner_dir );
@@ -323,7 +325,7 @@ sub analysis_vcf2cytosure {
             }
         );
         say {$FILEHANDLE} $AMPERSAND . $SPACE . $NEWLINE;
-        say {$FILEHANDLE} q{wait}, $NEWLINE;
+        say {$FILEHANDLE} $NEWLINE;
 
         # Extract SV from this sample from merged SV VCF file
         say {$FILEHANDLE} q{## Using bcftools_view to extract SV for sample} . $SPACE . $sample_id . $NEWLINE;
@@ -340,238 +342,33 @@ sub analysis_vcf2cytosure {
                 outfile_path => catfile($temp_directory, $sample_vcf_file),
             }
         );
-        say {$FILEHANDLE} q{wait}, $NEWLINE;
+        say {$FILEHANDLE} $NEWLINE;
 
         say {$FILEHANDLE} q{## Converting sample's SV VCF file into cytosure, using Vcf2cytosure} . $NEWLINE;
+
+        my $cgh_outile_path = catfile($temp_directory, $sample_id . $infile_tag . q{SV} . $DOT . q{cgh});
 
         vcf2cytosure_convert(
           {
             coverage_file => $file_path_prefix{$sample_id}{out} . $DOT . q{cov},
             FILEHANDLE => $FILEHANDLE,
-            outfile_path => catfile($temp_directory, $sample_id . $infile_tag . q{SV} . $DOT . q{cgh}),
+            outfile_path => $cgh_outile_path,
             vcf_infile_path => catfile($temp_directory, $sample_vcf_file),
           }
         );
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        ## Copies file from temporary directory.
+        say {$FILEHANDLE} q{## Copy file from temporary directory};
+        migrate_file(
+            {
+                FILEHANDLE   => $FILEHANDLE,
+                infile_path  => $cgh_outile_path,
+                outfile_path => $outfamily_directory,
+            }
+        );
+        say {$FILEHANDLE} q{wait}, $NEWLINE;
 
     }
-
-    say {$FILEHANDLE} q{wait}, $NEWLINE;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    #my %file_path_prefix;
-    #my $outfile_tag =
-    #  $file_info_href->{$family_id}{$mip_program_name}{file_tag};
-    #my $outfile_prefix = $family_id . $outfile_tag ;
-    #my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
-
-    ## Assign suffix
-    #my $infile_suffix = get_file_suffix(
-    #    {
-    #        jobid_chain    => $parameter_href->{psv_combinevariantcallsets}{chain},
-    #        parameter_href => $parameter_href,
-    #        suffix_key     => q{variant_file_suffix},
-    #    }
-    #);
-
-    #my $process_batches_count = 1;
-
-    ## Collect infiles for all sample_ids to enable migration to temporary directory
-    #  while ( my ( $sample_id_index, $sample_id ) =
-    #      each @{ $active_parameter_href->{sample_ids} } )
-    #  {
-
-          ## Assign directories
-    #      my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
-    #          $sample_id, $outaligner_dir );
-
-          ## Add merged infile name prefix after merging all BAM files per sample_id
-    #      my $merged_infile_prefix = get_merged_infile_prefix(
-    #          {
-    #              file_info_href => $file_info_href,
-    #              sample_id      => $sample_id,
-    #          }
-    #      );
-
-          ## Assign file_tags
-    #      my $infile_tag =
-    #        $file_info_href->{$sample_id}{psv_combinevariantcallsets}{file_tag};
-    #      my $infile_prefix         = $merged_infile_prefix . $infile_tag;
-    #      my $sample_outfile_prefix = $merged_infile_prefix . $outfile_tag;
-
-
-    #      my $infile_path = catfile( $insample_directory, $infile_prefix);
-
-    #      $file_path_prefix{$sample_id}{in} =
-    #        catfile( $temp_directory, $infile_prefix );
-    #      $file_path_prefix{$sample_id}{out} =
-    #        catfile( $temp_directory, $sample_outfile_prefix );
-
-    #      say {$FILEHANDLE} $NEWLINE;
-    #      say {$FILEHANDLE} q{insample_directory:} . $insample_directory;
-    #      say {$FILEHANDLE} q{merged_infile_prefix:} . $merged_infile_prefix;
-    #      say {$FILEHANDLE} q{infile_tag:} . $infile_tag;
-    #      say {$FILEHANDLE} q{infile_prefix:} . $infile_prefix;
-    #      say {$FILEHANDLE} q{sample_outfile_prefix:} . $sample_outfile_prefix;
-    #      say {$FILEHANDLE} q{infile_path:} . $infile_path;
-
-    #      $process_batches_count = print_wait(
-    #         {
-    #              FILEHANDLE            => $FILEHANDLE,
-    #              max_process_number    => $core_number,
-    #              process_batches_count => $process_batches_count,
-    #              process_counter       => $sample_id_index,
-    #          }
-    #      );
-
-          ## Copy file(s) to temporary directory
-    #      say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-    #      migrate_file(
-    #          {
-    #              FILEHANDLE   => $FILEHANDLE,
-    #              infile_path  => $infile_path,
-    #              outfile_path => $temp_directory,
-    #          }
-    #      );
-    #  }
-    #  say {$FILEHANDLE} q{wait}, $NEWLINE;
-
-      # Restart counter
-      #$process_batches_count = 1;
-
-      ## Collect infiles for all sample_ids
-      #while ( my ( $sample_id_index, $sample_id ) =
-      #    each @{ $active_parameter_href->{sample_ids} } )
-      #{
-
-      #    $process_batches_count = print_wait(
-      #        {
-      #            FILEHANDLE            => $FILEHANDLE,
-      #            max_process_number    => $core_number,
-      #            process_batches_count => $process_batches_count,
-      #            process_counter       => $sample_id_index,
-      #        }
-      #    );
-
-          ## Vcf2cytosure convert
-      #    vcf2cytosure_convert(
-      #        {
-      #            coverage_file => ,
-      #            frequency   =>
-      #            frequency_tag =>
-      #            FILEHANDLE  => $FILEHANDLE,
-      #            infile_path => $file_path_prefix{$sample_id}{in}
-      #              . $infile_suffix,
-      #            no_filter =>
-      #            stdoutfile_path =>
-      #            variant_size =>
-      #            vcf_infile_path =>
-      #        }
-      #    );
-      #    say {$FILEHANDLE} $AMPERSAND . $SPACE . $NEWLINE;
-      #}
-      #say {$FILEHANDLE} q{wait}, $NEWLINE;
-
-      ## Copies file from temporary directory.
-      #say {$FILEHANDLE} q{## Copy file from temporary directory};
-      #migrate_file(
-      #    {
-      #        FILEHANDLE   => $FILEHANDLE,
-      #        infile_path  => $outfile_path_prefix . $outfile_suffix . $ASTERISK,
-      #        outfile_path => $outfamily_directory,
-      #    }
-      #);
-      #say {$FILEHANDLE} q{wait}, $NEWLINE;
-
-      #close $FILEHANDLE;
 
       if ( $mip_program_mode == 1 ) {
 
