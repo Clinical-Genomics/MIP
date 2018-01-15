@@ -316,8 +316,9 @@ sub analysis_vcf2cytosure {
         # Extract SV from this sample from merged SV VCF file
         say {$FILEHANDLE} q{Using bcftools_view to extract SV for sample} . $SPACE . $sample_id;
 
-        my $merged_sv_vcf_path = \$sample_info_href->{sv_vcf_file}{ready_vcf}{path};
-        say {$FILEHANDLE} "path to merged VCF:$merged_sv_vcf_path";
+        $infile_tag = $file_info_href->{$sample_id}{psv_combinevariantcallsets}{file_tag};
+        say {$FILEHANDLE} q{infile tag from psv_combinevariantcallsets} . $SPACE . $infile_tag;
+
 
         #bcftools_view(
         #    {
