@@ -41,6 +41,7 @@ sub vcf2cytosure_convert {
 ##          : $frequency              => Maximum frequency
 ##          : $frequency_tag          => Frequency tag of the info field
 ##          : $no_filter              => Disable any filtering
+##          : $outfile_path           => Outfile path to write to
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
@@ -52,6 +53,7 @@ sub vcf2cytosure_convert {
     ## Flatten argument(s)
     my $coverage_file;
     my $FILEHANDLE;
+    my $outfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
@@ -88,6 +90,10 @@ sub vcf2cytosure_convert {
             default     => 0,
             store       => \$no_filter,
             strict_type => 1,
+        },
+        outfile_path => {
+            strict_type => 1,
+            store => \$outfile_path,
         },
         stderrfile_path => {
             store       => \$stderrfile_path,
@@ -138,6 +144,11 @@ sub vcf2cytosure_convert {
     # Option: no filtering. Overrides previous filtering options
     if ($no_filter) {
         push @commands, q{--no-filter};
+    }
+
+    if ($outfile_path) {
+
+       push @commands, q{--out} . $SPACE . $outfile_path;
     }
 
     # Coverage file

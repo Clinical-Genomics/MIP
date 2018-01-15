@@ -214,7 +214,6 @@ sub analysis_vcf2cytosure {
         }
     );
 
-
     ## Assign file_tags
     my %file_path_prefix;
     my $infile_prefix;
@@ -247,8 +246,6 @@ sub analysis_vcf2cytosure {
     {
         say {$FILEHANDLE} $NEWLINE . q{######################################################}; # remove this line after
         say {$FILEHANDLE} q{Sample id index:} . $sample_id_index . q{, sample id:} . $sample_id; # remove this line after
-
-        say {$FILEHANDLE} q{Creating coverage file with tiddit -cov for sample} . $SPACE . $sample_id;
 
         # Using tiddit coverage, create coverage file from .bam file of this sample
         my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
@@ -316,6 +313,7 @@ sub analysis_vcf2cytosure {
             }
         );
         say {$FILEHANDLE} q{wait}, $NEWLINE;
+        say {$FILEHANDLE} q{Creating coverage file with tiddit -cov for sample} . $SPACE . $sample_id;
 
         ## Tiddit coverage
         tiddit_coverage(
@@ -329,7 +327,6 @@ sub analysis_vcf2cytosure {
         );
         say {$FILEHANDLE} $AMPERSAND . $SPACE . $NEWLINE;
         say {$FILEHANDLE} q{wait}, $NEWLINE;
-
 
         # Extract SV from this sample from merged SV VCF file
         say {$FILEHANDLE} q{Using bcftools_view to extract SV for sample} . $SPACE . $sample_id;
@@ -346,7 +343,36 @@ sub analysis_vcf2cytosure {
                 outfile_path => catfile($temp_directory, $sample_vcf_file),
             }
         );
-        say {$FILEHANDLE} $NEWLINE;
+        say {$FILEHANDLE} q{wait}, $NEWLINE;
+
+        say {$FILEHANDLE} q{Converting sample's SV VCF file into cytosure, using Vcf2cytosure};
+        say {$FILEHANDLE} q{Coverage file:} . $file_path_prefix{$sample_id}{out} . $UNDERSCORE . q{cov};
+        say {$FILEHANDLE} q{VCF infile path:} . catfile($temp_directory, $sample_vcf_file);
+        say {$FILEHANDLE} q{Outfile:} . catfile($temp_directory, $sample_vcf_file);
+
+
+
+        #vcf2cytosure_convert(
+        #  {
+        #    coverage_file => $file_path_prefix{$sample_id}{out} . $UNDERSCORE . q{cov},
+        #    FILEHANDLE => $FILEHANDLE,
+
+        #  }
+
+
+
+        #);
+
+
+
+
+
+
+
+
+
+
+
 
 
 
