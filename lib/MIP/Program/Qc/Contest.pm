@@ -189,10 +189,10 @@ sub gatk_contest {
     if ($java_jar) {    # Write java core commands to filehandle.
         @commands = java_core(
             {
-                memory_allocation    => $memory_allocation,
-                java_use_large_pages => $java_use_large_pages,
-                temp_directory       => $temp_directory,
                 java_jar             => $java_jar,
+                java_use_large_pages => $java_use_large_pages,
+                memory_allocation    => $memory_allocation,
+                temp_directory       => $temp_directory,
             }
         );
     }
