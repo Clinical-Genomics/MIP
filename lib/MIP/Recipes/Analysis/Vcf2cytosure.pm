@@ -214,12 +214,22 @@ sub analysis_vcf2cytosure {
         }
     );
 
+
     ## Assign file_tags
     my %file_path_prefix;
     my $infile_prefix;
     my $infile_tag;
     my $sample_outfile_prefix;
     my $outfile_tag;
+
+    # Copy family-merged SV VCF file on temporary directory:
+    my $infamily_directory = catdir( $active_parameter_href->{outdata_dir}, $family_id, $outaligner_dir );
+
+    say {$FILEHANDLE} q{$infamily_directory:} . $infamily_directory;
+
+
+
+
 
     my $process_batches_count = 1;
 
@@ -326,7 +336,7 @@ sub analysis_vcf2cytosure {
               say {$FILEHANDLE} q{sample_outfile_prefix:} . $sample_outfile_prefix;
               say {$FILEHANDLE} q{infile_path:} . $infile_path;
 
-        #$infile_path = catfile( $insample_directory, $infile_prefix ),
+        $infile_path = catfile( $insample_directory, $merged_infile_prefix, $infile_tag ),
         #say {$FILEHANDLE} q{insample_directory:} . $insample_directory;
         #say {$FILEHANDLE} q{$infile_prefix:} .$infile_prefix;
         #say {$FILEHANDLE} q{VCF directory:} . $infile_path ;
