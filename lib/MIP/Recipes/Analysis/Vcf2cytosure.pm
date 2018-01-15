@@ -158,6 +158,7 @@ sub analysis_vcf2cytosure {
     use MIP::Processmanagement::Processes qw{ print_wait };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
+    use MIP::Program::Variantcalling::Tiddit qw{ tiddit_coverage };
     use MIP::QC::Record
       qw{ add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
