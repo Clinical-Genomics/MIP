@@ -317,8 +317,11 @@ sub analysis_vcf2cytosure {
         say {$FILEHANDLE} q{Using bcftools_view to extract SV for sample} . $SPACE . $sample_id;
 
         $infile_tag = $file_info_href->{$sample_id}{psv_combinevariantcallsets}{file_tag};
-        say {$FILEHANDLE} q{insample directory:} . $insample_directory ;
+
+        $infile_path = catfile( $insample_directory, $infile_prefix ),
+        say {$FILEHANDLE} q{VCF directory:} . $infile_path ;
         say {$FILEHANDLE} q{infile tag from psv_combinevariantcallsets:} . $infile_tag;
+
 
 
         #bcftools_view(
