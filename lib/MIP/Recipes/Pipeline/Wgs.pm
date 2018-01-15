@@ -211,7 +211,7 @@ sub pipeline_wgs {
     use MIP::Recipes::Analysis::Snpeff qw{ analysis_snpeff };
     use MIP::Recipes::Analysis::Sv_combinevariantcallsets
       qw{ analysis_sv_combinevariantcallsets };
-    use MIP::Recipes::Analysis::Tiddit qw{ analysis_tiddit analysis_tiddit_coverage };
+    use MIP::Recipes::Analysis::Tiddit qw{ analysis_tiddit };
     use MIP::Recipes::Analysis::Variantannotationblock
       qw{ analysis_variantannotationblock };
     use MIP::Recipes::Analysis::Variant_integrity
