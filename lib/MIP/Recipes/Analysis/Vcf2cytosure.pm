@@ -236,6 +236,8 @@ sub analysis_vcf2cytosure {
     $merged_sv_vcf = $family_id . $infile_tag . q{SV} . $DOT . q{vcf};
     $merged_sv_vcf_path = catfile( $infamily_directory, $merged_sv_vcf );
 
+    say {$FILEHANDLE} q{## Copy family-level merged SV VCF file to temporary directory} . $NEWLINE;
+
     migrate_file(
         {
             FILEHANDLE   => $FILEHANDLE,
@@ -286,23 +288,21 @@ sub analysis_vcf2cytosure {
         my $cov_outfile_suffix = get_file_suffix(
             {
                 parameter_href => $parameter_href,
-                program_name   => q{ptiddit},
-                suffix_key     => q{coverage_file_suffix},
+                program_name => q{ptiddit},
+                suffix_key => q{coverage_file_suffix},
             }
         );
 
         my $outfile_suffix = get_file_suffix(
             {
                 parameter_href => $parameter_href,
-                program_name   => $mip_program_name,
-                suffix_key     => q{outfile_suffix},
+                program_name => $mip_program_name,
+                suffix_key => q{outfile_suffix},
             }
         );
 
-        $file_path_prefix{$sample_id}{in} =
-          catfile( $temp_directory, $infile_prefix );
-        $file_path_prefix{$sample_id}{out} =
-          catfile( $temp_directory, $sample_outfile_prefix );
+        $file_path_prefix{$sample_id}{in} = catfile( $temp_directory, $infile_prefix );
+        $file_path_prefix{$sample_id}{out} = catfile( $temp_directory, $sample_outfile_prefix );
 
         #q{.bam} -> ".b*" for getting index as well
         my $infile_path = catfile( $insample_directory,
@@ -327,7 +327,7 @@ sub analysis_vcf2cytosure {
             }
         );
         say {$FILEHANDLE} q{wait}, $NEWLINE;
-        say {$FILEHANDLE} q{Creating coverage file with tiddit -cov for sample}
+        say {$FILEHANDLE} q{## Creating coverage file with tiddit -cov for sample}
           . $SPACE
           . $sample_id;
 
@@ -344,7 +344,7 @@ sub analysis_vcf2cytosure {
         say {$FILEHANDLE} $AMPERSAND . $SPACE . $NEWLINE;
 
         # Extract SV from this sample from merged SV VCF file
-        say {$FILEHANDLE} q{## Using bcftools_view to extract SV for sample}
+        say {$FILEHANDLE} q{## Using bcftools_view to extract SVs for sample}
           . $SPACE
           . $sample_id
           . $NEWLINE;
@@ -373,8 +373,7 @@ q{## Converting sample's SV VCF file into cytosure, using Vcf2cytosure}
 
         vcf2cytosure_convert(
             {
-                coverage_file => $file_path_prefix{$sample_id}{out}
-                  . $cov_outfile_suffix,
+                coverage_file => $file_path_prefix{$sample_id}{out} . $cov_outfile_suffix,
                 FILEHANDLE      => $FILEHANDLE,
                 outfile_path    => $cgh_outfile_path,
                 vcf_infile_path => catfile( $temp_directory, $sample_vcf_file ),
