@@ -1716,7 +1716,7 @@ sub build_usage {
     -pmna/--pmanta Structural variant calling using Manta (defaults to "0" (=no))
     -ptid/--ptiddit Structural variant calling using Tiddit (defaults to "0" (=no))
       -tidmsp/--tiddit_minimum_number_supporting_pairs The minimum number of supporting reads (defaults to "6")
-      -tid_bin/--tiddit_bin_size Compute coverage within bins of a specified size across the entire genome
+      -tid_bin/--tiddit_bin_size Compute coverage within bins of a specified size across the entire genome (defaults to "500")
     -psvc/--psv_combinevariantcallsets Combine variant call sets (defaults to "0" (=no))
       -svcvtd/--sv_vt_decompose Split multi allelic records into single records (supply flag to enable)
       -svsvdbmp/--sv_svdb_merge_prioritize The prioritization order of structural variant callers.(defaults to ""; comma sep; Options: manta|delly|cnvnator|tiddit)
@@ -1753,10 +1753,10 @@ sub build_usage {
       -svrevbf/--sv_rankvariant_binary_file Produce binary file from the rank variant chromosome sorted vcfs (supply flag to enable)
       -svrergf/--sv_reformat_remove_genes_file Remove variants in hgnc_ids (defaults to "")
     -pv2cs/--vcf2cytosure Convert a VCF with structural variants to the “.CGH” format used by the commercial Cytosure software
-      -v2csfq/--vcf2cytosure_freq Specify maximum frequency
-      -v2csfqt/--vcf2cytosure_freq_tag Specify frequency tag
-      -v2csnf/--vf2cytosure_no_filter Don't use any filtering
-      -v2csvs/--vcf2cytosure_var_size Specify minimum variant size
+      -v2csfq/--vcf2cytosure_freq Specify maximum frequency (defauls to "0.01")
+      -v2csfqt/--vcf2cytosure_freq_tag Specify frequency tag (defauls to "FRQ")
+      -v2csnf/--vf2cytosure_no_filter Don't use any filtering (defauls to "0" (=no))
+      -v2csvs/--vcf2cytosure_var_size Specify minimum variant size (defauls to "5000")
     ##Bcftools
     -pbmp/--pbcftools_mpileup Variant calling using bcftools mpileup (defaults to "0" (=no))
       -pbmpfv/--bcftools_mpileup_filter_variant (Supply flag to enable)
