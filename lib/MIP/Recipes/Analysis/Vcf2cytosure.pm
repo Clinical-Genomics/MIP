@@ -286,23 +286,23 @@ sub analysis_vcf2cytosure {
         my $cov_outfile_suffix = get_file_suffix(
             {
                 parameter_href => $parameter_href,
-                program_name => q{ptiddit},
-                suffix_key => q{coverage_file_suffix},
+                program_name   => q{ptiddit},
+                suffix_key     => q{coverage_file_suffix},
             }
         );
 
         my $outfile_suffix = get_file_suffix(
             {
                 parameter_href => $parameter_href,
-                program_name => $mip_program_name,
-                suffix_key => q{outfile_suffix},
+                program_name   => $mip_program_name,
+                suffix_key     => q{outfile_suffix},
             }
         );
 
         $file_path_prefix{$sample_id}{in} =
--          catfile( $temp_directory, $infile_prefix );
--       $file_path_prefix{$sample_id}{out} =
--          catfile( $temp_directory, $sample_outfile_prefix );
+          catfile( $temp_directory, $infile_prefix );
+        $file_path_prefix{$sample_id}{out} =
+          catfile( $temp_directory, $sample_outfile_prefix );
 
         #q{.bam} -> ".b*" for getting index as well
         my $infile_path = catfile( $insample_directory,
@@ -373,7 +373,8 @@ q{## Converting sample's SV VCF file into cytosure, using Vcf2cytosure}
 
         vcf2cytosure_convert(
             {
-                coverage_file => $file_path_prefix{$sample_id}{out} . $cov_outfile_suffix,
+                coverage_file => $file_path_prefix{$sample_id}{out}
+                  . $cov_outfile_suffix,
                 FILEHANDLE      => $FILEHANDLE,
                 outfile_path    => $cgh_outfile_path,
                 vcf_infile_path => catfile( $temp_directory, $sample_vcf_file ),
