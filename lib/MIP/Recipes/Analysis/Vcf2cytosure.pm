@@ -300,7 +300,7 @@ sub analysis_vcf2cytosure {
         );
 
         $file_path_prefix{$sample_id}{in} =
--          catfile( $temp_directory, $infile_prefix );		
+-          catfile( $temp_directory, $infile_prefix );
 -       $file_path_prefix{$sample_id}{out} =
 -          catfile( $temp_directory, $sample_outfile_prefix );
 
