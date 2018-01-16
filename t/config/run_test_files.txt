@@ -171,6 +171,8 @@ record_add_program_metafile_to_sample_info.t
 record_add_program_outfile_to_sample_info.t
 rhocall_aggregate.t
 rhocall_annotate.t
+rtg_format.t
+rtg_vcfeval.t
 sambamba_depth.t
 sambamba_flagstat.t
 sambamba_index.t
