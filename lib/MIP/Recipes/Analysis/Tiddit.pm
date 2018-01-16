@@ -37,7 +37,7 @@ Readonly my $AMPERSAND  => q{&};
 
 sub analysis_tiddit {
 
-## Function : Call structural variants using tiddit
+## Function : Call structural variants using Tiddit 1.0.2
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $call_type               => The variant call type
@@ -73,83 +73,83 @@ sub analysis_tiddit {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
             strict_type => 1,
-            store       => \$active_parameter_href
         },
         call_type => {
             default     => $UNDERSCORE . q{SV},
+            store       => \$call_type,
             strict_type => 1,
-            store       => \$call_type
         },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
+            store       => \$family_id,
             strict_type => 1,
-            store       => \$family_id
         },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
             strict_type => 1,
-            store       => \$file_info_href
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
             strict_type => 1,
-            store       => \$job_id_href
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
+            store       => \$outaligner_dir,
             strict_type => 1,
-            store       => \$outaligner_dir
         },
         outfamily_directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$outfamily_directory,
             strict_type => 1,
-            store       => \$outfamily_directory
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
-            store       => \$parameter_href
         },
         program_name => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$program_name,
             strict_type => 1,
-            store       => \$program_name
         },
         reference_dir => {
             default     => $arg_href->{active_parameter_href}{reference_dir},
+            store       => \$reference_dir,
             strict_type => 1,
-            store       => \$reference_dir
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
             strict_type => 1,
-            store       => \$sample_info_href
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
+            store       => \$temp_directory,
             strict_type => 1,
-            store       => \$temp_directory
         },
     };
 
@@ -393,7 +393,7 @@ sub analysis_tiddit {
 
 sub analysis_tiddit_coverage {
 
-## Function : calculate coverage using tiddit
+## Function : Calculate coverage using Tiddit 1.0.2
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $bin_size                => Bin size
@@ -427,78 +427,78 @@ sub analysis_tiddit_coverage {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
             strict_type => 1,
-            store       => \$active_parameter_href
         },
         bin_size => {
             default     => $arg_href->{active_parameter_href}{tiddit_bin_size},
+            store       => \$bin_size,
             strict_type => 1,
-            store       => \$bin_size
         },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
+            store       => \$family_id,
             strict_type => 1,
-            store       => \$family_id
         },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
             strict_type => 1,
-            store       => \$file_info_href
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
             strict_type => 1,
-            store       => \$infile_lane_prefix_href
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
             strict_type => 1,
-            store       => \$job_id_href
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
+            store       => \$outaligner_dir,
             strict_type => 1,
-            store       => \$outaligner_dir
         },
         outfamily_directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$outfamily_directory,
             strict_type => 1,
-            store       => \$outfamily_directory
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
-            store       => \$parameter_href
         },
         program_name => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$program_name,
             strict_type => 1,
-            store       => \$program_name
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
             strict_type => 1,
-            store       => \$sample_info_href
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
+            store       => \$temp_directory,
             strict_type => 1,
-            store       => \$temp_directory
         },
     };
 
@@ -655,7 +655,7 @@ sub analysis_tiddit_coverage {
     # Restart counter
     $process_batches_count = 1;
 
-    ## Collect infiles for all sample_ids
+    ## Calculate coverage and create .cgh outfiles for all sample_ids
     while ( my ( $sample_id_index, $sample_id ) =
         each @{ $active_parameter_href->{sample_ids} } )
     {
@@ -703,7 +703,7 @@ sub analysis_tiddit_coverage {
                 path => catfile(
                     $outfamily_directory, $outfile_prefix . $outfile_suffix
                 ),
-                program_name     => q{tiddit},
+                program_name     => q{tiddit_coverage},
                 sample_info_href => $sample_info_href,
             }
         );

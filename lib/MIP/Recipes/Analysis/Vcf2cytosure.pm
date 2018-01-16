@@ -151,9 +151,9 @@ sub analysis_vcf2cytosure {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_core_number };
-    use MIP::IO::Files qw{ migrate_file };
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_parameters };
+    use MIP::IO::Files qw{ migrate_file };
     use MIP::Program::Variantcalling::Vcf2cytosure qw{ vcf2cytosure_convert };
     use MIP::Processmanagement::Processes qw{ print_wait };
     use MIP::Processmanagement::Slurm_processes
@@ -214,14 +214,18 @@ sub analysis_vcf2cytosure {
         }
     );
 
-    ## Assign file_tags
-    my %file_path_prefix;
-    my $infile_prefix;
+    ## Tags
     my $infile_tag;
-    my $sample_outfile_prefix;
     my $outfile_tag;
-    my $merged_sv_vcf_path;
+
+    ## Files
+    my $infile_prefix;
+    my $sample_outfile_prefix;
     my $merged_sv_vcf;
+
+    ## Paths
+    my %file_path_prefix;
+    my $merged_sv_vcf_path;
 
     # Copy family-merged SV VCF file in temporary directory:
     my $infamily_directory = catdir( $active_parameter_href->{outdata_dir},
@@ -247,8 +251,7 @@ sub analysis_vcf2cytosure {
         each @{ $active_parameter_href->{sample_ids} } )
     {
 
-        say {$FILEHANDLE} q{######## Processing sample} . $SPACE
-          . $sample_id;    # remove this line after
+        say {$FILEHANDLE} q{######## Processing sample} . $SPACE . $sample_id;
 
      # Using tiddit coverage, create coverage file from .bam file of this sample
         my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
@@ -280,12 +283,19 @@ sub analysis_vcf2cytosure {
         );
 
         ## Set file suffix for next module within jobid chain
-        my $outfile_suffix = set_file_suffix(
+        my $cov_outfile_suffix = get_file_suffix(
             {
-                file_suffix => $parameter_href->{ptiddit}{coverage_file_suffix},
-                job_id_chain   => $job_id_chain,
                 parameter_href => $parameter_href,
-                suffix_key     => q{variant_file_suffix},
+                program_name   => q{ptiddit},
+                suffix_key     => q{coverage_file_suffix},
+            }
+        );
+
+        my $outfile_suffix = get_file_suffix(
+            {
+                parameter_href => $parameter_href,
+                program_name   => $mip_program_name,
+                suffix_key     => q{outfile_suffix},
             }
         );
 
@@ -336,7 +346,7 @@ sub analysis_vcf2cytosure {
 
         $infile_tag =
           $file_info_href->{$sample_id}{psv_combinevariantcallsets}{file_tag};
-        my $sample_vcf_file = $sample_id . $infile_tag . q{SV} . $DOT . q{tab};
+        my $sample_vcf_file = $sample_id . $infile_tag . q{SV} . $DOT . q{vcf};
 
         # Bcftools view
         bcftools_view(
@@ -353,15 +363,15 @@ sub analysis_vcf2cytosure {
 q{## Converting sample's SV VCF file into cytosure, using Vcf2cytosure}
           . $NEWLINE;
 
-        my $cgh_outile_path = catfile( $temp_directory,
+        my $cgh_outfile_path = catfile( $temp_directory,
             $sample_id . $infile_tag . q{SV} . $DOT . q{cgh} );
 
         vcf2cytosure_convert(
             {
                 coverage_file => $file_path_prefix{$sample_id}{out}
-                  . $DOT . q{tab},
+                  . $cov_outfile_suffix,
                 FILEHANDLE      => $FILEHANDLE,
-                outfile_path    => $cgh_outile_path,
+                outfile_path    => $cgh_outfile_path,
                 vcf_infile_path => catfile( $temp_directory, $sample_vcf_file ),
             }
         );
@@ -372,7 +382,7 @@ q{## Converting sample's SV VCF file into cytosure, using Vcf2cytosure}
         migrate_file(
             {
                 FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $cgh_outile_path,
+                infile_path  => $cgh_outfile_path,
                 outfile_path => $outfamily_directory,
             }
         );

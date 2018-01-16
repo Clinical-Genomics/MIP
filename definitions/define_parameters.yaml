@@ -852,7 +852,7 @@ ptiddit:
   file_tag: _tiddit
   outdir_name: tiddit
   outfile_suffix: ".vcf"
-  coverage_file_suffix: ".cov"
+  coverage_file_suffix: ".tab"
   program_name_path:
    - TIDDIT.py
    - svdb
