@@ -171,8 +171,8 @@ my %specific_argument = (
         expected_output => catfile(qw{path to test_infile_1}),
     },
     trim_mode => {
-        input       => q{pe},#[qw{any ap head mp pe tail}],
-        expected_output => q{--mode} . $SPACE . q{pe},#[qw{any ap head mp pe tail}],
+        input       => q{pe},
+        expected_output => q{--mode} . $SPACE . q{pe},
     },
     outsuffix => {
         input           => q{skeweroutsuffix},
