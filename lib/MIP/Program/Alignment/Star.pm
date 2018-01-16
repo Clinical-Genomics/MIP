@@ -36,33 +36,34 @@ sub star_aln {
 
 ## Function  : Perl wrapper for STAR v2.5.3a.
 ## Returns   : @commands
-## Arguments : $align_intron_max            => Maximum intron size
-##           : $align_mates_gap_max         => Maximum gap between two mates
-##           : $align_sjdb_overhang_min     => Minimum overhang (i.e. block size) for spliced alignments
-##           : $chim_junction_overhang_min  => Minimum overhang for a chimeric junction
-##           : $chim_segment_min            => Minimum length of chimaeric segment
-##           : $chim_segment_read_gap_max   => Maximum gap in the read sequence between chimeric segments
-##           : $FILEHANDLE                  => Filehandle to write to
-##           : $genome_dir_path             => Directory of the reference genome
-##           : $infile_path                 => Fastq file path
-##           : $limit_bam_sort_ram          => Memory available for sorting the output bam
-##           : $out_file_name_prefix        => Prefix of the output files (remember to end with a ".")
-##           : $out_sam_strand_field        => Cufflinks-like strand field flag
-##           : $out_sam_type                => Format of the output aligned reads 
-##           : $quant_mode                  => Types of quantification requested
-##           : $read_files_command          => A command which will be applied to the input files
-##           : $stderrfile_path             => Stderrfile path
-##           : $stderrfile_path_append      => Append stderr info to file path
-##           : $stdoutfile_path             => Stdoutfile path
-##           : $thread_number               => Number of threads
-##           : $two_pass_mode               => Two pass mode setting (None or Basic)
+## Arguments : $align_intron_max           => Maximum intron size
+##           : $align_mates_gap_max        => Maximum gap between two mates
+##           : $align_sjdb_overhang_min    => Minimum overhang (i.e. block size) for spliced alignments
+##           : $chim_junction_overhang_min => Minimum overhang for a chimeric junction
+##           : $chim_segment_min           => Minimum length of chimaeric segment
+##           : $chim_segment_read_gap_max  => Maximum gap in the read sequence between chimeric segments
+##           : $FILEHANDLE                 => Filehandle to write to
+##           : $genome_dir_path            => Directory of the reference genome
+##           : $infile_paths_ref           => Fastq file path(s)
+##           : $limit_bam_sort_ram         => Memory available for sorting the output bam
+##           : $outfile_name_prefix       => Prefix of the output files (remember to end with a ".")
+##           : $out_sam_strand_field       => Cufflinks-like strand field flag
+##           : $out_sam_type               => Format of the output aligned reads 
+##           : $quant_mode                 => Types of quantification requested
+##           : $read_files_command         => A command which will be applied to the input files
+##           : $stderrfile_path            => Stderrfile path
+##           : $stderrfile_path_append     => Append stderr info to file path
+##           : $stdoutfile_path            => Stdoutfile path
+##           : $thread_number              => Number of threads
+##           : $two_pass_mode              => Two pass mode setting (None or Basic)
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s) 
     my $FILEHANDLE;
     my $genome_dir_path;
-    my $out_file_name_prefix;
+    my $infile_paths_ref;
+    my $outfile_name_prefix;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
@@ -74,15 +75,13 @@ sub star_aln {
     my $chim_junction_overhang_min;
     my $chim_segment_min;
     my $chim_segment_read_gap_max;
-    my $infile_path;
     my $limit_bam_sort_ram;
-    my $read_files_command;
     my $out_sam_strand_field;
     my $out_sam_type;
     my $quant_mode;
+    my $read_files_command;
     my $thread_number;
     my $two_pass_mode;
-
 
     my $tmpl = {
         align_intron_max   => {
@@ -126,11 +125,11 @@ sub star_aln {
             store        => \$genome_dir_path,
             strict_type  => 1,
         },
-        infile_path => {
+        infile_paths_ref => {
             default => [],
             defined      => 1,
             required     => 1,
-            store        => \$infile_path,
+            store        => \$infile_paths_ref,
             strict_type  => 1,
         },
         limit_bam_sort_ram   => {
@@ -138,10 +137,10 @@ sub star_aln {
             store        => \$limit_bam_sort_ram,
             strict_type  => 1,
         },
-        out_file_name_prefix   => {
+        outfile_name_prefix   => {
             defined      => 1,
             required     => 1,
-            store        => \$out_file_name_prefix,
+            store        => \$outfile_name_prefix,
             strict_type  => 1,
         },
         out_sam_strand_field => {
@@ -151,7 +150,7 @@ sub star_aln {
             strict_type  => 1,
         },
         out_sam_type => {
-            default     => [q{BAM}, q{SortedByCoordinate}],
+            default     =>  q{BAM} . $SPACE . q{SortedByCoordinate},
             required     => 1,
             store       => \$out_sam_type,
             strict_type  => 1,
@@ -163,7 +162,7 @@ sub star_aln {
             strict_type  => 1,
         },
         read_files_command => {
-            default      => [q{gzip},q{-c}],
+            default      => q{gzip} . $SPACE . q{-c},
             required     => 1,
             strict_type  => 1,
             store        => \$read_files_command,
@@ -180,14 +179,12 @@ sub star_aln {
             store       => \$stdoutfile_path,
             strict_type => 1,
         },
-
         thread_number => {
             allow       => qr/ ^\d+$ /xms,
             default     => 16,
             store       => \$thread_number,
             strict_type => 1,
         },
-
         two_pass_mode => {
             allow       => [qw{ Basic None }],
             default      => q{Basic},
@@ -200,11 +197,16 @@ sub star_aln {
 
     ## Stores commands depending on input parameters
     my @commands = q{STAR};
+
     push @commands, q{--genomeDir} . $SPACE . $genome_dir_path;
-    push @commands, q{--readFilesCommand} . $SPACE . join $SPACE, $read_files_command;
-    push @commands, q{--readFilesIn} . $SPACE . join $SPACE, $infile_path;
-    push @commands, q{--outFileNamePrefix} . $SPACE . $out_file_name_prefix;
-    push @commands, q{--outSAMtype} . $SPACE . join $SPACE, $out_sam_type;
+
+    push @commands, q{--readFilesCommand} . $SPACE . $read_files_command;
+
+    push @commands, q{--readFilesIn} . $SPACE . join $SPACE, @{$infile_paths_ref};
+
+    push @commands, q{--outFileNamePrefix} . $SPACE . $outfile_name_prefix;
+
+    push @commands, q{--outSAMtype} . $SPACE . $out_sam_type;
 
     #Options
     if ($align_intron_max){
