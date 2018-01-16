@@ -32,10 +32,16 @@ use MIP::Program::Qc::Fastqc;
 #### Name of sub routine
 Change:
 ```Perl
+our @EXPORT_OK = qw{ space separated subroutines };
+.
+.
 sub name_of_subroutine {
 ```
 To:
 ```Perl
+our @EXPORT_OK = qw{ fastqc };
+.
+.
 sub fastqc {
 ```
 #### Basic shell command

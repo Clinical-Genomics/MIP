@@ -29,11 +29,9 @@ my $VERBOSE = 1;
 our $VERSION = 1.0.0;
 
 ## Constants
-Readonly my $COMMA         => q{,};
-Readonly my $MAX_FREQUENCY => 0.01;
-Readonly my $NEWLINE       => qq{\n};
-Readonly my $SPACE         => q{ };
-Readonly my $VARIANT_SIZE  => 5000;
+Readonly my $COMMA   => q{,};
+Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => q{ };
 
 ### User Options
 GetOptions(
@@ -80,7 +78,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Program::Variantcalling::Vcf2cytosure});
+    my @modules = (q{MIP::Program::Qc::Rtg});
 
   MODULE:
     for my $module (@modules) {
@@ -88,11 +86,11 @@ BEGIN {
     }
 }
 
-use MIP::Program::Variantcalling::Vcf2cytosure qw{ vcf2cytosure_convert };
+use MIP::Program::Qc::Rtg qw{ rtg_vcfeval };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test vcf2cytosure_convert from Vcf2cytosure.pm v}
-      . $MIP::Program::Variantcalling::Vcf2cytosure::VERSION
+diag(   q{Test rtg_vcfeval from Rtg.pm v}
+      . $MIP::Program::Qc::Rtg::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -101,7 +99,7 @@ diag(   q{Test vcf2cytosure_convert from Vcf2cytosure.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{vcf2cytosure};
+my $function_base_command = q{rtg vcfeval};
 
 my %base_argument = (
     FILEHANDLE => {
@@ -125,43 +123,67 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    coverage_file => {
-        input           => catfile(qw{ path_to_tiddit_outfiles prefix.cov }),
-        expected_output => q{--coverage}
-          . $SPACE
-          . catfile(qw{ path_to_tiddit_outfiles prefix.tab }),
+    baselinefile_path => {
+        input           => catfile(qw{path to baselinefile}),
+        expected_output => q{--baseline=} . catfile(qw{path to baselinefile}),
     },
-    vcf_infile_path => {
-        input           => q{path_to_sample_SVs.vcf},
-        expected_output => q{path_to_sample_SVs.vcf},
+    callfile_path => {
+        input           => catfile(qw{path to callfile}),
+        expected_output => q{--calls=} . catfile(qw{path to callfile}),
+    },
+    eval_region_file_path => {
+        input           => catfile(qw{path to eval_regionsfile}),
+        expected_output => q{--evaluation-regions=}
+          . catfile(qw{path to eval_regionsfile}),
+    },
+    outputdirectory_path => {
+        input           => catfile(qw{path to outputdirectory_path}),
+        expected_output => q{--output=}
+          . catfile(qw{path to outputdirectory_path}),
+    },
+    sdf_template_file_path => {
+        input           => catfile(qw{path to sdf_template_file_path}),
+        expected_output => q{--template=}
+          . catfile(qw{path to sdf_template_file_path}),
     },
 );
 
 my %specific_argument = (
-    frequency => {
-        input           => $MAX_FREQUENCY,
-        expected_output => q{--frequency} . $SPACE . $MAX_FREQUENCY,
+    baselinefile_path => {
+        input           => catfile(qw{path to baselinefile}),
+        expected_output => q{--baseline=} . catfile(qw{path to baselinefile}),
     },
-    frequency_tag => {
-        input           => q{FRQ},
-        expected_output => q{--frequency_tag FRQ},
+    callfile_path => {
+        input           => catfile(qw{path to callfile}),
+        expected_output => q{--calls=} . catfile(qw{path to callfile}),
     },
-    no_filter => {
-        input           => 1,
-        expected_output => q{--no-filter},
+    eval_region_file_path => {
+        input           => catfile(qw{path to eval_regionsfile}),
+        expected_output => q{--evaluation-regions=}
+          . catfile(qw{path to eval_regionsfile}),
     },
-    outfile_path => {
-        input           => q{path_to_vcf2cytosure_cgh_files},
-        expected_output => q{--out path_to_vcf2cytosure_cgh_files},
+    outputdirectory_path => {
+        input           => catfile(qw{path to outputdirectory_path}),
+        expected_output => q{--output=}
+          . catfile(qw{path to outputdirectory_path}),
     },
-    variant_size => {
-        input           => $VARIANT_SIZE,
-        expected_output => q{--size} . $SPACE . $VARIANT_SIZE,
+    output_mode => {
+        input           => q{annotate},
+        expected_output => q{--output-mode=annotate},
+    },
+    sample_id => {
+        input           => q{sample_1},
+        expected_output => q{--sample=sample_1},
+    },
+    sdf_template_file_path => {
+        input           => catfile(qw{path to sdf_template_file_path}),
+        expected_output => q{--template=}
+          . catfile(qw{path to sdf_template_file_path}),
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&vcf2cytosure_convert;
+my $module_function_cref = \&rtg_vcfeval;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

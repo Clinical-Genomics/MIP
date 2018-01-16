@@ -127,6 +127,10 @@ my %specific_argument = (
         input           => q{1},
         expected_output => q{-S},
     },
+    exclude_reads_with_these_flags => {
+        input           => q{1},
+        expected_output => q{-F 1},
+    },
     fraction => {
         input           => q{2.5},
         expected_output => q{-s 2.5},

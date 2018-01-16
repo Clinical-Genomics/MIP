@@ -58,6 +58,7 @@ gatk_baserecalibrator.t
 gatk_calculategenotypeposteriors.t
 gatk_catvariants.t
 gatk_combinevariants.t
+gatk_contest.t
 gatk_genotypegvcfs.t
 gatk_haplotypecaller.t
 gatk_indelrealigner.t
@@ -171,6 +172,8 @@ record_add_program_metafile_to_sample_info.t
 record_add_program_outfile_to_sample_info.t
 rhocall_aggregate.t
 rhocall_annotate.t
+rtg_format.t
+rtg_vcfeval.t
 sambamba_depth.t
 sambamba_flagstat.t
 sambamba_index.t
@@ -182,6 +185,7 @@ samtools_idxstats.t
 samtools_index.t
 samtools_mpileup.t
 samtools_stats.t
+samtools_depth.t
 samtools_view.t
 set_active_parameter_pedigree_keys.t
 set_config_to_active_parameters.t

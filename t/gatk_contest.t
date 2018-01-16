@@ -29,11 +29,9 @@ my $VERBOSE = 1;
 our $VERSION = 1.0.0;
 
 ## Constants
-Readonly my $COMMA         => q{,};
-Readonly my $MAX_FREQUENCY => 0.01;
-Readonly my $NEWLINE       => qq{\n};
-Readonly my $SPACE         => q{ };
-Readonly my $VARIANT_SIZE  => 5000;
+Readonly my $COMMA   => q{,};
+Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => q{ };
 
 ### User Options
 GetOptions(
@@ -80,7 +78,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Program::Variantcalling::Vcf2cytosure});
+    my @modules = (q{MIP::Program::Qc::Contest});
 
   MODULE:
     for my $module (@modules) {
@@ -88,11 +86,11 @@ BEGIN {
     }
 }
 
-use MIP::Program::Variantcalling::Vcf2cytosure qw{ vcf2cytosure_convert };
+use MIP::Program::Qc::Contest qw{ gatk_contest };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test vcf2cytosure_convert from Vcf2cytosure.pm v}
-      . $MIP::Program::Variantcalling::Vcf2cytosure::VERSION
+diag(   q{Test gatk_contest from Contest.pm v}
+      . $MIP::Program::Qc::Contest::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -101,67 +99,75 @@ diag(   q{Test vcf2cytosure_convert from Vcf2cytosure.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{vcf2cytosure};
+my $function_base_command = q{--analysis_type ContEst};
 
 my %base_argument = (
     FILEHANDLE => {
         input           => undef,
         expected_output => $function_base_command,
     },
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
-    },
-    stderrfile_path_append => {
-        input           => q{stderrfile.test},
-        expected_output => q{2>> stderrfile.test},
-    },
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
-    },
 );
 
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    coverage_file => {
-        input           => catfile(qw{ path_to_tiddit_outfiles prefix.cov }),
-        expected_output => q{--coverage}
+    infile_eval => {
+        input           => catfile(qw{path to input_bam_eval}),
+        expected_output => q{--input_file:eval}
           . $SPACE
-          . catfile(qw{ path_to_tiddit_outfiles prefix.tab }),
+          . catfile(qw{path to input_bam_eval}),
     },
-    vcf_infile_path => {
-        input           => q{path_to_sample_SVs.vcf},
-        expected_output => q{path_to_sample_SVs.vcf},
+    infile_genotype => {
+        input           => catfile(qw{path to input_bam_genotype}),
+        expected_output => q{--input_file:genotype}
+          . $SPACE
+          . catfile(qw{path to input_bam_genotype}),
+    },
+    outfile_path => {
+        input           => catfile(qw{path to output_file}),
+        expected_output => q{--out} . $SPACE . catfile(qw{path to output_file}),
+    },
+    pop_vcffile_path => {
+        input           => catfile(qw{path to population_vcf}),
+        expected_output => q{--popfile}
+          . $SPACE
+          . catfile(qw{path to population_vcf}),
+    },
+    referencefile_path => {
+        input           => catfile(qw{path to human_fasta_file}),
+        expected_output => q{--reference_sequence}
+          . $SPACE
+          . catfile(qw{path to human_fasta_file}),
     },
 );
 
 my %specific_argument = (
-    frequency => {
-        input           => $MAX_FREQUENCY,
-        expected_output => q{--frequency} . $SPACE . $MAX_FREQUENCY,
+    infile_eval => {
+        input           => catfile(qw{path to input_bam_eval}),
+        expected_output => q{--input_file:eval}
+          . $SPACE
+          . catfile(qw{path to input_bam_eval}),
     },
-    frequency_tag => {
-        input           => q{FRQ},
-        expected_output => q{--frequency_tag FRQ},
+    infile_genotype => {
+        input           => catfile(qw{path to input_bam_genotype}),
+        expected_output => q{--input_file:genotype}
+          . $SPACE
+          . catfile(qw{path to input_bam_genotype}),
     },
-    no_filter => {
-        input           => 1,
-        expected_output => q{--no-filter},
+    min_genotype_ratio => {
+        input           => q{0.95},
+        expected_output => q{--min_genotype_ratio} . $SPACE . q{0.95},
     },
-    outfile_path => {
-        input           => q{path_to_vcf2cytosure_cgh_files},
-        expected_output => q{--out path_to_vcf2cytosure_cgh_files},
-    },
-    variant_size => {
-        input           => $VARIANT_SIZE,
-        expected_output => q{--size} . $SPACE . $VARIANT_SIZE,
+    pop_vcffile_path => {
+        input           => catfile(qw{path to population_vcf}),
+        expected_output => q{--popfile}
+          . $SPACE
+          . catfile(qw{path to population_vcf}),
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&vcf2cytosure_convert;
+my $module_function_cref = \&gatk_contest;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
