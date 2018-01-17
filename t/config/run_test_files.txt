@@ -165,6 +165,7 @@ processes_limit_job_id_string.t
 programs_update_program_mode_with_dry_run_all.t
 qccollect.t
 qc_covplots_genome.t
+record_add_gene_panel.t
 record_add_most_complete_vcf.t
 record_add_processing_metafile_to_sample_info.t
 record_add_program_metafile_to_sample_info.t

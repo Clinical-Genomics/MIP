@@ -5,9 +5,10 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ basename dirname  };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use Getopt::Long;
+use Log::Log4perl;
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use Test::More;
@@ -86,7 +87,7 @@ BEGIN {
     }
 }
 
-use MIP::PATH::TO::MODULE qw{ add_gene_panel };
+use MIP::QC::Record qw{ add_gene_panel };
 use MIP::Test::Commands qw{ test_function };
 
 diag(   q{Test add_gene_panel from Record.pm v}
@@ -98,54 +99,24 @@ diag(   q{Test add_gene_panel from Record.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Base arguments
-my $function_base_command = q{};
+my $aggregate_gene_panels_key = q{TEST};
+my $family_id_test = q{family_id};
+my $program_name_test = q{vcfparser};
+my %sample_info;
 
-my %base_argument = (
+add_gene_panel(
+    {
+      aggregate_gene_panel_file => catfile( qw{ data 643594-miptest aggregated_gene_panel_test.txt } ),
+      aggregate_gene_panels_key => $aggregate_gene_panels_key,
+      family_id                 => $family_id_test,
+      program_name => $program_name_test,
+      sample_info_href => \%sample_info,
+    }
 );
 
-## Can be duplicated with %base_argument and/or %specific_argument
-## to enable testing of each individual argument
-my %required_argument = (
-    aggregate_gene_panels_key => {
-        input           => q{gene_panel_key},
-        expected_output => q{gene_panel_key},
-    },
-    sample_info_href => {
-        inputs_ref      => { first_key => "first test value", second_key => "second test value" },
-        expected_output => q{PROGRAM OUTPUT},
-    },
-);
+is( exists $sample_info{$program_name_test}{$aggregate_gene_panels_key}{gene_panel},
+    1, q{Gene panel added to $sample_info} );
 
-my %specific_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
-    },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
-    },
-);
-
-## Coderef - enables generalized use of generate call
-my $module_function_cref = \&add_gene_panel;
-
-## Test both base and function specific arguments
-my @arguments = ( \%base_argument, \%specific_argument );
-
-ARGUMENT_HASH_REF:
-foreach my $argument_href (@arguments) {
-    my @commands = test_function(
-        {
-            argument_href          => $argument_href,
-            do_test_base_command   => 1,
-            function_base_command  => $function_base_command,
-            module_function_cref   => $module_function_cref,
-            required_argument_href => \%required_argument,
-        }
-    );
-}
 
 done_testing();
 
