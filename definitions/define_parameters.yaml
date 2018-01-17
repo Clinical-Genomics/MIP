@@ -282,6 +282,7 @@ module_time:
     pvariant_integrity: 1
     pvcfparser: 5
     pvt: 10
+    pvcf2cytosure: 2
   type: mip
 module_core_number:
   associated_program:
@@ -331,6 +332,7 @@ module_core_number:
     psv_varianteffectpredictor: 16
     psv_vcfparser: 16
     pvariant_integrity: 1
+    pvcf2cytosure: 1
   type: mip
 max_cores_per_node:
   associated_program:

@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vcf2cytosure };
@@ -150,7 +150,6 @@ sub analysis_vcf2cytosure {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_core_number };
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::Get::Parameter qw{ get_module_parameters get_program_parameters };
     use MIP::IO::Files qw{ migrate_file };
@@ -172,10 +171,7 @@ sub analysis_vcf2cytosure {
     my $mip_program_mode = $active_parameter_href->{$mip_program_name};
 
     ## Unpack parameters
-    my $job_id_chain       = $parameter_href->{$mip_program_name}{chain};
-    my $max_cores_per_node = $active_parameter_href->{max_cores_per_node};
-    my $modifier_core_number =
-      scalar( @{ $active_parameter_href->{sample_ids} } );
+    my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
     my $program_outdirectory_name =
       $parameter_href->{$mip_program_name}{outdir_name};
     my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
@@ -188,14 +184,6 @@ sub analysis_vcf2cytosure {
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
-
-    $core_number = get_core_number(
-        {
-            max_cores_per_node   => $max_cores_per_node,
-            modifier_core_number => $modifier_core_number,
-            module_core_number   => $core_number,
-        }
-    );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ( $file_path, $program_info_path ) = setup_script(
@@ -236,7 +224,9 @@ sub analysis_vcf2cytosure {
     $merged_sv_vcf = $family_id . $infile_tag . q{SV} . $DOT . q{vcf};
     $merged_sv_vcf_path = catfile( $infamily_directory, $merged_sv_vcf );
 
-    say {$FILEHANDLE} q{## Copy family-level merged SV VCF file to temporary directory} . $NEWLINE;
+    say {$FILEHANDLE}
+      q{## Copy family-level merged SV VCF file to temporary directory}
+      . $NEWLINE;
 
     migrate_file(
         {
@@ -288,23 +278,25 @@ sub analysis_vcf2cytosure {
         my $cov_outfile_suffix = get_file_suffix(
             {
                 parameter_href => $parameter_href,
-                program_name => q{ptiddit},
-                suffix_key => q{coverage_file_suffix},
+                program_name   => q{ptiddit},
+                suffix_key     => q{coverage_file_suffix},
             }
         );
 
         my $outfile_suffix = get_file_suffix(
             {
                 parameter_href => $parameter_href,
-                program_name => $mip_program_name,
-                suffix_key => q{outfile_suffix},
+                program_name   => $mip_program_name,
+                suffix_key     => q{outfile_suffix},
             }
         );
 
-        $file_path_prefix{$sample_id}{in} = catfile( $temp_directory, $infile_prefix );
-        $file_path_prefix{$sample_id}{out} = catfile( $temp_directory, $sample_outfile_prefix );
+        $file_path_prefix{$sample_id}{in} =
+          catfile( $temp_directory, $infile_prefix );
+        $file_path_prefix{$sample_id}{out} =
+          catfile( $temp_directory, $sample_outfile_prefix );
 
-        #q{.bam} -> ".b*" for getting index as well
+        # q{.bam} -> ".b*" for getting index as well
         my $infile_path = catfile( $insample_directory,
             $infile_prefix . substr( $infile_suffix, 0, 2 ) . $ASTERISK );
 
@@ -327,7 +319,8 @@ sub analysis_vcf2cytosure {
             }
         );
         say {$FILEHANDLE} q{wait}, $NEWLINE;
-        say {$FILEHANDLE} q{## Creating coverage file with tiddit -cov for sample}
+        say {$FILEHANDLE}
+          q{## Creating coverage file with tiddit -cov for sample}
           . $SPACE
           . $sample_id;
 
@@ -342,6 +335,7 @@ sub analysis_vcf2cytosure {
             }
         );
         say {$FILEHANDLE} $AMPERSAND . $SPACE . $NEWLINE;
+        say {$FILEHANDLE} q{wait}, $NEWLINE;
 
         # Extract SV from this sample from merged SV VCF file
         say {$FILEHANDLE} q{## Using bcftools_view to extract SVs for sample}
@@ -373,7 +367,8 @@ q{## Converting sample's SV VCF file into cytosure, using Vcf2cytosure}
 
         vcf2cytosure_convert(
             {
-                coverage_file => $file_path_prefix{$sample_id}{out} . $cov_outfile_suffix,
+                coverage_file => $file_path_prefix{$sample_id}{out}
+                  . $cov_outfile_suffix,
                 FILEHANDLE      => $FILEHANDLE,
                 outfile_path    => $cgh_outfile_path,
                 vcf_infile_path => catfile( $temp_directory, $sample_vcf_file ),
@@ -410,6 +405,7 @@ q{## Converting sample's SV VCF file into cytosure, using Vcf2cytosure}
     }
 
     if ( $mip_program_mode == 1 ) {
+
         slurm_submit_job_sample_id_dependency_add_to_family(
             {
                 family_id               => $family_id,
