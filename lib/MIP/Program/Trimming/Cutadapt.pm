@@ -70,32 +70,32 @@ sub cutadapt {
 
     my $tmpl = {
         adapter_3_prime => {
-            default     => undef,
             allow       => [ undef, qr/ ^\w+$ /xsm ],
+            default     => undef,
+            store       => \$adapter_3_prime,
             strict_type => 1,
-            store       => \$adapter_3_prime
         },
         adapter_5_prime => {
-            default     => undef,
             allow       => [ undef, qr/ ^\w+$ /xsm ],
+            default     => undef,
+            store       => \$adapter_5_prime,
             strict_type => 1,
-            store       => \$adapter_5_prime
         },
         adapter_3_prime_second => {
-            default     => undef,
             allow       => [ undef, qr/ ^\w+$ /xsm ],
+            default     => undef,
+            store       => \$adapter_3_prime_second,
             strict_type => 1,
-            store       => \$adapter_3_prime_second
         },
         adapter_5_prime_second => {
-            default     => undef,
             allow       => [ undef, qr/ ^\w+$ /xsm ],
+            default     => undef,
+            store       => \$adapter_5_prime_second,
             strict_type => 1,
-            store       => \$adapter_5_prime_second
         },
         infile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
             store       => \$infile_path,
             strict_type => 1,
         },
@@ -113,26 +113,26 @@ sub cutadapt {
             strict_type => 1,
         },
         outputfile_path => {
-            strict_type => 1,
             store       => \$outputfile_path,
+            strict_type => 1,
         },
         paired_filter => {
             allow       => [qw{ any both }],
             default     => qw{ both },
-            strict_type => 1,
             store       => \$paired_filter,
+            strict_type => 1,
         },
         stderrfile_path => {
-            strict_type => 1,
             store       => \$stderrfile_path,
+            strict_type => 1,
         },
         stderrfile_path_append => {
-            strict_type => 1,
             store       => \$stderrfile_path_append,
+            strict_type => 1,
         },
         stdoutfile_path => {
-            strict_type => 1,
             store       => \$stdoutfile_path,
+            strict_type => 1,
         },
         thread_number => {
             allow       => qr/ ^\d+$ /xms,
