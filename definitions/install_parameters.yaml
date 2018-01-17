@@ -18,10 +18,12 @@ bioconda:
   gatk: 3.8
   gcc: 4.8.5
   htslib: 1.6
+  libxml2: 2.9.4
+  libxslt: 1.1.29
   manta: 1.1.0
   multiqc: 0.9.1a0
-  peddy: 0.3.1
   numpy: 1.9.3
+  peddy: 0.3.1
   picard: 2.14.1
   plink2: 1.90b3.35
   rtg-tools: 3.8.4
