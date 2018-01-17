@@ -160,20 +160,26 @@ sub cutadapt {
         push @commands, q{--front=} . $adapter_5_prime;
     }
 
-    #conditions for paired-end reads
+    # conditions for paired-end reads
     if ($infile_path_second) {
 
         push @commands, q{--pair-filter=} . $paired_filter;
+    }
+
+    if ($infile_path_second && $adapter_3_prime_second ) {
 
         push @commands, q{-A} . $SPACE . $adapter_3_prime_second;
+    }
+
+    if ($infile_path_second && $adapter_5_prime_second ) {
 
         push @commands, q{-G} . $SPACE . $adapter_5_prime_second;
     }
 
-    #input fastq file read1
+    # input fastq file read1
     push @commands, $infile_path;
 
-    #input fastq file read2
+    # input fastq file read2
     if ($infile_path_second) {
 
         push @commands, $infile_path_second;
