@@ -316,6 +316,7 @@ GetOptions(
     q{ptid|ptiddit=n}              => \$active_parameter{ptiddit},
     q{tidmsp|tiddit_minimum_number_supporting_pairs=n} =>
       \$active_parameter{tiddit_minimum_number_supporting_pairs},
+    q{tid_bin|tiddit_bin_size=n} => \$active_parameter{tiddit_bin_size},
     q{psvc|psv_combinevariantcallsets=n} =>
       \$active_parameter{psv_combinevariantcallsets},
     q{svcvtd|sv_vt_decompose} => \$active_parameter{sv_vt_decompose},
@@ -340,6 +341,11 @@ GetOptions(
       \$active_parameter{sv_genmod_filter_threshold},
     q{svcbcf|sv_combinevariantcallsets_bcf_file} =>
       \$active_parameter{sv_combinevariantcallsets_bcf_file},
+    q{pv2cs|pvcf2cytosure:n} => \$active_parameter{pvcf2cytosure},
+    q{v2csfq|vcf2cytosure_freq=n} => \$active_parameter{vcf2cytosure_freq},
+    q{v2csfqt|vcf2cytosure_freq_tag=s} => \$active_parameter{vcf2cytosure_freq_tag},
+    q{v2csnf|vf2cytosure_no_filter=s} => \$active_parameter{vf2cytosure_no_filter},
+    q{v2csvs|vcf2cytosure_var_size=n} => \$active_parameter{vcf2cytosure_var_size},
     q{psvv|psv_varianteffectpredictor=n} =>
       \$active_parameter{psv_varianteffectpredictor},
     q{svvepf|sv_vep_features:s} => \@{ $active_parameter{sv_vep_features} },
@@ -1712,6 +1718,7 @@ sub build_usage {
     -pmna/--pmanta Structural variant calling using Manta (defaults to "0" (=no))
     -ptid/--ptiddit Structural variant calling using Tiddit (defaults to "0" (=no))
       -tidmsp/--tiddit_minimum_number_supporting_pairs The minimum number of supporting reads (defaults to "6")
+      -tid_bin/--tiddit_bin_size Compute coverage within bins of a specified size across the entire genome (defaults to "500")
     -psvc/--psv_combinevariantcallsets Combine variant call sets (defaults to "0" (=no))
       -svcvtd/--sv_vt_decompose Split multi allelic records into single records (supply flag to enable)
       -svsvdbmp/--sv_svdb_merge_prioritize The prioritization order of structural variant callers.(defaults to ""; comma sep; Options: manta|delly|cnvnator|tiddit)
@@ -1747,7 +1754,11 @@ sub build_usage {
     -psvre/--psv_reformat Concatenating files (defaults to "0" (=no))
       -svrevbf/--sv_rankvariant_binary_file Produce binary file from the rank variant chromosome sorted vcfs (supply flag to enable)
       -svrergf/--sv_reformat_remove_genes_file Remove variants in hgnc_ids (defaults to "")
-
+    -pv2cs/--vcf2cytosure Convert a VCF with structural variants to the “.CGH” format used by the commercial Cytosure software
+      -v2csfq/--vcf2cytosure_freq Specify maximum frequency (defauls to "0.01")
+      -v2csfqt/--vcf2cytosure_freq_tag Specify frequency tag (defauls to "FRQ")
+      -v2csnf/--vf2cytosure_no_filter Don't use any filtering (defauls to "0" (=no))
+      -v2csvs/--vcf2cytosure_var_size Specify minimum variant size (defauls to "5000")
     ##Bcftools
     -pbmp/--pbcftools_mpileup Variant calling using bcftools mpileup (defaults to "0" (=no))
       -pbmpfv/--bcftools_mpileup_filter_variant (Supply flag to enable)
