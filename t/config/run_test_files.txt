@@ -58,6 +58,7 @@ gatk_baserecalibrator.t
 gatk_calculategenotypeposteriors.t
 gatk_catvariants.t
 gatk_combinevariants.t
+gatk_contest.t
 gatk_genotypegvcfs.t
 gatk_haplotypecaller.t
 gatk_indelrealigner.t
