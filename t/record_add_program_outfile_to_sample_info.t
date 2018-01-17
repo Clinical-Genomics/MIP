@@ -120,10 +120,54 @@ is( $sample_info{program}{$test_program_name}{path},
 is( $sample_info{program}{$test_program_name}{version},
     $version, q{Assigned correct value to family level version} );
 
-## Sample level
+## Sample level, without infile
 my $sample_id = q{test_sample_id};
 my $infile    = q{test_infile};
 
+add_program_outfile_to_sample_info(
+    {
+        sample_info_href => \%sample_info,
+        sample_id        => $sample_id,
+        program_name     => $test_program_name,
+        outdirectory     => $directory,
+        outfile          => $outfile,
+        path             => $path,
+        version          => $version,
+    }
+);
+## Test
+is(
+    !exists $sample_info{sample}{$sample_id}{program}{$test_program_name}
+      {$infile},
+    1,
+    q{Sample level hash key not created when infile is not provided}
+);
+
+is(
+    $sample_info{sample}{$sample_id}{program}{$test_program_name}
+      {$infile}{outdirectory},
+    undef, q{Value to sample level outdirectory not assigned}
+);
+
+is(
+    $sample_info{sample}{$sample_id}{program}{$test_program_name}
+      {$infile}{outfile},
+    undef, q{Value to sample level outfile not assigned}
+);
+
+is(
+    $sample_info{sample}{$sample_id}{program}{$test_program_name}
+      {$infile}{path},
+    undef, q{Value to sample level path not assigned}
+);
+
+is(
+    $sample_info{sample}{$sample_id}{program}{$test_program_name}
+      {$infile}{version},
+    undef, q{Value to sample level version not assigned}
+);
+
+## Sample level, with infile
 add_program_outfile_to_sample_info(
     {
         sample_info_href => \%sample_info,
