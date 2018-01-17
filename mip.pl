@@ -524,11 +524,13 @@ GetOptions(
       \$active_parameter{endvariantannotationblock_remove_genes_file},
     q{ravbf|rankvariant_binary_file} =>
       \$active_parameter{rankvariant_binary_file},
-    q{pped|ppeddy=n}             => \$active_parameter{ppeddy},
-    q{pplink|pplink=n}           => \$active_parameter{pplink},
-    q{pvai|pvariant_integrity=n} => \$active_parameter{pvariant_integrity},
-    q{pevl|pevaluation=n}        => \$active_parameter{pevaluation},
-    q{evlnid|nist_id:s}          => \$active_parameter{nist_id},
+    q{pped|ppeddy=n}                => \$active_parameter{ppeddy},
+    q{pplink|pplink=n}              => \$active_parameter{pplink},
+    q{pvai|pvariant_integrity=n}    => \$active_parameter{pvariant_integrity},
+    q{prte|prtg_vcfeval=n}          => \$active_parameter{prtg_vcfeval},
+    q{rtesdf|rtg_vcfeval_sdf_dir:s} => \$active_parameter{rtg_vcfeval_sdf_dir},
+    q{pevl|pevaluation=n}           => \$active_parameter{pevaluation},
+    q{evlnid|nist_id:s}             => \$active_parameter{nist_id},
     q{evlnhc|nist_high_confidence_call_set:s} =>
       \$active_parameter{nist_high_confidence_call_set},
     q{evlnil|nist_high_confidence_call_set_bed:s} =>
@@ -716,7 +718,7 @@ foreach my $parameter_name (@order_parameters) {
             active_parameter_href => \%active_parameter,
             associated_programs_ref =>
               \@{ $parameter{$parameter_name}{associated_program} },
-            parameter_href        => \%parameter,
+            parameter_href => \%parameter,
             parameter_name => $parameter_name,
         }
     );
@@ -1852,6 +1854,8 @@ sub build_usage {
     -pped/--ppeddy QC for familial-relationships and sexes (defaults to "0" (=no) )
     -pplink/--pplink QC for samples gender and relationship (defaults to "0" (=no) )
     -pvai/--pvariant_integrity QC for samples relationship (defaults to "0" (=no) )
+    -prte/--prtg_vcfeval Compare concordance with benchmark data set (defaults to "0" (=no) )
+      -rtesdf/--rtg_vcfeval_sdf_dir Human genome metafile SDF directory of rtg (defaults to "" )
     -pevl/--pevaluation Compare concordance with NIST data set (defaults to "0" (=no) )
       -evlnid/--nist_id NIST high-confidence sample_id (defaults to "NA12878")
       -evlnhc/--nist_high_confidence_call_set NIST high-confidence variant calls (defaults to "GRCh37_nist_hg001_-na12878_v2.19-.vcf")
@@ -2955,41 +2959,43 @@ sub create_file_endings {
   PARAMETER:
     foreach my $order_parameter_element (@$order_parameters_ref) {
 
-      ## Only active parameters
+        ## Only active parameters
         if ( defined $active_parameter_href->{$order_parameter_element} ) {
 
-	  ## Only process programs
+            ## Only process programs
             if (
-                    any { $_ eq $order_parameter_element }
-                    @{ $parameter_href->{dynamic_parameter}{program} }
+                any { $_ eq $order_parameter_element }
+                @{ $parameter_href->{dynamic_parameter}{program} }
               )
             {
 
-	      ## MAIN chain
+                ## MAIN chain
                 if ( $parameter_href->{$order_parameter_element}{chain} eq
-                    q{MAIN} ) {
+                    q{MAIN} )
+                {
 
-		  ##  File_tag exist
+                    ##  File_tag exist
                     if ( $parameter_href->{$order_parameter_element}{file_tag}
-                        ne q{nofile_tag} ) {
+                        ne q{nofile_tag} )
+                    {
 
-		      ## Alias
+                        ## Alias
                         my $file_ending_ref =
                           \$parameter_href->{$order_parameter_element}
                           {file_tag};
 
-			###MAIN/Per sample_id
-			SAMPLE_ID:
+                        ###MAIN/Per sample_id
+                      SAMPLE_ID:
                         foreach my $sample_id (
                             @{ $active_parameter_href->{sample_ids} } )
                         {
 
-			  ## File_ending should be added
+                            ## File_ending should be added
                             if ( $active_parameter_href
                                 ->{$order_parameter_element} > 0 )
                             {
 
-			      ## Special case
+                                ## Special case
                                 if ( $order_parameter_element eq
                                     q{ppicardtools_mergesamfiles} )
                                 {
@@ -3000,10 +3006,7 @@ sub create_file_endings {
                                 }
                                 else {
 
-                                    if (
-                                        defined
-                                            $temp_file_ending{$sample_id}
-                                      )
+                                    if ( defined $temp_file_ending{$sample_id} )
                                     {
 
                                         $file_info_href->{$sample_id}
@@ -3011,9 +3014,8 @@ sub create_file_endings {
                                           = $temp_file_ending{$sample_id}
                                           . $$file_ending_ref;
                                     }
-                                    else
-                                    {
-				      ## First module that should add filending
+                                    else {
+                                        ## First module that should add filending
 
                                         $file_info_href->{$sample_id}
                                           {$order_parameter_element}{file_tag}
@@ -3022,26 +3024,26 @@ sub create_file_endings {
                                 }
                             }
                             else {
-			      ## Do not add new module file_tag
+                                ## Do not add new module file_tag
 
                                 $file_info_href->{$sample_id}
                                   {$order_parameter_element}{file_tag} =
                                   $temp_file_ending{$sample_id};
                             }
 
-			    ## To enable sequential build-up of fileending
+                            ## To enable sequential build-up of fileending
                             $temp_file_ending{$sample_id} =
                               $file_info_href->{$sample_id}
                               {$order_parameter_element}{file_tag};
                         }
 
-			###MAIN/Per family_id
-			## File_ending should be added
+                        ###MAIN/Per family_id
+                        ## File_ending should be added
                         if ( $active_parameter_href->{$order_parameter_element}
                             > 0 )
                         {
 
-			  ## Special case - do nothing
+                            ## Special case - do nothing
                             if ( $order_parameter_element eq
                                 q{ppicardtools_mergesamfiles} )
                             {
@@ -3049,9 +3051,7 @@ sub create_file_endings {
                             else {
 
                                 if (
-                                    defined
-                                        $temp_file_ending{$$family_id_ref}
-                                  )
+                                    defined $temp_file_ending{$$family_id_ref} )
                                 {
 
                                     $file_info_href->{$$family_id_ref}
@@ -3060,21 +3060,21 @@ sub create_file_endings {
                                       . $$file_ending_ref;
                                 }
                                 else {
-				  ## First module that should add filending
+                                    ## First module that should add filending
 
                                     $file_info_href->{$$family_id_ref}
                                       {$order_parameter_element}{file_tag} =
                                       $$file_ending_ref;
                                 }
 
-				## To enable sequential build-up of fileending
+                                ## To enable sequential build-up of fileending
                                 $temp_file_ending{$$family_id_ref} =
                                   $file_info_href->{$$family_id_ref}
                                   {$order_parameter_element}{file_tag};
                             }
                         }
                         else {
-			  ## Do not add new module file_tag
+                            ## Do not add new module file_tag
 
                             $file_info_href->{$$family_id_ref}
                               {$order_parameter_element}{file_tag} =
@@ -3083,52 +3083,49 @@ sub create_file_endings {
                     }
                 }
 
-		## Other chain(s)
+                ## Other chain(s)
                 if ( $parameter_href->{$order_parameter_element}{chain} ne
                     q{MAIN} )
                 {
 
-		  ## Alias
+                    ## Alias
                     my $chain_fork =
                       $parameter_href->{$order_parameter_element}{chain};
 
-		    ## File_tag exist
+                    ## File_tag exist
                     if ( $parameter_href->{$order_parameter_element}{file_tag}
                         ne q{nofile_tag} )
                     {
 
-		      ## Alias
+                        ## Alias
                         my $file_ending_ref =
                           \$parameter_href->{$order_parameter_element}
                           {file_tag};
 
-			###OTHER/Per sample_id
-			SAMPLE_ID:
+                        ###OTHER/Per sample_id
+                      SAMPLE_ID:
                         foreach my $sample_id (
                             @{ $active_parameter_href->{sample_ids} } )
                         {
 
-			  ## File_ending should be added
+                            ## File_ending should be added
                             if ( $active_parameter_href
                                 ->{$order_parameter_element} > 0 )
                             {
 
-                                if ( not
-                                    defined
-                                        $temp_file_ending{$chain_fork}
-                                          {$sample_id}
-                                  )
+                                if (
+                                    not
+                                    defined $temp_file_ending{$chain_fork}
+                                    {$sample_id} )
                                 {
 
-				  ## Inherit current MAIN chain.
+                                    ## Inherit current MAIN chain.
                                     $temp_file_ending{$chain_fork}{$sample_id}
                                       = $temp_file_ending{$sample_id};
                                 }
                                 if (
-                                    defined
-                                        $temp_file_ending{$chain_fork}
-                                          {$sample_id}
-                                  )
+                                    defined $temp_file_ending{$chain_fork}
+                                    {$sample_id} )
                                 {
 
                                     $file_info_href->{$sample_id}
@@ -3137,7 +3134,7 @@ sub create_file_endings {
                                       . $$file_ending_ref;
                                 }
                                 else {
-				  ## First module that should add filending
+                                    ## First module that should add filending
 
                                     $file_info_href->{$sample_id}
                                       {$order_parameter_element}{file_tag} =
@@ -3145,42 +3142,37 @@ sub create_file_endings {
                                 }
                             }
                             else {
-			      ## Do not add new module file_tag
+                                ## Do not add new module file_tag
 
                                 $file_info_href->{$sample_id}
                                   {$order_parameter_element}{file_tag} =
                                   $temp_file_ending{$chain_fork}{$sample_id};
                             }
 
-			    ## To enable sequential build-up of fileending
+                            ## To enable sequential build-up of fileending
                             $temp_file_ending{$chain_fork}{$sample_id} =
                               $file_info_href->{$sample_id}
-                              {$order_parameter_element}{file_tag}
-                              ;
+                              {$order_parameter_element}{file_tag};
                         }
-			###Other/Per family_id
+                        ###Other/Per family_id
 
-			## File ending should be added
+                        ## File ending should be added
                         if ( $active_parameter_href->{$order_parameter_element}
                             > 0 )
                         {
 
-                            if (not
-                                defined
-                                    $temp_file_ending{$chain_fork}
-                                      {$$family_id_ref}
-                              )
+                            if (
+                                not defined $temp_file_ending{$chain_fork}
+                                {$$family_id_ref} )
                             {
 
-			      ## Inherit current MAIN chain.
+                                ## Inherit current MAIN chain.
                                 $temp_file_ending{$chain_fork}{$$family_id_ref}
                                   = $temp_file_ending{$$family_id_ref};
                             }
                             if (
-                                defined
-                                    $temp_file_ending{$chain_fork}
-                                      {$$family_id_ref}
-                              )
+                                defined $temp_file_ending{$chain_fork}
+                                {$$family_id_ref} )
                             {
 
                                 $file_info_href->{$$family_id_ref}
@@ -3189,20 +3181,20 @@ sub create_file_endings {
                                   {$$family_id_ref} . $$file_ending_ref;
                             }
                             else {
-			      ## First module that should add filending
+                                ## First module that should add filending
 
                                 $file_info_href->{$$family_id_ref}
                                   {$order_parameter_element}{file_tag} =
                                   $$file_ending_ref;
                             }
 
-			    ## To enable sequential build-up of fileending
+                            ## To enable sequential build-up of fileending
                             $temp_file_ending{$chain_fork}{$$family_id_ref} =
                               $file_info_href->{$$family_id_ref}
                               {$order_parameter_element}{file_tag};
                         }
                         else {
-			  ## Do not add new module file_tag
+                            ## Do not add new module file_tag
 
                             $file_info_href->{$$family_id_ref}
                               {$order_parameter_element}{file_tag} =

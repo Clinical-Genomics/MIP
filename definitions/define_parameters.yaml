@@ -231,104 +231,106 @@ module_time:
    - mip
   data_type: HASH
   default:
-    psplit_fastq_file: 10
-    pgzip_fastq: 2
-    pfastqc: 10
+    panalysisrunstatus: 1
     pbwa_mem: 30
-    ppicardtools_mergesamfiles: 20
-    pmarkduplicates: 20
-    pgatk_realigner: 20
-    pgatk_baserecalibration: 20
-    psambamba_depth: 10
-    pchanjo_sexcheck: 2
-    psamtools_subsample_mt: 1
-    ppicardtools_collectmultiplemetrics: 10
-    ppicardtools_collecthsmetrics: 10
-    pbedtools_genomecov: 15
-    prcovplots: 1
-    pgatk_haplotypecaller: 30
-    pgatk_genotypegvcfs: 10
-    pgatk_variantrecalibration: 10
-    pfreebayes: 20
-    pfrequency_filter: 2
     pbcftools_mpileup: 40
-    pgatk_combinevariantcallsets: 2
-    pprepareforvariantannotationblock: 5
-    prhocall: 5
-    pvt: 10
-    pvarianteffectpredictor: 10
-    pvcfparser: 5
-    psnpeff: 10
-    prankvariant: 10
-    pendvariantannotationblock: 2
-    ppeddy: 1
-    pplink: 1
-    pvariant_integrity: 1
-    pevaluation: 1
-    pgatk_variantevalall: 2
-    pgatk_variantevalexome: 2
-    ptiddit: 10
-    pmanta: 10
+    pbedtools_genomecov: 15
+    pchanjo_sexcheck: 2
+    pcnvnator: 5
     pdelly_call: 10
     pdelly_reformat: 5
-    pcnvnator: 5
+    pendvariantannotationblock: 2
+    pevaluation: 1
+    pfastqc: 10
+    pfreebayes: 20
+    pfrequency_filter: 2
+    pgatk_baserecalibration: 20
+    pgatk_combinevariantcallsets: 2
+    pgatk_genotypegvcfs: 10
+    pgatk_haplotypecaller: 30
+    pgatk_realigner: 20
+    pgatk_variantevalall: 2
+    pgatk_variantevalexome: 2
+    pgatk_variantrecalibration: 10
+    pgzip_fastq: 2
+    pmanta: 10
+    pmarkduplicates: 20
+    pmultiqc: 1
+    ppeddy: 1
+    ppicardtools_collecthsmetrics: 10
+    ppicardtools_collectmultiplemetrics: 10
+    ppicardtools_mergesamfiles: 20
+    pplink: 1
+    pprepareforvariantannotationblock: 5
+    pqccollect: 1
+    prankvariant: 10
+    prcovplots: 1
+    prhocall: 5
+    prtg_vcfeval: 1
+    psacct: 1
+    psambamba_depth: 10
+    psamtools_subsample_mt: 1
+    psplit_fastq_file: 10
+    psnpeff: 10
     psv_combinevariantcallsets: 2
-    psv_varianteffectpredictor: 10
-    psv_vcfparser: 2
     psv_rankvariant: 2
     psv_reformat: 1
-    pqccollect: 1
-    pmultiqc: 1
-    panalysisrunstatus: 1
-    psacct: 1
+    psv_varianteffectpredictor: 10
+    psv_vcfparser: 2
+    ptiddit: 10
+    pvarianteffectpredictor: 10
+    pvariant_integrity: 1
+    pvcfparser: 5
+    pvt: 10
   type: mip
 module_core_number:
   associated_program:
    - mip
   data_type: HASH
   default:
-    psplit_fastq_file: 4
-    pgzip_fastq: 0
-    pfastqc: 0
-    pbwa_mem: 16
-    ppicardtools_mergesamfiles: 16
-    pmarkduplicates: 16
-    pgatk_realigner: 16
-    pgatk_baserecalibration: 16
-    psambamba_depth: 2
-    pchanjo_sexcheck: 1
-    psamtools_subsample_mt: 1
-    ppicardtools_collectmultiplemetrics: 2
-    ppicardtools_collecthsmetrics: 2
-    pbedtools_genomecov: 1
-    prcovplots: 1
-    pgatk_haplotypecaller: 16
-    pgatk_genotypegvcfs: 4
-    pgatk_variantrecalibration: 16
-    pfreebayes: 16
-    pfrequency_filter: 16
+    panalysisrunstatus: 1
     pbcftools_mpileup: 16
-    pgatk_combinevariantcallsets: 1
-    pendvariantannotationblock: 1
-    ppeddy: 4
-    pplink: 1
-    pvariant_integrity: 1
-    pevaluation: 1
-    pgatk_variantevalall: 1
-    pgatk_variantevalexome: 1
+    pbedtools_genomecov: 1
+    pbwa_mem: 16
+    pchanjo_sexcheck: 1
+    pcnvnator: 16
     pdelly_call: 16
     pdelly_reformat: 16
-    pcnvnator: 16
+    pendvariantannotationblock: 1
+    pevaluation: 1
+    pfastqc: 0
+    pfreebayes: 16
+    pfrequency_filter: 16
+    pgatk_baserecalibration: 16
+    pgatk_combinevariantcallsets: 1
+    pgatk_genotypegvcfs: 4
+    pgatk_haplotypecaller: 16
+    pgatk_realigner: 16
+    pgatk_variantevalall: 1
+    pgatk_variantevalexome: 1
+    pgatk_variantrecalibration: 16
+    pgzip_fastq: 0
     pmanta: 16
+    pmarkduplicates: 16
+    pmultiqc: 1
+    ppeddy: 4
+    ppicardtools_collecthsmetrics: 2
+    ppicardtools_collectmultiplemetrics: 2
+    ppicardtools_mergesamfiles: 16
+    pplink: 1
+    pqccollect: 1
+    prcovplots: 1
+    prtg_vcfeval: 1
+    psacct: 1
+    psambamba_depth: 2
+    psamtools_subsample_mt: 1
+    psplit_fastq_file: 4
     psv_combinevariantcallsets: 1
-    psv_varianteffectpredictor: 16
-    psv_vcfparser: 16
     psv_rankvariant: 16
     psv_reformat: 1
-    pqccollect: 1
-    pmultiqc: 1
-    panalysisrunstatus: 1
-    psacct: 1
+    psv_varianteffectpredictor: 16
+    psv_vcfparser: 16
+    pvariant_integrity: 1
   type: mip
 max_cores_per_node:
   associated_program:
@@ -1876,6 +1878,22 @@ pvariant_integrity:
   default: 0
   file_tag: nofile_tag
   type: program
+prtg_vcfeval:
+  associated_program:
+   - mip
+  chain: RTG_EVAL_NIST
+  data_type: SCALAR
+  default: 0
+  file_tag: nofile_tag
+  program_name_path:
+   - bcftools
+  type: program
+rtg_vcfeval_sdf_dir:
+  associated_program:
+   - prtg_vcfeval
+  data_type: SCALAR
+  exists_check: directory
+  type: path
 pevaluation:
   associated_program:
    - mip
@@ -1889,12 +1907,14 @@ pevaluation:
   type: program
 nist_id:
   associated_program:
+   - prtg_vcfeval
    - pevaluation
   data_type: SCALAR
   default: NA12878
   type: program_argument
 nist_high_confidence_call_set:
   associated_program:
+   - prtg_vcfeval
    - pevaluation
   default: GRCh37_nist_hg001_-na12878_v2.19-.vcf
   data_type: SCALAR
@@ -1903,6 +1923,7 @@ nist_high_confidence_call_set:
   type: path
 nist_high_confidence_call_set_bed:
   associated_program:
+   - prtg_vcfeval
    - pevaluation
   default: GRCh37_nist_hg001_-na12878_v2.19-.bed
   data_type: SCALAR
