@@ -66,8 +66,6 @@ sub skewer {
     my $thread_number;
     my $trim_mode;
 
-    ## Default(s)
-
     my $tmpl = {
         adapter_sequence => {
             store       => \$adapter_sequence,
@@ -78,6 +76,8 @@ sub skewer {
             strict_type => 1,
         },
         compress_output => {
+            allow       => [ 0, 1 ],
+            default     => 0,
             store       => \$compress_output,
             strict_type => 1,
         },
@@ -118,8 +118,8 @@ sub skewer {
             strict_type => 1,
         },
         trim_mode => {
-            allow       => [qw{any ap head mp pe tail}],
-            default     => qw{pe},
+            allow       => [qw{ any ap head mp pe tail }],
+            default     => qw{ pe },
             store       => \$trim_mode,
             strict_type => 1,
         },
@@ -150,7 +150,7 @@ sub skewer {
 
     push @commands, $infile_path;
 
-    if ($second_infile_path) {
+    if ( $second_infile_path && $adapter_sequence_second ) {
         push @commands, $second_infile_path;
     }
 
