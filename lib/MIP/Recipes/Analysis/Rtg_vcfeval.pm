@@ -162,6 +162,7 @@ sub analysis_rtg_vcfeval {
 
     use MIP::Get::File qw{ get_file_suffix };
     use MIP::Get::Parameter qw{ get_module_parameters };
+    use MIP::Gnu::Coreutils qw{ gnu_rm  };
     use MIP::Program::Qc::Rtg qw{ rtg_vcfeval };
     use MIP::Program::Variantcalling::Bcftools
       qw{ bcftools_rename_vcf_samples bcftools_view_and_index_vcf };
@@ -255,6 +256,18 @@ sub analysis_rtg_vcfeval {
         }
     );
 
+    say {$FILEHANDLE} q{## Remove potential old Rtg vcfeval outdir};
+    my $rtg_outdirectory_path = catfile( $outfamily_directory, $sample_id );
+    gnu_rm(
+        {
+            FILEHANDLE  => $FILEHANDLE,
+            force       => 1,
+            infile_path => $rtg_outdirectory_path,
+            recursive   => 1,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
     say {$FILEHANDLE} q{## Rtg vcfeval};
     rtg_vcfeval(
         {
@@ -265,7 +278,7 @@ sub analysis_rtg_vcfeval {
             eval_region_file_path =>
               $active_parameter_href->{nist_high_confidence_call_set_bed},
             FILEHANDLE           => $FILEHANDLE,
-            outputdirectory_path => $outfamily_directory,
+            outputdirectory_path => $rtg_outdirectory_path,
             sample_id            => $active_parameter_href->{nist_id},
             sdf_template_file_path =>
               $active_parameter_href->{rtg_vcfeval_sdf_dir},
@@ -280,7 +293,7 @@ sub analysis_rtg_vcfeval {
 ## Collect QC metadata info for later use
         add_program_outfile_to_sample_info(
             {
-                outdirectory     => $outfamily_directory,
+                outdirectory     => $rtg_outdirectory_path,
                 program_name     => $program_name,
                 sample_info_href => $sample_info_href,
             }
