@@ -35,26 +35,38 @@ sub cutadapt {
 
 ## Function : Perl wrapper for cutadapt.
 ## Returns  : @commands
-## Arguments: $adapter_3_prime        => Sequence of an adapter ligated to the 3' end (paired data: of the first read).
-##          : $adapter_5_prime        => Sequence of an adapter ligated to the 5' end (paired data: of the first read).
+## Arguments: $adapter_3_prime        => Sequence of an adapter ligated to the 3' end (paired data: of the first read)
+##          : $adapter_5_prime        => Sequence of an adapter ligated to the 5' end (paired data: of the first read)
+##          : $adapter_3_prime_second => 3' adapter to be removed from second read in a pair
+##          : $adapter_5_prime_second => 5' adapter to be removed from second read in a pair
 ##          : $FILEHANDLE             => Filehandle to write to
+##          : $infile_path            => Fastq file for read1
+##          : $infile_path_second     => Fastq file for read1
 ##          : $outputfile_path        => Write trimmed reads to FILE
+##          : $paired_filter          => Which of the reads in a paired-end read have to match the filtering criterion (any or both)
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
+##          : $thread_numbter         => Number of CPU cores to use
+##          : $min_trimmed_length     => Discard reads shorter than LENGTH
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $adapter_3_prime;
     my $adapter_5_prime;
+    my $adapter_3_prime_second;
+    my $adapter_5_prime_second;
     my $FILEHANDLE;
+    my $infile_path;
+    my $infile_path_second;
+    my $min_trimmed_length;
     my $outputfile_path;
+    my $paired_filter;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
-
-    ## Default(s)
+    my $thread_number;
 
     my $tmpl = {
         adapter_3_prime => {
@@ -69,12 +81,46 @@ sub cutadapt {
             strict_type => 1,
             store       => \$adapter_5_prime
         },
+        adapter_3_prime_second => {
+            default     => undef,
+            allow       => [ undef, qr/ ^\w+$ /xsm ],
+            strict_type => 1,
+            store       => \$adapter_3_prime_second
+        },
+        adapter_5_prime_second => {
+            default     => undef,
+            allow       => [ undef, qr/ ^\w+$ /xsm ],
+            strict_type => 1,
+            store       => \$adapter_5_prime_second
+        },
+        infile_path => {
+            required    => 1,
+            defined     => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        infile_path_second => {
+            store       => \$infile_path_second,
+            strict_type => 1,
+        },
         FILEHANDLE => {
             store => \$FILEHANDLE,
+        },
+        min_trimmed_length => {
+            allow       => qr/ ^\d+$ /xms,
+            default     => 2,
+            store       => \$min_trimmed_length,
+            strict_type => 1,
         },
         outputfile_path => {
             strict_type => 1,
             store       => \$outputfile_path,
+        },
+        paired_filter => {
+            allow       => [qw{ any both }],
+            default     => qw{ both },
+            strict_type => 1,
+            store       => \$paired_filter,
         },
         stderrfile_path => {
             strict_type => 1,
@@ -88,12 +134,22 @@ sub cutadapt {
             strict_type => 1,
             store       => \$stdoutfile_path,
         },
+        thread_number => {
+            allow       => qr/ ^\d+$ /xms,
+            default     => 2,
+            store       => \$thread_number,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
     my @commands = q{cutadapt};
+
+    push @commands, q{--cores=} . $thread_number;
+
+    push @commands, q{--minimum-length=} . $min_trimmed_length;
 
     if ($adapter_3_prime) {
 
@@ -104,10 +160,30 @@ sub cutadapt {
         push @commands, q{--front=} . $adapter_5_prime;
     }
 
+    #conditions for paired-end reads
+    if ($infile_path_second) {
+
+        push @commands, q{--pair-filter=} . $paired_filter;
+
+        push @commands, q{-A} . $SPACE . $adapter_3_prime_second;
+
+        push @commands, q{-G} . $SPACE . $adapter_5_prime_second;
+    }
+
+    #input fastq file read1
+    push @commands, $infile_path;
+
+    #input fastq file read2
+    if ($infile_path_second) {
+
+        push @commands, $infile_path_second;
+    }
+
     if ($outputfile_path) {
 
         push @commands, q{--output=} . $outputfile_path;
     }
+
     push @commands,
       unix_standard_streams(
         {
