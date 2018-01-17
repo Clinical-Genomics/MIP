@@ -136,36 +136,22 @@ add_program_outfile_to_sample_info(
     }
 );
 ## Test
-is(
-    !exists $sample_info{sample}{$sample_id}{program}{$test_program_name}
-      {$infile},
-    1,
-    q{Sample level hash key not created when infile is not provided}
-);
 
-is(
-    $sample_info{sample}{$sample_id}{program}{$test_program_name}
-      {$infile}{outdirectory},
-    undef, q{Value to sample level outdirectory not assigned}
-);
+is( $sample_info{sample}{$sample_id}{program}{$test_program_name}{path},
+    $path, q{Assigned correct value to sample level path} );
 
-is(
-    $sample_info{sample}{$sample_id}{program}{$test_program_name}
-      {$infile}{outfile},
-    undef, q{Value to sample level outfile not assigned}
-);
+my %test_no_infile =
+  ( outdirectory => q{Value to sample level outdirectory not assigned} );
+$test_no_infile{outfile} .= q{Value to sample level outfile not assigned};
+$test_no_infile{path}    .= q{Value to sample level path not assigned};
+$test_no_infile{version} .= q{Value to sample level version not assigned};
 
-is(
-    $sample_info{sample}{$sample_id}{program}{$test_program_name}
-      {$infile}{path},
-    undef, q{Value to sample level path not assigned}
-);
-
-is(
-    $sample_info{sample}{$sample_id}{program}{$test_program_name}
-      {$infile}{version},
-    undef, q{Value to sample level version not assigned}
-);
+while ( my ( $parameter, $test_comment ) = each %test_no_infile ) {
+    my $test_result =
+      $sample_info{sample}{$sample_id}{program}{$test_program_name}{$infile}
+      {$parameter};
+    is( $test_result, undef, $test_comment );
+}
 
 ## Sample level, with infile
 add_program_outfile_to_sample_info(

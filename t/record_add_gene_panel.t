@@ -99,6 +99,7 @@ diag(   q{Test add_gene_panel from Record.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+my $aggregate_gene_panel_file = catfile( $Bin, qw{ data 643594-miptest aggregated_gene_panel_test.txt } );
 my $aggregate_gene_panels_key = q{TEST};
 my $family_id_test = q{family_id};
 my $program_name_test = q{vcfparser};
@@ -106,7 +107,7 @@ my %sample_info;
 
 add_gene_panel(
     {
-      aggregate_gene_panel_file => catfile( qw{ data 643594-miptest aggregated_gene_panel_test.txt } ),
+      aggregate_gene_panel_file => $aggregate_gene_panel_file,
       aggregate_gene_panels_key => $aggregate_gene_panels_key,
       family_id                 => $family_id_test,
       program_name => $program_name_test,
