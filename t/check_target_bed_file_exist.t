@@ -13,7 +13,6 @@ use Getopt::Long;
 use Log::Log4perl;
 use Params::Check qw{ allow check last_error };
 use Test::More;
-use Test::Trap;
 use utf8;
 use warnings qw{ FATAL utf8 };
 
@@ -113,14 +112,15 @@ my %parameter = (
     file_name => { build_file => 1 },
 );
 
-my @r = check_target_bed_file_exist(
+my $run = check_target_bed_file_exist(
     {
         parameter_name => q{file_name},
         path           => $file_name,
     }
 );
 
-is( $trap->stdout, undef, "Subroutine didn't exit, so .bed file was found" );
+# If it doesn't the right file format was provided
+is( $run, '', "Subroutine didn't exit, so .bed file was found" );
 
 done_testing();
 
