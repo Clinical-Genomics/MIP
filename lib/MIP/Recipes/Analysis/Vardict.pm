@@ -161,6 +161,7 @@ sub analysis_vardict {
     use MIP::QC::Record
       qw{ add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Set::File qw { set_file_suffix };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -192,7 +193,7 @@ sub analysis_vardict {
 
     ## Assign file_tags
     my $infile_tag =
-      $file_info_href->{$sample_id}{UPPSTREAM_DEPENDENCY_PROGRAM}{file_tag};
+      $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag =
       $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
 
@@ -203,15 +204,18 @@ sub analysis_vardict {
     my $infile_suffix = get_file_suffix(
         {
             jobid_chain =>
-              $parameter_href->{UPPSTREAM_DEPENDENCY_PROGRAM}{chain},
+              $parameter_href->{pgatk_baserecalibration}{chain},
             parameter_href => $parameter_href,
             suffix_key     => q{alignment_file_suffix},
         }
     );
-    my $outfile_suffix = get_file_suffix(
+
+    ## Set file suffix for next module within jobid chain
+    my $outfile_suffix = set_file_suffix(
         {
+            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            job_id_chain => $job_id_chain,
             parameter_href => $parameter_href,
-            program_name   => $mip_program_name,
             suffix_key     => q{outfile_suffix},
         }
     );
@@ -233,7 +237,7 @@ sub analysis_vardict {
             FILEHANDLE            => $FILEHANDLE,
             job_id_href           => $job_id_href,
             process_time          => $time,
-            program_directory => catfile( $outaligner_dir, q{PROGRAM_NAME} ),
+            program_directory => catfile( $outaligner_dir, q{vardict} ),
             program_name      => $program_name,
             source_environment_commands_ref => [$source_environment_cmd],
         }
