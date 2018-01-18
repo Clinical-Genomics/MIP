@@ -458,6 +458,61 @@ sub pipeline_mip_c {
         }
     }
 
+    if ( $active_parameter_href->{pbcftools_mpileup} ) {
+
+        $log->info(q{[Bcftools mpileup]});
+
+        my $program_outdirectory_name =
+          $parameter_href->{pbcftools_mpileup}{outdir_name};
+
+        my $outfamily_directory = catfile(
+            $active_parameter_href->{outdata_dir},
+            $active_parameter_href->{family_id},
+            $active_parameter_href->{outaligner_dir},
+            $program_outdirectory_name
+        );
+
+        analysis_bcftools_mpileup(
+            {
+                parameter_href          => $parameter_href,
+                active_parameter_href   => $active_parameter_href,
+                sample_info_href        => $sample_info_href,
+                file_info_href          => $file_info_href,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                program_name            => q{bcftools_mpileup},
+                outfamily_directory     => $outfamily_directory,
+            }
+        );
+    }
+    if ( $active_parameter_href->{pfreebayes} ) {
+
+        $log->info(q{[Freebayes]});
+
+        my $program_outdirectory_name =
+          $parameter_href->{pfreebayes}{outdir_name};
+
+        my $outfamily_directory = catfile(
+            $active_parameter_href->{outdata_dir},
+            $active_parameter_href->{family_id},
+            $active_parameter_href->{outaligner_dir},
+            $program_outdirectory_name
+        );
+
+        analysis_freebayes_calling(
+            {
+                parameter_href          => $parameter_href,
+                active_parameter_href   => $active_parameter_href,
+                sample_info_href        => $sample_info_href,
+                file_info_href          => $file_info_href,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                program_name            => q{freebayes},
+                outfamily_directory     => $outfamily_directory,
+            }
+        );
+    }
+
 ## QC collect
     if ( $active_parameter_href->{pqccollect} ) {
 
