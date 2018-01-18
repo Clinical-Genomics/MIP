@@ -150,6 +150,7 @@ sub pipeline_mip_c {
     use MIP::Recipes::Analysis::Chanjo_sex_check
       qw{ analysis_chanjo_sex_check };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
+    use MIP::Recipes::Analysis::Freebayes qw { analysis_freebayes_calling };
     use MIP::Recipes::Analysis::Gatk_baserecalibration
       qw{ analysis_gatk_baserecalibration };
     use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates };
