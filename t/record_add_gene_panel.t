@@ -133,15 +133,15 @@ is(
 
 while ( my ( $key, $value ) = each %header_info ) {
 
-    ## Test gene panel info
+## Test gene panel info
     my $set_header_value =
       $sample_info{$program_name_test}{$aggregate_gene_panels_key}{gene_panel}
       {$gene_panel}{$key};
+
     is( $set_header_value, $value,
             q{Gene panel header info value for key: }
           . $key
           . q{ added to $sample_info} );
-
 }
 
 done_testing();
