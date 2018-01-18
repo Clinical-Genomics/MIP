@@ -98,43 +98,12 @@ diag(   q{Test quote_bash_variable from Shell.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Base arguments
-my $function_base_command = q{};
+## Capture sub output
+my $return_string =
+  quote_bash_variable( { string_with_variable_to_quote => q{$TEST_VARIABLE} } );
 
-## Can be duplicated with %base_argument and/or %specific_argument
-## to enable testing of each individual argument
-my %required_argument = (
-    string_with_variable_to_quote => {
-        input           => q{$TEST_VARIABLE},
-        expected_output => q{"$TEST_VARIABLE"},
-    },
-);
-
-my %specific_argument = (
-    string_with_variable_to_quote => {
-        input           => q{$TEST_VARIABLE},
-        expected_output => q{"$TEST_VARIABLE"},
-    },
-);
-
-## Coderef - enables generalized use of generate call
-my $module_function_cref = \&quote_bash_variable;
-
-## Test both base and function specific arguments
-my @arguments = ( \%specific_argument );
-
-ARGUMENT_HASH_REF:
-foreach my $argument_href (@arguments) {
-    my @commands = test_function(
-        {
-            argument_href          => $argument_href,
-            do_test_base_command   => 0,
-            function_base_command  => $function_base_command,
-            module_function_cref   => $module_function_cref,
-            required_argument_href => \%required_argument,
-        }
-    );
-}
+## Test output
+is( $return_string, q{"$TEST_VARIABLE"}, q{quote_bash_variable} );
 
 done_testing();
 
