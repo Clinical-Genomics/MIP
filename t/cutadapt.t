@@ -131,6 +131,22 @@ my %required_argument = (
         input           => q{TEST_STRING},
         expected_output => q{--adapter=TEST_STRING},
     },
+    adapter_3_prime_second => {
+        input           => q{TEST_STRING},
+        expected_output => q{-A} . $SPACE . q{TEST_STRING},
+    },
+    adapter_5_prime_second => {
+        input           => q{TEST_STRING},
+        expected_output => q{-G} . $SPACE . q{TEST_STRING},
+    },
+    infile_path => {
+        input           => catfile(qw{path to test_infile_1}),
+        expected_output => catfile(qw{path to test_infile_1}),
+    },
+    infile_path_second => {
+        input           => catfile(qw{path to test_infile_2}),
+        expected_output => catfile(qw{path to test_infile_2}),
+    },
 );
 
 my %specific_argument = (
@@ -142,9 +158,29 @@ my %specific_argument = (
         input           => q{test_5_prime},
         expected_output => q{--front=test_5_prime},
     },
+    adapter_3_prime_second => {
+        input           => q{TEST_STRING},
+        expected_output => q{-A} . $SPACE . q{TEST_STRING},
+    },
+    adapter_5_prime_second => {
+        input           => q{TEST_STRING},
+        expected_output => q{-G} . $SPACE . q{TEST_STRING},
+    },
+    infile_path => {
+        input           => catfile(qw{path to test_infile_1}),
+        expected_output => catfile(qw{path to test_infile_1}),
+    },
+    infile_path_second => {
+        input           => catfile(qw{path to test_infile_2}),
+        expected_output => catfile(qw{path to test_infile_2}),
+    },
     outputfile_path => {
         input           => catfile(qw{ a test file }),
         expected_output => q{--output=} . catfile(qw{ a test file }),
+    },
+    paired_filter => {
+        input           => q{both},
+        expected_output => q{--pair-filter=} . q{both},
     },
 );
 

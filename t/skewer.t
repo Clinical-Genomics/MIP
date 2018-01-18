@@ -29,11 +29,9 @@ my $VERBOSE = 1;
 our $VERSION = 1.0.0;
 
 ## Constants
-Readonly my $COMMA         => q{,};
-Readonly my $MAX_FREQUENCY => 0.01;
-Readonly my $NEWLINE       => qq{\n};
-Readonly my $SPACE         => q{ };
-Readonly my $VARIANT_SIZE  => 5000;
+Readonly my $COMMA   => q{,};
+Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => q{ };
 
 ### User Options
 GetOptions(
@@ -80,7 +78,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Program::Variantcalling::Vcf2cytosure});
+    my @modules = (q{MIP::Program::Trimming::Skewer});
 
   MODULE:
     for my $module (@modules) {
@@ -88,11 +86,11 @@ BEGIN {
     }
 }
 
-use MIP::Program::Variantcalling::Vcf2cytosure qw{ vcf2cytosure_convert };
+use MIP::Program::Trimming::Skewer qw{ skewer };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test vcf2cytosure_convert from Vcf2cytosure.pm v}
-      . $MIP::Program::Variantcalling::Vcf2cytosure::VERSION
+diag(   q{Test skewer from Skewer.pm v}
+      . $MIP::Program::Trimming::Skewer::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -101,7 +99,7 @@ diag(   q{Test vcf2cytosure_convert from Vcf2cytosure.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{vcf2cytosure};
+my $function_base_command = q{skewer};
 
 my %base_argument = (
     FILEHANDLE => {
@@ -125,43 +123,73 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    coverage_file => {
-        input           => catfile(qw{ path_to_tiddit_outfiles prefix.cov }),
-        expected_output => q{--coverage}
+    adapter_sequence => {
+        input           => q{AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC},
+        expected_output => q{-x}
           . $SPACE
-          . catfile(qw{ path_to_tiddit_outfiles prefix.tab }),
+          . q{AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC},
     },
-    vcf_infile_path => {
-        input           => q{path_to_sample_SVs.vcf},
-        expected_output => q{path_to_sample_SVs.vcf},
+    adapter_sequence_second => {
+        input           => q{AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA},
+        expected_output => q{-y}
+          . $SPACE
+          . q{AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA},
+    },
+    infile_path => {
+        input           => catfile(qw{path to test_infile_1}),
+        expected_output => catfile(qw{path to test_infile_1}),
+    },
+    outsuffix => {
+        input           => q{skeweroutsuffix},
+        expected_output => q{--output} . $SPACE . q{skeweroutsuffix},
+    },
+    second_infile_path => {
+        input           => catfile(qw{test_infile_2}),
+        expected_output => catfile(qw{test_infile_2}),
     },
 );
 
 my %specific_argument = (
-    frequency => {
-        input           => $MAX_FREQUENCY,
-        expected_output => q{--frequency} . $SPACE . $MAX_FREQUENCY,
+    adapter_sequence => {
+        input           => q{AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC},
+        expected_output => q{-x}
+          . $SPACE
+          . q{AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC},
     },
-    frequency_tag => {
-        input           => q{FRQ},
-        expected_output => q{--frequency_tag FRQ},
+    adapter_sequence_second => {
+        input           => q{AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA},
+        expected_output => q{-y}
+          . $SPACE
+          . q{AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA},
     },
-    no_filter => {
+    compress_output => {
         input           => 1,
-        expected_output => q{--no-filter},
+        expected_output => q{-z} . $SPACE,
     },
-    outfile_path => {
-        input           => q{path_to_vcf2cytosure_cgh_files},
-        expected_output => q{--out path_to_vcf2cytosure_cgh_files},
+    infile_path => {
+        input           => catfile(qw{path to test_infile_1}),
+        expected_output => catfile(qw{path to test_infile_1}),
     },
-    variant_size => {
-        input           => $VARIANT_SIZE,
-        expected_output => q{--size} . $SPACE . $VARIANT_SIZE,
+    trim_mode => {
+        input       => q{pe},
+        expected_output => q{--mode} . $SPACE . q{pe},
+    },
+    outsuffix => {
+        input           => q{skeweroutsuffix},
+        expected_output => q{--output} . $SPACE . q{skeweroutsuffix},
+    },
+    thread_number => {
+        input           => q{2},
+        expected_output => q{--threads} . $SPACE . q{2},
+    },
+    second_infile_path => {
+        input           => catfile(qw{test_infile_2}),
+        expected_output => catfile(qw{test_infile_2}),
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&vcf2cytosure_convert;
+my $module_function_cref = \&skewer;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

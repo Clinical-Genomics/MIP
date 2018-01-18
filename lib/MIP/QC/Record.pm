@@ -337,6 +337,18 @@ sub add_program_outfile_to_sample_info {
             }
         }
     }
+    elsif ( defined $sample_id ) {
+
+      SAMPLE_PARAMETER:
+        while ( my ( $parameter_key, $parameter_value ) = each %parameter ) {
+
+            if ( defined $parameter_value ) {
+
+                $sample_info_href->{sample}{$sample_id}{program}{$program_name}
+                  {$parameter_key} = $parameter_value;
+            }
+        }
+    }
     else {
 
       FAMILY_PARAMETER:

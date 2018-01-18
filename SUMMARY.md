@@ -8,3 +8,4 @@
       * [Identifiers](documentation/API/Identifiers.md)
       * [Modules](documentation/API/Modules.md)
       * [Tests](documentation/API/Tests.md)
+      * [Subroutines](documentation/API/Subroutines.md)

@@ -562,7 +562,12 @@ sub get_programs_for_installation {
         }
     );
 
-    ## Remove all programs except those selected from installation
+    ## Chanjo requires sambamba to run and thus sambamba is added to the
+    ## select program array if a Chanjo installation has been requested
+    if ( any { $_ eq q{chanjo} } @{ $parameter_href->{select_program} } ) {
+        push @{ $parameter_href->{select_program} }, q{sambamba};
+    }
+    ## Remove all programs except those selected for installation
     if ( @{ $parameter_href->{select_program} } ) {
         my @programs = (
             keys %{ $parameter_href->{shell} },

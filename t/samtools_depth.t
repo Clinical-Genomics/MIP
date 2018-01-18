@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ basename dirname  };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Spec::Functions qw{ catdir };
 use FindBin qw{ $Bin };
 use Getopt::Long;
 use open qw{ :encoding(UTF-8) :std };
@@ -29,11 +29,9 @@ my $VERBOSE = 1;
 our $VERSION = 1.0.0;
 
 ## Constants
-Readonly my $COMMA         => q{,};
-Readonly my $MAX_FREQUENCY => 0.01;
-Readonly my $NEWLINE       => qq{\n};
-Readonly my $SPACE         => q{ };
-Readonly my $VARIANT_SIZE  => 5000;
+Readonly my $COMMA   => q{,};
+Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => q{ };
 
 ### User Options
 GetOptions(
@@ -80,19 +78,19 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Program::Variantcalling::Vcf2cytosure});
+    my @modules = (q{MIP::Program::Alignment::Samtools});
 
-  MODULE:
+  MODULES:
     for my $module (@modules) {
         require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 }
 
-use MIP::Program::Variantcalling::Vcf2cytosure qw{ vcf2cytosure_convert };
+use MIP::Program::Alignment::Samtools qw{ samtools_depth };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test vcf2cytosure_convert from Vcf2cytosure.pm v}
-      . $MIP::Program::Variantcalling::Vcf2cytosure::VERSION
+diag(   q{Test samtools_depth from Samtools.pm v}
+      . $MIP::Program::Alignment::Samtools::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -101,7 +99,7 @@ diag(   q{Test vcf2cytosure_convert from Vcf2cytosure.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{vcf2cytosure};
+my $function_base_command = q{samtools depth};
 
 my %base_argument = (
     FILEHANDLE => {
@@ -122,59 +120,56 @@ my %base_argument = (
     },
 );
 
-## Can be duplicated with %base_argument and/or %specific_argument
-## to enable testing of each individual argument
+## Can be duplicated with %base and/or %specific to enable testing of each individual argument
 my %required_argument = (
-    coverage_file => {
-        input           => catfile(qw{ path_to_tiddit_outfiles prefix.cov }),
-        expected_output => q{--coverage}
-          . $SPACE
-          . catfile(qw{ path_to_tiddit_outfiles prefix.tab }),
+    FILEHANDLE => {
+        input           => undef,
+        expected_output => $function_base_command,
     },
-    vcf_infile_path => {
-        input           => q{path_to_sample_SVs.vcf},
-        expected_output => q{path_to_sample_SVs.vcf},
+    infile_path => {
+        input           => q{infile.test},
+        expected_output => q{infile.test},
     },
 );
 
+## Specific arguments
 my %specific_argument = (
-    frequency => {
-        input           => $MAX_FREQUENCY,
-        expected_output => q{--frequency} . $SPACE . $MAX_FREQUENCY,
+    FILEHANDLE => {
+        input           => undef,
+        expected_output => $function_base_command,
     },
-    frequency_tag => {
-        input           => q{FRQ},
-        expected_output => q{--frequency_tag FRQ},
+    infile_path => {
+        input           => q{infile.test},
+        expected_output => q{infile.test},
     },
-    no_filter => {
-        input           => 1,
-        expected_output => q{--no-filter},
+    stderrfile_path => {
+        input           => q{stderrfile.test},
+        expected_output => q{2> stderrfile.test},
     },
-    outfile_path => {
-        input           => q{path_to_vcf2cytosure_cgh_files},
-        expected_output => q{--out path_to_vcf2cytosure_cgh_files},
+    stderrfile_path_append => {
+        input           => q{stderrfile_path_append},
+        expected_output => q{2>> stderrfile_path_append},
     },
-    variant_size => {
-        input           => $VARIANT_SIZE,
-        expected_output => q{--size} . $SPACE . $VARIANT_SIZE,
+    stdoutfile_path => {
+        input           => q{stdoutfile.test},
+        expected_output => q{1> stdoutfile.test},
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&vcf2cytosure_convert;
+my $module_function_cref = \&samtools_depth;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
 
-ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
+
     my @commands = test_function(
         {
             argument_href          => $argument_href,
-            do_test_base_command   => 1,
-            function_base_command  => $function_base_command,
-            module_function_cref   => $module_function_cref,
             required_argument_href => \%required_argument,
+            module_function_cref   => $module_function_cref,
+            function_base_command  => $function_base_command,
         }
     );
 }
@@ -187,9 +182,12 @@ done_testing();
 
 sub build_usage {
 
-## Function  : Build the USAGE instructions
-## Returns   :
-## Arguments : $program_name => Name of the script
+##build_usage
+
+##Function : Build the USAGE instructions
+##Returns  : ""
+##Arguments: $program_name
+##         : $program_name => Name of the script
 
     my ($arg_href) = @_;
 
@@ -199,8 +197,8 @@ sub build_usage {
     my $tmpl = {
         program_name => {
             default     => basename($PROGRAM_NAME),
-            store       => \$program_name,
             strict_type => 1,
+            store       => \$program_name,
         },
     };
 
