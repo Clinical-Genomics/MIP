@@ -48,7 +48,6 @@ use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
 use MIP::Get::Analysis qw{ get_overall_analysis_type print_program };
 use MIP::Get::File qw{ get_select_file_contigs };
 use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
-use MIP::QC::Record qw{ add_gene_panel add_most_complete_vcf };
 use MIP::Script::Utils qw{ help };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter
