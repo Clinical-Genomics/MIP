@@ -200,8 +200,10 @@ set_pedigree_phenotype_info.t
 set_pedigree_sample_info.t
 set_pedigree_sex_info.t
 shell_build_shebang.t
+shell_check_exist_and_move_file.t
 shell_create_housekeeping_function.t
 shell_create_error_trap_function.t
+shell_quote_bash_variable.t
 skewer.t
 slurm_sacct.t
 slurm_sbatch.t
