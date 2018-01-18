@@ -118,6 +118,24 @@ add_gene_panel(
 is( exists $sample_info{$program_name_test}{$aggregate_gene_panels_key}{gene_panel},
     1, q{Gene panel added to $sample_info} );
 
+is( $sample_info{$program_name_test}{$aggregate_gene_panels_key}{gene_panel}{q{gene_panel}}, q{gene_panel_test}, q{Gene panel added to $sample_info} );
+
+#print "\n----->".$sample_info{$program_name_test}{$aggregate_gene_panels_key}{gene_panel};
+
+
+while(my($key1,$value1)=each(%sample_info)){
+  while(my($key2,$value2)=each(%$value1)){
+    print "first level,key1:$key1\n";
+    print "\tsecond level, key2:$key2,value2-->$value2\n";
+    if ($key2 eq "TEST"){
+      foreach my $key3 (keys %$value2)
+      {
+        print "\t\t\tkey3 is $key3\n";
+      }
+    }
+  }
+}
+
 
 done_testing();
 

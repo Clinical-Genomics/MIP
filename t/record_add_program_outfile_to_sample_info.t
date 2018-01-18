@@ -140,11 +140,12 @@ add_program_outfile_to_sample_info(
 is( $sample_info{sample}{$sample_id}{program}{$test_program_name}{path},
     $path, q{Assigned correct value to sample level path} );
 
-my %test_no_infile =
-  ( outdirectory => q{Value to sample level outdirectory not assigned} );
-$test_no_infile{outfile} .= q{Value to sample level outfile not assigned};
-$test_no_infile{path}    .= q{Value to sample level path not assigned};
-$test_no_infile{version} .= q{Value to sample level version not assigned};
+my %test_no_infile = (
+    outdirectory => q{Value to sample level outdirectory not assigned},
+    outfile      => q{Value to sample level outfile not assigned},
+    path         => q{Value to sample level path not assigned},
+    version      => q{Value to sample level version not assigned},
+);
 
 while ( my ( $parameter, $test_comment ) = each %test_no_infile ) {
     my $test_result =
