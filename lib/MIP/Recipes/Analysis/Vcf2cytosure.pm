@@ -224,6 +224,21 @@ sub analysis_vcf2cytosure {
     $merged_sv_vcf = $family_id . $infile_tag . q{SV} . $DOT . q{vcf};
     $merged_sv_vcf_path = catfile( $infamily_directory, $merged_sv_vcf );
 
+    say {$FILEHANDLE} q{## Log vcf2cytosure version - use dummy parameters}
+      . $NEWLINE;
+    my $stderrfile_path = $program_info_path . $DOT . q{stderr.txt};
+    vcf2cytosure_convert(
+        {
+            coverage_file   => q{Na},
+            FILEHANDLE      => $FILEHANDLE,
+            stderrfile_path => $stderrfile_path,
+            vcf_infile_path => q{Na},
+            version         => 1,
+        }
+    );
+
+    say {$FILEHANDLE} $NEWLINE;
+
     say {$FILEHANDLE}
       q{## Copy family-level merged SV VCF file to temporary directory}
       . $NEWLINE;
@@ -243,7 +258,7 @@ sub analysis_vcf2cytosure {
         each @{ $active_parameter_href->{sample_ids} } )
     {
 
-        say {$FILEHANDLE} q{######## Processing sample} . $SPACE . $sample_id;
+        say {$FILEHANDLE} q{## Processing sample} . $SPACE . $sample_id;
 
      # Using tiddit coverage, create coverage file from .bam file of this sample
         my $insample_directory = catdir( $active_parameter_href->{outdata_dir},
@@ -391,12 +406,24 @@ q{## Converting sample's SV VCF file into cytosure, using Vcf2cytosure}
 
             add_program_outfile_to_sample_info(
                 {
+                    infile    => $merged_infile_prefix,
                     sample_id => $sample_id,
                     path      => catfile(
                         $outfamily_directory,
                         $sample_id . $infile_tag . q{SV} . $DOT . q{cgh}
                     ),
                     program_name     => q{vcf2cytosure},
+                    sample_info_href => $sample_info_href,
+                }
+            );
+
+            ## For logging version - until present in cgh file
+            add_program_outfile_to_sample_info(
+                {
+                    infile           => $merged_infile_prefix,
+                    sample_id        => $sample_id,
+                    path             => $stderrfile_path,
+                    program_name     => q{vcf2cytosure_version},
                     sample_info_href => $sample_info_href,
                 }
             );
