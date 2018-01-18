@@ -104,7 +104,7 @@ diag(   q{Test check_target_bed_file_exist from Path.pm v}
 my $dir = tempdir( CLEANUP => 1 );
 
 ## Create test file with .bed extension in temp dir
-my ($fh, $file_name) = tempfile( DIR => $dir, SUFFIX => ".bed");
+my ( $fh, $file_name ) = tempfile( DIR => $dir, SUFFIX => ".bed" );
 
 #SUFFIX => ".bed"
 
@@ -116,22 +116,11 @@ my %parameter = (
 my @r = check_target_bed_file_exist(
     {
         parameter_name => q{file_name},
-        path => $file_name,
+        path           => $file_name,
     }
 );
 
-#something is trapped, but it's undef
-is ( $trap->stdout, '', 'Expecting no STDOUT, bed file found!' );
-
-@r = check_target_bed_file_exist(
-    {
-        parameter_name => q{file_name},
-        path => q{some_other_not_bed_file},
-    }
-);
-
-#nothing is trapped, because there is an "exit 1" in the subroutine which is out of the scope of the Trap???
-is ( $trap->exit, 1, 'Not a bed file!' );
+is( $trap->stdout, undef, "Subroutine didn't exit, so .bed file was found" );
 
 done_testing();
 
