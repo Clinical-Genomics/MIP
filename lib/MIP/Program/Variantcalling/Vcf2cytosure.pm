@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ vcf2cytosure_convert };
@@ -47,6 +47,7 @@ sub vcf2cytosure_convert {
 ##          : $stdoutfile_path        => Stdoutfile path
 ##          : $variant_size           => Minimum variant size.
 ##          : $vcf_infile_path        => Path to VCF infile
+##          : $version                => Version of program
 
     my ($arg_href) = @_;
 
@@ -64,6 +65,7 @@ sub vcf2cytosure_convert {
     my $frequency_tag;
     my $no_filter;
     my $variant_size;
+    my $version;
 
     my $tmpl = {
         coverage_file => {
@@ -93,7 +95,7 @@ sub vcf2cytosure_convert {
         },
         outfile_path => {
             strict_type => 1,
-            store => \$outfile_path,
+            store       => \$outfile_path,
         },
         stderrfile_path => {
             store       => \$stderrfile_path,
@@ -119,12 +121,24 @@ sub vcf2cytosure_convert {
             store       => \$vcf_infile_path,
             strict_type => 1,
         },
+        version => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$version,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
     my @commands = q{vcf2cytosure};
+
+    # Option: Version of program
+    if ($version) {
+
+        push @commands, q{--version};
+    }
 
     # Option: specify minimum variant size
     if ($variant_size) {
@@ -148,7 +162,7 @@ sub vcf2cytosure_convert {
 
     if ($outfile_path) {
 
-       push @commands, q{--out} . $SPACE . $outfile_path;
+        push @commands, q{--out} . $SPACE . $outfile_path;
     }
 
     # Coverage file

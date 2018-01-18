@@ -567,6 +567,13 @@ sub get_programs_for_installation {
     if ( any { $_ eq q{chanjo} } @{ $parameter_href->{select_program} } ) {
         push @{ $parameter_href->{select_program} }, q{sambamba};
     }
+
+    ## vcf2cytosure requires libxml2 and libxslt to run and these are added to the
+    ## select program array if a vcf2cytosure installation has been requested
+    if ( any { $_ eq q{vcf2cytosure} } @{ $parameter_href->{select_program} } ) {
+        push @{ $parameter_href->{select_program} }, qw{ libxml2 libxslt };
+    }
+
     ## Remove all programs except those selected for installation
     if ( @{ $parameter_href->{select_program} } ) {
         my @programs = (

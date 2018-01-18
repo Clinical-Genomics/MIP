@@ -1,22 +1,22 @@
 #!/usr/bin/env perl
 
+use 5.018;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use File::Basename qw{ basename dirname  };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use Getopt::Long;
 use open qw{ :encoding(UTF-8) :std };
-use Params::Check qw{ check allow last_error };
+use Params::Check qw{ allow check last_error };
 use Test::More;
 use utf8;
 use warnings qw{ FATAL utf8 };
-use 5.018;
 
 ## CPANM
+use autodie qw{ :all };
 use Modern::Perl qw{ 2014 };
-use autodie;
 use Readonly;
 
 ## MIPs lib/
@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.1;
+our $VERSION = 1.0.0;
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -78,7 +78,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Program::Variantcalling::Bcftools});
+    my @modules = (q{MIP::Program::Trimming::Skewer});
 
   MODULE:
     for my $module (@modules) {
@@ -86,11 +86,11 @@ BEGIN {
     }
 }
 
-use MIP::Program::Variantcalling::Bcftools qw{ bcftools_stats };
+use MIP::Program::Trimming::Skewer qw{ skewer };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test bcftools_stats from Bcftools.pm v}
-      . $MIP::Program::Variantcalling::Bcftools::VERSION
+diag(   q{Test skewer from Skewer.pm v}
+      . $MIP::Program::Trimming::Skewer::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -99,7 +99,7 @@ diag(   q{Test bcftools_stats from Bcftools.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{bcftools};
+my $function_base_command = q{skewer};
 
 my %base_argument = (
     FILEHANDLE => {
@@ -115,24 +115,81 @@ my %base_argument = (
         expected_output => q{2>> stderrfile.test},
     },
     stdoutfile_path => {
-        input           => q{stdoutfile_path},
-        expected_output => q{1> stdoutfile_path},
+        input           => q{stdoutfile.test},
+        expected_output => q{1> stdoutfile.test},
     },
 );
 
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
-my %required_argument = ();
+my %required_argument = (
+    adapter_sequence => {
+        input           => q{AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC},
+        expected_output => q{-x}
+          . $SPACE
+          . q{AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC},
+    },
+    adapter_sequence_second => {
+        input           => q{AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA},
+        expected_output => q{-y}
+          . $SPACE
+          . q{AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA},
+    },
+    infile_path => {
+        input           => catfile(qw{path to test_infile_1}),
+        expected_output => catfile(qw{path to test_infile_1}),
+    },
+    outsuffix => {
+        input           => q{skeweroutsuffix},
+        expected_output => q{--output} . $SPACE . q{skeweroutsuffix},
+    },
+    second_infile_path => {
+        input           => catfile(qw{test_infile_2}),
+        expected_output => catfile(qw{test_infile_2}),
+    },
+);
 
 my %specific_argument = (
+    adapter_sequence => {
+        input           => q{AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC},
+        expected_output => q{-x}
+          . $SPACE
+          . q{AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC},
+    },
+    adapter_sequence_second => {
+        input           => q{AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA},
+        expected_output => q{-y}
+          . $SPACE
+          . q{AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA},
+    },
+    compress_output => {
+        input           => 1,
+        expected_output => q{-z} . $SPACE,
+    },
     infile_path => {
-        input           => q{infile.test},
-        expected_output => q{infile.test},
+        input           => catfile(qw{path to test_infile_1}),
+        expected_output => catfile(qw{path to test_infile_1}),
+    },
+    trim_mode => {
+        input       => q{pe},
+        expected_output => q{--mode} . $SPACE . q{pe},
+    },
+    outsuffix => {
+        input           => q{skeweroutsuffix},
+        expected_output => q{--output} . $SPACE . q{skeweroutsuffix},
+    },
+    thread_number => {
+        input           => q{2},
+        expected_output => q{--threads} . $SPACE . q{2},
+    },
+    second_infile_path => {
+        input           => catfile(qw{test_infile_2}),
+        expected_output => catfile(qw{test_infile_2}),
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&bcftools_stats;
+my $module_function_cref = \&skewer;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
@@ -142,10 +199,10 @@ foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
             argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
             do_test_base_command   => 1,
+            function_base_command  => $function_base_command,
+            module_function_cref   => $module_function_cref,
+            required_argument_href => \%required_argument,
         }
     );
 }
@@ -158,12 +215,9 @@ done_testing();
 
 sub build_usage {
 
-## build_usage
-
 ## Function  : Build the USAGE instructions
-## Returns   : ""
-## Arguments : $program_name
-##           : $program_name => Name of the script
+## Returns   :
+## Arguments : $program_name => Name of the script
 
     my ($arg_href) = @_;
 
@@ -173,8 +227,8 @@ sub build_usage {
     my $tmpl = {
         program_name => {
             default     => basename($PROGRAM_NAME),
-            strict_type => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
     };
 

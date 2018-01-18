@@ -155,7 +155,8 @@ sub analysis_samtools_subsample_MT {
 
     use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
     use MIP::Get::Parameter qw{ get_module_parameters };
-    use MIP::Program::Alignment::Samtools qw{ samtools_depth samtools_view };
+    use MIP::Program::Alignment::Samtools
+      qw{ samtools_depth samtools_index samtools_view };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_dead_end };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
@@ -301,7 +302,17 @@ sub analysis_samtools_subsample_MT {
             with_header                    => 1,
         }
     );
+    say $FILEHANDLE $NEWLINE;
 
+    ## Index new bam file
+    say $FILEHANDLE q{## Index the subsampled BAM file};
+    samtools_index(
+        {
+            bai_format  => 1,
+            FILEHANDLE  => $FILEHANDLE,
+            infile_path => $outfile_path,
+        }
+    );
     say $FILEHANDLE $NEWLINE;
 
     ## Close FILEHANDLES

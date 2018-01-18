@@ -202,6 +202,7 @@ set_pedigree_sex_info.t
 shell_build_shebang.t
 shell_create_housekeeping_function.t
 shell_create_error_trap_function.t
+skewer.t
 slurm_sacct.t
 slurm_sbatch.t
 slurm_build_sbatch_header.t
