@@ -100,10 +100,16 @@ diag(   q{Test add_gene_panel from Record.pm v}
       . $EXECUTABLE_NAME );
 
 my $aggregate_gene_panel_file = catfile( $Bin, qw{ data 643594-miptest aggregated_gene_panel_test.txt } );
-my $aggregate_gene_panels_key = q{TEST};
+my $aggregate_gene_panels_key = q{select_file};
+my $gene_panel = q{TEST};
 my $family_id_test = q{family_id};
 my $program_name_test = q{vcfparser};
 my %sample_info;
+my %header_info = (display_name => q{gene_panel_test},
+                   gene_panel => $gene_panel,
+                   updated_at => q{2016-12-08},
+                   version => q{1.0},
+                   );
 
 add_gene_panel(
     {
@@ -115,9 +121,17 @@ add_gene_panel(
     }
 );
 
-is( exists $sample_info{$program_name_test}{$aggregate_gene_panels_key}{gene_panel},
-    1, q{Gene panel added to $sample_info} );
+is( exists $sample_info{$program_name_test}{$aggregate_gene_panels_key}{gene_panel}{$gene_panel},
+    1, q{Gene panel key added to $sample_info} );
+}
 
+while (my ($key, $value) = each %header_info) {
+
+## Test gene panel info
+my $set_header_value = $sample_info{$program_name_test}{$aggregate_gene_panels_key}{gene_panel}{$gene_panel}{$key};
+
+is( $set_header_value, $value, q{Gene panel header info value for key: } . $key . q{ added to $sample_info} );
+}
 
 done_testing();
 
