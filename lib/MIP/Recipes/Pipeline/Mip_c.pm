@@ -458,33 +458,6 @@ sub pipeline_mip_c {
         }
     }
 
-    if ( $active_parameter_href->{pbcftools_mpileup} ) {
-
-        $log->info(q{[Bcftools mpileup]});
-
-        my $program_outdirectory_name =
-          $parameter_href->{pbcftools_mpileup}{outdir_name};
-
-        my $outfamily_directory = catfile(
-            $active_parameter_href->{outdata_dir},
-            $active_parameter_href->{family_id},
-            $active_parameter_href->{outaligner_dir},
-            $program_outdirectory_name
-        );
-
-        analysis_bcftools_mpileup(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                program_name            => q{bcftools_mpileup},
-                outfamily_directory     => $outfamily_directory,
-            }
-        );
-    }
     if ( $active_parameter_href->{pfreebayes} ) {
 
         $log->info(q{[Freebayes]});
@@ -509,6 +482,29 @@ sub pipeline_mip_c {
                 job_id_href             => $job_id_href,
                 program_name            => q{freebayes},
                 outfamily_directory     => $outfamily_directory,
+            }
+        );
+    }
+
+    if ( $active_parameter_href->{pgatk_combinevariantcallsets} ) {
+
+        $log->info(q{[GATK combinevariantcallsets]});
+
+        my $outfamily_directory = catfile(
+            $active_parameter_href->{outdata_dir},
+            $active_parameter_href->{family_id},
+            $active_parameter_href->{outaligner_dir}
+        );
+        analysis_gatk_combinevariantcallsets(
+            {
+                parameter_href          => $parameter_href,
+                active_parameter_href   => $active_parameter_href,
+                sample_info_href        => $sample_info_href,
+                file_info_href          => $file_info_href,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                outfamily_directory     => $outfamily_directory,
+                program_name            => q{gatk_combinevariantcallsets},
             }
         );
     }
