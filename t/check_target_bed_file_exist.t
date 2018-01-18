@@ -105,8 +105,6 @@ my $dir = tempdir( CLEANUP => 1 );
 ## Create test file with .bed extension in temp dir
 my ( $fh, $file_name ) = tempfile( DIR => $dir, SUFFIX => ".bed" );
 
-#SUFFIX => ".bed"
-
 my %parameter = (
     dir       => $dir,
     file_name => { build_file => 1 },
