@@ -88,9 +88,9 @@ BEGIN {
     }
 }
 
-use MIP::Check::Path qw{ check_target_bed_file_exist };
+use MIP::Check::Path qw{ check_target_bed_file_suffix };
 
-diag(   q{Test check_target_bed_file_exist from Path.pm v}
+diag(   q{Test check_target_bed_file_suffix from Path.pm v}
       . $MIP::Check::Path::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -99,18 +99,10 @@ diag(   q{Test check_target_bed_file_exist from Path.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Create a temp dir
-my $dir = tempdir( CLEANUP => 1 );
+## Test file name
+my $file_name = catfile( q{path_to_bed_file}, q{test_bed_file.bed} );
 
-## Create test file with .bed extension in temp dir
-my ( $fh, $file_name ) = tempfile( DIR => $dir, SUFFIX => ".bed" );
-
-my %parameter = (
-    dir       => $dir,
-    file_name => { build_file => 1 },
-);
-
-my $run = check_target_bed_file_exist(
+my $run = check_target_bed_file_suffix(
     {
         parameter_name => q{file_name},
         path           => $file_name,

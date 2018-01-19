@@ -23,7 +23,7 @@ check_pedigree_vs_user_input_sample_ids.t
 check_pedigree_mandatory_key.t
 check_pedigree_sample_allowed_values.t
 check_perl_modules.t
-check_target_bed_file_exist.t
+check_target_bed_file_suffix.t
 check_if_processed_by_vt.t
 chanjo_sex.t
 cnvnator_calling.t

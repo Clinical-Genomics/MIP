@@ -23,7 +23,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ check_filesystem_objects_existance check_filesystem_objects_and_index_existance check_file_version_exist check_dir_path_exist check_target_bed_file_exist check_parameter_files };
+      qw{ check_filesystem_objects_existance check_filesystem_objects_and_index_existance check_file_version_exist check_dir_path_exist check_target_bed_file_suffix check_parameter_files };
 }
 
 ## Constants
@@ -288,7 +288,7 @@ sub check_dir_path_exist {
     return @existing_dir_paths;
 }
 
-sub check_target_bed_file_exist {
+sub check_target_bed_file_suffix {
 
 ## Function : Check that supplied target file ends with ".bed" and otherwise exists.
 ## Returns  :
