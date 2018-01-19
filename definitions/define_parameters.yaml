@@ -1935,11 +1935,13 @@ prtg_vcfeval:
   program_name_path:
    - bcftools
   type: program
-rtg_vcfeval_sdf_dir:
+rtg_vcfeval_reference_genome:
   associated_program:
    - prtg_vcfeval
+  build_file: 1
   data_type: SCALAR
   exists_check: directory
+  reference: reference_dir
   type: path
 pevaluation:
   associated_program:

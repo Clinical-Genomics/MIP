@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ rtg_format rtg_vcfeval };
@@ -37,7 +37,7 @@ sub rtg_format {
 ## Function : Perl wrapper for rtg tools 3.8.4.
 ## Returns  : @commands
 ## Arguments: $FILEHANDLE             => Filehandle to write to
-##          : $infile_path            => Infile path
+##          : $reference_genome_path  => Human reference genome file path
 ##          : $input_format           => Format of input
 ##          : $sdf_output_directory   => Directory name of output SDF
 ##          : $stderrfile_path        => Stderrfile path
@@ -48,7 +48,7 @@ sub rtg_format {
 
     ## Flatten argument(s)
     my $FILEHANDLE;
-    my $infile_path;
+    my $reference_genome_path;
     my $input_format;
     my $sdf_output_directory;
     my $stderrfile_path;
@@ -58,10 +58,10 @@ sub rtg_format {
     ## Default(s)
 
     my $tmpl = {
-        infile_path => {
+        reference_genome_path => {
             defined     => 1,
             required    => 1,
-            store       => \$infile_path,
+            store       => \$reference_genome_path,
             strict_type => 1,
         },
         input_format => {
@@ -102,7 +102,7 @@ sub rtg_format {
 
     push @commands, q{--output=} . $sdf_output_directory;
 
-    push @commands, $infile_path;
+    push @commands, $reference_genome_path;
 
     push @commands,
       unix_standard_streams(

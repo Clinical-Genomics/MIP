@@ -41,7 +41,7 @@ use MIP::Check::Parameter
   qw{ check_allowed_temp_directory check_cmd_config_vs_definition_file check_parameter_hash };
 use MIP::Check::Path qw{ check_target_bed_file_exist check_parameter_files };
 use MIP::Check::Reference
-  qw{ check_bwa_prerequisites check_capture_file_prerequisites check_file_endings_to_build check_human_genome_file_endings check_human_genome_prerequisites check_parameter_metafiles check_references_for_vt };
+  qw{ check_bwa_prerequisites check_capture_file_prerequisites check_human_genome_file_endings check_human_genome_prerequisites check_parameter_metafiles check_references_for_vt check_rtg_prerequisites };
 use MIP::File::Format::Pedigree
   qw{ create_fam_file parse_yaml_pedigree_file reload_previous_pedigree_info };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
@@ -161,14 +161,18 @@ my ( %infile, %indir_path, %infile_lane_prefix, %lane,
     %infile_both_strands_prefix, %job_id, %sample_info );
 
 my %file_info = (
-    exome_target_bed =>
-      [qw{ .infile_list .pad100.infile_list .pad100.interval_list }],
 
     # BWA human genome reference file endings
     bwa_build_reference => [qw{ .bwt .ann .amb .pac .sa }],
 
+    exome_target_bed =>
+      [qw{ .infile_list .pad100.infile_list .pad100.interval_list }],
+
     # Human genome meta files
     human_genome_reference_file_endings => [qw{ .dict .fai }],
+
+    # RTG human genome reference file endings
+    rtg_vcfeval_reference_genome => [qw{ _sdf_dir }],
 );
 
 #### Staging Area
@@ -533,13 +537,12 @@ GetOptions(
       \$active_parameter{endvariantannotationblock_remove_genes_file},
     q{ravbf|rankvariant_binary_file} =>
       \$active_parameter{rankvariant_binary_file},
-    q{pped|ppeddy=n}                => \$active_parameter{ppeddy},
-    q{pplink|pplink=n}              => \$active_parameter{pplink},
-    q{pvai|pvariant_integrity=n}    => \$active_parameter{pvariant_integrity},
-    q{prte|prtg_vcfeval=n}          => \$active_parameter{prtg_vcfeval},
-    q{rtesdf|rtg_vcfeval_sdf_dir:s} => \$active_parameter{rtg_vcfeval_sdf_dir},
-    q{pevl|pevaluation=n}           => \$active_parameter{pevaluation},
-    q{evlnid|nist_id:s}             => \$active_parameter{nist_id},
+    q{pped|ppeddy=n}             => \$active_parameter{ppeddy},
+    q{pplink|pplink=n}           => \$active_parameter{pplink},
+    q{pvai|pvariant_integrity=n} => \$active_parameter{pvariant_integrity},
+    q{prte|prtg_vcfeval=n}       => \$active_parameter{prtg_vcfeval},
+    q{pevl|pevaluation=n}        => \$active_parameter{pevaluation},
+    q{evlnid|nist_id:s}          => \$active_parameter{nist_id},
     q{evlnhc|nist_high_confidence_call_set:s} =>
       \$active_parameter{nist_high_confidence_call_set},
     q{evlnil|nist_high_confidence_call_set_bed:s} =>
@@ -707,7 +710,7 @@ foreach my $parameter_name (@order_parameters) {
 
     ### Special case for parameters that are dependent on other parameters values
     my @custom_default_parameters =
-      qw{ analysis_type bwa_build_reference exome_target_bed infile_dirs sample_info_file };
+      qw{ analysis_type bwa_build_reference exome_target_bed infile_dirs sample_info_file rtg_vcfeval_reference_genome };
 
     if ( any { $_ eq $parameter_name } @custom_default_parameters ) {
 
@@ -845,7 +848,7 @@ foreach my $target_bed_file ( keys %{ $active_parameter{exome_target_bed} } ) {
     );
 }
 
-## Checks parameter metafile exists
+## Checks parameter metafile exists and set build_file parameter
 check_parameter_metafiles(
     {
         parameter_href        => \%parameter,
@@ -1374,6 +1377,24 @@ foreach my $program_name (
     last PROGRAM if ($is_finished);
 }
 
+## Check Rtg build prerequisites
+
+if ( $active_parameter{prtg_vcfeval} ) {
+
+    check_rtg_prerequisites(
+        {
+            parameter_href          => \%parameter,
+            active_parameter_href   => \%active_parameter,
+            sample_info_href        => \%sample_info,
+            file_info_href          => \%file_info,
+            infile_lane_prefix_href => \%infile_lane_prefix,
+            job_id_href             => \%job_id,
+            program_name            => q{rtg_vcfeval},
+            parameter_build_name    => q{rtg_vcfeval_reference_genome},
+        }
+    );
+}
+
 ## Check BWA build prerequisites
 
 if ( $active_parameter{pbwa_mem} ) {
@@ -1869,7 +1890,6 @@ sub build_usage {
     -pplink/--pplink QC for samples gender and relationship (defaults to "0" (=no) )
     -pvai/--pvariant_integrity QC for samples relationship (defaults to "0" (=no) )
     -prte/--prtg_vcfeval Compare concordance with benchmark data set (defaults to "0" (=no) )
-      -rtesdf/--rtg_vcfeval_sdf_dir Human genome metafile SDF directory of rtg (defaults to "" )
     -pevl/--pevaluation Compare concordance with NIST data set (defaults to "0" (=no) )
       -evlnid/--nist_id NIST high-confidence sample_id (defaults to "NA12878")
       -evlnhc/--nist_high_confidence_call_set NIST high-confidence variant calls (defaults to "GRCh37_nist_hg001_-na12878_v2.19-.vcf")
@@ -3301,7 +3321,7 @@ sub write_cmd_mip_log {
     my @nowrite = (
         "mip",                  "bwa_build_reference",
         "pbamcalibrationblock", "pvariantannotationblock",
-        q{associated_program},
+        q{associated_program},  q{rtg_build_reference},
     );
 
   PARAMETER_KEY:
