@@ -10,4 +10,5 @@
       * [Identifiers](documentation/API/Identifiers.md)
       * [Modules](documentation/API/Modules.md)
       * [Tests](documentation/API/Tests.md)
+        * [Log](documentation/API/Tests/Log.md)
       * [Subroutines](documentation/API/Subroutines.md)
