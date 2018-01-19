@@ -117,8 +117,7 @@ my $run = check_target_bed_file_exist(
     }
 );
 
-# If it doesn't the right file format was provided
-is( $run, '', "Subroutine didn't exit, so .bed file was found" );
+is( $run, 1, q{The provided file has a .bed extension} );
 
 done_testing();
 

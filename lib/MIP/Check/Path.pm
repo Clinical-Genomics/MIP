@@ -328,6 +328,7 @@ sub check_target_bed_file_exist {
         );
         exit 1;
     }
+    return 1;
 }
 
 sub check_parameter_files {
