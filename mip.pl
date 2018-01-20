@@ -39,7 +39,7 @@ use MIP::Check::Cluster qw{ check_max_core_number };
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Check::Parameter
   qw{ check_allowed_temp_directory check_cmd_config_vs_definition_file check_parameter_hash };
-use MIP::Check::Path qw{ check_target_bed_file_exist check_parameter_files };
+use MIP::Check::Path qw{ check_target_bed_file_suffix check_parameter_files };
 use MIP::Check::Reference
   qw{ check_bwa_prerequisites check_capture_file_prerequisites check_human_genome_file_endings check_human_genome_prerequisites check_parameter_metafiles check_references_for_vt check_rtg_prerequisites };
 use MIP::File::Format::Pedigree
@@ -795,7 +795,7 @@ foreach my $parameter_name ( keys %parameter ) {
 
 ### Checks
 
-## Check existance of files and directories
+## Check existence of files and directories
 PARAMETER:
 foreach my $parameter_name ( keys %parameter ) {
 
@@ -839,7 +839,7 @@ check_human_genome_file_endings(
 TARGET_FILE:
 foreach my $target_bed_file ( keys %{ $active_parameter{exome_target_bed} } ) {
 
-    check_target_bed_file_exist(
+    check_target_bed_file_suffix(
         {
             parameter_name => q{exome_target_bed},
             path           => $target_bed_file,
