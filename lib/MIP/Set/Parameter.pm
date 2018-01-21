@@ -27,9 +27,9 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
-Readonly my $TAB     => qq{\t};
+Readonly my $NEWLINE    => qq{\n};
+Readonly my $SPACE      => q{ };
+Readonly my $TAB        => qq{\t};
 Readonly my $UNDERSCORE => q{_};
 
 sub set_config_to_active_parameters {
@@ -191,6 +191,15 @@ q{Could not detect a supplied capture kit. Will Try to use 'latest' capture kit:
 
             $active_parameter_href->{$parameter_name}{$path} = $sample_id;
         }
+        return;
+    }
+    ## Set rtg vcfeval reference genome
+    if ( $parameter_name eq q{rtg_vcfeval_reference_genome} ) {
+
+        ## Now we now what human genome reference to build from
+        $active_parameter_href->{$parameter_name} =
+          $active_parameter_href->{human_genome_reference};
+
         return;
     }
     if ( $parameter_name eq q{sample_info_file} ) {
