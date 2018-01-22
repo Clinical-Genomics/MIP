@@ -104,14 +104,12 @@ my %active_parameter_test = (
     vcfparser_select_file => 1,
 );
 
-my $active_parameter_test_ref = \%active_parameter_test;
-
 update_vcfparser_outfile_counter(
-    { active_parameter_href => $active_parameter_test_ref, } );
+    { active_parameter_href => \%active_parameter_test, } );
 
-is( ${$active_parameter_test_ref}{vcfparser_outfile_count},
+is( $active_parameter_test{vcfparser_outfile_count},
     2, q{vcfparser used with a select file -> 2 outfiles. Test passed.} );
-is( ${$active_parameter_test_ref}{sv_vcfparser_outfile_count},
+is( $active_parameter_test{sv_vcfparser_outfile_count},
     1, q{sv_vcfparser used without a select file -> 1 outfile. Test passed.} );
 
 # Test the number of oufiles when both vcfparser and sv_vcfparser are used with select files.
@@ -122,14 +120,12 @@ is( ${$active_parameter_test_ref}{sv_vcfparser_outfile_count},
     vcfparser_select_file    => 1,
 );
 
-$active_parameter_test_ref = \%active_parameter_test;
-
 update_vcfparser_outfile_counter(
-    { active_parameter_href => $active_parameter_test_ref, } );
+    { active_parameter_href => \%active_parameter_test, } );
 
-is( ${$active_parameter_test_ref}{vcfparser_outfile_count},
+is( $active_parameter_test{vcfparser_outfile_count},
     2, q{vcfparser used with a select file -> 2 outfiles. Test passed.} );
-is( ${$active_parameter_test_ref}{sv_vcfparser_outfile_count},
+is( $active_parameter_test{sv_vcfparser_outfile_count},
     2, q{sv_vcfparser used with a select file -> 2 outfiles. Test passed.} );
 
 done_testing();
