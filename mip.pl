@@ -555,6 +555,7 @@ GetOptions(
       \$active_parameter{psamtools_subsample_mt},
     q{ssmtd|samtools_subsample_mt_depth=n} =>
       \$active_parameter{samtools_subsample_mt_depth},
+    q{pvrd|pvardict=n} => \$active_parameter{pvardict},
   )
   or help(
     {
@@ -1875,6 +1876,9 @@ sub build_usage {
     -pars/--panalysisrunstatus Sets the analysis run status flag to finished in sample_info_file (defaults to "0" (=no))
     -psac/--psacct Generating sbatch script for SLURM info on each submitted job (defaults to "0" (=no))
     -sacfrf/--sacct_format_fields Format and fields of sacct output (defaults to "jobid", "jobname%50", "account", "partition", "alloccpus", "TotalCPU", "elapsed", "start", "end", "state", "exitcode")
+
+    ##Vardict
+    -pvrd/pvardict Variant calling using Vardict (defaults to "0" (=no))
 END_USAGE
 }
 
