@@ -1,22 +1,22 @@
 #!/usr/bin/env perl
 
+use 5.018;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ dirname basename };
+use open qw{ :encoding(UTF-8) :std };
+use File::Basename qw{ basename dirname };
 use File::Spec::Functions qw{ catdir };
 use FindBin qw{ $Bin };
 use Getopt::Long;
-use open qw{ :encoding(UTF-8) :std };
-use Params::Check qw{ check allow last_error };
+use Params::Check qw{ allow check last_error };
 use Test::More;
 use utf8;
 use warnings qw{ FATAL utf8 };
-use 5.018;
 
 ## CPANM
+use autodie qw { :all };
 use Modern::Perl qw{ 2014 };
-use autodie;
 use Readonly;
 
 ## MIPs lib/
@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.1;
+our $VERSION = '1.0.0';
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -78,7 +78,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Program::Variantcalling::Bcftools});
+    my @modules = (q{MIP::Update::Parameters});
 
   MODULE:
     for my $module (@modules) {
@@ -86,11 +86,10 @@ BEGIN {
     }
 }
 
-use MIP::Program::Variantcalling::Bcftools qw{ bcftools_stats };
-use MIP::Test::Commands qw{ test_function };
+use MIP::Update::Parameters qw{ update_vcfparser_outfile_counter };
 
-diag(   q{Test bcftools_stats from Bcftools.pm v}
-      . $MIP::Program::Variantcalling::Bcftools::VERSION
+diag(   q{Test update_vcfparser_outfile_counter from Parameters.pm v}
+      . $MIP::Update::Parameters::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -98,57 +97,36 @@ diag(   q{Test bcftools_stats from Bcftools.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Base arguments
-my $function_base_command = q{bcftools};
-
-my %base_argument = (
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
-    },
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
-    },
-    stderrfile_path_append => {
-        input           => q{stderrfile.test},
-        expected_output => q{2>> stderrfile.test},
-    },
-    stdoutfile_path => {
-        input           => q{stdoutfile_path},
-        expected_output => q{1> stdoutfile_path},
-    },
+# Test the number of oufiles when vcfparser is used with select file and sv_vcfparser without.
+my %active_parameter_test = (
+    psv_vcfparser         => { type => q{program} },
+    pvcfparser            => { type => q{program} },
+    vcfparser_select_file => 1,
 );
 
-## Can be duplicated with %base_argument and/or %specific_argument
-## to enable testing of each individual argument
-my %required_argument = ();
+update_vcfparser_outfile_counter(
+    { active_parameter_href => \%active_parameter_test, } );
 
-my %specific_argument = (
-    infile_path => {
-        input           => q{infile.test},
-        expected_output => q{infile.test},
-    },
+is( $active_parameter_test{vcfparser_outfile_count},
+    2, q{vcfparser used with a select file -> 2 outfiles. Test passed.} );
+is( $active_parameter_test{sv_vcfparser_outfile_count},
+    1, q{sv_vcfparser used without a select file -> 1 outfile. Test passed.} );
+
+# Test the number of oufiles when both vcfparser and sv_vcfparser are used with select files.
+%active_parameter_test = (
+    psv_vcfparser            => { type => q{program} },
+    pvcfparser               => { type => q{program} },
+    sv_vcfparser_select_file => 1,
+    vcfparser_select_file    => 1,
 );
 
-## Coderef - enables generalized use of generate call
-my $module_function_cref = \&bcftools_stats;
+update_vcfparser_outfile_counter(
+    { active_parameter_href => \%active_parameter_test, } );
 
-## Test both base and function specific arguments
-my @arguments = ( \%base_argument, \%specific_argument );
-
-ARGUMENT_HASH_REF:
-foreach my $argument_href (@arguments) {
-    my @commands = test_function(
-        {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
-        }
-    );
-}
+is( $active_parameter_test{vcfparser_outfile_count},
+    2, q{vcfparser used with a select file -> 2 outfiles. Test passed.} );
+is( $active_parameter_test{sv_vcfparser_outfile_count},
+    2, q{sv_vcfparser used with a select file -> 2 outfiles. Test passed.} );
 
 done_testing();
 
@@ -158,12 +136,9 @@ done_testing();
 
 sub build_usage {
 
-## build_usage
-
 ## Function  : Build the USAGE instructions
-## Returns   : ""
-## Arguments : $program_name
-##           : $program_name => Name of the script
+## Returns   :
+## Arguments : $program_name => Name of the script
 
     my ($arg_href) = @_;
 
@@ -173,8 +148,8 @@ sub build_usage {
     my $tmpl = {
         program_name => {
             default     => basename($PROGRAM_NAME),
-            strict_type => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
     };
 

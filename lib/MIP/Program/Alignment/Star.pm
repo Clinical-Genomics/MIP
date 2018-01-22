@@ -48,7 +48,7 @@ sub star_aln {
 ##           : $limit_bam_sort_ram         => Memory available for sorting the output bam
 ##           : $outfile_name_prefix       => Prefix of the output files (remember to end with a ".")
 ##           : $out_sam_strand_field       => Cufflinks-like strand field flag
-##           : $out_sam_type               => Format of the output aligned reads 
+##           : $out_sam_type               => Format of the output aligned reads
 ##           : $quant_mode                 => Types of quantification requested
 ##           : $read_files_command         => A command which will be applied to the input files
 ##           : $stderrfile_path            => Stderrfile path
@@ -59,7 +59,7 @@ sub star_aln {
 
     my ($arg_href) = @_;
 
-    ## Flatten argument(s) 
+    ## Flatten argument(s)
     my $FILEHANDLE;
     my $genome_dir_path;
     my $infile_paths_ref;
@@ -84,88 +84,88 @@ sub star_aln {
     my $two_pass_mode;
 
     my $tmpl = {
-        align_intron_max   => {
-            default      => 100000,
-            store        => \$align_intron_max,
-            strict_type  => 1,
+        align_intron_max => {
+            default     => 100_000,
+            store       => \$align_intron_max,
+            strict_type => 1,
         },
         align_mates_gap_max => {
-            default      => 100000,
-            store        => \$align_mates_gap_max,
-            strict_type  => 1,
+            default     => 100_000,
+            store       => \$align_mates_gap_max,
+            strict_type => 1,
         },
         align_sjdb_overhang_min => {
-            default      => 10,
-            store        => \$align_sjdb_overhang_min,
-            strict_type  => 1,
+            default     => 10,
+            store       => \$align_sjdb_overhang_min,
+            strict_type => 1,
         },
 
         chim_junction_overhang_min => {
-            default      => 12,
-            store        => \$chim_junction_overhang_min,
-            strict_type  => 1,
+            default     => 12,
+            store       => \$chim_junction_overhang_min,
+            strict_type => 1,
         },
         chim_segment_min => {
-            default      => 12,
-            store        => \$chim_segment_min,
-            strict_type  => 1,
+            default     => 12,
+            store       => \$chim_segment_min,
+            strict_type => 1,
         },
 
         chim_segment_read_gap_max => {
-            default      => 3,
-            store        => \$chim_segment_read_gap_max,
-            strict_type  => 1,
+            default     => 3,
+            store       => \$chim_segment_read_gap_max,
+            strict_type => 1,
         },
         FILEHANDLE => {
             store => \$FILEHANDLE,
         },
         genome_dir_path => {
-            defined      => 1,
-            required     => 1,
-            store        => \$genome_dir_path,
-            strict_type  => 1,
+            defined     => 1,
+            required    => 1,
+            store       => \$genome_dir_path,
+            strict_type => 1,
         },
         infile_paths_ref => {
-            default => [],
-            defined      => 1,
-            required     => 1,
-            store        => \$infile_paths_ref,
-            strict_type  => 1,
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_paths_ref,
+            strict_type => 1,
         },
-        limit_bam_sort_ram   => {
-            default      => 31532137230,
-            store        => \$limit_bam_sort_ram,
-            strict_type  => 1,
+        limit_bam_sort_ram => {
+            default     => 315_321_372_30,
+            store       => \$limit_bam_sort_ram,
+            strict_type => 1,
         },
-        outfile_name_prefix   => {
-            defined      => 1,
-            required     => 1,
-            store        => \$outfile_name_prefix,
-            strict_type  => 1,
+        outfile_name_prefix => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_name_prefix,
+            strict_type => 1,
         },
         out_sam_strand_field => {
             allow       => [qw{ None intronMotif }],
-            default      => q{intronMotif},
-            store        => \$out_sam_strand_field,
-            strict_type  => 1,
+            default     => q{intronMotif},
+            store       => \$out_sam_strand_field,
+            strict_type => 1,
         },
         out_sam_type => {
-            default     =>  q{BAM} . $SPACE . q{SortedByCoordinate},
-            required     => 1,
+            default     => q{BAM} . $SPACE . q{SortedByCoordinate},
+            required    => 1,
             store       => \$out_sam_type,
-            strict_type  => 1,
-        }
+            strict_type => 1,
+        },
         quant_mode => {
             allow       => [qw{ - GeneCounts }],
-            default      => q{GeneCounts},
-            store        => \$quant_mode,
-            strict_type  => 1,
+            default     => q{GeneCounts},
+            store       => \$quant_mode,
+            strict_type => 1,
         },
         read_files_command => {
-            default      => q{gzip} . $SPACE . q{-c},
-            required     => 1,
-            strict_type  => 1,
-            store        => \$read_files_command,
+            default     => q{gzip} . $SPACE . q{-c},
+            required    => 1,
+            strict_type => 1,
+            store       => \$read_files_command,
         },
         stderrfile_path => {
             store       => \$stderrfile_path,
@@ -187,9 +187,9 @@ sub star_aln {
         },
         two_pass_mode => {
             allow       => [qw{ Basic None }],
-            default      => q{Basic},
-            store        => \$two_pass_mode,
-            strict_type  => 1,
+            default     => q{Basic},
+            store       => \$two_pass_mode,
+            strict_type => 1,
         },
     };
 
@@ -202,57 +202,61 @@ sub star_aln {
 
     push @commands, q{--readFilesCommand} . $SPACE . $read_files_command;
 
-    push @commands, q{--readFilesIn} . $SPACE . join $SPACE, @{$infile_paths_ref};
+    push @commands, q{--readFilesIn} . $SPACE . join $SPACE,
+      @{$infile_paths_ref};
 
     push @commands, q{--outFileNamePrefix} . $SPACE . $outfile_name_prefix;
 
     push @commands, q{--outSAMtype} . $SPACE . $out_sam_type;
 
     #Options
-    if ($align_intron_max){
+    if ($align_intron_max) {
         push @commands, q{--alignIntronMax} . $SPACE . $align_intron_max;
 
     }
-    if ($align_mates_gap_max){
+    if ($align_mates_gap_max) {
         push @commands, q{--alignMatesGapMax} . $SPACE . $align_mates_gap_max;
 
     }
-    if ($align_sjdb_overhang_min){
-        push @commands, q{--alignSJDBoverhangMin} . $SPACE . $align_sjdb_overhang_min;
+    if ($align_sjdb_overhang_min) {
+        push @commands,
+          q{--alignSJDBoverhangMin} . $SPACE . $align_sjdb_overhang_min;
 
     }
-    if ($chim_segment_min){
+    if ($chim_segment_min) {
         push @commands, q{--chimSegmentMin} . $SPACE . $chim_segment_min;
 
     }
-    if ($chim_junction_overhang_min){
-        push @commands, q{--chimJunctionOverhangMin} . $SPACE . $chim_junction_overhang_min;
+    if ($chim_junction_overhang_min) {
+        push @commands,
+          q{--chimJunctionOverhangMin} . $SPACE . $chim_junction_overhang_min;
 
     }
-    if ($chim_segment_read_gap_max){
-        push @commands, q{--chimSegmentReadGapMax} . $SPACE . $chim_segment_read_gap_max;
+    if ($chim_segment_read_gap_max) {
+        push @commands,
+          q{--chimSegmentReadGapMax} . $SPACE . $chim_segment_read_gap_max;
 
     }
-    if ($limit_bam_sort_ram){
+    if ($limit_bam_sort_ram) {
         push @commands, q{--limitBAMsortRAM} . $SPACE . $limit_bam_sort_ram;
 
     }
-    if ($quant_mode){
+    if ($quant_mode) {
         push @commands, q{--quantMode} . $SPACE . $quant_mode;
 
     }
-    if ($out_sam_strand_field){
+    if ($out_sam_strand_field) {
         push @commands, q{--outSAMstrandField} . $SPACE . $out_sam_strand_field;
     }
     if ($thread_number) {
         push @commands, q{--runThreadN} . $SPACE . $thread_number;
 
     }
-    if ($two_pass_mode){
+    if ($two_pass_mode) {
         push @commands, q{--twopassMode} . $SPACE . $two_pass_mode;
 
     }
-    
+
     push @commands,
       unix_standard_streams(
         {
@@ -273,9 +277,9 @@ sub star_aln {
     return @commands;
 }
 
-sub star_genome_generate{
+sub star_genome_generate {
 
-## Function  : Perl wrapper for STAR genomeGenerate, S.
+## Function  : Perl wrapper for STAR genomeGenerate, v2.5.3a.
 ## Returns   : @commands
 ## Arguments : $fasta_path             => Input reference fasta path
 ##           : $FILEHANDLE             => Filehandle to write to
@@ -304,25 +308,25 @@ sub star_genome_generate{
 
     my $tmpl = {
         fasta_path => {
-            defined      => 1,
-            required     => 1,
-            store        => \$fasta_path,
-            strict_type  => 1,
+            defined     => 1,
+            required    => 1,
+            store       => \$fasta_path,
+            strict_type => 1,
         },
         FILEHANDLE => {
             store => \$FILEHANDLE,
         },
         genome_dir_path => {
-            defined      => 1,
-            required     => 1,
-            store        => \$genome_dir_path,
-            strict_type  => 1,
+            defined     => 1,
+            required    => 1,
+            store       => \$genome_dir_path,
+            strict_type => 1,
         },
         gtf_path => {
-            defined      => 1,
-            required     => 1,
-            store        => \$gtf_path,
-            strict_type  => 1,
+            defined     => 1,
+            required    => 1,
+            store       => \$gtf_path,
+            strict_type => 1,
         },
         read_length => {
             allow       => qr/ ^\d+$ /xms,
@@ -356,18 +360,12 @@ sub star_genome_generate{
     my @commands = q{STAR --runMode genomeGenerate};
 
     #options
-    if ($fasta_path) {
-        push @commands, q{--genomeFastaFiles} . $SPACE . $fasta_path;
+    push @commands, q{--genomeFastaFiles} . $SPACE . $fasta_path;
 
-    }
-    if ($genome_dir_path) {
-        push @commands, q{--genomeDir} . $SPACE . $genome_dir_path;
+    push @commands, q{--genomeDir} . $SPACE . $genome_dir_path;
 
-    }
-    if ($gtf_path) {
-        push @commands, q{--sjdbGTFfile} . $SPACE . $gtf_path;
+    push @commands, q{--sjdbGTFfile} . $SPACE . $gtf_path;
 
-    }
     if ($read_length) {
         push @commands, q{--sjdbOverhang} . $SPACE . $read_length;
 

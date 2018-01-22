@@ -1,22 +1,22 @@
 #!/usr/bin/env perl
 
+use 5.018;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use open qw{ :encoding(UTF-8) :std };
+use File::Basename qw{ basename dirname };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use Getopt::Long;
-use open qw{ :encoding(UTF-8) :std };
-use Params::Check qw{ check allow last_error };
+use Params::Check qw{ allow check last_error };
 use Test::More;
 use utf8;
 use warnings qw{ FATAL utf8 };
-use 5.018;
 
 ## CPANM
+use autodie qw { :all };
 use Modern::Perl qw{ 2014 };
-use autodie;
 use Readonly;
 
 ## MIPs lib/
@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.1;
+our $VERSION = '1.0.0';
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -78,7 +78,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Program::Variantcalling::Bcftools});
+    my @modules = (q{MIP::Program::Alignment::Star});
 
   MODULE:
     for my $module (@modules) {
@@ -86,11 +86,11 @@ BEGIN {
     }
 }
 
-use MIP::Program::Variantcalling::Bcftools qw{ bcftools_stats };
+use MIP::Program::Alignment::Star qw{ star_genome_generate };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test bcftools_stats from Bcftools.pm v}
-      . $MIP::Program::Variantcalling::Bcftools::VERSION
+diag(   q{Test star_genome_generate from Star.pm v}
+      . $MIP::Program::Alignment::Star::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -98,13 +98,16 @@ diag(   q{Test bcftools_stats from Bcftools.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Base arguments
-my $function_base_command = q{bcftools};
+## Constants
+Readonly my $READ_LENGTH   => 150;
+Readonly my $THREAD_NUMBER => 16;
+
+my $function_base_command = q{STAR --runMode genomeGenerate};
 
 my %base_argument = (
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
+    stdoutfile_path => {
+        input           => q{stdoutfile.test},
+        expected_output => q{1> stdoutfile.test},
     },
     stderrfile_path => {
         input           => q{stderrfile.test},
@@ -114,27 +117,64 @@ my %base_argument = (
         input           => q{stderrfile.test},
         expected_output => q{2>> stderrfile.test},
     },
-    stdoutfile_path => {
-        input           => q{stdoutfile_path},
-        expected_output => q{1> stdoutfile_path},
+    FILEHANDLE => {
+        input           => undef,
+        expected_output => $function_base_command,
     },
 );
 
-## Can be duplicated with %base_argument and/or %specific_argument
-## to enable testing of each individual argument
-my %required_argument = ();
+my %required_argument = (
+    fasta_path => {
+        input           => catfile(qw{ dir test_file.fasta }),
+        expected_output => q{--genomeFastaFiles}
+          . $SPACE
+          . catfile(qw{ dir test_file.fasta }),
+    },
+    genome_dir_path => {
+        input           => catfile(qw{ dir genome_dir_path }),
+        expected_output => q{--genomeDir}
+          . $SPACE
+          . catfile(qw{ dir genome_dir_path }),
+    },
+    gtf_path => {
+        input           => catfile(qw{ dir test_gtf.gtf }),
+        expected_output => q{--sjdbGTFfile}
+          . $SPACE
+          . catfile(qw{ dir test_gtf.gtf }),
+    },
+);
 
 my %specific_argument = (
-    infile_path => {
-        input           => q{infile.test},
-        expected_output => q{infile.test},
+    fasta_path => {
+        input           => catfile(qw{ dir test_file.fasta }),
+        expected_output => q{--genomeFastaFiles}
+          . $SPACE
+          . catfile(qw{ dir test_file.fasta }),
+    },
+    genome_dir_path => {
+        input           => catfile(qw{ dir genome_dir_path }),
+        expected_output => q{--genomeDir}
+          . $SPACE
+          . catfile(qw{ dir genome_dir_path }),
+    },
+    gtf_path => {
+        input           => catfile(qw{ dir test_gtf.gtf }),
+        expected_output => q{--sjdbGTFfile}
+          . $SPACE
+          . catfile(qw{ dir test_gtf.gtf }),
+    },
+    read_length => {
+        input           => $READ_LENGTH,
+        expected_output => q{--sjdbOverhang} . $SPACE . $READ_LENGTH,
+    },
+    thread_number => {
+        input           => $THREAD_NUMBER,
+        expected_output => q{--runThreadN} . $SPACE . $THREAD_NUMBER,
     },
 );
 
-## Coderef - enables generalized use of generate call
-my $module_function_cref = \&bcftools_stats;
+my $module_function_cref = \&star_genome_generate;
 
-## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
 
 ARGUMENT_HASH_REF:
@@ -158,12 +198,9 @@ done_testing();
 
 sub build_usage {
 
-## build_usage
-
 ## Function  : Build the USAGE instructions
-## Returns   : ""
-## Arguments : $program_name
-##           : $program_name => Name of the script
+## Returns   :
+## Arguments : $program_name => Name of the script
 
     my ($arg_href) = @_;
 
@@ -173,8 +210,8 @@ sub build_usage {
     my $tmpl = {
         program_name => {
             default     => basename($PROGRAM_NAME),
-            strict_type => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
     };
 

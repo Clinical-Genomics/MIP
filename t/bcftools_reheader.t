@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.0;
+our $VERSION = 1.0.1;
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -135,7 +135,7 @@ my %specific_argument = (
     },
     samples_file_path => {
         input           => q{samples_file_path},
-        expected_output => q{--samples-file samples_file_path},
+        expected_output => q{--samples samples_file_path},
     },
 );
 

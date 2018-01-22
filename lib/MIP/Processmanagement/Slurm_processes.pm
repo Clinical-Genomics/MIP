@@ -1800,61 +1800,58 @@ sub slurm_submit_chain_job_ids_dependency_add_to_path {
 
 sub submit_jobs_to_sbatch {
 
-##submit_sbatch_to_sbatch
-
-##Function : Sumit jobs to sbatch using dependencies
-##Returns  : "The submitted $job_id"
-##Arguments: $sbatch_file_name, $job_dependency_type, $job_ids_string, $log
-##         : $sbatch_file_name    => Sbatch file to submit
-##         : $job_dependency_type => Job dependency type
-##         : $job_ids_string      => Job ids string
-##         : $log                 => Log
+## Function : Sumit jobs to sbatch using dependencies
+## Returns  : Submitted $job_id
+## Arguments: $job_dependency_type => Job dependency type
+##          : $job_ids_string      => Job ids string
+##          : $log                 => Log
+##          : $sbatch_file_name    => Sbatch file to submit
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $sbatch_file_name;
-    my $log;
     my $job_dependency_type;
     my $job_ids_string;
+    my $log;
+    my $sbatch_file_name;
 
     my $tmpl = {
         sbatch_file_name => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$sbatch_file_name,
             strict_type => 1,
-            store       => \$sbatch_file_name
         },
         log => {
-            required => 1,
             defined  => 1,
-            store    => \$log
+            required => 1,
+            store    => \$log,
         },
         job_dependency_type =>
-          { strict_type => 1, store => \$job_dependency_type },
-        job_ids_string => { strict_type => 1, store => \$job_ids_string },
+          { store => \$job_dependency_type, strict_type => 1, },
+        job_ids_string => { store => \$job_ids_string, strict_type => 1, },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my $job_id;
 
-    use MIP::Workloadmanager::Slurm qw{slurm_sbatch};
     use IPC::Cmd qw{run};
+    use MIP::Workloadmanager::Slurm qw{slurm_sbatch};
 
-# Supply with potential dependency of previous jobs that this one is dependent on
+    ## Supply with potential dependency of previous jobs that this one is dependent on
     my @commands = slurm_sbatch(
         {
-            infile_path     => $sbatch_file_name,
             dependency_type => $job_dependency_type,
+            infile_path     => $sbatch_file_name,
             job_ids_string  => $job_ids_string,
         }
     );
 
     # Submit job process
     my (
-        $success_ref,    $error_message_ref, $full_buf_ref,
-        $stdout_buf_ref, $stderr_buf_ref
+        $full_buf_ref,   $error_message_ref, $stderr_buf_ref,
+        $stdout_buf_ref, $success_ref,
       )
       = run(
         command => \@commands,
@@ -1862,7 +1859,9 @@ sub submit_jobs_to_sbatch {
       );
 
     # Just submitted job_id
-    if ( $stdout_buf_ref->[0] =~ /Submitted batch job (\d+)/ ) {
+    if (   $stdout_buf_ref->[0]
+        && $stdout_buf_ref->[0] =~ /Submitted batch job (\d+)/ )
+    {
 
         $job_id = $1;
     }
