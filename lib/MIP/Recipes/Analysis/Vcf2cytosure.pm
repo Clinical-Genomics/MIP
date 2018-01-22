@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vcf2cytosure };
@@ -276,7 +276,8 @@ sub analysis_vcf2cytosure {
         $infile_tag =
           $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
         $infile_prefix = $merged_infile_prefix . $infile_tag;
-        $outfile_tag   = $file_info_href->{$family_id}{ptiddit}{file_tag};
+        $outfile_tag =
+          $file_info_href->{$family_id}{psv_combinevariantcallsets}{file_tag};
         $sample_outfile_prefix = $merged_infile_prefix . $outfile_tag;
 
         ## Assign suffix
