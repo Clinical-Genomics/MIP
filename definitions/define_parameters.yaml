@@ -899,7 +899,7 @@ psv_combinevariantcallsets:
 pvcf2cytosure:
   associated_program:
     - mip
-  chain: SVV2CS
+  chain: SV
   data_type: SCALAR
   default: 0
   file_tag: _cyto
