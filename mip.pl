@@ -150,7 +150,7 @@ check_parameter_hash(
 );
 
 ## Set MIP version
-our $VERSION = 'v5.0.13';
+our $VERSION = 'v5.0.14';
 
 ## Holds all active parameters
 my %active_parameter;
@@ -1127,23 +1127,18 @@ foreach my $parameter_info (@broadcasts) {
 }
 
 ## Update program mode depending on analysis run value as some programs are not applicable for e.g. wes
-my @warning_msgs = update_program_mode(
+update_program_mode(
     {
         active_parameter_href => \%active_parameter,
-        programs_ref => [qw{ cnvnator delly_call delly_reformat tiddit }],
         consensus_analysis_type =>
           $parameter{dynamic_parameter}{consensus_analysis_type},
+        log          => $log,
+        programs_ref => [
+            qw{ cnvnator delly_call delly_reformat tiddit samtools_subsample_mt }
+        ],
     }
 );
 
-## Broadcast
-if (@warning_msgs) {
-
-    foreach my $warning_msg (@warning_msgs) {
-
-        $log->warn($warning_msg);
-    }
-}
 ## Update prioritize flag depending on analysis run value as some programs are not applicable for e.g. wes
 $active_parameter{sv_svdb_merge_prioritize} = update_prioritize_flag(
     {

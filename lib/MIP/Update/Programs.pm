@@ -18,7 +18,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -47,25 +47,25 @@ sub update_program_mode_with_dry_run_all {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         dry_run_all => {
-            required    => 1,
-            defined     => 1,
             allow       => [ 0, 1, 2 ],
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$dry_run_all,
+            strict_type => 1,
         },
         programs_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$programs_ref,
+            strict_type => 1,
         },
     };
 
@@ -96,6 +96,7 @@ sub update_program_mode {
 ##Returns  :
 ##Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##         : $consensus_analysis_type => Consensus analysis_type
+##         : $log                     => Log
 ##         : $programs_ref            => Programs to update {REF}
 
     my ($arg_href) = @_;
@@ -103,28 +104,34 @@ sub update_program_mode {
     ## Flatten argument(s)
     my $active_parameter_href;
     my $consensus_analysis_type;
+    my $log;
     my $programs_ref;
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         consensus_analysis_type => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$consensus_analysis_type,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
         },
         programs_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$programs_ref,
+            strict_type => 1,
         },
     };
 
@@ -150,7 +157,15 @@ sub update_program_mode {
 
             push @warning_msgs, $warning_msg;
         }
-        return @warning_msgs;
+
+        ## Broadcast
+        if (@warning_msgs) {
+
+          WARNING_MSG:
+            foreach my $warning_msg (@warning_msgs) {
+                $log->warn($warning_msg);
+            }
+        }
     }
     return;
 }
@@ -172,21 +187,21 @@ sub update_prioritize_flag {
 
     my $tmpl = {
         consensus_analysis_type => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$consensus_analysis_type,
+            strict_type => 1,
         },
         prioritize_key => {
-            strict_type => 1,
             store       => \$prioritize_key,
+            strict_type => 1,
         },
         programs_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$programs_ref,
+            strict_type => 1,
         },
     };
 
