@@ -174,7 +174,7 @@ foreach my $outfile (@outfiles) {
         )
       )
     {
-        say {STDOUT} q{Removed outfile successfully: } . $outfile;
+        say {*STDOUT} q{Removed outfile successfully: } . $outfile;
     }
 }
 
