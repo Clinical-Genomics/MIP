@@ -201,6 +201,7 @@ human_genome_reference:
    - pgatk_variantevalexome
    - ppicardtools_collecthsmetrics
    - ppicardtools_collectmultiplemetrics
+   - pvardict
   build_file: 1
   data_type: SCALAR
   default: GRCh37_homo_sapiens_-d5-.fasta
@@ -281,6 +282,7 @@ module_time:
     pmultiqc: 1
     panalysisrunstatus: 1
     psacct: 1
+    pvardict: 40
     pvcf2cytosure: 2
   type: mip
 module_core_number:
@@ -330,6 +332,7 @@ module_core_number:
     pmultiqc: 1
     panalysisrunstatus: 1
     psacct: 1
+    pvardict: 8
     pvcf2cytosure: 1
   type: mip
 max_cores_per_node:
@@ -1499,6 +1502,22 @@ rhocall_frequency_file:
   exists_check: file
   reference: reference_dir
   type: path
+##Vardict
+pvardict:
+  associated_program:
+    - mip
+  chain: VRDCT
+  data_type: SCALAR
+  default: 0
+  file_tag: _vardict_
+  program_name_path:
+    - vardict
+  outdir_name: vardict
+  program_type: variant_callers
+  file_endings:
+    -.vcf
+  outfile_suffx: ".vcf"
+  type: program
 ##VT
 pvt:
   associated_program:
