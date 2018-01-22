@@ -1518,6 +1518,36 @@ pvardict:
     -.vcf
   outfile_suffx: ".vcf"
   type: program
+vrd_af_threshold:
+  associated_program:
+   - pvardict
+  data_type: SCALAR
+  default: 0.01
+  type: program_argument
+vrd_chrom_start:
+  associated_program:
+   - pvardict
+  data_type: SCALAR
+  default: 1
+  type: program_argument
+vrd_region_end:
+  associated_program:
+   - pvardict
+  data_type: SCALAR
+  default: 3
+  type: program_argument
+vrd_region_start:
+  associated_program:
+   - pvardict
+  data_type: SCALAR
+  default: 2
+  type: program_argument
+vrd_segment_annotn:
+  associated_program:
+   - pvardict
+  data_type: SCALAR
+  default: 4
+  type: program_argument
 ##VT
 pvt:
   associated_program:
