@@ -39,16 +39,15 @@ use MIP::Check::Cluster qw{ check_max_core_number };
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Check::Parameter
   qw{ check_allowed_temp_directory check_cmd_config_vs_definition_file check_parameter_hash };
-use MIP::Check::Path qw{ check_target_bed_file_exist check_parameter_files };
+use MIP::Check::Path qw{ check_target_bed_file_suffix check_parameter_files };
 use MIP::Check::Reference
-  qw{ check_bwa_prerequisites check_capture_file_prerequisites check_file_endings_to_build check_human_genome_file_endings check_human_genome_prerequisites check_parameter_metafiles check_references_for_vt };
+  qw{ check_bwa_prerequisites check_capture_file_prerequisites check_human_genome_file_endings check_human_genome_prerequisites check_parameter_metafiles check_references_for_vt check_rtg_prerequisites };
 use MIP::File::Format::Pedigree
   qw{ create_fam_file parse_yaml_pedigree_file reload_previous_pedigree_info };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
 use MIP::Get::Analysis qw{ get_overall_analysis_type print_program };
 use MIP::Get::File qw{ get_select_file_contigs };
 use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
-use MIP::QC::Record qw{ add_gene_panel add_most_complete_vcf };
 use MIP::Script::Utils qw{ help };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter
@@ -151,7 +150,7 @@ check_parameter_hash(
 );
 
 ## Set MIP version
-our $VERSION = 'v5.0.13';
+our $VERSION = 'v5.0.14';
 
 ## Holds all active parameters
 my %active_parameter;
@@ -161,14 +160,18 @@ my ( %infile, %indir_path, %infile_lane_prefix, %lane,
     %infile_both_strands_prefix, %job_id, %sample_info );
 
 my %file_info = (
-    exome_target_bed =>
-      [qw{ .infile_list .pad100.infile_list .pad100.interval_list }],
 
     # BWA human genome reference file endings
     bwa_build_reference => [qw{ .bwt .ann .amb .pac .sa }],
 
+    exome_target_bed =>
+      [qw{ .infile_list .pad100.infile_list .pad100.interval_list }],
+
     # Human genome meta files
     human_genome_reference_file_endings => [qw{ .dict .fai }],
+
+    # RTG human genome reference file endings
+    rtg_vcfeval_reference_genome => [qw{ _sdf_dir }],
 );
 
 #### Staging Area
@@ -341,11 +344,14 @@ GetOptions(
       \$active_parameter{sv_genmod_filter_threshold},
     q{svcbcf|sv_combinevariantcallsets_bcf_file} =>
       \$active_parameter{sv_combinevariantcallsets_bcf_file},
-    q{pv2cs|pvcf2cytosure:n} => \$active_parameter{pvcf2cytosure},
+    q{pv2cs|pvcf2cytosure:n}      => \$active_parameter{pvcf2cytosure},
     q{v2csfq|vcf2cytosure_freq=n} => \$active_parameter{vcf2cytosure_freq},
-    q{v2csfqt|vcf2cytosure_freq_tag=s} => \$active_parameter{vcf2cytosure_freq_tag},
-    q{v2csnf|vf2cytosure_no_filter=s} => \$active_parameter{vf2cytosure_no_filter},
-    q{v2csvs|vcf2cytosure_var_size=n} => \$active_parameter{vcf2cytosure_var_size},
+    q{v2csfqt|vcf2cytosure_freq_tag=s} =>
+      \$active_parameter{vcf2cytosure_freq_tag},
+    q{v2csnf|vf2cytosure_no_filter=s} =>
+      \$active_parameter{vf2cytosure_no_filter},
+    q{v2csvs|vcf2cytosure_var_size=n} =>
+      \$active_parameter{vcf2cytosure_var_size},
     q{psvv|psv_varianteffectpredictor=n} =>
       \$active_parameter{psv_varianteffectpredictor},
     q{svvepf|sv_vep_features:s} => \@{ $active_parameter{sv_vep_features} },
@@ -533,6 +539,7 @@ GetOptions(
     q{pped|ppeddy=n}             => \$active_parameter{ppeddy},
     q{pplink|pplink=n}           => \$active_parameter{pplink},
     q{pvai|pvariant_integrity=n} => \$active_parameter{pvariant_integrity},
+    q{prte|prtg_vcfeval=n}       => \$active_parameter{prtg_vcfeval},
     q{pevl|pevaluation=n}        => \$active_parameter{pevaluation},
     q{evlnid|nist_id:s}          => \$active_parameter{nist_id},
     q{evlnhc|nist_high_confidence_call_set:s} =>
@@ -703,7 +710,7 @@ foreach my $parameter_name (@order_parameters) {
 
     ### Special case for parameters that are dependent on other parameters values
     my @custom_default_parameters =
-      qw{ analysis_type bwa_build_reference exome_target_bed infile_dirs sample_info_file };
+      qw{ analysis_type bwa_build_reference exome_target_bed infile_dirs sample_info_file rtg_vcfeval_reference_genome };
 
     if ( any { $_ eq $parameter_name } @custom_default_parameters ) {
 
@@ -723,7 +730,7 @@ foreach my $parameter_name (@order_parameters) {
             active_parameter_href => \%active_parameter,
             associated_programs_ref =>
               \@{ $parameter{$parameter_name}{associated_program} },
-            parameter_href        => \%parameter,
+            parameter_href => \%parameter,
             parameter_name => $parameter_name,
         }
     );
@@ -789,7 +796,7 @@ foreach my $parameter_name ( keys %parameter ) {
 
 ### Checks
 
-## Check existance of files and directories
+## Check existence of files and directories
 PARAMETER:
 foreach my $parameter_name ( keys %parameter ) {
 
@@ -833,7 +840,7 @@ check_human_genome_file_endings(
 TARGET_FILE:
 foreach my $target_bed_file ( keys %{ $active_parameter{exome_target_bed} } ) {
 
-    check_target_bed_file_exist(
+    check_target_bed_file_suffix(
         {
             parameter_name => q{exome_target_bed},
             path           => $target_bed_file,
@@ -841,7 +848,7 @@ foreach my $target_bed_file ( keys %{ $active_parameter{exome_target_bed} } ) {
     );
 }
 
-## Checks parameter metafile exists
+## Checks parameter metafile exists and set build_file parameter
 check_parameter_metafiles(
     {
         parameter_href        => \%parameter,
@@ -1121,23 +1128,18 @@ foreach my $parameter_info (@broadcasts) {
 }
 
 ## Update program mode depending on analysis run value as some programs are not applicable for e.g. wes
-my @warning_msgs = update_program_mode(
+update_program_mode(
     {
         active_parameter_href => \%active_parameter,
-        programs_ref => [qw{ cnvnator delly_call delly_reformat tiddit }],
         consensus_analysis_type =>
           $parameter{dynamic_parameter}{consensus_analysis_type},
+        log          => $log,
+        programs_ref => [
+            qw{ cnvnator delly_call delly_reformat tiddit samtools_subsample_mt }
+        ],
     }
 );
 
-## Broadcast
-if (@warning_msgs) {
-
-    foreach my $warning_msg (@warning_msgs) {
-
-        $log->warn($warning_msg);
-    }
-}
 ## Update prioritize flag depending on analysis run value as some programs are not applicable for e.g. wes
 $active_parameter{sv_svdb_merge_prioritize} = update_prioritize_flag(
     {
@@ -1368,6 +1370,24 @@ foreach my $program_name (
         }
     );
     last PROGRAM if ($is_finished);
+}
+
+## Check Rtg build prerequisites
+
+if ( $active_parameter{prtg_vcfeval} ) {
+
+    check_rtg_prerequisites(
+        {
+            parameter_href          => \%parameter,
+            active_parameter_href   => \%active_parameter,
+            sample_info_href        => \%sample_info,
+            file_info_href          => \%file_info,
+            infile_lane_prefix_href => \%infile_lane_prefix,
+            job_id_href             => \%job_id,
+            program_name            => q{rtg_vcfeval},
+            parameter_build_name    => q{rtg_vcfeval_reference_genome},
+        }
+    );
 }
 
 ## Check BWA build prerequisites
@@ -1753,11 +1773,11 @@ sub build_usage {
     -psvre/--psv_reformat Concatenating files (defaults to "0" (=no))
       -svrevbf/--sv_rankvariant_binary_file Produce binary file from the rank variant chromosome sorted vcfs (supply flag to enable)
       -svrergf/--sv_reformat_remove_genes_file Remove variants in hgnc_ids (defaults to "")
-    -pv2cs/--vcf2cytosure Convert a VCF with structural variants to the “.CGH” format used by the commercial Cytosure software
-      -v2csfq/--vcf2cytosure_freq Specify maximum frequency (defauls to "0.01")
-      -v2csfqt/--vcf2cytosure_freq_tag Specify frequency tag (defauls to "FRQ")
-      -v2csnf/--vf2cytosure_no_filter Don't use any filtering (defauls to "0" (=no))
-      -v2csvs/--vcf2cytosure_var_size Specify minimum variant size (defauls to "5000")
+    -pv2cs/--vcf2cytosure Convert a VCF with structural variants to the “.CGH” format used by the commercial Cytosure software (defaults to "0" (=no))
+      -v2csfq/--vcf2cytosure_freq Specify maximum frequency (defaults to "0.01")
+      -v2csfqt/--vcf2cytosure_freq_tag Specify frequency tag (defaults to "FRQ")
+      -v2csnf/--vf2cytosure_no_filter Don't use any filtering (defaults to "0" (=no))
+      -v2csvs/--vcf2cytosure_var_size Specify minimum variant size (defaults to "5000")
     ##Bcftools
     -pbmp/--pbcftools_mpileup Variant calling using bcftools mpileup (defaults to "0" (=no))
       -pbmpfv/--bcftools_mpileup_filter_variant (Supply flag to enable)
@@ -1864,6 +1884,7 @@ sub build_usage {
     -pped/--ppeddy QC for familial-relationships and sexes (defaults to "0" (=no) )
     -pplink/--pplink QC for samples gender and relationship (defaults to "0" (=no) )
     -pvai/--pvariant_integrity QC for samples relationship (defaults to "0" (=no) )
+    -prte/--prtg_vcfeval Compare concordance with benchmark data set (defaults to "0" (=no) )
     -pevl/--pevaluation Compare concordance with NIST data set (defaults to "0" (=no) )
       -evlnid/--nist_id NIST high-confidence sample_id (defaults to "NA12878")
       -evlnhc/--nist_high_confidence_call_set NIST high-confidence variant calls (defaults to "GRCh37_nist_hg001_-na12878_v2.19-.vcf")
@@ -2970,41 +2991,43 @@ sub create_file_endings {
   PARAMETER:
     foreach my $order_parameter_element (@$order_parameters_ref) {
 
-      ## Only active parameters
+        ## Only active parameters
         if ( defined $active_parameter_href->{$order_parameter_element} ) {
 
-	  ## Only process programs
+            ## Only process programs
             if (
-                    any { $_ eq $order_parameter_element }
-                    @{ $parameter_href->{dynamic_parameter}{program} }
+                any { $_ eq $order_parameter_element }
+                @{ $parameter_href->{dynamic_parameter}{program} }
               )
             {
 
-	      ## MAIN chain
+                ## MAIN chain
                 if ( $parameter_href->{$order_parameter_element}{chain} eq
-                    q{MAIN} ) {
+                    q{MAIN} )
+                {
 
-		  ##  File_tag exist
+                    ##  File_tag exist
                     if ( $parameter_href->{$order_parameter_element}{file_tag}
-                        ne q{nofile_tag} ) {
+                        ne q{nofile_tag} )
+                    {
 
-		      ## Alias
+                        ## Alias
                         my $file_ending_ref =
                           \$parameter_href->{$order_parameter_element}
                           {file_tag};
 
-			###MAIN/Per sample_id
-			SAMPLE_ID:
+                        ###MAIN/Per sample_id
+                      SAMPLE_ID:
                         foreach my $sample_id (
                             @{ $active_parameter_href->{sample_ids} } )
                         {
 
-			  ## File_ending should be added
+                            ## File_ending should be added
                             if ( $active_parameter_href
                                 ->{$order_parameter_element} > 0 )
                             {
 
-			      ## Special case
+                                ## Special case
                                 if ( $order_parameter_element eq
                                     q{ppicardtools_mergesamfiles} )
                                 {
@@ -3015,10 +3038,7 @@ sub create_file_endings {
                                 }
                                 else {
 
-                                    if (
-                                        defined
-                                            $temp_file_ending{$sample_id}
-                                      )
+                                    if ( defined $temp_file_ending{$sample_id} )
                                     {
 
                                         $file_info_href->{$sample_id}
@@ -3026,9 +3046,8 @@ sub create_file_endings {
                                           = $temp_file_ending{$sample_id}
                                           . $$file_ending_ref;
                                     }
-                                    else
-                                    {
-				      ## First module that should add filending
+                                    else {
+                                        ## First module that should add filending
 
                                         $file_info_href->{$sample_id}
                                           {$order_parameter_element}{file_tag}
@@ -3037,26 +3056,26 @@ sub create_file_endings {
                                 }
                             }
                             else {
-			      ## Do not add new module file_tag
+                                ## Do not add new module file_tag
 
                                 $file_info_href->{$sample_id}
                                   {$order_parameter_element}{file_tag} =
                                   $temp_file_ending{$sample_id};
                             }
 
-			    ## To enable sequential build-up of fileending
+                            ## To enable sequential build-up of fileending
                             $temp_file_ending{$sample_id} =
                               $file_info_href->{$sample_id}
                               {$order_parameter_element}{file_tag};
                         }
 
-			###MAIN/Per family_id
-			## File_ending should be added
+                        ###MAIN/Per family_id
+                        ## File_ending should be added
                         if ( $active_parameter_href->{$order_parameter_element}
                             > 0 )
                         {
 
-			  ## Special case - do nothing
+                            ## Special case - do nothing
                             if ( $order_parameter_element eq
                                 q{ppicardtools_mergesamfiles} )
                             {
@@ -3064,9 +3083,7 @@ sub create_file_endings {
                             else {
 
                                 if (
-                                    defined
-                                        $temp_file_ending{$$family_id_ref}
-                                  )
+                                    defined $temp_file_ending{$$family_id_ref} )
                                 {
 
                                     $file_info_href->{$$family_id_ref}
@@ -3075,21 +3092,21 @@ sub create_file_endings {
                                       . $$file_ending_ref;
                                 }
                                 else {
-				  ## First module that should add filending
+                                    ## First module that should add filending
 
                                     $file_info_href->{$$family_id_ref}
                                       {$order_parameter_element}{file_tag} =
                                       $$file_ending_ref;
                                 }
 
-				## To enable sequential build-up of fileending
+                                ## To enable sequential build-up of fileending
                                 $temp_file_ending{$$family_id_ref} =
                                   $file_info_href->{$$family_id_ref}
                                   {$order_parameter_element}{file_tag};
                             }
                         }
                         else {
-			  ## Do not add new module file_tag
+                            ## Do not add new module file_tag
 
                             $file_info_href->{$$family_id_ref}
                               {$order_parameter_element}{file_tag} =
@@ -3098,52 +3115,49 @@ sub create_file_endings {
                     }
                 }
 
-		## Other chain(s)
+                ## Other chain(s)
                 if ( $parameter_href->{$order_parameter_element}{chain} ne
                     q{MAIN} )
                 {
 
-		  ## Alias
+                    ## Alias
                     my $chain_fork =
                       $parameter_href->{$order_parameter_element}{chain};
 
-		    ## File_tag exist
+                    ## File_tag exist
                     if ( $parameter_href->{$order_parameter_element}{file_tag}
                         ne q{nofile_tag} )
                     {
 
-		      ## Alias
+                        ## Alias
                         my $file_ending_ref =
                           \$parameter_href->{$order_parameter_element}
                           {file_tag};
 
-			###OTHER/Per sample_id
-			SAMPLE_ID:
+                        ###OTHER/Per sample_id
+                      SAMPLE_ID:
                         foreach my $sample_id (
                             @{ $active_parameter_href->{sample_ids} } )
                         {
 
-			  ## File_ending should be added
+                            ## File_ending should be added
                             if ( $active_parameter_href
                                 ->{$order_parameter_element} > 0 )
                             {
 
-                                if ( not
-                                    defined
-                                        $temp_file_ending{$chain_fork}
-                                          {$sample_id}
-                                  )
+                                if (
+                                    not
+                                    defined $temp_file_ending{$chain_fork}
+                                    {$sample_id} )
                                 {
 
-				  ## Inherit current MAIN chain.
+                                    ## Inherit current MAIN chain.
                                     $temp_file_ending{$chain_fork}{$sample_id}
                                       = $temp_file_ending{$sample_id};
                                 }
                                 if (
-                                    defined
-                                        $temp_file_ending{$chain_fork}
-                                          {$sample_id}
-                                  )
+                                    defined $temp_file_ending{$chain_fork}
+                                    {$sample_id} )
                                 {
 
                                     $file_info_href->{$sample_id}
@@ -3152,7 +3166,7 @@ sub create_file_endings {
                                       . $$file_ending_ref;
                                 }
                                 else {
-				  ## First module that should add filending
+                                    ## First module that should add filending
 
                                     $file_info_href->{$sample_id}
                                       {$order_parameter_element}{file_tag} =
@@ -3160,42 +3174,37 @@ sub create_file_endings {
                                 }
                             }
                             else {
-			      ## Do not add new module file_tag
+                                ## Do not add new module file_tag
 
                                 $file_info_href->{$sample_id}
                                   {$order_parameter_element}{file_tag} =
                                   $temp_file_ending{$chain_fork}{$sample_id};
                             }
 
-			    ## To enable sequential build-up of fileending
+                            ## To enable sequential build-up of fileending
                             $temp_file_ending{$chain_fork}{$sample_id} =
                               $file_info_href->{$sample_id}
-                              {$order_parameter_element}{file_tag}
-                              ;
+                              {$order_parameter_element}{file_tag};
                         }
-			###Other/Per family_id
+                        ###Other/Per family_id
 
-			## File ending should be added
+                        ## File ending should be added
                         if ( $active_parameter_href->{$order_parameter_element}
                             > 0 )
                         {
 
-                            if (not
-                                defined
-                                    $temp_file_ending{$chain_fork}
-                                      {$$family_id_ref}
-                              )
+                            if (
+                                not defined $temp_file_ending{$chain_fork}
+                                {$$family_id_ref} )
                             {
 
-			      ## Inherit current MAIN chain.
+                                ## Inherit current MAIN chain.
                                 $temp_file_ending{$chain_fork}{$$family_id_ref}
                                   = $temp_file_ending{$$family_id_ref};
                             }
                             if (
-                                defined
-                                    $temp_file_ending{$chain_fork}
-                                      {$$family_id_ref}
-                              )
+                                defined $temp_file_ending{$chain_fork}
+                                {$$family_id_ref} )
                             {
 
                                 $file_info_href->{$$family_id_ref}
@@ -3204,20 +3213,20 @@ sub create_file_endings {
                                   {$$family_id_ref} . $$file_ending_ref;
                             }
                             else {
-			      ## First module that should add filending
+                                ## First module that should add filending
 
                                 $file_info_href->{$$family_id_ref}
                                   {$order_parameter_element}{file_tag} =
                                   $$file_ending_ref;
                             }
 
-			    ## To enable sequential build-up of fileending
+                            ## To enable sequential build-up of fileending
                             $temp_file_ending{$chain_fork}{$$family_id_ref} =
                               $file_info_href->{$$family_id_ref}
                               {$order_parameter_element}{file_tag};
                         }
                         else {
-			  ## Do not add new module file_tag
+                            ## Do not add new module file_tag
 
                             $file_info_href->{$$family_id_ref}
                               {$order_parameter_element}{file_tag} =
@@ -3310,7 +3319,7 @@ sub write_cmd_mip_log {
     my @nowrite = (
         "mip",                  "bwa_build_reference",
         "pbamcalibrationblock", "pvariantannotationblock",
-        q{associated_program},
+        q{associated_program},  q{rtg_build_reference},
     );
 
   PARAMETER_KEY:

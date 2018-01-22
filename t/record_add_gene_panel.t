@@ -1,22 +1,23 @@
 #!/usr/bin/env perl
 
+use 5.018;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use File::Basename qw{ basename dirname  };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use Getopt::Long;
+use Log::Log4perl;
 use open qw{ :encoding(UTF-8) :std };
-use Params::Check qw{ check allow last_error };
+use Params::Check qw{ allow check last_error };
 use Test::More;
 use utf8;
 use warnings qw{ FATAL utf8 };
-use 5.018;
 
 ## CPANM
+use autodie qw{ :all };
 use Modern::Perl qw{ 2014 };
-use autodie;
 use Readonly;
 
 ## MIPs lib/
@@ -26,7 +27,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.1;
+our $VERSION = 1.0.0;
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -78,7 +79,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Program::Variantcalling::Bcftools});
+    my @modules = (q{MIP::QC::Record});
 
   MODULE:
     for my $module (@modules) {
@@ -86,11 +87,11 @@ BEGIN {
     }
 }
 
-use MIP::Program::Variantcalling::Bcftools qw{ bcftools_stats };
+use MIP::QC::Record qw{ add_gene_panel };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test bcftools_stats from Bcftools.pm v}
-      . $MIP::Program::Variantcalling::Bcftools::VERSION
+diag(   q{Test add_gene_panel from Record.pm v}
+      . $MIP::QC::Record::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -98,56 +99,49 @@ diag(   q{Test bcftools_stats from Bcftools.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Base arguments
-my $function_base_command = q{bcftools};
+my $aggregate_gene_panel_file =
+  catfile( $Bin, qw{ data 643594-miptest aggregated_gene_panel_test.txt } );
+my $aggregate_gene_panels_key = q{select_file};
+my $gene_panel                = q{TEST};
+my $family_id_test            = q{family_id};
+my $program_name_test         = q{vcfparser};
+my %sample_info;
 
-my %base_argument = (
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
-    },
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
-    },
-    stderrfile_path_append => {
-        input           => q{stderrfile.test},
-        expected_output => q{2>> stderrfile.test},
-    },
-    stdoutfile_path => {
-        input           => q{stdoutfile_path},
-        expected_output => q{1> stdoutfile_path},
-    },
+my %header_info = (
+    display_name => q{gene_panel_test},
+    gene_panel   => $gene_panel,
+    updated_at   => q{2016-12-08},
+    version      => q{1.0},
 );
 
-## Can be duplicated with %base_argument and/or %specific_argument
-## to enable testing of each individual argument
-my %required_argument = ();
-
-my %specific_argument = (
-    infile_path => {
-        input           => q{infile.test},
-        expected_output => q{infile.test},
-    },
+add_gene_panel(
+    {
+        aggregate_gene_panel_file => $aggregate_gene_panel_file,
+        aggregate_gene_panels_key => $aggregate_gene_panels_key,
+        family_id                 => $family_id_test,
+        program_name              => $program_name_test,
+        sample_info_href          => \%sample_info,
+    }
 );
 
-## Coderef - enables generalized use of generate call
-my $module_function_cref = \&bcftools_stats;
+is(
+    exists $sample_info{$program_name_test}{$aggregate_gene_panels_key}
+      {gene_panel}{$gene_panel},
+    1,
+    q{Gene panel key added to $sample_info}
+);
 
-## Test both base and function specific arguments
-my @arguments = ( \%base_argument, \%specific_argument );
+while ( my ( $key, $value ) = each %header_info ) {
 
-ARGUMENT_HASH_REF:
-foreach my $argument_href (@arguments) {
-    my @commands = test_function(
-        {
-            argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
-        }
-    );
+## Test gene panel info
+    my $set_header_value =
+      $sample_info{$program_name_test}{$aggregate_gene_panels_key}{gene_panel}
+      {$gene_panel}{$key};
+
+    is( $set_header_value, $value,
+            q{Gene panel header info value for key: }
+          . $key
+          . q{ added to $sample_info} );
 }
 
 done_testing();
@@ -158,12 +152,9 @@ done_testing();
 
 sub build_usage {
 
-## build_usage
-
 ## Function  : Build the USAGE instructions
-## Returns   : ""
-## Arguments : $program_name
-##           : $program_name => Name of the script
+## Returns   :
+## Arguments : $program_name => Name of the script
 
     my ($arg_href) = @_;
 
@@ -173,8 +164,8 @@ sub build_usage {
     my $tmpl = {
         program_name => {
             default     => basename($PROGRAM_NAME),
-            strict_type => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
     };
 

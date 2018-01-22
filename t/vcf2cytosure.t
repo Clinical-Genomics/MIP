@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.0;
+our $VERSION = 1.0.1;
 
 ## Constants
 Readonly my $COMMA         => q{,};
@@ -157,6 +157,10 @@ my %specific_argument = (
     variant_size => {
         input           => $VARIANT_SIZE,
         expected_output => q{--size} . $SPACE . $VARIANT_SIZE,
+    },
+    version => {
+        input           => 1,
+        expected_output => q{--version},
     },
 );
 

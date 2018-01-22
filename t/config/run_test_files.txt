@@ -23,6 +23,7 @@ check_pedigree_vs_user_input_sample_ids.t
 check_pedigree_mandatory_key.t
 check_pedigree_sample_allowed_values.t
 check_perl_modules.t
+check_target_bed_file_suffix.t
 check_if_processed_by_vt.t
 chanjo_sex.t
 cnvnator_calling.t
@@ -166,6 +167,7 @@ processes_limit_job_id_string.t
 programs_update_program_mode_with_dry_run_all.t
 qccollect.t
 qc_covplots_genome.t
+record_add_gene_panel.t
 record_add_most_complete_vcf.t
 record_add_processing_metafile_to_sample_info.t
 record_add_program_metafile_to_sample_info.t
@@ -199,8 +201,10 @@ set_pedigree_phenotype_info.t
 set_pedigree_sample_info.t
 set_pedigree_sex_info.t
 shell_build_shebang.t
+shell_check_exist_and_move_file.t
 shell_create_housekeeping_function.t
 shell_create_error_trap_function.t
+shell_quote_bash_variable.t
 skewer.t
 slurm_sacct.t
 slurm_sbatch.t
@@ -210,6 +214,7 @@ snpeff_ann.t
 snpeff_download.t
 snpsift_annotate.t
 snpsift_dbnsfp.t
+star_genome_generate.t
 svdb_merge.t
 svdb_query.t
 tar.t
@@ -222,6 +227,7 @@ update_dynamic_config_parameters.t
 update_to_absolute_path.t
 update_prioritize_flag.t
 update_program_mode.t
+update_vcfparser_outfile_counter.t
 variant_effect_predictor.t
 vardict.t
 vardict_testsomatic.t

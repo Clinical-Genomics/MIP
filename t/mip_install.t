@@ -62,6 +62,7 @@ BEGIN {
     my %perl_module;
 
     $perl_module{charnames}                = [qw{ :full :short }];
+    $perl_module{English}                  = [qw{ -no_match_vars }];
     $perl_module{q{File::Basename}}        = [qw{ dirname basename }];
     $perl_module{q{File::Spec::Functions}} = [qw{ catfile catdir devnull }];
     $perl_module{FindBin}                  = [qw{ $Bin }];
@@ -78,7 +79,7 @@ BEGIN {
     }
 
     ## Modules
-    @modules = qw{ Cwd Getopt::Long utf8 strict warnings };
+    @modules = qw{ Carp Cwd Getopt::Long utf8 strict warnings };
 
   MODULE:
     for my $module (@modules) {
@@ -104,7 +105,7 @@ our $USAGE = build_usage( {} );
 
 my $conda_dir_path;
 my $verbose = 1;
-our $VERSION = q{1.0.0};
+our $VERSION = q{1.0.1};
 
 ###User Options
 GetOptions(
@@ -159,12 +160,23 @@ ok( $success, q{Executed mip_install.pl} );
 is( -e catfile( getcwd(), q{mip.sh} ),
     1, q{Locating created mip.sh in MIP dir} );
 
-##Clean-up
-$cmds_ref = [ q{rm}, catfile( getcwd(), q{mip.sh} ) ];
-( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) = run(
-    command => $cmds_ref,
-    verbose => $verbose
-);
+## Clean-up mip_install.pl output
+my @outfiles = qw{ mip.sh mip_install_*.log };
+
+foreach my $outfile (@outfiles) {
+
+    my $cmd = q{rm } . catfile( getcwd(), $outfile );
+    if (
+        scalar run(
+            command => $cmd,
+            timeout => 20,
+            verbose => $verbose,
+        )
+      )
+    {
+        say {*STDOUT} q{Removed outfile successfully: } . $outfile;
+    }
+}
 
 done_testing();
 

@@ -30,7 +30,7 @@ use Readonly;
 ##MIPs lib/
 use lib catdir( $Bin, q{lib} );
 use MIP::Check::Modules qw{ check_perl_modules };
-use MIP::File::Format::Yaml qw{ load_yaml write_yaml };
+vuse MIP::File::Format::Yaml qw{ load_yaml write_yaml };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
 
@@ -62,7 +62,7 @@ Readonly my $SPACE   => q{ };
 
 my ( $sample_info_file, $regexp_file, $print_regexp, $skip_evaluation );
 
-##Scalar parameters with defaults
+## Scalar parameters with defaults
 my ( $outfile, $print_regexp_outfile, $log_file ) =
   ( q{qcmetrics.yaml}, q{qc_regexp.yaml}, catfile( cwd(), q{qccollect.log} ) );
 
@@ -74,14 +74,14 @@ my %qc_header;
 ## Save data in each outfile
 my %qc_program_data;
 
-my $qccollect_version = q{2.0.4};
+my $qccollect_version = q{2.0.5};
 
 ###User Options
 GetOptions(
     q{si|sample_info_file:s}        => \$sample_info_file,
     q{r|regexp_file:s}              => \$regexp_file,
     q{o|outfile:s}                  => \$outfile,
-    q{preg|print_regexp:n}          => \$print_regexp,
+    q{preg|print_regexp}            => \$print_regexp,
     q{prego|print_regexp_outfile:s} => \$print_regexp_outfile,
     q{ske|skip_evaluation}          => \$skip_evaluation,
     q{l|log_file:s}                 => \$log_file,
@@ -1618,10 +1618,10 @@ sub regexp_to_yaml {
 
     my $tmpl = {
         print_regexp_outfile => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$print_regexp_outfile,
             strict_type => 1,
-            store       => \$print_regexp_outfile
         },
     };
 
@@ -1693,30 +1693,6 @@ q?perl -nae' if ($_=~/>>Overrepresented sequences\s+(\S+)/) {print $1;last;}' ?
       q?perl -nae' if ($_=~/>>Kmer Content\s+(\S+)/) {print $1;last;}' ?
       ;    #Collect Kmer Content
 
-    $regexp{mosaik_aligner}{version} =
-      q?perl -nae' if ($_=~/(\d+\.\d+\.\d+)\s/) {print $1;last;}' ?
-      ;    #Collect Mosaik Version
-
-    $regexp{mosaik_aligner}{unaligned_mates} =
-q?perl -nae' if ($_=~/# unaligned mates\S+\s+(\d+)\s\(\s+(\d+\.\d+)/) {print $2;last;}' ?
-      ;    #Collect Nr of unaligned mates
-
-    $regexp{mosaik_aligner}{filtered_out} =
-q?perl -nae' if ($_=~/# filtered out\S+\s+(\d+)\s\(\s+(\d+\.\d+)/) {print $2;last;}' ?
-      ;    #Collect Nr of filtered out reads
-
-    $regexp{mosaik_aligner}{uniquely_aligned_mates} =
-q?perl -nae' if ($_=~/# uniquely aligned mates\S+\s+(\d+)\s\(\s+(\d+\.\d+)/) {print $2;last;}' ?
-      ;    #Collect Uniquely aligned mates
-
-    $regexp{mosaik_aligner}{multiply_aligned_mates} =
-q?perl -nae' if ($_=~/# multiply aligned mates\S+\s+(\d+)\s\(\s+(\d+\.\d+)/) {print $2;last;}' ?
-      ;    #Collect Multiply aligned mates
-
-    $regexp{mosaik_aligner}{total_aligned} =
-q?perl -nae' if ($_=~/total aligned:\s+\S+\s+(\S+)\s\(\S+\s(\d+.\d+)/ ) {print $2;last;} elsif ($_=~/total aligned:\s+(\S+)\s\(\S+\s(\d+.\d+)/ ) { print $2;last;}' ?
-      ;    #Collect total aligned sequences
-
     $regexp{bamstats}{percentage_mapped_reads} =
       q?perl -nae 'if($_=~/percentage mapped reads:\s+(\S+)/) {print $1;last}' ?
       ;    #Collect % mapped reads from BAM alignment
@@ -1783,7 +1759,7 @@ q?perl -nae 'my @sexCheckFactor; if ($. > 1) {my @temp = split(/\s+/,$_);push(@s
       ; #Note return whole line and only look at line 8, where the data action is
 
     $regexp{variantevalall}{comp_overlap_header}{comp_overlap_header} =
-      q?perl -nae' if ($_ =~/^CompOverlap\s+\CompRod/ ) {print $_;last;}' ?
+      q?perl -nae' if ($_ =~/^CompOverlap\s+CompRod/ ) {print $_;last;}' ?
       ;    #Note return whole line (header)
 
     $regexp{variantevalall}{comp_overlap_header}{comp_overlap_data_all} =
@@ -1799,7 +1775,7 @@ q?perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/novel\s/) ) {print $_;last;}' 
       ;    #Note return whole line
 
     $regexp{variantevalall}{count_variants_header}{count_variants_header} =
-      q?perl -nae' if ($_ =~/^CountVariants\s+\CompRod/ ) {print $_;last;}' ?
+      q?perl -nae' if ($_ =~/^CountVariants\s+CompRod/ ) {print $_;last;}' ?
       ;    #Note return whole line (header)
     $regexp{variantevalall}{count_variants_header}{count_variants_data_all} =
 q?perl -nae' if ( ($_ =~/^CountVariants/) && ($_ =~/all\s/) ) {print $_;last;}' ?
@@ -1812,7 +1788,7 @@ q?perl -nae' if ( ($_ =~/^CountVariants/) && ($_ =~/novel\s/) ) {print $_;last;}
       ;    #Note return whole line
 
     $regexp{variantevalall}{indel_summary_header}{indel_summary_header} =
-      q?perl -nae' if ($_ =~/^IndelSummary\s+\CompRod/ ) {print $_;last;}' ?
+      q?perl -nae' if ($_ =~/^IndelSummary\s+CompRod/ ) {print $_;last;}' ?
       ;    #Note return whole line (header)
     $regexp{variantevalall}{indel_summary_header}{indel_summary_data_all} =
 q?perl -nae' if ( ($_ =~/^IndelSummary/) && ($_ =~/all\s/) ) {print $_;last;}' ?
@@ -1826,7 +1802,7 @@ q?perl -nae' if ( ($_ =~/^IndelSummary/) && ($_ =~/novel\s/) ) {print $_;last;}'
 
     $regexp{variantevalall}{multiallelic_summary_header}
       {multiallelic_summary_header} =
-q?perl -nae' if ($_ =~/^MultiallelicSummary\s+\CompRod/ ) {print $_;last;}' ?
+q?perl -nae' if ($_ =~/^MultiallelicSummary\s+CompRod/ ) {print $_;last;}' ?
       ;    #Note return whole line (header)
     $regexp{variantevalall}{multiallelic_summary_header}
       {multiallelic_summary_data_all} =
@@ -1843,7 +1819,7 @@ q?perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/novel\s/) ) {print $_;
 
     $regexp{variantevalall}{titv_variant_evaluator_header}
       {titv_variant_evaluator_header} =
-q?perl -nae' if ($_ =~/^TiTvVariantEvaluator\s+\CompRod/ ) {print $_;last;}' ?
+q?perl -nae' if ($_ =~/^TiTvVariantEvaluator\s+CompRod/ ) {print $_;last;}' ?
       ;    #Note return whole line (header)
     $regexp{variantevalall}{titv_variant_evaluator_header}
       {titv_variant_evaluator_data_all} =
@@ -1859,7 +1835,7 @@ q?perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/novel\s/) ) {print $_
       ;    #Note return whole line
 
     $regexp{variantevalall}{validation_report_header}{validation_report_header}
-      = q?perl -nae' if ($_ =~/^ValidationReport\s+\CompRod/ ) {print $_;last;}' ?
+      = q?perl -nae' if ($_ =~/^ValidationReport\s+CompRod/ ) {print $_;last;}' ?
       ;    #Note return whole line (header)
     $regexp{variantevalall}{validation_report_header}
       {validation_report_data_all} =
@@ -1875,7 +1851,7 @@ q?perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/novel\s/) ) {print $_;las
       ;    #Note return whole line
 
     $regexp{variantevalall}{variant_summary_header}{variant_summary_header} =
-      q?perl -nae' if ($_ =~/^VariantSummary\s+\CompRod/ ) {print $_;last;}' ?
+      q?perl -nae' if ($_ =~/^VariantSummary\s+CompRod/ ) {print $_;last;}' ?
       ;    #Note return whole line (header)
     $regexp{variantevalall}{variant_summary_header}{variant_summary_data_all} =
 q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/all\s/) ) {print $_;last;}' ?
@@ -2039,11 +2015,14 @@ q?perl -nae 'if($_=~/^##source=TIDDIT-(\S+)/) { print $1; last; } else { if($_=~
     $regexp{svdb}{version} =
 q?perl -nae 'if($_=~/^##SVDB_version=(\S+)/) { print $1; last; } else { if($_=~/#CHROM/) { last;} }' ?;
 
+    $regexp{vcf2cytosure_version}{version} =
+q?perl -nae 'if($_=~/cytosure\s+(\d+[.]\d+[.]\d+)/xsm) { print $1;last; }' ?;
+
     ## Writes a YAML hash to file
     write_yaml(
         {
-            yaml_href          => \%regexp,
-            yaml_file_path_ref => \$print_regexp_outfile,
+            yaml_href      => \%regexp,
+            yaml_file_path => $print_regexp_outfile,
         }
     );
     return;
