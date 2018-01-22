@@ -141,7 +141,7 @@ sub update_reference_parameters {
 
 sub update_vcfparser_outfile_counter {
 
-## Function : Determine the number of outfiles after vcfparser
+## Function : Determine the number of outfile after vcfparser
 ## Returns  :
 ## Arguments: $active_parameter_href   => Holds all set parameter for analysis
 
@@ -164,18 +164,21 @@ sub update_vcfparser_outfile_counter {
 
     ## Create link
     my %vcfparser_select_file = (
-        pvcfparser => { vcfparser_select_file => q{vcfparser_outfile_count} },
         psv_vcfparser =>
           { sv_vcfparser_select_file => q{sv_vcfparser_outfile_count} },
+        pvcfparser => { vcfparser_select_file => q{vcfparser_outfile_count} },
     );
-
 ## Determine if to expect select outfile for vcfparser and sv_vcfparser
   PROGRAM:
     foreach my $program ( keys %vcfparser_select_file ) {
+
+        next PROGRAM if ( not $active_parameter_href->{$program} );
+
       FILES:
         while ( my ( $parameter_name, $parameter_name_counter ) =
             each %{ $vcfparser_select_file{$program} } )
         {
+
             $active_parameter_href->{$parameter_name_counter} =
               _set_vcfparser_file_counter(
                 {
@@ -184,7 +187,7 @@ sub update_vcfparser_outfile_counter {
               );
         }
     }
-    return $active_parameter_href;
+    return;
 }
 
 sub _set_vcfparser_file_counter {
@@ -211,6 +214,7 @@ sub _set_vcfparser_file_counter {
         return 1;
     }
     else {
+
         ## To track if vcfparser was used with a vcfparser_select_file (=2) or not (=1)
         return 2;
     }
