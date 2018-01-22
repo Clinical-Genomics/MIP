@@ -204,6 +204,7 @@ snpeff_ann.t
 snpeff_download.t
 snpsift_annotate.t
 snpsift_dbnsfp.t
+star_genome_generate.t
 svdb_merge.t
 svdb_query.t
 tar.t

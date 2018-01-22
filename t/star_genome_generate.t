@@ -120,20 +120,41 @@ my %base_argument = (
 
 my %required_argument = (
     fasta_path => {
-        input           => q{test_file.fasta},
-        expected_output => q{test_file.fasta},
+        input           => catfile(qw{ dir test_file.fasta}),
+        expected_output => q{--genomeFastaFiles} . $SPACE . catfile(qw{ dir test_file.fasta}),
     },
     genome_dir_path => {
-        input           => q{genome_dir_path},
-        expected_output => q{genome_dir_path},
+        input           => catfile(qw{ dir genome_dir_path}),
+        expected_output => q{--genomeDir} . $SPACE . catfile(qw{ dir genome_dir_path}),
     },
     gtf_path => {
-        input           => q{test_gtf.gtf},
-        expected_output => q{test_gtf.gtf},
+        input           => catfile(qw{ dir test_gtf.gtf}),
+        expected_output => q{--sjdbGTFfile} . $SPACE . catfile(qw{ dir test_gtf.gtf}),
     },
 );
 
-my %specific_argument = ();
+my %specific_argument = (
+    fasta_path => {
+        input           => catfile(qw{ dir test_file.fasta}),
+        expected_output => q{--genomeFastaFiles} . $SPACE . catfile(qw{ dir test_file.fasta}),
+    },
+    genome_dir_path => {
+        input           => catfile(qw{ dir genome_dir_path}),
+        expected_output => q{--genomeDir} . $SPACE . catfile(qw{ dir genome_dir_path}),
+    },
+    gtf_path => {
+        input           => catfile(qw{ dir test_gtf.gtf}),
+        expected_output => q{--sjdbGTFfile} . $SPACE . catfile(qw{ dir test_gtf.gtf}),
+    },
+    read_length => {
+        input           => 150,
+        expected_output => q{--sjdbOverhang} . $SPACE . 150,
+    },
+    thread_number => {
+        input           => 16,
+        expected_output => q{--runThreadN} . $SPACE . 16,
+    },
+);
 
 my $module_function_cref = \&star_genome_generate;
 
