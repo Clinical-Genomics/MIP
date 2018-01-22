@@ -356,18 +356,12 @@ sub star_genome_generate{
     my @commands = q{STAR --runMode genomeGenerate};
 
     #options
-    if ($fasta_path) {
-        push @commands, q{--genomeFastaFiles} . $SPACE . $fasta_path;
+    push @commands, q{--genomeFastaFiles} . $SPACE . $fasta_path;
 
-    }
-    if ($genome_dir_path) {
-        push @commands, q{--genomeDir} . $SPACE . $genome_dir_path;
+    push @commands, q{--genomeDir} . $SPACE . $genome_dir_path;
 
-    }
-    if ($gtf_path) {
-        push @commands, q{--sjdbGTFfile} . $SPACE . $gtf_path;
+    push @commands, q{--sjdbGTFfile} . $SPACE . $gtf_path;
 
-    }
     if ($read_length) {
         push @commands, q{--sjdbOverhang} . $SPACE . $read_length;
 
