@@ -1,38 +1,39 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{ 2014 };
-use warnings qw{ FATAL utf8 };
-use autodie;
 use 5.018;
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
+use autodie;
 use Carp;
+use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-
-use FindBin qw{ $Bin };
 use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
+use File::Temp;
+use FindBin qw{ $Bin };
 use Getopt::Long;
+use Modern::Perl qw{ 2014 };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
 
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = q{1.0.1};
 
 ## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
 Readonly my $COMMA   => q{,};
+Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => q{ };
 
 ### User Options
 GetOptions(
@@ -70,9 +71,10 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module;
-
-    $perl_module{q{MIP::Script::Utils}} = [qw{ help }];
+    my %perl_module = (
+        q{MIP::Log::MIP_log4perl} => [qw{ initiate_logger }],
+        q{MIP::Script::Utils}     => [qw{ help }],
+    );
 
   PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
@@ -100,20 +102,36 @@ diag(   q{Test update_program_mode from Programs.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my @programs         = qw{ cnvnator delly_call delly_reformat tiddit };
+## Create temp logger
+my $test_dir = File::Temp->newdir();
+my $test_log_path = catfile( $test_dir, q{test.log} );
+
+## Create log object
+my $log = initiate_logger(
+    {
+        file_path      => $test_log_path,
+        log_name       => q{TEST},
+        categories_ref => [qw{ TRACE LogFile }],
+    }
+);
+
+my @programs =
+  qw{ cnvnator delly_call delly_reformat samtools_subsample_mt tiddit };
 my %active_parameter = (
-    pmanta          => 1,
-    pdelly_call     => 1,
-    pdelly_reformat => 1,
-    pcnvnator       => 1,
-    ptiddit         => 1,
+    pcnvnator              => 1,
+    pdelly_call            => 1,
+    pdelly_reformat        => 1,
+    pmanta                 => 1,
+    psamtools_subsample_mt => 1,
+    ptiddit                => 1,
 );
 
 my @warning_msgs = update_program_mode(
     {
         active_parameter_href   => \%active_parameter,
-        programs_ref            => \@programs,
         consensus_analysis_type => q{wgs},
+        log                     => $log,
+        programs_ref            => \@programs,
     }
 );
 
@@ -122,23 +140,27 @@ is( @warning_msgs, 0, q{No updates to programs mode} );
 @warning_msgs = update_program_mode(
     {
         active_parameter_href   => \%active_parameter,
-        programs_ref            => \@programs,
         consensus_analysis_type => q{wes},
+        log                     => $log,
+        programs_ref            => \@programs,
     }
 );
 ## Alias
-my $manta_mode          = $active_parameter{pmanta};
-my $delly_call_mode     = $active_parameter{pdelly_call};
-my $delly_reformat_mode = $active_parameter{pdelly_reformat};
-my $tiddit_mode         = $active_parameter{ptiddit};
-my $cnvnator_mode       = $active_parameter{pcnvnator};
+my $cnvnator_mode              = $active_parameter{pcnvnator};
+my $delly_call_mode            = $active_parameter{pdelly_call};
+my $delly_reformat_mode        = $active_parameter{pdelly_reformat};
+my $manta_mode                 = $active_parameter{pmanta};
+my $samtools_subsample_mt_mode = $active_parameter{psamtools_subsample_mt};
+my $tiddit_mode                = $active_parameter{ptiddit};
 
 ## Test program mode updates and warnings
-is( $manta_mode,          1, q{Updated programs mode for manta} );
+is( $cnvnator_mode,       0, q{Updated programs mode for cnvnator} );
 is( $delly_call_mode,     0, q{Updated programs mode for delly_call} );
 is( $delly_reformat_mode, 0, q{Updated programs mode for delly_reformat} );
-is( $tiddit_mode,         0, q{Updated programs mode for tiddit} );
-is( $cnvnator_mode,       0, q{Updated programs mode for cnvnator} );
+is( $manta_mode,          1, q{Updated programs mode for manta} );
+is( $samtools_subsample_mt_mode, 0,
+    q{Updated programs mode for samtools_subsample_mt} );
+is( $tiddit_mode, 0, q{Updated programs mode for tiddit} );
 isnt( @warning_msgs, 0, q{Generated warning message} );
 
 done_testing();

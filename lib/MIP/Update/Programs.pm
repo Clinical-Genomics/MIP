@@ -165,6 +165,8 @@ sub update_program_mode {
             foreach my $warning_msg (@warning_msgs) {
                 $log->warn($warning_msg);
             }
+
+            return @warning_msgs;
         }
     }
     return;
