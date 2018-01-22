@@ -150,7 +150,6 @@ sub pipeline_mip_c {
     use MIP::Recipes::Analysis::Chanjo_sex_check
       qw{ analysis_chanjo_sex_check };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
-    use MIP::Recipes::Analysis::Freebayes qw { analysis_freebayes_calling };
     use MIP::Recipes::Analysis::Gatk_baserecalibration
       qw{ analysis_gatk_baserecalibration };
     use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates };
@@ -457,57 +456,6 @@ sub pipeline_mip_c {
                 }
             );
         }
-    }
-
-    if ( $active_parameter_href->{pfreebayes} ) {
-
-        $log->info(q{[Freebayes]});
-
-        my $program_outdirectory_name =
-          $parameter_href->{pfreebayes}{outdir_name};
-
-        my $outfamily_directory = catfile(
-            $active_parameter_href->{outdata_dir},
-            $active_parameter_href->{family_id},
-            $active_parameter_href->{outaligner_dir},
-            $program_outdirectory_name
-        );
-
-        analysis_freebayes_calling(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                program_name            => q{freebayes},
-                outfamily_directory     => $outfamily_directory,
-            }
-        );
-    }
-
-    if ( $active_parameter_href->{pgatk_combinevariantcallsets} ) {
-
-        $log->info(q{[GATK combinevariantcallsets]});
-
-        my $outfamily_directory = catfile(
-            $active_parameter_href->{outdata_dir},
-            $active_parameter_href->{family_id},
-            $active_parameter_href->{outaligner_dir}
-        );
-        analysis_gatk_combinevariantcallsets(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                outfamily_directory     => $outfamily_directory,
-                program_name            => q{gatk_combinevariantcallsets},
-            }
-        );
     }
 
 ## QC collect
