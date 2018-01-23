@@ -479,6 +479,8 @@ sub parse_yaml_pedigree_file {
         ## Check that CLI supplied sample_id exists in pedigree
         check_pedigree_vs_user_input_sample_ids(
             {
+                file_path                 => $file_path,
+                log                       => $log,
                 pedigree_sample_ids_ref   => \@pedigree_sample_ids,
                 user_input_sample_ids_ref => \@user_input_sample_ids,
             }

@@ -257,9 +257,11 @@ sub analysis_picardtools_genotypeconcordance {
     bcftools_rename_vcf_samples(
         {
             FILEHANDLE => $FILEHANDLE,
-            infile  => $active_parameter_href->{nist_high_confidence_call_set},
-            outfile => $nist_file_path . $UNDERSCORE . q{refrm.vcf},
-            temp_directory => $temp_directory,
+            index      => 0,
+            infile => $active_parameter_href->{nist_high_confidence_call_set},
+            outfile_path_prefix => $nist_file_path . $UNDERSCORE . q{refrm},
+            output_type         => q{v},
+            temp_directory      => $temp_directory,
             sample_ids_ref => [ $active_parameter_href->{nist_id} . q{-NIST} ],
         }
     );
@@ -286,9 +288,9 @@ sub analysis_picardtools_genotypeconcordance {
     say {$FILEHANDLE} q{## bcftools stats};
     bcftools_stats(
         {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $nist_file_path . $DOT . q{vcf},
-            outfile_path => $nist_file_path . $DOT . q{vcf.stats},
+            FILEHANDLE      => $FILEHANDLE,
+            infile_path     => $nist_file_path . $DOT . q{vcf},
+            stdoutfile_path => $nist_file_path . $DOT . q{vcf.stats},
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -455,9 +457,9 @@ q?perl -nae 'unless($_=~/##contig=<ID=NC_007605,length=171823>/ || $_=~/##contig
     say {$FILEHANDLE} q{## bcftools stats};
     bcftools_stats(
         {
-            FILEHANDLE   => $FILEHANDLE,
-            infile_path  => $call_file_path . $UNDERSCORE . q{lts_refrm.vcf},
-            outfile_path => $call_file_path
+            FILEHANDLE      => $FILEHANDLE,
+            infile_path     => $call_file_path . $UNDERSCORE . q{lts_refrm.vcf},
+            stdoutfile_path => $call_file_path
               . $UNDERSCORE
               . q{lts_refrm.vcf.stats},
         }

@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ peddy };
@@ -35,76 +35,76 @@ sub peddy {
 
 ## Function : Perl wrapper for writing peddy recipe to already open $FILEHANDLE or return commands array. Based on peddy 0.2.9.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE             => Filehandle to write to
+## Arguments: $family_file_path       => Family file path
+##          : $FILEHANDLE             => Filehandle to write to
+##          : $infile_path            => Infile path
+##          : $outfile_prefix_path    => Outfile path
+##          : $plot                   => Generate plots
+##          : $processor_number       => Number of processors to use
 ##          : $stdoutfile_path        => Stdoutfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
-##          : $infile_path            => Infile path
-##          : $outfile_prefix_path    => Outfile path
-##          : $family_file_path       => Family file path
-##          : $processor_number       => Number of processors to use
-##          : $plot                   => Generate plots
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $family_file_path;
     my $FILEHANDLE;
+    my $infile_path;
+    my $outfile_prefix_path;
     my $stdoutfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
-    my $infile_path;
-    my $outfile_prefix_path;
-    my $family_file_path;
 
     ## Default(s)
-    my $processor_number;
     my $plot;
+    my $processor_number;
 
     my $tmpl = {
         FILEHANDLE => {
             store => \$FILEHANDLE,
         },
         stdoutfile_path => {
-            strict_type => 1,
             store       => \$stdoutfile_path,
+            strict_type => 1,
         },
         stderrfile_path => {
-            strict_type => 1,
             store       => \$stderrfile_path,
+            strict_type => 1,
         },
         stderrfile_path_append => {
-            strict_type => 1,
             store       => \$stderrfile_path_append,
+            strict_type => 1,
         },
         infile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$infile_path
         },
         outfile_prefix_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$outfile_prefix_path,
             strict_type => 1,
-            store       => \$outfile_prefix_path
         },
         family_file_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$family_file_path,
             strict_type => 1,
-            store       => \$family_file_path
         },
         processor_number => {
-            default     => 4,
             allow       => qr/ ^\d+$ /xsm,
+            default     => 4,
+            store       => \$processor_number,
             strict_type => 1,
-            store       => \$processor_number
         },
         plot => {
-            default     => 1,
             allow       => [ 0, 1 ],
+            default     => 1,
+            store       => \$plot,
             strict_type => 1,
-            store       => \$plot
         },
     };
 
@@ -144,17 +144,17 @@ sub peddy {
     push @commands,
       unix_standard_streams(
         {
-            stdoutfile_path        => $stdoutfile_path,
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
         }
       );
 
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
     return @commands;

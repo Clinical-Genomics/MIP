@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.0;
+our $VERSION = 1.0.1;
 
 ## Constants
 Readonly my $COMMA         => q{,};
@@ -126,14 +126,14 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     coverage_file => {
-        input           => catfile(qw{ path_to_tiddit_outfiles prefix.tab }),
+        input           => catfile(qw{ path_to_tiddit_outfiles prefix.cov }),
         expected_output => q{--coverage}
           . $SPACE
           . catfile(qw{ path_to_tiddit_outfiles prefix.tab }),
     },
     vcf_infile_path => {
-        input           => catfile(qw{ path_to_SV_output merged_sv.vcf }),
-        expected_output => catfile(qw{ path_to_SV_output merged_sv.vcf }),
+        input           => q{path_to_sample_SVs.vcf},
+        expected_output => q{path_to_sample_SVs.vcf},
     },
 );
 
@@ -150,9 +150,17 @@ my %specific_argument = (
         input           => 1,
         expected_output => q{--no-filter},
     },
+    outfile_path => {
+        input           => q{path_to_vcf2cytosure_cgh_files},
+        expected_output => q{--out path_to_vcf2cytosure_cgh_files},
+    },
     variant_size => {
         input           => $VARIANT_SIZE,
         expected_output => q{--size} . $SPACE . $VARIANT_SIZE,
+    },
+    version => {
+        input           => 1,
+        expected_output => q{--version},
     },
 );
 

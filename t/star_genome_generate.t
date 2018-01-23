@@ -6,7 +6,7 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use File::Basename qw{ basename dirname };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use Getopt::Long;
 use Params::Check qw{ allow check last_error };
@@ -87,9 +87,10 @@ BEGIN {
 }
 
 use MIP::Program::Alignment::Star qw{ star_genome_generate };
+use MIP::Test::Commands qw{ test_function };
 
 diag(   q{Test star_genome_generate from Star.pm v}
-      . $MIP::PATH::TO::MODULE::VERSION
+      . $MIP::Program::Alignment::Star::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -97,7 +98,11 @@ diag(   q{Test star_genome_generate from Star.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $function_base_command = q{STAR  --runMode genomeGenerate};
+## Constants
+Readonly my $READ_LENGTH   => 150;
+Readonly my $THREAD_NUMBER => 16;
+
+my $function_base_command = q{STAR --runMode genomeGenerate};
 
 my %base_argument = (
     stdoutfile_path => {
@@ -121,38 +126,50 @@ my %base_argument = (
 my %required_argument = (
     fasta_path => {
         input           => catfile(qw{ dir test_file.fasta }),
-        expected_output => q{--genomeFastaFiles} . $SPACE . catfile(qw{ dir test_file.fasta }),
+        expected_output => q{--genomeFastaFiles}
+          . $SPACE
+          . catfile(qw{ dir test_file.fasta }),
     },
     genome_dir_path => {
         input           => catfile(qw{ dir genome_dir_path }),
-        expected_output => q{--genomeDir} . $SPACE . catfile(qw{ dir genome_dir_path }),
+        expected_output => q{--genomeDir}
+          . $SPACE
+          . catfile(qw{ dir genome_dir_path }),
     },
     gtf_path => {
         input           => catfile(qw{ dir test_gtf.gtf }),
-        expected_output => q{--sjdbGTFfile} . $SPACE . catfile(qw{ dir test_gtf.gtf }),
+        expected_output => q{--sjdbGTFfile}
+          . $SPACE
+          . catfile(qw{ dir test_gtf.gtf }),
     },
 );
 
 my %specific_argument = (
     fasta_path => {
         input           => catfile(qw{ dir test_file.fasta }),
-        expected_output => q{--genomeFastaFiles} . $SPACE . catfile(qw{ dir test_file.fasta }),
+        expected_output => q{--genomeFastaFiles}
+          . $SPACE
+          . catfile(qw{ dir test_file.fasta }),
     },
     genome_dir_path => {
         input           => catfile(qw{ dir genome_dir_path }),
-        expected_output => q{--genomeDir} . $SPACE . catfile(qw{ dir genome_dir_path }),
+        expected_output => q{--genomeDir}
+          . $SPACE
+          . catfile(qw{ dir genome_dir_path }),
     },
     gtf_path => {
         input           => catfile(qw{ dir test_gtf.gtf }),
-        expected_output => q{--sjdbGTFfile} . $SPACE . catfile(qw{ dir test_gtf.gtf }),
+        expected_output => q{--sjdbGTFfile}
+          . $SPACE
+          . catfile(qw{ dir test_gtf.gtf }),
     },
     read_length => {
-        input           => 150,
-        expected_output => q{--sjdbOverhang} . $SPACE . 150,
+        input           => $READ_LENGTH,
+        expected_output => q{--sjdbOverhang} . $SPACE . $READ_LENGTH,
     },
     thread_number => {
-        input           => 16,
-        expected_output => q{--runThreadN} . $SPACE . 16,
+        input           => $THREAD_NUMBER,
+        expected_output => q{--runThreadN} . $SPACE . $THREAD_NUMBER,
     },
 );
 

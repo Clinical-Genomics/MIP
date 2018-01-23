@@ -237,7 +237,7 @@ MIP will place any generated datafiles in the output data directory specified by
 
 [Miniconda]: http://conda.pydata.org/miniconda.html
 [CPAN]: https://www.cpan.org/
-[Pedigree file]: https://github.com/Clinical-GenomicsMIP/tree/master/templates/643594-miptest_pedigree.yaml
+[Pedigree file]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/643594-miptest_pedigree.yaml
 [Configuration file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/mip_config.yaml
 [GATK]:https://software.broadinstitute.org/gatk/
 [Perl]:https://www.perl.org/

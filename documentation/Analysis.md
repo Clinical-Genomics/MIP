@@ -9,10 +9,10 @@ You can modify all parameters to MIP in order of precedence using:
 
 ## Start standard analysis
 ```Bash
-$ mip -f 0 -c GRCh37_config_-v1.4-.yaml -rio 1
+$ mip -f 0 -c GRCh37_config_-v1.4-.yaml -rio
 ```
 
-``-rio 1`` means that two blocks will be performed at the nodes without transfer of files between HDS and SLURM nodes within the block. These two blocks are:
+``-rio`` means that two blocks will be performed at the nodes without transfer of files between HDS and SLURM nodes within the block. These two blocks are:
 
 *bamcalibrationblock*
 
@@ -34,33 +34,31 @@ $ mip -f 0 -c GRCh37_config_-v1.4-.yaml -rio 1
 - rankvariants
 - endvariantannotationblock
 
-``-rio 0`` means that MIP will copy in and out files from HDS and SLURM nodes between each module. Thus increasing the network traffic.
+When not supplying the ``-rio`` flag MIP will copy in and out files from HDS and SLURM nodes between each module. Thus increasing the network traffic.
 
 ### Excluding a program from the analysis
 
 ```Bash
-$ mip -f 0 -c GRCh37_config_-v1.4-.yaml -rio 1 --pMarkduplicates 0
+$ mip -f 0 -c GRCh37_config_-v1.4-.yaml -rio --pMarkduplicates 0
 ```
 
 ### Skipping a already processed module i.e expect that the ouput has already been generated
 
 ```Bash
-$ mip -f 0 -c GRCh37_config_-v1.4-.yaml -rio 1 --pMarkduplicates 2
+$ mip -f 0 -c GRCh37_config_-v1.4-.yaml -rio --pMarkduplicates 2
 ```
 
 ### Simulate standard analysis
 
 ```Bash
-$ mip -f 0 -c GRCh37_config_-v1.4-.yaml -rio 1 -dra 1
+$ mip -f 0 -c GRCh37_config_-v1.4-.yaml -rio -dra
 ```
 
 ``-dra`` means "dry run mode" i.e simulation mode. If enabled MIP will execute everything except the final sbatch submission to SLURM and updates to qc_sample_info.yaml.
 
-``-dra 1`` will simulate analysis.
+When not supplying the ``-dra`` flag MIP will launch sbatch submission to slurm.
 
-``-dra 0`` means no simulation
-
-One can use ``-dra 1`` to generate sbatch scripts which then can be submitted manually by the user individually or sequentially using ``sbatch --dependency=[type]:[jobid]``. Note that this will not update qc_sampleInfo.yaml as this is done at MIP runtime.
+One can use ``-dra`` to generate sbatch scripts which then can be submitted manually by the user individually or sequentially using ``sbatch --dependency=[type]:[jobid]``. Note that this will not update qc_sampleInfo.yaml as this is done at MIP run time.
 
 ### Rerun analysis using exactly the same parameters as last analysis run for family 0
 
@@ -71,12 +69,12 @@ $ mip -c 0/analysis/0_config.yaml
 ### Rerun analysis using exactly the same parameters as last analysis run, but in simulation mode
 
 ```Bash
-$ mip -c 0/analysis/0_config.yaml -dra 2
+$ mip -c 0/analysis/0_config.yaml -dra
 ```
 ### Generate all supported standard programs
 
 ```Bash
-$ mip -f 0 -c GRCh37_config_-v1.4-.yaml -rio 1 -pp
+$ mip -f 0 -c GRCh37_config_-v1.4-.yaml -rio -pp
 ```
 
 This will print a string with programs in mode 2 (expect ouput) in chronological order (as far as possible, some things are processed in parallel):
@@ -95,6 +93,6 @@ You can of course start or skip any number of modules as long as it is sane to d
 
 ### You can also modulate the mode of '-pp' using -ppm:
 ```	  
-$ mip -f 0 -c GRCh37_config_-v1.4-.yaml -rio 1 -pp -ppm 1	
+$ mip -f 0 -c GRCh37_config_-v1.4-.yaml -rio -pp -ppm 1	
 $ --psplit_fastq_file 1 --pgzip_fastq 1 --pfastqc 1 --pbwa_mem 1 --ppicardtools_mergesamfiles 1 --pmarkduplicates 1 --pgatk_realigner 1 --pgatk_baserecalibration 1 --pchanjo_sexcheck 1 --psambamba_depth 1 --pbedtools_genomecov 1 --ppicardtools_collectmultiplemetrics 1 --ppicardtools_collecthsmetrics 1 --prcovplots 1 --pcnvnator 1 --pdelly_call 1 --pdelly_reformat 1 --pmanta 1 --ptiddit 1 --psv_combinevariantcallsets 1 --psv_varianteffectpredictor 1 --psv_vcfparser 1 --psv_rankvariant 1 --psv_reformat 1 --psamtools_mpileup 1 --pfreebayes 1 --pgatk_haplotypecaller 1 --pgatk_genotypegvcfs 1 --pgatk_variantrecalibration 1 --pgatk_combinevariantcallsets 1 --pprepareforvariantannotationblock 1 --prhocall 1 --pvt 1 --pfrequency_filter 1 --pgatk_variantevalall 1 --pgatk_variantevalexome 1 --pvarianteffectpredictor 1 --pvcfparser 1 --psnpeff 1 --ppeddy 1 --pplink 1 --pvariant_integrity 1 --pevaluation 1 --prankvariant 1 --pendvariantannotationblock 1 --pqccollect 1 --pmultiqc 1 --panalysisrunstatus 1 --psacct 1
 ```

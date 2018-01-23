@@ -23,6 +23,7 @@ check_pedigree_vs_user_input_sample_ids.t
 check_pedigree_mandatory_key.t
 check_pedigree_sample_allowed_values.t
 check_perl_modules.t
+check_target_bed_file_suffix.t
 check_if_processed_by_vt.t
 chanjo_sex.t
 cnvnator_calling.t
@@ -58,6 +59,7 @@ gatk_baserecalibrator.t
 gatk_calculategenotypeposteriors.t
 gatk_catvariants.t
 gatk_combinevariants.t
+gatk_contest.t
 gatk_genotypegvcfs.t
 gatk_haplotypecaller.t
 gatk_indelrealigner.t
@@ -165,12 +167,15 @@ processes_limit_job_id_string.t
 programs_update_program_mode_with_dry_run_all.t
 qccollect.t
 qc_covplots_genome.t
+record_add_gene_panel.t
 record_add_most_complete_vcf.t
 record_add_processing_metafile_to_sample_info.t
 record_add_program_metafile_to_sample_info.t
 record_add_program_outfile_to_sample_info.t
 rhocall_aggregate.t
 rhocall_annotate.t
+rtg_format.t
+rtg_vcfeval.t
 sambamba_depth.t
 sambamba_flagstat.t
 sambamba_index.t
@@ -178,9 +183,11 @@ sambamba_markdup.t
 sambamba_sort.t
 sambamba_view.t
 samtools_faidx.t
+samtools_idxstats.t
 samtools_index.t
 samtools_mpileup.t
 samtools_stats.t
+samtools_depth.t
 samtools_view.t
 set_active_parameter_pedigree_keys.t
 set_config_to_active_parameters.t
@@ -194,8 +201,11 @@ set_pedigree_phenotype_info.t
 set_pedigree_sample_info.t
 set_pedigree_sex_info.t
 shell_build_shebang.t
+shell_check_exist_and_move_file.t
 shell_create_housekeeping_function.t
 shell_create_error_trap_function.t
+shell_quote_bash_variable.t
+skewer.t
 slurm_sacct.t
 slurm_sbatch.t
 slurm_build_sbatch_header.t
@@ -217,6 +227,7 @@ update_dynamic_config_parameters.t
 update_to_absolute_path.t
 update_prioritize_flag.t
 update_program_mode.t
+update_vcfparser_outfile_counter.t
 variant_effect_predictor.t
 vardict.t
 vardict_testsomatic.t

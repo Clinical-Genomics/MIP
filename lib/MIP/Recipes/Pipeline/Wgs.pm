@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ pipeline_wgs };
@@ -205,8 +205,11 @@ sub pipeline_wgs {
       qw{ analysis_rankvariant analysis_rankvariant_unaffected analysis_sv_rankvariant analysis_sv_rankvariant_unaffected };
     use MIP::Recipes::Analysis::Rcoverageplots qw{ analysis_rcoverageplots };
     use MIP::Recipes::Analysis::Rhocall qw{ analysis_rhocall_annotate };
+    use MIP::Recipes::Analysis::Rtg_vcfeval qw{ analysis_rtg_vcfeval  };
     use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
     use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
+    use MIP::Recipes::Analysis::Samtools_subsample_MT
+      qw{ analysis_samtools_subsample_MT };
     use MIP::Recipes::Analysis::Sv_reformat qw{ analysis_sv_reformat };
     use MIP::Recipes::Analysis::Snpeff qw{ analysis_snpeff };
     use MIP::Recipes::Analysis::Sv_combinevariantcallsets
@@ -216,6 +219,7 @@ sub pipeline_wgs {
       qw{ analysis_variantannotationblock };
     use MIP::Recipes::Analysis::Variant_integrity
       qw{ analysis_variant_integrity };
+    use MIP::Recipes::Analysis::Vcf2cytosure qw{ analysis_vcf2cytosure };
     use MIP::Recipes::Analysis::Vep qw{ analysis_vep analysis_vep_sv };
     use MIP::Recipes::Analysis::Vt qw{ analysis_vt };
 
@@ -463,6 +467,36 @@ sub pipeline_wgs {
                     insample_directory      => $insample_directory,
                     outsample_directory     => $outsample_directory,
                     program_name            => q{chanjo_sexcheck},
+                }
+            );
+        }
+    }
+    if ( $active_parameter_href->{psamtools_subsample_mt} ) {
+
+        $log->info(q{[Subsample MT]});
+
+      SAMPLE_IDS:
+        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+            my $insample_directory =
+              catdir( $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir} );
+            my $outsample_directory =
+              catdir( $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir} );
+
+            analysis_samtools_subsample_MT(
+                {
+                    parameter_href          => $parameter_href,
+                    active_parameter_href   => $active_parameter_href,
+                    sample_info_href        => $sample_info_href,
+                    file_info_href          => $file_info_href,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    job_id_href             => $job_id_href,
+                    sample_id               => $sample_id,
+                    insample_directory      => $insample_directory,
+                    outsample_directory     => $outsample_directory,
+                    program_name            => q{samtools_subsample_mt},
                 }
             );
         }
@@ -800,6 +834,32 @@ sub pipeline_wgs {
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 program_name            => q{sv_combinevariantcallsets},
+            }
+        );
+    }
+    if ( $active_parameter_href->{pvcf2cytosure} ) {
+
+        $log->info(q{[Vcf2cytosure]});
+
+        my $v2cs_program_name = q{vcf2cytosure};
+
+        my $outfamily_directory = catfile(
+            $active_parameter_href->{outdata_dir},
+            $active_parameter_href->{family_id},
+            $active_parameter_href->{outaligner_dir},
+            $v2cs_program_name,
+        );
+
+        analysis_vcf2cytosure(
+            {
+                parameter_href          => $parameter_href,
+                active_parameter_href   => $active_parameter_href,
+                sample_info_href        => $sample_info_href,
+                file_info_href          => $file_info_href,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                outfamily_directory     => $outfamily_directory,
+                program_name            => $v2cs_program_name,
             }
         );
     }
@@ -1196,6 +1256,47 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
             }
         );
     }
+    if ( $active_parameter_href->{prtg_vcfeval} ) {
+
+      SAMPLE_ID:
+        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+            if ( $sample_id =~ /$active_parameter_href->{nist_id}/sxm ) {
+
+                $log->info(q{[Rtg evaluation]});
+
+                my $rtg_program_name = q{rtg_vcfeval};
+
+                ## Assign directories
+                my $infamily_directory = catdir(
+                    $active_parameter_href->{outdata_dir},
+                    $active_parameter_href->{family_id},
+                    $active_parameter_href->{outaligner_dir}
+                );
+                my $outfamily_directory = catfile(
+                    $active_parameter_href->{outdata_dir},
+                    $active_parameter_href->{family_id},
+                    $active_parameter_href->{outaligner_dir},
+                    $rtg_program_name
+                );
+                analysis_rtg_vcfeval(
+                    {
+                        parameter_href          => $parameter_href,
+                        active_parameter_href   => $active_parameter_href,
+                        sample_info_href        => $sample_info_href,
+                        file_info_href          => $file_info_href,
+                        infile_lane_prefix_href => $infile_lane_prefix_href,
+                        job_id_href             => $job_id_href,
+                        sample_id               => $sample_id,
+                        call_type               => q{BOTH},
+                        infamily_directory      => $infamily_directory,
+                        outfamily_directory     => $outfamily_directory,
+                        program_name            => $rtg_program_name,
+                    }
+                );
+            }
+        }
+    }
     if ( $active_parameter_href->{pevaluation} ) {
 
       SAMPLE_ID:
@@ -1235,7 +1336,6 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
                     }
                 );
             }
-
         }
     }
     if ( $active_parameter_href->{pgatk_variantevalall} ) {
