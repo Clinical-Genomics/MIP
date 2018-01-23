@@ -37,7 +37,7 @@ Readonly my $PIPE       => q{|};
 Readonly my $UNDERSCORE => q{_};
 Readonly my $ASTERISK   => q{*};
 
-sub analysis_vardict_TN {
+sub analysis_vardict_tn {
 
 ## Function : Analysis recipe for varDict variant calling
 ## Returns  :
@@ -61,23 +61,17 @@ sub analysis_vardict_TN {
     my $active_parameter_href;
     my $file_info_href;
     my $infile_lane_prefix_href;
-
-    #my $insample_directory;
     my $job_id_href;
     my $outfamily_directory;
     my $outsample_directory;
     my $parameter_href;
     my $program_name;
-
-    #my $sample_id;
     my $sample_info_href;
-
-    #my $sample_origin;
-    my $temp_directory;
 
     ## Default(s)
     my $family_id;
     my $outaligner_dir;
+    my $temp_directory;
     my $xargs_file_counter;
     my $xargs_file_path_prefix;
 
@@ -152,19 +146,6 @@ sub analysis_vardict_TN {
             store       => \$program_name,
             strict_type => 1,
         },
-
-        #        sample_id => {
-        #            defined     => 1,
-        #            required    => 1,
-        #            store       => \$sample_id,
-        #            strict_type => 1,
-        #        },
-        #        sample_origin => {
-        #            defined     => 1,
-        #            required    => 1,
-        #            store       => \$sample_origin,
-        #            strict_type => 1,
-        #        },
         sample_info_href => {
             default     => {},
             defined     => 1,
@@ -218,10 +199,9 @@ sub analysis_vardict_TN {
         }
     );
 
-    ## add get core number not more than max
+    ## Add get core number not more than max
     $core_number = get_core_number(
         {
-            module_core_number => $core_number,
             modifier_core_number =>
               scalar( @{ $active_parameter_href->{sample_ids} } ),
             max_cores_per_node => $active_parameter_href->{max_cores_per_node},
@@ -231,7 +211,6 @@ sub analysis_vardict_TN {
     ## Filehandles
     # Create anonymous filehandle
     my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ( $file_path, $program_info_path ) = setup_script(
@@ -272,19 +251,13 @@ sub analysis_vardict_TN {
     my $outfile_tag =
       $file_info_href->{$family_id}{$mip_program_name}{file_tag};
 
-    #my $infile_prefix  = $family_id . $infile_tag;
     my $outfile_prefix = $family_id . $outfile_tag;
 
     ## Files
     my $outfile_name = $outfile_prefix . $outfile_suffix;
-    say $outfile_name;
 
     ## Paths
     my $outfile_path = catfile( $outsample_directory, $outfile_name );
-
-    #my $infile_name = $infile_prefix . $infile_suffix;
-    #say $infile_name;
-    #my $infile_path  = catfile( $insample_directory,  $infile_name );
 
     my %file_path_prefix;
 
@@ -359,23 +332,12 @@ sub analysis_vardict_TN {
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $region_end         = $active_parameter_href->{vrd_region_end};
     my $region_start       = $active_parameter_href->{vrd_region_start};
+
     ## Assign family_id to sample_name
     my $sample_name    = $active_parameter_href->{family_id};
     my $segment_annotn = $active_parameter_href->{vrd_segment_annotn};
 
     say {$FILEHANDLE} q{## varDict variant calling};
-
-    #    ## Create file commands for xargs
-    #    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
-    #        {
-    #            core_number        => $core_number,
-    #            file_path          => $file_path,
-    #            program_info_path  => $program_info_path,
-    #            FILEHANDLE         => $FILEHANDLE,
-    #            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-    #            xargs_file_counter => $xargs_file_counter,
-    #        }
-    #    );
 
     vardict(
         {
@@ -397,7 +359,6 @@ sub analysis_vardict_TN {
     vardict_teststrandbias(
         {
             FILEHANDLE => $FILEHANDLE,
-
         }
     );
 
@@ -426,7 +387,6 @@ sub analysis_vardict_TN {
     say {$FILEHANDLE} q{wait} . $NEWLINE;
 
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
-    close $XARGSFILEHANDLE
       or $log->logcroak(q{Could not close XARGSFILEHANDLE});
 
     if ( $mip_program_mode == 1 ) {
@@ -436,7 +396,7 @@ sub analysis_vardict_TN {
                 path => catfile(
                     $outfamily_directory, $outfile_prefix . $outfile_suffix
                 ),
-                program_name     => q{freebayes},
+                program_name     => q{vardict},
                 sample_info_href => $sample_info_href,
             }
         );
