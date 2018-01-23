@@ -65,6 +65,7 @@ gatk_genotypegvcfs.t
 gatk_haplotypecaller.t
 gatk_indelrealigner.t
 gatk_leftalignandtrimvariants.t
+gatk_pedigree_flag.t
 gatk_printreads.t
 gatk_realignertargetcreator.t
 gatk_selectvariants.t
