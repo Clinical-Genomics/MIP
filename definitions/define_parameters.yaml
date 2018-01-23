@@ -276,21 +276,14 @@ module_time:
     psv_combinevariantcallsets: 2
     psv_rankvariant: 2
     psv_reformat: 1
-<<<<<<< HEAD
-    pqccollect: 1
-    pmultiqc: 1
-    panalysisrunstatus: 1
-    psacct: 1
-    pvardict: 40
-=======
     psv_varianteffectpredictor: 10
     psv_vcfparser: 2
     ptiddit: 10
+    pvardict: 40
     pvarianteffectpredictor: 10
     pvariant_integrity: 1
     pvcfparser: 5
     pvt: 10
->>>>>>> upstream/develop
     pvcf2cytosure: 2
   type: mip
 module_core_number:
@@ -1518,7 +1511,7 @@ rhocall_frequency_file:
   exists_check: file
   reference: reference_dir
   type: path
-##Vardict
+## Vardict
 pvardict:
   associated_program:
     - mip
@@ -1531,7 +1524,7 @@ pvardict:
   outdir_name: vardict
   program_type: variant_callers
   file_endings:
-    -.vcf
+    -".vcf"
   outfile_suffx: ".vcf"
   type: program
 vrd_af_threshold:
