@@ -21,7 +21,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Inherit from Exporter to export functions and variables
     use base qw { Exporter };
@@ -120,7 +120,7 @@ sub bedtools_genomecov {
     return @commands;
 }
 
-sub bedtools_makewindows_bed {
+sub bedtools_makewindows {
 
     ## Function : Perl wrapper for writing bedtools makewindows for bed files recipe to $FILEHANDLE. Based on bedtools 2.26.0.
     ## Returns  : "@commands"
@@ -142,9 +142,6 @@ sub bedtools_makewindows_bed {
     my $stdoutfile_path;
     my $step_size;
     my $window_size;
-
-    ## Default(s)
-    my $max_coverage;
 
     my $tmpl = {
         FILEHANDLE => { store => \$FILEHANDLE },
