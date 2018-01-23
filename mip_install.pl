@@ -25,7 +25,6 @@ use Readonly;
 use YAML;
 
 ## MIPs lib/
-#Add MIPs internal lib
 use lib catdir( $Bin, q{lib} );
 use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Gnu::Coreutils qw{ gnu_rm };
@@ -69,7 +68,7 @@ Readonly my $UNDERSCORE => q{_};
 my $config_file = catfile( $Bin, qw{ definitions install_parameters.yaml} );
 my %parameter = load_yaml( { yaml_file => $config_file } );
 
-our $VERSION = q{1.2.28};
+our $VERSION = q{1.2.29};
 
 GetOptions(
     q{see|bash_set_errexit}    => \$parameter{bash_set_errexit},
@@ -81,7 +80,7 @@ GetOptions(
     q{pip|pip=s}               => \%{ $parameter{pip} },
     q{pyv|python_version=s}    => \$parameter{conda_packages}{python},
 
-    # SHELL
+    ## SHELL
     q{psh|prefer_shell}   => \$parameter{prefer_shell},
     q{si|shell_install:s} => \@{ $parameter{shell_install} },
     q{pic|picard:s}       => \$parameter{shell}{picard}{version},
@@ -93,7 +92,7 @@ GetOptions(
         @{ $parameter{shell}{snpeff}{snpeff_genome_versions} } =
           split /,/xms, $ARG[1];
     },
-    q{v2cs|vcf2cytosure:s}          => \$parameter{shell}{v2cs}{version},
+    q{v2cs|vcf2cytosure:s} => \$parameter{shell}{vcf2cytosure}{version},
     q{vep|varianteffectpredictor:i} => \$parameter{shell}{vep}{version},
     q{vepf|vep_auto_flag:s}         => \$parameter{shell}{vep}{vep_auto_flag},
     q{vepc|vep_cache_dir:s}         => \$parameter{shell}{vep}{vep_cache_dir},
@@ -111,7 +110,7 @@ GetOptions(
     q{tid|tiddit:s} => \$parameter{shell}{tiddit}{version},
     q{svdb|svdb:s}  => \$parameter{shell}{svdb}{version},
 
-    # Utility
+    ## Utility
     q{rd|reference_dir:s}                => \$parameter{reference_dir},
     q{rg|reference_genome_versions:s{,}} => sub {
         @{ $parameter{reference_genome_versions} } = split /,/xms, $ARG[1];
@@ -145,13 +144,14 @@ GetOptions(
   )
   or croak help(
     {
-        USAGE     => $USAGE,
         exit_code => 1,
+        USAGE     => $USAGE,
     }
   );
 
 ## Create default log name
 if ( not $parameter{log_file} ) {
+
     ## Get local time
     my $date_time       = localtime;
     my $date_time_stamp = $date_time->datetime;
@@ -192,10 +192,10 @@ if ( not $parameter{vep_cache_dir} ) {
 ###MAIN###
 ##########
 
-# Create anonymous filehandle
+## Create anonymous filehandle
 my $FILEHANDLE = IO::Handle->new();
 
-# Installation instruction file
+## Installation instruction file
 my $file_name_path = catfile( cwd(), q{mip.sh} );
 
 open $FILEHANDLE, q{>}, $file_name_path
@@ -210,12 +210,12 @@ open $FILEHANDLE, q{>}, $file_name_path
 ## Create bash file for writing install instructions
 create_bash_file(
     {
-        file_name   => $file_name_path,
         FILEHANDLE  => $FILEHANDLE,
+        file_name   => $file_name_path,
+        log         => $log,
         remove_dir  => catfile( cwd(), $DOT . q{MIP} ),
         set_errexit => $parameter{bash_set_errexit},
         set_nounset => $parameter{bash_set_nounset},
-        log         => $log
     }
 );
 
@@ -248,70 +248,72 @@ install_bioconda_packages(
         bioconda_packages_href => $parameter{bioconda},
         conda_env              => $parameter{conda_environment},
         conda_env_path         => $parameter{conda_prefix_path},
+        FILEHANDLE             => $FILEHANDLE,
         snpeff_genome_versions_ref =>
           $parameter{shell}{snpeff}{snpeff_genome_versions},
-        FILEHANDLE => $FILEHANDLE,
-        quiet      => $parameter{quiet},
-        verbose    => $parameter{verbose},
+        quiet   => $parameter{quiet},
+        verbose => $parameter{verbose},
     }
 );
 
 ## Install PIP packages
 install_pip_packages(
     {
-        pip_packages_href => $parameter{pip},
-        quiet             => $parameter{quiet},
         conda_env         => $parameter{conda_environment},
         FILEHANDLE        => $FILEHANDLE,
+        pip_packages_href => $parameter{pip},
+        quiet             => $parameter{quiet},
     }
 );
 
 ### Install shell programs
 ## Create dispatch table for shell installation subs
 my %shell_subs = (
-    picard       => \&install_picard,
-    sambamba     => \&install_sambamba,
     bedtools     => \&install_bedtools,
-    vt           => \&install_vt,
-    snpeff       => \&install_snpeff,
+    cnvnator     => \&install_cnvnator,
+    mip_scripts  => \&install_mip_scripts,
+    picard       => \&install_picard,
     plink2       => \&install_plink2,
     rhocall      => \&install_rhocall,
-    mip_scripts  => \&install_mip_scripts,
-    vep          => \&install_vep,
-    cnvnator     => \&install_cnvnator,
-    tiddit       => \&install_tiddit,
+    sambamba     => \&install_sambamba,
+    snpeff       => \&install_snpeff,
     svdb         => \&install_svdb,
+    tiddit       => \&install_tiddit,
+    vep          => \&install_vep,
     vcf2cytosure => \&install_vcf2cytosure,
+    vt           => \&install_vt,
 );
 
 ## Launch shell installation subroutines
 SHELL_PROGRAM:
 for my $shell_program ( @{ $parameter{shell_programs_to_install} } ) {
+
     $shell_subs{$shell_program}->(
         {
-            program_parameters_href => $parameter{shell}{$shell_program},
-            conda_prefix_path       => $parameter{conda_prefix_path},
             conda_environment       => $parameter{conda_environment},
+            conda_prefix_path       => $parameter{conda_prefix_path},
+            FILEHANDLE              => $FILEHANDLE,
             noupdate                => $parameter{noupdate},
+            program_parameters_href => $parameter{shell}{$shell_program},
             quiet                   => $parameter{quiet},
             verbose                 => $parameter{verbose},
-            FILEHANDLE              => $FILEHANDLE,
         }
     );
 }
 
 ## Download reference genome if requested
 if ( $parameter{reference_dir} ) {
+
     download_genome_references(
         {
+            conda_environment  => $parameter{conda_environment},
+            conda_prefix_path  => $parameter{conda_prefix_path},
+            FILEHANDLE         => $FILEHANDLE,
+            reference_dir_path => $parameter{reference_dir},
             reference_genome_versions_ref =>
               $parameter{reference_genome_versions},
-            reference_dir_path => $parameter{reference_dir},
-            conda_prefix_path  => $parameter{conda_prefix_path},
-            conda_environment  => $parameter{conda_environment},
-            quiet              => $parameter{quiet},
-            verbose            => $parameter{verbose},
-            FILEHANDLE         => $FILEHANDLE,
+            quiet   => $parameter{quiet},
+            verbose => $parameter{verbose},
         }
     );
 }
@@ -338,9 +340,9 @@ close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
 sub build_usage {
 
-##Function : Build the USAGE instructions
-##Returns  :
-##Arguments: $script_name => Name of the script
+## Function : Build the USAGE instructions
+## Returns  :
+## Arguments: $script_name => Name of the script
 
     my ($arg_href) = @_;
 
@@ -350,8 +352,8 @@ sub build_usage {
     my $tmpl = {
         script_name => {
             default     => basename($PROGRAM_NAME),
-            strict_type => 1,
             store       => \$script_name,
+            strict_type => 1,
         },
     };
 
@@ -570,7 +572,8 @@ sub get_programs_for_installation {
 
     ## vcf2cytosure requires libxml2 and libxslt to run and these are added to the
     ## select program array if a vcf2cytosure installation has been requested
-    if ( any { $_ eq q{vcf2cytosure} } @{ $parameter_href->{select_program} } ) {
+    if ( any { $_ eq q{vcf2cytosure} } @{ $parameter_href->{select_program} } )
+    {
         push @{ $parameter_href->{select_program} }, qw{ libxml2 libxslt };
     }
 
@@ -579,7 +582,7 @@ sub get_programs_for_installation {
         my @programs = (
             keys %{ $parameter_href->{shell} },
             keys %{ $parameter_href->{bioconda} },
-            keys %{ $parameter_href->{pip} }
+            keys %{ $parameter_href->{pip} },
         );
         my @programs_to_skip =
           array_minus( @programs, @{ $parameter_href->{select_program} } );
@@ -675,10 +678,10 @@ sub _assure_python_3_compability {
             required => 1,
             defined  => 1,
             allow    => qr{
-                         ^( 2 | 3 )    # Assert that the python major version starts with 2 or 3
-                         \.            # Major version separator
+                         ^( [23] )    # Assert that the python major version starts with 2 or 3
+                         [.]            # Major version separator
                          ( \d+$        # Assert that the minor version is a digit
-                         | \d+\.\d+$ ) # Case when minor and patch version has been supplied, allow only digits
+                         | \d+ [.] \d+$ ) # Case when minor and patch version has been supplied, allow only digits
                          }xms,
             store => \$python_version,
         },
@@ -695,10 +698,10 @@ sub _assure_python_3_compability {
 
     ## Check if a python 3 environment has been specified and a python 2 program has been specified for installation
     if (
-        $python_version =~ m/
-        3\.\d+ |    # Python 3 release with minor version eg 3.6
-        3\.\d+\.\d+ # Python 3 release with minor and patch e.g. 3.6.2
-        /xms
+        $python_version =~ m{
+        3 [.] \d+ |    # Python 3 release with minor version eg 3.6
+        3 [.] \d+ [.] \d+ # Python 3 release with minor and patch e.g. 3.6.2
+        }xms
         and array_minus( @{$select_program_ref}, @{$py3_packages_ref} )
       )
     {
@@ -747,9 +750,9 @@ sub _assure_python_2_compability {
 
     if (
         $parameter_href->{conda_packages}{python} =~
-        m/ 2\.\d+ |    # Python 2 release with minor version eg 2.7.14
-           2\.\d+\.\d+ # Python 3 release with minor and patch e.g. 3.6.2
-        /xms
+        m{ 2 [.] \d+ |    # Python 2 release with minor version eg 2.7.14
+           2 [.] \d+ [.] \d+ # Python 3 release with minor and patch e.g. 3.6.2
+        }xms
       )
     {
         ## Delete python 3 packages if a python 2 env has been specified
@@ -934,28 +937,29 @@ sub display_final_message {
         $conda_env_name = q{Root environment};
     }
 
-    say $FILEHANDLE
+    say {$FILEHANDLE}
 q{echo -e '\n##############################################################\n'};
     if ( any { $_ eq q{cnvnator} } @programs_to_install ) {
-        say $FILEHANDLE
+        say {$FILEHANDLE}
 q{echo -e "\tMIP's installation script has attempted to install CNVnator"};
-        say $FILEHANDLE q{echo -e "\tin the specified conda environment: }
+        say {$FILEHANDLE} q{echo -e "\tin the specified conda environment: }
           . $conda_env_name . q{\n"};
-        say $FILEHANDLE
+        say {$FILEHANDLE}
           q{echo -e "\tPlease exit the current session before continuing"};
     }
     else {
-        say $FILEHANDLE q{echo -e "\tMIP's installation script has finished\n"};
-        say $FILEHANDLE
+        say {$FILEHANDLE}
+          q{echo -e "\tMIP's installation script has finished\n"};
+        say {$FILEHANDLE}
           q{echo -e "\tMIP has attempted to install the following programs"};
-        say $FILEHANDLE q{echo -e "\tin the specified conda environment: }
+        say {$FILEHANDLE} q{echo -e "\tin the specified conda environment: }
           . $conda_env_name . q{\n"};
 
         foreach my $program_to_install ( sort @programs_to_install ) {
-            say $FILEHANDLE q{echo -e "\t"} . $program_to_install;
+            say {$FILEHANDLE} q{echo -e "\t"} . $program_to_install;
         }
     }
-    say $FILEHANDLE
+    say {$FILEHANDLE}
 q{echo -e '\n##############################################################\n'};
     return;
 }
