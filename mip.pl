@@ -562,7 +562,12 @@ GetOptions(
       \$active_parameter{psamtools_subsample_mt},
     q{ssmtd|samtools_subsample_mt_depth=n} =>
       \$active_parameter{samtools_subsample_mt_depth},
-    q{pvrd|pvardict=n} => \$active_parameter{pvardict},
+    q{pvrd|pvardict=n}           => \$active_parameter{pvardict},
+    q{pvdraf|vrd_af_threshold}   => \$active_parameter{vrd_af_threshold},
+    q{pvrdcs|vrd_chrom_start}    => \$active_parameter{vrd_chrom_start},
+    q{qvrdre|vrd_region_end}     => \$active_parameter{vrd_region_end},
+    q{qvrdrs|vrd_region_start}   => \$active_parameter{vrd_region_start},
+    q{qvrdsa|vrd_segment_annotn} => \$active_parameter{vrd_segment_annotn},
   )
   or help(
     {
@@ -3376,12 +3381,12 @@ sub write_cmd_mip_log {
                         "-" . $order_parameter_element . " ",
                         map {
 "$_=$active_parameter_href->{$order_parameter_element}{$_} "
-                        } (
+                          } (
                             keys %{
                                 $active_parameter_href
                                   ->{$order_parameter_element}
                             }
-                        )
+                          )
                     );
                 }
                 else {
