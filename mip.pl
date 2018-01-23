@@ -1905,6 +1905,11 @@ sub build_usage {
 
     ##Vardict
     -pvrd/pvardict Variant calling using Vardict (defaults to "0" (=no))
+        -pvdraf|vrd_af_threshold AF threshold for variant calling (default 0.01)
+        -pvrdcs|vrd_chrom_start Column for chromosome in the output (default 1)
+        -qvrdre|vrd_region_end Column for region end position in the output (default 3)
+        -qvrdrs|vrd_region_start Column for region start position in the output (default 2)
+        -qvrdsa|vrd_segment_annotn Column for segment annotation in the output (default 4)
 END_USAGE
 }
 
