@@ -49,7 +49,7 @@ sub check_bwa_prerequisites {
 ##          : $file_info_href          => File info hash {REF}
 ##          : $infile_lane_prefix_href => Infile(s) without the ".ending" {REF}
 ##          : $job_id_href             => Job id hash {REF}
-##          : $parameter_build_name          => File info build key parameter name
+##          : $parameter_build_name    => File info build key parameter name
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $program_name            => Program name
 ##          : $sample_info_href        => Info on samples and family hash {REF}
