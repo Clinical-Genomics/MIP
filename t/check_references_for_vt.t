@@ -10,7 +10,6 @@ use File::Spec::Functions qw{ catdir catfile };
 use File::Temp;
 use FindBin qw{ $Bin };
 use Getopt::Long;
-use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use Params::Check qw{ allow check last_error };
 use Test::More;
 use utf8;
@@ -24,6 +23,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Script::Utils qw{ help };
+use MIP::Log::MIP_log4perl qw{ initiate_logger };
 
 our $USAGE = build_usage( {} );
 
