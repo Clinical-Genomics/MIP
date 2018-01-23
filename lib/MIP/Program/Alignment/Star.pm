@@ -26,7 +26,7 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ star_aln, star_genome_generate };
+    our @EXPORT_OK = qw{ star_aln star_genome_generate };
 }
 
 ## Constants
