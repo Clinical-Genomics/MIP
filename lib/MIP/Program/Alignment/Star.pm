@@ -46,7 +46,7 @@ sub star_aln {
 ##           : $genome_dir_path            => Directory of the reference genome
 ##           : $infile_paths_ref           => Fastq file path(s)
 ##           : $limit_bam_sort_ram         => Memory available for sorting the output bam
-##           : $outfile_name_prefix       => Prefix of the output files (remember to end with a ".")
+##           : $outfile_name_prefix        => Prefix of the output files (remember to end with a ".")
 ##           : $out_sam_strand_field       => Cufflinks-like strand field flag
 ##           : $out_sam_type               => Format of the output aligned reads
 ##           : $quant_mode                 => Types of quantification requested

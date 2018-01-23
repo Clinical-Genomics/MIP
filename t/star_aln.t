@@ -99,7 +99,6 @@ diag(   q{Test star_aln from Star.pm v}
       . $EXECUTABLE_NAME );
 
 ## Constants
-Readonly my $THREAD_NUMBER              => 16;
 Readonly my $ALIGN_INTRON_MAX           => 100_000;
 Readonly my $ALIGN_MATES_GAP_MAX        => 100_000;
 Readonly my $ALIGN_SJDB_OVERHANG_MIN    => 10;
@@ -107,6 +106,7 @@ Readonly my $CHIM_JUNCTION_OVERHANG_MIN => 12;
 Readonly my $CHIM_SEGMENT_MIN           => 12;
 Readonly my $CHIM_SEGMENT_READ_GAP_MAX  => 3;
 Readonly my $LIMIT_BAM_SORT_RAM         => 315_321_372_30;
+Readonly my $THREAD_NUMBER              => 16;
 
 my $function_base_command = q{STAR};
 
