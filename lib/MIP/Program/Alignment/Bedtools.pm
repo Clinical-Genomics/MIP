@@ -27,7 +27,7 @@ BEGIN {
     use base qw { Exporter };
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ bedtools_genomecov };
+    our @EXPORT_OK = qw{ bedtools_genomecov bedtools_makewindows_bed };
 
 }
 
@@ -120,8 +120,96 @@ sub bedtools_genomecov {
     return @commands;
 }
 
-sub bedtools_makewindows {
-    return;
+sub bedtools_makewindows_bed {
+
+    ## Function : Perl wrapper for writing bedtools makewindows for bed files recipe to $FILEHANDLE. Based on bedtools 2.26.0.
+    ## Returns  : "@commands"
+    ## Arguments: $FILEHANDLE             => Sbatch filehandle to write to
+    ##          : $infile_bed             => Input BED file (with chrom,start,end fields).
+    ##          : $stderrfile_path        => Stderrfile path
+    ##          : $stderrfile_path_append => Stderrfile path append
+    ##          : $stdoutfile_path        => Outfile path
+    ##          : $step_size              => Step size (bp): i.e., how many base pairs to step before creating a new window.
+    ##          : $window_size            => Divide each input interval (bp)
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $infile_bed;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+    my $step_size;
+    my $window_size;
+
+    ## Default(s)
+    my $max_coverage;
+
+    my $tmpl = {
+        FILEHANDLE => { store => \$FILEHANDLE },
+        infile_bed => {
+            required    => 1,
+            store       => \$infile_bed,
+            strict_type => 1,
+        },
+        step_size => {
+            allow       => qr/^\d+$/,
+            store       => \$step_size,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+        window_size => {
+            allow       => qr/^\d+$/,
+            required    => 1,
+            store       => \$window_size,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
+
+    ## Array @commands stores commands depending on input parameters
+    my @commands = qw{bedtools makewindow};
+
+    ## Infile
+    push @commands, q{-b} . $SPACE . $infile_bed;
+
+    ## Step size
+    push @commands, q{-s} . $SPACE . $step_size;
+
+    ## Window size
+    push @commands, q{-w} . $SPACE . $window_size;
+
+    # Redirect stderr output to program specific stderr file
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+    return @commands;
 }
 
 1;
