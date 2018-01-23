@@ -68,7 +68,7 @@ Readonly my $UNDERSCORE => q{_};
 my $config_file = catfile( $Bin, qw{ definitions install_parameters.yaml} );
 my %parameter = load_yaml( { yaml_file => $config_file } );
 
-our $VERSION = q{1.2.29};
+our $VERSION = q{1.2.30};
 
 GetOptions(
     q{see|bash_set_errexit}    => \$parameter{bash_set_errexit},
@@ -564,17 +564,19 @@ sub get_programs_for_installation {
         }
     );
 
-    ## Chanjo requires sambamba to run and thus sambamba is added to the
-    ## select program array if a Chanjo installation has been requested
+    ## Programs that are not installed via conda can have dependencies that
+    ## needs to be explicetly installed. Also, depedening on how the analysis
+    ## recipes have been written, a module can be dependent on more than one
+    ## conda program to function.
     if ( any { $_ eq q{chanjo} } @{ $parameter_href->{select_program} } ) {
         push @{ $parameter_href->{select_program} }, q{sambamba};
     }
-
-    ## vcf2cytosure requires libxml2 and libxslt to run and these are added to the
-    ## select program array if a vcf2cytosure installation has been requested
     if ( any { $_ eq q{vcf2cytosure} } @{ $parameter_href->{select_program} } )
     {
         push @{ $parameter_href->{select_program} }, qw{ libxml2 libxslt };
+    }
+    if ( any { $_ eq q{cnvnator} } @{ $parameter_href->{select_program} } ) {
+        push @{ $parameter_href->{select_program} }, qw{ samtools bcftools };
     }
 
     ## Remove all programs except those selected for installation
