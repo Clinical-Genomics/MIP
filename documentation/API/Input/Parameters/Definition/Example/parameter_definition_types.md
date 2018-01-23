@@ -1,6 +1,6 @@
 # Parameter definitions and types.
 
-The following lines are printed using the test "check_parameter_hash.t" on the yaml definition file "check_parameter_hash.t" with the yaml definition file "[define_parameters.yaml]" (https://github.com/Clinical-Genomics/MIP/blob/develop/definitions/define_parameters.yaml) (date: 2018-01-23).
+The following lines are printed using the test "check_parameter_hash.t" on the yaml definition file "[define_parameters.yaml]" (https://github.com/Clinical-Genomics/MIP/blob/develop/definitions/define_parameters.yaml) (date: 2018-01-23).
 
 |               Key of first level hash              | Key of second level hash |             Value of second level hash            |
 |:--------------------------------------------------:|:------------------------:|:-------------------------------------------------:|
