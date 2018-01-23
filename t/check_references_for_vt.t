@@ -116,22 +116,26 @@ my $log = initiate_logger(
 );
 
 my %active_parameter_test = (
-    pgatk_realigner                  => 1,
-    pgatk_baserecalibration          => 1,
-    pgatk_variantevalall             => 1,
-    pgatk_variantevalexome           => 1,
-    psnpeff                          => 1,
-    gatk_realigner_indel_known_sites => [
-        qw{ GRCh37_1000g_indels_-phase1-.vcf GRCh37_mills_and_1000g_indels_-gold_standard-.vcf },
-    ],
     gatk_baserecalibration_known_sites => [
         qw{ GRCh37_dbsnp_-138-.vcf GRCh37_1000g_indels_-phase1-.vcf GRCh37_mills_and_1000g_indels_-gold_standard-.vcf },
     ],
+    gatk_realigner_indel_known_sites => [
+        qw{ GRCh37_1000g_indels_-phase1-.vcf GRCh37_mills_and_1000g_indels_-gold_standard-.vcf },
+    ],
     gatk_varianteval_dbsnp   => q{GRCh37_dbsnp_-138_esa_129-.vcf},
+    pgatk_baserecalibration          => 1,
+    pgatk_realigner                  => 1,
+    pgatk_variantevalall             => 1,
+    pgatk_variantevalexome           => 1,
+    psnpeff                          => 1,
     snpsift_annotation_files => {
-        SWEREF => q{GRCh37_anon-swegen_snp_-1000samples-.vcf.gz},
-        EXAC   => q{GRCh37_exac_reheader_-r0.3.1-.vcf.gz},
+        SWEREF => catfile($Bin, qw{ t data references GRCh37_anon-swegen_snp_-1000samples-.vcf.gz }),
+        EXAC   => catfile($Bin, qw{ t data references GRCh37_exac_reheader_-r0.3.1-.vcf.gz }),
+        GNOMAD => catfile($Bin, qw{ t data references GRCh37_exac_reheader_-r0.3.1-.vcf.gz }),
     },
+    gatk_realigner_indel_known_sites => [catfile($Bin, qw{ t data references GRCh37_1000g_indels_-phase1-.vcf }) , catfile($Bin, qw{ t data references GRCh37_mills_and_1000g_indels_-gold_standard-.vcf }) ],
+    gatk_baserecalibration_known_sites => [catfile($Bin, qw{ t data references GRCh37_dbsnp_-138-.vcf }) , catfile($Bin, qw{ t data references GRCh37_1000g_indels_-phase1-.vcf }), catfile($Bin, qw{ t data references GRCh37_mills_and_1000g_indels_-gold_standard-.vcf }) ],
+    gatk_varianteval_dbsnp => catfile($Bin, qw{ t data references GRCh37_gnomad.genomes_-r2.0.1-.vcf.gz }),
 );
 
 my %parameter_test = (
@@ -151,7 +155,7 @@ my %parameter_test = (
 );
 
 my @vt_references_test =
-  qw{ gatk_realigner_indel_known_sites gatk_baserecalibration_known_sites gatk_varianteval_dbsnp snpsift_annotation_files };
+  qw{  gatk_baserecalibration_known_sites gatk_realigner_indel_known_sites gatk_varianteval_dbsnp snpsift_annotation_files };
 
 my @refs_to_process = check_references_for_vt(
     {
