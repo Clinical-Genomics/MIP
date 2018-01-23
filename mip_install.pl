@@ -578,6 +578,9 @@ sub get_programs_for_installation {
     if ( any { $_ eq q{cnvnator} } @{ $parameter_href->{select_program} } ) {
         push @{ $parameter_href->{select_program} }, qw{ samtools bcftools };
     }
+    if ( any { $_ eq q{peddy} } @{ $parameter_href->{select_program} } ) {
+        push @{ $parameter_href->{select_program} }, qw{ bcftools };
+    }
 
     ## Remove all programs except those selected for installation
     if ( @{ $parameter_href->{select_program} } ) {
