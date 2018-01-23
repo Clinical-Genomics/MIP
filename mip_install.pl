@@ -68,7 +68,7 @@ Readonly my $UNDERSCORE => q{_};
 my $config_file = catfile( $Bin, qw{ definitions install_parameters.yaml} );
 my %parameter = load_yaml( { yaml_file => $config_file } );
 
-our $VERSION = q{1.2.29};
+our $VERSION = q{1.2.30};
 
 GetOptions(
     q{see|bash_set_errexit}    => \$parameter{bash_set_errexit},
