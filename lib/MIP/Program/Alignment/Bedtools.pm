@@ -120,4 +120,8 @@ sub bedtools_genomecov {
     return @commands;
 }
 
+sub bedtools_makewindows {
+    return;
+}
+
 1;
