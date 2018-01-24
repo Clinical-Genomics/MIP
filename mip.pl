@@ -562,6 +562,12 @@ GetOptions(
       \$active_parameter{psamtools_subsample_mt},
     q{ssmtd|samtools_subsample_mt_depth=n} =>
       \$active_parameter{samtools_subsample_mt_depth},
+    q{pvrd|pvardict=n}           => \$active_parameter{pvardict},
+    q{pvdraf|vrd_af_threshold}   => \$active_parameter{vrd_af_threshold},
+    q{pvrdcs|vrd_chrom_start}    => \$active_parameter{vrd_chrom_start},
+    q{qvrdre|vrd_region_end}     => \$active_parameter{vrd_region_end},
+    q{qvrdrs|vrd_region_start}   => \$active_parameter{vrd_region_start},
+    q{qvrdsa|vrd_segment_annotn} => \$active_parameter{vrd_segment_annotn},
   )
   or help(
     {
@@ -1896,6 +1902,14 @@ sub build_usage {
     -pars/--panalysisrunstatus Sets the analysis run status flag to finished in sample_info_file (defaults to "0" (=no))
     -psac/--psacct Generating sbatch script for SLURM info on each submitted job (defaults to "0" (=no))
     -sacfrf/--sacct_format_fields Format and fields of sacct output (defaults to "jobid", "jobname%50", "account", "partition", "alloccpus", "TotalCPU", "elapsed", "start", "end", "state", "exitcode")
+
+    ##Vardict
+    -pvrd/--pvardict Variant calling using Vardict (defaults to "0" (=no))
+        -pvdraf/--vrd_af_threshold AF threshold for variant calling (default 0.01)
+        -pvrdcs/--vrd_chrom_start Column for chromosome in the output (default 1)
+        -qvrdre/--vrd_region_end Column for region end position in the output (default 3)
+        -qvrdrs/--vrd_region_start Column for region start position in the output (default 2)
+        -qvrdsa/--vrd_segment_annotn Column for segment annotation in the output (default 4)
 END_USAGE
 }
 
@@ -3372,12 +3386,12 @@ sub write_cmd_mip_log {
                         "-" . $order_parameter_element . " ",
                         map {
 "$_=$active_parameter_href->{$order_parameter_element}{$_} "
-                        } (
+                          } (
                             keys %{
                                 $active_parameter_href
                                   ->{$order_parameter_element}
                             }
-                        )
+                          )
                     );
                 }
                 else {
