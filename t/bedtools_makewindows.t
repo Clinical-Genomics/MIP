@@ -98,6 +98,9 @@ diag(   q{Test bedtools_makewindows from Bedtools.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+Readonly my $WINDOW_SIZE => 200_000;
+Readonly my $STEP_SIZE   => 199_750;
+
 ## Base arguments
 my $function_base_command = q{bedtools};
 
@@ -131,8 +134,8 @@ my %required_argument = (
         expected_output => q{-b} . $SPACE . catfile(qw{ path to infile_bed }),
     },
     window_size => {
-        input           => q{200000},
-        expected_output => q{-w} . $SPACE . q{200000},
+        input           => $WINDOW_SIZE,
+        expected_output => q{-w} . $SPACE . $WINDOW_SIZE,
     },
 );
 
@@ -143,12 +146,12 @@ my %specific_argument = (
         expected_output => q{-b} . $SPACE . catfile(qw{ path to infile_bed }),
     },
     step_size => {
-        input           => q{199750},
-        expected_output => q{-s} . $SPACE . q{199750},
+        input           => $STEP_SIZE,
+        expected_output => q{-s} . $SPACE . $STEP_SIZE,
     },
     window_size => {
-        input           => q{200000},
-        expected_output => q{-w} . $SPACE . q{200000},
+        input           => $WINDOW_SIZE,
+        expected_output => q{-w} . $SPACE . $WINDOW_SIZE,
     },
 );
 
