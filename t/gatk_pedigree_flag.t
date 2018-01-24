@@ -110,9 +110,9 @@ my %command = gatk_pedigree_flag(
 );
 
 is( $command{pedigree_validation_type},
-    q{STRICT}, q{Test passed, pedigree validation type is verified.} );
+    q{STRICT}, q{Pedigree validation type is verified} );
 is( $command{pedigree}, $fam_file_path_test,
-    q{Test passed, path to pedigree file is verified.} );
+    q{Path to pedigree file is verified} );
 
 done_testing();
 
