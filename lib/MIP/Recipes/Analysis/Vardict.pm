@@ -25,7 +25,7 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_vardict };
+    our @EXPORT_OK = qw{ analysis_vardict_tn };
 
 }
 
@@ -73,7 +73,6 @@ sub analysis_vardict_tn {
     my $outaligner_dir;
     my $temp_directory;
     my $xargs_file_counter;
-    my $xargs_file_path_prefix;
 
     my $tmpl = {
         active_parameter_href => {
@@ -102,13 +101,6 @@ sub analysis_vardict_tn {
             store       => \$infile_lane_prefix_href,
             strict_type => 1,
         },
-
-        #        insample_directory => {
-        #            defined     => 1,
-        #            required    => 1,
-        #            store       => \$insample_directory,
-        #            strict_type => 1,
-        #        },
         job_id_href => {
             default     => {},
             defined     => 1,

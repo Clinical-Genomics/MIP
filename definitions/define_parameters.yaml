@@ -1517,7 +1517,7 @@ pvardict:
   outdir_name: vardict
   program_type: variant_callers
   file_endings:
-    -".vcf"
+    - ".vcf"
   outfile_suffx: ".vcf"
   type: program
 vrd_af_threshold:
