@@ -148,12 +148,6 @@ my %specific_argument = (
         input           => q{3},
         expected_output => q{--NUM_PROCESSES} . $SPACE . q{3},
     },
-    tumor_file => {
-        input           => catfile(qw{ path to tumor_sample_SNP_formatted}),
-        expected_output => q{--TUMOR_FILE}
-          . $SPACE
-          . catfile(qw{ path to tumor_sample_SNP_formatted}),
-    },
     output_prefix => {
         input           => q{output_prefix},
         expected_output => q{--OUTPUT_PREFIX} . $SPACE . q{output_prefix},
@@ -161,6 +155,12 @@ my %specific_argument = (
     output_dir => {
         input           => catfile(qw{ path to output_dir}),
         expected_output => q{--DIR} . $SPACE . catfile(qw{ path to output_dir}),
+    },
+    tumor_file => {
+        input           => catfile(qw{ path to tumor_sample_SNP_formatted}),
+        expected_output => q{--TUMOR_FILE}
+          . $SPACE
+          . catfile(qw{ path to tumor_sample_SNP_formatted}),
     },
 );
 
