@@ -86,10 +86,10 @@ BEGIN {
     }
 }
 
-use MIP::Program::Alignment::Bedtools qw{ bedtools_makewindows_bed };
+use MIP::Program::Alignment::Bedtools qw{ bedtools_makewindows };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test bedtools_makewindows_bed from Bedtools.pm v}
+diag(   q{Test bedtools_makewindows from Bedtools.pm v}
       . $MIP::Program::Alignment::Bedtools::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -126,25 +126,21 @@ my %required_argument = (
         input           => undef,
         expected_output => $function_base_command,
     },
-    infile_bed => {
-        input           => catfile(q{infile.test}),
-        expected_output => q{-b} . $SPACE . catfile(q{infile.test}),
-    },
-    step_size => {
-        input           => q{1},
-        expected_output => q{-s} . $SPACE . q{1},
+    infile_bed_path => {
+        input           => catfile(qw{ path to infile_bed }),
+        expected_output => q{-b} . $SPACE . catfile(qw{ path to infile_bed }),
     },
     window_size => {
-        input           => q{2},
-        expected_output => q{-w} . $SPACE . q{2},
+        input           => q{200000},
+        expected_output => q{-w} . $SPACE . q{200000},
     },
 );
 
 ## Specific arguments
 my %specific_argument = (
-    infile_bed => {
-        input           => catfile(q{infile.test}),
-        expected_output => q{-b} . $SPACE . catfile(q{infile.test}),
+    infile_bed_path => {
+        input           => catfile(qw{ path to infile_bed }),
+        expected_output => q{-b} . $SPACE . catfile(qw{ path to infile_bed }),
     },
     step_size => {
         input           => q{199750},
@@ -154,11 +150,10 @@ my %specific_argument = (
         input           => q{200000},
         expected_output => q{-w} . $SPACE . q{200000},
     },
-
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&bedtools_makewindows_bed;
+my $module_function_cref = \&bedtools_makewindows;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

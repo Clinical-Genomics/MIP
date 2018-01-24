@@ -27,7 +27,7 @@ BEGIN {
     use base qw { Exporter };
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ bedtools_genomecov bedtools_makewindows_bed };
+    our @EXPORT_OK = qw{ bedtools_genomecov bedtools_makewindows };
 
 }
 
@@ -136,7 +136,7 @@ sub bedtools_makewindows {
 
     ## Flatten argument(s)
     my $FILEHANDLE;
-    my $infile_bed;
+    my $infile_bed_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
@@ -144,10 +144,10 @@ sub bedtools_makewindows {
     my $window_size;
 
     my $tmpl = {
-        FILEHANDLE => { store => \$FILEHANDLE },
-        infile_bed => {
+        FILEHANDLE      => { store => \$FILEHANDLE },
+        infile_bed_path => {
             required    => 1,
-            store       => \$infile_bed,
+            store       => \$infile_bed_path,
             strict_type => 1,
         },
         step_size => {
@@ -181,10 +181,12 @@ sub bedtools_makewindows {
     my @commands = qw{bedtools makewindow};
 
     ## Infile
-    push @commands, q{-b} . $SPACE . $infile_bed;
+    push @commands, q{-b} . $SPACE . $infile_bed_path;
 
-    ## Step size
-    push @commands, q{-s} . $SPACE . $step_size;
+    if ($step_size) {
+        ## Step size
+        push @commands, q{-s} . $SPACE . $step_size;
+    }
 
     ## Window size
     push @commands, q{-w} . $SPACE . $window_size;
@@ -202,8 +204,8 @@ sub bedtools_makewindows {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
     return @commands;
