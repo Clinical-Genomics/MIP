@@ -125,7 +125,7 @@ sub bedtools_makewindows {
     ## Function : Perl wrapper for writing bedtools makewindows for bed files recipe to $FILEHANDLE. Based on bedtools 2.26.0.
     ## Returns  : "@commands"
     ## Arguments: $FILEHANDLE             => Sbatch filehandle to write to
-    ##          : $infile_bed             => Input BED file (with chrom,start,end fields).
+    ##          : infile_bed_path         => Input BED file (with chrom,start,end fields).
     ##          : $stderrfile_path        => Stderrfile path
     ##          : $stderrfile_path_append => Stderrfile path append
     ##          : $stdoutfile_path        => Outfile path
