@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ basename dirname  };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use Getopt::Long;
 use open qw{ :encoding(UTF-8) :std };
@@ -78,7 +78,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::PATH::TO::MODULE});
+    my @modules = (q{MIP::Program::Qc::Theta});
 
   MODULE:
     for my $module (@modules) {
@@ -86,11 +86,11 @@ BEGIN {
     }
 }
 
-use MIP::PATH::TO::MODULE qw{ SUB_ROUTINE };
+use MIP::Program::Qc::Theta qw{ run_theta };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
-      . $MIP::PATH::TO::MODULE::VERSION
+diag(   q{Test run_theta from Theta.pm v}
+      . $MIP::Program::Qc::Theta::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -99,7 +99,7 @@ diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = q{BASE_COMMAND};
+my $function_base_command = q{RunTHetA};
 
 my %base_argument = (
     FILEHANDLE => {
@@ -123,29 +123,49 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
+    normal_file => {
+        input           => catfile(qw{ path to normal_sample_SNP_formatted}),
+        expected_output => q{--NORMAL_FILE}
+          . $SPACE
+          . q{catfile(qw{ path to normal_sample_SNP_formatted})},
     },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
+    tumor_file => {
+        input           => catfile(qw{ path to tumor_sample_SNP_formatted}),
+        expected_output => q{--TUMOR_FILE}
+          . $SPACE
+          . catfile(qw{ path to tumor_sample_SNP_formatted}),
     },
 );
 
 my %specific_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
+    normal_file => {
+        input           => catfile(qw{ path to normal_sample_SNP_formatted}),
+        expected_output => q{--NORMAL_FILE}
+          . $SPACE
+          . catfile(qw{ path to normal_sample_SNP_formatted}),
     },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
+    num_processes => {
+        input           => q{3},
+        expected_output => q{--NUM_PROCESSES} . $SPACE . q{3},
+    },
+    tumor_file => {
+        input           => catfile(qw{ path to tumor_sample_SNP_formatted}),
+        expected_output => q{--TUMOR_FILE}
+          . $SPACE
+          . catfile(qw{ path to tumor_sample_SNP_formatted}),
+    },
+    output_prefix => {
+        input           => q{output_prefix},
+        expected_output => q{--OUTPUT_PREFIX} . $SPACE . q{output_prefix},
+    },
+    output_dir => {
+        input           => catfile(qw{ path to output_dir}),
+        expected_output => q{--DIR} . $SPACE . catfile(qw{ path to output_dir}),
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&SUB_ROUTINE;
+my $module_function_cref = \&run_theta;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );

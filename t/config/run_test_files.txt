@@ -218,6 +218,7 @@ star_genome_generate.t
 svdb_merge.t
 svdb_query.t
 tar.t
+theta.t
 tiddit_coverage.t
 tiddit_sv.t
 unix_standard_streams.t
