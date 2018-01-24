@@ -11,6 +11,7 @@ bcftools_stats.t
 bcftools_view.t
 bedtools_genomecov.t
 bedtools_intersectbed.t
+bedtools_makewindows.t
 bwa_mem.t
 bwa_index.t
 bzip2.t
