@@ -41,8 +41,7 @@ sub vardict {
 ## Arguments: $af_threshold           => Threshold for allele frequency
 ##          : $FILEHANDLE             => Filehandle to write to
 ##          : $infile_bed_region_info => Infile path for region info bed file
-##          : $infile_path_normal     => Infile path normal
-##          : $infile_path_tumor      => Infile path tumor
+##          : $infile_paths_ref       => Infile path array for normal and tumor bam file
 ##          : $out_chrom_start        => Column for chromosome
 ##          : $out_region_start       => Column for region start
 ##          : $out_region_end         => Column for region end
@@ -78,7 +77,6 @@ sub vardict {
             allow       => qr/ ^0.\d{1,2}$ | ^1$ /xsm,
             defined     => 1,
             default     => 0.01,
-            required    => 1,
             store       => \$af_threshold,
             strict_type => 1,
         },
@@ -441,7 +439,6 @@ sub vardict_teststrandbias {
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
-
 
     my $tmpl = {
         FILEHANDLE => {
