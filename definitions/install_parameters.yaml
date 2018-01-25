@@ -121,7 +121,7 @@ shell:
     vep_assemblies:
       - GRCh37
       - GRCh38
-    vep_auto_flag: alcfp
+    vep_auto_flag: acfp
     vep_cache_dir: ~
     vep_plugins:
       - UpDownDistance
