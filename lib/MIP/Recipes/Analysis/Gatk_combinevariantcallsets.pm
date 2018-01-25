@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_combinevariantcallsets };
@@ -383,7 +383,8 @@ sub analysis_gatk_combinevariantcallsets {
             my $most_complete_bcf_key =
               q{most_complete} . $UNDERSCORE . substr $bcf_suffix, 1;
             my $program_bcf_file_path =
-              catfile( $outfamily_directory, $outfile_prefix . $bcf_suffix );
+              catfile( $outfamily_directory,
+                $outfile_prefix . $bcf_suffix . q{.gz} );
             add_processing_metafile_to_sample_info(
                 {
                     metafile_tag     => $most_complete_bcf_key,
