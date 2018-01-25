@@ -124,13 +124,13 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     normal_file => {
-        input           => catfile(qw{ path to normal_sample_SNP_formatted}),
+        input           => catfile(qw{ path to normal_sample_SNP_formatted }),
         expected_output => q{--NORMAL_FILE}
           . $SPACE
-          . q{catfile(qw{ path to normal_sample_SNP_formatted})},
+          . catfile(qw{ path to normal_sample_SNP_formatted }),
     },
     tumor_file => {
-        input           => catfile(qw{ path to tumor_sample_SNP_formatted}),
+        input           => catfile(qw{ path to tumor_sample_SNP_formatted }),
         expected_output => q{--TUMOR_FILE}
           . $SPACE
           . catfile(qw{ path to tumor_sample_SNP_formatted}),
@@ -139,28 +139,30 @@ my %required_argument = (
 
 my %specific_argument = (
     normal_file => {
-        input           => catfile(qw{ path to normal_sample_SNP_formatted}),
+        input           => catfile(qw{ path to normal_sample_SNP_formatted }),
         expected_output => q{--NORMAL_FILE}
           . $SPACE
-          . catfile(qw{ path to normal_sample_SNP_formatted}),
+          . catfile(qw{ path to normal_sample_SNP_formatted }),
     },
     num_processes => {
-        input           => q{3},
-        expected_output => q{--NUM_PROCESSES} . $SPACE . q{3},
+        input           => 3,
+        expected_output => q{--NUM_PROCESSES} . $SPACE . 3,
     },
     output_prefix => {
         input           => q{output_prefix},
         expected_output => q{--OUTPUT_PREFIX} . $SPACE . q{output_prefix},
     },
     output_dir => {
-        input           => catfile(qw{ path to output_dir}),
-        expected_output => q{--DIR} . $SPACE . catfile(qw{ path to output_dir}),
+        input           => catfile(qw{ path to output_dir }),
+        expected_output => q{--DIR}
+          . $SPACE
+          . catfile(qw{ path to output_dir }),
     },
     tumor_file => {
-        input           => catfile(qw{ path to tumor_sample_SNP_formatted}),
+        input           => catfile(qw{ path to tumor_sample_SNP_formatted }),
         expected_output => q{--TUMOR_FILE}
           . $SPACE
-          . catfile(qw{ path to tumor_sample_SNP_formatted}),
+          . catfile(qw{ path to tumor_sample_SNP_formatted }),
     },
 );
 

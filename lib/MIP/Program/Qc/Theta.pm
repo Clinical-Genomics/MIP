@@ -108,19 +108,19 @@ sub run_theta {
 
     if ($output_dir) {
 
-        #output directory
+        # Output directory
         push @commands, q{--DIR} . $SPACE . $output_dir;
     }
 
     if ($output_prefix) {
 
-        #output prefix
+        # Output prefix
         push @commands, q{--OUTPUT_PREFIX} . $SPACE . $output_prefix;
     }
 
     if ($num_processes) {
 
-        #number of processes
+        # Number of processes
         push @commands, q{--NUM_PROCESSES} . $SPACE . $num_processes;
     }
 
