@@ -1,17 +1,17 @@
 package MIP::Recipes::Install::Vep;
 
-use strict;
-use warnings;
-use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
 use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
+use charnames qw{ :full :short };
 use Cwd;
+use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use List::MoreUtils qw{ any };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
+use strict;
+use utf8;
+use warnings qw{ FATAL utf8 };
+use warnings;
 
 ## Cpanm
 use Readonly;
@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vep };
@@ -36,60 +36,60 @@ sub install_vep {
 
 ## Function : Install varianteffectpredictor
 ## Returns  : ""
-## Arguments: $program_parameters_href => Hash with vep specific parameters {REF}
+## Arguments: $conda_environment       => Conda environment
 ##          : $conda_prefix_path       => Conda prefix path
-##          : $conda_environment       => Conda environment
+##          : $FILEHANDLE              => Filehandle to write to
 ##          : $noupdate                => Do not update
+##          : $program_parameters_href => Hash with vep specific parameters {REF}
 ##          : $quiet                   => Be quiet
 ##          : $verbose                 => Set verbosity
-##          : $FILEHANDLE              => Filehandle to write to
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $vep_parameters_href;
-    my $conda_prefix_path;
     my $conda_environment;
+    my $conda_prefix_path;
+    my $FILEHANDLE;
     my $noupdate;
     my $quiet;
+    my $vep_parameters_href;
     my $verbose;
-    my $FILEHANDLE;
 
     my $tmpl = {
-        program_parameters_href => {
-            required    => 1,
-            default     => {},
+        conda_environment => {
+            store       => \$conda_environment,
             strict_type => 1,
-            store       => \$vep_parameters_href
         },
         conda_prefix_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$conda_prefix_path,
             strict_type => 1,
-            store       => \$conda_prefix_path
         },
-        conda_environment => {
-            strict_type => 1,
-            store       => \$conda_environment
+        FILEHANDLE => {
+            defined  => 1,
+            required => 1,
+            store    => \$FILEHANDLE,
         },
         noupdate => {
+            store       => \$noupdate,
             strict_type => 1,
-            store       => \$noupdate
+        },
+        program_parameters_href => {
+            default     => {},
+            required    => 1,
+            store       => \$vep_parameters_href,
+            strict_type => 1,
         },
         quiet => {
             allow       => [ undef, 0, 1 ],
+            store       => \$quiet,
             strict_type => 1,
-            store       => \$quiet
         },
         verbose => {
             allow       => [ undef, 0, 1 ],
+            store       => \$verbose,
             strict_type => 1,
-            store       => \$verbose
-        },
-        FILEHANDLE => {
-            required => 1,
-            defined  => 1,
-            store    => \$FILEHANDLE
         },
     };
 
@@ -167,8 +167,8 @@ sub install_vep {
         say {$FILEHANDLE} q{## Activate conda environment};
         conda_source_activate(
             {
-                FILEHANDLE => $FILEHANDLE,
                 env_name   => $conda_environment,
+                FILEHANDLE => $FILEHANDLE,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -277,7 +277,7 @@ sub install_vep {
     }
 
     # Initate
-    my $vep_plugin_dir = catdir( q{$HOME}, $DOT, qw{vep Plugins} );
+    my $vep_plugin_dir = catdir( $cache_directory, q{Plugins} );
 
     if (@plugins) {
 
