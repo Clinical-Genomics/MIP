@@ -198,6 +198,7 @@ set_default_config_dynamic_parameters.t
 set_default_log4perl_file.t
 set_file_suffix.t
 set_dynamic_parameter.t
+set_parameter_to_broadcast.t
 set_pedigree_capture_kit_info.t
 set_pedigree_family_info.t
 set_pedigree_phenotype_info.t
