@@ -30,12 +30,13 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $STDOUT     => q{>};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $PIPE       => q{|};
-Readonly my $UNDERSCORE => q{_};
-Readonly my $ASTERISK   => q{*};
+Readonly my $ASTERISK     => q{*};
+Readonly my $DOUBLE_QUOTE => q{"};
+Readonly my $NEWLINE      => qq{\n};
+Readonly my $PIPE         => q{|};
+Readonly my $SPACE        => q{ };
+Readonly my $STDOUT       => q{>};
+Readonly my $UNDERSCORE   => q{_};
 
 sub analysis_vardict_tn {
 
@@ -166,6 +167,7 @@ sub analysis_vardict_tn {
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files
       qw{ migrate_file migrate_files xargs_migrate_contig_files };
+    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_filter };
     use MIP::Program::Variantcalling::Vardict
       qw{ vardict vardict_var2vcf_single vardict_var2vcf_paired vardict_testsomatic vardict_teststrandbias };
     use MIP::Processmanagement::Slurm_processes
@@ -202,7 +204,7 @@ sub analysis_vardict_tn {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
+    my $FILEHANDLE = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ( $file_path, $program_info_path ) = setup_script(
@@ -358,17 +360,78 @@ sub analysis_vardict_tn {
 
     vardict_var2vcf_paired(
         {
-            af_threshold    => $af_threshold,
-            FILEHANDLE      => $FILEHANDLE,
+            af_threshold => $af_threshold,
+            FILEHANDLE   => $FILEHANDLE,
+            ## TODO: add -M, -P, and -m options.
             sample_name     => $sample_name,
             stdoutfile_path => $outfile_path,
         }
     );
 
-    print {$FILEHANDLE} $STDOUT . print {$outfile_path} . $NEWLINE
+    print {$FILEHANDLE} $PIPE . $SPACE;
 
-      ## Copies file from temporary directory.
-      say {$FILEHANDLE} q{## Copy file from temporary directory};
+    ## Filter for low allele frequency with low depth
+    bcftools_filter(
+        {
+            exclude => _bcftools_low_freq_low_depth(),
+
+            #TODO add the following to bcftools
+            filter_mode => q{+},
+            filter_name => q{LowAlleleDepth},
+            FILEHANDLE  => $FILEHANDLE,
+        }
+    );
+
+    print {$FILEHANDLE} $PIPE . $SPACE;
+
+    ## Filter for low frequency with poor quality
+    bcftools_filter(
+        {
+            exclude => _bcftools_low_freq_low_qual(),
+
+            #TODO add the following to bcftools
+            filter_mode => q{+},
+            filter_name => q{LowFreqQuality},
+            FILEHANDLE  => $FILEHANDLE,
+        }
+    );
+
+    print {$FILEHANDLE} $PIPE . $SPACE;
+
+    ## Include only those with QUAL > 0
+    bcftools_filter(
+        {
+            include    => $DOUBLE_QUOTE . q{QUAL>=0} . $DOUBLE_QUOTE,
+            FILEHANDLE => $FILEHANDLE,
+        }
+    );
+
+    print {$FILEHANDLE} _tag_somatic() . $PIPE . $SPACE;
+
+    ## Filter for rejected non somatic
+    bcftools_filter(
+        {
+            exclude => q?'STATUS !~ \".*Somatic\"'?,
+
+            #TODO add the following to bcftools
+            filter_mode => q{+},
+            filter_name => q{REJECT},
+            FILEHANDLE  => $FILEHANDLE,
+        }
+    );
+
+    print {$FILEHANDLE} $PIPE . $SPACE;
+
+    print {$FILEHANDLE} _replace_ambiguous() . $PIPE . $SPACE;
+
+    print {$FILEHANDLE} _filter_duplicate()
+      . $SPACE
+      . $STDOUT
+      . print {$outfile_path}
+      . $NEWLINE;
+
+    ## Copies file from temporary directory.
+    say {$FILEHANDLE} q{## Copy file from temporary directory};
     migrate_file(
         {
             FILEHANDLE   => $FILEHANDLE,
@@ -406,6 +469,133 @@ sub analysis_vardict_tn {
         );
     }
     return;
+}
+
+sub _bcftools_low_freq_low_qual {
+
+    ## Function: Create filter expression for bcftools.
+    ## Return: $bcftools_filter_expr
+
+    ## The filter is: AF < 0.2 && QUAL < 55 && SSF > 0.06
+
+    Readonly my $CONDITON_AND => q{&&};
+
+    my $bcftools_filter_expr;
+
+    my $af_expr = q{AF < 0.2};
+
+    my $pval_expr = q{SSF > 0.06};
+
+    my $qual_expr = q{QUAL < 55};
+
+    $bcftools_filter_expr =
+        $DOUBLE_QUOTE
+      . $af_expr
+      . $CONDITON_AND
+      . $qual_expr
+      . $CONDITON_AND
+      . $pval_expr;
+
+    return $bcftools_filter_expr;
+}
+
+sub _bcftools_low_freq_low_depth {
+
+    ## Function: Create filter expression for bcftools.
+    ## Return: $bcftools_filter_expr
+
+    ## The filter is:
+    ## ((AF * DP < 6) &&
+    ## ((MQ < 55.0 && NM > 1.0) ||
+    ##  (MQ < 60.0 && NM > 2.0) ||
+    ##  (DP < 10) ||
+    ##  (QUAL < 45)))
+
+    Readonly my $CONDITON_AND => q{&&};
+    Readonly my $CONDITON_OR  => q{||};
+    Readonly my $OPEN_PARAN   => q{(};
+    Readonly my $CLOSE_PARAN  => q{)};
+
+    my $bcftools_filter_expr;
+
+    my $af_dp_expr = q{(AF * DP < 6)};
+
+    my $mq_nm_expr_1 = q{(MQ < 55.0 && NM > 1.0)};
+
+    my $mq_nm_expr_2 = q{(MQ < 60.0 && NM > 2.0)};
+
+    my $dp_expr = q{(DP < 10)};
+
+    my $qual_expr = q{(QUAL < 45)};
+
+    $bcftools_filter_expr =
+        $DOUBLE_QUOTE
+      . $OPEN_PARAN
+      . $af_dp_expr
+      . $CONDITON_AND
+      . $OPEN_PARAN
+      . $mq_nm_expr_1
+      . $CONDITON_OR
+      . $mq_nm_expr_2
+      . $CONDITON_OR
+      . $dp_expr
+      . $CONDITON_OR
+      . $qual_expr
+      . $CLOSE_PARAN
+      . $CLOSE_PARAN;
+
+    return $bcftools_filter_expr;
+}
+
+sub _filter_duplicate {
+
+    ## Function: Writes a awk expression to open $FILEHANDLE. The awk expression will remove duplicates by comparing ref and alt allele. Adopted from bcbio.
+    ## Returns: $awk_filter
+    my $awk_filter;
+
+    $awk_filter =
+      q?awk -F$'\t' -v OFS='\t' '$1!~/^#/ && $4 == $5 ? . q?{next} {print}'?;
+
+    return $awk_filter;
+}
+
+sub _replace_ambiguous {
+
+    ## Function: Writes a awk expression to open $FILEHANDLE. The awk expression will replace ambiguous reference with N. Adopted from bcbio.
+    ## Returns: $awk_filter
+
+    ## Remove abimguous from ref, column 4 in VCF
+    my $awk_filter_ref =
+        q?awk -F$'\t' -v OFS='\t' ' ?
+      . q?{ if ($0 !~ /^#/) gsub(/[KMRYSWBVHDXkmryswbvhdx]/, "N", $4)} ?
+      . q?{ print }'?;
+
+    ## Remove abimguous from alt, column 5 in VCF
+    my $awk_filter_alt =
+        q?awk -F$'\t' -v OFS='\t' ' ?
+      . q?{ if ($0 !~ /^#/) gsub(/[KMRYSWBVHDXkmryswbvhdx]/, "N", $5)} ?
+      . q?{ print }'?;
+
+    my $awk_filter =
+      $awk_filter_ref . $SPACE . $PIPE . $SPACE . $awk_filter_alt;
+
+    return $awk_filter;
+}
+
+sub _tag_somatic {
+
+    ## Function: Writes a sed expression to open $FILEHANDLE. The sed expression will update the somatic. Adopted from bcbio.
+    ## Returns: $sed_filter
+
+    my $somatic_replace = q?sed 's/\\\\.*Somatic\\\\/Somatic/'?;
+
+    my $reject_update =
+q?sed 's/REJECT,Description=\".*\">/REJECT,Description=\"Not Somatic via VarDict\">/?;
+
+    my $sed_string =
+      $somatic_replace . $SPACE . $PIPE . $SPACE . $reject_update;
+
+    return $sed_string;
 }
 
 1;
