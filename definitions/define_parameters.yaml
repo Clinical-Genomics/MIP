@@ -1532,6 +1532,18 @@ vrd_chrom_start:
   data_type: SCALAR
   default: 1
   type: program_argument
+vrd_max_mm:
+  associated_program:
+   - pvardict
+  data_type: SCALAR
+  default: 4.5
+  type: program_argument
+vrd_max_pval:
+  associated_program:
+   - pvardict
+  data_type: SCALAR
+  default: 0.9
+  type: program_argument
 vrd_region_end:
   associated_program:
    - pvardict
@@ -1549,6 +1561,12 @@ vrd_segment_annotn:
    - pvardict
   data_type: SCALAR
   default: 4
+  type: program_argument
+vrd_somatic_only:
+  associated_program:
+   - pvardict
+  data_type: SCALAR
+  default: 0
   type: program_argument
 ##VT
 pvt:
