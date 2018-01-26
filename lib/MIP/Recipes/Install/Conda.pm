@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.0.13;
+    our $VERSION = 1.0.14;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -659,6 +659,18 @@ sub finish_bioconda_package_install {
                 FILEHANDLE  => $FILEHANDLE,
                 force       => 1,
                 infile_path => dirname($gatk_tar_path),
+                recursive   => 1,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+
+        ## Remove of /tmp/gatk from gatk 3.8 installation
+        my $tmpdir = File::Spec->tmpdir();
+        gnu_rm(
+            {
+                FILEHANDLE  => $FILEHANDLE,
+                force       => 1,
+                infile_path => catdir( $tmpdir, q{gatk} ),
                 recursive   => 1,
             }
         );
