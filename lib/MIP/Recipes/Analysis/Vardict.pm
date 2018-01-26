@@ -323,9 +323,12 @@ sub analysis_vardict_tn {
     my $af_threshold       = $active_parameter_href->{vrd_af_threshold};
     my $chrom_start        = $active_parameter_href->{vrd_chrom_start};
     my $input_bed_file     = $active_parameter_href->{vrd_input_bed_file};
+    my $max_mm             = $active_parameter_href->{vrd_max_mm};
+    my $max_pval           = $active_parameter_href->{vrd_max_pval};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $region_end         = $active_parameter_href->{vrd_region_end};
     my $region_start       = $active_parameter_href->{vrd_region_start};
+    my $somatic_only       = $active_parameter_href->{vrd_somatic_only};
 
     ## Assign family_id to sample_name
     my $sample_name    = $active_parameter_href->{family_id};
@@ -338,13 +341,16 @@ sub analysis_vardict_tn {
             af_threshold           => $af_threshold,
             FILEHANDLE             => $FILEHANDLE,
             infile_paths_ref       => \@infile_path,
+            infile_bed_region_info => $input_bed_file,
+            max_pval               => $max_pval,
+            max_mm                 => $max_mm,
             out_chrom_start        => $chrom_start,
             out_region_start       => $region_start,
             out_region_end         => $region_end,
             out_segment_annotn     => $segment_annotn,
             referencefile_path     => $referencefile_path,
             sample_name            => $sample_name,
-            infile_bed_region_info => $input_bed_file,
+            somatic_only           => $somatic_only,
         }
     );
 
@@ -360,10 +366,12 @@ sub analysis_vardict_tn {
 
     vardict_var2vcf_paired(
         {
-            af_threshold => $af_threshold,
-            FILEHANDLE   => $FILEHANDLE,
-            ## TODO: add -M, -P, and -m options.
+            af_threshold    => $af_threshold,
+            FILEHANDLE      => $FILEHANDLE,
+            max_pval        => $max_pval,
+            max_mm          => $max_mm,
             sample_name     => $sample_name,
+            somatic_only    => $somatic_only,
             stdoutfile_path => $outfile_path,
         }
     );
@@ -373,11 +381,9 @@ sub analysis_vardict_tn {
     ## Filter for low allele frequency with low depth
     bcftools_filter(
         {
-            exclude => _bcftools_low_freq_low_depth(),
-
-            #TODO add the following to bcftools
+            exclude     => _bcftools_low_freq_low_depth(),
             filter_mode => q{+},
-            filter_name => q{LowAlleleDepth},
+            soft_filter => q{LowAlleleDepth},
             FILEHANDLE  => $FILEHANDLE,
         }
     );
@@ -387,11 +393,9 @@ sub analysis_vardict_tn {
     ## Filter for low frequency with poor quality
     bcftools_filter(
         {
-            exclude => _bcftools_low_freq_low_qual(),
-
-            #TODO add the following to bcftools
+            exclude     => _bcftools_low_freq_low_qual(),
             filter_mode => q{+},
-            filter_name => q{LowFreqQuality},
+            soft_filter => q{LowFreqQuality},
             FILEHANDLE  => $FILEHANDLE,
         }
     );
