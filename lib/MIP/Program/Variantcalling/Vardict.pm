@@ -278,14 +278,17 @@ sub vardict_var2vcf_single {
 
 sub vardict_var2vcf_paired {
 
-## Function : Perl wrapper for var2vcf_paired, converting variant output to vcf. Based on vardict 2017.09.24
-## Returns  : @commands
-## Arguments: $af_threshold           => Threshold for allele frequency
-##          : $FILEHANDLE             => Filehandle to write to
-##          : $sample_name            => Sample name to be used directly, will overwrite -n option
-##          : $stderrfile_path        => Stderrfile path
-##          : $stderrfile_path_append => Append stderr info to file path
-##          : $stdoutfile_path        => Stdoutfile path
+    ## Function : Perl wrapper for var2vcf_paired, converting variant output to vcf. Based on vardict 2017.09.24
+    ## Returns  : @commands
+    ## Arguments: $af_threshold           => Threshold for allele frequency
+    ##          : $FILEHANDLE             => Filehandle to write to
+    ##          : $max_mm                 => The maximum mean mismatches allowed
+    ##          : $max_pval               => The maximum p-valuem, set to 0 to keep all variants
+    ##          : $sample_name            => Sample name to be used directly, will overwrite -n option
+    ##          : $somatic_only           => Output only candidate somatic
+    ##          : $stderrfile_path        => Stderrfile path
+    ##          : $stderrfile_path_append => Append stderr info to file path
+    ##          : $stdoutfile_path        => Stdoutfile path
 
     my ($arg_href) = @_;
 
@@ -298,6 +301,9 @@ sub vardict_var2vcf_paired {
 
     ## Default(s)
     my $af_threshold;
+    my $max_mm;
+    my $max_pval;
+    my $somatic_only;
 
     my $tmpl = {
         af_threshold => {
@@ -305,14 +311,34 @@ sub vardict_var2vcf_paired {
             allow       => qr/ ^0.\d{1,2}$ | ^1$ /xsm,
             defined     => 1,
             default     => 0.01,
-            required    => 1,
             store       => \$af_threshold,
+            strict_type => 1,
+        },
+        max_mm => {
+            allow       => qr/ ^\d.\d*$ | ^\d*$ /xsm,
+            defined     => 1,
+            default     => 4.5,
+            store       => \$max_mm,
+            strict_type => 1,
+        },
+        max_pval => {
+            ## Pvalue match must have a none zero digit as the last one
+            allow       => qr/ ^0.\d*[1-9]$ /xsm,
+            defined     => 1,
+            default     => 0.9,
+            store       => \$max_pval,
             strict_type => 1,
         },
         sample_name => {
             allow       => qr/ ^\w+$ /xsm,
             required    => 1,
             store       => \$sample_name,
+            strict_type => 1,
+        },
+        somatic_only => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$somatic_only,
             strict_type => 1,
         },
         FILEHANDLE => {
@@ -337,9 +363,31 @@ sub vardict_var2vcf_paired {
     ## Stores commands depending on input parameters
     my @commands = q{var2vcf_paired.pl};
 
-    push @commands, q{-f} . $SPACE . $af_threshold;
+    if ($af_threshold) {
+
+        # Allele frequency threshold
+        push @commands, q{-f} . $SPACE . $af_threshold;
+    }
+
+    if ($max_mm) {
+
+        # Maximum mean mismatches allowed
+        push @commands, q{-m} . $SPACE . $max_mm;
+    }
+
+    if ($max_pval) {
+
+        # Pvalue threshold for variants
+        push @commands, q{-P} . $SPACE . $max_pval;
+    }
 
     push @commands, q{-N} . $SPACE . $sample_name;
+
+    if ($somatic_only) {
+
+        # Output only somatic variants
+        push @commands, q{-M} . $SPACE;
+    }
 
     push @commands,
       unix_standard_streams(
