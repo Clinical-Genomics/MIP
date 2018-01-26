@@ -312,7 +312,7 @@ q{http://genes.mit.edu/burgelab/maxent/download/fordownload.tar.gz},
                     FILEHANDLE   => $FILEHANDLE,
                     force        => 1,
                     infile_path  => q{fordownload},
-                    outfile_path => catfile( $cache_directory, ),
+                    outfile_path => catfile($vep_plugin_dir),
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
