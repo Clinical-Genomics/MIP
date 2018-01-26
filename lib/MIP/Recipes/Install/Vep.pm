@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vep };
@@ -312,7 +312,7 @@ q{http://genes.mit.edu/burgelab/maxent/download/fordownload.tar.gz},
                     FILEHANDLE   => $FILEHANDLE,
                     force        => 1,
                     infile_path  => q{fordownload},
-                    outfile_path => catfile( $cache_directory, ),
+                    outfile_path => catfile($vep_plugin_dir),
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
