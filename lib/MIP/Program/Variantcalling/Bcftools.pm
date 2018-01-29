@@ -457,6 +457,7 @@ sub bcftools_filter {
 ## Returns  : @commands
 ## Arguments: $FILEHANDLE             => Filehandle to write to
 ##          : $exclude                => Exclude sites for which the expression is true
+##          : $filter_mode            => "+": do not replace but add to existing FILTER; "x": reset filters at sites which pass
 ##          : $include                => Include only sites for which the expression is true
 ##          : $indel_gap              => Filter clusters of indels separated by <int> or fewer base pairs allowing only one to pass
 ##          : $infile_path            => Infile paths
@@ -474,17 +475,18 @@ sub bcftools_filter {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
     my $exclude;
+    my $filter_mode;
+    my $FILEHANDLE;
     my $include;
     my $indel_gap;
     my $infile_path;
-    my $soft_filter;
-    my $snp_gap;
     my $outfile_path;
     my $regions_ref;
     my $samples_file_path;
     my $samples_ref;
+    my $soft_filter;
+    my $snp_gap;
     my $stdoutfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -493,41 +495,75 @@ sub bcftools_filter {
     my $output_type;
 
     my $tmpl = {
-        FILEHANDLE  => { store => \$FILEHANDLE, },
-        exclude     => { store => \$exclude, strict_type => 1, },
-        infile_path => { store => \$infile_path, strict_type => 1, },
-        include     => { store => \$include, strict_type => 1, },
+        FILEHANDLE => { store => \$FILEHANDLE, },
+        exclude    => {
+            store       => \$exclude,
+            strict_type => 1,
+        },
+        filter_mode => {
+            allow       => [qw{ + x }],
+            default     => q{+},
+            store       => \$filter_mode,
+            strict_type => 1,
+        },
+        infile_path => {
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        include => {
+            store       => \$include,
+            strict_type => 1,
+        },
         indel_gap => {
             allow       => qr/ ^\d+$ /sxm,
             store       => \$indel_gap,
             strict_type => 1,
         },
-        outfile_path => { store => \$outfile_path, strict_type => 1, },
-        output_type  => {
+        outfile_path => {
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+        output_type => {
             allow       => [qw{ b u z v}],
             default     => q{v},
             store       => \$output_type,
             strict_type => 1,
         },
-        regions_ref =>
-          { default => [], store => \$regions_ref, strict_type => 1, },
-        samples_file_path =>
-          { store => \$samples_file_path, strict_type => 1, },
+        regions_ref => {
+            default     => [],
+            store       => \$regions_ref,
+            strict_type => 1,
+        },
+        samples_file_path => {
+            store       => \$samples_file_path,
+            strict_type => 1,
+        },
         samples_ref => {
             default     => [],
             store       => \$samples_ref,
             strict_type => 1,
         },
-        soft_filter => { store => \$soft_filter, strict_type => 1, },
-        snp_gap     => {
+        soft_filter => {
+            store       => \$soft_filter,
+            strict_type => 1,
+        },
+        snp_gap => {
             allow       => qr/ ^\d+$ /sxm,
             store       => \$snp_gap,
             strict_type => 1,
         },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -552,18 +588,15 @@ sub bcftools_filter {
 
         push @commands, q{--exclude} . $SPACE . $exclude;
     }
+
+    if ($filter_mode) {
+
+        push @commands, q{--mode} . $SPACE . $filter_mode;
+    }
+
     if ($include) {
 
         push @commands, q{--include} . $SPACE . $include;
-    }
-    if ($soft_filter) {
-
-        push @commands, q{--soft-filter} . $SPACE . $soft_filter;
-    }
-
-    if ($snp_gap) {
-
-        push @commands, q{--SnpGap} . $SPACE . $snp_gap;
     }
 
     if ($indel_gap) {
@@ -575,6 +608,16 @@ sub bcftools_filter {
     if ($infile_path) {
 
         push @commands, $infile_path;
+    }
+
+    if ($soft_filter) {
+
+        push @commands, q{--soft-filter} . $SPACE . $soft_filter;
+    }
+
+    if ($snp_gap) {
+
+        push @commands, q{--SnpGap} . $SPACE . $snp_gap;
     }
 
     push @commands,

@@ -1165,7 +1165,7 @@ if ( $active_parameter{config_file_analysis} ne 0 ) {
     make_path( dirname( $active_parameter{config_file_analysis} ) );
 
     ## Remove previous analysis specific info not relevant for current run e.g. log file, sample_ids which are read from pedigree or cmd
-    my @remove_keys = (qw{ associated_program });
+    my @remove_keys = (qw{ associated_program dry_run_all });
 
   KEY:
     foreach my $key (@remove_keys) {
@@ -1643,7 +1643,6 @@ sub build_usage {
     return <<"END_USAGE";
  $program_name [options] -ifd [infile_dirs=sample_id] -rd [reference_dir] -p [project_id] -s [sample_ids,.,.,.,n] -em [email] -osd [outscript_dir] -odd [outdata_dir] -f [family_id] -p[program] -at [sample_id=analysis_type]
 
-
     #### MIP
     -ifd/--infile_dirs                                             Infile directory(s) (Hash infile_dirs=sample_id; mandatory)
     -rd/--reference_dir                                            Reference(s) directory (mandatory)
@@ -1681,6 +1680,7 @@ sub build_usage {
     -l/--log_file                                                  MIP log file (defaults to "{outdata_dir}/{family_id}/mip_log/{date}/{scriptname}_{timestamp}.log")
     -h/--help                                                      Display this help message
     -v/--version                                                   Display version of MIP
+
     #### Bash
     -bse/--bash_set_errexit                                        Set errexit in bash scripts (supply flag to enable)
     -bsu/--bash_set_nounset                                        Set nounset in bash scripts (supply flag to enable)
@@ -1695,21 +1695,25 @@ sub build_usage {
     -em/--email                                                    E-mail (defaults to "")
     -emt/--email_types                                             E-mail type (defaults to FAIL (=FAIL);Options: BEGIN (=BEGIN) and/or F (=FAIL) and/or END=(END))
     -qos/--slurm_quality_of_service                                SLURM quality of service command in sbatch scripts (defaults to "normal")
+
     #### Programs
     -psfq/--psplit_fastq_file                                      Split fastq files in batches of X reads and exits (defaults to "0" (=no))
       -sfqrdb/--split_fastq_file_read_batch                        Number of sequence reads to place in each batch (defaults to "25,000,000")
     -pgz/--pgzip_fastq                                             Gzip fastq files (defaults to "0" (=no))
     -pfqc/--pfastqc                                                Sequence quality analysis using FastQC (defaults to "0" (=no))
     -pcta/--pcutadapt                                              Trim input reads using cutadapt (defaults to "0" (=no))
+    
     ##BWA
     -pmem/--pbwa_mem                                               Align reads using Bwa Mem (defaults to "0" (=no))
       -memhla/--bwa_mem_hla                                        Apply HLA typing (supply flag to enable)
       -memcrm/--bwa_mem_cram                                       Use CRAM-format for additional output file (supply flag to enable)
       -memsts/--bwa_mem_bamstats                                   Collect statistics from BAM files (supply flag to enable)
       -memssm/--bwa_sambamba_sort_memory_limit                     Set the memory limit for Sambamba sort after bwa alignment (defaults to "32G")
+
     ## Picardtools
     -ptp/--picardtools_path                                        Path to Picardtools. Mandatory for use of Picardtools (defaults to "")
     -pptm/--ppicardtools_mergesamfiles                             Merge (BAM file(s) ) using Picardtools mergesamfiles or rename single samples for downstream processing (defaults to "0" (=no))
+
     ## Markduplicates
     -pmd/--pmarkduplicates                                         Markduplicates using either Picardtools markduplicates or sambamba markdup (defaults to "0" (=no))
     -mdpmd/--markduplicates_picardtools_markduplicates             Markduplicates using Picardtools markduplicates (supply flag to enable)
@@ -1717,6 +1721,7 @@ sub build_usage {
       -mdshts/--markduplicates_sambamba_markdup_hash_table_size    Sambamba size of hash table for finding read pairs (defaults to "262144")
       -mdsols/--markduplicates_sambamba_markdup_overflow_list_size Sambamba size of the overflow list (defaults to "200000")
       -mdsibs/--markduplicates_sambamba_markdup_io_buffer_size     Sambamba size of the io buffer for reading and writing BAM during the second pass (defaults to "2048")
+
     ### Coverage calculations
     -pchs/--pchanjo_sexcheck                                       Predicts gender from sex chromosome coverage (defaults to "0" (=no))
       -chslle/--chanjo_sexcheck_log_level                          Set chanjo sex log level (defaults to "DEBUG")
@@ -1735,6 +1740,7 @@ sub build_usage {
       -extb/--exome_target_bed                                     Exome target bed file per sample_id (defaults to "latest_supported_capturekit.bed";
                                                                    -extb file.bed=Sample_idX,Sample_idY -extb file.bed=Sample_idZ)
     -prcp/--prcovplots                                             Plots of genome coverage using rcovplots (defaults to "0" (=no))
+
     ### Structural variant callers
     -pcnv/--pcnvnator                                              Structural variant calling using CNVnator (defaults to "0" (=no))
       -cnvhbs/--cnv_bin_size                                       CNVnator bin size (defaults to "1000")
@@ -1790,11 +1796,15 @@ sub build_usage {
       -v2csfqt/--vcf2cytosure_freq_tag                             Specify frequency tag (defaults to "FRQ")
       -v2csnf/--vf2cytosure_no_filter                              Don't use any filtering (defaults to "0" (=no))
       -v2csvs/--vcf2cytosure_var_size                              Specify minimum variant size (defaults to "5000")
+
     ## Bcftools
     -pbmp/--pbcftools_mpileup                                      Variant calling using bcftools mpileup (defaults to "0" (=no))
       -pbmpfv/--bcftools_mpileup_filter_variant                    Use standard bcftools filters (Supply flag to enable)
+
     ## Freebayes
     -pfrb/--pfreebayes                                             Variant calling using Freebayes and bcftools (defaults to "0" (=no))
+
+
     ## GATK
     -gtp/--gatk_path                                               Path to GATK. Mandatory for use of GATK (defaults to "")
     -gll/--gatk_logging_level                                      Set the GATK log level (defaults to "INFO")
@@ -1852,6 +1862,7 @@ sub build_usage {
     -pgvee/--pgatk_variantevalexome                                Variant evaluation using GATK varianteval for exonic variants  (defaults to "0" (=no))
       -gveedbs/--gatk_varianteval_dbsnp                            DbSNP file used in GATK varianteval (defaults to "dbsnp_GRCh37_138_esa_129.vcf")
       -gveedbg/--gatk_varianteval_gold                             Gold indel file used in GATK varianteval (defaults to "GRCh37_mills_and_1000g_indels_-gold_standard-.vcf")
+
     ###Annotation
     -ppvab/--pprepareforvariantannotationblock                     Prepare for variant annotation block by copying and splitting files per contig (defaults to "0" (=no))
     -prhc/--prhocall                                               Rhocall performs annotation of variants in autozygosity regions (defaults to "0" (=no))
@@ -1898,6 +1909,7 @@ sub build_usage {
       -snesdbnsfpa/--snpsift_dbnsfp_annotations                    DbNSFP annotations to use with snpsift, comma sep; (defaults to
                                                                    "SIFT_pred", "Polyphen2_HDIV_pred", "Polyphen2_HVAR_pred",
                                                                    "GERP++_NR", "GERP++_RS",           "phastCons100way_vertebrate")
+
     ## Rankvariant
     -prav/--prankvariant                                           Ranking of annotated variants (defaults to "0" (=no))
       -ravgft/--genmod_models_family_type                          Use one of the known setups (defaults to "mip")
@@ -1907,6 +1919,7 @@ sub build_usage {
       -ravwg/--genmod_models_whole_gene                            Allow compound pairs in intronic regions (supply flag to enable)
       -ravrpf/--genmod_models_reduced_penetrance_file              File containg genes with reduced penetrance (defaults to "")
       -ravrm/--rank_model_file                                     Rank model config file (defaults to "")
+
     -pevab/--pendvariantannotationblock                            End variant annotation block by concatenating files (defaults to "0" (=no))
       -ravbf/--rankvariant_binary_file                             Produce binary file from the rank variant chromosomal sorted vcfs (supply flag to enable)
       -evabrgf/--endvariantannotationblock_remove_genes_file       Remove variants in hgnc_ids (defaults to "")
@@ -1914,6 +1927,7 @@ sub build_usage {
     ## Subsample the mitochondria
     -pssmt/--psamtools_subsample_mt                                Subsample the mitochondria (defaults to "0" (=no))
     -ssmtd/--samtools_subsample_mt_depth                           Set approximate coverage of subsampled bam file (defaults to "60")
+
     ### Utility
     -pped/--ppeddy                                                 QC for familial-relationships and sexes (defaults to "0" (=no) )
     -pplink/--pplink                                               QC for samples gender and relationship (defaults to "0" (=no) )
@@ -1945,7 +1959,7 @@ sub build_usage {
        -qvrdmm/--vrd_max_mm                                        The maximum mean mismatches allowed (default 4.5)
        -qvrdmp/--vrd_max_pval                                      The maximum p-valuem, set to 0 to keep all variants (default 0.9)
        -qvrdso/--vrd_somatic_only                                  Output only candidate somatic (default no)
-
+       
 END_USAGE
 }
 
@@ -3422,12 +3436,12 @@ sub write_cmd_mip_log {
                         "-" . $order_parameter_element . " ",
                         map {
 "$_=$active_parameter_href->{$order_parameter_element}{$_} "
-                          } (
+                        } (
                             keys %{
                                 $active_parameter_href
                                   ->{$order_parameter_element}
                             }
-                          )
+                        )
                     );
                 }
                 else {
