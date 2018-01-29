@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.0;
+our $VERSION = 1.0.1;
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -128,10 +128,6 @@ my %specific_argument = (
     infile_path => {
         input           => q{infile.test},
         expected_output => q{infile.test},
-    },
-    outfile_path => {
-        input           => q{outfile.txt},
-        expected_output => q{--output outfile.txt},
     },
 );
 

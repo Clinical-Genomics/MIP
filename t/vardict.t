@@ -125,10 +125,6 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    af_threshold => {
-        input           => q{0.01},
-        expected_output => q{-f} . $SPACE . q{0.01},
-    },
     infile_paths_ref => {
         inputs_ref      => [qw{tumor_bam normal_bam}],
         expected_output => q{-b}
@@ -138,32 +134,32 @@ my %required_argument = (
           . $DQUOTE,
     },
     out_chrom_start => {
-        input           => q{1},
-        expected_output => q{-c} . $SPACE . q{1},
+        input           => 1,
+        expected_output => q{-c} . $SPACE . 1,
     },
     out_region_start => {
-        input           => q{2},
-        expected_output => q{-S} . $SPACE . q{2},
+        input           => 2,
+        expected_output => q{-S} . $SPACE . 2,
     },
     out_region_end => {
-        input           => q{3},
-        expected_output => q{-E} . $SPACE . q{3},
+        input           => 3,
+        expected_output => q{-E} . $SPACE . 3,
     },
     out_segment_annotn => {
-        input           => q{4},
-        expected_output => q{-g} . $SPACE . q{4},
+        input           => 4,
+        expected_output => q{-g} . $SPACE . 4,
     },
     referencefile_path => {
-        input           => catfile(qw{ a_test_ref_file }),
-        expected_output => q{-G} . $SPACE . catfile(qw{ a_test_ref_file }),
+        input           => catfile(qw{ path to ref_file }),
+        expected_output => q{-G} . $SPACE . catfile(qw{ path to ref_file }),
     },
     sample_name => {
         input           => q{my_sample_name},
         expected_output => q{-N} . $SPACE . q{my_sample_name},
     },
     infile_bed_region_info => {
-        input           => catfile(qw{an_input_bed_file}),
-        expected_output => catfile(qw{an_input_bed_file}),
+        input           => catfile(qw{ path to input_bed_file }),
+        expected_output => catfile(qw{ path to input_bed_file }),
     },
 );
 
@@ -181,32 +177,32 @@ my %specific_argument = (
           . $DQUOTE,
     },
     out_chrom_start => {
-        input           => q{1},
-        expected_output => q{-c} . $SPACE . q{1},
+        input           => 1,
+        expected_output => q{-c} . $SPACE . 1,
     },
     out_region_start => {
-        input           => q{2},
-        expected_output => q{-S} . $SPACE . q{2},
+        input           => 2,
+        expected_output => q{-S} . $SPACE . 2,
     },
     out_region_end => {
-        input           => q{3},
-        expected_output => q{-E} . $SPACE . q{3},
+        input           => 3,
+        expected_output => q{-E} . $SPACE . 3,
     },
     out_segment_annotn => {
-        input           => q{4},
-        expected_output => q{-g} . $SPACE . q{4},
+        input           => 4,
+        expected_output => q{-g} . $SPACE . 4,
     },
     referencefile_path => {
-        input           => catfile(qw{ a_test_ref_file }),
-        expected_output => q{-G} . $SPACE . catfile(qw{ a_test_ref_file }),
+        input           => catfile(qw{ path to ref_file }),
+        expected_output => q{-G} . $SPACE . catfile(qw{ path to ref_file }),
     },
     sample_name => {
         input           => q{my_sample_name},
         expected_output => q{-N} . $SPACE . q{my_sample_name},
     },
     infile_bed_region_info => {
-        input           => catfile(qw{an_input_bed_file}),
-        expected_output => catfile(qw{an_input_bed_file}),
+        input           => catfile(qw{ path to input_bed_file }),
+        expected_output => catfile(qw{ path to input_bed_file }),
     },
 );
 

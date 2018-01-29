@@ -314,18 +314,16 @@ sub analysis_vep {
             if ( $plugin eq q{LoF} ) {
 
                 my $lof_parameter = q{,human_ancestor_fa:}
-                  . catfile(
-                    $active_parameter_href->{vep_directory_cache},
-                    q{human_ancestor.fa,filter_position:0.05}
-                  );
+                  . catfile( $active_parameter_href->{vep_directory_cache},
+                    q{Plugins}, q{human_ancestor.fa,filter_position:0.05} );
                 push @plugins, $plugin . $lof_parameter;
             }
             elsif ( $plugin eq q{MaxEntScan} ) {
 
-                my $lof_parameter = q{,}
+                my $max_ent_scan_parameter = q{,}
                   . catfile( $active_parameter_href->{vep_directory_cache},
-                    q{fordownload} );
-                push @plugins, $plugin . $lof_parameter;
+                    qw{ Plugins fordownload } );
+                push @plugins, $plugin . $max_ent_scan_parameter;
             }
             elsif ( $plugin eq q{UpDownDistance} ) {
 
@@ -745,17 +743,15 @@ sub analysis_vep_rio {
             if ( $plugin eq q{LoF} ) {
 
                 my $lof_parameter = q{,human_ancestor_fa:}
-                  . catfile(
-                    $active_parameter_href->{vep_directory_cache},
-                    q{human_ancestor.fa,filter_position:0.05}
-                  );
+                  . catfile( $active_parameter_href->{vep_directory_cache},
+                    q{Plugins}, q{human_ancestor.fa,filter_position:0.05} );
                 push @plugins, $plugin . $lof_parameter;
             }
             elsif ( $plugin eq q{MaxEntScan} ) {
 
                 my $lof_parameter = q{,}
                   . catfile( $active_parameter_href->{vep_directory_cache},
-                    q{fordownload} );
+                    qw{ Plugins fordownload } );
                 push @plugins, $plugin . $lof_parameter;
             }
             elsif ( $plugin eq q{UpDownDistance} ) {

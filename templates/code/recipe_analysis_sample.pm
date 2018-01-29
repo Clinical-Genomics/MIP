@@ -220,7 +220,7 @@ sub analysis_recipe {
     my $outfile_path = catfile( $outsample_directory, $outfile_name );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ( $file_name, $program_info_path ) = setup_script(
+    my ( $file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
             core_number           => $core_number,

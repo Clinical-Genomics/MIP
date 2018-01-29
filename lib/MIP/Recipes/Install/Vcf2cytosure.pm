@@ -16,11 +16,12 @@ use warnings;
 use Readonly;
 
 BEGIN {
+
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vcf2cytosure };
@@ -145,6 +146,7 @@ sub install_vcf2cytosure {
 
     ## Only activate conda environment if supplied by user
     if ($conda_environment) {
+
         ## Activate conda environment
         say {$FILEHANDLE} q{## Activate conda environment};
         conda_source_activate(
@@ -192,6 +194,16 @@ sub install_vcf2cytosure {
             packages_ref => [$DOT],
             quiet        => $quiet,
             verbose      => $verbose,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
+    ## Go back to subroutine origin
+    say {$FILEHANDLE} q{## Moving back to original working directory};
+    gnu_cd(
+        {
+            directory_path => $pwd,
+            FILEHANDLE     => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;

@@ -1,16 +1,16 @@
 package MIP::Check::Installation;
 
-use strict;
-use warnings;
-use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
 use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
+use charnames qw{ :full :short };
 use Cwd;
+use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
+use strict;
+use utf8;
+use warnings qw{ FATAL utf8 };
+use warnings;
 
 ## Cpanm
 use Readonly;
@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ check_existing_installation };
@@ -35,61 +35,61 @@ sub check_existing_installation {
 ## Function : Checks if the program has already been installed and optionally removes the current installation.
 ##          : Returns "1" if the program is found and a noupdate flag has been provided
 ## Returns  : $install_check
-## Arguments: $program_directory_path => Path to program directory
-##          : $program_name                => Program name
-##          : $conda_environment      => Conda environment
+## Arguments: $conda_environment      => Conda environment
 ##          : $conda_prefix_path      => Path to conda environment
-##          : $noupdate               => Do not update
 ##          : $FILEHANDLE             => Filehandle to write to
 ##          : $log                    => Log to write messages to
+##          : $noupdate               => Do not update
+##          : $program_directory_path => Path to program directory
+##          : $program_name                => Program name
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $program_directory_path;
-    my $program_name;
     my $conda_environment;
     my $conda_prefix_path;
-    my $noupdate;
     my $FILEHANDLE;
     my $log;
+    my $noupdate;
+    my $program_directory_path;
+    my $program_name;
 
     my $tmpl = {
         program_directory_path => {
             required    => 1,
+            store       => \$program_directory_path,
             strict_type => 1,
-            store       => \$program_directory_path
         },
         program_name => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$program_name,
             strict_type => 1,
-            store       => \$program_name
         },
         conda_prefix_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$conda_prefix_path,
             strict_type => 1,
-            store       => \$conda_prefix_path
         },
         conda_environment => {
+            store       => \$conda_environment,
             strict_type => 1,
-            store       => \$conda_environment
         },
         noupdate => {
             allow       => [ undef, 0, 1 ],
+            store       => \$noupdate,
             strict_type => 1,
-            store       => \$noupdate
         },
         FILEHANDLE => {
-            required => 1,
             defined  => 1,
-            store    => \$FILEHANDLE
+            required => 1,
+            store    => \$FILEHANDLE,
         },
         log => {
-            required => 1,
             defined  => 1,
-            store    => \$log
+            required => 1,
+            store    => \$log,
         },
     };
 
@@ -102,7 +102,7 @@ sub check_existing_installation {
 
     ## Set default for conda environment if undef
     if ( not $conda_environment ) {
-        $conda_environment = q{root};
+        $conda_environment = q{root/base};
     }
 
     ## Check if installation directory exists
@@ -129,10 +129,10 @@ sub check_existing_installation {
         say {$FILEHANDLE} qq{## Removing old $program_name directory};
         gnu_rm(
             {
+                FILEHANDLE  => $FILEHANDLE,
+                force       => 1,
                 infile_path => $program_directory_path,
                 recursive   => 1,
-                force       => 1,
-                FILEHANDLE  => $FILEHANDLE,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -140,10 +140,10 @@ sub check_existing_installation {
         say {$FILEHANDLE} qq{## Removing old $program_name links};
         gnu_find(
             {
-                search_path   => catdir( $conda_prefix_path, q{bin} ),
-                test_criteria => q{-xtype l},
                 action        => q{-delete},
                 FILEHANDLE    => $FILEHANDLE,
+                search_path   => catdir( $conda_prefix_path, q{bin} ),
+                test_criteria => q{-xtype l},
             }
         );
         say {$FILEHANDLE} $NEWLINE;
