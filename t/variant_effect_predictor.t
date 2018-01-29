@@ -1,21 +1,22 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{ 2014 };
-use warnings qw{ FATAL utf8 };
-use autodie;
 use 5.018;
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
 use Carp;
+use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-
-use FindBin qw{ $Bin };
-use File::Basename qw{ dirname basename };
+use File::Basename qw{ basename dirname  };
 use File::Spec::Functions qw{ catdir catfile };
+use FindBin qw{ $Bin };
 use Getopt::Long;
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
+
+## CPANM
+use autodie qw{ :all };
+use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ## MIPs lib/
@@ -25,20 +26,24 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = 1.0.1;
 
 ## Constants
 Readonly my $COMMA   => q{,};
 Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
 
-###User Options
+### User Options
 GetOptions(
+
+    # Display help text
     q{h|help} => sub {
         done_testing();
         say {*STDOUT} $USAGE;
         exit;
-    },    #Display help text
+    },
+
+    # Display version number
     q{v|version} => sub {
         done_testing();
         say {*STDOUT} $NEWLINE
@@ -47,7 +52,7 @@ GetOptions(
           . $VERSION
           . $NEWLINE;
         exit;
-    },    #Display version number
+    },
     q{vb|verbose} => $VERBOSE,
   )
   or (
@@ -63,21 +68,19 @@ GetOptions(
 BEGIN {
 
 ### Check all internal dependency modules and imports
-##Modules with import
-    my %perl_module;
+## Modules with import
+    my %perl_module = ( q{MIP::Script::Utils} => [qw{ help }], );
 
-    $perl_module{q{MIP::Script::Utils}} = [qw{ help }];
-
-  PERL_MODULES:
+  PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
         use_ok( $module, @{$module_import} )
           or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 
-##Modules
+## Modules
     my @modules = (q{MIP::Program::Variantcalling::Vep});
 
-  MODULES:
+  MODULE:
     for my $module (@modules) {
         require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
@@ -86,7 +89,7 @@ BEGIN {
 use MIP::Program::Variantcalling::Vep qw{variant_effect_predictor};
 use MIP::Test::Commands qw{test_function};
 
-diag(   q{Test variant_effect_predictor from Vep v}
+diag(   q{Test variant_effect_predictor from Vep.pm v}
       . $MIP::Program::Variantcalling::Vep::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -102,9 +105,9 @@ Readonly my $VARIANT_BUFFERT_SIZE => 20_000;
 my $function_base_command = q{vep};
 
 my %base_argument = (
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
+    FILEHANDLE => {
+        input           => undef,
+        expected_output => $function_base_command,
     },
     stderrfile_path => {
         input           => q{stderrfile.test},
@@ -114,9 +117,9 @@ my %base_argument = (
         input           => q{stderrfile.test},
         expected_output => q{2>> stderrfile.test},
     },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
+    stdoutfile_path => {
+        input           => q{stdoutfile.test},
+        expected_output => q{1> stdoutfile.test},
     },
 );
 
@@ -130,6 +133,58 @@ my %required_argument = (
 );
 
 my %specific_argument = (
+    assembly => {
+        input           => q{GRCh37},
+        expected_output => q{--assembly} . $SPACE . q{GRCh37},
+    },
+    buffer_size => {
+        input           => $VARIANT_BUFFERT_SIZE,
+        expected_output => q{--buffer_size} . $SPACE . $VARIANT_BUFFERT_SIZE,
+    },
+    cache_directory => {
+        input           => catdir( q{test_dir}, q{test_cache_dir} ),
+        expected_output => q{--dir_cache}
+          . $SPACE
+          . catdir( q{test_dir}, q{test_cache_dir} ),
+    },
+    distance => {
+        input           => 10,
+        expected_output => q{--distance} . $SPACE . q{10},
+    },
+    FILEHANDLE => {
+        input           => undef,
+        expected_output => $function_base_command,
+    },
+    fork => {
+        input           => 1,
+        expected_output => q{--fork} . $SPACE . q{1},
+    },
+    infile_format => {
+        input           => q{vcf},
+        expected_output => q{--format} . $SPACE . q{vcf},
+    },
+    infile_path => {
+        input           => catfile( q{test_dir}, q{infile.vcf} ),
+        expected_output => q{--input_file}
+          . $SPACE
+          . catfile( q{test_dir}, q{infile.vcf} ),
+    },
+    outfile_format => {
+        input           => q{vcf},
+        expected_output => q{--} . q{vcf},
+    },
+    outfile_path => {
+        input           => catfile( q{test_dir}, q{infile.vcf} ),
+        expected_output => q{--output_file}
+          . $SPACE
+          . catfile( q{test_dir}, q{infile.vcf} ),
+    },
+    reference_path => {
+        input           => catfile( q{test_dir}, q{hum_ref.pl} ),
+        expected_output => q{--fasta}
+          . $SPACE
+          . catfile( q{test_dir}, q{hum_ref.pl} ),
+    },
     regions_ref => {
         inputs_ref      => [qw{ 1 2 }],
         expected_output => q{--chr} . $SPACE . q{1,2},
@@ -141,54 +196,6 @@ my %specific_argument = (
     vep_features_ref => {
         inputs_ref      => [qw{ tsl hgvs}],
         expected_output => q{--tsl} . $SPACE . q{--hgvs},
-    },
-    fork => {
-        input           => 1,
-        expected_output => q{--fork} . $SPACE . q{1},
-    },
-    buffer_size => {
-        input           => $VARIANT_BUFFERT_SIZE,
-        expected_output => q{--buffer_size} . $SPACE . $VARIANT_BUFFERT_SIZE,
-    },
-    assembly => {
-        input           => q{GRCh37},
-        expected_output => q{--assembly} . $SPACE . q{GRCh37},
-    },
-    reference_path => {
-        input           => catfile( q{test_dir}, q{hum_ref.pl} ),
-        expected_output => q{--fasta}
-          . $SPACE
-          . catfile( q{test_dir}, q{hum_ref.pl} ),
-    },
-    cache_directory => {
-        input           => catdir( q{test_dir}, q{test_cache_dir} ),
-        expected_output => q{--dir_cache}
-          . $SPACE
-          . catdir( q{test_dir}, q{test_cache_dir} ),
-    },
-    infile_format => {
-        input           => q{vcf},
-        expected_output => q{--format} . $SPACE . q{vcf},
-    },
-    outfile_format => {
-        input           => q{vcf},
-        expected_output => q{--} . q{vcf},
-    },
-    infile_path => {
-        input           => catfile( q{test_dir}, q{infile.vcf} ),
-        expected_output => q{--input_file}
-          . $SPACE
-          . catfile( q{test_dir}, q{infile.vcf} ),
-    },
-    outfile_path => {
-        input           => catfile( q{test_dir}, q{infile.vcf} ),
-        expected_output => q{--output_file}
-          . $SPACE
-          . catfile( q{test_dir}, q{infile.vcf} ),
-    },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
     },
 );
 

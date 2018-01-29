@@ -1074,7 +1074,6 @@ sv_vep_plugins:
   element_separator: ,
   data_type: ARRAY
   default:
-   - UpDownDistance
    - LoFtool
   type: program_argument
 psv_vcfparser:
@@ -1757,7 +1756,6 @@ vep_plugins:
   element_separator: ,
   data_type: ARRAY
   default:
-   - UpDownDistance
    - LoFtool
    - MaxEntScan
   type: program_argument
