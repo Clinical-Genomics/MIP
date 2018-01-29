@@ -132,15 +132,21 @@ my %specific_argument = (
     },
     exclude => {
         input           => q{%QUAL<10 || (RPB<0.1 && %QUAL<15)},
-        expected_output => q{--exclude %QUAL<10 || (RPB<0.1 && %QUAL<15)},
+        expected_output => q{--exclude}
+          . $SPACE
+          . q{%QUAL<10 || (RPB<0.1 && %QUAL<15)},
+    },
+    filter_mode => {
+        input           => q{+},
+        expected_output => q{--mode} . $SPACE . q{+},
     },
     include => {
         input           => q{INFO/CSQ[*]~":p[.]"},
-        expected_output => q{--include INFO/CSQ[*]~":p[.]"},
+        expected_output => q{--include} . $SPACE . q{INFO/CSQ[*]~":p[.]"},
     },
     soft_filter => {
         input           => q{LowQual},
-        expected_output => q{--soft-filter LowQual},
+        expected_output => q{--soft-filter} . $SPACE . q{LowQual},
     },
     snp_gap => {
         input           => $SNP_GAP_FILTER_DISTANCE,
