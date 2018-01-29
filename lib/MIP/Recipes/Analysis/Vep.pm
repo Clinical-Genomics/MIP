@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vep analysis_vep_rio analysis_vep_sv };
@@ -31,11 +31,13 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $ASTERIX    => q{*};
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
+Readonly my $ASTERIX                => q{*};
+Readonly my $DOT                    => q{.};
+Readonly my $NEWLINE                => qq{\n};
+Readonly my $SPACE                  => q{ };
+Readonly my $UNDERSCORE             => q{_};
+Readonly my $ANNOTATION_DISTANCE    => 5000;
+Readonly my $ANNOTATION_DISTANCE_MT => 10;
 
 sub analysis_vep {
 
@@ -306,6 +308,14 @@ sub analysis_vep {
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
         ## Get parameters
+        my $distance = $ANNOTATION_DISTANCE;
+
+        # Special case for mitochondrial contig annotation
+        if ( $contig =~ / MT|M /xsm ) {
+
+            $distance = $ANNOTATION_DISTANCE_MT;
+        }
+
         # VEP plugins
         my @plugins;
       PLUGIN:
@@ -325,15 +335,6 @@ sub analysis_vep {
                     qw{ Plugins fordownload } );
                 push @plugins, $plugin . $max_ent_scan_parameter;
             }
-            elsif ( $plugin eq q{UpDownDistance} ) {
-
-                # Special case for mitochondrial contig annotation
-
-                if ( $contig =~ / MT|M /xsm ) {
-
-                    push @plugins, q{UpDownDistance,10,10};
-                }
-            }
             else {
 
                 push @plugins, $plugin;
@@ -350,7 +351,7 @@ sub analysis_vep {
             push @vep_features_ref, $vep_feature;
 
             # Special case for mitochondrial contig annotation
-            if ( ( $contig =~ / MT|M /xsm ) && ( $vep_feature eq q{refseq} ) ) {
+            if ( $contig =~ / MT|M /xsm && $vep_feature eq q{refseq} ) {
 
                 push @vep_features_ref, q{all_refseq};
             }
@@ -370,6 +371,7 @@ sub analysis_vep {
                 buffer_size => 20_000,
                 cache_directory =>
                   $active_parameter_href->{vep_directory_cache},
+                distance       => $distance,
                 FILEHANDLE     => $XARGSFILEHANDLE,
                 fork           => $VEP_FORK_NUMBER,
                 infile_format  => substr( $outfile_suffix, 1 ),
@@ -735,6 +737,14 @@ sub analysis_vep_rio {
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
         ## Get parameters
+        my $distance = $ANNOTATION_DISTANCE;
+
+        # Special case for mitochondrial contig annotation
+        if ( $contig =~ / MT|M /xsm ) {
+
+            $distance = $ANNOTATION_DISTANCE_MT;
+        }
+
         # VEP plugins
         my @plugins;
       PLUGIN:
@@ -753,15 +763,6 @@ sub analysis_vep_rio {
                   . catfile( $active_parameter_href->{vep_directory_cache},
                     qw{ Plugins fordownload } );
                 push @plugins, $plugin . $lof_parameter;
-            }
-            elsif ( $plugin eq q{UpDownDistance} ) {
-
-                # Special case for mitochondrial contig annotation
-
-                if ( $contig =~ /MT|M/xsm ) {
-
-                    push @plugins, q{UpDownDistance,10,10};
-                }
             }
             else {
 
@@ -799,6 +800,7 @@ sub analysis_vep_rio {
                 cache_directory =>
                   $active_parameter_href->{vep_directory_cache},
                 buffer_size    => 20_000,
+                distance       => $distance,
                 FILEHANDLE     => $XARGSFILEHANDLE,
                 fork           => $VEP_FORK_NUMBER,
                 infile_format  => substr( $outfile_suffix, 1 ),
@@ -1180,6 +1182,14 @@ sub analysis_vep_sv {
     foreach my $contig ( @{$contigs_ref} ) {
 
         ## Get parameters
+        my $distance = $ANNOTATION_DISTANCE;
+
+        # Special case for mitochondrial contig annotation
+        if ( $contig =~ / MT|M /xsm ) {
+
+            $distance = $ANNOTATION_DISTANCE_MT;
+        }
+
         my $vep_outfile_prefix         = $outfile_prefix;
         my $vep_xargs_file_path_prefix = $xargs_file_path_prefix;
         my @regions;
@@ -1210,15 +1220,6 @@ sub analysis_vep_sv {
                     q{human_ancestor.fa,filter_position:0.05}
                   );
                 push @plugins, $plugin . $lof_parameter;
-            }
-            elsif ( $plugin eq q{UpDownDistance} ) {
-
-                # Special case for mitochondrial contig annotation
-
-                if ( $contig =~ /MT|M/xsm ) {
-
-                    push @plugins, q{UpDownDistance,10,10};
-                }
             }
             else {
 
@@ -1258,6 +1259,7 @@ sub analysis_vep_sv {
                 buffer_size => 100,
                 cache_directory =>
                   $active_parameter_href->{vep_directory_cache},
+                distance       => $distance,
                 FILEHANDLE     => $XARGSFILEHANDLE,
                 fork           => $VEP_FORK_NUMBER,
                 infile_format  => substr( $file_suffix, 1 ),

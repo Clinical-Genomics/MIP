@@ -261,7 +261,7 @@ sub analysis_gatk_genotypegvcfs {
                 process_time          => $time,
                 program_directory     => catfile( $outaligner_dir, q{gatk} ),
                 program_name          => $program_name,
-                sleep                 => 4,
+                sleep                 => 1,
                 source_environment_commands_ref => [$source_environment_cmd],
                 temp_directory                  => $temp_directory,
             }
