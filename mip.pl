@@ -565,9 +565,12 @@ GetOptions(
     q{pvrd|pvardict=n}           => \$active_parameter{pvardict},
     q{pvdraf|vrd_af_threshold}   => \$active_parameter{vrd_af_threshold},
     q{pvrdcs|vrd_chrom_start}    => \$active_parameter{vrd_chrom_start},
+    q{qvrdmm|vrd_max_mm}         => \$active_parameter{vrd_max_mm},
+    q{qvrdmp|vrd_max_pval}       => \$active_parameter{vrd_max_pval},
     q{qvrdre|vrd_region_end}     => \$active_parameter{vrd_region_end},
     q{qvrdrs|vrd_region_start}   => \$active_parameter{vrd_region_start},
     q{qvrdsa|vrd_segment_annotn} => \$active_parameter{vrd_segment_annotn},
+    q{qvrdso|vrd_somatic_only}   => \$active_parameter{vrd_somatic_only},
   )
   or help(
     {
@@ -1699,7 +1702,7 @@ sub build_usage {
     -pgz/--pgzip_fastq                                             Gzip fastq files (defaults to "0" (=no))
     -pfqc/--pfastqc                                                Sequence quality analysis using FastQC (defaults to "0" (=no))
     -pcta/--pcutadapt                                              Trim input reads using cutadapt (defaults to "0" (=no))
-
+    
     ##BWA
     -pmem/--pbwa_mem                                               Align reads using Bwa Mem (defaults to "0" (=no))
       -memhla/--bwa_mem_hla                                        Apply HLA typing (supply flag to enable)
@@ -1800,6 +1803,7 @@ sub build_usage {
 
     ## Freebayes
     -pfrb/--pfreebayes                                             Variant calling using Freebayes and bcftools (defaults to "0" (=no))
+
 
     ## GATK
     -gtp/--gatk_path                                               Path to GATK. Mandatory for use of GATK (defaults to "")
@@ -1934,7 +1938,7 @@ sub build_usage {
       -evlnhc/--nist_high_confidence_call_set                      NIST high-confidence variant calls (defaults to "GRCh37_nist_hg001_-na12878_v2.19-.vcf")
       -evlnil/--nist_high_confidence_call_set_bed                  NIST high-confidence variant calls interval list (defaults to "GRCh37_nist_hg001_-na12878_v2.19-.bed")
     -pqcc/--pqccollect                                             Collect QC metrics from programs processed (defaults to "0" (=no) )
-      -qccsi/--qccollect_sampleinfo_file                           Sample info file containing info on what to parse from this analysis run (defaults to 
+      -qccsi/--qccollect_sampleinfo_file                           Sample info file containing info on what to parse from this analysis run (defaults to
                                                                    "{outdata_dir}/{family_id}/{family_id}_qc_sample_info.yaml")
       -qccref/--qccollect_regexp_file                              Regular expression file containing the regular expression to be used for each program (defaults to "qc_regexp_-v1.13-.yaml")
       -qccske/--qccollect_skip_evaluation                          Skip evaluation step in qccollect (supply flag to enable)
@@ -1945,14 +1949,17 @@ sub build_usage {
                                                                    "jobid",    "jobname%50", "account", "partition", "alloccpus",
                                                                    "TotalCPU", "elapsed",    "start",   "end",       "state",
                                                                    "exitcode")
-
     ## Vardict
     -pvrd/--pvardict                                               Variant calling using Vardict (defaults to "0" (=no))
-        -pvdraf/--vrd_af_threshold                                 AF threshold for variant calling (default 0.01)
-        -pvrdcs/--vrd_chrom_start                                  Column for chromosome in the output (default 1)
-        -qvrdre/--vrd_region_end                                   Column for region end position in the output (default 3)
-        -qvrdrs/--vrd_region_start                                 Column for region start position in the output (default 2)
-        -qvrdsa/--vrd_segment_annotn                               Column for segment annotation in the output (default 4)
+       -pvdraf/--vrd_af_threshold                                  AF threshold for variant calling (default 0.01)
+       -pvrdcs/--vrd_chrom_start                                   Column for chromosome in the output (default 1)
+       -qvrdre/--vrd_region_end                                    Column for region end position in the output (default 3)
+       -qvrdrs/--vrd_region_start                                  Column for region start position in the output (default 2)
+       -qvrdsa/--vrd_segment_annotn                                Column for segment annotation in the output (default 4)
+       -qvrdmm/--vrd_max_mm                                        The maximum mean mismatches allowed (default 4.5)
+       -qvrdmp/--vrd_max_pval                                      The maximum p-valuem, set to 0 to keep all variants (default 0.9)
+       -qvrdso/--vrd_somatic_only                                  Output only candidate somatic (default no)
+       
 END_USAGE
 }
 
