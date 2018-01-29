@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vcf2cytosure };
@@ -188,6 +188,17 @@ sub install_vcf2cytosure {
 
     ## Pip install the downloaded vcf2cytosure package
     say {$FILEHANDLE} q{## Install};
+    ## Vcf2cytosure seems to require a numpy version higher then what is
+    ## currently specified in the install parameter file (1.9.3)
+    pip_install(
+        {
+            FILEHANDLE   => $FILEHANDLE,
+            packages_ref => [qw{ numpy==1.14.0 }],
+            quiet        => $quiet,
+            verbose      => $verbose,
+        }
+    );
+    print {$FILEHANDLE} $NEWLINE;
     pip_install(
         {
             FILEHANDLE   => $FILEHANDLE,
