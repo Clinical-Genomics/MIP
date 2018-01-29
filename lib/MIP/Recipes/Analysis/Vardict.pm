@@ -30,12 +30,13 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $STDOUT     => q{>};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $PIPE       => q{|};
-Readonly my $UNDERSCORE => q{_};
-Readonly my $ASTERISK   => q{*};
+Readonly my $ASTERISK     => q{*};
+Readonly my $DOUBLE_QUOTE => q{"};
+Readonly my $NEWLINE      => qq{\n};
+Readonly my $PIPE         => q{|};
+Readonly my $SPACE        => q{ };
+Readonly my $STDOUT       => q{>};
+Readonly my $UNDERSCORE   => q{_};
 
 sub analysis_vardict_tn {
 
@@ -166,6 +167,7 @@ sub analysis_vardict_tn {
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files
       qw{ migrate_file migrate_files xargs_migrate_contig_files };
+    use MIP::Program::Variantcalling::Bcftools qw{ bcftools_filter };
     use MIP::Program::Variantcalling::Vardict
       qw{ vardict vardict_var2vcf_single vardict_var2vcf_paired vardict_testsomatic vardict_teststrandbias };
     use MIP::Processmanagement::Slurm_processes
@@ -202,7 +204,7 @@ sub analysis_vardict_tn {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
+    my $FILEHANDLE = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ( $file_path, $program_info_path ) = setup_script(
@@ -321,9 +323,12 @@ sub analysis_vardict_tn {
     my $af_threshold       = $active_parameter_href->{vrd_af_threshold};
     my $chrom_start        = $active_parameter_href->{vrd_chrom_start};
     my $input_bed_file     = $active_parameter_href->{vrd_input_bed_file};
+    my $max_mm             = $active_parameter_href->{vrd_max_mm};
+    my $max_pval           = $active_parameter_href->{vrd_max_pval};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $region_end         = $active_parameter_href->{vrd_region_end};
     my $region_start       = $active_parameter_href->{vrd_region_start};
+    my $somatic_only       = $active_parameter_href->{vrd_somatic_only};
 
     ## Assign family_id to sample_name
     my $sample_name    = $active_parameter_href->{family_id};
@@ -336,13 +341,16 @@ sub analysis_vardict_tn {
             af_threshold           => $af_threshold,
             FILEHANDLE             => $FILEHANDLE,
             infile_paths_ref       => \@infile_path,
+            infile_bed_region_info => $input_bed_file,
+            max_pval               => $max_pval,
+            max_mm                 => $max_mm,
             out_chrom_start        => $chrom_start,
             out_region_start       => $region_start,
             out_region_end         => $region_end,
             out_segment_annotn     => $segment_annotn,
             referencefile_path     => $referencefile_path,
             sample_name            => $sample_name,
-            infile_bed_region_info => $input_bed_file,
+            somatic_only           => $somatic_only,
         }
     );
 
@@ -360,15 +368,74 @@ sub analysis_vardict_tn {
         {
             af_threshold    => $af_threshold,
             FILEHANDLE      => $FILEHANDLE,
+            max_pval        => $max_pval,
+            max_mm          => $max_mm,
             sample_name     => $sample_name,
+            somatic_only    => $somatic_only,
             stdoutfile_path => $outfile_path,
         }
     );
 
-    print {$FILEHANDLE} $STDOUT . print {$outfile_path} . $NEWLINE
+    print {$FILEHANDLE} $PIPE . $SPACE;
 
-      ## Copies file from temporary directory.
-      say {$FILEHANDLE} q{## Copy file from temporary directory};
+    ## Filter for low allele frequency with low depth
+    bcftools_filter(
+        {
+            exclude     => _bcftools_low_freq_low_depth(),
+            filter_mode => q{+},
+            soft_filter => q{LowAlleleDepth},
+            FILEHANDLE  => $FILEHANDLE,
+        }
+    );
+
+    print {$FILEHANDLE} $PIPE . $SPACE;
+
+    ## Filter for low frequency with poor quality
+    bcftools_filter(
+        {
+            exclude     => _bcftools_low_freq_low_qual(),
+            filter_mode => q{+},
+            soft_filter => q{LowFreqQuality},
+            FILEHANDLE  => $FILEHANDLE,
+        }
+    );
+
+    print {$FILEHANDLE} $PIPE . $SPACE;
+
+    ## Include only those with QUAL > 0
+    bcftools_filter(
+        {
+            include    => $DOUBLE_QUOTE . q{QUAL>=0} . $DOUBLE_QUOTE,
+            FILEHANDLE => $FILEHANDLE,
+        }
+    );
+
+    print {$FILEHANDLE} _tag_somatic() . $PIPE . $SPACE;
+
+    ## Filter for rejected non somatic
+    bcftools_filter(
+        {
+            exclude => q?'STATUS !~ \".*Somatic\"'?,
+
+            #TODO add the following to bcftools
+            filter_mode => q{+},
+            filter_name => q{REJECT},
+            FILEHANDLE  => $FILEHANDLE,
+        }
+    );
+
+    print {$FILEHANDLE} $PIPE . $SPACE;
+
+    print {$FILEHANDLE} _replace_ambiguous() . $PIPE . $SPACE;
+
+    print {$FILEHANDLE} _filter_duplicate()
+      . $SPACE
+      . $STDOUT
+      . print {$outfile_path}
+      . $NEWLINE;
+
+    ## Copies file from temporary directory.
+    say {$FILEHANDLE} q{## Copy file from temporary directory};
     migrate_file(
         {
             FILEHANDLE   => $FILEHANDLE,
@@ -407,5 +474,160 @@ sub analysis_vardict_tn {
     }
     return;
 }
+
+sub _bcftools_low_freq_low_qual {
+
+    ## Function: Create filter expression for bcftools.
+    ## Return: $bcftools_filter_expr
+
+    ## The filter is: AF < 0.2 && QUAL < 55 && SSF > 0.06
+    ## Notes: This filter is aimed at variants with low frequency and low quality, essentially removing false positives (SSF>0.06).
+
+    Readonly my $CONDITON_AND => q{&&};
+
+    my $bcftools_filter_expr;
+
+    my $af_expr = q{AF < 0.2};
+
+    my $pval_expr = q{SSF > 0.06};
+
+    my $qual_expr = q{QUAL < 55};
+
+    $bcftools_filter_expr =
+        $DOUBLE_QUOTE
+      . $af_expr
+      . $CONDITON_AND
+      . $qual_expr
+      . $CONDITON_AND
+      . $pval_expr;
+
+    return $bcftools_filter_expr;
+}
+
+sub _bcftools_low_freq_low_depth {
+
+    ## Function: Create filter expression for bcftools.
+    ## Return: $bcftools_filter_expr
+
+    ## The filter is (explained further at the end):
+    ## ((AF * DP < 6) &&
+    ## ((MQ < 55.0 && NM > 1.0) ||
+    ##  (MQ < 60.0 && NM > 2.0) ||
+    ##  (DP < 10) ||
+    ##  (QUAL < 45)))
+
+    Readonly my $CONDITON_AND => q{&&};
+    Readonly my $CONDITON_OR  => q{||};
+    Readonly my $OPEN_PARAN   => q{(};
+    Readonly my $CLOSE_PARAN  => q{)};
+
+    my $bcftools_filter_expr;
+
+    my $af_dp_expr = q{(AF * DP < 6)};
+
+    my $mq_nm_expr_1 = q{(MQ < 55.0 && NM > 1.0)};
+
+    my $mq_nm_expr_2 = q{(MQ < 60.0 && NM > 2.0)};
+
+    my $dp_expr = q{(DP < 10)};
+
+    my $qual_expr = q{(QUAL < 45)};
+
+    $bcftools_filter_expr =
+        $DOUBLE_QUOTE
+      . $OPEN_PARAN
+      . $af_dp_expr
+      . $CONDITON_AND
+      . $OPEN_PARAN
+      . $mq_nm_expr_1
+      . $CONDITON_OR
+      . $mq_nm_expr_2
+      . $CONDITON_OR
+      . $dp_expr
+      . $CONDITON_OR
+      . $qual_expr
+      . $CLOSE_PARAN
+      . $CLOSE_PARAN;
+
+    return $bcftools_filter_expr;
+}
+
+sub _filter_duplicate {
+
+    ## Function: Writes a awk expression to open $FILEHANDLE. The awk expression will remove duplicates by comparing ref and alt allele. Adopted from bcbio.
+    ## Returns: $awk_filter
+    my $awk_filter;
+
+    $awk_filter =
+      q?awk -F$'\t' -v OFS='\t' '$1!~/^#/ && $4 == $5 ? . q?{next} {print}'?;
+
+    return $awk_filter;
+}
+
+sub _replace_ambiguous {
+
+    ## Function: Writes a awk expression to open $FILEHANDLE. The awk expression will replace ambiguous reference with N. Adopted from bcbio. (explained further at the end)
+    ## Returns: $awk_filter
+
+    ## Remove abimguous from ref, column 4 in VCF
+    my $awk_filter_ref = q?awk -F$'\t' -v OFS='\t' ' ?
+
+      #Lines not starting with "#" essentially the VCF header.
+      . q?{ if ($0 !~ /^#/) ?
+
+      #Replacing IUPAC characters at column 4 with N (any base)
+      . q?gsub(/[KMRYSWBVHDXkmryswbvhdx]/, "N", $4)} { print }'?;
+
+    ## Remove abimguous from alt, column 5 in VCF
+    my $awk_filter_alt = q?awk -F$'\t' -v OFS='\t' ' ?
+
+      #Lines not starting with "#" essentially the VCF header.
+      . q?{ if ($0 !~ /^#/) ?
+
+      #Replacing IUPAC characters at column 4 with N (any base)
+      . q?gsub(/[KMRYSWBVHDXkmryswbvhdx]/, "N", $5)} { print }'?;
+
+    my $awk_filter =
+      $awk_filter_ref . $SPACE . $PIPE . $SPACE . $awk_filter_alt;
+
+    return $awk_filter;
+}
+
+sub _tag_somatic {
+
+    ## Function: Writes a sed expression to open $FILEHANDLE. The sed expression will update the somatic. Adopted from bcbio.
+    ## Returns: $sed_filter
+
+    my $somatic_replace = q?sed 's/\\\\.*Somatic\\\\/Somatic/'?;
+
+    my $reject_update =
+q?sed 's/REJECT,Description=\".*\">/REJECT,Description=\"Not Somatic via VarDict\">/?;
+
+    my $sed_string =
+      $somatic_replace . $SPACE . $PIPE . $SPACE . $reject_update;
+
+    return $sed_string;
+}
+
+## Notes:
+##       1. _bcftools_low_freq_low_depth:
+##           - AF * DP < 6: According to [ ref 1 ], a read depth of 13x is required to detect heterozygous SNVs 95% of the time.
+##           - (MQ<55.0 && NM>1.0) || (MQ<60.0 && NM>2.0): It seems bwa mem, mentioned by Brad Chapman in bcbio, and
+##           also found in [ ref 2] has a maximum mapping quality of 60. This coupled with number of read mismatches (NM) will
+##           reduce number of false positives
+##           - DP<10: This is tied to AF*DP above. As it can be seen in [ ref 1 ], at 10 DP, ~90% of SNVs detected correctly
+##           - QUAL < 45: This is the used threshold in bcbio and ALASCCA pipeline. There is no publication to back this up, although based on
+##           [ ref 3 ], for rare variants at quality of 60 is the bare minimum. So QUAL < 45 seems to be generalized relax cutoff to filter
+##           obvious false positives.
+##           ref 1: https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-14-195
+##           ref 2: https://github.com/lh3/bwa/blob/b58281621136a0ce2a66837ba509716c727b9387/bwamem.c#L972
+##           ref 3: https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-15-247
+
+##       2. _replace_ambiguous:
+##           - The two awk expressions below will specifically look into column ref and alt alleles, $awk_filter_ref and $awk_filter_alt respectively.
+##           If the ref/alt alleles have IUPAC nucletotide codes: KMRYSWBVHDX [ https://www.bioinformatics.org/sms/iupac.html ], it will be replaced with N.
+##           - "if ($0 !~ /^#/)": Lines not starting with "#" essentially the VCF header.
+##           - "gsub(/[KMRYSWBVHDXkmryswbvhdx]/, "N", $4)": Replacing IUPAC characters at column 4 with N (any base).
+##           - "{ print }": Print!
 
 1;
