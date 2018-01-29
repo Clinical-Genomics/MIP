@@ -1162,7 +1162,7 @@ if ( $active_parameter{config_file_analysis} ne 0 ) {
     make_path( dirname( $active_parameter{config_file_analysis} ) );
 
     ## Remove previous analysis specific info not relevant for current run e.g. log file, sample_ids which are read from pedigree or cmd
-    my @remove_keys = (qw{ associated_program });
+    my @remove_keys = (qw{ associated_program dry_run_all });
 
   KEY:
     foreach my $key (@remove_keys) {
