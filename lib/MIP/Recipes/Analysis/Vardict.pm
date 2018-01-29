@@ -475,6 +475,10 @@ sub analysis_vardict_tn {
     return;
 }
 
+sub analysis_vardict_single {
+    return;
+}
+
 sub _bcftools_low_freq_low_qual {
 
     ## Function: Create filter expression for bcftools.
