@@ -506,27 +506,15 @@ sub _bcftools_low_freq_low_qual {
 
 sub _bcftools_low_freq_low_depth {
 
-    ## Function: Create filter expression for bcftools. We are using only one aligner in MIP pipeline.
+    ## Function: Create filter expression for bcftools.
     ## Return: $bcftools_filter_expr
 
-    ## The filter is:
+    ## The filter is (explained further at the end):
     ## ((AF * DP < 6) &&
     ## ((MQ < 55.0 && NM > 1.0) ||
     ##  (MQ < 60.0 && NM > 2.0) ||
     ##  (DP < 10) ||
     ##  (QUAL < 45)))
-
-    ## Notes:    - AF * DP < 6: According to [ ref 1 ], a read depth of 13x is required to detect heterozygous SNVs 95% of the time.
-    ##           - (MQ<55.0 && NM>1.0) || (MQ<60.0 && NM>2.0): It seems bwa mem, mentioned by Brad Chapman in bcbio, and
-    ##           also found in [ ref 2] has a maximum mapping quality of 60. This coupled with number of read mismatches (NM) will
-    ##           reduce number of false positives
-    ##           - DP<10: This is tied to AF*DP above. As it can be seen in [ ref 1 ], at 10 DP, ~90% of SNVs detected correctly
-    ##           - QUAL < 45: This is the used threshold in bcbio and ALASCCA pipeline. There is no publication to back this up, although based on
-    ##           [ ref 3 ], for rare variants at quality of 60 is the bare minimum. So QUAL < 45 seems to be generalized relax cutoff to filter
-    ##           obvious false positives.
-    ##           ref 1: https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-14-195
-    ##           ref 2: https://github.com/lh3/bwa/blob/b58281621136a0ce2a66837ba509716c727b9387/bwamem.c#L972
-    ##           ref 3: https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-15-247
 
     Readonly my $CONDITON_AND => q{&&};
     Readonly my $CONDITON_OR  => q{||};
@@ -578,26 +566,26 @@ sub _filter_duplicate {
 
 sub _replace_ambiguous {
 
-    ## Function: Writes a awk expression to open $FILEHANDLE. The awk expression will replace ambiguous reference with N. Adopted from bcbio.
+    ## Function: Writes a awk expression to open $FILEHANDLE. The awk expression will replace ambiguous reference with N. Adopted from bcbio. (explained further at the end)
     ## Returns: $awk_filter
 
-    ## Notes: - The two awk expressions below will specifically look into column ref and alt alleles, $awk_filter_ref and $awk_filter_alt respectively.
-    ##        If the ref/alt alleles have IUPAC nucletotide codes: KMRYSWBVHDX [ https://www.bioinformatics.org/sms/iupac.html ], it will be replaced with N.
-    ##        - "if ($0 !~ /^#/)": Lines not starting with "#" essentially the VCF header.
-    ##        - "gsub(/[KMRYSWBVHDXkmryswbvhdx]/, "N", $4)": Replacing IUPAC characters at column 4 with N (any base).
-    ##        - "{ print }": Print!
-
     ## Remove abimguous from ref, column 4 in VCF
-    my $awk_filter_ref =
-        q?awk -F$'\t' -v OFS='\t' ' ?
-      . q?{ if ($0 !~ /^#/) gsub(/[KMRYSWBVHDXkmryswbvhdx]/, "N", $4)} ?
-      . q?{ print }'?;
+    my $awk_filter_ref = q?awk -F$'\t' -v OFS='\t' ' ?
+
+      #Lines not starting with "#" essentially the VCF header.
+      . q?{ if ($0 !~ /^#/) ?
+
+      #Replacing IUPAC characters at column 4 with N (any base)
+      . q?gsub(/[KMRYSWBVHDXkmryswbvhdx]/, "N", $4)} { print }'?;
 
     ## Remove abimguous from alt, column 5 in VCF
-    my $awk_filter_alt =
-        q?awk -F$'\t' -v OFS='\t' ' ?
-      . q?{ if ($0 !~ /^#/) gsub(/[KMRYSWBVHDXkmryswbvhdx]/, "N", $5)} ?
-      . q?{ print }'?;
+    my $awk_filter_alt = q?awk -F$'\t' -v OFS='\t' ' ?
+
+      #Lines not starting with "#" essentially the VCF header.
+      . q?{ if ($0 !~ /^#/) ?
+
+      #Replacing IUPAC characters at column 4 with N (any base)
+      . q?gsub(/[KMRYSWBVHDXkmryswbvhdx]/, "N", $5)} { print }'?;
 
     my $awk_filter =
       $awk_filter_ref . $SPACE . $PIPE . $SPACE . $awk_filter_alt;
@@ -620,5 +608,26 @@ q?sed 's/REJECT,Description=\".*\">/REJECT,Description=\"Not Somatic via VarDict
 
     return $sed_string;
 }
+
+## Notes:
+##       1. _bcftools_low_freq_low_depth:
+##           - AF * DP < 6: According to [ ref 1 ], a read depth of 13x is required to detect heterozygous SNVs 95% of the time.
+##           - (MQ<55.0 && NM>1.0) || (MQ<60.0 && NM>2.0): It seems bwa mem, mentioned by Brad Chapman in bcbio, and
+##           also found in [ ref 2] has a maximum mapping quality of 60. This coupled with number of read mismatches (NM) will
+##           reduce number of false positives
+##           - DP<10: This is tied to AF*DP above. As it can be seen in [ ref 1 ], at 10 DP, ~90% of SNVs detected correctly
+##           - QUAL < 45: This is the used threshold in bcbio and ALASCCA pipeline. There is no publication to back this up, although based on
+##           [ ref 3 ], for rare variants at quality of 60 is the bare minimum. So QUAL < 45 seems to be generalized relax cutoff to filter
+##           obvious false positives.
+##           ref 1: https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-14-195
+##           ref 2: https://github.com/lh3/bwa/blob/b58281621136a0ce2a66837ba509716c727b9387/bwamem.c#L972
+##           ref 3: https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-15-247
+
+##       2. _replace_ambiguous:
+##           - The two awk expressions below will specifically look into column ref and alt alleles, $awk_filter_ref and $awk_filter_alt respectively.
+##           If the ref/alt alleles have IUPAC nucletotide codes: KMRYSWBVHDX [ https://www.bioinformatics.org/sms/iupac.html ], it will be replaced with N.
+##           - "if ($0 !~ /^#/)": Lines not starting with "#" essentially the VCF header.
+##           - "gsub(/[KMRYSWBVHDXkmryswbvhdx]/, "N", $4)": Replacing IUPAC characters at column 4 with N (any base).
+##           - "{ print }": Print!
 
 1;
