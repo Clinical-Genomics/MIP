@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_bwa_mem };
@@ -267,7 +267,7 @@ sub analysis_bwa_mem {
                 program_directory               => lc $outaligner_dir,
                 program_name                    => $program_name,
                 process_time                    => $time,
-                sleep                           => 1,
+                sleep                           => 4,
                 source_environment_commands_ref => [$source_environment_cmd],
                 temp_directory                  => $temp_directory,
             }
