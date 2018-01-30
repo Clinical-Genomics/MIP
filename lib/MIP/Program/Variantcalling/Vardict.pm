@@ -193,10 +193,12 @@ sub vardict {
 
 sub vardict_var2vcf_single {
 
-## Function : Perl wrapper for var2vcf_singlelsls, converting variant output to vcf. Based on vardict 2017.09.24
+## Function : Perl wrapper for var2vcf_valid.pl, converting variant output to vcf. Based on vardict 2017.11.23
 ## Returns  : @commands
 ## Arguments: $af_threshold           => Threshold for allele frequency
+##          : $all_var                => Indicate to output all variants at the same position
 ##          : $FILEHANDLE             => Filehandle to write to
+##          : $no_end_tag             => Do not print END tag
 ##          : $sample_name            => Sample name to be used directly, will overwrite -n option
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
@@ -213,6 +215,8 @@ sub vardict_var2vcf_single {
 
     ## Default(s)
     my $af_threshold;
+    my $all_var;
+    my $no_end_tag;
 
     my $tmpl = {
         af_threshold => {
@@ -220,8 +224,22 @@ sub vardict_var2vcf_single {
             allow       => qr/ ^0.\d{1,2}$ | ^1$ /xsm,
             defined     => 1,
             default     => 0.01,
-            required    => 1,
             store       => \$af_threshold,
+            strict_type => 1,
+        },
+        all_var => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$all_var,
+            strict_type => 1,
+        },
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        no_end_tag => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$no_end_tag,
             strict_type => 1,
         },
         sample_name => {
@@ -229,9 +247,6 @@ sub vardict_var2vcf_single {
             required    => 1,
             store       => \$sample_name,
             strict_type => 1,
-        },
-        FILEHANDLE => {
-            store => \$FILEHANDLE,
         },
         stderrfile_path => {
             store       => \$stderrfile_path,
@@ -251,6 +266,18 @@ sub vardict_var2vcf_single {
 
     ## Stores commands depending on input parameters
     my @commands = q{var2vcf_valid.pl};
+
+    if ( $all_var ) {
+
+        # Print All variants at the same position, not just highest frequency one
+        push @commands, q{-A} . $SPACE;
+    }
+
+    if ( $no_end_tag ) {
+
+        # Do not print END tag
+        push @commands, q{-E} . $SPACE;
+    }
 
     push @commands, q{-f} . $SPACE . $af_threshold;
 
@@ -278,7 +305,7 @@ sub vardict_var2vcf_single {
 
 sub vardict_var2vcf_paired {
 
-    ## Function : Perl wrapper for var2vcf_paired, converting variant output to vcf. Based on vardict 2017.09.24
+    ## Function : Perl wrapper for var2vcf_paired.pl, converting variant output to vcf. Based on vardict 2017.09.24
     ## Returns  : @commands
     ## Arguments: $af_threshold           => Threshold for allele frequency
     ##          : $FILEHANDLE             => Filehandle to write to
