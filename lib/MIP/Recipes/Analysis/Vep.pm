@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vep analysis_vep_rio analysis_vep_sv };
@@ -378,7 +378,9 @@ sub analysis_vep {
                 infile_path    => $infile_path,
                 outfile_format => substr( $outfile_suffix, 1 ),
                 outfile_path   => $outfile_path,
-                plugins_ref    => \@plugins,
+                plugins_dir_path =>
+                  $active_parameter_href->{vep_plugins_dir_path},
+                plugins_ref => \@plugins,
                 reference_path =>
                   $active_parameter_href->{human_genome_reference},
                 regions_ref      => [$contig],
@@ -807,7 +809,9 @@ sub analysis_vep_rio {
                 infile_path    => $infile_path,
                 outfile_format => substr( $outfile_suffix, 1 ),
                 outfile_path   => $outfile_path,
-                plugins_ref    => \@plugins,
+                plugins_dir_path =>
+                  $active_parameter_href->{vep_plugins_dir_path},
+                plugins_ref => \@plugins,
                 reference_path =>
                   $active_parameter_href->{human_genome_reference},
                 regions_ref      => [$contig],
@@ -1266,8 +1270,10 @@ sub analysis_vep_sv {
                 infile_path    => $infile_path,
                 outfile_format => substr( $file_suffix, 1 ),
                 outfile_path   => $outfile_path,
-                plugins_ref    => \@plugins,
-                regions_ref    => \@regions,
+                plugins_dir_path =>
+                  $active_parameter_href->{vep_plugins_dir_path},
+                plugins_ref => \@plugins,
+                regions_ref => \@regions,
                 reference_path =>
                   $active_parameter_href->{human_genome_reference},
                 stderrfile_path  => $stderrfile_path,

@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.1;
+our $VERSION = 1.0.2;
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -179,6 +179,16 @@ my %specific_argument = (
           . $SPACE
           . catfile( q{test_dir}, q{infile.vcf} ),
     },
+    plugins_dir_path => {
+        input           => catdir(qw{ test_dir plugins }),
+        expected_output => q{--dir_plugins}
+          . $SPACE
+          . catdir(qw{ test_dir plugins }),
+    },
+    plugins_ref => {
+        inputs_ref      => [qw{ LoFtool LoF }],
+        expected_output => q{--plugin LoFtool} . $SPACE . q{--plugin LoF},
+    },
     reference_path => {
         input           => catfile( q{test_dir}, q{hum_ref.pl} ),
         expected_output => q{--fasta}
@@ -188,10 +198,6 @@ my %specific_argument = (
     regions_ref => {
         inputs_ref      => [qw{ 1 2 }],
         expected_output => q{--chr} . $SPACE . q{1,2},
-    },
-    plugins_ref => {
-        inputs_ref      => [qw{ LoFtool LoF }],
-        expected_output => q{--plugin LoFtool} . $SPACE . q{--plugin LoF},
     },
     vep_features_ref => {
         inputs_ref      => [qw{ tsl hgvs}],

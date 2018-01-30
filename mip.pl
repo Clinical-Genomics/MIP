@@ -490,7 +490,9 @@ GetOptions(
     q{vepc|vep_directory_cache:s} => \$active_parameter{vep_directory_cache},
     q{vepf|vep_features:s}        => \@{ $active_parameter{vep_features} },
     q{veppl|vep_plugins:s}        => \@{ $active_parameter{vep_plugins} },
-    q{pvcp|pvcfparser=n}          => \$active_parameter{pvcfparser},
+    q{veppldp|vep_plugins_dir_paths:s} =>
+      \$active_parameter{vep_plugins_dir_path},
+    q{pvcp|pvcfparser=n} => \$active_parameter{pvcfparser},
     q{vcpvt|vcfparser_vep_transcripts} =>
       \$active_parameter{vcfparser_vep_transcripts},
     q{vcprff|vcfparser_range_feature_file:s} =>
@@ -1884,6 +1886,7 @@ sub build_usage {
                                                                    "humdiv",  "domains",    "protein", "ccds",      "uniprot",
                                                                    "biotype", "regulatory", "tsl",     "canonical", "appris")
       -veppl/--vep_plugins                                         VEP plugins (defaults to ("UpDownDistance, LoFtool, LoF"); comma sep)
+      -veppldp/--vep_plugins_dir_paths                             Path to directory with VEP plugins (defaults to "")
     -pvcp/--pvcfparser                                             Parse variants using vcfParser.pl (defaults to "0" (=no))
       -vcpvt/--vcfparser_vep_transcripts                           Parse VEP transcript specific entries (supply flag to enable)
       -vcprff/--vcfparser_range_feature_file                       Range annotations file (defaults to ""; tab-sep)
