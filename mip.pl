@@ -562,15 +562,16 @@ GetOptions(
       \$active_parameter{psamtools_subsample_mt},
     q{ssmtd|samtools_subsample_mt_depth=n} =>
       \$active_parameter{samtools_subsample_mt_depth},
-    q{pvrd|pvardict=n}           => \$active_parameter{pvardict},
-    q{pvdraf|vrd_af_threshold}   => \$active_parameter{vrd_af_threshold},
-    q{pvrdcs|vrd_chrom_start}    => \$active_parameter{vrd_chrom_start},
-    q{qvrdmm|vrd_max_mm}         => \$active_parameter{vrd_max_mm},
-    q{qvrdmp|vrd_max_pval}       => \$active_parameter{vrd_max_pval},
-    q{qvrdre|vrd_region_end}     => \$active_parameter{vrd_region_end},
-    q{qvrdrs|vrd_region_start}   => \$active_parameter{vrd_region_start},
-    q{qvrdsa|vrd_segment_annotn} => \$active_parameter{vrd_segment_annotn},
-    q{qvrdso|vrd_somatic_only}   => \$active_parameter{vrd_somatic_only},
+    q{pvrd|pvardict=n}            => \$active_parameter{pvardict},
+    q{pvdraf|vrd_af_threshold}    => \$active_parameter{vrd_af_threshold},
+    q{pvrdcs|vrd_chrom_start}     => \$active_parameter{vrd_chrom_start},
+    q{pvrdbed|vrd_input_bed_file} => \$active_parameter{vrd_input_bed_file},
+    q{pvrdmm|vrd_max_mm}          => \$active_parameter{vrd_max_mm},
+    q{pvrdmp|vrd_max_pval}        => \$active_parameter{vrd_max_pval},
+    q{pvrdre|vrd_region_end}      => \$active_parameter{vrd_region_end},
+    q{pvrdrs|vrd_region_start}    => \$active_parameter{vrd_region_start},
+    q{pvrdsa|vrd_segment_annotn}  => \$active_parameter{vrd_segment_annotn},
+    q{pvrdso|vrd_somatic_only}    => \$active_parameter{vrd_somatic_only},
   )
   or help(
     {
@@ -1953,12 +1954,13 @@ sub build_usage {
     -pvrd/--pvardict                                               Variant calling using Vardict (defaults to "0" (=no))
        -pvdraf/--vrd_af_threshold                                  AF threshold for variant calling (default 0.01)
        -pvrdcs/--vrd_chrom_start                                   Column for chromosome in the output (default 1)
-       -qvrdre/--vrd_region_end                                    Column for region end position in the output (default 3)
-       -qvrdrs/--vrd_region_start                                  Column for region start position in the output (default 2)
-       -qvrdsa/--vrd_segment_annotn                                Column for segment annotation in the output (default 4)
-       -qvrdmm/--vrd_max_mm                                        The maximum mean mismatches allowed (default 4.5)
-       -qvrdmp/--vrd_max_pval                                      The maximum p-valuem, set to 0 to keep all variants (default 0.9)
-       -qvrdso/--vrd_somatic_only                                  Output only candidate somatic (default no)
+       -pvrdbed/--vrd_input_bed_file                               Infile path for region info bed file (mandatory, default none)
+       -pvrdmm/--vrd_max_mm                                        The maximum mean mismatches allowed (default 4.5)
+       -pvrdmp/--vrd_max_pval                                      The maximum p-valuem, set to 0 to keep all variants (default 0.9)
+       -pvrdre/--vrd_region_end                                    Column for region end position in the output (default 3)
+       -pvrdrs/--vrd_region_start                                  Column for region start position in the output (default 2)
+       -pvrdsa/--vrd_segment_annotn                                Column for segment annotation in the output (default 4)
+       -pvrdso/--vrd_somatic_only                                  Output only candidate somatic (default no)
        
 END_USAGE
 }
