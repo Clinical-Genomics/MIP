@@ -1777,6 +1777,13 @@ vep_plugins:
    - LoFtool
    - MaxEntScan
   type: program_argument
+vep_plugins_dir_path:
+  associated_program:
+    - pvarianteffectpredictor
+  data_type: SCALAR
+  exists_check: directory
+  type: path
+  update_path: absolute_path
 ## VCFParser
 pvcfparser:
   associated_program:

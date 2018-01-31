@@ -26,7 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -50,6 +50,7 @@ sub variant_effect_predictor {
 ##          : $infile_format           => Input file format - one of "ensembl", "vcf", "hgvs", "id"
 ##          : $outfile_format          => Output file format
 ##          : $outfile_path            => Outfile path to write to
+##          : $plugins_dir_path        => Path to plugins directory
 ##          : $plugins_ref             => Use named plugin {REF}
 ##          : $reference_path          => Reference sequence file
 ##          : $regions_ref             => The regions to process {REF}
@@ -73,6 +74,7 @@ sub variant_effect_predictor {
     my $FILEHANDLE;
     my $infile_path;
     my $outfile_path;
+    my $plugins_dir_path;
     my $plugins_ref;
     my $reference_path;
     my $regions_ref;
@@ -82,21 +84,29 @@ sub variant_effect_predictor {
     my $vep_features_ref;
 
     my $tmpl = {
-        assembly    => { store => \$assembly, strict_type => 1, },
+        assembly => {
+            store       => \$assembly,
+            strict_type => 1,
+        },
         buffer_size => {
             allow       => qr/ ^\d+$ /sxm,
             store       => \$buffer_size,
             strict_type => 1,
         },
-        cache_directory => { store => \$cache_directory, strict_type => 1, },
-        distance        => {
+        cache_directory => {
+            store       => \$cache_directory,
+            strict_type => 1,
+        },
+        distance => {
             allow       => qr/ ^\d+$ /xsm,
             default     => 5000,
             store       => \$distance,
             strict_type => 1,
         },
-        FILEHANDLE => { store => \$FILEHANDLE, },
-        fork       => {
+        FILEHANDLE => {
+            store => \$FILEHANDLE,
+        },
+        fork => {
             allow       => qr/ ^\d+$ /xsm,
             default     => 0,
             store       => \$fork,
@@ -108,25 +118,55 @@ sub variant_effect_predictor {
             store       => \$infile_format,
             strict_type => 1,
         },
-        infile_path    => { store => \$infile_path, strict_type => 1, },
+        infile_path => {
+            store       => \$infile_path,
+            strict_type => 1,
+        },
         outfile_format => {
             allow       => [qw{ vcf tab json }],
             default     => q{vcf},
             store       => \$outfile_format,
             strict_type => 1,
         },
-        outfile_path => { store => \$outfile_path, strict_type => 1, },
-        plugins_ref =>
-          { default => [], store => \$plugins_ref, strict_type => 1, },
-        reference_path => { store => \$reference_path, strict_type => 1, },
-        regions_ref =>
-          { default => [], store => \$regions_ref, strict_type => 1, },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
-        vep_features_ref =>
-          { default => [], store => \$vep_features_ref, strict_type => 1, },
+        outfile_path => {
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+        plugins_dir_path => {
+            store       => \$plugins_dir_path,
+            strict_type => 1,
+        },
+        plugins_ref => {
+            default     => [],
+            store       => \$plugins_ref,
+            strict_type => 1,
+        },
+        reference_path => {
+            store       => \$reference_path,
+            strict_type => 1,
+        },
+        regions_ref => {
+            default     => [],
+            store       => \$regions_ref,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+        vep_features_ref => {
+            default     => [],
+            store       => \$vep_features_ref,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -172,6 +212,9 @@ sub variant_effect_predictor {
     if ( @{$regions_ref} ) {
 
         push @commands, q{--chr} . $SPACE . join $COMMA, @{$regions_ref};
+    }
+    if ($plugins_dir_path) {
+        push @commands, q{--dir_plugins} . $SPACE . $plugins_dir_path;
     }
     if ( @{$plugins_ref} ) {
 
