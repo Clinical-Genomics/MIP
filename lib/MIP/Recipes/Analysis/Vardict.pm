@@ -307,15 +307,6 @@ sub analysis_vardict_tn {
     ## TODO: sub in vardict module to create pairs of analysis: TvsN and NvsN.
     ## TODO: add merge bam files for more than one normal sample id. This should be added to picardtools_mergesamfiles as a sub.
 
-    ## Vardict
-    ## Note: Vardict doesn't runs the analysis based on the input bed file, so if the input bed file points towards the
-    ## whole genome, Vardict will run it on whole genome, but mind you, this might take a long time (up to 3 weeks). So
-    ## in order to reduce this time two measures need to be taken: 1) use vardict-java to support multiple threads, 2)
-    ## run bedtools genomecov and run it on callable regions the same way GATK is doing. After having the callable
-    ## regions, by having multiple bed files, it can create a more proper form of parallelization. For now vardict's
-    ## recipe is designed to accommodate small bed files with small regions (it might be good to have the regions
-    ## overlap with each other).
-
     ## Create input filename bam file for $infile_paths_ref in vardict module. This has to be an array where first
     ## is tumor and the second one is normal tissue.
     ## Get parameters
@@ -476,7 +467,8 @@ sub analysis_vardict_tn {
 }
 
 sub analysis_vardict_single {
-    ## Function : Analysis recipe for varDict variant calling
+
+## Function : Analysis recipe for varDict variant calling
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id
@@ -737,15 +729,6 @@ sub analysis_vardict_single {
     my @infile_path =
       map { $file_path_prefix{$_} . $UNDERSCORE . $infile_suffix }
       @{ $active_parameter_href->{sample_ids} };
-
-    ## Vardict
-    ## Note: Vardict doesn't runs the analysis based on the input bed file, so if the input bed file points towards the
-    ## whole genome, Vardict will run it on whole genome, but mind you, this might take a long time (up to 3 weeks). So
-    ## in order to reduce this time two measures need to be taken: 1) use vardict-java to support multiple threads, 2)
-    ## run bedtools genomecov and run it on callable regions the same way GATK is doing. After having the callable
-    ## regions, by having multiple bed files, it can create a more proper form of parallelization. For now vardict's
-    ## recipe is designed to accommodate small bed files with small regions (it might be good to have the regions
-    ## overlap with each other).
 
     ## Create input filename bam file for $infile_paths_ref in vardict module. This has to be an array where first
     ## is tumor and the second one is normal tissue.
@@ -1039,6 +1022,16 @@ q?sed 's/REJECT,Description=\".*\">/REJECT,Description=\"Not Somatic via VarDict
 }
 
 ## Notes:
+## Vardict
+## Note: Vardict doesn't runs the analysis based on the input bed file, so if the input bed file points towards the
+## whole genome, Vardict will run it on whole genome, but mind you, this might take a long time (up to 3 weeks). So
+## in order to reduce this time two measures need to be taken: 1) use vardict-java to support multiple threads, 2)
+## run bedtools genomecov and run it on callable regions the same way GATK is doing. After having the callable
+## regions, by having multiple bed files, it can create a more proper form of parallelization. For now vardict's
+## recipe is designed to accommodate small bed files with small regions (it might be good to have the regions
+## overlap with each other).
+##
+##
 ##       1. _bcftools_low_freq_low_depth:
 ##           - AF * DP < 6: According to [ ref 1 ], a read depth of 13x is required to detect heterozygous SNVs 95% of the time.
 ##           - (MQ<55.0 && NM>1.0) || (MQ<60.0 && NM>2.0): It seems bwa mem, mentioned by Brad Chapman in bcbio, and
