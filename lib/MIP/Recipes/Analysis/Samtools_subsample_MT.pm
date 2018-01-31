@@ -321,7 +321,7 @@ sub analysis_samtools_subsample_MT {
     if ( $mip_program_mode == 1 ) {
 
         my $program_outfile_path = catfile( $outsample_directory,
-            $outfile_prefix . $UNDERSCORE . q{subsample_MT.bam} );
+            $outfile_prefix . $DOT . q{bam} );
         ## Collect QC metadata info for later use
         add_program_outfile_to_sample_info(
             {
