@@ -1074,7 +1074,6 @@ sv_vep_plugins:
   element_separator: ,
   data_type: ARRAY
   default:
-   - UpDownDistance
    - LoFtool
   type: program_argument
 psv_vcfparser:
@@ -1775,10 +1774,16 @@ vep_plugins:
   element_separator: ,
   data_type: ARRAY
   default:
-   - UpDownDistance
    - LoFtool
    - MaxEntScan
   type: program_argument
+vep_plugins_dir_path:
+  associated_program:
+    - pvarianteffectpredictor
+  data_type: SCALAR
+  exists_check: directory
+  type: path
+  update_path: absolute_path
 ## VCFParser
 pvcfparser:
   associated_program:

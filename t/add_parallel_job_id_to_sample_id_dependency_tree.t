@@ -1,53 +1,60 @@
 #!/usr/bin/env perl
 
-#### Copyright 2017 Henrik Stranneheim
-
-use Modern::Perl qw{2014};
-use warnings qw{FATAL utf8};
-use autodie;
-use 5.018;    #Require at least perl 5.18
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
+use 5.018;
 use Carp;
-use English qw{-no_match_vars};
-use Params::Check qw{check allow last_error};
-
-use FindBin qw{$Bin};    #Find directory of script
-use File::Basename qw{dirname basename};
-use File::Spec::Functions qw{catdir};
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use open qw{ :encoding(UTF-8) :std };
+use File::Basename qw{ basename dirname };
+use File::Spec::Functions qw{ catdir };
+use FindBin qw{ $Bin };
 use Getopt::Long;
+use Params::Check qw{ allow check last_error };
 use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
+
+## CPANM
+use autodie qw { :all };
+use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
-use MIP::Script::Utils qw{help};
+use lib catdir( dirname($Bin), q{lib} );
+use MIP::Script::Utils qw{ help };
 
 our $USAGE = build_usage( {} );
 
-##Constants
+my $VERBOSE = 1;
+our $VERSION = '1.0.1';
+
+## Constants
+Readonly my $COMMA      => q{,};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
 Readonly my $UNDERSCORE => q{_};
 
-my $VERBOSE = 1;
-our $VERSION = q{1.0.0};
-
-###User Options
+### User Options
 GetOptions(
-    'h|help' => sub {
+
+    # Display help text
+    q{h|help} => sub {
         done_testing();
         say {*STDOUT} $USAGE;
         exit;
-    },    #Display help text
-    'v|version' => sub {
+    },
+
+    # Display version number
+    q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
-          $NEWLINE;
+        say {*STDOUT} $NEWLINE
+          . basename($PROGRAM_NAME)
+          . $SPACE
+          . $VERSION
+          . $NEWLINE;
         exit;
-    },    #Display version number
-    'vb|verbose' => $VERBOSE,
+    },
+    q{vb|verbose} => $VERBOSE,
   )
   or (
     done_testing(),
@@ -62,15 +69,13 @@ GetOptions(
 BEGIN {
 
 ### Check all internal dependency modules and imports
-##Modules with import
-    my %perl_module;
+## Modules with import
+    my %perl_module = ( q{MIP::Script::Utils} => [qw{ help }], );
 
-    $perl_module{'MIP::Script::Utils'} = [qw{help}];
-
-  MODULES:
+  PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
         use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load } . $module;
+          or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 
 ##Modules
@@ -86,8 +91,14 @@ use MIP::Processmanagement::Processes
   qw{add_parallel_job_id_to_sample_id_dependency_tree};
 
 diag(
-"Test add_parallel_job_id_to_sample_id_dependency_tree $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"
-);
+    q{Test add_parallel_job_id_to_sample_id_dependency_tree from Processes.pm v}
+      . $MIP::Processmanagement::Processes::VERSION
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+      . $EXECUTABLE_NAME );
 
 ## Base arguments
 my $sample_id           = q{sample1};
@@ -126,10 +137,10 @@ my $no_parallel_push_result = join $SPACE,
   @{ $job_id{$family_id_chain_key}{$sample_id_chain_key} };
 is( $no_parallel_push_result, q{job_id_1 job_id_2}, q{No parallel job_id} );
 
-###Previous parallel jobs
+### Previous parallel jobs
 ## Set-up previous parallel job
 INFILES:
-while ( my ($infile_index) = each $infile_lane_prefix{$sample_id} ) {
+while ( my ($infile_index) = each @{ $infile_lane_prefix{$sample_id} } ) {
 
     # Set key
     my $chain_key_parallel_job =
@@ -171,12 +182,9 @@ done_testing();
 
 sub build_usage {
 
-##build_usage
-
-##Function : Build the USAGE instructions
-##Returns  : ""
-##Arguments: $program_name
-##         : $program_name => Name of the script
+## Function : Build the USAGE instructions
+## Returns  :
+## Arguments: $program_name => Name of the script
 
     my ($arg_href) = @_;
 
@@ -186,8 +194,8 @@ sub build_usage {
     my $tmpl = {
         program_name => {
             default     => basename($PROGRAM_NAME),
-            strict_type => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
     };
 
