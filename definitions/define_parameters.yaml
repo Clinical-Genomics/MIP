@@ -1531,6 +1531,14 @@ vrd_chrom_start:
   data_type: SCALAR
   default: 1
   type: program_argument
+vrd_input_bed_file:
+  associated_program:
+   - pvardict
+  data_type: SCALAR
+  exists_check: file
+  mandatory: yes
+  type: path
+  update_path: absolute_path
 vrd_max_mm:
   associated_program:
    - pvardict

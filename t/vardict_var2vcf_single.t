@@ -88,8 +88,7 @@ BEGIN {
     }
 }
 
-use MIP::Program::Variantcalling::Vardict
-  qw{ vardict_var2vcf_single };
+use MIP::Program::Variantcalling::Vardict qw{ vardict_var2vcf_single };
 use MIP::Test::Commands qw{ test_function };
 
 diag(   q{Test var2vcf_valid.pl from Vardict.pm}
@@ -126,10 +125,6 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    af_threshold => {
-        input           => q{0.01},
-        expected_output => q{-f} . $SPACE . q{0.01},
-    },
     sample_name => {
         input           => q{my_sample_name},
         expected_output => q{-N} . $SPACE . q{my_sample_name},
@@ -140,6 +135,14 @@ my %specific_argument = (
     af_threshold => {
         input           => q{0.01},
         expected_output => q{-f} . $SPACE . q{0.01},
+    },
+    all_var => {
+        input           => 1,
+        expected_output => q{-A} . $SPACE,
+    },
+    no_end_tag => {
+        input           => 1,
+        expected_output => q{-E} . $SPACE,
     },
     sample_name => {
         input           => q{my_sample_name},
