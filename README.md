@@ -90,9 +90,11 @@ $ mip --family_id [family_id] --pbwa_mem 1 --config_file [mip_config.yaml] --ped
 MIP is written in perl and therefore requires that perl is installed on your OS.
 
 #### Prerequisites
-* [Perl], version 5.18.2 or above
+* [Perl], version 5.26.0 or above
 * [Cpanm](http://search.cpan.org/~miyagawa/App-cpanminus-1.7043/lib/App/cpanminus.pm)
 * [Miniconda]
+
+We recommend perlbrew for installing and managing perl and cpanm libraries. Installation instructions and setting up specific the cpanm libraries can be found [here](https://github.com/Clinical-Genomics/development/blob/master/perl/installation/installation.md).
 
 #### Automated Installation \(Linux x86\_64\)  
 ##### 1.Clone the official git repository
