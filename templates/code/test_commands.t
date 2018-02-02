@@ -193,7 +193,7 @@ sub build_usage {
     return <<"END_USAGE";
  $program_name [options]
     -vb/--verbose Verbose
-    -h/--help Display this help message
-    -v/--version Display version
+    -h/--help     Display this help message
+    -v/--version  Display version
 END_USAGE
 }

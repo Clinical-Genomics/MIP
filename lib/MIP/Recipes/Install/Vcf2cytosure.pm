@@ -16,11 +16,12 @@ use warnings;
 use Readonly;
 
 BEGIN {
+
     require Exporter;
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vcf2cytosure };
@@ -145,6 +146,7 @@ sub install_vcf2cytosure {
 
     ## Only activate conda environment if supplied by user
     if ($conda_environment) {
+
         ## Activate conda environment
         say {$FILEHANDLE} q{## Activate conda environment};
         conda_source_activate(
@@ -186,12 +188,33 @@ sub install_vcf2cytosure {
 
     ## Pip install the downloaded vcf2cytosure package
     say {$FILEHANDLE} q{## Install};
+    ## Vcf2cytosure seems to require a numpy version higher then what is
+    ## currently specified in the install parameter file (1.9.3)
+    pip_install(
+        {
+            FILEHANDLE   => $FILEHANDLE,
+            packages_ref => [qw{ numpy==1.14.0 }],
+            quiet        => $quiet,
+            verbose      => $verbose,
+        }
+    );
+    print {$FILEHANDLE} $NEWLINE;
     pip_install(
         {
             FILEHANDLE   => $FILEHANDLE,
             packages_ref => [$DOT],
             quiet        => $quiet,
             verbose      => $verbose,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
+    ## Go back to subroutine origin
+    say {$FILEHANDLE} q{## Moving back to original working directory};
+    gnu_cd(
+        {
+            directory_path => $pwd,
+            FILEHANDLE     => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;

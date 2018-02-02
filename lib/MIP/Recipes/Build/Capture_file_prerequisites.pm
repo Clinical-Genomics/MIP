@@ -1,18 +1,17 @@
 package MIP::Recipes::Build::Capture_file_prerequisites;
 
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catdir catfile };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use autodie qw{ :all };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-use File::Spec::Functions qw{ catdir catfile };
 
 ## CPANM
+use autodie qw{ :all };
 use Readonly;
 
 BEGIN {
@@ -21,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_capture_file_prerequisites };
@@ -38,35 +37,35 @@ sub build_capture_file_prerequisites {
 
 ## Function : Creates the target "infiles_list" "padded.infile_list" and interval_list files.
 ## Returns  :
-## Arguments: $parameter_href              => Parameter hash {REF}
-##          : $active_parameter_href       => Active parameters for this analysis hash {REF}
-##          : $sample_info_href            => Info on samples and family hash {REF}
+## Arguments: $active_parameter_href       => Active parameters for this analysis hash {REF}
+##          : $family_id                   => Family ID
+##          : $FILEHANDLE                  => Filehandle to write to
 ##          : $infile_lane_prefix_href     => Infile(s) without the ".ending" {REF}
-##          : $job_id_href                 => Job id hash {REF}
 ##          : $infile_list_suffix          => Infile list suffix
+##          : $job_id_href                 => Job id hash {REF}
+##          : $log                         => Log object
+##          : $outaligner_dir              => Outaligner_dir used in the analysis {REF}
 ##          : $padded_infile_list_suffix   => Padded infile list suffix
 ##          : $padded_interval_list_suffix => Padded interval list suffix
+##          : $parameter_href              => Parameter hash {REF}
 ##          : $program_name                => Program name
-##          : $FILEHANDLE                  => Filehandle to write to
-##          : $log                         => Log object
-##          : $family_id                   => Family ID
-##          : $outaligner_dir              => Outaligner_dir used in the analysis {REF}
+##          : $sample_info_href            => Info on samples and family hash {REF}
 ##          : $temp_directory              => Temporary directory
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $parameter_href;
     my $active_parameter_href;
-    my $sample_info_href;
+    my $FILEHANDLE;
     my $infile_lane_prefix_href;
-    my $job_id_href;
     my $infile_list_suffix;
+    my $job_id_href;
+    my $log;
     my $padded_infile_list_suffix;
     my $padded_interval_list_suffix;
+    my $parameter_href;
     my $program_name;
-    my $FILEHANDLE;
-    my $log;
+    my $sample_info_href;
 
     ## Default(s)
     my $family_id;
@@ -74,94 +73,94 @@ sub build_capture_file_prerequisites {
     my $temp_directory;
 
     my $tmpl = {
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
             strict_type => 1,
-            store       => \$sample_info_href,
         },
+        family_id => {
+            default     => $arg_href->{active_parameter_href}{family_id},
+            store       => \$family_id,
+            strict_type => 1,
+        },
+        FILEHANDLE              => { store => \$FILEHANDLE, },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$infile_lane_prefix_href,
-        },
-        job_id_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
             strict_type => 1,
-            store       => \$job_id_href,
         },
         infile_list_suffix => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$infile_list_suffix,
+            strict_type => 1,
         },
-        padded_infile_list_suffix => {
-            required    => 1,
+        job_id_href => {
+            default     => {},
             defined     => 1,
-            strict_type => 1,
-            store       => \$padded_infile_list_suffix,
-        },
-        padded_interval_list_suffix => {
             required    => 1,
-            defined     => 1,
+            store       => \$job_id_href,
             strict_type => 1,
-            store       => \$padded_interval_list_suffix,
         },
-        program_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$program_name,
-        },
-        FILEHANDLE => { store => \$FILEHANDLE, },
-        log        => { store => \$log, },
-        family_id  => {
-            default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
-            store       => \$family_id,
-        },
+        log            => { store => \$log, },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
             store       => \$outaligner_dir,
+            strict_type => 1,
+        },
+        padded_infile_list_suffix => {
+            defined     => 1,
+            required    => 1,
+            store       => \$padded_infile_list_suffix,
+            strict_type => 1,
+        },
+        padded_interval_list_suffix => {
+            defined     => 1,
+            required    => 1,
+            store       => \$padded_interval_list_suffix,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        program_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$program_name,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
             store       => \$temp_directory,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Gnu::Coreutils qw{ gnu_rm gnu_cat gnu_ln };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
+    use MIP::Processmanagement::Slurm_processes
+      qw{ slurm_submit_job_no_dependency_add_to_samples };
     use MIP::Program::Fasta::Picardtools
       qw{ picardtools_createsequencedictionary };
     use MIP::Program::Interval::Picardtools qw{ picardtools_intervallisttools };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_no_dependency_add_to_samples };
+    use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
     Readonly my $NR_OF_BASES_PADDING => 100;
@@ -171,7 +170,7 @@ sub build_capture_file_prerequisites {
 
     ## Set MIP program name
     my $mip_program_name = q{p} . $program_name;
-    my $mip_program_mode = $active_parameter_href->{$program_name};
+    my $mip_program_mode = $active_parameter_href->{$mip_program_name};
 
     ## Alias
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
@@ -186,9 +185,9 @@ sub build_capture_file_prerequisites {
         ($file_path) = setup_script(
             {
                 active_parameter_href => $active_parameter_href,
-                job_id_href           => $job_id_href,
                 FILEHANDLE            => $FILEHANDLE,
                 directory_id          => $family_id,
+                job_id_href           => $job_id_href,
                 program_name          => $program_name,
                 program_directory     => $outaligner_dir,
             }
@@ -216,17 +215,17 @@ sub build_capture_file_prerequisites {
 
         picardtools_createsequencedictionary(
             {
-                FILEHANDLE        => $FILEHANDLE,
-                memory_allocation => q{Xmx2g},
-                java_use_large_pages =>
-                  $active_parameter_href->{java_use_large_pages},
-                temp_directory => $temp_directory,
-                java_jar       => catfile(
+                FILEHANDLE => $FILEHANDLE,
+                java_jar   => catfile(
                     $active_parameter_href->{picardtools_path},
                     q{picard.jar}
                 ),
-                referencefile_path => $referencefile_path,
+                java_use_large_pages =>
+                  $active_parameter_href->{java_use_large_pages},
+                memory_allocation => q{Xmx2g},
                 outfile_path => $exome_target_bed_file_random . $DOT . q{dict},
+                referencefile_path => $referencefile_path,
+                temp_directory     => $temp_directory,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -235,6 +234,7 @@ sub build_capture_file_prerequisites {
           q{## Add target file to headers from sequence dictionary};
         gnu_cat(
             {
+                FILEHANDLE       => $FILEHANDLE,
                 infile_paths_ref => [
                     $exome_target_bed_file_random . $DOT . q{dict},
                     $exome_target_bed_file
@@ -242,7 +242,6 @@ sub build_capture_file_prerequisites {
                 outfile_path => $exome_target_bed_file_random
                   . $DOT
                   . q{dict_body},
-                FILEHANDLE => $FILEHANDLE,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -269,18 +268,18 @@ sub build_capture_file_prerequisites {
           . $infile_list_suffix;
         picardtools_intervallisttools(
             {
-                memory_allocation => q{Xmx2g},
-                java_use_large_pages =>
-                  $active_parameter_href->{java_use_large_pages},
-                temp_directory => $temp_directory,
-                java_jar       => catfile(
+                FILEHANDLE       => $FILEHANDLE,
+                infile_paths_ref => \@infile_paths_ref,
+                java_jar         => catfile(
                     $active_parameter_href->{picardtools_path},
                     q{picard.jar}
                 ),
-                infile_paths_ref   => \@infile_paths_ref,
+                java_use_large_pages =>
+                  $active_parameter_href->{java_use_large_pages},
+                memory_allocation  => q{Xmx2g},
                 outfile_path       => $infile_list_outfile_path,
-                FILEHANDLE         => $FILEHANDLE,
                 referencefile_path => $referencefile_path,
+                temp_directory     => $temp_directory,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -311,19 +310,19 @@ sub build_capture_file_prerequisites {
           . $padded_infile_list_suffix;
         picardtools_intervallisttools(
             {
-                memory_allocation => q{Xmx2g},
-                java_use_large_pages =>
-                  $active_parameter_href->{java_use_large_pages},
-                temp_directory => $active_parameter_href->{temp_directory},
-                java_jar       => catfile(
+                FILEHANDLE       => $FILEHANDLE,
+                infile_paths_ref => \@infile_paths_ref,
+                java_jar         => catfile(
                     $active_parameter_href->{picardtools_path},
                     q{picard.jar}
                 ),
-                infile_paths_ref   => \@infile_paths_ref,
+                java_use_large_pages =>
+                  $active_parameter_href->{java_use_large_pages},
+                memory_allocation  => q{Xmx2g},
                 outfile_path       => $padded_infile_list_outfile_path,
                 padding            => $NR_OF_BASES_PADDING,
-                FILEHANDLE         => $FILEHANDLE,
                 referencefile_path => $referencefile_path,
+                temp_directory     => $active_parameter_href->{temp_directory},
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -351,13 +350,13 @@ sub build_capture_file_prerequisites {
 
         gnu_ln(
             {
-                force       => 1,
+                FILEHANDLE => $FILEHANDLE,
+                force      => 1,
+                link_path  => $exome_target_bed_file
+                  . $padded_interval_list_suffix,
                 symbolic    => 1,
                 target_path => $exome_target_bed_file
                   . $padded_infile_list_suffix,
-                link_path => $exome_target_bed_file
-                  . $padded_interval_list_suffix,
-                FILEHANDLE => $FILEHANDLE,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -377,16 +376,16 @@ sub build_capture_file_prerequisites {
 
             gnu_rm(
                 {
-                    infile_path => $file,
-                    force       => 1,
                     FILEHANDLE  => $FILEHANDLE,
+                    force       => 1,
+                    infile_path => $file,
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
         }
     }
     ## Unless FILEHANDLE was supplied close filehandle and submit
-    if ( not defined $FILEHANDLE ) {
+    if ( not defined $arg_href->{active_parameter_href}{FILEHANDLE} ) {
 
         close $FILEHANDLE;
 
@@ -394,13 +393,13 @@ sub build_capture_file_prerequisites {
 
             slurm_submit_job_no_dependency_add_to_samples(
                 {
+                    family_id   => $family_id,
                     job_id_href => $job_id_href,
+                    log         => $log,
+                    path        => q{MAIN},
                     sample_ids_ref =>
                       \@{ $active_parameter_href->{sample_ids} },
-                    family_id        => $family_id,
-                    path             => q{MAIN},
                     sbatch_file_name => $file_path,
-                    log              => $log,
                 }
             );
         }
@@ -423,10 +422,10 @@ sub _reformat_capture_file {
 
     my $tmpl = {
         exome_target_bed_file_random => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$exome_target_bed_file_random,
+            strict_type => 1,
         },
         FILEHANDLE => { store => \$FILEHANDLE, },
     };

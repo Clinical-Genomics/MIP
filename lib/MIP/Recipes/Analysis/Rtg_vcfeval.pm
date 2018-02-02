@@ -281,7 +281,9 @@ sub analysis_rtg_vcfeval {
             outputdirectory_path => $rtg_outdirectory_path,
             sample_id            => $active_parameter_href->{nist_id},
             sdf_template_file_path =>
-              $active_parameter_href->{rtg_vcfeval_sdf_dir},
+              $active_parameter_href->{rtg_vcfeval_reference_genome}
+              . $file_info_href->{rtg_vcfeval_reference_genome}[0]
+            ,    # Only one directory for sdf
         }
     );
 

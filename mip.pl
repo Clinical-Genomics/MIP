@@ -41,7 +41,7 @@ use MIP::Check::Parameter
   qw{ check_allowed_temp_directory check_cmd_config_vs_definition_file check_parameter_hash };
 use MIP::Check::Path qw{ check_target_bed_file_suffix check_parameter_files };
 use MIP::Check::Reference
-  qw{ check_bwa_prerequisites check_capture_file_prerequisites check_file_endings_to_build check_human_genome_file_endings check_human_genome_prerequisites check_parameter_metafiles check_references_for_vt };
+  qw{ check_bwa_prerequisites check_capture_file_prerequisites check_human_genome_file_endings check_human_genome_prerequisites check_parameter_metafiles check_references_for_vt check_rtg_prerequisites };
 use MIP::File::Format::Pedigree
   qw{ create_fam_file parse_yaml_pedigree_file reload_previous_pedigree_info };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
@@ -150,7 +150,7 @@ check_parameter_hash(
 );
 
 ## Set MIP version
-our $VERSION = 'v5.0.13';
+our $VERSION = 'v5.0.14';
 
 ## Holds all active parameters
 my %active_parameter;
@@ -160,14 +160,18 @@ my ( %infile, %indir_path, %infile_lane_prefix, %lane,
     %infile_both_strands_prefix, %job_id, %sample_info );
 
 my %file_info = (
-    exome_target_bed =>
-      [qw{ .infile_list .pad100.infile_list .pad100.interval_list }],
 
     # BWA human genome reference file endings
     bwa_build_reference => [qw{ .bwt .ann .amb .pac .sa }],
 
+    exome_target_bed =>
+      [qw{ .infile_list .pad100.infile_list .pad100.interval_list }],
+
     # Human genome meta files
     human_genome_reference_file_endings => [qw{ .dict .fai }],
+
+    # RTG human genome reference file endings
+    rtg_vcfeval_reference_genome => [qw{ _sdf_dir }],
 );
 
 #### Staging Area
@@ -486,7 +490,9 @@ GetOptions(
     q{vepc|vep_directory_cache:s} => \$active_parameter{vep_directory_cache},
     q{vepf|vep_features:s}        => \@{ $active_parameter{vep_features} },
     q{veppl|vep_plugins:s}        => \@{ $active_parameter{vep_plugins} },
-    q{pvcp|pvcfparser=n}          => \$active_parameter{pvcfparser},
+    q{veppldp|vep_plugins_dir_paths:s} =>
+      \$active_parameter{vep_plugins_dir_path},
+    q{pvcp|pvcfparser=n} => \$active_parameter{pvcfparser},
     q{vcpvt|vcfparser_vep_transcripts} =>
       \$active_parameter{vcfparser_vep_transcripts},
     q{vcprff|vcfparser_range_feature_file:s} =>
@@ -532,13 +538,12 @@ GetOptions(
       \$active_parameter{endvariantannotationblock_remove_genes_file},
     q{ravbf|rankvariant_binary_file} =>
       \$active_parameter{rankvariant_binary_file},
-    q{pped|ppeddy=n}                => \$active_parameter{ppeddy},
-    q{pplink|pplink=n}              => \$active_parameter{pplink},
-    q{pvai|pvariant_integrity=n}    => \$active_parameter{pvariant_integrity},
-    q{prte|prtg_vcfeval=n}          => \$active_parameter{prtg_vcfeval},
-    q{rtesdf|rtg_vcfeval_sdf_dir:s} => \$active_parameter{rtg_vcfeval_sdf_dir},
-    q{pevl|pevaluation=n}           => \$active_parameter{pevaluation},
-    q{evlnid|nist_id:s}             => \$active_parameter{nist_id},
+    q{pped|ppeddy=n}             => \$active_parameter{ppeddy},
+    q{pplink|pplink=n}           => \$active_parameter{pplink},
+    q{pvai|pvariant_integrity=n} => \$active_parameter{pvariant_integrity},
+    q{prte|prtg_vcfeval=n}       => \$active_parameter{prtg_vcfeval},
+    q{pevl|pevaluation=n}        => \$active_parameter{pevaluation},
+    q{evlnid|nist_id:s}          => \$active_parameter{nist_id},
     q{evlnhc|nist_high_confidence_call_set:s} =>
       \$active_parameter{nist_high_confidence_call_set},
     q{evlnil|nist_high_confidence_call_set_bed:s} =>
@@ -559,6 +564,16 @@ GetOptions(
       \$active_parameter{psamtools_subsample_mt},
     q{ssmtd|samtools_subsample_mt_depth=n} =>
       \$active_parameter{samtools_subsample_mt_depth},
+    q{pvrd|pvardict=n}            => \$active_parameter{pvardict},
+    q{pvdraf|vrd_af_threshold}    => \$active_parameter{vrd_af_threshold},
+    q{pvrdcs|vrd_chrom_start}     => \$active_parameter{vrd_chrom_start},
+    q{pvrdbed|vrd_input_bed_file} => \$active_parameter{vrd_input_bed_file},
+    q{pvrdmm|vrd_max_mm}          => \$active_parameter{vrd_max_mm},
+    q{pvrdmp|vrd_max_pval}        => \$active_parameter{vrd_max_pval},
+    q{pvrdre|vrd_region_end}      => \$active_parameter{vrd_region_end},
+    q{pvrdrs|vrd_region_start}    => \$active_parameter{vrd_region_start},
+    q{pvrdsa|vrd_segment_annotn}  => \$active_parameter{vrd_segment_annotn},
+    q{pvrdso|vrd_somatic_only}    => \$active_parameter{vrd_somatic_only},
   )
   or help(
     {
@@ -706,7 +721,7 @@ foreach my $parameter_name (@order_parameters) {
 
     ### Special case for parameters that are dependent on other parameters values
     my @custom_default_parameters =
-      qw{ analysis_type bwa_build_reference exome_target_bed infile_dirs sample_info_file };
+      qw{ analysis_type bwa_build_reference exome_target_bed infile_dirs sample_info_file rtg_vcfeval_reference_genome };
 
     if ( any { $_ eq $parameter_name } @custom_default_parameters ) {
 
@@ -844,7 +859,7 @@ foreach my $target_bed_file ( keys %{ $active_parameter{exome_target_bed} } ) {
     );
 }
 
-## Checks parameter metafile exists
+## Checks parameter metafile exists and set build_file parameter
 check_parameter_metafiles(
     {
         parameter_href        => \%parameter,
@@ -1124,23 +1139,18 @@ foreach my $parameter_info (@broadcasts) {
 }
 
 ## Update program mode depending on analysis run value as some programs are not applicable for e.g. wes
-my @warning_msgs = update_program_mode(
+update_program_mode(
     {
         active_parameter_href => \%active_parameter,
-        programs_ref => [qw{ cnvnator delly_call delly_reformat tiddit }],
         consensus_analysis_type =>
           $parameter{dynamic_parameter}{consensus_analysis_type},
+        log          => $log,
+        programs_ref => [
+            qw{ cnvnator delly_call delly_reformat tiddit samtools_subsample_mt }
+        ],
     }
 );
 
-## Broadcast
-if (@warning_msgs) {
-
-    foreach my $warning_msg (@warning_msgs) {
-
-        $log->warn($warning_msg);
-    }
-}
 ## Update prioritize flag depending on analysis run value as some programs are not applicable for e.g. wes
 $active_parameter{sv_svdb_merge_prioritize} = update_prioritize_flag(
     {
@@ -1158,7 +1168,7 @@ if ( $active_parameter{config_file_analysis} ne 0 ) {
     make_path( dirname( $active_parameter{config_file_analysis} ) );
 
     ## Remove previous analysis specific info not relevant for current run e.g. log file, sample_ids which are read from pedigree or cmd
-    my @remove_keys = (qw{ associated_program });
+    my @remove_keys = (qw{ associated_program dry_run_all });
 
   KEY:
     foreach my $key (@remove_keys) {
@@ -1371,6 +1381,24 @@ foreach my $program_name (
         }
     );
     last PROGRAM if ($is_finished);
+}
+
+## Check Rtg build prerequisites
+
+if ( $active_parameter{prtg_vcfeval} ) {
+
+    check_rtg_prerequisites(
+        {
+            parameter_href          => \%parameter,
+            active_parameter_href   => \%active_parameter,
+            sample_info_href        => \%sample_info,
+            file_info_href          => \%file_info,
+            infile_lane_prefix_href => \%infile_lane_prefix,
+            job_id_href             => \%job_id,
+            program_name            => q{rtg_vcfeval},
+            parameter_build_name    => q{rtg_vcfeval_reference_genome},
+        }
+    );
 }
 
 ## Check BWA build prerequisites
@@ -1618,269 +1646,325 @@ sub build_usage {
     return <<"END_USAGE";
  $program_name [options] -ifd [infile_dirs=sample_id] -rd [reference_dir] -p [project_id] -s [sample_ids,.,.,.,n] -em [email] -osd [outscript_dir] -odd [outdata_dir] -f [family_id] -p[program] -at [sample_id=analysis_type]
 
-    ####MIP
-    -ifd/--infile_dirs Infile directory(s) (Hash infile_dirs=sample_id; mandatory)
-    -rd/--reference_dir Reference(s) directory (mandatory)
-    -p/--project_id The project ID (mandatory)
-    -s/--sample_ids The sample ID(s)(comma sep; mandatory)
-    -odd/--outdata_dir The data output directory (mandatory)
-    -osd/--outscript_dir The script files (.sh) output directory (mandatory)
-    -f/--family_id Group id of samples to be compared (defaults to "", (Ex: 1 for IDN 1-1-1A))
-    -sck/--supported_capture_kit Set the capture kit acronym shortcut in pedigree file
-    -dnr/--decompose_normalize_references Set the references to be decomposed and normalized (defaults: "gatk_realigner_indel_known_sites", "gatk_baserecalibration_known_sites","gatk_haplotypecaller_snp_known_set", "gatk_variantrecalibration_resource_snv", "gatk_variantrecalibration_resource_indel", "frequency_genmod_filter_1000g", "sv_vcfanno_config_file", "gatk_varianteval_gold", "gatk_varianteval_dbsnp","snpsift_annotation_files")
-    -ped/--pedigree_file Meta data on samples (defaults to "")
-    -hgr/--human_genome_reference Fasta file for the human genome reference (defaults to "GRCh37_homo_sapiens_-d5-.fasta;1000G decoy version 5")
-    -ald/--outaligner_dir Setting which aligner out directory was used for alignment in previous analysis (defaults to "{outdata_dir}{outaligner_dir}")
-    -at/--analysis_type Type of analysis to perform (sample_id=analysis_type, defaults to "wgs";Valid entries: "wgs", "wes", "wts")
-    -pl/--platform Platform/technology used to produce the reads (defaults to "ILLUMINA")
-    -ec/--expected_coverage Expected mean target coverage for analysis (sample_id=expected_coverage, defaults to "")
-    -sao/--sample_origin Sample origin for analysis (sample_id=sample_origin, defaults to "")
-    -c/--config_file YAML config file for analysis parameters (defaults to "")
-    -ccp/--cluster_constant_path Set the cluster constant path (defaults to "")
-    -acp/--analysis_constant_path Set the analysis constant path (defaults to "analysis")
-    -cfa/--config_file_analysis Write YAML configuration file for analysis parameters (defaults to "")
-    -sif/--sample_info_file YAML file for sample info used in the analysis (defaults to "{outdata_dir}/{family_id}/{family_id}_qc_sample_info.yaml")
-    -dra/--dry_run_all Sets all programs to dry run mode i.e. no sbatch submission (supply flag to enable)
-    -jul/--java_use_large_pages Use large page memory. (supply flag to enable)
-    -ges/--genomic_set Selection of relevant regions post alignment (Format=sorted BED; defaults to "")
-    -rio/--reduce_io Run consecutive models at nodes (supply flag to enable)
-    -riu/--replace_iupac Replace IUPAC code in alternative alleles with N (supply flag to enable)
-    -pp/--print_program Print all programs that are supported
-    -ppm/--print_program_mode Print all programs that are supported in: 0 (off mode), 1 (on mode), 2 (dry run mode; defaults to "2")
-    -l/--log_file Mip log file (defaults to "{outdata_dir}/{family_id}/mip_log/{date}/{scriptname}_{timestamp}.log")
-    -h/--help Display this help message
-    -v/--version Display version of MIP
+    #### MIP
+    -ifd/--infile_dirs                                             Infile directory(s) (Hash infile_dirs=sample_id; mandatory)
+    -rd/--reference_dir                                            Reference(s) directory (mandatory)
+    -p/--project_id                                                Project ID (mandatory)
+    -s/--sample_ids                                                Sample ID(s)(comma sep; mandatory)
+    -odd/--outdata_dir                                             Data output directory (mandatory)
+    -osd/--outscript_dir                                           Script files (.sh) output directory (mandatory)
+    -f/--family_id                                                 Group id of samples to be compared (defaults to "", (Ex: 1 for IDN 1-1-1A))
+    -sck/--supported_capture_kit                                   Set the capture kit acronym shortcut in pedigree file
+    -dnr/--decompose_normalize_references                          Set the references to be decomposed and normalized (defaults:
+                                                                   "gatk_realigner_indel_known_sites",         "gatk_baserecalibration_known_sites",
+                                                                   "gatk_haplotypecaller_snp_known_set",       "gatk_variantrecalibration_resource_snv",
+                                                                   "gatk_variantrecalibration_resource_indel", "frequency_genmod_filter_1000g",
+                                                                   "sv_vcfanno_config_file",                   "gatk_varianteval_gold",
+                                                                   "gatk_varianteval_dbsnp",                   "snpsift_annotation_files")
+    -ped/--pedigree_file                                           Meta data on samples (defaults to "")
+    -hgr/--human_genome_reference                                  Fasta file for the human genome reference (defaults to "GRCh37_homo_sapiens_-d5-.fasta;1000G decoy version 5")
+    -ald/--outaligner_dir                                          Setting which aligner out directory was used for alignment in previous analysis (defaults to "{outdata_dir}{outaligner_dir}")
+    -at/--analysis_type                                            Type of analysis to perform (sample_id=analysis_type, defaults to "wgs";Valid entries: "wgs", "wes", "wts")
+    -pl/--platform                                                 Platform/technology used to produce the reads (defaults to "ILLUMINA")
+    -ec/--expected_coverage                                        Expected mean target coverage for analysis (sample_id=expected_coverage, defaults to "")
+    -sao/--sample_origin                                           Sample origin for analysis (sample_id=sample_origin, defaults to "")
+    -c/--config_file                                               YAML config file for analysis parameters (defaults to "")
+    -ccp/--cluster_constant_path                                   Set the cluster constant path (defaults to "")
+    -acp/--analysis_constant_path                                  Set the analysis constant path (defaults to "analysis")
+    -cfa/--config_file_analysis                                    Write YAML configuration file for analysis parameters (defaults to "")
+    -sif/--sample_info_file                                        YAML file for sample info used in the analysis (defaults to "{outdata_dir}/{family_id}/{family_id}_qc_sample_info.yaml")
+    -dra/--dry_run_all                                             Sets all programs to dry run mode i.e. no sbatch submission (supply flag to enable)
+    -jul/--java_use_large_pages                                    Use large page memory. (supply flag to enable)
+    -ges/--genomic_set                                             Selection of relevant regions post alignment (Format=sorted BED; defaults to "")
+    -rio/--reduce_io                                               Run consecutive models at nodes (supply flag to enable)
+    -riu/--replace_iupac                                           Replace IUPAC code in alternative alleles with N (supply flag to enable)
+    -pp/--print_program                                            Print all programs that are supported
+    -ppm/--print_program_mode                                      Print all programs that are supported in: 0 (off mode), 1 (on mode), 2 (dry run mode; defaults to "2")
+    -l/--log_file                                                  MIP log file (defaults to "{outdata_dir}/{family_id}/mip_log/{date}/{scriptname}_{timestamp}.log")
+    -h/--help                                                      Display this help message
+    -v/--version                                                   Display version of MIP
 
-    ####Bash
-    -bse/--bash_set_errexit Set errexit in bash scripts (supply flag to enable)
-    -bsu/--bash_set_nounset Set nounset in bash scripts (supply flag to enable)
-    -bsp/--bash_set_pipefail Set pipefail in bash scripts (supply flag to enable)
-    -mot/--module_time Set the time allocation for each module (Format: module "program name"=time(Hours))
-    -mcn/--module_core_number Set the number of cores for each module (Format: module "program_name"=X(cores))
-    -mse/--module_source_environment_command Set environment variables specific for each module (Format: module "program_name"="command"
-    -sen/--source_main_environment_commands Source main environment command in sbatch scripts (defaults to "")
-    -mcn/--max_cores_per_node The maximum number of processor cores per node used in the analysis (defaults to "16")
-    -nrm/--node_ram_memory The RAM memory size of the node(s) in GigaBytes (Defaults to 24)
-    -tmd/--temp_directory Set the temporary directory for all programs (defaults to "/scratch/SLURM_JOB_ID";supply whole path)
-    -em/--email E-mail (defaults to "")
-    -emt/--email_types E-mail type (defaults to FAIL (=FAIL);Options: BEGIN (=BEGIN) and/or F (=FAIL) and/or END=(END))
-    -qos/--slurm_quality_of_service SLURM quality of service command in sbatch scripts (defaults to "normal")
+    #### Bash
+    -bse/--bash_set_errexit                                        Set errexit in bash scripts (supply flag to enable)
+    -bsu/--bash_set_nounset                                        Set nounset in bash scripts (supply flag to enable)
+    -bsp/--bash_set_pipefail                                       Set pipefail in bash scripts (supply flag to enable)
+    -mot/--module_time                                             Set the time allocation for each module (Format: module "program name"=time(Hours))
+    -mcn/--module_core_number                                      Set the number of cores for each module (Format: module "program_name"=X(cores))
+    -mse/--module_source_environment_command                       Set environment variables specific for each module (Format: module "program_name"="command"
+    -sen/--source_main_environment_commands                        Source main environment command in sbatch scripts (defaults to "")
+    -mcn/--max_cores_per_node                                      Maximum number of processor cores per node used in the analysis (defaults to "16")
+    -nrm/--node_ram_memory                                         RAM memory size of the node(s) in GigaBytes (Defaults to 24)
+    -tmd/--temp_directory                                          Set the temporary directory for all programs (defaults to "/scratch/SLURM_JOB_ID";supply whole path)
+    -em/--email                                                    E-mail (defaults to "")
+    -emt/--email_types                                             E-mail type (defaults to FAIL (=FAIL);Options: BEGIN (=BEGIN) and/or F (=FAIL) and/or END=(END))
+    -qos/--slurm_quality_of_service                                SLURM quality of service command in sbatch scripts (defaults to "normal")
 
-    ####Programs
-    -psfq/--psplit_fastq_file Split fastq files in batches of X reads and exits (defaults to "0" (=no))
-      -sfqrdb/--split_fastq_file_read_batch The number of sequence reads to place in each batch (defaults to "25,000,000")
-    -pgz/--pgzip_fastq Gzip fastq files (defaults to "0" (=no))
-    -pfqc/--pfastqc Sequence quality analysis using FastQC (defaults to "0" (=no))
-    -pcta/--pcutadapt trim input reads using cutadapt (defaults to "0" (=no))
-
+    #### Programs
+    -psfq/--psplit_fastq_file                                      Split fastq files in batches of X reads and exits (defaults to "0" (=no))
+      -sfqrdb/--split_fastq_file_read_batch                        Number of sequence reads to place in each batch (defaults to "25,000,000")
+    -pgz/--pgzip_fastq                                             Gzip fastq files (defaults to "0" (=no))
+    -pfqc/--pfastqc                                                Sequence quality analysis using FastQC (defaults to "0" (=no))
+    -pcta/--pcutadapt                                              Trim input reads using cutadapt (defaults to "0" (=no))
+    
     ##BWA
-    -pmem/--pbwa_mem Align reads using Bwa Mem (defaults to "0" (=no))
-      -memhla/--bwa_mem_hla Apply HLA typing (supply flag to enable)
-      -memcrm/--bwa_mem_cram Use CRAM-format for additional output file (supply flag to enable)
-      -memsts/--bwa_mem_bamstats Collect statistics from BAM files (supply flag to enable)
-      -memssm/--bwa_sambamba_sort_memory_limit Set the memory limit for Sambamba sort after bwa alignment (defaults to "32G")
+    -pmem/--pbwa_mem                                               Align reads using Bwa Mem (defaults to "0" (=no))
+      -memhla/--bwa_mem_hla                                        Apply HLA typing (supply flag to enable)
+      -memcrm/--bwa_mem_cram                                       Use CRAM-format for additional output file (supply flag to enable)
+      -memsts/--bwa_mem_bamstats                                   Collect statistics from BAM files (supply flag to enable)
+      -memssm/--bwa_sambamba_sort_memory_limit                     Set the memory limit for Sambamba sort after bwa alignment (defaults to "32G")
 
-    ##Picardtools
-    -ptp/--picardtools_path Path to Picardtools. Mandatory for use of Picardtools (defaults to "")
-    -pptm/--ppicardtools_mergesamfiles Merge (BAM file(s) ) using Picardtools mergesamfiles or rename single samples for downstream processing (defaults to "0" (=no))
+    ## Picardtools
+    -ptp/--picardtools_path                                        Path to Picardtools. Mandatory for use of Picardtools (defaults to "")
+    -pptm/--ppicardtools_mergesamfiles                             Merge (BAM file(s) ) using Picardtools mergesamfiles or rename single samples for downstream processing (defaults to "0" (=no))
 
-    ##Markduplicates
-    -pmd/--pmarkduplicates Markduplicates using either Picardtools markduplicates or sambamba markdup (defaults to "0" (=no))
-    -mdpmd/--markduplicates_picardtools_markduplicates Markduplicates using Picardtools markduplicates (supply flag to enable)
-    -mdsmd/--markduplicates_sambamba_markdup Markduplicates using Sambamba markduplicates (supply flag to enable)
-      -mdshts/--markduplicates_sambamba_markdup_hash_table_size Sambamba size of hash table for finding read pairs (defaults to "262144")
+    ## Markduplicates
+    -pmd/--pmarkduplicates                                         Markduplicates using either Picardtools markduplicates or sambamba markdup (defaults to "0" (=no))
+    -mdpmd/--markduplicates_picardtools_markduplicates             Markduplicates using Picardtools markduplicates (supply flag to enable)
+    -mdsmd/--markduplicates_sambamba_markdup                       Markduplicates using Sambamba markduplicates (supply flag to enable)
+      -mdshts/--markduplicates_sambamba_markdup_hash_table_size    Sambamba size of hash table for finding read pairs (defaults to "262144")
       -mdsols/--markduplicates_sambamba_markdup_overflow_list_size Sambamba size of the overflow list (defaults to "200000")
-      -mdsibs/--markduplicates_sambamba_markdup_io_buffer_size Sambamba size of the io buffer for reading and writing BAM during the second pass (defaults to "2048")
+      -mdsibs/--markduplicates_sambamba_markdup_io_buffer_size     Sambamba size of the io buffer for reading and writing BAM during the second pass (defaults to "2048")
 
-    ###Coverage calculations
-    -pchs/--pchanjo_sexcheck Predicts gender from sex chromosome coverage (defaults to "0" (=no))
-      -chslle/--chanjo_sexcheck_log_level Set chanjo sex log level (defaults to "DEBUG")
-    -psdt/--psambamba_depth Sambamba depth coverage analysis (defaults to "0" (=no))
-      -sdtmod/--sambamba_depth_mode Mode unit to print the statistics on (defaults to "region")
-      -sdtcut/--sambamba_depth_cutoffs Read depth cutoff (comma sep; defaults to "10", "20", "30", "50", "100")
-      -sdtbed/--sambamba_depth_bed Reference database (defaults to "CCDS.current.bed")
-      -sdtbaq/--sambamba_depth_base_quality Do not count bases with lower base quality (defaults to "10")
-      -stdmaq/--sambamba_depth_mapping_quality  Do not count reads with lower mapping quality (defaults to "10")
-      -stdndu/--sambamba_depth_noduplicates Do not include duplicates in coverage calculation (supply flag to enable)
-      -stdfqc/--sambamba_depth_quality_control Do not include reads with failed quality control (supply flag to enable)
-    -pbgc/--pbedtools_genomecov Genome coverage calculation using bedtools genomecov (defaults to "0" (=no))
-     -bgcmc/--bedtools_genomecov_max_coverage Max coverage depth when using '-pbedtools_genomecov' (defaults to "30")
-    -pptcmm/--ppicardtools_collectmultiplemetrics Metrics calculation using Picardtools CollectMultipleMetrics (defaults to "0" (=no))
-    -pptchs/--ppicardtools_collecthsmetrics Capture calculation using Picardtools Collecthsmetrics (defaults to "0" (=no))
-      -extb/--exome_target_bed Exome target bed file per sample_id (defaults to "latest_supported_capturekit.bed"; -extb file.bed=Sample_idX,Sample_idY -extb file.bed=Sample_idZ)
-    -prcp/--prcovplots Plots of genome coverage using rcovplots (defaults to "0" (=no))
+    ### Coverage calculations
+    -pchs/--pchanjo_sexcheck                                       Predicts gender from sex chromosome coverage (defaults to "0" (=no))
+      -chslle/--chanjo_sexcheck_log_level                          Set chanjo sex log level (defaults to "DEBUG")
+    -psdt/--psambamba_depth                                        Sambamba depth coverage analysis (defaults to "0" (=no))
+      -sdtmod/--sambamba_depth_mode                                Mode unit to print the statistics on (defaults to "region")
+      -sdtcut/--sambamba_depth_cutoffs                             Read depth cutoff (comma sep; defaults to "10", "20", "30", "50", "100")
+      -sdtbed/--sambamba_depth_bed                                 Reference database (defaults to "CCDS.current.bed")
+      -sdtbaq/--sambamba_depth_base_quality                        Do not count bases with lower base quality (defaults to "10")
+      -stdmaq/--sambamba_depth_mapping_quality                     Do not count reads with lower mapping quality (defaults to "10")
+      -stdndu/--sambamba_depth_noduplicates                        Do not include duplicates in coverage calculation (supply flag to enable)
+      -stdfqc/--sambamba_depth_quality_control                     Do not include reads with failed quality control (supply flag to enable)
+    -pbgc/--pbedtools_genomecov                                    Genome coverage calculation using bedtools genomecov (defaults to "0" (=no))
+     -bgcmc/--bedtools_genomecov_max_coverage                      Max coverage depth when using '-pbedtools_genomecov' (defaults to "30")
+    -pptcmm/--ppicardtools_collectmultiplemetrics                  Metrics calculation using Picardtools CollectMultipleMetrics (defaults to "0" (=no))
+    -pptchs/--ppicardtools_collecthsmetrics                        Capture calculation using Picardtools Collecthsmetrics (defaults to "0" (=no))
+      -extb/--exome_target_bed                                     Exome target bed file per sample_id (defaults to "latest_supported_capturekit.bed";
+                                                                   -extb file.bed=Sample_idX,Sample_idY -extb file.bed=Sample_idZ)
+    -prcp/--prcovplots                                             Plots of genome coverage using rcovplots (defaults to "0" (=no))
 
-    ###Structural variant callers
-    -pcnv/--pcnvnator Structural variant calling using CNVnator (defaults to "0" (=no))
-      -cnvhbs/--cnv_bin_size CNVnator bin size (defaults to "1000")
-    -pdelc/--pdelly_call Structural variant calling using Delly (defaults to "0" (=no))
-    -pdel/--pdelly_reformat Merge, regenotype and filter using Delly (defaults to "0" (=no))
-      -deltyp/--delly_types Type of SV to call (defaults to "DEL,DUP,INV,TRA"; comma sep)
-      -delexc/--delly_exclude_file Exclude centomere and telemore regions in delly calling (defaults to "hg19_human_excl_-0.7.6-.tsv")
-    -pmna/--pmanta Structural variant calling using Manta (defaults to "0" (=no))
-    -ptid/--ptiddit Structural variant calling using Tiddit (defaults to "0" (=no))
-      -tidmsp/--tiddit_minimum_number_supporting_pairs The minimum number of supporting reads (defaults to "6")
-      -tid_bin/--tiddit_bin_size Compute coverage within bins of a specified size across the entire genome (defaults to "500")
-    -psvc/--psv_combinevariantcallsets Combine variant call sets (defaults to "0" (=no))
-      -svcvtd/--sv_vt_decompose Split multi allelic records into single records (supply flag to enable)
-      -svsvdbmp/--sv_svdb_merge_prioritize The prioritization order of structural variant callers.(defaults to ""; comma sep; Options: manta|delly|cnvnator|tiddit)
-      -svcbtv/--sv_bcftools_view_filter Include structural variants with PASS in FILTER column (supply flag to enable)
-      -svcdbq/--sv_svdb_query Annotate structural variants using svdb query (supply flag to enable)
-      -svcdbqd/--sv_svdb_query_db_files Database file(s) for annotation (defaults to "")
-      -svcvan/--sv_vcfanno Annotate structural variants (supply flag to enable)
-      -svcval/--sv_vcfanno_lua vcfAnno lua postscripting file (defaults to "")
-      -svcvac/--sv_vcfanno_config vcfAnno toml config (defaults to "")
-      -svcvacf/--sv_vcfanno_config_file Annotation file within vcfAnno config toml file (defaults to "GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz")
-      -svcvah/--sv_vcfannotation_header_lines_file Adjust for postscript by adding required header lines to vcf (defaults to "")
-      -svcgmf/--sv_genmod_filter Remove common structural variants from vcf (supply flag to enable)
-      -svcgfr/--sv_genmod_filter_1000g Genmod annotate structural variants from 1000G reference (defaults to "GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz")
-      -svcgft/--sv_genmod_filter_threshold Threshold for filtering structural variants (defaults to "0.10")
-      -svcbcf/--sv_combinevariantcallsets_bcf_file Produce a bcf from the CombineStructuralVariantCallSet vcf (supply flag to enable)
-    -psvv/--psv_varianteffectpredictor Annotate SV variants using VEP (defaults to "0" (=no))
-      -svvepf/--sv_vep_features VEP features (defaults to ("hgvs","symbol","numbers","sift","polyphen","humdiv","domains","protein","ccds","uniprot","biotype","regulatory", "tsl", "canonical", "per_gene", "appris"); comma sep)
-      -svveppl/--sv_vep_plugins VEP plugins (defaults to ("UpDownDistance, LoFtool"); comma sep)
-    -psvvcp/--psv_vcfparser Parse structural variants using vcfParser.pl (defaults to "0" (=no))
-      -svvcpvt/--sv_vcfparser_vep_transcripts Parse VEP transcript specific entries (supply flag to enable)
-      -svvcppg/--sv_vcfparser_per_gene Keep only most severe consequence per gene (supply flag to enable)
-      -svvcprff/--sv_vcfparser_range_feature_file Range annotations file (defaults to ""; tab-sep)
-      -svvcprfa/--sv_vcfparser_range_feature_annotation_columns Range annotations feature columns (defaults to ""; comma sep)
-      -svvcpsf/--sv_vcfparser_select_file File containging list of genes to analyse seperately (defaults to "";tab-sep file and HGNC Symbol required)
-      -svvcpsfm/--sv_vcfparser_select_file_matching_column Position of HGNC Symbol column in select file (defaults to "")
-      -svvcpsfa/--sv_vcfparser_select_feature_annotation_columns Feature columns to use in annotation (defaults to ""; comma sep)
-    -psvr/--psv_rankvariant Ranking of annotated SV variants (defaults to "0" (=no))
-      -svravanr/--sv_genmod_annotate_regions Use predefined gene annotation supplied with genmod for defining genes (supply flag to enable)
-      -svravgft/--sv_genmod_models_family_type Use one of the known setups (defaults to "mip")
-      -svravwg/--sv_genmod_models_whole_gene Allow compound pairs in intronic regions (supply flag to enable)
-      -svravrpf/--sv_genmod_models_reduced_penetrance_file File containg genes with reduced penetrance (defaults to "")
-      -svravrm/--sv_rank_model_file Rank model config file (defaults to "")
-    -psvre/--psv_reformat Concatenating files (defaults to "0" (=no))
-      -svrevbf/--sv_rankvariant_binary_file Produce binary file from the rank variant chromosome sorted vcfs (supply flag to enable)
-      -svrergf/--sv_reformat_remove_genes_file Remove variants in hgnc_ids (defaults to "")
-    -pv2cs/--vcf2cytosure Convert a VCF with structural variants to the “.CGH” format used by the commercial Cytosure software (defaults to "0" (=no))
-      -v2csfq/--vcf2cytosure_freq Specify maximum frequency (defaults to "0.01")
-      -v2csfqt/--vcf2cytosure_freq_tag Specify frequency tag (defaults to "FRQ")
-      -v2csnf/--vf2cytosure_no_filter Don't use any filtering (defaults to "0" (=no))
-      -v2csvs/--vcf2cytosure_var_size Specify minimum variant size (defaults to "5000")
-    ##Bcftools
-    -pbmp/--pbcftools_mpileup Variant calling using bcftools mpileup (defaults to "0" (=no))
-      -pbmpfv/--bcftools_mpileup_filter_variant (Supply flag to enable)
+    ### Structural variant callers
+    -pcnv/--pcnvnator                                              Structural variant calling using CNVnator (defaults to "0" (=no))
+      -cnvhbs/--cnv_bin_size                                       CNVnator bin size (defaults to "1000")
+    -pdelc/--pdelly_call                                           Structural variant calling using Delly (defaults to "0" (=no))
+    -pdel/--pdelly_reformat                                        Merge, regenotype and filter using Delly (defaults to "0" (=no))
+      -deltyp/--delly_types                                        Type of SV to call (defaults to "DEL,DUP,INV,TRA"; comma sep)
+      -delexc/--delly_exclude_file                                 Exclude centomere and telemore regions in delly calling (defaults to "hg19_human_excl_-0.7.6-.tsv")
+    -pmna/--pmanta                                                 Structural variant calling using Manta (defaults to "0" (=no))
+    -ptid/--ptiddit                                                Structural variant calling using Tiddit (defaults to "0" (=no))
+      -tidmsp/--tiddit_minimum_number_supporting_pairs             Minimum number of supporting reads (defaults to "6")
+      -tid_bin/--tiddit_bin_size                                   Compute coverage within bins of a specified size across the entire genome (defaults to "500")
+    -psvc/--psv_combinevariantcallsets                             Combine variant call sets (defaults to "0" (=no))
+      -svcvtd/--sv_vt_decompose                                    Split multi allelic records into single records (supply flag to enable)
+      -svsvdbmp/--sv_svdb_merge_prioritize                         Prioritization order of structural variant callers.(defaults to ""; comma sep; Options: manta|delly|cnvnator|tiddit)
+      -svcbtv/--sv_bcftools_view_filter                            Include structural variants with PASS in FILTER column (supply flag to enable)
+      -svcdbq/--sv_svdb_query                                      Annotate structural variants using svdb query (supply flag to enable)
+      -svcdbqd/--sv_svdb_query_db_files                            Database file(s) for annotation (defaults to "")
+      -svcvan/--sv_vcfanno                                         Annotate structural variants (supply flag to enable)
+      -svcval/--sv_vcfanno_lua                                     VcfAnno lua postscripting file (defaults to "")
+      -svcvac/--sv_vcfanno_config                                  VcfAnno toml config (defaults to "")
+      -svcvacf/--sv_vcfanno_config_file                            Annotation file within vcfAnno config toml file (defaults to "GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz")
+      -svcvah/--sv_vcfannotation_header_lines_file                 Adjust for postscript by adding required header lines to vcf (defaults to "")
+      -svcgmf/--sv_genmod_filter                                   Remove common structural variants from vcf (supply flag to enable)
+      -svcgfr/--sv_genmod_filter_1000g                             Genmod annotate structural variants from 1000G reference (defaults to "GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz")
+      -svcgft/--sv_genmod_filter_threshold                         Threshold for filtering structural variants (defaults to "0.10")
+      -svcbcf/--sv_combinevariantcallsets_bcf_file                 Produce a bcf from the CombineStructuralVariantCallSet vcf (supply flag to enable)
+    -psvv/--psv_varianteffectpredictor                             Annotate SV variants using VEP (defaults to "0" (=no))
+      -svvepf/--sv_vep_features                                    VEP features , comma sep;(defaults to
+                                                                   "hgvs",       "symbol",     "numbers",   "sift",      "polyphen",
+                                                                   "humdiv",     "domains",    "protein",   "ccds",      "uniprot",
+                                                                   "biotype",    "regulatory"  "tsl",       "canonical", "per_gene",
+                                                                   "appris")
+      -svveppl/--sv_vep_plugins                                    VEP plugins (defaults to ("UpDownDistance, LoFtool"); comma sep)
+    -psvvcp/--psv_vcfparser                                        Parse structural variants using vcfParser.pl (defaults to "0" (=no))
+      -svvcpvt/--sv_vcfparser_vep_transcripts                      Parse VEP transcript specific entries (supply flag to enable)
+      -svvcppg/--sv_vcfparser_per_gene                             Keep only most severe consequence per gene (supply flag to enable)
+      -svvcprff/--sv_vcfparser_range_feature_file                  Range annotations file (defaults to ""; tab-sep)
+      -svvcprfa/--sv_vcfparser_range_feature_annotation_columns    Range annotations feature columns (defaults to ""; comma sep)
+      -svvcpsf/--sv_vcfparser_select_file                          File containging list of genes to analyse seperately (defaults to "";tab-sep file and HGNC Symbol required)
+      -svvcpsfm/--sv_vcfparser_select_file_matching_column         Position of HGNC Symbol column in select file (defaults to "")
+      -svvcpsfa/--sv_vcfparser_select_feature_annotation_columns   Feature columns to use in annotation (defaults to ""; comma sep)
+    -psvr/--psv_rankvariant                                        Ranking of annotated SV variants (defaults to "0" (=no))
+      -svravanr/--sv_genmod_annotate_regions                       Use predefined gene annotation supplied with genmod for defining genes (supply flag to enable)
+      -svravgft/--sv_genmod_models_family_type                     Use one of the known setups (defaults to "mip")
+      -svravwg/--sv_genmod_models_whole_gene                       Allow compound pairs in intronic regions (supply flag to enable)
+      -svravrpf/--sv_genmod_models_reduced_penetrance_file         File containg genes with reduced penetrance (defaults to "")
+      -svravrm/--sv_rank_model_file                                Rank model config file (defaults to "")
+    -psvre/--psv_reformat                                          Concatenating files (defaults to "0" (=no))
+      -svrevbf/--sv_rankvariant_binary_file                        Produce binary file from the rank variant chromosome sorted vcfs (supply flag to enable)
+      -svrergf/--sv_reformat_remove_genes_file                     Remove variants in hgnc_ids (defaults to "")
+    -pv2cs/--vcf2cytosure                                          Convert a VCF with structural variants to the “.CGH” format used by the commercial Cytosure software (defaults to "0" (=no))
+      -v2csfq/--vcf2cytosure_freq                                  Specify maximum frequency (defaults to "0.01")
+      -v2csfqt/--vcf2cytosure_freq_tag                             Specify frequency tag (defaults to "FRQ")
+      -v2csnf/--vf2cytosure_no_filter                              Don't use any filtering (defaults to "0" (=no))
+      -v2csvs/--vcf2cytosure_var_size                              Specify minimum variant size (defaults to "5000")
 
-    ##Freebayes
-    -pfrb/--pfreebayes Variant calling using Freebayes and bcftools (defaults to "0" (=no))
+    ## Bcftools
+    -pbmp/--pbcftools_mpileup                                      Variant calling using bcftools mpileup (defaults to "0" (=no))
+      -pbmpfv/--bcftools_mpileup_filter_variant                    Use standard bcftools filters (Supply flag to enable)
 
-    ##GATK
-    -gtp/--gatk_path  Path to GATK. Mandatory for use of GATK (defaults to "")
-    -gll/--gatk_logging_level Set the GATK log level (defaults to "INFO")
-    -gbdv/--gatk_bundle_download_version  GATK FTP bundle download version.(defaults to "2.8")
-    -gdco/--gatk_downsample_to_coverage Coverage to downsample to at any given locus (defaults to "1000")
-    -gdai/--gatk_disable_auto_index_and_file_lock Disable auto index creation and locking when reading rods (supply flag to enable)
-    -pgra/--pgatk_realigner Realignments of reads using GATK ReAlignerTargetCreator/IndelRealigner (defaults to "0" (=no))
-      -graks/--gatk_realigner_indel_known_sites GATK ReAlignerTargetCreator/IndelRealigner known indel site (defaults to "GRCh37_1000g_indels_-phase1-.vcf", "GRCh37_mills_and_1000g_indels_-gold_standard-.vcf")
-    -pgbr/--pgatk_baserecalibration Recalibration of bases using GATK BaseReCalibrator/PrintReads (defaults to "0" (=no))
-      -gbrcov/--gatk_baserecalibration_covariates GATK BaseReCalibration covariates (defaults to "ReadGroupCovariate", "ContextCovariate", "CycleCovariate", "QualityScoreCovariate")
-      -gbrkst/--gatk_baserecalibration_known_sites GATK BaseReCalibration known SNV and INDEL sites (defaults to "GRCh37_dbsnp_-138-.vcf", "GRCh37_1000g_indels_-phase1-.vcf", "GRCh37_mills_and_1000g_indels_-gold_standard-.vcf")
-      -gbrrf/--gatk_baserecalibration_read_filters Filter out reads according to set filter (defaults to "1" (=yes))
-      -gbrdiq/--gatk_baserecalibration_disable_indel_qual Disable indel quality scores (supply flag to enable)
-      -gbrsqq/--gatk_baserecalibration_static_quantized_quals Static binning of base quality scores (defaults to "10,20,30,40"; comma sep)
-    -pghc/--pgatk_haplotypecaller Variant discovery using GATK HaplotypeCaller (defaults to "0" (=no))
-      -ghcann/--gatk_haplotypecaller_annotation GATK HaploTypeCaller annotations (defaults to "BaseQualityRankSumTest", "ChromosomeCounts", "Coverage", "DepthPerAlleleBySample", "FisherStrand", "MappingQualityRankSumTest", "QualByDepth", "RMSMappingQuality", "ReadPosRankSumTest", "StrandOddsRatio")
-      -ghckse/--gatk_haplotypecaller_snp_known_set GATK HaplotypeCaller dbSNP set for annotating ID columns (defaults to "GRCh37_dbsnp_-138-.vcf")
-      -ghcscb/--gatk_haplotypecaller_no_soft_clipped_bases Do not include soft clipped bases in the variant calling (supply flag to enable)
-      -ghcpim/--gatk_haplotypecaller_pcr_indel_model The PCR indel model to use (defaults to "None"; Set to "0" to disable)
-    -pggt/--pgatk_genotypegvcfs Merge gVCF records using GATK GenotypeGVCFs (defaults to "0" (=no))
-      -ggtgrl/--gatk_genotypegvcfs_ref_gvcf GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping (defaults to "")
-      -ggtals/--gatk_genotypegvcfs_all_sites Emit non-variant sites to the output vcf file (supply flag to enable)
-      -ggbcf/gatk_concatenate_genotypegvcfs_bcf_file Produce a bcf from the GATK ConcatenateGenoTypeGVCFs vcf (supply flag to enable)
-    -pgvr/--pgatk_variantrecalibration Variant recalibration using GATK VariantRecalibrator/ApplyRecalibration (defaults to "0" (=no))
-      -gvrann/--gatk_variantrecalibration_annotations Annotations to use with GATK VariantRecalibrator (defaults to "QD", "MQRankSum", "ReadPosRankSum", "FS", "SOR", "DP")
-      -gvrres/gatk_variantrecalibration_resource_snv Resource to use with GATK VariantRecalibrator in SNV|BOTH mode (defaults to "GRCh37_dbsnp_-138-.vcf: dbsnp,known=true,training=false,truth=false,prior=2.0, GRCh37_hapmap_-3.3-.vcf: hapmap,VCF,known=false,training=true,truth=true,prior=15.0, GRCh37_1000g_omni_-2.5-.vcf: omni,VCF,known=false,training=true,truth=false,prior=12.0, GRCh37_1000g_snps_high_confidence_-phase1-.vcf: 1000G,known=false,training=true,truth=false,prior=10.0")
-      -gvrrei/gatk_variantrecalibration_resource_indel Resource to use with GATK VariantRecalibrator in INDEL|BOTH (defaults to "GRCh37_dbsnp_-138-.vcf: dbsnp,known=true,training=false,truth=false,prior=2.0, GRCh37_mills_and_1000g_indels_-gold_standard-.vcf: mills,VCF,known=true,training=true,truth=true,prior=12.0")
-      -gvrstf/--gatk_variantrecalibration_snv_tsfilter_level The truth sensitivity level for snvs at which to start filtering used in GATK VariantRecalibrator (defaults to "99.9")
-      -gvritf/--gatk_variantrecalibration_indel_tsfilter_level The truth sensitivity level for indels at which to start filtering used in GATK VariantRecalibrator (defaults to "99.9")
-      -gvrdpa/--gatk_variantrecalibration_dp_annotation Use the DP annotation in variant recalibration (supply flag to enable)
-      -gvrsmg/--gatk_variantrecalibration_snv_max_gaussians Use hard filtering for snvs (supply flag to enable)
-      -gvrimg/--gatk_variantrecalibration_indel_max_gaussians Use hard filtering for indels (supply flag to enable)
-      -gcgpss/--gatk_calculategenotypeposteriors_support_set GATK CalculateGenotypePosteriors support set (defaults to "1000g_sites_GRCh37_phase3_v4_20130502.vcf")
-    -pgcv/--pgatk_combinevariantcallsets Combine variant call sets (defaults to "0" (=no))
-      -gcvbcf/--gatk_combinevariantcallsets_bcf_file Produce a bcf from the GATK CombineVariantCallSet vcf (supply flag to enable)
-      -gcvgmo/--gatk_combinevariants_genotype_merge_option Type of merge to perform (defaults to "PRIORITIZE")
-      -gcvpc/--gatk_combinevariants_prioritize_caller The prioritization order of variant callers.(defaults to ""; comma sep; Options: gatk|bcftools|freebayes)
-    -pgvea/--pgatk_variantevalall Variant evaluation using GATK varianteval for all variants  (defaults to "0" (=no))
-    -pgvee/--pgatk_variantevalexome Variant evaluation using GATK varianteval for exonic variants  (defaults to "0" (=no))
-      -gveedbs/--gatk_varianteval_dbsnp DbSNP file used in GATK varianteval (defaults to "dbsnp_GRCh37_138_esa_129.vcf")
-      -gveedbg/--gatk_varianteval_gold Gold indel file used in GATK varianteval (defaults to "GRCh37_mills_and_1000g_indels_-gold_standard-.vcf")
+    ## Freebayes
+    -pfrb/--pfreebayes                                             Variant calling using Freebayes and bcftools (defaults to "0" (=no))
+
+
+    ## GATK
+    -gtp/--gatk_path                                               Path to GATK. Mandatory for use of GATK (defaults to "")
+    -gll/--gatk_logging_level                                      Set the GATK log level (defaults to "INFO")
+    -gbdv/--gatk_bundle_download_version                           GATK FTP bundle download version.(defaults to "2.8")
+    -gdco/--gatk_downsample_to_coverage                            Coverage to downsample to at any given locus (defaults to "1000")
+    -gdai/--gatk_disable_auto_index_and_file_lock                  Disable auto index creation and locking when reading rods (supply flag to enable)
+    -pgra/--pgatk_realigner                                        Realignments of reads using GATK ReAlignerTargetCreator/IndelRealigner (defaults to "0" (=no))
+      -graks/--gatk_realigner_indel_known_sites                    GATK ReAlignerTargetCreator/IndelRealigner known indel site (defaults to
+                                                                   "GRCh37_1000g_indels_-phase1-.vcf",
+                                                                   "GRCh37_mills_and_1000g_indels_-gold_standard-.vcf")
+    -pgbr/--pgatk_baserecalibration                                Recalibration of bases using GATK BaseReCalibrator/PrintReads (defaults to "0" (=no))
+      -gbrcov/--gatk_baserecalibration_covariates                  GATK BaseReCalibration covariates (defaults to
+                                                                   "ReadGroupCovariate", "ContextCovariate",
+                                                                   "CycleCovariate",     "QualityScoreCovariate")
+      -gbrkst/--gatk_baserecalibration_known_sites                 GATK BaseReCalibration known SNV and INDEL sites (defaults to
+                                                                   "GRCh37_dbsnp_-138-.vcf", "GRCh37_1000g_indels_-phase1-.vcf",
+                                                                   "GRCh37_mills_and_1000g_indels_-gold_standard-.vcf")
+      -gbrrf/--gatk_baserecalibration_read_filters                 Filter out reads according to set filter (defaults to "1" (=yes))
+      -gbrdiq/--gatk_baserecalibration_disable_indel_qual          Disable indel quality scores (supply flag to enable)
+      -gbrsqq/--gatk_baserecalibration_static_quantized_quals      Static binning of base quality scores (defaults to "10,20,30,40"; comma sep)
+    -pghc/--pgatk_haplotypecaller                                  Variant discovery using GATK HaplotypeCaller (defaults to "0" (=no))
+      -ghcann/--gatk_haplotypecaller_annotation                    GATK HaploTypeCaller annotations (defaults to
+                                                                   "BaseQualityRankSumTest",    "ChromosomeCounts", "Coverage",          "DepthPerAlleleBySample", "FisherStrand",
+                                                                   "MappingQualityRankSumTest", "QualByDepth",      "RMSMappingQuality", "ReadPosRankSumTest",     "StrandOddsRatio")
+      -ghckse/--gatk_haplotypecaller_snp_known_set                 GATK HaplotypeCaller dbSNP set for annotating ID columns (defaults to "GRCh37_dbsnp_-138-.vcf")
+      -ghcscb/--gatk_haplotypecaller_no_soft_clipped_bases         Do not include soft clipped bases in the variant calling (supply flag to enable)
+      -ghcpim/--gatk_haplotypecaller_pcr_indel_model               PCR indel model to use (defaults to "None"; Set to "0" to disable)
+    -pggt/--pgatk_genotypegvcfs                                    Merge gVCF records using GATK GenotypeGVCFs (defaults to "0" (=no))
+      -ggtgrl/--gatk_genotypegvcfs_ref_gvcf                        GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping (defaults to "")
+      -ggtals/--gatk_genotypegvcfs_all_sites                       Emit non-variant sites to the output vcf file (supply flag to enable)
+      -ggbcf/gatk_concatenate_genotypegvcfs_bcf_file               Produce a bcf from the GATK ConcatenateGenoTypeGVCFs vcf (supply flag to enable)
+    -pgvr/--pgatk_variantrecalibration                             Variant recalibration using GATK VariantRecalibrator/ApplyRecalibration (defaults to "0" (=no))
+      -gvrann/--gatk_variantrecalibration_annotations              Annotations to use with GATK VariantRecalibrator (defaults to
+                                                                   "QD", "MQRankSum", "ReadPosRankSum",
+                                                                   "FS", "SOR",       "DP")
+      -gvrres/gatk_variantrecalibration_resource_snv               Resource to use with GATK VariantRecalibrator in SNV|BOTH mode (defaults to
+                                                                   "GRCh37_dbsnp_-138-.vcf:dbsnp,known=true,training=false,truth=false,prior=2.0",
+                                                                   "GRCh37_hapmap_-3.3-.vcf:hapmap,VCF,known=false,training=true,truth=true,prior=15.0",
+                                                                   "GRCh37_1000g_omni_-2.5-.vcf: omni,VCF,known=false,training=true,truth=false,prior=12.0",
+                                                                   "GRCh37_1000g_snps_high_confidence_-phase1-.vcf: 1000G,known=false,training=true,truth=false,prior=10.0")
+      -gvrrei/gatk_variantrecalibration_resource_indel             Resource to use with GATK VariantRecalibrator in INDEL|BOTH (defaults to
+                                                                   "GRCh37_dbsnp_-138-.vcf: dbsnp,known=true,training=false,truth=false,prior=2.0",
+                                                                   "GRCh37_mills_and_1000g_indels_-gold_standard-.vcf: mills,VCF,known=true,training=true,truth=true,prior=12.0")
+      -gvrstf/--gatk_variantrecalibration_snv_tsfilter_level       Truth sensitivity level for snvs at which to start filtering used in GATK VariantRecalibrator (defaults to "99.9")
+      -gvritf/--gatk_variantrecalibration_indel_tsfilter_level     Truth sensitivity level for indels at which to start filtering used in GATK VariantRecalibrator (defaults to "99.9")
+      -gvrdpa/--gatk_variantrecalibration_dp_annotation            Use the DP annotation in variant recalibration (supply flag to enable)
+      -gvrsmg/--gatk_variantrecalibration_snv_max_gaussians        Use hard filtering for snvs (supply flag to enable)
+      -gvrimg/--gatk_variantrecalibration_indel_max_gaussians      Use hard filtering for indels (supply flag to enable)
+      -gcgpss/--gatk_calculategenotypeposteriors_support_set       GATK CalculateGenotypePosteriors support set (defaults to "1000g_sites_GRCh37_phase3_v4_20130502.vcf")
+    -pgcv/--pgatk_combinevariantcallsets                           Combine variant call sets (defaults to "0" (=no))
+      -gcvbcf/--gatk_combinevariantcallsets_bcf_file               Produce a bcf from the GATK CombineVariantCallSet vcf (supply flag to enable)
+      -gcvgmo/--gatk_combinevariants_genotype_merge_option         Type of merge to perform (defaults to "PRIORITIZE")
+      -gcvpc/--gatk_combinevariants_prioritize_caller              Prioritization order of variant callers.(defaults to ""; comma sep; Options: gatk|bcftools|freebayes)
+    -pgvea/--pgatk_variantevalall                                  Variant evaluation using GATK varianteval for all variants  (defaults to "0" (=no))
+    -pgvee/--pgatk_variantevalexome                                Variant evaluation using GATK varianteval for exonic variants  (defaults to "0" (=no))
+      -gveedbs/--gatk_varianteval_dbsnp                            DbSNP file used in GATK varianteval (defaults to "dbsnp_GRCh37_138_esa_129.vcf")
+      -gveedbg/--gatk_varianteval_gold                             Gold indel file used in GATK varianteval (defaults to "GRCh37_mills_and_1000g_indels_-gold_standard-.vcf")
 
     ###Annotation
-    -ppvab/--pprepareforvariantannotationblock Prepare for variant annotation block by copying and splitting files per contig (defaults to "0" (=no))
-    -prhc/--prhocall Rhocall performs annotation of variants in autozygosity regions (defaults to "0" (=no))
-      -rhcf/--rhocall_frequency_file Frequency file for bcftools roh calculation (defaults to "GRCh37_anon_swegen_snp_-2016-10-19-.tab.gz", tab sep)
-    -pvt/--pvt VT decompose and normalize (defaults to "0" (=no))
-      -vtdec/--vt_decompose Split multi allelic records into single records (supply flag to enable)
-      -vtnor/--vt_normalize Normalize variants (supply flag to enable)
-      -vtunq/--vt_uniq Remove variant duplicates (supply flag to enable)
-      -vtmaa/--vt_missing_alt_allele Remove missing alternative alleles '*' (supply flag to enable)
-      -fqfgmf/--frequency_genmod_filter Remove common variants from vcf file (supply flag to enable)
-      -fqfgfr/--frequency_genmod_filter_1000g Genmod annotate 1000G reference (defaults to "GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz")
-      -fqfmaf/--frequency_genmod_filter_max_af Annotate MAX_AF from reference (defaults to "")
-      -fqfgft/--frequency_genmod_filter_threshold Threshold for filtering variants (defaults to "0.10")
-    -pvep/--pvarianteffectpredictor Annotate variants using VEP (defaults to "0" (=no))
-      -vepp/--vep_directory_path Path to VEP script directory (defaults to "")
-      -vepc/--vep_directory_cache Specify the cache directory to use (defaults to "")
-      -vepf/--vep_features VEP features (defaults to ("hgvs","symbol","numbers","sift","polyphen","humdiv","domains","protein","ccds","uniprot","biotype","regulatory", "tsl", "canonical", "appris"); comma sep)
-      -veppl/--vep_plugins VEP plugins (defaults to ("UpDownDistance, LoFtool, LoF"); comma sep)
-    -pvcp/--pvcfparser Parse variants using vcfParser.pl (defaults to "0" (=no))
-      -vcpvt/--vcfparser_vep_transcripts Parse VEP transcript specific entries (supply flag to enable)
-      -vcprff/--vcfparser_range_feature_file Range annotations file (defaults to ""; tab-sep)
-      -vcprfa/--vcfparser_range_feature_annotation_columns Range annotations feature columns (defaults to ""; comma sep)
-      -vcpsf/--vcfparser_select_file File containging list of genes to analyse seperately (defaults to "";tab-sep file and HGNC Symbol required)
-      -vcpsfm/--vcfparser_select_file_matching_column Position of HGNC symbol column in SelectFile (defaults to "")
-      -vcpsfa/--vcfparser_select_feature_annotation_columns Feature columns to use in annotation (defaults to ""; comma sep)
-    -psne/--psnpeff Variant annotation using snpEff (defaults to "0" (=no))
-#snpEffAnn
-      -snep/--snpeff_path Path to snpEff. Mandatory for use of snpEff (defaults to "")
-      -sneann/--snpeff_ann Annotate variants using snpeff (supply flag to enable)
-      -snegbv/--snpeff_genome_build_version snpeff genome build version (defaults to "GRCh37.75")
-      -snesaf/--snpsift_annotation_files Annotation files to use with snpsift (default to (GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz=AF GRCh37_exac_reheader_-r0.3.1-.vcf.gz=AF GRCh37_anon-swegen_snp_-1000samples-.vcf.gz=AF GRCh37_anon-swegen_indel_-1000samples-.vcf.gz=AF); Hash flag i.e. --Flag key=value)
-      -snesaoi/--snpsift_annotation_outinfo_key snpsift output INFO key (default to (GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf=1000G GRCh37_exac_reheader_-r0.3.1-.vcf.gz=EXAC GRCh37_anon-swegen_snp_-1000samples-.vcf.gz=SWEREF GRCh37_anon-swegen_indel_-1000samples-.vcf.gz=SWEREF); Hash flag i.e. --Flag key=value)
-      -snesdbnsfp/--snpsift_dbnsfp_file DbNSFP File (defaults to "GRCh37_dbnsfp_-v2.9-.txt.gz")
-      -snesdbnsfpa/--snpsift_dbnsfp_annotations DbNSFP annotations to use with snpsift (defaults to ("SIFT_pred","Polyphen2_HDIV_pred","Polyphen2_HVAR_pred","GERP++_NR","GERP++_RS","phastCons100way_vertebrate"); comma sep)
+    -ppvab/--pprepareforvariantannotationblock                     Prepare for variant annotation block by copying and splitting files per contig (defaults to "0" (=no))
+    -prhc/--prhocall                                               Rhocall performs annotation of variants in autozygosity regions (defaults to "0" (=no))
+      -rhcf/--rhocall_frequency_file                               Frequency file for bcftools roh calculation (defaults to "GRCh37_anon_swegen_snp_-2016-10-19-.tab.gz", tab sep)
+    -pvt/--pvt VT                                                  Decompose and normalize (defaults to "0" (=no))
+      -vtdec/--vt_decompose                                        Split multi allelic records into single records (supply flag to enable)
+      -vtnor/--vt_normalize                                        Normalize variants (supply flag to enable)
+      -vtunq/--vt_uniq                                             Remove variant duplicates (supply flag to enable)
+      -vtmaa/--vt_missing_alt_allele                               Remove missing alternative alleles '*' (supply flag to enable)
+      -fqfgmf/--frequency_genmod_filter                            Remove common variants from vcf file (supply flag to enable)
+      -fqfgfr/--frequency_genmod_filter_1000g                      Genmod annotate 1000G reference (defaults to "GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz")
+      -fqfmaf/--frequency_genmod_filter_max_af                     Annotate MAX_AF from reference (defaults to "")
+      -fqfgft/--frequency_genmod_filter_threshold                  Threshold for filtering variants (defaults to "0.10")
+    -pvep/--pvarianteffectpredictor                                Annotate variants using VEP (defaults to "0" (=no))
+      -vepp/--vep_directory_path                                   Path to VEP script directory (defaults to "")
+      -vepc/--vep_directory_cache                                  Specify the cache directory to use (defaults to "")
+      -vepf/--vep_features                                         VEP features , comma sep; (defaults to
+                                                                   "hgvs",    "symbol",     "numbers", "sift",      "polyphen",
+                                                                   "humdiv",  "domains",    "protein", "ccds",      "uniprot",
+                                                                   "biotype", "regulatory", "tsl",     "canonical", "appris")
+      -veppl/--vep_plugins                                         VEP plugins (defaults to ("UpDownDistance, LoFtool, LoF"); comma sep)
+      -veppldp/--vep_plugins_dir_paths                             Path to directory with VEP plugins (defaults to "")
+    -pvcp/--pvcfparser                                             Parse variants using vcfParser.pl (defaults to "0" (=no))
+      -vcpvt/--vcfparser_vep_transcripts                           Parse VEP transcript specific entries (supply flag to enable)
+      -vcprff/--vcfparser_range_feature_file                       Range annotations file (defaults to ""; tab-sep)
+      -vcprfa/--vcfparser_range_feature_annotation_columns         Range annotations feature columns (defaults to ""; comma sep)
+      -vcpsf/--vcfparser_select_file                               File containging list of genes to analyse seperately (defaults to "";tab-sep file and HGNC Symbol required)
+      -vcpsfm/--vcfparser_select_file_matching_column              Position of HGNC symbol column in SelectFile (defaults to "")
+      -vcpsfa/--vcfparser_select_feature_annotation_columns        Feature columns to use in annotation (defaults to ""; comma sep)
+    -psne/--psnpeff                                                Variant annotation using snpEff (defaults to "0" (=no))
+      -snep/--snpeff_path                                          Path to snpEff. Mandatory for use of snpEff (defaults to "")
+      -sneann/--snpeff_ann                                         Annotate variants using snpeff (supply flag to enable)
+      -snegbv/--snpeff_genome_build_version                        Snpeff genome build version (defaults to "GRCh37.75")
+      -snesaf/--snpsift_annotation_files                           Annotation files to use with snpsift, hash flag i.e. --Flag key=value; (default to
+                                                                   "GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz=AF"
+                                                                   "GRCh37_exac_reheader_-r0.3.1-.vcf.gz=AF"
+                                                                   "GRCh37_anon-swegen_snp_-1000samples-.vcf.gz=AF"
+                                                                   "GRCh37_anon-swegen_indel_-1000samples-.vcf.gz=AF"
+      -snesaoi/--snpsift_annotation_outinfo_key                    Snpsift output INFO key, Hash flag i.e. --Flag key=value; (default to
+                                                                   "GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf=1000G"
+                                                                   "GRCh37_exac_reheader_-r0.3.1-.vcf.gz=EXAC"
+                                                                   "GRCh37_anon-swegen_snp_-1000samples-.vcf.gz=SWEREF"
+                                                                   "GRCh37_anon-swegen_indel_-1000samples-.vcf.gz=SWEREF")
+      -snesdbnsfp/--snpsift_dbnsfp_file                            DbNSFP File (defaults to "GRCh37_dbnsfp_-v2.9-.txt.gz")
+      -snesdbnsfpa/--snpsift_dbnsfp_annotations                    DbNSFP annotations to use with snpsift, comma sep; (defaults to
+                                                                   "SIFT_pred", "Polyphen2_HDIV_pred", "Polyphen2_HVAR_pred",
+                                                                   "GERP++_NR", "GERP++_RS",           "phastCons100way_vertebrate")
 
-    ##Rankvariant
-    -prav/--prankvariant Ranking of annotated variants (defaults to "0" (=no))
-      -ravgft/--genmod_models_family_type Use one of the known setups (defaults to "mip")
-      -ravanr/--genmod_annotate_regions Use predefined gene annotation supplied with genmod for defining genes (supply flag to enable)
-      -ravcad/--genmod_annotate_cadd_files CADD score files (defaults to ""; comma sep)
-      -ravspi/--genmod_annotate_spidex_file Spidex database for alternative splicing (defaults to "")
-      -ravwg/--genmod_models_whole_gene Allow compound pairs in intronic regions (supply flag to enable)
-      -ravrpf/--genmod_models_reduced_penetrance_file File containg genes with reduced penetrance (defaults to "")
-      -ravrm/--rank_model_file Rank model config file (defaults to "")
+    ## Rankvariant
+    -prav/--prankvariant                                           Ranking of annotated variants (defaults to "0" (=no))
+      -ravgft/--genmod_models_family_type                          Use one of the known setups (defaults to "mip")
+      -ravanr/--genmod_annotate_regions                            Use predefined gene annotation supplied with genmod for defining genes (supply flag to enable)
+      -ravcad/--genmod_annotate_cadd_files                         CADD score files (defaults to ""; comma sep)
+      -ravspi/--genmod_annotate_spidex_file                        Spidex database for alternative splicing (defaults to "")
+      -ravwg/--genmod_models_whole_gene                            Allow compound pairs in intronic regions (supply flag to enable)
+      -ravrpf/--genmod_models_reduced_penetrance_file              File containg genes with reduced penetrance (defaults to "")
+      -ravrm/--rank_model_file                                     Rank model config file (defaults to "")
 
-    -pevab/--pendvariantannotationblock End variant annotation block by concatenating files (defaults to "0" (=no))
-      -ravbf/--rankvariant_binary_file Produce binary file from the rank variant chromosomal sorted vcfs (supply flag to enable)
-      -evabrgf/--endvariantannotationblock_remove_genes_file Remove variants in hgnc_ids (defaults to "")
+    -pevab/--pendvariantannotationblock                            End variant annotation block by concatenating files (defaults to "0" (=no))
+      -ravbf/--rankvariant_binary_file                             Produce binary file from the rank variant chromosomal sorted vcfs (supply flag to enable)
+      -evabrgf/--endvariantannotationblock_remove_genes_file       Remove variants in hgnc_ids (defaults to "")
 
-    ##Subsample the mitochondria
-    -pssmt/--psamtools_subsample_mt Subsample the mitochondria (defaults to "0" (=no))
-    -ssmtd/--samtools_subsample_mt_depth Set approximate coverage of subsampled bam file (defaults to "60")
+    ## Subsample the mitochondria
+    -pssmt/--psamtools_subsample_mt                                Subsample the mitochondria (defaults to "0" (=no))
+    -ssmtd/--samtools_subsample_mt_depth                           Set approximate coverage of subsampled bam file (defaults to "60")
 
-    ###Utility
-    -pped/--ppeddy QC for familial-relationships and sexes (defaults to "0" (=no) )
-    -pplink/--pplink QC for samples gender and relationship (defaults to "0" (=no) )
-    -pvai/--pvariant_integrity QC for samples relationship (defaults to "0" (=no) )
-    -prte/--prtg_vcfeval Compare concordance with benchmark data set (defaults to "0" (=no) )
-      -rtesdf/--rtg_vcfeval_sdf_dir Human genome metafile SDF directory of rtg (defaults to "" )
-    -pevl/--pevaluation Compare concordance with NIST data set (defaults to "0" (=no) )
-      -evlnid/--nist_id NIST high-confidence sample_id (defaults to "NA12878")
-      -evlnhc/--nist_high_confidence_call_set NIST high-confidence variant calls (defaults to "GRCh37_nist_hg001_-na12878_v2.19-.vcf")
-      -evlnil/--nist_high_confidence_call_set_bed NIST high-confidence variant calls interval list (defaults to "GRCh37_nist_hg001_-na12878_v2.19-.bed")
-    -pqcc/--pqccollect Collect QC metrics from programs processed (defaults to "0" (=no) )
-      -qccsi/--qccollect_sampleinfo_file SampleInfo file containing info on what to parse from this analysis run (defaults to "{outdata_dir}/{family_id}/{family_id}_qc_sample_info.yaml")
-      -qccref/--qccollect_regexp_file Regular expression file containing the regular expression to be used for each program (defaults to "qc_regexp_-v1.13-.yaml")
-      -qccske/--qccollect_skip_evaluation Skip evaluation step in qccollect (supply flag to enable)
-    -pmqc/--pmultiqc Create aggregate bioinformatics analysis report across many samples (defaults to "0" (=no))
-    -pars/--panalysisrunstatus Sets the analysis run status flag to finished in sample_info_file (defaults to "0" (=no))
-    -psac/--psacct Generating sbatch script for SLURM info on each submitted job (defaults to "0" (=no))
-    -sacfrf/--sacct_format_fields Format and fields of sacct output (defaults to "jobid", "jobname%50", "account", "partition", "alloccpus", "TotalCPU", "elapsed", "start", "end", "state", "exitcode")
+    ### Utility
+    -pped/--ppeddy                                                 QC for familial-relationships and sexes (defaults to "0" (=no) )
+    -pplink/--pplink                                               QC for samples gender and relationship (defaults to "0" (=no) )
+    -pvai/--pvariant_integrity                                     QC for samples relationship (defaults to "0" (=no) )
+    -prte/--prtg_vcfeval                                           Compare concordance with benchmark data set (defaults to "0" (=no) )
+    -pevl/--pevaluation                                            Compare concordance with NIST data set (defaults to "0" (=no) )
+      -evlnid/--nist_id                                            NIST high-confidence sample_id (defaults to "NA12878")
+      -evlnhc/--nist_high_confidence_call_set                      NIST high-confidence variant calls (defaults to "GRCh37_nist_hg001_-na12878_v2.19-.vcf")
+      -evlnil/--nist_high_confidence_call_set_bed                  NIST high-confidence variant calls interval list (defaults to "GRCh37_nist_hg001_-na12878_v2.19-.bed")
+    -pqcc/--pqccollect                                             Collect QC metrics from programs processed (defaults to "0" (=no) )
+      -qccsi/--qccollect_sampleinfo_file                           Sample info file containing info on what to parse from this analysis run (defaults to
+                                                                   "{outdata_dir}/{family_id}/{family_id}_qc_sample_info.yaml")
+      -qccref/--qccollect_regexp_file                              Regular expression file containing the regular expression to be used for each program (defaults to "qc_regexp_-v1.13-.yaml")
+      -qccske/--qccollect_skip_evaluation                          Skip evaluation step in qccollect (supply flag to enable)
+    -pmqc/--pmultiqc                                               Create aggregate bioinformatics analysis report across many samples (defaults to "0" (=no))
+    -pars/--panalysisrunstatus                                     Sets the analysis run status flag to finished in sample_info_file (defaults to "0" (=no))
+    -psac/--psacct                                                 Generating sbatch script for SLURM info on each submitted job (defaults to "0" (=no))
+    -sacfrf/--sacct_format_fields                                  Format and fields of sacct output (defaults to
+                                                                   "jobid",    "jobname%50", "account", "partition", "alloccpus",
+                                                                   "TotalCPU", "elapsed",    "start",   "end",       "state",
+                                                                   "exitcode")
+    ## Vardict
+    -pvrd/--pvardict                                               Variant calling using Vardict (defaults to "0" (=no))
+       -pvdraf/--vrd_af_threshold                                  AF threshold for variant calling (default 0.01)
+       -pvrdcs/--vrd_chrom_start                                   Column for chromosome in the output (default 1)
+       -pvrdbed/--vrd_input_bed_file                               Infile path for region info bed file (mandatory, default none)
+       -pvrdmm/--vrd_max_mm                                        The maximum mean mismatches allowed (default 4.5)
+       -pvrdmp/--vrd_max_pval                                      The maximum p-valuem, set to 0 to keep all variants (default 0.9)
+       -pvrdre/--vrd_region_end                                    Column for region end position in the output (default 3)
+       -pvrdrs/--vrd_region_start                                  Column for region start position in the output (default 2)
+       -pvrdsa/--vrd_segment_annotn                                Column for segment annotation in the output (default 4)
+       -pvrdso/--vrd_somatic_only                                  Output only candidate somatic (default no)
+       
 END_USAGE
 }
 
@@ -3300,7 +3384,7 @@ sub write_cmd_mip_log {
     my @nowrite = (
         "mip",                  "bwa_build_reference",
         "pbamcalibrationblock", "pvariantannotationblock",
-        q{associated_program},
+        q{associated_program},  q{rtg_build_reference},
     );
 
   PARAMETER_KEY:

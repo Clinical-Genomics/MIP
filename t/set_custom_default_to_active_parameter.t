@@ -27,7 +27,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 ## Constants
 Readonly my $COMMA      => q{,};
@@ -135,7 +135,7 @@ my %parameter = load_yaml(
 );
 
 my @custom_default_parameters =
-  qw{ analysis_type bwa_build_reference exome_target_bed sample_info_file };
+  qw{ analysis_type bwa_build_reference exome_target_bed rtg_vcfeval_reference_genome sample_info_file };
 
 foreach my $parameter_name (@custom_default_parameters) {
 
@@ -152,9 +152,15 @@ is( $active_parameter{analysis_type}{sample_1},
     q{wgs}, q{Set analysis_type default} );
 
 is(
-    $active_parameter{human_genome_reference},
+    $active_parameter{bwa_build_reference},
     q{human_genom_reference.fasta},
     q{Set human_genome_reference default for bwa}
+);
+
+is(
+    $active_parameter{rtg_vcfeval_reference_genome},
+    q{human_genom_reference.fasta},
+    q{Set human_genome_reference default for rtg vcfeval reference genome}
 );
 
 foreach my $capture_kit ( keys %{ $active_parameter{exome_target_bed} } ) {

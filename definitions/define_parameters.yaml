@@ -201,6 +201,7 @@ human_genome_reference:
    - pgatk_variantevalexome
    - ppicardtools_collecthsmetrics
    - ppicardtools_collectmultiplemetrics
+   - pvardict
   build_file: 1
   data_type: SCALAR
   default: GRCh37_homo_sapiens_-d5-.fasta
@@ -278,6 +279,7 @@ module_time:
     psv_varianteffectpredictor: 10
     psv_vcfparser: 2
     ptiddit: 10
+    pvardict: 40
     pvarianteffectpredictor: 10
     pvariant_integrity: 1
     pvcfparser: 5
@@ -331,6 +333,7 @@ module_core_number:
     psv_reformat: 1
     psv_varianteffectpredictor: 16
     psv_vcfparser: 16
+    pvardict: 8
     pvariant_integrity: 1
     pvcf2cytosure: 1
   type: mip
@@ -899,10 +902,10 @@ psv_combinevariantcallsets:
 pvcf2cytosure:
   associated_program:
     - mip
-  chain: SVV2CS
+  chain: SV
   data_type: SCALAR
   default: 0
-  file_tag: _cyto
+  file_tag: cyto_
   outfile_suffix: ".cgh"
   outdir_name: vcf2cytosure
   program_name_path:
@@ -1071,7 +1074,6 @@ sv_vep_plugins:
   element_separator: ,
   data_type: ARRAY
   default:
-   - UpDownDistance
    - LoFtool
   type: program_argument
 psv_vcfparser:
@@ -1501,6 +1503,77 @@ rhocall_frequency_file:
   exists_check: file
   reference: reference_dir
   type: path
+## Vardict
+pvardict:
+  associated_program:
+    - mip
+  chain: VRDCT
+  data_type: SCALAR
+  default: 0
+  file_tag: _vardict_
+  program_name_path:
+    - vardict
+  outdir_name: vardict
+  program_type: variant_callers
+  file_endings:
+    - ".vcf"
+  outfile_suffx: ".vcf"
+  type: program
+vrd_af_threshold:
+  associated_program:
+   - pvardict
+  data_type: SCALAR
+  default: 0.01
+  type: program_argument
+vrd_chrom_start:
+  associated_program:
+   - pvardict
+  data_type: SCALAR
+  default: 1
+  type: program_argument
+vrd_input_bed_file:
+  associated_program:
+   - pvardict
+  data_type: SCALAR
+  exists_check: file
+  type: path
+  update_path: absolute_path
+vrd_max_mm:
+  associated_program:
+   - pvardict
+  data_type: SCALAR
+  default: 4.5
+  type: program_argument
+vrd_max_pval:
+  associated_program:
+   - pvardict
+  data_type: SCALAR
+  default: 0.9
+  type: program_argument
+vrd_region_end:
+  associated_program:
+   - pvardict
+  data_type: SCALAR
+  default: 3
+  type: program_argument
+vrd_region_start:
+  associated_program:
+   - pvardict
+  data_type: SCALAR
+  default: 2
+  type: program_argument
+vrd_segment_annotn:
+  associated_program:
+   - pvardict
+  data_type: SCALAR
+  default: 4
+  type: program_argument
+vrd_somatic_only:
+  associated_program:
+   - pvardict
+  data_type: SCALAR
+  default: 0
+  type: program_argument
 ##VT
 pvt:
   associated_program:
@@ -1708,10 +1781,16 @@ vep_plugins:
   element_separator: ,
   data_type: ARRAY
   default:
-   - UpDownDistance
    - LoFtool
    - MaxEntScan
   type: program_argument
+vep_plugins_dir_path:
+  associated_program:
+    - pvarianteffectpredictor
+  data_type: SCALAR
+  exists_check: directory
+  type: path
+  update_path: absolute_path
 ## VCFParser
 pvcfparser:
   associated_program:
@@ -1935,11 +2014,13 @@ prtg_vcfeval:
   program_name_path:
    - bcftools
   type: program
-rtg_vcfeval_sdf_dir:
+rtg_vcfeval_reference_genome:
   associated_program:
    - prtg_vcfeval
+  build_file: 1
   data_type: SCALAR
   exists_check: directory
+  reference: reference_dir
   type: path
 pevaluation:
   associated_program:

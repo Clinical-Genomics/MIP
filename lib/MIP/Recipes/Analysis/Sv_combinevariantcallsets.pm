@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_combinevariantcallsets };
@@ -654,7 +654,7 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
 
             $sample_info_href->{sv_bcf_file}{path} =
               catfile( $outfamily_directory,
-                $family_id . $outfile_tag . $call_type . $DOT . q{bcf} );
+                $family_id . $outfile_tag . $call_type . $DOT . q{bcf.gz} );
         }
 
         slurm_submit_job_sample_id_dependency_add_to_family(
