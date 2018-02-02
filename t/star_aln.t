@@ -228,9 +228,9 @@ my %specific_argument = (
         expected_output => q{--quantMode} . $SPACE . q{GeneCounts},
     },
     read_files_command => {
-        input           => q{gzip} . $SPACE . q{-c},
+        input           => q{gunzip} . $SPACE . q{-c},
         expected_output => q{--readFilesCommand}
-          . $SPACE . q{gzip}
+          . $SPACE . q{gunzip}
           . $SPACE . q{-c},
     },
     thread_number => {
