@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_genotypegvcfs };
@@ -73,81 +73,81 @@ sub analysis_gatk_genotypegvcfs {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         call_type =>
-          { default => q{BOTH}, strict_type => 1, store => \$call_type, },
+          { default => q{BOTH}, store => \$call_type, strict_type => 1, },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
             store       => \$family_id,
+            strict_type => 1,
         },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$file_info_href,
+            strict_type => 1,
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$infile_lane_prefix_href,
+            strict_type => 1,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$job_id_href,
+            strict_type => 1,
         },
         outaligner_dir => {
             default     => $arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
             store       => \$outaligner_dir,
+            strict_type => 1,
         },
         outfamily_directory => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$outfamily_directory,
+            strict_type => 1,
         },
         outfamily_file_directory => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$outfamily_file_directory,
+            strict_type => 1,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
         },
         program_name => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
         },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
-            strict_type => 1,
             store       => \$temp_directory,
+            strict_type => 1,
         },
     };
 
@@ -233,9 +233,9 @@ sub analysis_gatk_genotypegvcfs {
       catfile( $outfamily_file_directory, $family_id . $DOT . q{fam} );
     create_fam_file(
         {
+            active_parameter_href => $active_parameter_href,
             fam_file_path         => $fam_file_path,
             FILEHANDLE            => $FILEHANDLE,
-            active_parameter_href => $active_parameter_href,
             parameter_href        => $parameter_href,
             sample_info_href      => $sample_info_href,
         }

@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.2;
+our $VERSION = 1.0.0;
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -78,7 +78,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Program::Variantcalling::Vep});
+    my @modules = (q{MIP::Program::Qc::Theta});
 
   MODULE:
     for my $module (@modules) {
@@ -86,11 +86,11 @@ BEGIN {
     }
 }
 
-use MIP::Program::Variantcalling::Vep qw{variant_effect_predictor};
-use MIP::Test::Commands qw{test_function};
+use MIP::Program::Qc::Theta qw{ run_theta };
+use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test variant_effect_predictor from Vep.pm v}
-      . $MIP::Program::Variantcalling::Vep::VERSION
+diag(   q{Test run_theta from Theta.pm v}
+      . $MIP::Program::Qc::Theta::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -98,11 +98,8 @@ diag(   q{Test variant_effect_predictor from Vep.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Constants
-Readonly my $VARIANT_BUFFERT_SIZE => 20_000;
-
 ## Base arguments
-my $function_base_command = q{vep};
+my $function_base_command = q{RunTHetA};
 
 my %base_argument = (
     FILEHANDLE => {
@@ -126,100 +123,64 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
+    normal_file => {
+        input           => catfile(qw{ path to normal_sample_SNP_formatted }),
+        expected_output => q{--NORMAL_FILE}
+          . $SPACE
+          . catfile(qw{ path to normal_sample_SNP_formatted }),
+    },
+    tumor_file => {
+        input           => catfile(qw{ path to tumor_sample_SNP_formatted }),
+        expected_output => q{--TUMOR_FILE}
+          . $SPACE
+          . catfile(qw{ path to tumor_sample_SNP_formatted}),
     },
 );
 
 my %specific_argument = (
-    assembly => {
-        input           => q{GRCh37},
-        expected_output => q{--assembly} . $SPACE . q{GRCh37},
-    },
-    buffer_size => {
-        input           => $VARIANT_BUFFERT_SIZE,
-        expected_output => q{--buffer_size} . $SPACE . $VARIANT_BUFFERT_SIZE,
-    },
-    cache_directory => {
-        input           => catdir( q{test_dir}, q{test_cache_dir} ),
-        expected_output => q{--dir_cache}
+    normal_file => {
+        input           => catfile(qw{ path to normal_sample_SNP_formatted }),
+        expected_output => q{--NORMAL_FILE}
           . $SPACE
-          . catdir( q{test_dir}, q{test_cache_dir} ),
+          . catfile(qw{ path to normal_sample_SNP_formatted }),
     },
-    distance => {
-        input           => 10,
-        expected_output => q{--distance} . $SPACE . q{10},
+    num_processes => {
+        input           => 3,
+        expected_output => q{--NUM_PROCESSES} . $SPACE . 3,
     },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
+    output_prefix => {
+        input           => q{output_prefix},
+        expected_output => q{--OUTPUT_PREFIX} . $SPACE . q{output_prefix},
     },
-    fork => {
-        input           => 1,
-        expected_output => q{--fork} . $SPACE . q{1},
-    },
-    infile_format => {
-        input           => q{vcf},
-        expected_output => q{--format} . $SPACE . q{vcf},
-    },
-    infile_path => {
-        input           => catfile( q{test_dir}, q{infile.vcf} ),
-        expected_output => q{--input_file}
+    output_dir => {
+        input           => catfile(qw{ path to output_dir }),
+        expected_output => q{--DIR}
           . $SPACE
-          . catfile( q{test_dir}, q{infile.vcf} ),
+          . catfile(qw{ path to output_dir }),
     },
-    outfile_format => {
-        input           => q{vcf},
-        expected_output => q{--} . q{vcf},
-    },
-    outfile_path => {
-        input           => catfile( q{test_dir}, q{infile.vcf} ),
-        expected_output => q{--output_file}
+    tumor_file => {
+        input           => catfile(qw{ path to tumor_sample_SNP_formatted }),
+        expected_output => q{--TUMOR_FILE}
           . $SPACE
-          . catfile( q{test_dir}, q{infile.vcf} ),
-    },
-    plugins_dir_path => {
-        input           => catdir(qw{ test_dir plugins }),
-        expected_output => q{--dir_plugins}
-          . $SPACE
-          . catdir(qw{ test_dir plugins }),
-    },
-    plugins_ref => {
-        inputs_ref      => [qw{ LoFtool LoF }],
-        expected_output => q{--plugin LoFtool} . $SPACE . q{--plugin LoF},
-    },
-    reference_path => {
-        input           => catfile( q{test_dir}, q{hum_ref.pl} ),
-        expected_output => q{--fasta}
-          . $SPACE
-          . catfile( q{test_dir}, q{hum_ref.pl} ),
-    },
-    regions_ref => {
-        inputs_ref      => [qw{ 1 2 }],
-        expected_output => q{--chr} . $SPACE . q{1,2},
-    },
-    vep_features_ref => {
-        inputs_ref      => [qw{ tsl hgvs}],
-        expected_output => q{--tsl} . $SPACE . q{--hgvs},
+          . catfile(qw{ path to tumor_sample_SNP_formatted }),
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&variant_effect_predictor;
+my $module_function_cref = \&run_theta;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
 
-HASHES_OF_ARGUMENTS:
+ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
             argument_href          => $argument_href,
-            required_argument_href => \%required_argument,
-            module_function_cref   => $module_function_cref,
-            function_base_command  => $function_base_command,
             do_test_base_command   => 1,
+            function_base_command  => $function_base_command,
+            module_function_cref   => $module_function_cref,
+            required_argument_href => \%required_argument,
         }
     );
 }
@@ -232,12 +193,9 @@ done_testing();
 
 sub build_usage {
 
-##build_usage
-
-##Function : Build the USAGE instructions
-##Returns  : ""
-##Arguments: $program_name
-##         : $program_name => Name of the script
+## Function  : Build the USAGE instructions
+## Returns   :
+## Arguments : $program_name => Name of the script
 
     my ($arg_href) = @_;
 
@@ -247,8 +205,8 @@ sub build_usage {
     my $tmpl = {
         program_name => {
             default     => basename($PROGRAM_NAME),
-            strict_type => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
     };
 

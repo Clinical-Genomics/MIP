@@ -30,10 +30,11 @@ BEGIN {
 
 ## Constants
 Readonly my $BACKTICK                    => q{`};
-Readonly my $SAMTOOLS_UNMAPPED_READ_FLAG => 4;
-Readonly my $MAX_LIMIT_SEED              => 100;
+Readonly my $DOT                         => q{.};
 Readonly my $NEWLINE                     => qq{\n};
+Readonly my $MAX_LIMIT_SEED              => 100;
 Readonly my $PIPE                        => q{|};
+Readonly my $SAMTOOLS_UNMAPPED_READ_FLAG => 4;
 Readonly my $SPACE                       => q{ };
 Readonly my $UNDERSCORE                  => q{_};
 
@@ -321,7 +322,7 @@ sub analysis_samtools_subsample_MT {
     if ( $mip_program_mode == 1 ) {
 
         my $program_outfile_path = catfile( $outsample_directory,
-            $outfile_prefix . $UNDERSCORE . q{subsample_MT.bam} );
+            $outfile_prefix . $DOT . q{bam} );
         ## Collect QC metadata info for later use
         add_program_outfile_to_sample_info(
             {

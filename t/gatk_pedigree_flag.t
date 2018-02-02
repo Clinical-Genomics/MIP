@@ -4,18 +4,18 @@ use 5.018;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ basename dirname  };
-use File::Spec::Functions qw{ catdir };
+use open qw{ :encoding(UTF-8) :std };
+use File::Basename qw{ basename dirname };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use Getopt::Long;
-use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use Test::More;
 use utf8;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
-use autodie qw{ :all };
+use autodie qw { :all };
 use Modern::Perl qw{ 2014 };
 use Readonly;
 
@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.0;
+our $VERSION = '1.0.0';
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -78,7 +78,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::PATH::TO::MODULE});
+    my @modules = (q{MIP::File::Format::Pedigree});
 
   MODULE:
     for my $module (@modules) {
@@ -86,11 +86,10 @@ BEGIN {
     }
 }
 
-use MIP::PATH::TO::MODULE qw{ SUB_ROUTINE };
-use MIP::Test::Commands qw{ test_function };
+use MIP::File::Format::Pedigree qw{ gatk_pedigree_flag };
 
-diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
-      . $MIP::PATH::TO::MODULE::VERSION
+diag(   q{Test gatk_pedigree_flag from Pedigree.pm v}
+      . $MIP::File::Format::Pedigree::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -98,70 +97,22 @@ diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Base arguments
-my $function_base_command = q{BASE_COMMAND};
+my $fam_file_path_test =
+  catfile( $Bin, qw{ data 643594-miptest 643594-200M.fam } );
+my $program_test = q{pgatk_genotypegvcfs};
 
-my %base_argument = (
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
-    },
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
-    },
-    stderrfile_path_append => {
-        input           => q{stderrfile.test},
-        expected_output => q{2>> stderrfile.test},
-    },
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
-    },
+my %command = gatk_pedigree_flag(
+    {
+        fam_file_path            => $fam_file_path_test,
+        pedigree_validation_type => q{STRICT},
+        program_name             => $program_test,
+    }
 );
 
-## Can be duplicated with %base_argument and/or %specific_argument
-## to enable testing of each individual argument
-my %required_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
-    },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
-    },
-);
-
-my %specific_argument = (
-    ARRAY => {
-        inputs_ref      => [qw{ TEST_STRING_1 TEST_STRING_2 }],
-        expected_output => q{PROGRAM OUTPUT},
-    },
-    SCALAR => {
-        input           => q{TEST_STRING},
-        expected_output => q{PROGRAM_OUTPUT},
-    },
-);
-
-## Coderef - enables generalized use of generate call
-my $module_function_cref = \&SUB_ROUTINE;
-
-## Test both base and function specific arguments
-my @arguments = ( \%base_argument, \%specific_argument );
-
-ARGUMENT_HASH_REF:
-foreach my $argument_href (@arguments) {
-    my @commands = test_function(
-        {
-            argument_href          => $argument_href,
-            do_test_base_command   => 1,
-            function_base_command  => $function_base_command,
-            module_function_cref   => $module_function_cref,
-            required_argument_href => \%required_argument,
-        }
-    );
-}
+is( $command{pedigree_validation_type},
+    q{STRICT}, q{Pedigree validation type is verified} );
+is( $command{pedigree}, $fam_file_path_test,
+    q{Path to pedigree file is verified} );
 
 done_testing();
 
@@ -193,7 +144,7 @@ sub build_usage {
     return <<"END_USAGE";
  $program_name [options]
     -vb/--verbose Verbose
-    -h/--help     Display this help message
-    -v/--version  Display version
+    -h/--help Display this help message
+    -v/--version Display version
 END_USAGE
 }

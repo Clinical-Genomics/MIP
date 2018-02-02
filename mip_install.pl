@@ -68,7 +68,7 @@ Readonly my $UNDERSCORE => q{_};
 my $config_file = catfile( $Bin, qw{ definitions install_parameters.yaml} );
 my %parameter = load_yaml( { yaml_file => $config_file } );
 
-our $VERSION = q{1.2.30};
+our $VERSION = q{1.2.31};
 
 GetOptions(
     q{see|bash_set_errexit}    => \$parameter{bash_set_errexit},
@@ -571,12 +571,18 @@ sub get_programs_for_installation {
     if ( any { $_ eq q{chanjo} } @{ $parameter_href->{select_program} } ) {
         push @{ $parameter_href->{select_program} }, q{sambamba};
     }
+    if ( any { $_ eq q{cnvnator} } @{ $parameter_href->{select_program} } ) {
+        push @{ $parameter_href->{select_program} }, qw{ samtools bcftools };
+    }
+    if ( any { $_ eq q{peddy} } @{ $parameter_href->{select_program} } ) {
+        push @{ $parameter_href->{select_program} }, qw{ bcftools };
+    }
     if ( any { $_ eq q{vcf2cytosure} } @{ $parameter_href->{select_program} } )
     {
         push @{ $parameter_href->{select_program} }, qw{ libxml2 libxslt };
     }
-    if ( any { $_ eq q{cnvnator} } @{ $parameter_href->{select_program} } ) {
-        push @{ $parameter_href->{select_program} }, qw{ samtools bcftools };
+    if ( any { $_ eq q{vep} } @{ $parameter_href->{select_program} } ) {
+        push @{ $parameter_href->{select_program} }, qw{ bcftools };
     }
 
     ## Remove all programs except those selected for installation

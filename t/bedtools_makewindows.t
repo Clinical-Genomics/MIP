@@ -15,7 +15,7 @@ use utf8;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
-use autodie qw{ :all };
+use autodie;
 use Modern::Perl qw{ 2014 };
 use Readonly;
 
@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.2;
+our $VERSION = 1.0.0;
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -78,7 +78,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Program::Variantcalling::Vep});
+    my @modules = (q{MIP::Program::Alignment::Bedtools});
 
   MODULE:
     for my $module (@modules) {
@@ -86,11 +86,11 @@ BEGIN {
     }
 }
 
-use MIP::Program::Variantcalling::Vep qw{variant_effect_predictor};
-use MIP::Test::Commands qw{test_function};
+use MIP::Program::Alignment::Bedtools qw{ bedtools_makewindows };
+use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test variant_effect_predictor from Vep.pm v}
-      . $MIP::Program::Variantcalling::Vep::VERSION
+diag(   q{Test bedtools_makewindows from Bedtools.pm v}
+      . $MIP::Program::Alignment::Bedtools::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -98,11 +98,11 @@ diag(   q{Test variant_effect_predictor from Vep.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Constants
-Readonly my $VARIANT_BUFFERT_SIZE => 20_000;
+Readonly my $WINDOW_SIZE => 200_000;
+Readonly my $STEP_SIZE   => 199_750;
 
 ## Base arguments
-my $function_base_command = q{vep};
+my $function_base_command = q{bedtools};
 
 my %base_argument = (
     FILEHANDLE => {
@@ -123,103 +123,52 @@ my %base_argument = (
     },
 );
 
-## Can be duplicated with %base_argument and/or %specific_argument
-## to enable testing of each individual argument
+## Can be duplicated with %base and/or %specific to enable testing of each individual argument
 my %required_argument = (
     FILEHANDLE => {
         input           => undef,
         expected_output => $function_base_command,
     },
+    infile_bed_path => {
+        input           => catfile(qw{ path to infile_bed }),
+        expected_output => q{-b} . $SPACE . catfile(qw{ path to infile_bed }),
+    },
+    window_size => {
+        input           => $WINDOW_SIZE,
+        expected_output => q{-w} . $SPACE . $WINDOW_SIZE,
+    },
 );
 
+## Specific arguments
 my %specific_argument = (
-    assembly => {
-        input           => q{GRCh37},
-        expected_output => q{--assembly} . $SPACE . q{GRCh37},
+    infile_bed_path => {
+        input           => catfile(qw{ path to infile_bed }),
+        expected_output => q{-b} . $SPACE . catfile(qw{ path to infile_bed }),
     },
-    buffer_size => {
-        input           => $VARIANT_BUFFERT_SIZE,
-        expected_output => q{--buffer_size} . $SPACE . $VARIANT_BUFFERT_SIZE,
+    step_size => {
+        input           => $STEP_SIZE,
+        expected_output => q{-s} . $SPACE . $STEP_SIZE,
     },
-    cache_directory => {
-        input           => catdir( q{test_dir}, q{test_cache_dir} ),
-        expected_output => q{--dir_cache}
-          . $SPACE
-          . catdir( q{test_dir}, q{test_cache_dir} ),
-    },
-    distance => {
-        input           => 10,
-        expected_output => q{--distance} . $SPACE . q{10},
-    },
-    FILEHANDLE => {
-        input           => undef,
-        expected_output => $function_base_command,
-    },
-    fork => {
-        input           => 1,
-        expected_output => q{--fork} . $SPACE . q{1},
-    },
-    infile_format => {
-        input           => q{vcf},
-        expected_output => q{--format} . $SPACE . q{vcf},
-    },
-    infile_path => {
-        input           => catfile( q{test_dir}, q{infile.vcf} ),
-        expected_output => q{--input_file}
-          . $SPACE
-          . catfile( q{test_dir}, q{infile.vcf} ),
-    },
-    outfile_format => {
-        input           => q{vcf},
-        expected_output => q{--} . q{vcf},
-    },
-    outfile_path => {
-        input           => catfile( q{test_dir}, q{infile.vcf} ),
-        expected_output => q{--output_file}
-          . $SPACE
-          . catfile( q{test_dir}, q{infile.vcf} ),
-    },
-    plugins_dir_path => {
-        input           => catdir(qw{ test_dir plugins }),
-        expected_output => q{--dir_plugins}
-          . $SPACE
-          . catdir(qw{ test_dir plugins }),
-    },
-    plugins_ref => {
-        inputs_ref      => [qw{ LoFtool LoF }],
-        expected_output => q{--plugin LoFtool} . $SPACE . q{--plugin LoF},
-    },
-    reference_path => {
-        input           => catfile( q{test_dir}, q{hum_ref.pl} ),
-        expected_output => q{--fasta}
-          . $SPACE
-          . catfile( q{test_dir}, q{hum_ref.pl} ),
-    },
-    regions_ref => {
-        inputs_ref      => [qw{ 1 2 }],
-        expected_output => q{--chr} . $SPACE . q{1,2},
-    },
-    vep_features_ref => {
-        inputs_ref      => [qw{ tsl hgvs}],
-        expected_output => q{--tsl} . $SPACE . q{--hgvs},
+    window_size => {
+        input           => $WINDOW_SIZE,
+        expected_output => q{-w} . $SPACE . $WINDOW_SIZE,
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&variant_effect_predictor;
+my $module_function_cref = \&bedtools_makewindows;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
 
-HASHES_OF_ARGUMENTS:
 foreach my $argument_href (@arguments) {
+
     my @commands = test_function(
         {
             argument_href          => $argument_href,
             required_argument_href => \%required_argument,
             module_function_cref   => $module_function_cref,
             function_base_command  => $function_base_command,
-            do_test_base_command   => 1,
         }
     );
 }
@@ -252,7 +201,7 @@ sub build_usage {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
 
     return <<"END_USAGE";
  $program_name [options]

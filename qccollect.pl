@@ -30,7 +30,7 @@ use Readonly;
 ##MIPs lib/
 use lib catdir( $Bin, q{lib} );
 use MIP::Check::Modules qw{ check_perl_modules };
-vuse MIP::File::Format::Yaml qw{ load_yaml write_yaml };
+use MIP::File::Format::Yaml qw{ load_yaml write_yaml };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
 

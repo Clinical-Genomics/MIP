@@ -500,9 +500,9 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
               . q{lanes}
               . $UNDERSCORE
               . $lanes_id
+              . $outfile_tag
               . $UNDERSCORE
               . $file_info_href->{contigs_size_ordered}[0]
-              . $outfile_tag
               . $outfile_suffix );
         add_program_outfile_to_sample_info(
             {
