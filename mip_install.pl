@@ -68,7 +68,7 @@ Readonly my $UNDERSCORE => q{_};
 my $config_file = catfile( $Bin, qw{ definitions install_parameters.yaml} );
 my %parameter = load_yaml( { yaml_file => $config_file } );
 
-our $VERSION = q{1.2.31};
+our $VERSION = q{1.2.32};
 
 GetOptions(
     q{see|bash_set_errexit}    => \$parameter{bash_set_errexit},
@@ -379,12 +379,12 @@ sub build_usage {
     -vt/--vt                        Set the vt version (Default: "0.57")
     -plk/--plink                    Set the plink version (Default: "160224")
     -snpg/--snpeff_genome_versions  Set the snpEff genome version (Default: ["GRCh37.75", "GRCh38.82"])
-    -vep/--varianteffectpredictor   Set the VEP version (Default: "90")
+    -vep/--varianteffectpredictor   Set the VEP version (Default: "91")
     -vepf/--vep_auto_flag           Set the VEP auto installer flags
     -vepc/--vep_cache_dir           Specify the cache directory to use (whole path;
                                         defaults to "[--conda_dir_path]/ensembl-tools-release-varianteffectpredictorVersion/cache")
     -vepa/--vep_assemblies          Select the assembly version (Default: ["GRCh37", "GRCh38"])
-    -vepp/--vep_plugins             Supply VEP plugins (Default: "UpDownDistance, LoFtool, Lof")
+    -vepp/--vep_plugins             Supply VEP plugins (Default: "LoFtool, MaxEntScan")
     -rhc/--rhocall                  Set the rhocall version (Default: "0.4")
     -rhcp/--rhocall_path            Set the path to where to install rhocall (Defaults: "HOME/rhocall")
     -cnvn/--cnvnator                Set the cnvnator version (Default: 0.3.3)
@@ -582,7 +582,7 @@ sub get_programs_for_installation {
         push @{ $parameter_href->{select_program} }, qw{ libxml2 libxslt };
     }
     if ( any { $_ eq q{vep} } @{ $parameter_href->{select_program} } ) {
-        push @{ $parameter_href->{select_program} }, qw{ bcftools };
+        push @{ $parameter_href->{select_program} }, qw{ bcftools htslib };
     }
 
     ## Remove all programs except those selected for installation

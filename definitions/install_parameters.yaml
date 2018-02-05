@@ -124,7 +124,6 @@ shell:
     vep_auto_flag: acfp
     vep_cache_dir: ~
     vep_plugins:
-      - UpDownDistance
       - LoFtool
       - MaxEntScan
     version: 91
