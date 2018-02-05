@@ -160,7 +160,7 @@ sub star_aln {
             strict_type => 1,
         },
         read_files_command => {
-            default     => q{gzip} . $SPACE . q{-c},
+            default     => q{gunzip} . $SPACE . q{-c},
             store       => \$read_files_command,
             strict_type => 1,
         },
