@@ -244,7 +244,6 @@ sub analysis_star_aln {
                 program_directory               => lc $outaligner_dir,
                 program_name                    => $program_name,
                 process_time                    => $time,
-                sleep                           => 1,
                 source_environment_commands_ref => [$source_environment_cmd],
                 temp_directory                  => $temp_directory,
             }
@@ -300,8 +299,7 @@ sub analysis_star_aln {
               catfile( $temp_directory, $infiles_ref->[$paired_end_tracker] );
             catfile( $temp_directory, $infiles_ref->[$paired_end_tracker] );
         }
-        my $referencefile_dir_path = $active_parameter_href->{reference_dir}
-          . q{DOES STAR HAVE AN SEPERATE DIR WITH ONLY THE HUMAN REF?};
+        my $referencefile_dir_path = $active_parameter_href->{reference_dir};
 
         star_aln(
             {
