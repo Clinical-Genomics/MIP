@@ -187,8 +187,9 @@ sub install_vep {
         say {$FILEHANDLE} $NEWLINE;
     }
 
-    if ( ($auto =~ m/[cfp]/xms) && (not $auto =~ m/[al]/xms) ) {
-        ## Make sure that the VEP:s INSTALL.pl exist if the user has selected to skip api installation
+    ## Make sure that the VEP:s INSTALL.pl exist if the user has selected to skip api installation
+    if ( ( $auto =~ m/[cfp]/xms ) && ( not $auto =~ m/[al]/xms ) ) {
+
         if ( not -s catfile( $vep_dir_path, q{INSTALL.pl} ) ) {
             $log->fatal(
 q{Can't install cache, fasta files or plugins without a VEP installation file!}
@@ -198,19 +199,31 @@ q{Please add the [a] and/or [l] flag to --vep_auto_flag when running mip_install
             );
             exit 1;
         }
-        ## Make sure that the cache directory exists if a chache or plugin installation has been requested
-        if ( not -d $cache_directory ) {
-            say {$FILEHANDLE} q{## Create cache directory};
-            gnu_mkdir(
-                {
-                    FILEHANDLE       => $FILEHANDLE,
-                    indirectory_path => $cache_directory,
-                    parents          => 1,
-                }
-            );
-            say {$FILEHANDLE} $NEWLINE;
-        }
     }
+
+    ## Make sure that the cache directory exists
+    if ( not -d $cache_directory ) {
+        say {$FILEHANDLE} q{## Create cache directory};
+        gnu_mkdir(
+            {
+                FILEHANDLE       => $FILEHANDLE,
+                indirectory_path => $cache_directory,
+                parents          => 1,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+    }
+
+    ## Set LD_LIBRARY_PATH for VEP isntallation
+    my $conda_dir_path = get_conda_dir_path(
+        {
+            log => $log
+        }
+    );
+    say $FILEHANDLE q{LD_LIBRARY_PATH=}
+      . $conda_dir_path
+      . q{/lib/:$LD_LIBRARY_PATH};
+    say $FILEHANDLE q{export LD_LIBRARY_PATH} . $NEWLINE;
 
     ## Download VEP
     if ( $auto =~ m/[al]/xms ) {
@@ -398,6 +411,15 @@ q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/LoFtool_scores.tx
         );
         say {$FILEHANDLE} $NEWLINE;
     }
+
+    ## Unset LD_LIBRARY_PATH as to not pollute the rest of the installation
+    gnu_unset(
+        {
+            bash_variable => q{LD_LIBRARY_PATH},
+            FILEHANDLE    => $FILEHANDLE,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
     ## Go back to subroutine origin
     say {$FILEHANDLE} q{## Moving back to original working directory};
