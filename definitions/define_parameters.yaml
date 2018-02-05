@@ -273,6 +273,7 @@ module_time:
     psamtools_subsample_mt: 1
     psplit_fastq_file: 10
     psnpeff: 10
+    pstar_aln: 5
     psv_combinevariantcallsets: 2
     psv_rankvariant: 2
     psv_reformat: 1
@@ -328,6 +329,7 @@ module_core_number:
     psambamba_depth: 2
     psamtools_subsample_mt: 1
     psplit_fastq_file: 4
+    pstar_aln: 16
     psv_combinevariantcallsets: 1
     psv_rankvariant: 16
     psv_reformat: 1
@@ -501,6 +503,57 @@ bwa_build_reference:
   exists_check: file
   reference: reference_dir
   type: path
+pstar_aln:
+  associated_program:
+   - mip
+  chain: MAIN
+  data_type: SCALAR
+  default: 0
+  file_tag: _star
+  outfile_suffix: ".bam"
+  outdir_name: star
+  program_name_path:
+   - STAR
+  program_type: aligners
+  file_endings:
+   - .bam
+  type: program
+align_intron_max:
+  associated_program:
+   - pstar_aln
+  data_type: SCALAR
+  default: 100000
+  type: program_argument
+align_mates_gap_max:
+  associated_program:
+   - pstar_aln
+  data_type: SCALAR
+  default: 100000
+  type: program_argument
+align_sjdb_overhang_min:
+  associated_program:
+   - pstar_aln
+  data_type: SCALAR
+  default: 10
+  type: program_argument
+chim_junction_overhang_min:
+  associated_program:
+   - pstar_aln
+  data_type: SCALAR
+  default: 12
+  type: program_argument
+chim_segment_min:
+  associated_program:
+   - pstar_aln
+  data_type: SCALAR
+  default: 12
+  type: program_argument
+two_pass_mode:
+  associated_program:
+   - pstar_aln
+  data_type: SCALAR
+  default: Basic
+  type: program_argument
 ## Choosen MIP Aligner
 outaligner_dir:
   associated_program:

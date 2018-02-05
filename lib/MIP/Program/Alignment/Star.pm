@@ -110,7 +110,6 @@ sub star_aln {
             store       => \$chim_segment_min,
             strict_type => 1,
         },
-
         chim_segment_read_gap_max => {
             default     => 3,
             store       => \$chim_segment_read_gap_max,
@@ -151,7 +150,6 @@ sub star_aln {
         },
         out_sam_type => {
             default     => q{BAM} . $SPACE . q{SortedByCoordinate},
-            required    => 1,
             store       => \$out_sam_type,
             strict_type => 1,
         },
@@ -162,10 +160,9 @@ sub star_aln {
             strict_type => 1,
         },
         read_files_command => {
-            default     => q{gzip} . $SPACE . q{-c},
-            required    => 1,
-            strict_type => 1,
+            default     => q{gunzip} . $SPACE . q{-c},
             store       => \$read_files_command,
+            strict_type => 1,
         },
         stderrfile_path => {
             store       => \$stderrfile_path,
@@ -209,7 +206,7 @@ sub star_aln {
 
     push @commands, q{--outSAMtype} . $SPACE . $out_sam_type;
 
-    #Options
+    ## Options
     if ($align_intron_max) {
         push @commands, q{--alignIntronMax} . $SPACE . $align_intron_max;
 
