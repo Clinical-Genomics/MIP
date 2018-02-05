@@ -187,17 +187,6 @@ sub install_vep {
         say {$FILEHANDLE} $NEWLINE;
     }
 
-    ### Set LD_LIBRARY_PATH for VEP isntallation
-    #my $conda_dir_path = get_conda_dir_path(
-    #    {
-    #        log => $log
-    #    }
-    #);
-    #say $FILEHANDLE q{LD_LIBRARY_PATH=}
-    #  . $conda_dir_path
-    #  . q{/lib/:$LD_LIBRARY_PATH};
-    #say $FILEHANDLE q{export LD_LIBRARY_PATH} . $NEWLINE;
-
     if ( $auto =~ m/[cfp]/xms ) {
         ## Make sure that the VEP:s INSTALL.pl exist if the user has selected to skip api installation
         if ( not -s catfile( $vep_dir_path, q{INSTALL.pl} ) ) {
@@ -419,15 +408,6 @@ q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/LoFtool_scores.tx
         }
     );
     say {$FILEHANDLE} $NEWLINE;
-
-    ## Unset LD_LIBRARY_PATH as to not pollute the rest of the installation
-    #gnu_unset(
-    #    {
-    #        bash_variable => q{LD_LIBRARY_PATH},
-    #        FILEHANDLE    => $FILEHANDLE,
-    #    }
-    #);
-    #say {$FILEHANDLE} $NEWLINE;
 
     ## Deactivate conda environment if conda_environment exists
     if ($conda_environment) {
