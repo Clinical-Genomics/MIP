@@ -187,7 +187,7 @@ sub install_vep {
         say {$FILEHANDLE} $NEWLINE;
     }
 
-    if ( $auto =~ m/[cfp]/xms ) {
+    if ( ($auto =~ m/[cfp]/xms) && (not $auto =~ m/[al]/xms) ) {
         ## Make sure that the VEP:s INSTALL.pl exist if the user has selected to skip api installation
         if ( not -s catfile( $vep_dir_path, q{INSTALL.pl} ) ) {
             $log->fatal(
