@@ -10,6 +10,7 @@ use File::Spec::Functions qw{ catdir catfile };
 use File::Temp;
 use FindBin qw{ $Bin };
 use Getopt::Long;
+use List::MoreUtils qw{ any };
 use Params::Check qw{ allow check last_error };
 use Test::More;
 use utf8;
@@ -259,7 +260,7 @@ sub _compare_aray {
 
         foreach my $expected (@output_info) {
 
-            if ( not grep $expected eq $_, @sample_info ) {
+            if ( not any { $expected eq $_ } @sample_info ) {
 
                 $success = 0;
                 last;
