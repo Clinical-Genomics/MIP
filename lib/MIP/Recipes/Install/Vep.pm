@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.07;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vep };
@@ -106,7 +106,6 @@ sub install_vep {
     use MIP::Program::Download::Wget qw{ wget };
     use MIP::Program::Variantcalling::Vep
       qw{ variant_effect_predictor_install };
-    use MIP::Recipes::Install::Conda qw{ get_conda_dir_path };
     use MIP::Versionmanager::Git qw{ git_checkout git_clone };
 
     ## Unpack parameters
@@ -214,14 +213,9 @@ q{Please add the [a] and/or [l] flag to --vep_auto_flag when running mip_install
         say {$FILEHANDLE} $NEWLINE;
     }
 
-    ## Set LD_LIBRARY_PATH for VEP isntallation
-    my $conda_dir_path = get_conda_dir_path(
-        {
-            log => $log
-        }
-    );
+    ## Set LD_LIBRARY_PATH for VEP installation
     say $FILEHANDLE q{LD_LIBRARY_PATH=}
-      . $conda_dir_path
+      . $conda_prefix_path
       . q{/lib/:$LD_LIBRARY_PATH};
     say $FILEHANDLE q{export LD_LIBRARY_PATH} . $NEWLINE;
 
