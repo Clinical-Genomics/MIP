@@ -58,7 +58,7 @@ ok( can_run(q{mip}), q{Checking can run mip} );
 ## Test execution of mip
 # Create array ref for cmd
 my $cmds_ref = [
-    qw{perl /mnt/hds/proj/cust003/develop/modules/MIP/mip.pl},
+    q{mip},
     qw(-f 643594-miptest),
     q{-c},
     $config_file,
