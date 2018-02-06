@@ -515,7 +515,7 @@ sub _check_vcf_header_and_keys {
             print {$FILEHANDLE} q?$harness->runtests( ?;
 
             print {$FILEHANDLE} q?["?
-              . catfile( $Bin, qw{ t mip_analysis.t } )
+              . catfile( $Bin, qw{ t mip_analysis.test } )
               . q?", "test ?
               . $mode
               . $SPACE

@@ -151,7 +151,7 @@ This will install MIP and most of its dependencies into a conda environment.
 Make sure to activate your conda environment if that option was used above.  
 
 ```Bash
-$ cd t; prove run_tests.t
+$ cd t; prove -r
 $ cd -
 ```
 ##### 7.Install tools with conflicting dependencies  

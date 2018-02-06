@@ -1,22 +1,21 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{ 2014 };
-use warnings qw{ FATAL utf8 };
-use autodie;
 use 5.018;
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
 use Carp;
+use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-
-use FindBin qw{ $Bin };
+use Getopt::Long;
 use File::Basename qw{ dirname basename };
 use File::Spec::Functions qw{ catdir catfile devnull };
-use Getopt::Long;
-use IPC::Cmd qw{ can_run run };
+use FindBin qw{ $Bin };
+use open qw{ :encoding(UTF-8) :std };
+use warnings qw{ FATAL utf8 };
+use utf8;
 
 ## CPANM
+use autodie;
+use IPC::Cmd qw{ can_run run };
+use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ##MIPs lib/
@@ -94,7 +93,7 @@ Readonly my $SPACE   => q{ };
 
 my $config_file = catfile( dirname($Bin), qw(templates mip_config.yaml) );
 my $VERBOSE = 1;
-our $VERSION = '0.0.2';
+our $VERSION = '0.0.3';
 
 ###User Options
 GetOptions(
@@ -128,14 +127,7 @@ GetOptions(
 use TAP::Harness;
 use Cwd;
 
-## Test central perl modules and import functions
-test_modules();
-
-mip_scripts();
-
-ok( can_run(q{prove}), q{Checking can run perl prove} );
-
-diag(   q{Test run_tests.t version }
+diag(   q{Test mip_core.t version }
       . $VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -144,16 +136,12 @@ diag(   q{Test run_tests.t version }
       . $SPACE
       . $EXECUTABLE_NAME );
 
-##Run tests files using run_test_files.txt manifest
-my $cmds_ref =
-  [ qw(prove - < ), catdir( dirname($Bin), qw(t config run_test_files.txt) ), ];
-my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
-  run( command => $cmds_ref, verbose => $VERBOSE );
+## Test central perl modules and import functions
+test_modules();
 
-## Test MIP execuation
-$cmds_ref = [ qw(prove mip.t :: -c ), $config_file ];
-( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
-  run( command => $cmds_ref, verbose => $VERBOSE );
+mip_scripts();
+
+ok( can_run(q{prove}), q{Checking can run perl prove} );
 
 ## Reached the end safely
 done_testing();
@@ -217,7 +205,7 @@ sub test_modules {
     use File::Spec::Functions qw{ catfile catdir devnull };
     ok( catdir( dirname($Bin), q{t} ),
         q{File::Spec::Functions qw{ catdir }: Concatenate directories} );
-    ok( catfile( $Bin, q{run_tests.t} ),
+    ok( catfile( $Bin, q{mip_core.t} ),
         q{File::Spec::Functions qw{ catfile }: Concatenate files} );
     ok(
         catfile( dirname( devnull() ), q{stdout} ),
@@ -225,13 +213,13 @@ sub test_modules {
     );
 
     use File::Basename qw{ basename };
-    my $file_path = catfile( $Bin, q{run_tests.t} );
+    my $file_path = catfile( $Bin, q{mip_core.t} );
     ok( basename($file_path),
         q{File::Basename qw{ basename }: Strip directories} );
 
     use Cwd qw{ abs_path };
     ok(
-        abs_path( catfile( $Bin, q{run_tests.pl} ) ),
+        abs_path( catfile( $Bin, q{mip_core.pl} ) ),
         q{Cwd_abs_path: Add absolute path}
     );
 
@@ -269,7 +257,7 @@ sub test_modules {
         {
             categories_ref => [qw{ TRACE ScreenApp }],
             file_path      => $log_file,
-            log_name       => q{Run_tests},
+            log_name       => q{Mip_core},
         }
     );
 
@@ -333,7 +321,7 @@ sub mip_scripts {
           [qw{ calculate_af.pl covplots_exome.R covplots_genome.R max_af.pl }],
         definitions =>
           [qw{ define_download_references.yaml define_parameters.yaml }],
-        t         => [qw{ mip_install.t mip.t run_tests.t mip_analysis.t }],
+        t         => [qw{ mip_install.t mip.t mip_core.t mip_analysis.test }],
         templates => [
             qw{ mip_config.yaml mip_travis_config.yaml
               643594-miptest_pedigree.yaml
