@@ -1,49 +1,50 @@
 #!/usr/bin/env perl
 
-###Copyright 2016 Henrik Stranneheim
-
-use Modern::Perl qw(2014);    #CPAN
-use warnings qw( FATAL utf8 );
-use autodie qw(open close :all);    #CPAN
-use 5.018;                          #Require at least perl 5.18
-use utf8;
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
+use 5.018;
 use Carp;
+use charnames qw( :full :short );
 use English qw(-no_match_vars);
-
-use Test::More;
-use FindBin qw($Bin);
 use File::Basename qw(dirname basename);
 use File::Path qw(remove_tree);
 use File::Spec::Functions qw(catfile catdir devnull);
-use Params::Check qw[check allow last_error];
-$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
-use IPC::Cmd qw[can_run run];
+use FindBin qw($Bin);
 use Getopt::Long;
-use Cwd;
+use open qw( :encoding(UTF-8) :std );
+use Params::Check qw[check allow last_error];
+use Test::More;
+use utf8;
+use warnings qw( FATAL utf8 );
 
-##MIPs lib/
+## Cpanm
+use autodie qw(open close :all);
+use IPC::Cmd qw[can_run run];
+use Modern::Perl qw(2014);
+
+## MIPs lib/
 use lib catdir( dirname($Bin), 'lib' );
 use MIP::Script::Utils qw(help);
 
 our $USAGE = build_usage( {} );
 
 my $verbose = 1;
-our $VERSION = '0.0.1';
+our $VERSION = '0.0.2';
 
+## Set default
 my $config_file = catfile( dirname($Bin), qw(templates mip_config.yaml) );
+my $cluster_constant_path = catfile( dirname($Bin), qw{ t data} );
 
-###User Options
+### User Options
 GetOptions(
-    'c|config_file:s' => \$config_file,
-    'h|help' => sub { print {*STDOUT} $USAGE, "\n"; exit; },  #Display help text
-    'v|version' => sub {
+    q{c|config_file:s} => \$config_file,
+    ## Display help text
+    q{h|help} => sub { print {*STDOUT} $USAGE, "\n"; exit; },
+    ## Display version number
+    q{v|version} => sub {
         print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{ } . $VERSION,
           "\n\n";
         exit;
-    },    #Display version number
-    'vb|verbose' => $verbose,
+    },
+    q{vb|verbose} => $verbose,
   )
   or help(
     {
@@ -52,37 +53,48 @@ GetOptions(
     }
   );
 
-ok( can_run('mip'), 'Checking can run mip' );
+ok( can_run(q{mip}), q{Checking can run mip} );
 
 ## Test execution of mip
 # Create array ref for cmd
 my $cmds_ref = [
-    'mip',
+    qw{perl /mnt/hds/proj/cust003/develop/modules/MIP/mip.pl},
     qw(-f 643594-miptest),
-    '-c',
+    q{-c},
     $config_file,
-    '-ifd',
-    catfile(qw(data 643594-miptest test_data ADM1059A1 fastq=ADM1059A1)),
-    '-ifd',
-    catfile(qw(data 643594-miptest test_data ADM1059A2 fastq=ADM1059A2)),
-    '-ifd',
-    catfile(qw(data 643594-miptest test_data ADM1059A3 fastq=ADM1059A3)),
-    qw(--rio 1),
-    qw(--dra 2),
+    q{-ccp},
+    $cluster_constant_path,
+    q{-ifd},
+    catfile(
+        $cluster_constant_path,
+        qw( 643594-miptest test_data ADM1059A1 fastq=ADM1059A1)
+    ),
+    q{-ifd},
+    catfile(
+        $cluster_constant_path,
+        qw( 643594-miptest test_data ADM1059A2 fastq=ADM1059A2)
+    ),
+    q{-ifd},
+    catfile(
+        $cluster_constant_path,
+        qw( 643594-miptest test_data ADM1059A3 fastq=ADM1059A3)
+    ),
+    qw(--rio),
+    qw(--dra),
     qw(--psvv 0),
 ];
 
 my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
   run( command => $cmds_ref, verbose => $verbose );
-ok( $success, 'Executed mip' );
+ok( $success, q{Executed mip} );
 
-my $qc_sample_info_file = catfile( getcwd(),
-    qw{ data 643594-miptest analysis 643594-miptest_qc_sample_info.yaml} );
+my $qc_sample_info_file = catfile( $cluster_constant_path,
+    qw{ 643594-miptest analysis 643594-miptest_qc_sample_info.yaml} );
 ok( -f $qc_sample_info_file,
     q{Checking for 643594-miptest_qc_sample_info.yaml} );
 
-##Clean-up
-remove_tree( catfile( getcwd(), qw(data 643594-miptest analysis) ) );
+## Clean-up
+remove_tree( catfile( $cluster_constant_path, qw( 643594-miptest analysis) ) );
 
 done_testing();
 
@@ -92,12 +104,9 @@ done_testing();
 
 sub build_usage {
 
-##build_usage
-
-##Function : Build the USAGE instructions
-##Returns  : ""
-##Arguments: $program_name
-##         : $program_name => Name of the script
+## Function : Build the USAGE instructions
+## Returns  :
+## Arguments: $program_name => Name of the script
 
     my ($arg_href) = @_;
 
@@ -107,18 +116,18 @@ sub build_usage {
     my $tmpl = {
         program_name => {
             default     => basename($PROGRAM_NAME),
-            strict_type => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     return <<"END_USAGE";
  $program_name [options]
     -c/--config_file YAML config file for analysis parameters (defaults to ../templates/mip_config.yaml")
-    -vb/--verbose Verbose
-    -h/--help Display this help message
-    -v/--version Display version
+    -vb/--verbose    Verbose
+    -h/--help        Display this help message
+    -v/--version     Display version
 END_USAGE
 }
