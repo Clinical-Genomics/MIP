@@ -213,7 +213,7 @@ q{Please add the [a] and/or [l] flag to --vep_auto_flag when running mip_install
         say {$FILEHANDLE} $NEWLINE;
     }
 
-    ## Set LD_LIBRARY_PATH for VEP isntallation
+    ## Set LD_LIBRARY_PATH for VEP installation
     say $FILEHANDLE q{LD_LIBRARY_PATH=}
       . $conda_prefix_path
       . q{/lib/:$LD_LIBRARY_PATH};
