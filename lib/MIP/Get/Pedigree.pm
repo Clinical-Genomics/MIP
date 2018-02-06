@@ -84,7 +84,7 @@ sub get_sample_info {
         next if ( not $sample->{$sample_info_key} eq $sample_info_value );
 
         ## Continue if sample_info_out does not exist
-        next if ( not $sample->{$sample_info_out});
+        next if ( not $sample->{$sample_info_out} );
 
         if ( $sample->{$sample_info_key} eq $sample_info_value ) {
 
