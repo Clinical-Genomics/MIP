@@ -58,7 +58,7 @@ ok( can_run(q{mip}), q{Checking can run mip} );
 ## Test execution of mip
 # Create array ref for cmd
 my $cmds_ref = [
-    q{mip},
+    qw{perl /mnt/hds/proj/cust003/develop/modules/MIP/mip.pl},
     qw(-f 643594-miptest),
     q{-c},
     $config_file,
@@ -79,8 +79,8 @@ my $cmds_ref = [
         $cluster_constant_path,
         qw( 643594-miptest test_data ADM1059A3 fastq=ADM1059A3)
     ),
-    qw(--rio 1),
-    qw(--dra 2),
+    qw(--rio),
+    qw(--dra),
     qw(--psvv 0),
 ];
 
