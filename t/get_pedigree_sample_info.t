@@ -172,6 +172,7 @@ my %pedigree = (
     ],
 );
 
+## Test for a single sample entry
 my @sample_info = get_sample_info(
     {
         pedigree_href     => \%pedigree,
@@ -181,9 +182,37 @@ my @sample_info = get_sample_info(
     }
 );
 
-print @sample_info;
+my @output_info = (qw{sample_2_a});
 
-#is( $sample_origin, q{tumor}, q{Found correct sample_origin} );
+is( _compare_aray(), 1, "Test for a single info retrieval." );
+
+## Test for multiple sample entry
+@sample_info = get_sample_info(
+    {
+        pedigree_href     => \%pedigree,
+        sample_info_key   => q{analysis_type},
+        sample_info_out   => q{sample_id},
+        sample_info_value => q{cancer},
+    }
+);
+
+@output_info = (qw{sample_2_a sample_2_b sample_2_c});
+
+is( _compare_aray(), 1, "Test for multiple info retrieval." );
+
+## Test for empty output
+@sample_info = get_sample_info(
+    {
+        pedigree_href     => \%pedigree,
+        sample_info_key   => q{analysis_type},
+        sample_info_out   => q{sample_origin},
+        sample_info_value => q{wts},
+    }
+);
+
+@output_info = ();
+
+is( _compare_aray(), 1, "Test for non-existing entry retrieval." );
 
 done_testing();
 
@@ -218,4 +247,29 @@ sub build_usage {
     -h/--help Display this help message
     -v/--version Display version
 END_USAGE
+}
+
+sub _compare_aray {
+
+    ## Function :   Check if all elements of @output_info are in @sample_info
+    ## Returns  :   $success
+
+    my $success = 1;
+    if ( scalar @sample_info eq scalar @output_info ) {
+
+        foreach my $expected (@output_info) {
+
+            if ( not grep $expected eq $_, @sample_info ) {
+
+                $success = 0;
+                last;
+            }
+
+        }
+    }
+    else {
+        $success = 0;
+    }
+
+    return $success;
 }
