@@ -144,7 +144,7 @@ my $install_script = catfile( dirname($Bin), q{mip_install.pl} );
 
 ## Test execution of install.pl
 # Create array ref for cmd
-my $cmds_ref = [ qw{ perl }, $install_script, qw{ -sp mip_scripts } ];
+my $cmds_ref = [ qw{ perl }, $install_script, qw{ -sp mip_scripts -dec } ];
 if ($conda_dir_path) {
 
     push @{$cmds_ref}, q{--conda_dir_path}, $conda_dir_path;

@@ -49,6 +49,9 @@ conda_packages:
 # Optionally update conda
 conda_update: ~
 
+# Disable environment check
+disable_env_check: 0
+
 # Optional name of log file
 log_file: ~
 

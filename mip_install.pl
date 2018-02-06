@@ -68,7 +68,7 @@ Readonly my $UNDERSCORE => q{_};
 my $config_file = catfile( $Bin, qw{ definitions install_parameters.yaml} );
 my %parameter = load_yaml( { yaml_file => $config_file } );
 
-our $VERSION = q{1.2.32};
+our $VERSION = q{1.2.33};
 
 GetOptions(
     q{see|bash_set_errexit}    => \$parameter{bash_set_errexit},
@@ -123,12 +123,13 @@ GetOptions(
         );
         exit;
     },
-    q{nup|noupdate}        => \$parameter{noupdate},
-    q{sp|select_program:s} => \@{ $parameter{select_program} },
-    q{skip|skip_program:s} => \@{ $parameter{skip_program} },
-    q{l|log:s}             => \$parameter{log_file},
-    q{q|quiet}             => \$parameter{quiet},
-    q{h|help}              => sub {
+    q{nup|noupdate}          => \$parameter{noupdate},
+    q{sp|select_program:s}   => \@{ $parameter{select_program} },
+    q{skip|skip_program:s}   => \@{ $parameter{skip_program} },
+    q{l|log:s}               => \$parameter{log_file},
+    q{dec|disable_env_check} => \$parameter{disable_env_check},
+    q{q|quiet}               => \$parameter{quiet},
+    q{h|help}                => sub {
         say {*STDOUT} $USAGE;
         exit;
     },
@@ -173,10 +174,11 @@ $log->info(
 ## Check the conda installation and get the conda path
 $parameter{conda_prefix_path} = check_conda_installation(
     {
-        conda_dir_path => $parameter{conda_dir_path},
-        conda_env      => $parameter{conda_environment},
-        quiet          => $parameter{quiet},
-        verbose        => $parameter{verbose},
+        conda_dir_path    => $parameter{conda_dir_path},
+        conda_env         => $parameter{conda_environment},
+        disable_env_check => $parameter{disable_env_check},
+        quiet             => $parameter{quiet},
+        verbose           => $parameter{verbose},
     }
 );
 
@@ -402,6 +404,7 @@ sub build_usage {
     -sp/--select_program            Only install selected program(s) (e.g. -sp bedtools -sp TIDDIT)
     -l/--log                        File for writing log messages (Default: "mip_install_TIMESTAMP.log")
     -q/--quiet                      Quiet (Supply flag to enable; no output from individual program that has a quiet flag)
+    -dec/--disable_env_check        Disable source environment check
     -h/--help                       Display this help message
     -ver/--version                  Display version
     -v/--verbose                    Set verbosity
