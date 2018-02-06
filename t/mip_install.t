@@ -203,13 +203,13 @@ sub build_usage {
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw[Could not parse arguments!];
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     return <<"END_USAGE";
  $program_name [options]
     -cdp/--conda_dir_path The conda directory path (Default: "HOME/miniconda")
-    -vb/--verbose Verbose
-    -h/--help Display this help message
-    -v/--version Display version
+    -vb/--verbose         Verbose
+    -h/--help             Display this help message
+    -v/--version          Display version
 END_USAGE
 }
