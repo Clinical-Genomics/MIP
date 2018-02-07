@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 
 use 5.018;
+use Array::Utils qw{ array_diff };
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -176,44 +177,74 @@ my %pedigree = (
 ## Test for a single sample entry
 my @sample_info = get_sample_info(
     {
-        pedigree_href     => \%pedigree,
-        sample_info_key   => q{sample_origin},
-        sample_info_out   => q{sample_id},
-        sample_info_value => q{tumor},
+        get_values_for_key          => q{sample_id},
+        pedigree_href               => \%pedigree,
+        sample_info_intersect_key   => q{sample_origin},
+        sample_info_intersect_value => q{tumor},
     }
 );
 
 my @output_info = (qw{sample_2_a});
 
-is( _compare_aray(), 1, "Test for a single info retrieval." );
+is( array_diff( @output_info, @sample_info ),
+    0, q{Test for a single info retrieval} );
 
 ## Test for multiple sample entry
 @sample_info = get_sample_info(
     {
-        pedigree_href     => \%pedigree,
-        sample_info_key   => q{analysis_type},
-        sample_info_out   => q{sample_id},
-        sample_info_value => q{cancer},
+        get_values_for_key          => q{sample_id},
+        pedigree_href               => \%pedigree,
+        sample_info_intersect_key   => q{analysis_type},
+        sample_info_intersect_value => q{cancer},
     }
 );
 
 @output_info = (qw{sample_2_a sample_2_b sample_2_c});
 
-is( _compare_aray(), 1, "Test for multiple info retrieval." );
+is( array_diff( @output_info, @sample_info ),
+    0, q{Test for multiple info retrieval} );
 
 ## Test for empty output
 @sample_info = get_sample_info(
     {
-        pedigree_href     => \%pedigree,
-        sample_info_key   => q{analysis_type},
-        sample_info_out   => q{sample_origin},
-        sample_info_value => q{wts},
+        get_values_for_key          => q{sample_origin},
+        pedigree_href               => \%pedigree,
+        sample_info_intersect_key   => q{analysis_type},
+        sample_info_intersect_value => q{wts},
     }
 );
 
 @output_info = ();
 
-is( _compare_aray(), 1, "Test for non-existing entry retrieval." );
+is( array_diff( @output_info, @sample_info ),
+    0, q{Test for non-existing entry retrieval} );
+
+## Test for default value of get_values_for_key
+@sample_info = get_sample_info(
+    {
+        pedigree_href               => \%pedigree,
+        sample_info_intersect_key   => q{analysis_type},
+        sample_info_intersect_value => q{cancer},
+    }
+);
+
+@output_info = (qw{sample_2_a sample_2_b sample_2_c});
+
+is( array_diff( @output_info, @sample_info ),
+    0, q{Test for default output for get_values_for_key} );
+
+## Test for default output, i.e. all sample_ids
+@sample_info = get_sample_info(
+    {
+        pedigree_href => \%pedigree,
+    }
+);
+
+@output_info =
+  (qw{ sample_1 sample_2_a sample_2_b sample_2_c sample_3 sample_4 });
+
+is( array_diff( @output_info, @sample_info ),
+    0, q{Test for default output for all sample_ids} );
 
 done_testing();
 
@@ -250,27 +281,3 @@ sub build_usage {
 END_USAGE
 }
 
-sub _compare_aray {
-
-    ## Function :   Check if all elements of @output_info are in @sample_info
-    ## Returns  :   $success
-
-    my $success = 1;
-    if ( scalar @sample_info eq scalar @output_info ) {
-
-        foreach my $expected (@output_info) {
-
-            if ( not any { $expected eq $_ } @sample_info ) {
-
-                $success = 0;
-                last;
-            }
-
-        }
-    }
-    else {
-        $success = 0;
-    }
-
-    return $success;
-}
