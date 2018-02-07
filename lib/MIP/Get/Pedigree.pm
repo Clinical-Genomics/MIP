@@ -1,4 +1,5 @@
 package MIP::Get::Pedigree;
+
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -28,22 +29,29 @@ BEGIN {
 sub get_sample_info {
 
     ## Function     : Given pedigree hash, extract an specific field given a sample level pedigree info
-    ## Returns      : @sample_info
-    ## Arguments    : $pedigree_hash        =>  Pedigree hash {REF}
-    ##              : $sample_info_key      =>  Key in pedigree hash to search
-    ##              : $sample_info_value    =>  Key in pedigree hash to match
-    ##              : $sample_info_out      =>  Key in pedigree hash to return
-    ## Note         : Returns an empty array if a particular key is not found.
+    ## Returns      : @info_out
+    ## Arguments    : $get_values_for_key             =>  Key in pedigree hash to return its value
+    ##              : $sample_info_intersect_key      =>  Key in pedigree hash to search
+    ##              : $sample_info_intersect_value    =>  Value in pedigree hash for $sample_info_intersect_key
+    ##              : $pedigree_hash                  =>  Pedigree hash {REF}
+    ## Note         : It will search for "$sample_info_intersect_key: $sample_info_intersect_value" in pedigree_hash
+    ##                and return the value for the key specified in $get_values_for_key.
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $get_values_for_key;
     my $pedigree_href;
-    my $sample_info_key;
-    my $sample_info_out;
-    my $sample_info_value;
+    my $sample_info_intersect_key;
+    my $sample_info_intersect_value;
 
     my $tmpl = {
+        get_values_for_key => {
+            default     => q{sample_id},
+            defined     => 1,
+            store       => \$get_values_for_key,
+            strict_type => 1,
+        },
         pedigree_href => {
             default     => {},
             defined     => 1,
@@ -51,22 +59,14 @@ sub get_sample_info {
             store       => \$pedigree_href,
             strict_type => 1,
         },
-        sample_info_key => {
+        sample_info_intersect_key => {
             defined     => 1,
-            required    => 1,
-            store       => \$sample_info_key,
+            store       => \$sample_info_intersect_key,
             strict_type => 1,
         },
-        sample_info_out => {
+        sample_info_intersect_value => {
             defined     => 1,
-            required    => 1,
-            store       => \$sample_info_out,
-            strict_type => 1,
-        },
-        sample_info_value => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_value,
+            store       => \$sample_info_intersect_value,
             strict_type => 1,
         },
     };
@@ -75,22 +75,38 @@ sub get_sample_info {
 
     my @info_out;
 
-    foreach my $sample ( @{ $pedigree_href->{samples} } ) {
+    if ( not $sample_info_intersect_key and not $sample_info_intersect_value ) {
 
-        ## Check if sample_info_key entry exists in this particular sample
-        next if ( not $sample->{$sample_info_key} );
+        foreach my $sample_href ( @{ $pedigree_href->{samples} } ) {
 
-        ## Continue if sample_info_value is not matching
-        next if ( not $sample->{$sample_info_key} eq $sample_info_value );
-
-        ## Continue if sample_info_out does not exist
-        next if ( not $sample->{$sample_info_out} );
-
-        if ( $sample->{$sample_info_key} eq $sample_info_value ) {
-
-            push @info_out, $sample->{$sample_info_out};
+            push @info_out, $sample_href->{sample_id};
         }
+    }
+    else {
 
+      SAMPLE:
+        foreach my $sample_href ( @{ $pedigree_href->{samples} } ) {
+
+            ## Check if sample_info_intersect_key entry exists in this particular sample
+            next SAMPLE if ( not $sample_href->{$sample_info_intersect_key} );
+
+            ## Continue if sample_info_intersect_value is not matching
+            next SAMPLE
+              if (
+                not $sample_href->{$sample_info_intersect_key} eq
+                $sample_info_intersect_value );
+
+            ## Continue if get_values_for_key does not exist
+            next SAMPLE if ( not $sample_href->{$get_values_for_key} );
+
+            if ( $sample_href->{$sample_info_intersect_key} eq
+                $sample_info_intersect_value )
+            {
+
+                push @info_out, $sample_href->{$get_values_for_key};
+            }
+
+        }
     }
 
     return @info_out;
