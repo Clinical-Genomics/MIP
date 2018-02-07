@@ -104,18 +104,6 @@ diag(   q{Test get_sample_info from Pedigree.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Create temp logger
-my $test_dir = File::Temp->newdir();
-my $test_log_path = catfile( $test_dir, q{test.log} );
-
-## Creates log object
-my $log = initiate_logger(
-    {
-        file_path => $test_log_path,
-        log_name  => q{TEST},
-    }
-);
-
 my %pedigree = (
     family  => q{family_1},
     samples => [
