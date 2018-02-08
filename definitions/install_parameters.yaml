@@ -21,7 +21,6 @@ bioconda:
   libxml2: 2.9.4
   libxslt: 1.1.29
   manta: 1.1.0
-  multiqc: 0.9.1a0
   numpy: 1.9.3
   peddy: 0.3.1
   picard: 2.14.1
@@ -61,6 +60,7 @@ noupdate: ~
 # Python packages to be installed via pip
 pip:
   chanjo: 4.2.0
+  multiqc: 1.4
   genmod: 3.7.2
   variant_integrity: 0.0.4
 
@@ -72,6 +72,7 @@ prefer_shell: ~
 py3_packages:
   - chanjo
   - genmod
+  - multiqc
   - variant_integrity
 
 # Specify python version
