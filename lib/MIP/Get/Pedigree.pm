@@ -47,8 +47,8 @@ sub get_sample_info {
 
     my $tmpl = {
         get_values_for_key => {
-            default     => q{sample_id},
             defined     => 1,
+            required    => 1,
             store       => \$get_values_for_key,
             strict_type => 1,
         },
@@ -75,11 +75,15 @@ sub get_sample_info {
 
     my @info_out;
 
-    if ( not $sample_info_intersect_key and not $sample_info_intersect_value ) {
+    if ( not $sample_info_intersect_key or not $sample_info_intersect_value ) {
 
+        DEFAULT:
         foreach my $sample_href ( @{ $pedigree_href->{samples} } ) {
 
-            push @info_out, $sample_href->{sample_id};
+            ## Continue if get_values_for_key does not exist
+            next DEFAULT if ( not $sample_href->{$get_values_for_key} );
+
+            push @info_out, $sample_href->{$get_values_for_key};
         }
     }
     else {
