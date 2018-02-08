@@ -210,21 +210,8 @@ is( array_diff( @output_info, @sample_info ),
 ## Test for default value of get_values_for_key
 @sample_info = get_sample_info(
     {
-        pedigree_href               => \%pedigree,
-        sample_info_intersect_key   => q{analysis_type},
-        sample_info_intersect_value => q{cancer},
-    }
-);
-
-@output_info = (qw{sample_2_a sample_2_b sample_2_c});
-
-is( array_diff( @output_info, @sample_info ),
-    0, q{Test for default output for get_values_for_key} );
-
-## Test for default output, i.e. all sample_ids
-@sample_info = get_sample_info(
-    {
-        pedigree_href => \%pedigree,
+        get_values_for_key => q{sample_id},
+        pedigree_href      => \%pedigree,
     }
 );
 
@@ -232,7 +219,7 @@ is( array_diff( @output_info, @sample_info ),
   (qw{ sample_1 sample_2_a sample_2_b sample_2_c sample_3 sample_4 });
 
 is( array_diff( @output_info, @sample_info ),
-    0, q{Test for default output for all sample_ids} );
+    0, q{Test for default output for no sample_info_intersect_key or sample_info_intersect_value} );
 
 done_testing();
 
