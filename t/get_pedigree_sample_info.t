@@ -218,8 +218,11 @@ is( array_diff( @output_info, @sample_info ),
 @output_info =
   (qw{ sample_1 sample_2_a sample_2_b sample_2_c sample_3 sample_4 });
 
-is( array_diff( @output_info, @sample_info ),
-    0, q{Test for default output for no sample_info_intersect_key or sample_info_intersect_value} );
+is(
+    array_diff( @output_info, @sample_info ),
+    0,
+q{Test for default output for no sample_info_intersect_key or sample_info_intersect_value}
+);
 
 done_testing();
 

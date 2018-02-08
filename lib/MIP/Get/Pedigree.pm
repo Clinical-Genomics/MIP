@@ -77,7 +77,7 @@ sub get_sample_info {
 
     if ( not $sample_info_intersect_key or not $sample_info_intersect_value ) {
 
-        DEFAULT:
+      DEFAULT:
         foreach my $sample_href ( @{ $pedigree_href->{samples} } ) {
 
             ## Continue if get_values_for_key does not exist
