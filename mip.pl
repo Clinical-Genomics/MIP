@@ -353,7 +353,9 @@ GetOptions(
       \$active_parameter{sv_genmod_filter_threshold},
     q{svcbcf|sv_combinevariantcallsets_bcf_file} =>
       \$active_parameter{sv_combinevariantcallsets_bcf_file},
-    q{pv2cs|pvcf2cytosure:n}      => \$active_parameter{pvcf2cytosure},
+    q{pv2cs|pvcf2cytosure:n} => \$active_parameter{pvcf2cytosure},
+    q{vc2csef|vcf2cytosure_exclude_filter=s} =>
+      \$active_parameter{vcf2cytosure_exclude_filter},
     q{v2csfq|vcf2cytosure_freq=n} => \$active_parameter{vcf2cytosure_freq},
     q{v2csfqt|vcf2cytosure_freq_tag=s} =>
       \$active_parameter{vcf2cytosure_freq_tag},
@@ -1813,6 +1815,7 @@ sub build_usage {
       -svrevbf/--sv_rankvariant_binary_file                        Produce binary file from the rank variant chromosome sorted vcfs (supply flag to enable)
       -svrergf/--sv_reformat_remove_genes_file                     Remove variants in hgnc_ids (defaults to "")
     -pv2cs/--vcf2cytosure                                          Convert a VCF with structural variants to the “.CGH” format used by the commercial Cytosure software (defaults to "0" (=no))
+      -vc2csef/--vcf2cytosure_exclude_filter                       Filter vcf using bcftools exclude filter string (defaults to "")
       -v2csfq/--vcf2cytosure_freq                                  Specify maximum frequency (defaults to "0.01")
       -v2csfqt/--vcf2cytosure_freq_tag                             Specify frequency tag (defaults to "FRQ")
       -v2csnf/--vf2cytosure_no_filter                              Don't use any filtering (defaults to "0" (=no))

@@ -964,7 +964,13 @@ pvcf2cytosure:
   program_name_path:
     - TIDDIT.py
     - vcf2cytosure
+    - bcftools
   type: program
+vcf2cytosure_exclude_filter:
+  associated_program:
+   - pvcf2cytosure
+  data_type: SCALAR
+  type: program_argument
 vcf2cytosure_freq:
   associated_program:
    - pvcf2cytosure

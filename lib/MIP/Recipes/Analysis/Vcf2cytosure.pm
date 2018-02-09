@@ -29,12 +29,14 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $AMPERSAND  => q{&};
-Readonly my $ASTERISK   => q{*};
-Readonly my $DOT        => q{.};
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
+Readonly my $AMPERSAND    => q{&};
+Readonly my $ASTERISK     => q{*};
+Readonly my $DOT          => q{.};
+Readonly my $NEWLINE      => qq{\n};
+Readonly my $SINGLE_QUOTE => q{'};
+Readonly my $SPACE        => q{ };
+Readonly my $SV_LENGTH    => 3000;
+Readonly my $UNDERSCORE   => q{_};
 
 sub analysis_vcf2cytosure {
 
@@ -366,6 +368,7 @@ sub analysis_vcf2cytosure {
         # Bcftools view
         bcftools_view(
             {
+                exclude      => $active_parameter_href->{vcf2cytosure_exclude_filter},
                 FILEHANDLE   => $FILEHANDLE,
                 infile_path  => catfile( $temp_directory, $merged_sv_vcf ),
                 samples_ref  => [$sample_id],
