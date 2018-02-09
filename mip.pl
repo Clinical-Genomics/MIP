@@ -270,7 +270,16 @@ GetOptions(
     q{memsts|bwa_mem_bamstats} => \$active_parameter{bwa_mem_bamstats},
     q{memssm|bwa_sambamba_sort_memory_limit:s} =>
       \$active_parameter{bwa_sambamba_sort_memory_limit},
-    q{ptp|picardtools_path:s} => \$active_parameter{picardtools_path},
+    q{pstn|pstar_aln=n}              => \$active_parameter{pstar_aln},
+    q{stn_aim|align_intron_max=n}    => \$active_parameter{align_intron_max},
+    q{stn_amg|align_mates_gap_max=n} => \$active_parameter{align_mates_gap_max},
+    q{stn_asom|align_sjdb_overhang_min=n} =>
+      \$active_parameter{align_sjdb_overhang_min},
+    q{stn_cjom|chim_junction_overhang_min=n} =>
+      \$active_parameter{chim_junction_overhang_min},
+    q{stn_csm|chim_segment_min=n} => \$active_parameter{chim_segment_min},
+    q{stn_tpm|two_pass_mode=n}    => \$active_parameter{two_pass_mode},
+    q{ptp|picardtools_path:s}     => \$active_parameter{picardtools_path},
     q{pptm|ppicardtools_mergesamfiles=n} =>
       \$active_parameter{ppicardtools_mergesamfiles},
     q{pmd|pmarkduplicates=n} => \$active_parameter{pmarkduplicates},
@@ -1705,13 +1714,22 @@ sub build_usage {
     -pgz/--pgzip_fastq                                             Gzip fastq files (defaults to "0" (=no))
     -pfqc/--pfastqc                                                Sequence quality analysis using FastQC (defaults to "0" (=no))
     -pcta/--pcutadapt                                              Trim input reads using cutadapt (defaults to "0" (=no))
-    
-    ##BWA
+
+    ## BWA
     -pmem/--pbwa_mem                                               Align reads using Bwa Mem (defaults to "0" (=no))
       -memhla/--bwa_mem_hla                                        Apply HLA typing (supply flag to enable)
       -memcrm/--bwa_mem_cram                                       Use CRAM-format for additional output file (supply flag to enable)
       -memsts/--bwa_mem_bamstats                                   Collect statistics from BAM files (supply flag to enable)
       -memssm/--bwa_sambamba_sort_memory_limit                     Set the memory limit for Sambamba sort after bwa alignment (defaults to "32G")
+
+    ## Star
+    -pstn/--pstar_aln                                              Align reads using Star aln (defaults to "0" (=no))
+      -stn_aim/--align_intron_max                                  Maximum intron size (defaults to "100000")
+      -stn_amg/--align_mates_gap_max                               Maximum gap between two mates (defaults to "100000")
+      -stn_asom/--align_sjdb_overhang_min                          Minimum overhang (i.e. block size) for spliced alignments (defaults to "10")
+      -stn_cjom/--chim_junction_overhang_min                       Minimum overhang for a chimeric junction (defaults to "12")
+      -stn_csm/--chim_segment_min                                  Minimum length of chimaeric segment (defaults to "12")
+      -stn_tpm/--two_pass_mode                                     Two pass mode setting (defaults to "Basic")
 
     ## Picardtools
     -ptp/--picardtools_path                                        Path to Picardtools. Mandatory for use of Picardtools (defaults to "")

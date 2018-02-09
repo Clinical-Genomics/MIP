@@ -238,7 +238,7 @@ sub build_usage {
 
     return <<"END_USAGE";
  $program_name infile.vcf [VCF] config_file [YAML] [options]
-    -h/--help Display this help message
+    -h/--help    Display this help message
     -v/--version Display version
 END_USAGE
 }

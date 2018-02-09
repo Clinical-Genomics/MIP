@@ -94,7 +94,7 @@ MIP is written in perl and therefore requires that perl is installed on your OS.
 * [Cpanm](http://search.cpan.org/~miyagawa/App-cpanminus-1.7043/lib/App/cpanminus.pm)
 * [Miniconda]
 
-We recommend perlbrew for installing and managing perl and cpanm libraries. Installation instructions and setting up specific the cpanm libraries can be found [here](https://github.com/Clinical-Genomics/development/blob/master/perl/installation/installation.md).
+We recommend perlbrew for installing and managing perl and cpanm libraries. Installation instructions and setting up specific cpanm libraries can be found [here](https://github.com/Clinical-Genomics/development/blob/master/perl/installation/installation.md).
 
 #### Automated Installation \(Linux x86\_64\)  
 ##### 1.Clone the official git repository
@@ -151,13 +151,13 @@ This will install MIP and most of its dependencies into a conda environment.
 Make sure to activate your conda environment if that option was used above.  
 
 ```Bash
-$ cd t; prove run_tests.t
+$ cd t; prove -r
 $ cd -
 ```
 ##### 7.Install tools with conflicting dependencies  
 Tools that have conflicting dependencies needs to be installed in separate conda environments. Currently these programs requires separate environments:  
 
-  * Genmod, Chanjo and Variant_integrity
+  * Genmod, Chanjo, Multiqc and Variant_integrity
     - requires python 3
   * Peddy
     - conflicts with SVDB dependencies  
@@ -167,7 +167,7 @@ Tools that have conflicting dependencies needs to be installed in separate conda
 
   ```bash
   ## Python 3 tools
-  $ perl mip_install.pl -env mip_pyv3.6 --python_version 3.6 --select_program genmod --select_program chanjo --select_program variant_integrity
+  $ perl mip_install.pl -env mip_pyv3.6 --python_version 3.6 --select_program genmod --select_program chanjo --select_program variant_integrity --select_program multiqc
   $ bash mip.sh
 
   ## Peddy
@@ -184,13 +184,14 @@ Tools that have conflicting dependencies needs to be installed in separate conda
   ```Yml
   module_source_environment_command:
     pchanjo_sexcheck: "source activate mip_pyv3.6"
+    pcnvnator: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source [CONDA_PATH]/envs/mip_cnvnator/root/bin/thisroot.sh; source activate mip_cnvnator"
+    pmultiqc: "source activate mip_pyv3.6"
+    ppeddy: "source activate mip_peddy"
     prankvariant: "source activate mip_pyv3.6"
     psv_rankvariant: "source activate mip_pyv3.6"
-    pvariant_integrity: "source activate mip_pyv3.6"
-    ppeddy: "source activate mip_peddy"
-    pvarianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source activate mip_vep"
     psv_varianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source activate mip_vep"
-    pcnvnator: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source [CONDA_PATH]/envs/mip_cnvnator/root/bin/thisroot.sh; source activate mip_cnvnator"
+    pvarianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source activate mip_vep"
+    pvariant_integrity: "source activate mip_pyv3.6"
   ```
 
   MIP will execute this on the node before executing the program and then revert to the ``--source_main_environment_command`` if set. Otherwise ``source deactivate`` is used to return to the conda root environment.
