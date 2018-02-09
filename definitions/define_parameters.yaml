@@ -970,6 +970,7 @@ vcf2cytosure_exclude_filter:
   associated_program:
    - pvcf2cytosure
   data_type: SCALAR
+  default: ""
   type: program_argument
 vcf2cytosure_freq:
   associated_program:
