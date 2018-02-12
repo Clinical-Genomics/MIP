@@ -32,11 +32,172 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ picardtools_mergesamfiles  picardtools_markduplicates picardtools_gatherbamfiles picardtools_collectmultiplemetrics picardtools_collecthsmetrics };
+      qw{ picardtools_addorreplacereadgroups picardtools_mergesamfiles  picardtools_markduplicates picardtools_gatherbamfiles picardtools_collectmultiplemetrics picardtools_collecthsmetrics };
 }
 
 ## Constants
 Readonly my $SPACE => q{ };
+
+sub picardtools_addorreplacereadgroups {
+## Function : Perl wrapper for writing picardtools addorreplacereadgroups recipe to $FILEHANDLE. Based on picardtools 2.5.0.
+## Returns  : @commands
+## Arguments: $infile_path                    => Infile paths
+##          : $outfile_path                   => Outfile path
+##          : $stderrfile_path                => Stderrfile path
+##          : $FILEHANDLE                     => Sbatch filehandle to write to
+##          : $memory_allocation              => Memory allocation for java
+##          : $temp_directory                 => Redirect tmp files to java temp
+##          : $java_use_large_pages           => Use java large pages
+##          : $java_jar                       => Java jar
+##          : $readgroup_id                   => Readgroup id value
+##          : $readgroup_library              => Readgroup library
+##          : $readgroup_platform             => Reagroup platform
+##          : $readgroup_platform_unit        => ID of the sequencing unit
+##          : $readgroup_sample               => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $infile_path;
+    my $java_jar;
+    my $memory_allocation;
+    my $outfile_path;
+    my $readgroup_sample;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $temp_directory;
+
+    ## Default(s)
+    my $java_use_large_pages;
+    my $readgroup_id;
+    my $readgroup_library;
+    my $readgroup_platform;
+    my $readgroup_platform_unit;
+
+    my $tmpl = {
+        FILEHANDLE  => { store => \$FILEHANDLE },
+        infile_path => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$infile_path
+        },
+        java_jar             => { strict_type => 1, store => \$java_jar },
+        java_use_large_pages => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$java_use_large_pages
+        },
+        outfile_path => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$outfile_path
+        },
+        memory_allocation => { strict_type => 1, store => \$memory_allocation },
+        readgroup_id      => {
+            default     => 1,
+            defined     => 1,
+            required    => 1,
+            strict_type => 1,
+            store       => \$readgroup_id
+        },
+        readgroup_library => {
+            default     => q{undefined},
+            defined     => 1,
+            required    => 1,
+            strict_type => 1,
+            store       => \$readgroup_library
+        },
+        readgroup_platform => {
+            default     => q{Illumina},
+            defined     => 1,
+            required    => 1,
+            strict_type => 1,
+            store       => \$readgroup_platform
+        },
+        readgroup_platform_unit => {
+            default     => q{undefined},
+            defined     => 1,
+            required    => 1,
+            strict_type => 1,
+            store       => \$readgroup_platform_unit
+        },
+        readgroup_sample => {
+            defined     => 1,
+            required    => 1,
+            strict_type => 1,
+            store       => \$readgroup_sample
+        },
+        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+        stderrfile_path_append =>
+          { strict_type => 1, store => \$stderrfile_path_append },
+
+        temp_directory => { strict_type => 1, store => \$temp_directory },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    # Stores commands depending on input parameters
+    my @commands;
+
+    ## Return java core commands
+    if ($java_jar) {
+
+        @commands = java_core(
+            {
+                memory_allocation    => $memory_allocation,
+                java_use_large_pages => $java_use_large_pages,
+                temp_directory       => $temp_directory,
+                java_jar             => $java_jar,
+            }
+        );
+    }
+
+    ## Picardtools addorreaplacereadgroups
+    push @commands, q{AddOrReplaceReadGroups};
+
+    ## Infile
+    push @commands, q{INPUT=} . $infile_path;
+
+    ## Output
+    push @commands, q{OUTPUT=} . $outfile_path;
+
+    ## Readgroup id
+    push @commands, q{RGID=} . $readgroup_id;
+
+    ## Readgroup library
+    push @commands, q{RGLB=} . $readgroup_library;
+
+    ## Readgroup platform
+    push @commands, q{RGPL=} . $readgroup_platform;
+
+    ## Readgroup platform unit
+    push @commands, q{RGPU=} . $readgroup_platform_unit;
+
+    ## Readgroup sample
+    push @commands, q{RGSM=} . $readgroup_sample;
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+    return @commands;
+
+}
 
 sub picardtools_mergesamfiles {
 
