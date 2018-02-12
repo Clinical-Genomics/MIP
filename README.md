@@ -227,6 +227,7 @@ All references and template files should be placed directly in the reference dir
 * [Pedigree file] \(YAML-format\)
 * [Rank model file] \(Ini-format; Snv/indel\)
 * [SV rank model file] \(Ini-format; SV\)
+* [Qc regexp file] \(YAML-format\)
 
 #### Output
 
@@ -249,3 +250,4 @@ MIP will place any generated datafiles in the output data directory specified by
 [Perl]:https://www.perl.org/
 [Rank model file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/rank_model_cmms_-v1.20-.ini
 [SV rank model file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/svrank_model_cmms_-v1.2-.ini
+[Qc regexp file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/qc_regexp_-v1.17-.yaml
