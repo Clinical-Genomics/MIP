@@ -130,8 +130,6 @@ This will generate a batch script "mip.sh" for the install in your working direc
   ###### *Note:*  
   - The batch script will install the MIP dependencies in Conda's root environment. Often it is beneficial to create a separate environment for each of your applications. In order to create a separate environment for MIP supply the ``-env [env_name]`` flag when running *mip_install.pl*.  
 
-  - There is currently an issue with installing GATK via Conda causing the installation process to freeze. The solution at the moment is to turn of the GATK installation by running the install script together with the ``-skip gatk`` flag and install [GATK] manually.
-
   - For a full list of available options and parameters, run: ``$ perl mip_install.pl --help``
 
   - For a full list of parameter defaults, run: ``$ perl mip_install.pl -ppd``
@@ -160,9 +158,10 @@ Tools that have conflicting dependencies needs to be installed in separate conda
   * Genmod, Chanjo, Multiqc and Variant_integrity
     - requires python 3
   * Peddy
-    - conflicts with SVDB dependencies  
   * CNVnator  
     - Requires access to ROOT which disturbs the normal linking of C libraries  
+  * SVDB  
+  * VEP
 
 
   ```bash
@@ -177,11 +176,21 @@ Tools that have conflicting dependencies needs to be installed in separate conda
   ## CNVnator
   $ perl mip_install.pl -env mip_cnvnator --select_program cnvnator
   $ bash mip.sh
+
+  ## SVDB
+  $ perl mip_install.pl -env mip_svdb --select_program svdb
+  $ bash mip.sh
+
+  ## VEP
+  $ perl mip_install.pl -env mip_vep --select_program vep
+  $ bash mip.sh
   ```
 
-  In your config yaml file or on the command line you will have to supply the ``module_source_environment_command`` parameter to activate the conda environment specific for the tool. Here is an example with three Python 3 tools in their own environment and Peddy and VEP and CNVnator in each own, with some extra initialization:
+  In your config yaml file or on the command line you will have to supply the ``module_source_environment_command`` parameter to activate the conda environment specific for the tool. Here is an example with three Python 3 tools in their own environment and Peddy, CNVnator, SVDB and VEP in each own, with some extra initialization:
 
   ```Yml
+  program_source_environment_command:
+    pgenmod: "source activate mip_pyv3.6"
   module_source_environment_command:
     pchanjo_sexcheck: "source activate mip_pyv3.6"
     pcnvnator: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source [CONDA_PATH]/envs/mip_cnvnator/root/bin/thisroot.sh; source activate mip_cnvnator"
@@ -189,9 +198,14 @@ Tools that have conflicting dependencies needs to be installed in separate conda
     ppeddy: "source activate mip_peddy"
     prankvariant: "source activate mip_pyv3.6"
     psv_rankvariant: "source activate mip_pyv3.6"
-    psv_varianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source activate mip_vep"
-    pvarianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source activate mip_vep"
+    psv_combinevariantcallsets: "source activate mip_svdb"
+    psv_varianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/envs/mip_vep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source activate mip_vep"
+    pvarianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/envs/mip_vep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source activate mip_vep"
     pvariant_integrity: "source activate mip_pyv3.6"
+  source_main_environment_commands:
+    - source
+    - activate
+    - mip
   ```
 
   MIP will execute this on the node before executing the program and then revert to the ``--source_main_environment_command`` if set. Otherwise ``source deactivate`` is used to return to the conda root environment.
