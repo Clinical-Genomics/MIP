@@ -222,9 +222,11 @@ All references and template files should be placed directly in the reference dir
 
 ##### Meta-Data
 
-* [Pedigree file] \(YAML-format\)
 * [Configuration file] \(YAML-format\)
-
+* [Gene panel file]
+* [Pedigree file] \(YAML-format\)
+* [Rank model file] \(Ini-format; Snv/indel\)
+* [SV rank model file] \(Ini-format; SV\)
 
 #### Output
 
@@ -238,9 +240,12 @@ MIP will create sbatch scripts \(.sh\) and submit them in proper order with atta
 
 MIP will place any generated datafiles in the output data directory specified by `--outdata_dir`. All data files are regenerated for each analysis. STDOUT and STDERR for each program is written in the program/info directory prior to alignment and in the aligner/info directory post alignment.
 
-[Miniconda]: http://conda.pydata.org/miniconda.html
-[CPAN]: https://www.cpan.org/
-[Pedigree file]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/643594-miptest_pedigree.yaml
 [Configuration file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/mip_config.yaml
+[CPAN]: https://www.cpan.org/
 [GATK]:https://software.broadinstitute.org/gatk/
+[Gene panel file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/aggregated_master.txt
+[Miniconda]: http://conda.pydata.org/miniconda.html
+[Pedigree file]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/643594-miptest_pedigree.yaml
 [Perl]:https://www.perl.org/
+[Rank model file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/rank_model_cmms_-v1.20-.ini
+[SV rank model file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/svrank_model_cmms_-v1.2-.ini
