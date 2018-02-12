@@ -1,5 +1,0 @@
-unix_standard_streams.t
-gnu_grep.t
-gnu_cd.t
-parameter_check_allowed_temp_directory.t
-slurm_sacct.t
