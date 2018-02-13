@@ -596,6 +596,17 @@ GetOptions(
 ## Special case:Enable/activate MIP. Cannot be changed from cmd or config
 $active_parameter{mip} = $parameter{mip}{default};
 
+## Special case for boolean flag that will be removed from
+## config upon loading
+my @boolean_parameter = qw{dry_run_all};
+foreach my $parameter (@boolean_parameter) {
+
+    if ( not defined $active_parameter{$parameter} ) {
+
+        delete $active_parameter{$parameter};
+    }
+}
+
 ## Change relative path to absolute path for parameter with "update_path: absolute_path" in config
 update_to_absolute_path(
     {
@@ -615,7 +626,7 @@ if ( exists $active_parameter{config_file}
       load_yaml( { yaml_file => $active_parameter{config_file}, } );
 
     ## Remove previous analysis specific info not relevant for current run e.g. log file, which is read from pedigree or cmd
-    my @remove_keys = (qw{ log_file });
+    my @remove_keys = (qw{ log_file dry_run_all });
 
   KEY:
     foreach my $key (@remove_keys) {
@@ -1179,7 +1190,7 @@ if ( $active_parameter{config_file_analysis} ne 0 ) {
     make_path( dirname( $active_parameter{config_file_analysis} ) );
 
     ## Remove previous analysis specific info not relevant for current run e.g. log file, sample_ids which are read from pedigree or cmd
-    my @remove_keys = (qw{ associated_program dry_run_all });
+    my @remove_keys = (qw{ associated_program });
 
   KEY:
     foreach my $key (@remove_keys) {
