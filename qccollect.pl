@@ -1874,7 +1874,7 @@ q?perl -nae 'if($_=~/##SnpSiftVersion=\"(.+),/) {my $ret=$1; $ret=~s/\s/_/g;prin
       ;    #Collect SnpEff version
 
     $regexp{varianteffectpredictor}{version} =
-      q?perl -nae 'if($_=~/##VEP=(\w+)/) {print $1;last;}' ?
+      q?perl -nae 'if($_=~/##VEP="(\w+)"/) {print $1;last;}' ?
       ;    #Collect varianteffectpredictor version
 
     $regexp{varianteffectpredictor}{cache} =
@@ -1950,7 +1950,7 @@ q?perl -nae 'if($_=~/SVMETHOD=EMBL\.DELLY(v\d+\.\d+\.\d+)/) {print $1;last }' ?
       ;    #Collect SVVCFAnno version
 
     $regexp{sv_varianteffectpredictor}{version} =
-      q?perl -nae 'if($_=~/##VEP=(\w+)/) {print $1;last;}' ?
+      q?perl -nae 'if($_=~/##VEP="(\w+)"/) {print $1;last;}' ?
       ;    #Collect sv_varianteffectpredictor version
 
     $regexp{sv_varianteffectpredictor}{cache} =

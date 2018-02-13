@@ -54,9 +54,8 @@ sub update_program_mode_with_dry_run_all {
             strict_type => 1,
         },
         dry_run_all => {
-            allow       => [ 0, 1, 2 ],
-            defined     => 1,
-            required    => 1,
+            allow       => [ undef, 0, 1, 2 ],
+            default     => 0,
             store       => \$dry_run_all,
             strict_type => 1,
         },
