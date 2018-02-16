@@ -83,7 +83,7 @@ sub picardtools_addorreplacereadgroups {
             store       => \$infile_path,
             strict_type => 1,
         },
-        java_jar             => { store => \$java_jar, strict_type => 1,  },
+        java_jar             => { store => \$java_jar, strict_type => 1, },
         java_use_large_pages => {
             allow       => [ 0, 1 ],
             default     => 0,
