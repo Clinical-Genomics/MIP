@@ -41,19 +41,19 @@ Readonly my $SPACE => q{ };
 sub picardtools_addorreplacereadgroups {
 ## Function : Perl wrapper for writing picardtools addorreplacereadgroups recipe to $FILEHANDLE. Based on picardtools 2.5.0.
 ## Returns  : @commands
-## Arguments: $infile_path                    => Infile paths
-##          : $outfile_path                   => Outfile path
-##          : $stderrfile_path                => Stderrfile path
-##          : $FILEHANDLE                     => Sbatch filehandle to write to
-##          : $memory_allocation              => Memory allocation for java
-##          : $temp_directory                 => Redirect tmp files to java temp
-##          : $java_use_large_pages           => Use java large pages
+## Arguments: $FILEHANDLE                     => Sbatch filehandle to write to
+##          : $infile_path                    => Infile paths
 ##          : $java_jar                       => Java jar
+##          : $java_use_large_pages           => Use java large pages
+##          : $memory_allocation              => Memory allocation for java
+##          : $outfile_path                   => Outfile path
 ##          : $readgroup_id                   => Readgroup id value
 ##          : $readgroup_library              => Readgroup library
 ##          : $readgroup_platform             => Reagroup platform
 ##          : $readgroup_platform_unit        => ID of the sequencing unit
 ##          : $readgroup_sample               => Sample id
+##          : $stderrfile_path                => Stderrfile path
+##          : $temp_directory                 => Redirect tmp files to java temp
 
     my ($arg_href) = @_;
 
@@ -78,23 +78,23 @@ sub picardtools_addorreplacereadgroups {
     my $tmpl = {
         FILEHANDLE  => { store => \$FILEHANDLE },
         infile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
             strict_type => 1,
-            store       => \$infile_path
         },
-        java_jar             => { strict_type => 1, store => \$java_jar },
+        java_jar             => { store => \$java_jar, strict_type => 1,  },
         java_use_large_pages => {
-            default     => 0,
             allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$java_use_large_pages,
             strict_type => 1,
-            store       => \$java_use_large_pages
         },
         outfile_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
             strict_type => 1,
-            store       => \$outfile_path
+            store       => \$outfile_path,
         },
         memory_allocation => { strict_type => 1, store => \$memory_allocation },
         readgroup_id      => {
@@ -102,34 +102,34 @@ sub picardtools_addorreplacereadgroups {
             defined     => 1,
             required    => 1,
             strict_type => 1,
-            store       => \$readgroup_id
+            store       => \$readgroup_id,
         },
         readgroup_library => {
             default     => q{undefined},
             defined     => 1,
             required    => 1,
             strict_type => 1,
-            store       => \$readgroup_library
+            store       => \$readgroup_library,
         },
         readgroup_platform => {
             default     => q{Illumina},
             defined     => 1,
             required    => 1,
             strict_type => 1,
-            store       => \$readgroup_platform
+            store       => \$readgroup_platform,
         },
         readgroup_platform_unit => {
             default     => q{undefined},
             defined     => 1,
             required    => 1,
             strict_type => 1,
-            store       => \$readgroup_platform_unit
+            store       => \$readgroup_platform_unit,
         },
         readgroup_sample => {
             defined     => 1,
             required    => 1,
             strict_type => 1,
-            store       => \$readgroup_sample
+            store       => \$readgroup_sample,
         },
         stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
         stderrfile_path_append =>
@@ -148,10 +148,10 @@ sub picardtools_addorreplacereadgroups {
 
         @commands = java_core(
             {
-                memory_allocation    => $memory_allocation,
-                java_use_large_pages => $java_use_large_pages,
-                temp_directory       => $temp_directory,
                 java_jar             => $java_jar,
+                java_use_large_pages => $java_use_large_pages,
+                memory_allocation    => $memory_allocation,
+                temp_directory       => $temp_directory,
             }
         );
     }
