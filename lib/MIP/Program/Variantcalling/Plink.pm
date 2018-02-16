@@ -644,8 +644,10 @@ sub plink_sex_check {
     }
     push @commands, q{--read-freq} . $SPACE . $read_freqfile_path;
 
-    push @commands, q{--extract} . $SPACE . $extract_file;
+    if($extract_file) {
 
+      push @commands, q{--extract} . $SPACE . $extract_file;
+    }
     push @commands, q{--out} . $SPACE . $outfile_prefix;
 
     push @commands,

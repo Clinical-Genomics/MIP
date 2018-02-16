@@ -169,10 +169,10 @@ sub analysis_plink {
       qw(bcftools_view bcftools_annotate);
     use MIP::Program::Variantcalling::Plink
       qw{ plink_calculate_inbreeding plink_check_sex_chroms plink_create_mibs plink_fix_fam_ped_map_freq plink_sex_check plink_variant_pruning };
+    use MIP::Program::Variantcalling::Vt qw(vt_uniq);
     use MIP::QC::Record
       qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Program::Variantcalling::Vt qw(vt_uniq);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
@@ -257,9 +257,9 @@ sub analysis_plink {
     ## Create .fam file to be used in variant calling analyses
     create_fam_file(
         {
+            active_parameter_href => $active_parameter_href,
             fam_file_path         => $family_file,
             FILEHANDLE            => $FILEHANDLE,
-            active_parameter_href => $active_parameter_href,
             parameter_href        => $parameter_href,
             sample_info_href      => $sample_info_href,
         }
@@ -336,10 +336,10 @@ sub analysis_plink {
     say {$FILEHANDLE} q{## Create pruning set and uniq IDs};
     plink_variant_pruning(
         {
-            FILEHANDLE          => $FILEHANDLE,
             const_fid           => $family_id,
-            outfile_prefix      => $outfile_prefix,
+            FILEHANDLE          => $FILEHANDLE,
             make_bed            => 1,
+            outfile_prefix      => $outfile_prefix,
             indep               => 1,
             indep_step_size     => $INDEP_STEP_SIZE,
             indep_vif_threshold => $INDEP_VIF_THRESHOLD,
@@ -374,8 +374,8 @@ sub analysis_plink {
         {
             allow_no_sex          => $allow_no_sex,
             binary_fileset_prefix => $binary_fileset_prefix,
-            FILEHANDLE            => $FILEHANDLE,
             fam_file_path         => $family_file,
+            FILEHANDLE            => $FILEHANDLE,
             freqx                 => 1,
             make_just_fam         => 1,
             outfile_prefix        => $outfile_prefix,
@@ -459,13 +459,16 @@ sub analysis_plink {
         ## Get parameters
         my $sex_check_min_f;
         if ( $consensus_analysis_type eq q{wes} ) {
+
             $sex_check_min_f = $FEMALE_MAX_F . $SPACE . $MALE_MIN_F;
         }
         my $extract_file;
+	my $read_freqfile_path;
 
         if ( scalar @{ $active_parameter_href->{sample_ids} } > 1 ) {
 
             $extract_file = $binary_fileset_prefix . $DOT . q{prune.in};
+	    $read_freqfile_path = $binary_fileset_prefix . $DOT . q{frqx};
         }
 
         $outfile_prefix = catfile( $outfamily_directory, $family_id );
@@ -478,7 +481,7 @@ sub analysis_plink {
                 extract_file       => $extract_file,
                 FILEHANDLE         => $FILEHANDLE,
                 outfile_prefix     => $outfile_prefix,
-                read_freqfile_path => $binary_fileset_prefix . $DOT . q{frqx},
+                read_freqfile_path => $read_freqfile_path,
                 sex_check_min_f    => $sex_check_min_f,
             }
         );
