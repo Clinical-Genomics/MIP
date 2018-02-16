@@ -60,7 +60,8 @@ BEGIN {
 Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
 
-my ( $sample_info_file, $regexp_file, $print_regexp, $skip_evaluation, $evaluate_plink_gender );
+my ( $sample_info_file, $regexp_file, $print_regexp, $skip_evaluation,
+    $evaluate_plink_gender );
 
 ## Scalar parameters with defaults
 my ( $outfile, $print_regexp_outfile, $log_file ) =
@@ -84,7 +85,7 @@ GetOptions(
     q{preg|print_regexp}            => \$print_regexp,
     q{prego|print_regexp_outfile:s} => \$print_regexp_outfile,
     q{ske|skip_evaluation}          => \$skip_evaluation,
-	   q{epg|evaluate_plink_gender}          => \$evaluate_plink_gender,
+    q{epg|evaluate_plink_gender}    => \$evaluate_plink_gender,
     q{l|log_file:s}                 => \$log_file,
     ## Display help text
     q{h|help} => sub { say STDOUT $USAGE; exit; },
@@ -349,13 +350,13 @@ sub family_qc {
         ## Add extracted information to qc_data
         add_to_qc_data(
             {
-	     evaluate_plink_gender => $evaluate_plink_gender,
-                qc_data_href         => $qc_data_href,
-                qc_header_href       => $qc_header_href,
-                qc_program_data_href => $qc_program_data_href,
-                program              => $program,
-                regexp_href          => $regexp_href,
-                sample_info_href     => $sample_info_href,
+                evaluate_plink_gender => $evaluate_plink_gender,
+                qc_data_href          => $qc_data_href,
+                qc_header_href        => $qc_header_href,
+                qc_program_data_href  => $qc_program_data_href,
+                program               => $program,
+                regexp_href           => $regexp_href,
+                sample_info_href      => $sample_info_href,
             }
         );
     }
@@ -486,7 +487,7 @@ sub sample_qc {
                         program              => $program,
                         regexp_href          => $regexp_href,
                         sample_id            => $sample_id,
-		     sample_info_href     => $sample_info_href,
+                        sample_info_href     => $sample_info_href,
                     }
                 );
             }
@@ -697,19 +698,19 @@ sub add_to_qc_data {
     my $sample_info_href;
 
     my $tmpl = {
-		evaluate_plink_gender => {
-					  allow => [undef, 0, 1],
+        evaluate_plink_gender => {
+            allow       => [ undef, 0, 1 ],
             store       => \$evaluate_plink_gender,
             strict_type => 1,
         },
-        infile => { store => \$infile, strict_type => 1, },
-		program   => {
+        infile  => { store => \$infile, strict_type => 1, },
+        program => {
             defined     => 1,
             required    => 1,
             store       => \$program,
             strict_type => 1,
         },
-		qc_data_href => {
+        qc_data_href => {
             default     => {},
             defined     => 1,
             required    => 1,
@@ -730,7 +731,7 @@ sub add_to_qc_data {
             store       => \$qc_program_data_href,
             strict_type => 1,
         },
-		regexp_href => {
+        regexp_href => {
             default     => {},
             defined     => 1,
             required    => 1,
@@ -823,8 +824,9 @@ sub add_to_qc_data {
                           [$regexp_key_counter];
                     }
                     ## Check gender for sample_id
-                    if ( $program eq q{plink_sexcheck}
-		       && $evaluate_plink_gender) {
+                    if (   $program eq q{plink_sexcheck}
+                        && $evaluate_plink_gender )
+                    {
 
                         ## Array ref
                         my @sexchecks = split(
