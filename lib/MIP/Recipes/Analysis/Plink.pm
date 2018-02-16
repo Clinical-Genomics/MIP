@@ -463,12 +463,12 @@ sub analysis_plink {
             $sex_check_min_f = $FEMALE_MAX_F . $SPACE . $MALE_MIN_F;
         }
         my $extract_file;
-	my $read_freqfile_path;
+        my $read_freqfile_path;
 
         if ( scalar @{ $active_parameter_href->{sample_ids} } > 1 ) {
 
-            $extract_file = $binary_fileset_prefix . $DOT . q{prune.in};
-	    $read_freqfile_path = $binary_fileset_prefix . $DOT . q{frqx};
+            $extract_file       = $binary_fileset_prefix . $DOT . q{prune.in};
+            $read_freqfile_path = $binary_fileset_prefix . $DOT . q{frqx};
         }
 
         $outfile_prefix = catfile( $outfamily_directory, $family_id );

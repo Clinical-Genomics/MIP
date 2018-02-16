@@ -617,13 +617,12 @@ sub plink_sex_check {
             store       => \$binary_fileset_prefix,
             strict_type => 1,
         },
-        extract_file =>
-          { required => 1, store => \$extract_file, strict_type => 1, },
-        FILEHANDLE => { store => \$FILEHANDLE, },
+        extract_file => { store => \$extract_file, strict_type => 1, },
+        FILEHANDLE   => { store => \$FILEHANDLE, },
         outfile_prefix =>
           { required => 1, store => \$outfile_prefix, strict_type => 1, },
         read_freqfile_path =>
-          { required => 1, store => \$read_freqfile_path, strict_type => 1, },
+          { store => \$read_freqfile_path, strict_type => 1, },
         sex_check_min_f => { store => \$sex_check_min_f, strict_type => 1, },
         stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
 
@@ -642,11 +641,15 @@ sub plink_sex_check {
 
         push @commands, $sex_check_min_f;
     }
-    push @commands, q{--read-freq} . $SPACE . $read_freqfile_path;
 
-    if($extract_file) {
+    if ($read_freqfile_path) {
 
-      push @commands, q{--extract} . $SPACE . $extract_file;
+        push @commands, q{--read-freq} . $SPACE . $read_freqfile_path;
+    }
+
+    if ($extract_file) {
+
+        push @commands, q{--extract} . $SPACE . $extract_file;
     }
     push @commands, q{--out} . $SPACE . $outfile_prefix;
 
