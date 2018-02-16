@@ -90,12 +90,6 @@ sub picardtools_addorreplacereadgroups {
             store       => \$java_use_large_pages,
             strict_type => 1,
         },
-        outfile_path => {
-            defined     => 1,
-            required    => 1,
-            strict_type => 1,
-            store       => \$outfile_path,
-        },
         memory_allocation => { strict_type => 1, store => \$memory_allocation },
         readgroup_id      => {
             default     => 1,
@@ -103,6 +97,12 @@ sub picardtools_addorreplacereadgroups {
             required    => 1,
             strict_type => 1,
             store       => \$readgroup_id,
+        },
+        outfile_path => {
+            defined     => 1,
+            required    => 1,
+            strict_type => 1,
+            store       => \$outfile_path,
         },
         readgroup_library => {
             default     => q{undefined},
