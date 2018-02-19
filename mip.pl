@@ -45,7 +45,8 @@ use MIP::Check::Reference
 use MIP::File::Format::Pedigree
   qw{ create_fam_file parse_yaml_pedigree_file reload_previous_pedigree_info };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
-use MIP::Get::Analysis qw{ get_overall_analysis_type print_program };
+use MIP::Get::Analysis
+  qw{ get_dependency_tree get_overall_analysis_type print_program };
 use MIP::Get::File qw{ get_select_file_contigs };
 use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
 use MIP::Script::Utils qw{ help };
@@ -57,7 +58,7 @@ use MIP::Update::Parameters
   qw{ update_dynamic_config_parameters update_reference_parameters update_vcfparser_outfile_counter };
 use MIP::Update::Path qw{ update_to_absolute_path };
 use MIP::Update::Programs
-  qw{ update_program_mode_with_dry_run_all update_program_mode update_prioritize_flag };
+  qw{ update_prioritize_flag update_program_mode_for_analysis_type update_program_mode_with_dry_run_all update_program_mode_with_start_with };
 
 ## Recipes
 use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
@@ -216,6 +217,7 @@ GetOptions(
     q{cfa|config_file_analysis:s} => \$active_parameter{config_file_analysis},
     q{sif|sample_info_file:s}     => \$active_parameter{sample_info_file},
     q{dra|dry_run_all}            => \$active_parameter{dry_run_all},
+    q{swp|start_with_program:s}   => \$active_parameter{start_with_program},
     q{jul|java_use_large_pages}   => \$active_parameter{java_use_large_pages},
     q{ges|genomic_set:s}          => \$active_parameter{genomic_set},
     q{rio|reduce_io}              => \$active_parameter{reduce_io},
@@ -1102,6 +1104,40 @@ check_program_mode(
     }
 );
 
+## Get initiation program, downstream dependencies and update program modes
+if ( $active_parameter{start_with_program} ) {
+
+    my %dependency_tree = load_yaml(
+        {
+            yaml_file =>
+              catfile( $Bin, qw{ definitions define_wgs_initiation.yaml } ),
+        }
+    );
+    my @start_with_programs;
+    my $is_program_found = 0;
+    my $is_chain_found   = 0;
+
+    ## Collects all downstream programs from initation point
+    get_dependency_tree(
+        {
+            dependency_tree_href    => \%dependency_tree,
+            is_program_found_ref    => \$is_program_found,
+            is_chain_found_ref      => \$is_chain_found,
+            program                 => $active_parameter{start_with_program},
+            start_with_programs_ref => \@start_with_programs,
+        }
+    );
+
+    ## Update program mode depending on start with flag
+    update_program_mode_with_start_with(
+        {
+            active_parameter_href => \%active_parameter,
+            programs_ref => \@{ $parameter{dynamic_parameter}{program} },
+            start_with_programs_ref => \@start_with_programs,
+        }
+    );
+}
+
 ## Update program mode depending on dry_run_all flag
 update_program_mode_with_dry_run_all(
     {
@@ -1161,7 +1197,7 @@ foreach my $parameter_info (@broadcasts) {
 }
 
 ## Update program mode depending on analysis run value as some programs are not applicable for e.g. wes
-update_program_mode(
+update_program_mode_for_analysis_type(
     {
         active_parameter_href => \%active_parameter,
         consensus_analysis_type =>
@@ -1696,6 +1732,7 @@ sub build_usage {
     -cfa/--config_file_analysis                                    Write YAML configuration file for analysis parameters (defaults to "")
     -sif/--sample_info_file                                        YAML file for sample info used in the analysis (defaults to "{outdata_dir}/{family_id}/{family_id}_qc_sample_info.yaml")
     -dra/--dry_run_all                                             Sets all programs to dry run mode i.e. no sbatch submission (supply flag to enable)
+    -swp/start_with_program                                        Start analysis wirh program (defaults to "")
     -jul/--java_use_large_pages                                    Use large page memory. (supply flag to enable)
     -ges/--genomic_set                                             Selection of relevant regions post alignment (Format=sorted BED; defaults to "")
     -rio/--reduce_io                                               Run consecutive models at nodes (supply flag to enable)
