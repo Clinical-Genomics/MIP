@@ -71,6 +71,19 @@ $ mip -c 0/analysis/0_config.yaml
 ```Bash
 $ mip -c 0/analysis/0_config.yaml -dra
 ```
+
+### Turn on individual or consecutive programs 
+After performing a dry run all programs are set to simulation mode in the config. If you want run one or several programs set them to "1" in the config or supply them on the command line.
+```Bash
+$ mip -c 0/analysis/0_config.yaml --pbwa_mem 1 --ppeddy 1
+```
+
+### Run all downstream dependencies starting from a program
+```Bash
+$ mip -c 0/analysis/0_config.yaml --start_with_program pgatk_variantrecalibration
+```
+This will swith the mode for all downstream dependencies to run and all programs upstream of the program to simulation mode.
+
 ### Generate all supported standard programs
 
 ```Bash
