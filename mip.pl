@@ -1732,7 +1732,7 @@ sub build_usage {
     -cfa/--config_file_analysis                                    Write YAML configuration file for analysis parameters (defaults to "")
     -sif/--sample_info_file                                        YAML file for sample info used in the analysis (defaults to "{outdata_dir}/{family_id}/{family_id}_qc_sample_info.yaml")
     -dra/--dry_run_all                                             Sets all programs to dry run mode i.e. no sbatch submission (supply flag to enable)
-    -swp/start_with_program                                        Start analysis wirh program (defaults to "")
+    -swp/--start_with_program                                      Start analysis wirh program (defaults to "")
     -jul/--java_use_large_pages                                    Use large page memory. (supply flag to enable)
     -ges/--genomic_set                                             Selection of relevant regions post alignment (Format=sorted BED; defaults to "")
     -rio/--reduce_io                                               Run consecutive models at nodes (supply flag to enable)
