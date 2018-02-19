@@ -51,11 +51,11 @@ initiation:
             - pdelly_call
             - pdelly_reformat
       - psv_combinevariantcallsets
-      - pvcf2cytosure
       - psv_varianteffectpredictor
       - psv_vcfparser
       - psv_rankvariant
       - psv_reformat
+      - pvcf2cytosure
    - pqccollect
    - pmultiqc
    - panalysisrunstatus
