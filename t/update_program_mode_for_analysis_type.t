@@ -91,9 +91,9 @@ BEGIN {
     }
 }
 
-use MIP::Update::Programs qw{ update_program_mode };
+use MIP::Update::Programs qw{ update_program_mode_for_analysis_type };
 
-diag(   q{Test update_program_mode from Programs.pm v}
+diag(   q{Test update_program_mode_for_analysis_type from Programs.pm v}
       . $MIP::Update::Programs::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -126,7 +126,7 @@ my %active_parameter = (
     ptiddit                => 1,
 );
 
-my @warning_msgs = update_program_mode(
+my @warning_msgs = update_program_mode_for_analysis_type(
     {
         active_parameter_href   => \%active_parameter,
         consensus_analysis_type => q{wgs},
@@ -137,7 +137,7 @@ my @warning_msgs = update_program_mode(
 
 is( @warning_msgs, 0, q{No updates to programs mode} );
 
-@warning_msgs = update_program_mode(
+@warning_msgs = update_program_mode_for_analysis_type(
     {
         active_parameter_href   => \%active_parameter,
         consensus_analysis_type => q{wes},

@@ -154,6 +154,12 @@ dry_run_all:
   data_type: SCALAR
   mandatory: no
   type: mip
+start_with_program:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  mandatory: no
+  type: mip
 genomic_set:
   associated_program:
    - mip

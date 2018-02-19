@@ -45,7 +45,8 @@ use MIP::Check::Reference
 use MIP::File::Format::Pedigree
   qw{ create_fam_file parse_yaml_pedigree_file reload_previous_pedigree_info };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
-use MIP::Get::Analysis qw{ get_overall_analysis_type print_program };
+use MIP::Get::Analysis
+  qw{ get_dependency_tree get_overall_analysis_type print_program };
 use MIP::Get::File qw{ get_select_file_contigs };
 use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
 use MIP::Script::Utils qw{ help };
@@ -57,7 +58,7 @@ use MIP::Update::Parameters
   qw{ update_dynamic_config_parameters update_reference_parameters update_vcfparser_outfile_counter };
 use MIP::Update::Path qw{ update_to_absolute_path };
 use MIP::Update::Programs
-  qw{ update_program_mode_with_dry_run_all update_program_mode update_prioritize_flag };
+  qw{ update_prioritize_flag update_program_mode_for_analysis_type update_program_mode_with_dry_run_all update_program_mode_with_start_with };
 
 ## Recipes
 use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
@@ -150,7 +151,7 @@ check_parameter_hash(
 );
 
 ## Set MIP version
-our $VERSION = 'v6.0.3';
+our $VERSION = 'v6.0.4';
 
 ## Holds all active parameters
 my %active_parameter;
@@ -216,6 +217,7 @@ GetOptions(
     q{cfa|config_file_analysis:s} => \$active_parameter{config_file_analysis},
     q{sif|sample_info_file:s}     => \$active_parameter{sample_info_file},
     q{dra|dry_run_all}            => \$active_parameter{dry_run_all},
+    q{swp|start_with_program:s}   => \$active_parameter{start_with_program},
     q{jul|java_use_large_pages}   => \$active_parameter{java_use_large_pages},
     q{ges|genomic_set:s}          => \$active_parameter{genomic_set},
     q{rio|reduce_io}              => \$active_parameter{reduce_io},
@@ -1102,6 +1104,40 @@ check_program_mode(
     }
 );
 
+## Get initiation program, downstream dependencies and update program modes
+if ( $active_parameter{start_with_program} ) {
+
+    my %dependency_tree = load_yaml(
+        {
+            yaml_file =>
+              catfile( $Bin, qw{ definitions define_wgs_initiation.yaml } ),
+        }
+    );
+    my @start_with_programs;
+    my $is_program_found = 0;
+    my $is_chain_found   = 0;
+
+    ## Collects all downstream programs from initation point
+    get_dependency_tree(
+        {
+            dependency_tree_href    => \%dependency_tree,
+            is_program_found_ref    => \$is_program_found,
+            is_chain_found_ref      => \$is_chain_found,
+            program                 => $active_parameter{start_with_program},
+            start_with_programs_ref => \@start_with_programs,
+        }
+    );
+
+    ## Update program mode depending on start with flag
+    update_program_mode_with_start_with(
+        {
+            active_parameter_href => \%active_parameter,
+            programs_ref => \@{ $parameter{dynamic_parameter}{program} },
+            start_with_programs_ref => \@start_with_programs,
+        }
+    );
+}
+
 ## Update program mode depending on dry_run_all flag
 update_program_mode_with_dry_run_all(
     {
@@ -1161,7 +1197,7 @@ foreach my $parameter_info (@broadcasts) {
 }
 
 ## Update program mode depending on analysis run value as some programs are not applicable for e.g. wes
-update_program_mode(
+update_program_mode_for_analysis_type(
     {
         active_parameter_href => \%active_parameter,
         consensus_analysis_type =>
@@ -1696,6 +1732,7 @@ sub build_usage {
     -cfa/--config_file_analysis                                    Write YAML configuration file for analysis parameters (defaults to "")
     -sif/--sample_info_file                                        YAML file for sample info used in the analysis (defaults to "{outdata_dir}/{family_id}/{family_id}_qc_sample_info.yaml")
     -dra/--dry_run_all                                             Sets all programs to dry run mode i.e. no sbatch submission (supply flag to enable)
+    -swp/--start_with_program                                      Start analysis wirh program (defaults to "")
     -jul/--java_use_large_pages                                    Use large page memory. (supply flag to enable)
     -ges/--genomic_set                                             Selection of relevant regions post alignment (Format=sorted BED; defaults to "")
     -rio/--reduce_io                                               Run consecutive models at nodes (supply flag to enable)
@@ -1996,7 +2033,6 @@ sub build_usage {
        -pvrdrs/--vrd_region_start                                  Column for region start position in the output (default 2)
        -pvrdsa/--vrd_segment_annotn                                Column for segment annotation in the output (default 4)
        -pvrdso/--vrd_somatic_only                                  Output only candidate somatic (default no)
-       
 END_USAGE
 }
 
@@ -2122,114 +2158,111 @@ sub collect_infiles {
 
 sub infiles_reformat {
 
-##infiles_reformat
-
-##Function : Reformat files for MIP output, which have not yet been created into, correct format so that a sbatch script can be generated with the correct filenames.
-##Returns  : "$uncompressed_file_counter"
-##Arguments: $active_parameter_href, $sample_info_href, $file_info_href, $infile_href, $indir_path_href, $infile_lane_prefix_href, $infile_both_strands_prefix_href, $lane_href, $job_id_href, $program_name, $outaligner_dir_ref
-##         : $active_parameter_href              => Active parameters for this analysis hash {REF}
-##         : $sample_info_href                   => Info on samples and family hash {REF}
-##         : $file_info_href                     => File info hash {REF}
-##         : $infile_href                        => Infiles hash {REF}
-##         : $indir_path_href                    => Indirectories path(s) hash {REF}
-##         : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
-##         : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
-##         : $lane_href                          => The lane info hash {REF}
-##         : $job_id_href                        => Job id hash {REF}
-##         : $program_name                       => Program name {REF}
-##         : $outaligner_dir_ref                 => Outaligner_dir used in the analysis {REF}
+## Function : Reformat files for MIP output, which have not yet been created into, correct format so that a sbatch script can be generated with the correct filenames.
+## Returns  : "$uncompressed_file_counter"
+## Arguments: $active_parameter_href           => Active parameters for this analysis hash {REF}
+##          : $file_info_href                  => File info hash {REF}
+##          : $indir_path_href                 => Indirectories path(s) hash {REF}
+##          : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
+##          : $infile_href                     => Infiles hash {REF}
+##          : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
+##          : $job_id_href                     => Job id hash {REF}
+##          : $lane_href                       => The lane info hash {REF}
+##          : $outaligner_dir_ref              => Outaligner_dir used in the analysis {REF}
+##          : $program_name                    => Program name {REF}
+##          : $sample_info_href                => Info on samples and family hash {REF}
 
     my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $file_info_href;
+    my $indir_path_href;
+    my $infile_both_strands_prefix_href;
+    my $infile_href;
+    my $infile_lane_prefix_href;
+    my $job_id_href;
+    my $lane_href;
+    my $program_name;
+    my $sample_info_href;
 
     ## Default(s)
     my $outaligner_dir_ref;
 
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $infile_href;
-    my $indir_path_href;
-    my $infile_lane_prefix_href;
-    my $infile_both_strands_prefix_href;
-    my $lane_href;
-    my $job_id_href;
-    my $program_name;
-
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
             strict_type => 1,
-            store       => \$sample_info_href,
         },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$file_info_href,
-        },
-        infile_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
             strict_type => 1,
-            store       => \$infile_href
         },
         indir_path_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$indir_path_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
             defined     => 1,
-            default     => {},
+            required    => 1,
+            store       => \$indir_path_href,
             strict_type => 1,
-            store       => \$infile_lane_prefix_href,
         },
         infile_both_strands_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_both_strands_prefix_href,
             strict_type => 1,
-            store       => \$infile_both_strands_prefix_href
         },
-        lane_href => {
-            required    => 1,
-            defined     => 1,
+        infile_href => {
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_href,
             strict_type => 1,
-            store       => \$lane_href
+        },
+        infile_lane_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
+            strict_type => 1,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$job_id_href,
-        },
-        program_name => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
             strict_type => 1,
-            store       => \$program_name,
+        },
+        lane_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$lane_href,
+            strict_type => 1,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
             store       => \$outaligner_dir_ref,
+            strict_type => 1,
+        },
+        program_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$program_name,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
         },
     };
 
@@ -2247,6 +2280,7 @@ sub infiles_reformat {
         # Needed to be able to track when lanes are finished
         my $lane_tracker = 0;
 
+      INFILE:
         while ( my ( $file_index, $file_name ) =
             each( @{ $infile_href->{$sample_id} } ) )
         {
@@ -2254,51 +2288,54 @@ sub infiles_reformat {
             ## Check if a file is gzipped.
             my $compressed_switch =
               check_gzipped( { file_name_ref => \$file_name, } );
-            my $read_file_command = "zcat";
+            my $read_file_command = q{zcat};
 
-            if ( !$compressed_switch ) {    #Not compressed
+            ## Not compressed
+            if ( not $compressed_switch ) {
 
-                $uncompressed_file_counter = "uncompressed"
-                  ; #File needs compression before starting analysis. Note: All files are rechecked downstream and uncompressed ones are gzipped automatically
-                $read_file_command = "cat";
+                ## File needs compression before starting analysis. Note: All files are rechecked downstream and uncompressed ones are gzipped automatically
+                $uncompressed_file_counter = q{uncompressed};
+                $read_file_command         = q{cat};
             }
 
+            ## Parse 'new' no "index" format $1=lane, $2=date,
+            ## $3=Flow-cell, $4=Sample_id, $5=index,$6=direction
             if (
                 $file_name =~ /(\d+)_(\d+)_([^_]+)_([^_]+)_([^_]+)_(\d).fastq/ )
-            { #Parse 'new' no "index" format $1=lane, $2=date, $3=Flow-cell, $4=Sample_id, $5=index,$6=direction
+            {
 
                 ## Check that the sample_id provided and sample_id in infile name match.
                 check_sample_id_match(
                     {
                         active_parameter_href => $active_parameter_href,
+                        file_index            => $file_index,
                         infile_href           => $infile_href,
-                        sample_id             => $sample_id,
                         infile_sample_id => $4,    #$4 = Sample_id from filename
-                        file_index => $file_index,
+                        sample_id => $sample_id,
                     }
                 );
 
                 ## Adds information derived from infile name to sample_info hash. Tracks the number of lanes sequenced and checks unique array elementents.
                 add_infile_info(
                     {
-                        active_parameter_href   => $active_parameter_href,
-                        sample_info_href        => $sample_info_href,
-                        file_info_href          => $file_info_href,
-                        lane_href               => $lane_href,
-                        infile_href             => $infile_href,
-                        indir_path_href         => $indir_path_href,
-                        infile_lane_prefix_href => $infile_lane_prefix_href,
+                        active_parameter_href => $active_parameter_href,
+                        compressed_switch     => $compressed_switch,
+                        date                  => $2,
+                        direction             => $6,
+                        file_info_href        => $file_info_href,
+                        file_index            => $file_index,
+                        flowcell              => $3,
+                        index                 => $5,
+                        indir_path_href       => $indir_path_href,
                         infile_both_strands_prefix_href =>
                           $infile_both_strands_prefix_href,
-                        lane              => $1,
-                        date              => $2,
-                        flowcell          => $3,
-                        sample_id         => $4,
-                        index             => $5,
-                        direction         => $6,
-                        lane_tracker_ref  => \$lane_tracker,
-                        file_index        => $file_index,
-                        compressed_switch => $compressed_switch,
+                        infile_href             => $infile_href,
+                        infile_lane_prefix_href => $infile_lane_prefix_href,
+                        lane                    => $1,
+                        lane_href               => $lane_href,
+                        lane_tracker_ref        => \$lane_tracker,
+                        sample_id               => $4,
+                        sample_info_href        => $sample_info_href,
                     }
                 );
             }
@@ -2306,19 +2343,17 @@ sub infiles_reformat {
             {    #No regexp match i.e. file does not follow filename convention
 
                 $log->warn(
-                        "Could not detect MIP file name convention for file: "
+                        q{Could not detect MIP file name convention for file: }
                       . $file_name
-                      . ". \n" );
+                      . q{.} );
                 $log->warn(
-                    "Will try to find mandatory information in fastq header.",
-                    "\n" );
+                    q{Will try to find mandatory information in fastq header.});
 
-                ##Check that file name at least contains sample_id
+                ## Check that file name at least contains sample_id
                 if ( $file_name !~ /$sample_id/ ) {
 
                     $log->fatal(
-"Please check that the file name contains the sample_id.",
-                        "\n"
+q{Please check that the file name contains the sample_id.}
                     );
                 }
 
@@ -2326,49 +2361,49 @@ sub infiles_reformat {
                 my @fastq_info_headers = get_run_info(
                     {
                         directory         => $indir_path_href->{$sample_id},
-                        read_file_command => $read_file_command,
                         file              => $file_name,
+                        read_file_command => $read_file_command,
                     }
                 );
 
                 ## Adds information derived from infile name to sample_info hash. Tracks the number of lanes sequenced and checks unique array elementents.
                 add_infile_info(
                     {
-                        active_parameter_href   => $active_parameter_href,
-                        sample_info_href        => $sample_info_href,
-                        file_info_href          => $file_info_href,
-                        lane_href               => $lane_href,
-                        infile_href             => $infile_href,
-                        indir_path_href         => $indir_path_href,
-                        infile_lane_prefix_href => $infile_lane_prefix_href,
+                        active_parameter_href => $active_parameter_href,
+                        compressed_switch     => $compressed_switch,
+                        ## fastq format does not contain a date of the run,
+                        ## so fake it with constant impossible date
+                        date            => q{000101},
+                        direction       => $fastq_info_headers[4],
+                        file_index      => $file_index,
+                        file_info_href  => $file_info_href,
+                        flowcell        => $fastq_info_headers[2],
+                        index           => $fastq_info_headers[5],
+                        indir_path_href => $indir_path_href,
                         infile_both_strands_prefix_href =>
                           $infile_both_strands_prefix_href,
-                        lane => $fastq_info_headers[3],
-                        date => "000101"
-                        , #fastq format does not contain a date of the run, so fake it with constant impossible date
-                        flowcell          => $fastq_info_headers[2],
-                        sample_id         => $sample_id,
-                        index             => $fastq_info_headers[5],
-                        direction         => $fastq_info_headers[4],
-                        lane_tracker_ref  => \$lane_tracker,
-                        file_index        => $file_index,
-                        compressed_switch => $compressed_switch,
+                        infile_href             => $infile_href,
+                        infile_lane_prefix_href => $infile_lane_prefix_href,
+                        lane                    => $fastq_info_headers[3],
+                        lane_href               => $lane_href,
+                        lane_tracker_ref        => \$lane_tracker,
+                        sample_id               => $sample_id,
+                        sample_info_href        => $sample_info_href,
                     }
                 );
 
                 $log->info(
-                    "Found following information from fastq header: lane="
+                        q{Found following information from fastq header: lane=}
                       . $fastq_info_headers[3]
-                      . " flow-cell="
+                      . q{ flow-cell=}
                       . $fastq_info_headers[2]
-                      . " index="
+                      . q{ index=}
                       . $fastq_info_headers[5]
-                      . " direction="
+                      . q{ direction=}
                       . $fastq_info_headers[4],
-                    "\n"
                 );
                 $log->warn(
-"Will add fake date '20010101' to follow file convention since this is not recorded in fastq header\n"
+q{Will add fake date '20010101' to follow file convention since this is not recorded in fastq header}
                 );
             }
         }
@@ -5365,50 +5400,54 @@ sub check_aligner {
 
 sub collect_read_length {
 
-##collect_read_length
-
-##Function : Collect read length from an infile
-##Returns  : "readLength"
-##Arguments: $directory, $read_file, $file
-##         : $directory => Directory of file
-##         : $read_file => Command used to read file
-##         : $file      => File to parse
+## Function : Collect read length from an infile
+## Returns  : "readLength"
+## Arguments: $directory => Directory of file
+##          : $file      => File to parse
+##          : $read_file => Command used to read file
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $directory;
-    my $read_file_command;
     my $file;
+    my $read_file_command;
 
     my $tmpl = {
         directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$directory,
             strict_type => 1,
-            store       => \$directory
         },
         read_file_command => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$read_file_command,
             strict_type => 1,
-            store       => \$read_file_command
         },
         file =>
-          { required => 1, defined => 1, strict_type => 1, store => \$file },
+          { defined => 1, required => 1, store => \$file, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    ## Prints sequence length and exits
     my $seq_length_regexp =
-q?perl -ne 'if ($_!~/@/) {chomp($_);my $seq_length = length($_);print $seq_length;last;}' ?
-      ;    #Prints sequence length and exits
+q?perl -ne 'if ($_!~/@/) {chomp($_);my $seq_length = length($_);print $seq_length;last;}' ?;
 
-    my $pwd = cwd();      #Save current direcory
-    chdir($directory);    #Move to sample_id infile directory
+    ## Save current direcory
+    my $pwd = cwd();
 
-    my $ret =
-      `$read_file_command $file | $seq_length_regexp;`; #Collect sequence length
+    ## Move to sample_id infile directory
+    chdir($directory);
+
+    ## Collect sequence length
+    my $ret = `$read_file_command $file | $seq_length_regexp;`;
+
+    ## Move to original directory
+    chdir($pwd);
+
     return $ret;
 }
 
