@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_vcf2cytosure };
@@ -158,7 +158,7 @@ sub analysis_vcf2cytosure {
     use MIP::Program::Variantcalling::Vcf2cytosure qw{ vcf2cytosure_convert };
     use MIP::Processmanagement::Processes qw{ print_wait };
     use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_family };
+      qw{ slurm_submit_job_sample_id_dependency_family_dead_end };
     use MIP::Program::Variantcalling::Bcftools qw{ bcftools_view };
     use MIP::Program::Variantcalling::Tiddit qw{ tiddit_coverage };
     use MIP::QC::Record qw{ add_program_outfile_to_sample_info };
@@ -368,7 +368,8 @@ sub analysis_vcf2cytosure {
         # Bcftools view
         bcftools_view(
             {
-                exclude      => $active_parameter_href->{vcf2cytosure_exclude_filter},
+                exclude =>
+                  $active_parameter_href->{vcf2cytosure_exclude_filter},
                 FILEHANDLE   => $FILEHANDLE,
                 infile_path  => catfile( $temp_directory, $merged_sv_vcf ),
                 samples_ref  => [$sample_id],
@@ -437,7 +438,7 @@ q{## Converting sample's SV VCF file into cytosure, using Vcf2cytosure}
 
     if ( $mip_program_mode == 1 ) {
 
-        slurm_submit_job_sample_id_dependency_add_to_family(
+        slurm_submit_job_sample_id_dependency_family_dead_end(
             {
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
