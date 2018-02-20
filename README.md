@@ -110,9 +110,6 @@ $ cd definitions
 $ cpanm --installdeps .
 $ cd -
 ```  
-  ###### *Note:*  
-  - Some versions of the cpan module List::MoreUtils has conflicts with certain versions of Perl. Perl v 5.18.2 has been confirmed to be compatible with version 0.4.13 of the List::MoreUtils module.
-  If you experience issues with that module, try to reinstall it by running: ``cpanm --reinstall List::MoreUtils@0.4.13 ``
 
 ##### 3.Test conda and mip_installation (optional)
 
