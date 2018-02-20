@@ -25,6 +25,13 @@ initiation:
             - pgatk_genotypegvcfs
             - pgatk_variantrecalibration
       - pgatk_combinevariantcallsets
+      - PARALLEL:
+         - ppeddy
+         - pplink
+         - pvariant_integrity
+         - prtg_vcfeval
+         - pevaluation
+         - pgatk_variantevalall
       - pprepareforvariantannotationblock
       - prhocall
       - pvt
@@ -35,13 +42,6 @@ initiation:
       - prankvariant
       - pendvariantannotationblock
       - pgatk_variantevalexome
-      - PARALLEL:
-         - ppeddy
-         - pplink
-         - pvariant_integrity
-         - prtg_vcfeval
-         - pevaluation
-         - pgatk_variantevalall
    - CHAIN_SV:
       - PARALLEL:
          - pcnvnator
