@@ -38,7 +38,7 @@ use lib catdir( $Bin, q{lib} );
 use MIP::Check::Cluster qw{ check_max_core_number };
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Check::Parameter
-  qw{ check_allowed_temp_directory check_cmd_config_vs_definition_file check_parameter_hash };
+  qw{ check_allowed_temp_directory check_cmd_config_vs_definition_file check_email_address check_parameter_hash };
 use MIP::Check::Path qw{ check_target_bed_file_suffix check_parameter_files };
 use MIP::Check::Reference
   qw{ check_bwa_prerequisites check_capture_file_prerequisites check_human_genome_file_endings check_human_genome_prerequisites check_parameter_metafiles check_references_for_vt check_rtg_prerequisites };
@@ -925,10 +925,15 @@ detect_founders(
     }
 );
 
-## Check email adress format
-if ( defined $active_parameter{email} ) {    #Allow no malformed email adress
+## Check email adress syntax and mail host
+if ( defined $active_parameter{email} ) {
 
-    check_email_address( { email_ref => \$active_parameter{email}, } );
+    check_email_address(
+        {
+            email => $active_parameter{email},
+            log   => $log,
+        }
+    );
 }
 
 if (
@@ -4341,47 +4346,6 @@ sub remove_pedigree_elements {
                 delete( $hash_ref->{sample}{$sample_id}{$pedigree_element} );
             }
         }
-    }
-}
-
-sub check_email_address {
-
-##check_email_address
-
-##Function : Check the syntax of the email adress is valid not that it is actually exists.
-##Returns  : ""
-##Arguments: $email_ref
-##         : $email_ref => The email adress
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $email_ref;
-
-    my $tmpl = {
-        email_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$email_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    $$email_ref =~
-      /[ |\t|\r|\n]*\"?([^\"]+\"?@[^ <>\t]+\.[^ <>\t][^ <>\t]+)[ |\t|\r|\n]*/;
-
-    unless ( defined($1) ) {
-
-        $log->fatal(
-            "The supplied email: " . $$email_ref . " seem to be malformed. ",
-            "\n" );
-        exit 1;
     }
 }
 
