@@ -835,9 +835,10 @@ sub read_sv_infile_vcf {
             $vep_key_value = 0;
         }
 
-        my @todo_keys = qw{ APPRIS TSL Existing_variation
-          LoF_flags MOTIF_NAME MOTIF_POS HIGH_INF_POS
-          MOTIF_SCORE_CHANGE LoF_filter };
+        my @todo_keys =
+          qw{ APPRIS Codons DOMAINS Existing_variation HIGH_INF_POS
+          HGVSp Amino_acids LoF_flags LoF_filter MOTIF_NAME MOTIF_POS
+          MOTIF_SCORE_CHANGE TSL };
 
         if ( any { $_ eq $vep_key } @todo_keys ) {
 
