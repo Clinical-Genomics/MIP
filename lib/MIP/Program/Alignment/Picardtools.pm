@@ -41,7 +41,8 @@ Readonly my $SPACE => q{ };
 sub picardtools_addorreplacereadgroups {
 ## Function : Perl wrapper for writing picardtools addorreplacereadgroups recipe to $FILEHANDLE. Based on picardtools 2.5.0.
 ## Returns  : @commands
-## Arguments: $FILEHANDLE                     => Sbatch filehandle to write to
+## Arguments: $active_parameter_href          => Active parameters for this analysis hash {REF}
+##          : $FILEHANDLE                     => Sbatch filehandle to write to
 ##          : $infile_path                    => Infile paths
 ##          : $java_jar                       => Java jar
 ##          : $java_use_large_pages           => Use java large pages
