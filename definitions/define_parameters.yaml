@@ -936,7 +936,6 @@ ptiddit:
   coverage_file_suffix: ".tab"
   program_name_path:
    - TIDDIT.py
-   - svdb
   program_type: structural_variant_callers
   type: program
 tiddit_minimum_number_supporting_pairs:
@@ -956,7 +955,6 @@ psv_combinevariantcallsets:
   program_name_path:
    - vt
    - bcftools
-   - svdb
   type: program
 pvcf2cytosure:
   associated_program:
