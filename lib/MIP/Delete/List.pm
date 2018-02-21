@@ -219,7 +219,6 @@ sub delete_contig_elements {
         @cleansed_contigs = grep { $_ ne $remove_contig } @cleansed_contigs;
 
     }
-    say STDERR join " ", @cleansed_contigs;
     return @cleansed_contigs;
 }
 
