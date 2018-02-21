@@ -254,32 +254,17 @@ sub analysis_sv_reformat {
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
     my @contigs = delete_contig_elements(
         {
-            elements_ref       => \@{ $file_info_href->{contigs} },
+            elements_ref       => \@{ $file_info_href->{contigs_sv} },
             remove_contigs_ref => [qw{ MT M }],
         }
     );
 
     my @contigs_size_ordered = delete_contig_elements(
         {
-            elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
+            elements_ref => \@{ $file_info_href->{contigs_sv_size_ordered} },
             remove_contigs_ref => [qw{ MT M }],
         }
     );
-
-    ### If no males or other remove contig Y from all downstream analysis
-    my @contig_arrays = ( \@contigs_size_ordered, \@contigs );
-
-  CONTIGS_REF:
-    foreach my $array_ref (@contig_arrays) {
-
-        ## Removes contig_names from contigs array if no male or other found
-        $array_ref = delete_male_contig(
-            {
-                contigs_ref => $array_ref,
-                found_male  => $active_parameter_href->{found_male},
-            }
-        );
-    }
 
     ## Determined by vcfparser output
     for my $vcfparser_outfile_counter ( 0 .. $VCFPARSER_OUTFILE_COUNT ) {
