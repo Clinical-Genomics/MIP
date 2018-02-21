@@ -105,31 +105,28 @@ sub delete_non_wes_contig {
 
 sub delete_male_contig {
 
-## delete_male_contig
-
 ## Function : Delete contig chrY|Y from contigs array if no male or other found
 ## Returns  : @contigs
-## Arguments: $contigs_ref, $contig_names_ref, found_male
-##          : $contigs_ref      => Contigs array to update {REF}
+## Arguments: $contigs_ref      => Contigs array to update {REF}
 ##          : $contig_names_ref => Contig names to remove {REF}
 ##          : $found_male       => Male was included in the analysis
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $contigs_ref;
     my $contig_names_ref;
+    my $contigs_ref;
     my $found_male;
 
     use MIP::Check::Parameter qw{ check_allowed_array_values };
 
     my $tmpl = {
         contigs_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$contigs_ref,
             strict_type => 1,
-            store       => \$contigs_ref
         },
         contig_names_ref => {
             default => [qw{ Y }],
@@ -143,15 +140,15 @@ sub delete_male_contig {
                     );
                 }
             ],
+            store       => \$contig_names_ref,
             strict_type => 1,
-            store       => \$contig_names_ref
         },
         found_male => {
-            required    => 1,
             defined     => 1,
             allow       => [ 0, 1 ],
-            strict_type => 1,
+            required    => 1,
             store       => \$found_male,
+            strict_type => 1,
         },
     };
 
@@ -173,12 +170,9 @@ sub delete_male_contig {
 
 sub delete_contig_elements {
 
-## delete_contig_elements
-
 ## Function : Removes contig elements from array and return new contig array while leaving orginal elements_ref untouched.
 ## Returns  : @cleansed_contigs
-## Arguments: $elements_ref, $remove_contigs_ref
-##          : $elements_ref       => Array to remove an element from {REF}
+## Arguments: $elements_ref       => Array to remove an element from {REF}
 ##          : $remove_contigs_ref => Remove these contigs {REF}
 
     my ($arg_href) = @_;
@@ -189,18 +183,18 @@ sub delete_contig_elements {
 
     my $tmpl = {
         elements_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$elements_ref,
             strict_type => 1,
-            store       => \$elements_ref
         },
         remove_contigs_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$remove_contigs_ref,
             strict_type => 1,
-            store       => \$remove_contigs_ref
         },
     };
 
@@ -225,6 +219,7 @@ sub delete_contig_elements {
         @cleansed_contigs = grep { $_ ne $remove_contig } @cleansed_contigs;
 
     }
+    say STDERR join " ", @cleansed_contigs;
     return @cleansed_contigs;
 }
 

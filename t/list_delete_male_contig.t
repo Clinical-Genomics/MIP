@@ -128,6 +128,25 @@ is( scalar @contigs, scalar @refseq_contigs - 1, q{Removed chrY from array} );
 
 is( scalar @contigs, scalar @refseq_contigs, q{Keept male contig in array} );
 
+@contigs = delete_male_contig(
+    {
+        contigs_ref      => \@ensembl_contigs,
+        contig_names_ref => [qw{ Y }],
+        found_male       => 0,
+    }
+);
+is( scalar @contigs, scalar @ensembl_contigs - 1, q{Removed Y from array} );
+
+@contigs = delete_male_contig(
+    {
+        contigs_ref      => \@ensembl_contigs,
+        contig_names_ref => [qw{ Y }],
+        found_male       => 1,
+    }
+);
+
+is( scalar @contigs, scalar @ensembl_contigs, q{Keept male contig in array} );
+
 done_testing();
 
 ######################
