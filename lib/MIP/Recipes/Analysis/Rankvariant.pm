@@ -2201,14 +2201,14 @@ sub analysis_sv_rankvariant {
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
     my @contigs_size_ordered = delete_contig_elements(
         {
-            elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
+            elements_ref => \@{ $file_info_href->{contigs_sv_size_ordered} },
             remove_contigs_ref => [qw{ MT M }],
         }
     );
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
     my @contigs = delete_contig_elements(
         {
-            elements_ref       => \@{ $file_info_href->{contigs} },
+            elements_ref       => \@{ $file_info_href->{contigs_sv} },
             remove_contigs_ref => [qw{ MT M }],
         }
     );
@@ -2830,14 +2830,14 @@ sub analysis_sv_rankvariant_unaffected {
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
     my @contigs_size_ordered = delete_contig_elements(
         {
-            elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
+            elements_ref => \@{ $file_info_href->{contigs_sv_size_ordered} },
             remove_contigs_ref => [qw{ MT M }],
         }
     );
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
     my @contigs = delete_contig_elements(
         {
-            elements_ref       => \@{ $file_info_href->{contigs} },
+            elements_ref       => \@{ $file_info_href->{contigs_sv} },
             remove_contigs_ref => [qw{ MT M }],
         }
     );
