@@ -9,12 +9,24 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use MooseX::App qw{ Config Color BashCompletion };
+use MooseX::App qw{ Color BashCompletion };
 
 ## MIPs lib/
 use MIP::Cli::Mip;
 
 our $VERSION = 0.01;
+
+option(
+    q{config_file} => (
+        cmd_aliases => [qw{ config }],
+        cmd_flag    => q{config_file},
+        documentation =>
+          q{YAML config file for analysis parameters (defaults to "")},
+        is       => q{rw},
+        isa      => q{Str},
+        required => 0,
+    )
+);
 
 option(
     q{version} => (
