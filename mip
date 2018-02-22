@@ -1,0 +1,23 @@
+#!/usr/bin/env perl
+
+use 5.018;
+use Carp;
+use File::Spec::Functions qw{ catdir };
+use FindBin qw{ $Bin };
+use open qw{ :encoding(UTF-8) :std };
+use strict;
+use utf8;
+use warnings;
+use warnings qw{ FATAL utf8 };
+
+## CPANM
+use autodie qw{ :all };
+
+## MIPs lib/
+use lib catdir( $Bin, q{lib} );
+use MIP::Cli::Mip;
+
+our $VERSION = 0.01;
+
+## Parse command line options
+MIP::Cli::Mip->new_with_command->run();

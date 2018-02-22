@@ -1,0 +1,29 @@
+package MIP::Cli::Mip::Analyse::Rare_disease;
+
+use MooseX::App::Command;
+
+extends qw(MIP::Cli::Mip::Analyse);
+
+command_short_description q[Rare disease analysis];
+command_long_description q[Rare disease analysis on wes, wgs or mixed sequence data];
+
+command_usage q{mip <analyse> <rare_disease> -pbwa_mem INT};
+
+option 'pbwa_mem' => (
+    is                => q{rw},
+    isa               => q{Int},
+    required          => 0,
+    documentation     => q{Align reads using Bwa Mem (defaults to "0" (=no))},
+    cmd_tags          => [qw{ Analysis recipe switch! }], # Extra tags. Displayed in square brackets
+    cmd_aliases       => [qw{ s }], # Alternative option name
+    cmd_flag          => q{some}, # Option should be called 'some' instead of 'some_option'
+);
+
+sub run {
+   my ($self) = @_;
+   # do something
+   say STDERR "HELLO WORLD";
+   return;
+}
+
+1;
