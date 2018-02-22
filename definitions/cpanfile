@@ -14,12 +14,14 @@ requires qw{ HTML::Lint 2.26 };                 # VEP
 requires qw{ IO::Uncompress::Gunzip 2.074 };    # VEP
 requires qw{ JSON 2.97000 };                    # VEP
 requires qw{ IPC::System::Simple 1.25 };        # MIP
+requires qw{ IO::Interactive 1.022 };           # MIP
 requires qw{ List::MoreUtils 0.413 };           # MIP
 requires qw{ List::Util 1.49 };                 # MIP
 requires qw{ Log::Log4perl 1.49 };              # MIP
 requires qw{ Modern::Perl 1.20170117 };         # MIP
 requires qw{ Module::Build 0.4224 };            # VEP
 requires qw{ Module::CPANfile 1.1002 };         # MIP
+requires qw{ MooseX::App 1.39 };                # MIP
 requires qw{ Path::Iterator::Rule 1.012 };      # MIP
 requires qw{ PerlIO::gzip 0.20 };               # VEP
 requires qw{ Readonly 2.05 };                   # MIP

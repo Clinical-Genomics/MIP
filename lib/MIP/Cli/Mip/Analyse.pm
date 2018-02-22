@@ -35,7 +35,7 @@ q{Type of analysis (defaults to 'wgs'; Valid entries: 'wgs', 'wes', 'wts', 'canc
 );
 
 option(
-    q{dra_run_all} => (
+    q{dry_run_all} => (
         cmd_aliases => [qw{ dra }],
         cmd_flag    => q{dry_run_all},
         documentation =>
@@ -43,6 +43,17 @@ option(
         is       => q{rw},
         isa      => q{Bool},
         required => 0,
+    )
+);
+
+option(
+    q{family_id} => (
+        cmd_aliases   => [qw{ fam }],
+        cmd_flag      => q{family_id},
+        documentation => q{Group id of samples to be compared (defaults to "")},
+        is            => q{rw},
+        isa           => q{Str},
+        required      => 1,
     )
 );
 
