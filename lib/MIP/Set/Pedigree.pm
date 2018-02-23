@@ -489,9 +489,9 @@ sub _add_pedigree_sample_info {
 
 ## Function : Add pedigree sample level keys and values to sample info
 ## Returns  :
-## Arguments: $pedigree_sample_href                   => YAML sample info hash {REF}
-##          : $sample_id                              => Sample ID
-##          : $sample_info_href                       => Info on samples and family hash {REF}
+## Arguments: $pedigree_sample_href => YAML sample info hash {REF}
+##          : $sample_id            => Sample ID
+##          : $sample_info_href     => Info on samples and family hash {REF}
 
     my ($arg_href) = @_;
 
@@ -531,7 +531,6 @@ sub _add_pedigree_sample_info {
 
         $sample_info_href->{sample}{$sample_id}{$key} =
           $pedigree_sample_href->{$key};
-
     }
     return;
 }

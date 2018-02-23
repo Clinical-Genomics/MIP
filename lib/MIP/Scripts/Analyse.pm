@@ -175,13 +175,16 @@ sub mip_analyse {
 
 #### Staging Area
 ### Get and/or set input parameters
+    my %skipped_cli;
 
+    #$active_parameter{sample_ids}= "";
 ### User Options
     GetOptions(
-        q{ifd|infile_dirs:s}   => \%{ $active_parameter{infile_dirs} },
-        q{rd|reference_dir:s}  => \$active_parameter{reference_dir},
-        q{p|project_id:s}      => \$active_parameter{project_id},
-        q{s|sample_ids:s}      => \@{ $active_parameter{sample_ids} },
+        q{ifd|infile_dirs:s}  => \%{ $active_parameter{infile_dirs} },
+        q{rd|reference_dir:s} => \$active_parameter{reference_dir},
+        q{p|project_id:s}     => \$active_parameter{project_id},
+
+        # q{s|sample_ids:s}      => \@{ $skipped_cli{sample_ids} },
         q{odd|outdata_dir:s}   => \$active_parameter{outdata_dir},
         q{osd|outscript_dir:s} => \$active_parameter{outscript_dir},
         q{f|family_id:s}       => \$active_parameter{family_id},
@@ -591,13 +594,14 @@ sub mip_analyse {
         q{pvrdrs|vrd_region_start}    => \$active_parameter{vrd_region_start},
         q{pvrdsa|vrd_segment_annotn}  => \$active_parameter{vrd_segment_annotn},
         q{pvrdso|vrd_somatic_only}    => \$active_parameter{vrd_somatic_only},
-      )
-      or help(
-        {
-            exit_code => 1,
-            USAGE     => $USAGE,
-        }
-      );
+    );
+
+    #      or help(
+    #        {
+    #            exit_code => 1,
+    #            USAGE     => $USAGE,
+    #        }
+    #      );
 
 ## Special case:Enable/activate MIP. Cannot be changed from cmd or config
     $active_parameter{mip} = $parameter{mip}{default};
@@ -724,7 +728,9 @@ sub mip_analyse {
         );
     }
 
-## Detect if all samples has the same sequencing type and return consensus if reached
+    say STDERR join " ", ( keys %{ $active_parameter{exome_target_bed} } );
+
+# Detect if all samples has the same sequencing type and return consensus if reached
     $parameter{dynamic_parameter}{consensus_analysis_type} =
       get_overall_analysis_type(
         { analysis_type_href => \%{ $active_parameter{analysis_type} }, } );

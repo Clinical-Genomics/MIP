@@ -246,6 +246,7 @@ sub get_user_supplied_info {
         elsif ( defined $active_parameter_href->{$parameter}
             and not ref $active_parameter_href->{$parameter} )
         {
+
             ## If scalar and supplied
             $user_supply_switch{$parameter} = 1;
         }
