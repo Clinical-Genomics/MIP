@@ -956,50 +956,6 @@ psv_combinevariantcallsets:
    - vt
    - bcftools
   type: program
-pvcf2cytosure:
-  associated_program:
-    - mip
-  chain: SV
-  data_type: SCALAR
-  default: 0
-  file_tag: cyto_
-  outfile_suffix: ".cgh"
-  outdir_name: vcf2cytosure
-  program_name_path:
-    - TIDDIT.py
-    - vcf2cytosure
-    - bcftools
-  type: program
-vcf2cytosure_exclude_filter:
-  associated_program:
-   - pvcf2cytosure
-  data_type: SCALAR
-  default: ""
-  type: program_argument
-vcf2cytosure_freq:
-  associated_program:
-   - pvcf2cytosure
-  data_type: SCALAR
-  default: 0.01
-  type: program_argument
-vcf2cytosure_freq_tag:
-  associated_program:
-   - pvcf2cytosure
-  data_type: SCALAR
-  default: FRQ
-  type: program_argument
-vf2cytosure_no_filter:
-  associated_program:
-   - pvcf2cytosure
-  data_type: SCALAR
-  default: 0
-  type: program_argument
-vcf2cytosure_var_size:
-  associated_program:
-   - pvcf2cytosure
-  data_type: SCALAR
-  default: 0
-  type: program_argument
 tiddit_bin_size:
   associated_program:
    - pvcf2cytosure
@@ -1266,6 +1222,50 @@ sv_reformat_remove_genes_file:
   mandatory: no
   reference: reference_dir
   type: path
+pvcf2cytosure:
+  associated_program:
+    - mip
+  chain: SV
+  data_type: SCALAR
+  default: 0
+  file_tag: cyto_
+  outfile_suffix: ".cgh"
+  outdir_name: vcf2cytosure
+  program_name_path:
+    - TIDDIT.py
+    - vcf2cytosure
+    - bcftools
+  type: program
+vcf2cytosure_exclude_filter:
+  associated_program:
+   - pvcf2cytosure
+  data_type: SCALAR
+  default: ""
+  type: program_argument
+vcf2cytosure_freq:
+  associated_program:
+   - pvcf2cytosure
+  data_type: SCALAR
+  default: 0.01
+  type: program_argument
+vcf2cytosure_freq_tag:
+  associated_program:
+   - pvcf2cytosure
+  data_type: SCALAR
+  default: FRQ
+  type: program_argument
+vf2cytosure_no_filter:
+  associated_program:
+   - pvcf2cytosure
+  data_type: SCALAR
+  default: 0
+  type: program_argument
+vcf2cytosure_var_size:
+  associated_program:
+   - pvcf2cytosure
+  data_type: SCALAR
+  default: 0
+  type: program_argument
 ##Samtools
 pbcftools_mpileup:
   associated_program:
