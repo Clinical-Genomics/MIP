@@ -106,7 +106,8 @@ sub run {
     ### To DO new sub ends here with return of parameter hash
 
     # write_args(\%parameter);
-    #    write_args(\%active_parameter);
+    write_args( \%active_parameter );
+
     #exit;
 
     mip_analyse(
