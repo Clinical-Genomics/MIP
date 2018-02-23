@@ -151,7 +151,7 @@ check_parameter_hash(
 );
 
 ## Set MIP version
-our $VERSION = 'v6.0.10';
+our $VERSION = 'v6.0.11';
 
 ## Holds all active parameters
 my %active_parameter;
