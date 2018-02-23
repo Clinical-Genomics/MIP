@@ -94,14 +94,16 @@ sub mip_analyse {
 ## Function : Creates program directories (info & programData & programScript), program script filenames and writes sbatch header.
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $file_info_href                       => File info hash {REF}
 ##          : $parameter_href        => Parameter hash {REF}
 #           : $order_parameters_ref  => Order of addition to parameter array {REF}
 
     my ($arg_href) = @_;
 
-## Flatten argument(s)
-    my $parameter_href;
+    ## Flatten argument(s)
     my $active_parameter_href;
+    my $parameter_href;
+    my $file_info_href;
     my $order_parameters_ref;
 
     my $tmpl = {
@@ -111,6 +113,13 @@ sub mip_analyse {
             required    => 1,
             store       => \$active_parameter_href,
             strict_type => 1,
+        },
+        file_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$file_info_href,
         },
         parameter_href => {
             default     => {},
@@ -130,8 +139,9 @@ sub mip_analyse {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-## Transfer to lexical variables
+    ## Transfer to lexical variables
     my %active_parameter = %{$active_parameter_href};
+    my %file_info        = %{$file_info_href};
     my @order_parameters = @{$order_parameters_ref};
     my %parameter        = %{$parameter_href};
 
@@ -149,45 +159,22 @@ sub mip_analyse {
 #### Set program parameters
 
 ## Set MIP version
-    our $VERSION = 'v6.0.10';
-
-## Holds all active parameters
-    #my %active_parameter;
+    our $VERSION = 'v7.0.0';
 
 ## Directories, files, job_ids and sample_info
     my ( %infile, %indir_path, %infile_lane_prefix, %lane,
         %infile_both_strands_prefix, %job_id, %sample_info );
 
-    my %file_info = (
-
-        # BWA human genome reference file endings
-        bwa_build_reference => [qw{ .bwt .ann .amb .pac .sa }],
-
-        exome_target_bed =>
-          [qw{ .infile_list .pad100.infile_list .pad100.interval_list }],
-
-        # Human genome meta files
-        human_genome_reference_file_endings => [qw{ .dict .fai }],
-
-        # RTG human genome reference file endings
-        rtg_vcfeval_reference_genome => [qw{ _sdf_dir }],
-    );
-
 #### Staging Area
 ### Get and/or set input parameters
-    my %skipped_cli;
 
-    #$active_parameter{sample_ids}= "";
 ### User Options
     GetOptions(
-        q{ifd|infile_dirs:s}  => \%{ $active_parameter{infile_dirs} },
-        q{rd|reference_dir:s} => \$active_parameter{reference_dir},
-        q{p|project_id:s}     => \$active_parameter{project_id},
-
-        # q{s|sample_ids:s}      => \@{ $skipped_cli{sample_ids} },
+        q{ifd|infile_dirs:s}   => \%{ $active_parameter{infile_dirs} },
+        q{rd|reference_dir:s}  => \$active_parameter{reference_dir},
+        q{p|project_id:s}      => \$active_parameter{project_id},
         q{odd|outdata_dir:s}   => \$active_parameter{outdata_dir},
         q{osd|outscript_dir:s} => \$active_parameter{outscript_dir},
-        q{f|family_id:s}       => \$active_parameter{family_id},
         q{sck|supported_capture_kit:s} =>
           \%{ $active_parameter{supported_capture_kit} },
         q{dnr|decompose_normalize_references:s} =>
@@ -196,11 +183,9 @@ sub mip_analyse {
         q{hgr|human_genome_reference:s} =>
           \$active_parameter{human_genome_reference},
         q{al|outaligner_dir:s}    => \$active_parameter{outaligner_dir},
-        q{at|analysis_type:s}     => \%{ $active_parameter{analysis_type} },
         q{pl|platform:s}          => \$active_parameter{platform},
         q{ec|expected_coverage:s} => \%{ $active_parameter{expected_coverage} },
         q{sao|sample_origin:s}    => \%{ $active_parameter{sample_origin} },
-        q{config|config_file:s}   => \$active_parameter{config_file},
         q{ccp|cluster_constant_path:s} =>
           \$active_parameter{cluster_constant_path},
         q{acp|analysis_constant_path:s} =>
@@ -208,7 +193,6 @@ sub mip_analyse {
         q{cfa|config_file_analysis:s} =>
           \$active_parameter{config_file_analysis},
         q{sif|sample_info_file:s}   => \$active_parameter{sample_info_file},
-        q{dra|dry_run_all}          => \$active_parameter{dry_run_all},
         q{swp|start_with_program:s} => \$active_parameter{start_with_program},
         q{jul|java_use_large_pages} => \$active_parameter{java_use_large_pages},
         q{ges|genomic_set:s}        => \$active_parameter{genomic_set},
@@ -727,8 +711,6 @@ sub mip_analyse {
             }
         );
     }
-
-    say STDERR join " ", ( keys %{ $active_parameter{exome_target_bed} } );
 
 # Detect if all samples has the same sequencing type and return consensus if reached
     $parameter{dynamic_parameter}{consensus_analysis_type} =
