@@ -16,26 +16,37 @@ use MIP::Cli::Mip;
 
 our $VERSION = 0.01;
 
-option(
-    q{config_file} => (
-        cmd_aliases => [qw{ config }],
-        cmd_flag    => q{config_file},
-        documentation =>
-          q{YAML config file for analysis parameters (defaults to "")},
-        is       => q{rw},
-        isa      => q{Str},
-        required => 0,
-    )
-);
+## Define, check and get Cli supplied parameters
+_build_usage();
 
-option(
-    q{version} => (
-        cmd_flag      => q{v},
-        documentation => q{Show version},
-        is            => q{rw},
-        isa           => q{Bool},
-        required      => 0,
-    )
-);
+sub _build_usage {
+
+## Function : Get and/or set input parameters
+## Returns  :
+## Arguments:
+
+    option(
+        q{config_file} => (
+            cmd_aliases => [qw{ config }],
+            cmd_flag    => q{config_file},
+            documentation =>
+              q{YAML config file for analysis parameters (defaults to "")},
+            is       => q{rw},
+            isa      => q{Str},
+            required => 0,
+        )
+    );
+
+    option(
+        q{version} => (
+            cmd_flag      => q{v},
+            documentation => q{Show version},
+            is            => q{rw},
+            isa           => q{Bool},
+            required      => 0,
+        )
+    );
+    return;
+}
 
 1;

@@ -22,52 +22,8 @@ command_long_description(q{Entry point for performing MIP analysis});
 
 command_usage(q{analyse <pipeline>});
 
-option(
-    q{analysis_type} => (
-        cmd_aliases => [qw{ at }],
-        cmd_flag    => q{analysis_type},
-        documentation =>
-q{Type of analysis (defaults to 'wgs'; Valid entries: 'wgs', 'wes', 'wts', 'cancer'; sample_id=analysis_type)},
-        is       => q{rw},
-        isa      => q{HashRef},
-        required => 0,
-    )
-);
-
-option(
-    q{dry_run_all} => (
-        cmd_aliases => [qw{ dra }],
-        cmd_flag    => q{dry_run_all},
-        documentation =>
-          q{Sets all programs to dry run mode i.e. no sbatch submission},
-        is       => q{rw},
-        isa      => q{Bool},
-        required => 0,
-    )
-);
-
-option(
-    q{family_id} => (
-        cmd_aliases   => [qw{ fam }],
-        cmd_flag      => q{family_id},
-        documentation => q{Group id of samples to be compared (defaults to "")},
-        is            => q{rw},
-        isa           => q{Str},
-        required      => 1,
-    )
-);
-
-option(
-    q{sample_ids} => (
-        cmd_aliases => [qw{ spi }],
-        cmd_flag    => q{sample_ids},
-        documentation =>
-          q{Sets all programs to dry run mode i.e. no sbatch submission},
-        is       => q{rw},
-        isa      => q{ArrayRef},
-        required => 0,
-    )
-);
+## Define, check and get Cli supplied parameters
+_build_usage();
 
 sub run {
     my ($arg_href) = @_;
@@ -80,6 +36,73 @@ sub run {
         say STDERR $sample;
     }
     print Dumper($arg_href);
+    return;
+}
+
+sub _build_usage {
+
+## Function : Get and/or set input parameters
+## Returns  :
+## Arguments:
+
+    option(
+        q{analysis_type} => (
+            cmd_aliases => [qw{ at }],
+            cmd_flag    => q{analysis_type},
+            documentation =>
+q{Type of analysis (defaults to 'wgs'; Valid entries: 'wgs', 'wes', 'wts', 'cancer'; sample_id=analysis_type)},
+            is       => q{rw},
+            isa      => q{HashRef},
+            required => 0,
+        )
+    );
+
+    option(
+        q{dry_run_all} => (
+            cmd_aliases => [qw{ dra }],
+            cmd_flag    => q{dry_run_all},
+            documentation =>
+              q{Sets all programs to dry run mode i.e. no sbatch submission},
+            is       => q{rw},
+            isa      => q{Bool},
+            required => 0,
+        )
+    );
+
+    option(
+        q{family_id} => (
+            cmd_aliases => [qw{ fam }],
+            cmd_flag    => q{family_id},
+            documentation =>
+              q{Group id of samples to be compared (defaults to "")},
+            is       => q{rw},
+            isa      => q{Str},
+            required => 1,
+        )
+    );
+
+    option(
+        q{infile_dirs} => (
+            cmd_aliases   => [qw{ ifd }],
+            cmd_flag      => q{infile_dirs},
+            documentation => q{Infile directory(s); infile_dirs=sample_id},
+            is            => q{rw},
+            isa           => q{HashRef},
+            required      => 0,
+        )
+    );
+
+    option(
+        q{sample_ids} => (
+            cmd_aliases => [qw{ spi }],
+            cmd_flag    => q{sample_ids},
+            documentation =>
+              q{Sets all programs to dry run mode i.e. no sbatch submission},
+            is       => q{rw},
+            isa      => q{ArrayRef},
+            required => 0,
+        )
+    );
     return;
 }
 
