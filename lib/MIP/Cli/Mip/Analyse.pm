@@ -53,7 +53,6 @@ sub _build_usage {
 q{Type of analysis (defaults to 'wgs'; Valid entries: 'wgs', 'wes', 'wts', 'cancer'; sample_id=analysis_type)},
             is       => q{rw},
             isa      => q{HashRef},
-            required => 0,
         )
     );
 
@@ -65,7 +64,17 @@ q{Type of analysis (defaults to 'wgs'; Valid entries: 'wgs', 'wes', 'wts', 'canc
               q{Sets all programs to dry run mode i.e. no sbatch submission},
             is       => q{rw},
             isa      => q{Bool},
-            required => 0,
+        )
+    );
+
+    option(
+        q{config_file_analysis} => (
+            cmd_aliases => [qw{ cfa }],
+            cmd_flag    => q{config_file_analysis},
+            documentation =>
+              q{Write YAML configuration file the analysis parameters (defaults to "")},
+            is       => q{rw},
+            isa      => q{Str},
         )
     );
 
@@ -88,7 +97,60 @@ q{Type of analysis (defaults to 'wgs'; Valid entries: 'wgs', 'wes', 'wts', 'canc
             documentation => q{Infile directory(s); infile_dirs=sample_id},
             is            => q{rw},
             isa           => q{HashRef},
-            required      => 0,
+        )
+    );
+
+    option(
+        q{outdata_dir} => (
+            cmd_aliases => [qw{ odd }],
+            cmd_flag    => q{outdata_dir},
+            documentation =>
+              q{Data output directory},
+            is       => q{rw},
+            isa      => q{Str},
+        )
+    );
+
+    option(
+        q{outscript_dir} => (
+            cmd_aliases => [qw{ osd }],
+            cmd_flag    => q{outscript_dir},
+            documentation =>
+              q{Script files (.sh) output directory},
+            is       => q{rw},
+            isa      => q{Str},
+        )
+    );
+
+    option(
+        q{project_id} => (
+            cmd_aliases => [qw{ pro }],
+            cmd_flag    => q{project_id},
+            documentation =>
+              q{Project id},
+            is       => q{rw},
+            isa      => q{Str},
+        )
+    );
+
+    option(
+        q{reference_dir} => (
+            cmd_aliases => [qw{ rd }],
+            cmd_flag    => q{reference_dir},
+            documentation =>
+              q{Reference(s) directory},
+            is       => q{rw},
+            isa      => q{Str},
+        )
+    );
+
+    option(
+        q{supported_capture_kit} => (
+            cmd_aliases   => [qw{ sck }],
+            cmd_flag      => q{supported_capture_kit},
+            documentation => q{Set the capture kit acronym shortcut in pedigree file},
+            is            => q{rw},
+            isa           => q{HashRef},
         )
     );
 
@@ -100,7 +162,6 @@ q{Type of analysis (defaults to 'wgs'; Valid entries: 'wgs', 'wes', 'wts', 'canc
               q{Sets all programs to dry run mode i.e. no sbatch submission},
             is       => q{rw},
             isa      => q{ArrayRef},
-            required => 0,
         )
     );
     return;

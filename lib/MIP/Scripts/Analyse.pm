@@ -170,13 +170,6 @@ sub mip_analyse {
 
 ### User Options
     GetOptions(
-        q{ifd|infile_dirs:s}   => \%{ $active_parameter{infile_dirs} },
-        q{rd|reference_dir:s}  => \$active_parameter{reference_dir},
-        q{p|project_id:s}      => \$active_parameter{project_id},
-        q{odd|outdata_dir:s}   => \$active_parameter{outdata_dir},
-        q{osd|outscript_dir:s} => \$active_parameter{outscript_dir},
-        q{sck|supported_capture_kit:s} =>
-          \%{ $active_parameter{supported_capture_kit} },
         q{dnr|decompose_normalize_references:s} =>
           \@{ $active_parameter{decompose_normalize_references} },
         q{ped|pedigree_file:s} => \$active_parameter{pedigree_file},
@@ -190,8 +183,8 @@ sub mip_analyse {
           \$active_parameter{cluster_constant_path},
         q{acp|analysis_constant_path:s} =>
           \$active_parameter{analysis_constant_path},
-        q{cfa|config_file_analysis:s} =>
-          \$active_parameter{config_file_analysis},
+#        q{cfa|config_file_analysis:s} =>
+ #         \$active_parameter{config_file_analysis},
         q{sif|sample_info_file:s}   => \$active_parameter{sample_info_file},
         q{swp|start_with_program:s} => \$active_parameter{start_with_program},
         q{jul|java_use_large_pages} => \$active_parameter{java_use_large_pages},
