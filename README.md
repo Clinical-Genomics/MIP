@@ -26,7 +26,7 @@ MIP has been in use in the clinical production at the Clinical Genomics facility
 ## Example Usage
 
 ```Bash
-$ mip --family_id [family_id] --pbwa_mem 1 --config_file [mip_config.yaml] --pedigree_file [family_id_pedigree.yaml]
+$ mip analyse rare_disease --family_id [family_id] --pbwa_mem 1 --config_file [mip_config.yaml] --pedigree_file [family_id_pedigree.yaml]
 ```
 
 ## Features
@@ -222,7 +222,7 @@ You can always supply `perl mip.pl --help` to list all available parameters and 
 
 Example usage:
 ```Bash
-$ mip -f 3 --sample_ids 3-1-1A --sample_ids 3-2-1U --sample_ids 3-2-2U -pfqc 0 --pbwa_mem 2 -c 3_config.yaml
+$ mip analyse rare_disease -f 3 --sample_ids 3-1-1A --sample_ids 3-2-1U --sample_ids 3-2-2U -pfqc 0 --pbwa_mem 2 -c 3_config.yaml
 ```
 
 This will analyse family 3 using 3 individuals from that family and begin the analysis with programs after Bwa mem and use all parameter values as specified in the config file except those supplied on the command line, which has precedence.
