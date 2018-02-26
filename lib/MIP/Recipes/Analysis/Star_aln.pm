@@ -329,7 +329,7 @@ sub analysis_star_aln {
                 FILEHANDLE   => $FILEHANDLE,
                 infile_path  => $outfile_path_prefix . $outfile_suffix,
                 outfile_path => $outfile_path_prefix
-                  . $DOT . "RG"
+                  . $DOT . q{RG}
                   . $outfile_suffix,
                 readgroup_id            => $infile_prefix,
                 readgroup_library       => q{RNA},
