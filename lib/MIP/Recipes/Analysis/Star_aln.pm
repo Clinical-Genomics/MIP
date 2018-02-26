@@ -167,6 +167,8 @@ sub analysis_star_aln {
     use MIP::Get::File qw{ get_file_suffix };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file };
+    use MIP::Program::Alignment::Picardtools
+      qw{ picardtools_addorreplacereadgroups };
     use MIP::Program::Alignment::Star qw{ star_aln };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
@@ -303,7 +305,6 @@ sub analysis_star_aln {
 
         star_aln(
             {
-                ##TO DO @jesper: finish the call to star aln
                 FILEHANDLE       => $FILEHANDLE,
                 align_intron_max => $active_parameter_href->{align_intron_max},
                 align_mates_gap_max =>
@@ -318,8 +319,25 @@ sub analysis_star_aln {
                 outfile_name_prefix => $outfile_path_prefix,
                 thread_number       => $core_number,
                 two_pass_mode       => $active_parameter_href->{two_pass_mode},
-            }
+            },
         );
+        say {$FILEHANDLE} $NEWLINE;
+
+        picardtools_addorreplacereadgroups(
+            {
+                FILEHANDLE   => $FILEHANDLE,
+                infile_path  => $outfile_path_prefix . $outfile_suffix,
+                outfile_path => $outfile_path_prefix
+                  . $DOT . q{RG}
+                  . $outfile_suffix,
+                readgroup_id            => $infile_prefix,
+                readgroup_library       => q{RNA},
+                readgroup_platform      => $active_parameter_href->{platform},
+                readgroup_platform_unit => q{0},
+                readgroup_sample        => $sample_id,
+            },
+        );
+
         say {$FILEHANDLE} $NEWLINE;
 
         ## Copies file from temporary directory.
