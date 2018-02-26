@@ -14,7 +14,7 @@ use autodie qw{ :all };
 use MooseX::App::Command;
 
 ## MIPs lib
-use MIP::Scripts::Analyse qw{ mip_analyse };
+use MIP::Main::Analyse qw{ mip_analyse };
 
 our $VERSION = 0.01;
 

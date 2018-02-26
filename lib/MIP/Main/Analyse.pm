@@ -1,4 +1,4 @@
-package MIP::Scripts::Analyse;
+package MIP::Main::Analyse;
 
 #### Master script for analysing paired end reads from the Illumina plattform in fastq(.gz) format to annotated ranked disease causing variants. The program performs QC, aligns reads using BWA, performs variant discovery and annotation as well as ranking the found variants according to disease potential.
 
