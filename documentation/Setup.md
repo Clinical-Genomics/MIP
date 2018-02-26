@@ -75,7 +75,7 @@ BWA:
 If you do not supply these parameters (Bwa) MIP will create these from scratch using the supplied human reference genom as template. 
 
 Capture target files:
- 1. The "infile_list" and .pad100.infile_list files used in ``pPicardToolsCollectHSMetrics``.
+ 1. The "infile_list" and .pad100.infile_list files used in ``ppicardtoolscollecthsmetrics``.
  2. The ".pad100.interval_list" file used by some GATK modules.
 
 #### *Note*
