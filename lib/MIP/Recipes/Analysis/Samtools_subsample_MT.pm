@@ -248,8 +248,9 @@ sub analysis_samtools_subsample_MT {
     # Get depth per base
     samtools_depth(
         {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $infile_path,
+            FILEHANDLE         => $FILEHANDLE,
+            infile_path        => $infile_path,
+            max_depth_treshold => q{500000},
         }
     );
 

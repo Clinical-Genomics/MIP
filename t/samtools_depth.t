@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.0;
+our $VERSION = 1.0.1;
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -141,6 +141,10 @@ my %specific_argument = (
     infile_path => {
         input           => q{infile.test},
         expected_output => q{infile.test},
+    },
+    max_depth_treshold => {
+        input           => q{100000},
+        expected_output => q{-d 100000},
     },
     stderrfile_path => {
         input           => q{stderrfile.test},
