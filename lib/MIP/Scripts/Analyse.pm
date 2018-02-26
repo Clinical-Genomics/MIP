@@ -183,8 +183,6 @@ sub mip_analyse {
           \$active_parameter{cluster_constant_path},
         q{acp|analysis_constant_path:s} =>
           \$active_parameter{analysis_constant_path},
-#        q{cfa|config_file_analysis:s} =>
- #         \$active_parameter{config_file_analysis},
         q{sif|sample_info_file:s}   => \$active_parameter{sample_info_file},
         q{swp|start_with_program:s} => \$active_parameter{start_with_program},
         q{jul|java_use_large_pages} => \$active_parameter{java_use_large_pages},
