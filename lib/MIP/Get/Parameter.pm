@@ -61,10 +61,9 @@ sub get_capture_kit {
     ## Set default or return supplied capture kit
     if ( not defined $user_supplied_parameter_switch ) {
 
-        ## Supported capture kit alias
-        if ( defined $supported_capture_kit_href->{default}{$capture_kit} ) {
+        if ( defined $supported_capture_kit_href->{$capture_kit} ) {
 
-            return $supported_capture_kit_href->{default}{$capture_kit};
+            return $supported_capture_kit_href->{$capture_kit};
         }
         else {
             ## Return unchanged capture_kit string
@@ -77,10 +76,9 @@ sub get_capture_kit {
         and not $user_supplied_parameter_switch )
     {
 
-        ## Supported capture kit alias
-        if ( defined $supported_capture_kit_href->{default}{$capture_kit} ) {
+        if ( defined $supported_capture_kit_href->{$capture_kit} ) {
 
-            return $supported_capture_kit_href->{default}{$capture_kit};
+            return $supported_capture_kit_href->{$capture_kit};
         }
         else {
             #Return unchanged capture_kit string
@@ -93,10 +91,10 @@ sub get_capture_kit {
 
 sub get_module_parameters {
 
-##Function : Get core number, time and source environment command
-##Returns  : $core_number, $time, $source_environment_cmd
-##Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
-##         : $mip_program_name      => MIP program name
+## Function : Get core number, time and source environment command
+## Returns  : $core_number, $time, $source_environment_cmd
+## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
+##          : $mip_program_name      => MIP program name
 
     my ($arg_href) = @_;
 
@@ -219,11 +217,12 @@ sub get_user_supplied_info {
 
     ## Define what should be checked
     my %user_supply_switch = (
-        analysis_type     => 0,
-        exome_target_bed  => 0,
-        expected_coverage => 0,
-        sample_ids        => 0,
-        sample_origin     => 0,
+        analysis_type         => 0,
+        exome_target_bed      => 0,
+        expected_coverage     => 0,
+        sample_ids            => 0,
+        sample_origin         => 0,
+        supported_capture_kit => 0,
     );
 
     ## Detect user supplied info
