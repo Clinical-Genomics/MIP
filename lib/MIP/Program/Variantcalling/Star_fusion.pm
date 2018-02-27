@@ -60,12 +60,12 @@ sub star_fusion {
             store => \$FILEHANDLE,
         },
         genome_lib_dir_path =>
-          { strict_type => 1, required => 1, store => \$genome_lib_dir_path, },
+          { required => 1, strict_type => 1, store => \$genome_lib_dir_path, },
         infile_path =>
-          { strict_type => 1, required => 1, store => \$infile_path, },
+          { required => 1, strict_type => 1, store => \$infile_path, },
         output_directory_path => {
-            strict_type => 1,
             required    => 1,
+            strict_type => 1,
             store       => \$output_directory_path,
         },
         stderrfile_path => {
