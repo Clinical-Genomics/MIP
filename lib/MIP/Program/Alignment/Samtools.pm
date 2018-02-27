@@ -22,21 +22,20 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Inherit from Exporter to export functions and variables
     use base qw{ Exporter };
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ 
-      samtools_create_chromosome_files 
+    our @EXPORT_OK = qw{
+      samtools_create_chromosome_files
       samtools_depth
-      samtools_faidx 
-      samtools_idxstats 
-      samtools_index 
-      samtools_mpileup 
-      samtools_stats 
+      samtools_faidx
+      samtools_idxstats
+      samtools_index
+      samtools_mpileup
+      samtools_stats
       samtools_view };
 
 }
@@ -771,6 +770,7 @@ sub samtools_depth {
 ## Returns  : @commands
 ## Arguments: $FILEHANDLE             => Filehandle to write to
 ##          : $infile_path            => Infile path
+##          : $max_depth_treshold     => Set the depth value treshold, samtools depth defaults to 8000 if left unset
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
@@ -780,6 +780,7 @@ sub samtools_depth {
     ## Flatten argument(s)
     my $FILEHANDLE;
     my $infile_path;
+    my $max_depth_treshold;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
@@ -795,6 +796,11 @@ sub samtools_depth {
             required    => 1,
             store       => \$infile_path,
             strict_type => 1,
+        },
+        max_depth_treshold => {
+            allow   => qr/^\d+$/xms,
+            defined => 1,
+            store   => \$max_depth_treshold,
         },
         stderrfile_path => {
             store       => \$stderrfile_path,
@@ -814,6 +820,11 @@ sub samtools_depth {
 
     ## Stores commands depending on input parameters
     my @commands = q{samtools depth};
+
+    ## Optionally set the read depth cutoff value
+    if ($max_depth_treshold) {
+        push @commands, q{-d} . $SPACE . $max_depth_treshold;
+    }
 
     ## Infile
     push @commands, $infile_path;

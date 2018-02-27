@@ -739,7 +739,7 @@ samtools_subsample_mt_depth:
   associated_program:
    - psamtools_subsample_mt
   data_type: SCALAR
-  default: 60
+  default: 100
   type: program_argument
 psambamba_depth:
   associated_program:
