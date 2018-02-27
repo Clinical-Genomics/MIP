@@ -170,15 +170,7 @@ sub mip_analyse {
 
 ### User Options
     GetOptions(
-        q{dnr|decompose_normalize_references:s} =>
-          \@{ $active_parameter{decompose_normalize_references} },
-        q{ped|pedigree_file:s} => \$active_parameter{pedigree_file},
-        q{hgr|human_genome_reference:s} =>
-          \$active_parameter{human_genome_reference},
-        q{al|outaligner_dir:s}    => \$active_parameter{outaligner_dir},
-        q{pl|platform:s}          => \$active_parameter{platform},
-        q{ec|expected_coverage:s} => \%{ $active_parameter{expected_coverage} },
-        q{sao|sample_origin:s}    => \%{ $active_parameter{sample_origin} },
+        q{sao|sample_origin:s} => \%{ $active_parameter{sample_origin} },
         q{ccp|cluster_constant_path:s} =>
           \$active_parameter{cluster_constant_path},
         q{acp|analysis_constant_path:s} =>

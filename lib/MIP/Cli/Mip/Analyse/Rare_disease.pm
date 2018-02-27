@@ -12,6 +12,7 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw{ :all };
 use MooseX::App::Command;
+use Moose::Util::TypeConstraints;
 
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
@@ -112,15 +113,34 @@ sub _build_usage {
 ## Arguments:
 
     option(
-        q{pbwa_mem} => (
-            cmd_aliases => [qw{ pmem }],
-            cmd_flag    => q{pbwa_mem},
-            cmd_tags    => [q{Analysis recipe switch}],
+        q{decompose_normalize_references} => (
+            cmd_aliases => [qw{ dnr }],
+            cmd_flag    => q{dec_norm_ref},
             documentation =>
-              q{Align reads using Bwa Mem (defaults to "0" (=no))},
-            is       => q{rw},
-            isa      => q{Int},
-            required => 0,
+              q{Set the references to be decomposed and normalized},
+            is  => q{rw},
+            isa => q{ArrayRef},
+        )
+    );
+
+    option(
+        q{expected_coverage} => (
+            cmd_aliases   => [qw{ ec }],
+            cmd_tags      => [q{sample_id=expected_coverage}],
+            documentation => q{Expected mean target coverage for analysis},
+            is            => q{rw},
+            isa           => q{HashRef},
+        )
+    );
+
+    option(
+        q{pbwa_mem} => (
+            cmd_aliases   => [qw{ pmem }],
+            cmd_flag      => q{pbwa_mem},
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Align reads using Bwa Mem},
+            is            => q{rw},
+            isa           => enum( [ 1, 2 ] ),
         )
     );
     return;

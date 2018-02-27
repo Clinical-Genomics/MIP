@@ -9,12 +9,18 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use MooseX::App qw{ Color BashCompletion };
+use MooseX::App qw{ BashCompletion Color Typo };
 
 ## MIPs lib/
 use MIP::Cli::Mip;
 
 our $VERSION = 0.01;
+
+## Enable strict mode
+app_strict 1;
+
+## Allows one to specify multiple values with one key
+app_permute 1;
 
 ## Define, check and get Cli supplied parameters
 _build_usage();
@@ -27,23 +33,19 @@ sub _build_usage {
 
     option(
         q{config_file} => (
-            cmd_aliases => [qw{ config }],
-            cmd_flag    => q{config_file},
-            documentation =>
-              q{YAML config file for analysis parameters (defaults to "")},
-            is       => q{rw},
-            isa      => q{Str},
-            required => 0,
+            cmd_aliases   => [qw{ config }],
+            documentation => q{YAML config file for analysis parameters},
+            is            => q{rw},
+            isa           => q{Str},
         )
     );
 
     option(
         q{version} => (
-            cmd_flag      => q{v},
+            cmd_aliases   => q{v},
             documentation => q{Show version},
             is            => q{rw},
             isa           => q{Bool},
-            required      => 0,
         )
     );
     return;
