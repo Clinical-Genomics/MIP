@@ -363,6 +363,7 @@ temp_directory:
   data_type: SCALAR
   default: /scratch/$SLURM_JOB_ID
   type: path
+  update_path: absolute_path
 email:
   associated_program:
    - mip
