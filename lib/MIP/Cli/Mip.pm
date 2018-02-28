@@ -37,6 +37,16 @@ sub _build_usage {
             documentation => q{YAML config file for analysis parameters},
             is            => q{rw},
             isa           => q{Str},
+            required      => 1,
+        )
+    );
+
+   option(
+        q{log_file} => (
+            cmd_aliases   => [qw{ log }],
+            documentation => q{Log file},
+            is            => q{rw},
+            isa           => q{Str},
         )
     );
 

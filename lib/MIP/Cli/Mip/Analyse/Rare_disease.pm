@@ -26,7 +26,7 @@ command_short_description(q{Rare disease analysis});
 command_long_description(
     q{Rare disease analysis on wes, wgs or mixed sequence data});
 
-command_usage(q{mip <analyse> <rare_disease> -pbwa_mem INT});
+command_usage(q{mip <analyse> <rare_disease> --config <config_file> --fam <family_id>});
 
 ## Define, check and get Cli supplied parameters
 _build_usage();
@@ -42,6 +42,7 @@ sub run {
 
     use MIP::File::Format::Parameter qw{ parse_definition_file  };
     use MIP::File::Format::Yaml qw{ order_parameter_names };
+    use MIP::Get::Analysis qw{ print_program };
 
     ## Mip analyse rare_disease parameters
     my $define_parameters_path =
@@ -50,6 +51,7 @@ sub run {
     ## Non mandatory parameter definition keys to check
     my $non_mandatory_parameter_keys_path = catfile( $Bin,
         qw{ definitions rare_disease_non_mandatory_parameter_keys.yaml } );
+
     ## Mandatory parameter definition keys to check
     my $mandatory_parameter_keys_path = catfile( $Bin,
         qw{ definitions rare_disease_mandatory_parameter_keys.yaml } );
@@ -64,6 +66,19 @@ sub run {
             mandatory_parameter_keys_path => $mandatory_parameter_keys_path,
         }
     );
+
+    ## Print programs and exit
+    if($active_parameter{print_programs}) {
+
+      print_program(
+		    {
+		     define_parameters_file => $define_parameters_path,
+		     parameter_href     => \%parameter,
+		     print_program_mode => $active_parameter{print_program_mode},
+		    }
+		   );
+      exit;
+    }
 
     ### To add/write parameters in the correct order
     ## Adds the order of first level keys from yaml file to array
@@ -124,25 +139,15 @@ sub _build_usage {
     );
 
     option(
-        q{expected_coverage} => (
-            cmd_aliases   => [qw{ ec }],
-            cmd_tags      => [q{sample_id=expected_coverage}],
-            documentation => q{Expected mean target coverage for analysis},
+        q{genomic_set} => (
+            cmd_aliases   => [qw{ ges }],
+			   cmd_tags      => [q{sorted BED}],
+            documentation => q{Selection of relevant regions post alignment},
             is            => q{rw},
-            isa           => q{HashRef},
+            isa           => q{Bool},
         )
     );
 
-    option(
-        q{pbwa_mem} => (
-            cmd_aliases   => [qw{ pmem }],
-            cmd_flag      => q{pbwa_mem},
-            cmd_tags      => [q{Analysis recipe switch}],
-            documentation => q{Align reads using Bwa Mem},
-            is            => q{rw},
-            isa           => enum( [ 1, 2 ] ),
-        )
-    );
     return;
 }
 
