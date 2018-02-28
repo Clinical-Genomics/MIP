@@ -14,6 +14,7 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw{ :all };
 use Readonly;
+use List::MoreUtils qw{ first_index };
 
 BEGIN {
 
@@ -29,6 +30,7 @@ BEGIN {
 }
 
 ## Constants
+Readonly my $AMPERSAND  => q{&};
 Readonly my $ASTERIX    => q{*};
 Readonly my $DOT        => q{.};
 Readonly my $EMPTY_STR  => q{};
@@ -52,7 +54,6 @@ sub analysis_sv_reformat {
 ##          : $reference_dir           => MIP reference directory
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
-##          : $xargs_file_counter      => The xargs file counter
 
     my ($arg_href) = @_;
 
@@ -71,7 +72,6 @@ sub analysis_sv_reformat {
     my $outaligner_dir;
     my $reference_dir;
     my $temp_directory;
-    my $xargs_file_counter;
 
     my $tmpl = {
         active_parameter_href => {
@@ -81,8 +81,11 @@ sub analysis_sv_reformat {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        call_type =>
-          { default => q{SV}, store => \$call_type, strict_type => 1, },
+        call_type => {
+            default     => q{SV},
+            store       => \$call_type,
+            strict_type => 1,
+        },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
             store       => \$family_id,
@@ -149,25 +152,18 @@ sub analysis_sv_reformat {
             store       => \$temp_directory,
             strict_type => 1,
         },
-        xargs_file_counter => {
-            allow       => qr/ ^\d+$ /xsm,
-            default     => 0,
-            store       => \$xargs_file_counter,
-            strict_type => 1,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Delete::List qw{ delete_contig_elements delete_male_contig };
+    use MIP::Delete::List qw{ delete_male_contig };
     use MIP::Get::File qw{ get_file_suffix };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::Gnu::Software::Gnu_grep qw{ gnu_grep };
-    use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
+    use MIP::IO::Files qw{ migrate_files };
     use MIP::Program::Utility::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
-    use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
     use MIP::Program::Variantcalling::Picardtools qw{ sort_vcf };
     use MIP::QC::Record
       qw{ add_most_complete_vcf add_program_metafile_to_sample_info };
@@ -197,8 +193,7 @@ sub analysis_sv_reformat {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $FILEHANDLE = IO::Handle->new();
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ( $file_path, $program_info_path ) = setup_script(
@@ -249,115 +244,26 @@ sub analysis_sv_reformat {
         }
     );
 
-    my $vcfparser_analysis_type = $EMPTY_STR;
+    ## Set analysis types and infiles
+    my @vcfparser_analysis_types = ( $EMPTY_STR, q{.selected} );
+    splice @vcfparser_analysis_types, $VCFPARSER_OUTFILE_COUNT + 1;
+    my @vcfparser_infiles =
+      map { $infile_prefix . $_ . $file_suffix } @vcfparser_analysis_types;
 
-    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    my @contigs = delete_contig_elements(
+    ## Copy file(s) to temporary directory
+    migrate_files(
         {
-            elements_ref       => \@{ $file_info_href->{contigs_sv} },
-            remove_contigs_ref => [qw{ MT M }],
+            core_number  => scalar @vcfparser_infiles,
+            FILEHANDLE   => $FILEHANDLE,
+            infiles_ref  => \@vcfparser_infiles,
+            indirectory  => $infamily_directory,
+            outfile_path => $temp_directory,
         }
     );
 
-    my @contigs_size_ordered = delete_contig_elements(
-        {
-            elements_ref => \@{ $file_info_href->{contigs_sv_size_ordered} },
-            remove_contigs_ref => [qw{ MT M }],
-        }
-    );
-
-    ## Determined by vcfparser output
-    for my $vcfparser_outfile_counter ( 0 .. $VCFPARSER_OUTFILE_COUNT ) {
-
-        if ( $vcfparser_outfile_counter == 1 ) {
-
-            ## SelectFile variants
-            $vcfparser_analysis_type = $DOT . q{selected};
-
-            @contigs = delete_contig_elements(
-                {
-                    elements_ref =>
-                      \@{ $file_info_href->{select_file_contigs} },
-                    remove_contigs_ref => [qw{ Y MT M }],
-                }
-            );
-
-            ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-            @contigs_size_ordered = delete_contig_elements(
-                {
-                    elements_ref =>
-                      \@{ $file_info_href->{sorted_select_file_contigs} },
-                    remove_contigs_ref => [qw{ Y MT M }],
-                }
-            );
-        }
-
-        ## Transfer contig files
-        if (   $consensus_analysis_type eq q{wgs}
-            || $consensus_analysis_type eq q{mixed} )
-        {
-
-            ## Copy file(s) to temporary directory
-            say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-            $xargs_file_counter = xargs_migrate_contig_files(
-                {
-                    contigs_ref => \@contigs_size_ordered,
-                    core_number => $core_number,
-                    FILEHANDLE  => $FILEHANDLE,
-                    file_ending => $vcfparser_analysis_type
-                      . $file_suffix
-                      . $ASTERIX,
-                    file_path         => $file_path,
-                    indirectory       => $infamily_directory,
-                    infile            => $infile_prefix,
-                    program_info_path => $program_info_path,
-                    temp_directory  => $active_parameter_href->{temp_directory},
-                    XARGSFILEHANDLE => $XARGSFILEHANDLE,
-                    xargs_file_counter => $xargs_file_counter,
-                }
-            );
-        }
-        else {
-
-            ## Copy file(s) to temporary directory
-            say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-            migrate_file(
-                {
-                    FILEHANDLE  => $FILEHANDLE,
-                    infile_path => catfile(
-                        $infamily_directory,
-                        $infile_prefix
-                          . $vcfparser_analysis_type
-                          . $file_suffix
-                    ),
-                    outfile_path => $temp_directory,
-                }
-            );
-            say {$FILEHANDLE} q{wait}, $NEWLINE;
-        }
-
-        my $concatenate_ending = $EMPTY_STR;
-        if (   $consensus_analysis_type eq q{wgs}
-            || $consensus_analysis_type eq q{mixed} )
-        {
-
-            $concatenate_ending = $UNDERSCORE . q{cat};
-
-            ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
-            gatk_concatenate_variants(
-                {
-                    active_parameter_href => $active_parameter_href,
-                    elements_ref          => \@contigs,
-                    FILEHANDLE            => $FILEHANDLE,
-                    infile_postfix => $vcfparser_analysis_type . $file_suffix,
-                    infile_prefix  => $file_path_prefix . $UNDERSCORE,
-                    outfile_path_prefix => $file_path_prefix
-                      . $vcfparser_analysis_type
-                      . $concatenate_ending,
-                    outfile_suffix => $file_suffix,
-                }
-            );
-        }
+    ## Sort vcf;
+  VCFPARSER_ANLAYSIS_TYPE:
+    foreach my $vcfparser_analysis_type (@vcfparser_analysis_types) {
 
         ## Writes sbatch code to supplied filehandle to sort variants in vcf format
         sort_vcf(
@@ -370,21 +276,21 @@ sub analysis_sv_reformat {
                       . $DOT . q{dict}
                 ),
                 infile_paths_ref => [
-                        $file_path_prefix
-                      . $vcfparser_analysis_type
-                      . $concatenate_ending
-                      . $file_suffix
+                    $file_path_prefix . $vcfparser_analysis_type . $file_suffix
                 ],
                 outfile => $outfile_path_prefix
                   . $vcfparser_analysis_type
                   . $file_suffix,
             }
         );
+        print {$FILEHANDLE} $AMPERSAND . $NEWLINE;
+    }
+    say {$FILEHANDLE} q{wait} . $NEWLINE;
 
-        print {$FILEHANDLE} $NEWLINE;
-
-        ## Remove variants in hgnc_id list from vcf
-        if ( $active_parameter_href->{sv_reformat_remove_genes_file} ) {
+    ## Remove variants in hgnc_id list from vcf
+    if ( $active_parameter_href->{sv_reformat_remove_genes_file} ) {
+      VCFPARSER_ANLAYSIS_TYPE:
+        foreach my $vcfparser_analysis_type (@vcfparser_analysis_types) {
 
             ## Removes contig_names from contigs array if no male or other found
             gnu_grep(
@@ -405,7 +311,7 @@ sub analysis_sv_reformat {
                       . $file_suffix,
                 }
             );
-            say {$FILEHANDLE} $NEWLINE;
+            say {$FILEHANDLE} $AMPERSAND . $NEWLINE;
 
             ## Save filtered file
             my $sv_reformat_remove_genes_path =
@@ -415,7 +321,7 @@ sub analysis_sv_reformat {
               . q{filtered}
               . $file_suffix;
 
-            if ( $vcfparser_outfile_counter == 1 ) {
+            if ( $vcfparser_analysis_type eq $vcfparser_analysis_types[1] ) {
 
                 ## Save filtered file
                 add_program_metafile_to_sample_info(
@@ -441,25 +347,34 @@ sub analysis_sv_reformat {
                     }
                 );
             }
-
-            ## Copies file from temporary directory.
-            say {$FILEHANDLE} q{## Copy file from temporary directory};
-            migrate_file(
-                {
-                    FILEHANDLE  => $FILEHANDLE,
-                    infile_path => $outfile_path_prefix
-                      . $vcfparser_analysis_type
-                      . $UNDERSCORE
-                      . q{filtered}
-                      . $file_suffix,
-                    outfile_path => $outfamily_directory,
-                }
-            );
-            say {$FILEHANDLE} q{wait}, $NEWLINE;
         }
+        say {$FILEHANDLE} q{wait};
 
-        if ( $active_parameter_href->{sv_rankvariant_binary_file} ) {
+        ## Copies file from temporary directory.
+        say {$FILEHANDLE} q{## Copy file from temporary directory};
+        my @filtered_files = map {
+                $infile_prefix
+              . $_
+              . $UNDERSCORE
+              . q{filtersed}
+              . $file_suffix
+        } @vcfparser_analysis_types;
+        migrate_files(
+            {
+                FILEHANDLE   => $FILEHANDLE,
+                core_number  => scalar @filtered_files,
+                indirectory  => $temp_directory,
+                infiles_ref  => \@filtered_files,
+                outfile_path => $outfamily_directory,
+            }
+        );
+    }
 
+    if ( $active_parameter_href->{sv_rankvariant_binary_file} ) {
+
+        say {$FILEHANDLE} q{## Compress};
+      VCFPARSER_ANLAYSIS_TYPE:
+        foreach my $vcfparser_analysis_type (@vcfparser_analysis_types) {
             ## Compress or decompress original file or stream to outfile (if supplied)
             htslib_bgzip(
                 {
@@ -474,8 +389,13 @@ sub analysis_sv_reformat {
                     write_to_stdout => 1,
                 }
             );
-            say {$FILEHANDLE} $NEWLINE;
+            say {$FILEHANDLE} $AMPERSAND;
+        }
+        say {$FILEHANDLE} q{wait} . $NEWLINE;
 
+        say {$FILEHANDLE} q{## Index};
+      VCFPARSER_ANLAYSIS_TYPE:
+        foreach my $vcfparser_analysis_type (@vcfparser_analysis_types) {
             ## Index file using tabix
             htslib_tabix(
                 {
@@ -489,24 +409,32 @@ sub analysis_sv_reformat {
                     1,
                 }
             );
-            say {$FILEHANDLE} $NEWLINE;
+            say {$FILEHANDLE} $AMPERSAND;
         }
+        say {$FILEHANDLE} q{wait} . $NEWLINE;
+    }
 
-        ## Copies file from temporary directory.
-        say {$FILEHANDLE} q{## Copy file from temporary directory};
-        migrate_file(
-            {
-                FILEHANDLE  => $FILEHANDLE,
-                infile_path => $outfile_path_prefix
-                  . $vcfparser_analysis_type
-                  . $file_suffix
-                  . $ASTERIX,
-                outfile_path => $outfamily_directory,
-            }
-        );
-        say {$FILEHANDLE} q{wait}, $NEWLINE;
+    ## Copies file from temporary directory.
+    say {$FILEHANDLE} q{## Copy file(s) from temporary directory};
+    my @outfiles = map { $outfile_prefix . $_ . $file_suffix . $ASTERIX }
+      @vcfparser_analysis_types;
+    migrate_files(
+        {
+            FILEHANDLE   => $FILEHANDLE,
+            core_number  => scalar @outfiles,
+            indirectory  => $temp_directory,
+            infiles_ref  => \@outfiles,
+            outfile_path => $outfamily_directory,
+        }
+    );
+
+  VCFPARSER_ANLAYSIS_TYPE:
+    foreach my $vcfparser_analysis_type (@vcfparser_analysis_types) {
 
         ## Adds the most complete vcf file to sample_info
+        my $vcfparser_outfile_counter =
+          first_index { $_ == $vcfparser_analysis_type }
+        @vcfparser_analysis_types;
         add_most_complete_vcf(
             {
                 active_parameter_href => $active_parameter_href,

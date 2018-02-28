@@ -119,7 +119,7 @@ shell:
   svdb:
     version: 1.0.7
   tiddit:
-    version: 2.0.3
+    version: 2.2.1
   vcf2cytosure:
     version: 0.2.0
   vep:

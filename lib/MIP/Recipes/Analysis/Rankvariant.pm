@@ -31,6 +31,7 @@ BEGIN {
 }
 
 ## Constants
+Readonly my $AMPERSAND  => q{&};
 Readonly my $ASTERIX    => q{*};
 Readonly my $DASH       => q{-};
 Readonly my $DOT        => q{.};
@@ -553,7 +554,7 @@ sub analysis_rankvariant {
 
             my $rank_model_version;
             if ( $active_parameter_href->{rank_model_file} =~
-                / v(\d+[.]\d+[.]\d+ | \d+[.]\d+) /sxm )
+                m/ v(\d+[.]\d+[.]\d+ | \d+[.]\d+) /sxm )
             {
 
                 $rank_model_version = $1;
@@ -1077,7 +1078,7 @@ sub analysis_rankvariant_rio {
 
             my $rank_model_version;
             if ( $active_parameter_href->{rank_model_file} =~
-                / v(\d+[.]\d+[.]\d+ | \d+[.]\d+) /sxm )
+                m/ v(\d+[.]\d+[.]\d+ | \d+[.]\d+) /sxm )
             {
 
                 $rank_model_version = $1;
@@ -1503,7 +1504,7 @@ sub analysis_rankvariant_rio_unaffected {
 
             my $rank_model_version;
             if ( $active_parameter_href->{rank_model_file} =~
-                / v(\d+[.]\d+[.]\d+ | \d+[.]\d+) /sxm )
+                m/ v(\d+[.]\d+[.]\d+ | \d+[.]\d+) /sxm )
             {
 
                 $rank_model_version = $1;
@@ -1950,7 +1951,7 @@ sub analysis_rankvariant_unaffected {
 
             my $rank_model_version;
             if ( $active_parameter_href->{rank_model_file} =~
-                / v(\d+[.]\d+[.]\d+ | \d+[.]\d+) /sxm )
+                m/ v(\d+[.]\d+[.]\d+ | \d+[.]\d+) /sxm )
             {
 
                 $rank_model_version = $1;
@@ -1999,7 +2000,6 @@ sub analysis_sv_rankvariant {
 ##          : $reference_dir_ref       => MIP reference directory {REF}
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
-##          : $xargs_file_counter      => The xargs file counter
 
     my ($arg_href) = @_;
 
@@ -2018,7 +2018,6 @@ sub analysis_sv_rankvariant {
     my $reference_dir_ref;
     my $outaligner_dir;
     my $temp_directory;
-    my $xargs_file_counter;
 
     my $tmpl = {
         active_parameter_href => {
@@ -2028,8 +2027,11 @@ sub analysis_sv_rankvariant {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        call_type =>
-          { default => q{SV}, store => \$call_type, strict_type => 1, },
+        call_type => {
+            default     => q{SV},
+            store       => \$call_type,
+            strict_type => 1,
+        },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
             store       => \$family_id,
@@ -2091,27 +2093,19 @@ sub analysis_sv_rankvariant {
             store       => \$temp_directory,
             strict_type => 1,
         },
-        xargs_file_counter => {
-            allow       => qr/ ^\d+$ /xsm,
-            default     => 0,
-            store       => \$xargs_file_counter,
-            strict_type => 1,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Delete::List qw{ delete_contig_elements delete_male_contig };
     use MIP::Get::File qw{ get_file_suffix };
     use MIP::Get::Parameter qw{ get_module_parameters };
-    use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
+    use MIP::IO::Files qw{ migrate_files };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
     use MIP::Program::Variantcalling::Genmod
       qw{ genmod_annotate genmod_compound genmod_models genmod_score };
     use MIP::QC::Record
-      qw{ add_most_complete_vcf add_program_outfile_to_sample_info add_program_metafile_to_sample_info };
-    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
+      qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constant
@@ -2129,7 +2123,6 @@ sub analysis_sv_rankvariant {
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my $xargs_file_path_prefix;
     my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
@@ -2139,8 +2132,7 @@ sub analysis_sv_rankvariant {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $FILEHANDLE = IO::Handle->new();
 
     ## Limit number of cores requested to the maximum number of cores available per node
     my $genmod_core_number = check_max_core_number(
@@ -2196,38 +2188,6 @@ sub analysis_sv_rankvariant {
         }
     );
 
-    my $vcfparser_analysis_type = $EMPTY_STR;
-
-    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    my @contigs_size_ordered = delete_contig_elements(
-        {
-            elements_ref => \@{ $file_info_href->{contigs_sv_size_ordered} },
-            remove_contigs_ref => [qw{ MT M }],
-        }
-    );
-    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    my @contigs = delete_contig_elements(
-        {
-            elements_ref       => \@{ $file_info_href->{contigs_sv} },
-            remove_contigs_ref => [qw{ MT M }],
-        }
-    );
-
-    ### If no males or other remove contig Y from all downstream analysis
-    my @contig_arrays = ( \@contigs_size_ordered, \@contigs );
-
-  CONTIGS_REF:
-    foreach my $array_ref (@contig_arrays) {
-
-        ## Removes contig_names from contigs array if no male or other found
-        $array_ref = delete_male_contig(
-            {
-                contigs_ref => $array_ref,
-                found_male  => $active_parameter_href->{found_male},
-            }
-        );
-    }
-
     my $family_file =
       catfile( $outfamily_file_directory, $family_id . $DOT . q{fam} );
 
@@ -2242,319 +2202,166 @@ sub analysis_sv_rankvariant {
         }
     );
 
-    for my $vcfparser_outfile_counter ( 0 .. $VCFPARSER_OUTFILE_COUNT ) {
+    ## Set analysis types and infiles
+    my @vcfparser_analysis_types = ( $EMPTY_STR, q{.selected} );
+    splice @vcfparser_analysis_types, $VCFPARSER_OUTFILE_COUNT + 1;
+    my @vcfparser_infiles =
+      map { $infile_prefix . $_ . $file_suffix } @vcfparser_analysis_types;
 
-        if ( $vcfparser_outfile_counter == 1 ) {
-
-            ## SelectFile variants
-            $vcfparser_analysis_type = $DOT . q{selected};
-
-            ### Always skip MT and Y in select files
-            ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-            @contigs = delete_contig_elements(
-                {
-                    elements_ref =>
-                      \@{ $file_info_href->{select_file_contigs} },
-                    remove_contigs_ref => [qw{ Y MT M }],
-                }
-            );
-
-            ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-            @contigs_size_ordered = delete_contig_elements(
-                {
-                    elements_ref =>
-                      \@{ $file_info_href->{sorted_select_file_contigs} },
-                    remove_contigs_ref => [qw{ Y MT M }],
-                }
-            );
-        }
-
-        ## Transfer contig files
-        if (   $consensus_analysis_type eq q{wgs}
-            || $consensus_analysis_type eq q{mixed} )
+    ## Copy file(s) to temporary directory
+    migrate_files(
         {
-
-            ## Copy file(s) to temporary directory
-            say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-            $xargs_file_counter = xargs_migrate_contig_files(
-                {
-                    contigs_ref => \@contigs_size_ordered,
-                    core_number => $core_number,
-                    FILEHANDLE  => $FILEHANDLE,
-                    file_ending => $vcfparser_analysis_type
-                      . $file_suffix
-                      . $ASTERIX,
-                    file_path          => $file_path,
-                    infile             => $infile_prefix,
-                    indirectory        => $infamily_directory,
-                    program_info_path  => $program_info_path,
-                    XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                    xargs_file_counter => $xargs_file_counter,
-                    temp_directory => $active_parameter_href->{temp_directory},
-                }
-            );
+            core_number  => scalar @vcfparser_infiles,
+            FILEHANDLE   => $FILEHANDLE,
+            infiles_ref  => \@vcfparser_infiles,
+            indirectory  => $infamily_directory,
+            outfile_path => $temp_directory,
         }
-        else {
+    );
 
-            ## Copy file(s) to temporary directory
-            say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-            migrate_file(
-                {
-                    FILEHANDLE  => $FILEHANDLE,
-                    infile_path => catfile(
-                        $infamily_directory,
-                        $infile_prefix
-                          . $vcfparser_analysis_type
-                          . $file_suffix
-                    ),
-                    outfile_path => $temp_directory
-                }
-            );
-            say {$FILEHANDLE} q{wait}, $NEWLINE;
-        }
+    ## Get parameters
+    my $genmod_file_ending_stub    = $infile_prefix;
+    my $genmod_outfile_path_prefix = $outfile_path_prefix;
 
-        ## Track which genmod modules has been processed
-        my $genmod_module = $EMPTY_STR;
+  ANALYSIS_TYPE:
+    foreach my $vcfparser_analysis_type (@vcfparser_analysis_types) {
 
-        ## Genmod
-        say {$FILEHANDLE} q{## Genmod};
+        ## InFile
+        my $genmod_indata = catfile( $temp_directory,
+                $genmod_file_ending_stub
+              . $vcfparser_analysis_type
+              . $file_suffix );
 
-        ## Create file commands for xargs
-        ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
+        # OutFile
+        my $genmod_outfile_path =
+          catfile( dirname( devnull() ), q{stdout} );
+
+        ## Annotate
+        my $genmod_module = q{_annotate};
+        genmod_annotate(
             {
-                core_number        => $genmod_core_number,
-                FILEHANDLE         => $FILEHANDLE,
-                file_path          => $file_path,
-                program_info_path  => $program_info_path,
-                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                xargs_file_counter => $xargs_file_counter,
+                annotate_region =>
+                  $active_parameter_href->{sv_genmod_annotate_regions},
+                FILEHANDLE      => $FILEHANDLE,
+                infile_path     => $genmod_indata,
+                outfile_path    => $genmod_outfile_path,
+                stderrfile_path => $program_info_path
+                  . $genmod_module
+                  . $vcfparser_analysis_type
+                  . $DOT
+                  . q{stderr.txt},
+                temp_directory_path => $temp_directory,
+                verbosity           => q{v},
             }
         );
 
-      CONTIG:
-        foreach my $contig (@contigs_size_ordered) {
+        # Pipe
+        print {$FILEHANDLE} $PIPE . $SPACE;
 
-            ## Get parameters
-            my $genmod_file_ending_stub       = $infile_prefix;
-            my $genmod_outfile_path_prefix    = $outfile_path_prefix;
-            my $genmod_xargs_file_path_prefix = $xargs_file_path_prefix;
+        ## Get parameters
+        # Preparation for next module
+        $genmod_indata = $DASH;
 
-            ## InFile
-            my $genmod_indata = catfile( $temp_directory,
-                    $genmod_file_ending_stub
-                  . $vcfparser_analysis_type
-                  . $file_suffix );
+        ## Genmod Models
+        $genmod_module .= $UNDERSCORE . q{models};
 
-            # Update endings with contig info
-            if (   $consensus_analysis_type eq q{wgs}
-                || $consensus_analysis_type eq q{mixed} )
-            {
-
-                $genmod_file_ending_stub =
-                  $infile_prefix . $UNDERSCORE . $contig;
-                $genmod_outfile_path_prefix =
-                  $outfile_path_prefix . $UNDERSCORE . $contig;
-                $genmod_xargs_file_path_prefix =
-                  $xargs_file_path_prefix . $DOT . $contig;
-
-                ## Infile
-                $genmod_indata = catfile( $temp_directory,
-                        $genmod_file_ending_stub
-                      . $vcfparser_analysis_type
-                      . $file_suffix );
-            }
-            ## Restart for next contig
-            $genmod_module = $EMPTY_STR;
-
-            ## Genmod Annotate
-            $genmod_module = q{_annotate};
-
-            ## Write to outputstream
-            # OutFile
-            my $genmod_outfile_path =
-              catfile( dirname( devnull() ), q{stdout} );
-            genmod_annotate(
-                {
-                    annotate_region =>
-                      $active_parameter_href->{sv_genmod_annotate_regions},
-                    FILEHANDLE      => $XARGSFILEHANDLE,
-                    infile_path     => $genmod_indata,
-                    outfile_path    => $genmod_outfile_path,
-                    stderrfile_path => $genmod_xargs_file_path_prefix
-                      . $genmod_module
-                      . $DOT
-                      . q{stderr.txt},
-                    temp_directory_path => $temp_directory,
-                    verbosity           => q{v},
-                }
-            );
-            ## Write to outputstream
-            # Pipe
-            print {$XARGSFILEHANDLE} $PIPE . $SPACE;
-
-            ## Get parameters
-            # Preparation for next module
-            $genmod_indata = $DASH;
-
-            ## Genmod Models
-            $genmod_module .= $UNDERSCORE . q{models};
-
-            my $use_vep;
-            ## Use VEP annotations in compound models
-            if ( $active_parameter_href->{psv_varianteffectpredictor}
-                and not $active_parameter_href->{sv_genmod_annotate_regions} )
-            {
-
-                $use_vep = 1;
-            }
-            genmod_models(
-                {
-                    FILEHANDLE  => $XARGSFILEHANDLE,
-                    family_file => $family_file,
-                    family_type =>
-                      $active_parameter_href->{sv_genmod_models_family_type},
-                    infile_path  => $genmod_indata,
-                    outfile_path => catfile( dirname( devnull() ), q{stdout} ),
-                    reduced_penetrance_file_path => $active_parameter_href
-                      ->{sv_genmod_models_reduced_penetrance_file},
-                    stderrfile_path => $genmod_xargs_file_path_prefix
-                      . $genmod_module
-                      . $DOT
-                      . q{stderr.txt},
-                    temp_directory_path => $temp_directory,
-                    thread_number       => 4,
-                    vep                 => $use_vep,
-                    verbosity           => q{v},
-                    whole_gene =>
-                      $active_parameter_href->{sv_genmod_models_whole_gene},
-                }
-            );
-
-            # Pipe
-            print {$XARGSFILEHANDLE} $PIPE . $SPACE;
-
-            ## Get parameters
-            # Preparation for next module
-            $genmod_indata = $DASH;
-
-            ## Genmod Score
-            $genmod_module .= $UNDERSCORE . q{score};
-
-            genmod_score(
-                {
-                    FILEHANDLE  => $XARGSFILEHANDLE,
-                    family_file => $family_file,
-                    family_type =>
-                      $active_parameter_href->{sv_genmod_models_family_type},
-                    infile_path  => $genmod_indata,
-                    outfile_path => catfile( dirname( devnull() ), q{stdout} ),
-                    rank_model_file_path =>
-                      $active_parameter_href->{sv_rank_model_file},
-                    rank_result     => 1,
-                    stderrfile_path => $genmod_xargs_file_path_prefix
-                      . $genmod_module
-                      . $DOT
-                      . q{stderr.txt},
-                    verbosity => q{v},
-                }
-            );
-
-            # Pipe
-            print {$XARGSFILEHANDLE} $PIPE . $SPACE;
-
-            ## Genmod Compound
-            $genmod_module .= $UNDERSCORE . q{compound};
-
-            genmod_compound(
-                {
-                    FILEHANDLE   => $XARGSFILEHANDLE,
-                    infile_path  => $genmod_indata,
-                    outfile_path => $genmod_outfile_path_prefix
-                      . $vcfparser_analysis_type
-                      . $file_suffix,
-                    stderrfile_path => $genmod_xargs_file_path_prefix
-                      . $genmod_module
-                      . $DOT
-                      . q{stderr.txt},
-                    temp_directory_path => $temp_directory,
-                    vep                 => $use_vep,
-                    verbosity           => q{v},
-                }
-            );
-            say {$XARGSFILEHANDLE} $NEWLINE;
-
-            # Update endings with contig info
-            if ( $consensus_analysis_type eq q{wes} ) {
-
-# Only perform once for exome samples to avoid risking contigs lacking variants throwing errors
-                last;
-            }
-        }
-
-        if (   $consensus_analysis_type eq q{wgs}
-            || $consensus_analysis_type eq q{mixed} )
+        my $use_vep;
+        ## Use VEP annotations in compound models
+        if ( $active_parameter_href->{psv_varianteffectpredictor}
+            and not $active_parameter_href->{sv_genmod_annotate_regions} )
         {
 
-            ## Copies file from temporary directory.
-            say {$FILEHANDLE} q{## Copy file(s) from temporary directory};
-            ($xargs_file_counter) = xargs_migrate_contig_files(
-                {
-                    contigs_ref => \@contigs,
-                    core_number => $core_number,
-                    FILEHANDLE  => $FILEHANDLE,
-                    file_ending => $vcfparser_analysis_type
-                      . $file_suffix
-                      . $ASTERIX,
-                    file_path          => $file_path,
-                    outdirectory       => $outfamily_directory,
-                    outfile            => $outfile_prefix,
-                    program_info_path  => $program_info_path,
-                    XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                    xargs_file_counter => $xargs_file_counter,
-                    temp_directory     => $temp_directory,
-                }
-            );
+            $use_vep = 1;
         }
-        else {
+        genmod_models(
+            {
+                FILEHANDLE  => $FILEHANDLE,
+                family_file => $family_file,
+                family_type =>
+                  $active_parameter_href->{sv_genmod_models_family_type},
+                infile_path  => $genmod_indata,
+                outfile_path => catfile( dirname( devnull() ), q{stdout} ),
+                reduced_penetrance_file_path => $active_parameter_href
+                  ->{sv_genmod_models_reduced_penetrance_file},
+                stderrfile_path => $program_info_path
+                  . $genmod_module
+                  . $vcfparser_analysis_type
+                  . $DOT
+                  . q{stderr.txt},
+                temp_directory_path => $temp_directory,
+                thread_number       => 4,
+                vep                 => $use_vep,
+                verbosity           => q{v},
+                whole_gene =>
+                  $active_parameter_href->{sv_genmod_models_whole_gene},
+            }
+        );
 
-            ## Copies file from temporary directory.
-            say {$FILEHANDLE} q{## Copy file from temporary directory};
-            migrate_file(
-                {
-                    FILEHANDLE  => $FILEHANDLE,
-                    infile_path => catfile(
-                        $temp_directory,
-                        $outfile_prefix
-                          . $vcfparser_analysis_type
-                          . $file_suffix
-                          . $ASTERIX
-                    ),
-                    outfile_path => $outfamily_directory,
-                }
-            );
-            say {$FILEHANDLE} q{wait}, $NEWLINE;
+        # Pipe
+        print {$FILEHANDLE} $PIPE . $SPACE;
 
-            ## Adds the most complete vcf file to sample_info
-            add_most_complete_vcf(
-                {
-                    active_parameter_href => $active_parameter_href,
-                    path                  => catfile(
-                        $outfamily_directory,
-                        $outfile_prefix
-                          . $vcfparser_analysis_type
-                          . $file_suffix
-                    ),
-                    program_name              => $program_name,
-                    sample_info_href          => $sample_info_href,
-                    vcfparser_outfile_counter => $vcfparser_outfile_counter,
-                    vcf_file_key              => q{sv}
-                      . $UNDERSCORE
-                      . substr( $file_suffix, 1 )
-                      . $UNDERSCORE . q{file},
-                }
-            );
-        }
+        ## Genmod Score
+        $genmod_module .= $UNDERSCORE . q{score};
+        genmod_score(
+            {
+                FILEHANDLE  => $FILEHANDLE,
+                family_file => $family_file,
+                family_type =>
+                  $active_parameter_href->{sv_genmod_models_family_type},
+                infile_path  => $genmod_indata,
+                outfile_path => catfile( dirname( devnull() ), q{stdout} ),
+                rank_model_file_path =>
+                  $active_parameter_href->{sv_rank_model_file},
+                rank_result     => 1,
+                stderrfile_path => $program_info_path
+                  . $genmod_module
+                  . $vcfparser_analysis_type
+                  . $DOT
+                  . q{stderr.txt},
+                verbosity => q{v},
+            }
+        );
+
+        # Pipe
+        print {$FILEHANDLE} $PIPE . $SPACE;
+
+        ## Genmod Compound
+        $genmod_module .= $UNDERSCORE . q{compound};
+        genmod_compound(
+            {
+                FILEHANDLE   => $FILEHANDLE,
+                infile_path  => $genmod_indata,
+                outfile_path => $genmod_outfile_path_prefix
+                  . $vcfparser_analysis_type
+                  . $file_suffix,
+                stderrfile_path => $program_info_path
+                  . $genmod_module
+                  . $vcfparser_analysis_type
+                  . $DOT
+                  . q{stderr.txt},
+                temp_directory_path => $temp_directory,
+                vep                 => $use_vep,
+                verbosity           => q{v},
+            }
+        );
+
+        say {$FILEHANDLE} $AMPERSAND . $NEWLINE;
     }
+    say {$FILEHANDLE} q{wait} . $NEWLINE;
+
+    ## Copy file(s) to back to directory
+    my @genmod_outfiles = map { $outfile_prefix . $_ . $file_suffix . $ASTERIX }
+      @vcfparser_analysis_types;
+    migrate_files(
+        {
+            core_number  => scalar @genmod_outfiles,
+            FILEHANDLE   => $FILEHANDLE,
+            infiles_ref  => \@genmod_outfiles,
+            indirectory  => $temp_directory,
+            outfile_path => $outfamily_directory,
+        }
+    );
+
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
     if ( $mip_program_mode == 1 ) {
@@ -2564,7 +2371,7 @@ sub analysis_sv_rankvariant {
 
             my $sv_rank_model_version;
             if ( $active_parameter_href->{sv_rank_model_file} =~
-                / v(\d+[.]\d+[.]\d+ | \d+[.]\d+) /sxm )
+                m/ v(\d+[.]\d+[.]\d+ | \d+[.]\d+) /sxm )
             {
 
                 $sv_rank_model_version = $1;
@@ -2580,13 +2387,13 @@ sub analysis_sv_rankvariant {
                     version          => $sv_rank_model_version,
                 }
             );
-
         }
+
         my $qc_sv_genmod_outfile =
             $family_id
           . $outfile_tag
           . $call_type
-          . $vcfparser_analysis_type
+          . $vcfparser_analysis_types[$VCFPARSER_OUTFILE_COUNT]
           . $file_suffix;
         add_program_outfile_to_sample_info(
             {
@@ -2628,7 +2435,6 @@ sub analysis_sv_rankvariant_unaffected {
 ##          : $reference_dir_ref       => MIP reference directory {REF}
 ##          : $sample_info_href        => Info on samples and family hash {REF}
 ##          : $temp_directory          => Temporary directory
-##          : $xargs_file_counter      => The xargs file counter
 
     my ($arg_href) = @_;
 
@@ -2647,7 +2453,6 @@ sub analysis_sv_rankvariant_unaffected {
     my $reference_dir_ref;
     my $outaligner_dir;
     my $temp_directory;
-    my $xargs_file_counter;
 
     my $tmpl = {
         active_parameter_href => {
@@ -2720,27 +2525,19 @@ sub analysis_sv_rankvariant_unaffected {
             store       => \$temp_directory,
             strict_type => 1,
         },
-        xargs_file_counter => {
-            allow       => qr/ ^\d+$ /xsm,
-            default     => 0,
-            store       => \$xargs_file_counter,
-            strict_type => 1,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Delete::List qw{ delete_contig_elements delete_male_contig };
     use MIP::Get::File qw{ get_file_suffix };
     use MIP::Get::Parameter qw{ get_module_parameters };
-    use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
+    use MIP::IO::Files qw{ migrate_files };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
     use MIP::Program::Variantcalling::Genmod
       qw{ genmod_annotate genmod_compound genmod_models genmod_score };
     use MIP::QC::Record
-      qw{ add_most_complete_vcf add_program_outfile_to_sample_info add_program_metafile_to_sample_info };
-    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
+      qw{ add_program_outfile_to_sample_info add_program_metafile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constant
@@ -2758,7 +2555,6 @@ sub analysis_sv_rankvariant_unaffected {
     my $consensus_analysis_type =
       $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my $xargs_file_path_prefix;
     my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
         {
             active_parameter_href => $active_parameter_href,
@@ -2768,8 +2564,7 @@ sub analysis_sv_rankvariant_unaffected {
 
     ## Filehandles
     # Create anonymous filehandle
-    my $FILEHANDLE      = IO::Handle->new();
-    my $XARGSFILEHANDLE = IO::Handle->new();
+    my $FILEHANDLE = IO::Handle->new();
 
     ## Limit number of cores requested to the maximum number of cores available per node
     my $genmod_core_number = check_max_core_number(
@@ -2825,38 +2620,6 @@ sub analysis_sv_rankvariant_unaffected {
         }
     );
 
-    my $vcfparser_analysis_type = $EMPTY_STR;
-
-    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    my @contigs_size_ordered = delete_contig_elements(
-        {
-            elements_ref => \@{ $file_info_href->{contigs_sv_size_ordered} },
-            remove_contigs_ref => [qw{ MT M }],
-        }
-    );
-    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    my @contigs = delete_contig_elements(
-        {
-            elements_ref       => \@{ $file_info_href->{contigs_sv} },
-            remove_contigs_ref => [qw{ MT M }],
-        }
-    );
-
-    ### If no males or other remove contig Y from all downstream analysis
-    my @contig_arrays = ( \@contigs_size_ordered, \@contigs );
-
-  CONTIGS_REF:
-    foreach my $array_ref (@contig_arrays) {
-
-        ## Removes contig_names from contigs array if no male or other found
-        $array_ref = delete_male_contig(
-            {
-                contigs_ref => $array_ref,
-                found_male  => $active_parameter_href->{found_male},
-            }
-        );
-    }
-
     my $family_file =
       catfile( $outfamily_file_directory, $family_id . $DOT . q{fam} );
 
@@ -2871,242 +2634,76 @@ sub analysis_sv_rankvariant_unaffected {
         }
     );
 
-    for my $vcfparser_outfile_counter ( 0 .. $VCFPARSER_OUTFILE_COUNT ) {
+    ## Set analysis types and infiles
+    my @vcfparser_analysis_types = ( $EMPTY_STR, q{.selected} );
+    splice @vcfparser_analysis_types, $VCFPARSER_OUTFILE_COUNT + 1;
+    my @vcfparser_infiles =
+      map { $infile_prefix . $_ . $file_suffix } @vcfparser_analysis_types;
 
-        if ( $vcfparser_outfile_counter == 1 ) {
-
-            ## SelectFile variants
-            $vcfparser_analysis_type = $DOT . q{selected};
-
-            ### Always skip MT and Y in select files
-            ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-            @contigs = delete_contig_elements(
-                {
-                    elements_ref =>
-                      \@{ $file_info_href->{select_file_contigs} },
-                    remove_contigs_ref => [qw{ Y MT M }],
-                }
-            );
-
-            ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-            @contigs_size_ordered = delete_contig_elements(
-                {
-                    elements_ref =>
-                      \@{ $file_info_href->{sorted_select_file_contigs} },
-                    remove_contigs_ref => [qw{ Y MT M }],
-                }
-            );
-        }
-
-        ## Transfer contig files
-        if (   $consensus_analysis_type eq q{wgs}
-            || $consensus_analysis_type eq q{mixed} )
+    ## Copy file(s) to temporary directory
+    migrate_files(
         {
-
-            ## Copy file(s) to temporary directory
-            say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-            $xargs_file_counter = xargs_migrate_contig_files(
-                {
-                    contigs_ref => \@contigs_size_ordered,
-                    core_number => $core_number,
-                    FILEHANDLE  => $FILEHANDLE,
-                    file_ending => $vcfparser_analysis_type
-                      . $file_suffix
-                      . $ASTERIX,
-                    file_path          => $file_path,
-                    infile             => $infile_prefix,
-                    indirectory        => $infamily_directory,
-                    program_info_path  => $program_info_path,
-                    XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                    xargs_file_counter => $xargs_file_counter,
-                    temp_directory => $active_parameter_href->{temp_directory},
-                }
-            );
+            core_number  => scalar @vcfparser_infiles,
+            FILEHANDLE   => $FILEHANDLE,
+            infiles_ref  => \@vcfparser_infiles,
+            indirectory  => $infamily_directory,
+            outfile_path => $temp_directory,
         }
-        else {
+    );
 
-            ## Copy file(s) to temporary directory
-            say {$FILEHANDLE} q{## Copy file(s) to temporary directory};
-            migrate_file(
-                {
-                    FILEHANDLE  => $FILEHANDLE,
-                    infile_path => catfile(
-                        $infamily_directory,
-                        $infile_prefix
-                          . $vcfparser_analysis_type
-                          . $file_suffix
-                    ),
-                    outfile_path => $temp_directory
-                }
-            );
-            say {$FILEHANDLE} q{wait}, $NEWLINE;
-        }
+    ## Get parameters
+    my $genmod_file_ending_stub    = $infile_prefix;
+    my $genmod_outfile_path_prefix = $outfile_path_prefix;
 
-        ## Track which genmod modules has been processed
-        my $genmod_module = $EMPTY_STR;
+  ANALYSIS_TYPE:
+    foreach my $vcfparser_analysis_type (@vcfparser_analysis_types) {
 
-        ## Genmod
-        say {$FILEHANDLE} q{## Genmod};
+        ## InFile
+        my $genmod_indata = catfile( $temp_directory,
+                $genmod_file_ending_stub
+              . $vcfparser_analysis_type
+              . $file_suffix );
 
-        ## Create file commands for xargs
-        ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
+        ## OutFile
+        my $genmod_outfile_path =
+          $genmod_outfile_path_prefix . $vcfparser_analysis_type . $file_suffix;
+
+        ## Annotate
+        my $genmod_module = q{_annotate};
+        genmod_annotate(
             {
-                core_number        => $genmod_core_number,
-                FILEHANDLE         => $FILEHANDLE,
-                file_path          => $file_path,
-                program_info_path  => $program_info_path,
-                XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                xargs_file_counter => $xargs_file_counter,
+                annotate_region =>
+                  $active_parameter_href->{sv_genmod_annotate_regions},
+                FILEHANDLE      => $FILEHANDLE,
+                infile_path     => $genmod_indata,
+                outfile_path    => $genmod_outfile_path,
+                stderrfile_path => $program_info_path
+                  . $genmod_module
+                  . $vcfparser_analysis_type
+                  . $DOT
+                  . q{stderr.txt},
+                temp_directory_path => $temp_directory,
+                verbosity           => q{v},
             }
         );
 
-      CONTIG:
-        foreach my $contig (@contigs_size_ordered) {
-
-            ## Get parameters
-            my $genmod_file_ending_stub       = $infile_prefix;
-            my $genmod_outfile_path_prefix    = $outfile_path_prefix;
-            my $genmod_xargs_file_path_prefix = $xargs_file_path_prefix;
-
-            ## InFile
-            my $genmod_indata = catfile( $temp_directory,
-                    $genmod_file_ending_stub
-                  . $vcfparser_analysis_type
-                  . $file_suffix );
-
-            # Update endings with contig info
-            if (   $consensus_analysis_type eq q{wgs}
-                || $consensus_analysis_type eq q{mixed} )
-            {
-
-                $genmod_file_ending_stub =
-                  $infile_prefix . $UNDERSCORE . $contig;
-                $genmod_outfile_path_prefix =
-                  $outfile_path_prefix . $UNDERSCORE . $contig;
-                $genmod_xargs_file_path_prefix =
-                  $xargs_file_path_prefix . $DOT . $contig;
-
-                ## Infile
-                $genmod_indata = catfile( $temp_directory,
-                        $genmod_file_ending_stub
-                      . $vcfparser_analysis_type
-                      . $file_suffix );
-            }
-            ## Restart for next contig
-            $genmod_module = $EMPTY_STR;
-
-            ## Genmod Annotate
-            $genmod_module = q{_annotate};
-
-            my $genmod_outfile_path;
-            ## Only unaffected
-            if ( defined $parameter_href->{dynamic_parameter}{unaffected}
-                && @{ $parameter_href->{dynamic_parameter}{unaffected} } eq
-                @{ $active_parameter_href->{sample_ids} } )
-            {
-
-                ## Write to outputFile - last genmod module
-                # Outfile
-                $genmod_outfile_path =
-                    $genmod_outfile_path_prefix
-                  . $vcfparser_analysis_type
-                  . $file_suffix;
-            }
-            else {
-
-                ## Write to outputstream
-                $genmod_outfile_path =
-                  catfile( dirname( devnull() ), q{stdout} );    #OutFile
-            }
-            genmod_annotate(
-                {
-                    annotate_region =>
-                      $active_parameter_href->{sv_genmod_annotate_regions},
-                    FILEHANDLE      => $XARGSFILEHANDLE,
-                    infile_path     => $genmod_indata,
-                    outfile_path    => $genmod_outfile_path,
-                    stderrfile_path => $genmod_xargs_file_path_prefix
-                      . $genmod_module
-                      . $DOT
-                      . q{stderr.txt},
-                    temp_directory_path => $temp_directory,
-                    verbosity           => q{v},
-                }
-            );
-            say {$XARGSFILEHANDLE} $NEWLINE;
-
-            # Update endings with contig info
-            if ( $consensus_analysis_type eq q{wes} ) {
-
-# Only perform once for exome samples to avoid risking contigs lacking variants throwing errors
-                last;
-            }
-        }
-
-        if (   $consensus_analysis_type eq q{wgs}
-            || $consensus_analysis_type eq q{mixed} )
-        {
-
-            ## Copies file from temporary directory.
-            say {$FILEHANDLE} q{## Copy file(s) from temporary directory};
-            ($xargs_file_counter) = xargs_migrate_contig_files(
-                {
-                    contigs_ref => \@contigs,
-                    core_number => $core_number,
-                    FILEHANDLE  => $FILEHANDLE,
-                    file_ending => $vcfparser_analysis_type
-                      . $file_suffix
-                      . $ASTERIX,
-                    file_path          => $file_path,
-                    outdirectory       => $outfamily_directory,
-                    outfile            => $outfile_prefix,
-                    program_info_path  => $program_info_path,
-                    XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                    xargs_file_counter => $xargs_file_counter,
-                    temp_directory     => $temp_directory,
-                }
-            );
-        }
-        else {
-
-            ## Copies file from temporary directory.
-            say {$FILEHANDLE} q{## Copy file from temporary directory};
-            migrate_file(
-                {
-                    FILEHANDLE  => $FILEHANDLE,
-                    infile_path => catfile(
-                        $temp_directory,
-                        $outfile_prefix
-                          . $vcfparser_analysis_type
-                          . $file_suffix
-                          . $ASTERIX
-                    ),
-                    outfile_path => $outfamily_directory,
-                }
-            );
-            say {$FILEHANDLE} q{wait}, $NEWLINE;
-
-            ## Adds the most complete vcf file to sample_info
-            add_most_complete_vcf(
-                {
-                    active_parameter_href => $active_parameter_href,
-                    path                  => catfile(
-                        $outfamily_directory,
-                        $outfile_prefix
-                          . $vcfparser_analysis_type
-                          . $file_suffix
-                    ),
-                    program_name              => $program_name,
-                    sample_info_href          => $sample_info_href,
-                    vcfparser_outfile_counter => $vcfparser_outfile_counter,
-                    vcf_file_key              => q{sv}
-                      . $UNDERSCORE
-                      . substr( $file_suffix, 1 )
-                      . $UNDERSCORE . q{file},
-                }
-            );
-        }
+        say {$FILEHANDLE} $AMPERSAND . $NEWLINE;
     }
+    say {$FILEHANDLE} q{wait} . $NEWLINE;
+
+    ## Copy file(s) to back to directory
+    my @genmod_outfiles = map { $outfile_prefix . $_ . $file_suffix . $ASTERIX }
+      @vcfparser_analysis_types;
+    migrate_files(
+        {
+            core_number  => scalar @genmod_outfiles,
+            FILEHANDLE   => $FILEHANDLE,
+            infiles_ref  => \@genmod_outfiles,
+            indirectory  => $temp_directory,
+            outfile_path => $outfamily_directory,
+        }
+    );
+
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 
     if ( $mip_program_mode == 1 ) {
@@ -3116,7 +2713,7 @@ sub analysis_sv_rankvariant_unaffected {
 
             my $sv_rank_model_version;
             if ( $active_parameter_href->{sv_rank_model_file} =~
-                / v(\d+[.]\d+[.]\d+ | \d+[.]\d+) /sxm )
+                m/ v(\d+[.]\d+[.]\d+ | \d+[.]\d+) /sxm )
             {
 
                 $sv_rank_model_version = $1;
@@ -3138,7 +2735,7 @@ sub analysis_sv_rankvariant_unaffected {
             $family_id
           . $outfile_tag
           . $call_type
-          . $vcfparser_analysis_type
+          . $vcfparser_analysis_types[$VCFPARSER_OUTFILE_COUNT]
           . $file_suffix;
         add_program_outfile_to_sample_info(
             {

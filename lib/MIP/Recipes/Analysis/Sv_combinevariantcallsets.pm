@@ -435,7 +435,7 @@ sub analysis_sv_combinevariantcallsets {
             ),
         }
     );
-    print {$FILEHANDLE} $NEWLINE;
+    say {$FILEHANDLE} $NEWLINE;
 
     $alt_file_tag = $outfile_alt_file_tag;
 
@@ -595,7 +595,7 @@ q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", 
             }
         );
 
-        print {$FILEHANDLE} $NEWLINE;
+        say {$FILEHANDLE} $NEWLINE;
     }
 
     if ( $active_parameter_href->{sv_combinevariantcallsets_bcf_file} ) {
