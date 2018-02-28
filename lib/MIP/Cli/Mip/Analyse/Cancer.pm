@@ -18,19 +18,10 @@ extends(qw{ MIP::Cli::Mip::Analyse });
 command_short_description(q{Cancer analysis});
 command_long_description(q{Cancer analysis on panel, wes or wgs sequence data});
 
-command_usage(q{mip <analyse> <cancer> -pbwa_mem INT});
+command_usage(q{mip <analyse> <cancer> --config <config_file> --fam <family_id>});
 
-option(
-    q{pbwa_mem} => (
-        cmd_aliases   => [qw{ mem }],
-        cmd_flag      => q{pbwa_mem},
-        cmd_tags      => [qw{ Analysis recipe switch! }],
-        documentation => q{Align reads using Bwa Mem (defaults to "0" (=no))},
-        is            => q{rw},
-        isa           => q{Int},
-        required      => 0,
-    )
-);
+## Define, check and get Cli supplied parameters
+_build_usage();
 
 sub run {
     my ($self) = @_;
@@ -38,6 +29,25 @@ sub run {
     # do something
     say STDERR 'HELLO WORLD';
     return;
+}
+
+sub _build_usage {
+
+## Function : Get and/or set input parameters
+## Returns  :
+## Arguments:
+
+option(
+        q{sample_origin} => (
+            cmd_aliases   => [qw{ sao }],
+            cmd_tags      => [q{sample_id=sample_origin}],
+            documentation => q{Sample origin for analysis},
+            is            => q{rw},
+            isa           => q{HashRef},
+        )
+    );
+
+return;
 }
 
 1;

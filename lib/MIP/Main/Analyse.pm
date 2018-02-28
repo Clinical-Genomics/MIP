@@ -46,7 +46,7 @@ use MIP::File::Format::Pedigree
   qw{ create_fam_file parse_yaml_pedigree_file reload_previous_pedigree_info };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
 use MIP::Get::Analysis
-  qw{ get_dependency_tree get_overall_analysis_type print_program };
+  qw{ get_dependency_tree get_overall_analysis_type };
 use MIP::Get::File qw{ get_select_file_contigs };
 use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
 use MIP::Script::Utils qw{ help };
@@ -170,30 +170,6 @@ sub mip_analyse {
 
 ### User Options
     GetOptions(
-        q{sao|sample_origin:s} => \%{ $active_parameter{sample_origin} },
-        q{ccp|cluster_constant_path:s} =>
-          \$active_parameter{cluster_constant_path},
-        q{acp|analysis_constant_path:s} =>
-          \$active_parameter{analysis_constant_path},
-        q{sif|sample_info_file:s}   => \$active_parameter{sample_info_file},
-        q{swp|start_with_program:s} => \$active_parameter{start_with_program},
-        q{jul|java_use_large_pages} => \$active_parameter{java_use_large_pages},
-        q{ges|genomic_set:s}        => \$active_parameter{genomic_set},
-        q{rio|reduce_io}            => \$active_parameter{reduce_io},
-        q{riu|replace_iupac}        => \$active_parameter{replace_iupac},
-        q{ppm|print_program_mode=n} => \$active_parameter{print_program_mode},
-        q{pp|print_program}         => sub {
-            ## Force ppm to be read before function call
-            GetOptions( q{ppm|print_program_mode=n} =>
-                  \$active_parameter{print_program_mode} );
-            print_program(
-                {
-                    parameter_href     => \%parameter,
-                    print_program_mode => $active_parameter{print_program_mode},
-                }
-            );
-            exit;
-        },
         q{l|log_file:s} => \$active_parameter{log_file},
         q{h|help}       => sub { say STDOUT $USAGE; exit; },
         q{v|version}    => sub {
@@ -225,23 +201,12 @@ sub mip_analyse {
           \$active_parameter{split_fastq_file_read_batch},
         q{pgz|pgzip_fastq=n}       => \$active_parameter{pgzip_fastq},
         q{pfqc|pfastqc=n}          => \$active_parameter{pfastqc},
-        q{pcta|pcutadapt=n}        => \$active_parameter{pcutadapt},
         q{pmem|pbwa_mem=n}         => \$active_parameter{pbwa_mem},
         q{memhla|bwa_mem_hla}      => \$active_parameter{bwa_mem_hla},
         q{memcrm|bwa_mem_cram}     => \$active_parameter{bwa_mem_cram},
         q{memsts|bwa_mem_bamstats} => \$active_parameter{bwa_mem_bamstats},
         q{memssm|bwa_sambamba_sort_memory_limit:s} =>
           \$active_parameter{bwa_sambamba_sort_memory_limit},
-        q{pstn|pstar_aln=n}           => \$active_parameter{pstar_aln},
-        q{stn_aim|align_intron_max=n} => \$active_parameter{align_intron_max},
-        q{stn_amg|align_mates_gap_max=n} =>
-          \$active_parameter{align_mates_gap_max},
-        q{stn_asom|align_sjdb_overhang_min=n} =>
-          \$active_parameter{align_sjdb_overhang_min},
-        q{stn_cjom|chim_junction_overhang_min=n} =>
-          \$active_parameter{chim_junction_overhang_min},
-        q{stn_csm|chim_segment_min=n} => \$active_parameter{chim_segment_min},
-        q{stn_tpm|two_pass_mode=n}    => \$active_parameter{two_pass_mode},
         q{ptp|picardtools_path:s}     => \$active_parameter{picardtools_path},
         q{pptm|ppicardtools_mergesamfiles=n} =>
           \$active_parameter{ppicardtools_mergesamfiles},
@@ -562,13 +527,6 @@ sub mip_analyse {
         q{pvrdsa|vrd_segment_annotn}  => \$active_parameter{vrd_segment_annotn},
         q{pvrdso|vrd_somatic_only}    => \$active_parameter{vrd_somatic_only},
     );
-
-    #      or help(
-    #        {
-    #            exit_code => 1,
-    #            USAGE     => $USAGE,
-    #        }
-    #      );
 
 ## Special case:Enable/activate MIP. Cannot be changed from cmd or config
     $active_parameter{mip} = $parameter{mip}{default};

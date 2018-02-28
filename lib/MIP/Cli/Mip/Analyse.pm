@@ -46,6 +46,16 @@ sub _build_usage {
 ## Returns  :
 ## Arguments:
 
+  option(
+        q{analysis_constant_path} => (
+            cmd_aliases => [qw{ acp }],
+            documentation =>
+              q{Set the analysis constant path},
+            is  => q{rw},
+            isa => q{Str},
+        )
+    );
+
     option(
         q{analysis_type} => (
             cmd_aliases   => [qw{ at }],
@@ -53,6 +63,27 @@ sub _build_usage {
             documentation => q{Type of analysis},
             is            => q{rw},
             isa           => q{HashRef},
+        )
+    );
+
+    option(
+        q{cluster_constant_path} => (
+            cmd_aliases => [qw{ ccp }],
+            documentation =>
+              q{Set the cluster constant path},
+            is  => q{rw},
+            isa => q{Str},
+        )
+    );
+
+        option(
+        q{config_file_analysis} => (
+            cmd_aliases => [qw{ cfa }],
+				    cmd_tags      => [q{YAML}],
+            documentation =>
+              q{Write YAML configuration file the analysis parameters},
+            is  => q{rw},
+            isa => q{Str},
         )
     );
 
@@ -67,12 +98,12 @@ sub _build_usage {
     );
 
     option(
-        q{config_file_analysis} => (
-            cmd_aliases => [qw{ cfa }],
-            documentation =>
-              q{Write YAML configuration file the analysis parameters},
-            is  => q{rw},
-            isa => q{Str},
+        q{expected_coverage} => (
+            cmd_aliases   => [qw{ ec }],
+            cmd_tags      => [q{sample_id=expected_coverage}],
+            documentation => q{Expected mean target coverage for analysis},
+            is            => q{rw},
+            isa           => q{HashRef},
         )
     );
 
@@ -103,6 +134,15 @@ sub _build_usage {
             documentation => q{Infile directory(s)},
             is            => q{rw},
             isa           => q{HashRef},
+        )
+    );
+
+  option(
+        q{java_use_large_pages} => (
+            cmd_aliases   => [qw{ jul }],
+            documentation => q{Use large page memory},
+            is            => q{rw},
+            isa           => q{Bool},
         )
     );
 
@@ -137,6 +177,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     option(
         q{pedigree_file} => (
             cmd_aliases   => [qw{ ped }],
+			     cmd_tags      => [q{YAML}],
             documentation => q{Meta data on samples},
             is            => q{rw},
             isa           => q{Str},
@@ -152,6 +193,15 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
         )
     );
 
+  option(
+        q{print_program_mode} => (
+            cmd_aliases   => [qw{ ppm }],
+            documentation => q{Print all programs that are supported},
+            is            => q{rw},
+            isa           => enum([0, 1, 2]),
+        )
+    );
+
     option(
         q{project_id} => (
             cmd_aliases   => [qw{ pro }],
@@ -161,7 +211,16 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
         )
     );
 
-    option(
+  option(
+        q{print_programs} => (
+            cmd_aliases   => [qw{ pp }],
+            documentation => q{Print all programs that are supported},
+            is            => q{rw},
+            isa           => q{Bool},
+        )
+    );
+
+  option(
         q{reference_dir} => (
             cmd_aliases   => [qw{ rd }],
             documentation => q{Reference(s) directory},
@@ -171,9 +230,45 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     );
 
     option(
+        q{reduce_io} => (
+            cmd_aliases   => [qw{ rio }],
+            documentation => q{Run consecutive models at node},
+            is            => q{rw},
+            isa           => q{Bool},
+        )
+    );
+
+  option(
+        q{replace_iupac} => (
+            cmd_aliases   => [qw{ riu }],
+            documentation => q{Replace IUPAC code in alternative alleles with N},
+            is            => q{rw},
+            isa           => q{Bool},
+        )
+    );
+
+  option(
+        q{sample_info_file} => (
+            cmd_aliases   => [qw{ sif }],
+				cmd_tags      => [q{YAML}],
+            documentation => q{File for sample info used in the analysis},
+            is            => q{rw},
+            isa           => q{Str},
+        )
+    );
+
+  option(
+        q{start_with_program} => (
+            cmd_aliases   => [qw{ swp }],
+            documentation => q{Start analysis with program},
+            is            => q{rw},
+            isa           => q{Str},
+        )
+    );
+
+    option(
         q{supported_capture_kit} => (
             cmd_aliases => [qw{ sck }],
-            cmd_flag    => q{supported_capture_kit},
             cmd_tags    => [q{acronym=file.bed}],
             documentation =>
               q{Set the capture kit acronym shortcut in pedigree file},
@@ -191,6 +286,18 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
             isa => q{ArrayRef},
         )
     );
+
+    option(
+        q{pbwa_mem} => (
+            cmd_aliases   => [qw{ pmem }],
+            cmd_flag      => q{pbwa_mem},
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Align reads using Bwa Mem},
+            is            => q{rw},
+            isa           => enum( [ 1, 2 ] ),
+        )
+    );
+
     return;
 }
 
