@@ -281,6 +281,7 @@ GetOptions(
       \$active_parameter{chim_junction_overhang_min},
     q{stn_csm|chim_segment_min=n} => \$active_parameter{chim_segment_min},
     q{stn_tpm|two_pass_mode=n}    => \$active_parameter{two_pass_mode},
+    q{pstf|pstar_fusion=n}        => \$active_parameter{pstar_fusion},
     q{ptp|picardtools_path:s}     => \$active_parameter{picardtools_path},
     q{pptm|ppicardtools_mergesamfiles=n} =>
       \$active_parameter{ppicardtools_mergesamfiles},
@@ -1785,6 +1786,8 @@ sub build_usage {
       -stn_cjom/--chim_junction_overhang_min                       Minimum overhang for a chimeric junction (defaults to "12")
       -stn_csm/--chim_segment_min                                  Minimum length of chimaeric segment (defaults to "12")
       -stn_tpm/--two_pass_mode                                     Two pass mode setting (defaults to "Basic")
+    -pstf/--pstar_fusion                                           Detect fusion transcripts with star fusion (defaults to "0" (=no))
+
 
     ## Picardtools
     -ptp/--picardtools_path                                        Path to Picardtools. Mandatory for use of Picardtools (defaults to "")

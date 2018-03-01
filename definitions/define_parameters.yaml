@@ -280,6 +280,7 @@ module_time:
     psplit_fastq_file: 10
     psnpeff: 10
     pstar_aln: 5
+    pstar_fusion: 5
     psv_combinevariantcallsets: 2
     psv_rankvariant: 2
     psv_reformat: 1
@@ -336,6 +337,7 @@ module_core_number:
     psamtools_subsample_mt: 1
     psplit_fastq_file: 4
     pstar_aln: 16
+    pstar_fusion: 1
     psv_combinevariantcallsets: 1
     psv_rankvariant: 16
     psv_reformat: 1
@@ -567,6 +569,16 @@ outaligner_dir:
   data_type: SCALAR
   mandatory: no
   type: mip
+pstar_fusion:
+  associated_program:
+   - mip
+  chain: FUSION
+  data_type: SCALAR
+  default: 0
+  file_tag: _fusion
+  outfile_suffix: ".tsv"
+  outdir_name: star
+  type: program
 ## BAMCalibrationBlock
 pbamcalibrationblock:
   associated_program:
