@@ -244,7 +244,7 @@ sub analysis_star_fusion {
 
     my $process_batches_count = 1;
 
-    while ( my ( $sample_id_index, $sample_id ) =
+    while ( my ( $sample_id_index, ) =
         each @{ $active_parameter_href->{sample_ids} } )
     {
 
@@ -277,30 +277,9 @@ sub analysis_star_fusion {
 
         my $program_outfile_path = catfile( $outsample_directory,
             $outfile_prefix . $UNDERSCORE . q{ENDING} );
-        ## Collect QC metadata info for later use
-        #        add_program_outfile_to_sample_info(
-        #            {
-        #                infile           => $infile_prefix,
-        #                path             => $program_outfile_path,
-        #                program_name     => q{star_fusion},
-        #                sample_id        => $sample_id,
-        #                sample_info_href => $sample_info_href,
-        #            }
-        #        );
 
         my $most_complete_format_key =
           q{most_complete} . $UNDERSCORE . substr $outfile_suffix, 1;
-
-   #        my $qc_metafile_path =
-   #          catfile( $outsample_directory, $infile_prefix . $outfile_suffix );
-   #        add_processing_metafile_to_sample_info(
-   #            {
-   #                metafile_tag     => $most_complete_format_key,
-   #                path             => $qc_metafile_path,
-   #                sample_id        => $sample_id,
-   #                sample_info_href => $sample_info_href,
-   #            }
-   #        );
 
         slurm_submit_job_sample_id_dependency_add_to_sample(
             {
