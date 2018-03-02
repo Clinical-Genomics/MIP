@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_samtools_subsample_MT };
@@ -32,6 +32,7 @@ BEGIN {
 Readonly my $BACKTICK                    => q{`};
 Readonly my $DOT                         => q{.};
 Readonly my $NEWLINE                     => qq{\n};
+Readonly my $MAX_DEPTH_TRESHOLD          => 500_000;
 Readonly my $MAX_LIMIT_SEED              => 100;
 Readonly my $PIPE                        => q{|};
 Readonly my $SAMTOOLS_UNMAPPED_READ_FLAG => 4;
@@ -248,8 +249,9 @@ sub analysis_samtools_subsample_MT {
     # Get depth per base
     samtools_depth(
         {
-            FILEHANDLE  => $FILEHANDLE,
-            infile_path => $infile_path,
+            FILEHANDLE         => $FILEHANDLE,
+            infile_path        => $infile_path,
+            max_depth_treshold => $MAX_DEPTH_TRESHOLD,
         }
     );
 
