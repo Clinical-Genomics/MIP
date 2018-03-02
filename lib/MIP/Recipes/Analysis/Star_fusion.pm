@@ -29,7 +29,10 @@ BEGIN {
 }
 
 ## Constants
+Readonly my $AMPERSAND  => q{&};
+Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
+Readonly my $SPACE      => q{ };
 Readonly my $UNDERSCORE => q{_};
 
 sub analysis_star_fusion {
@@ -77,14 +80,13 @@ sub analysis_star_fusion {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        family_id
-          family_id => {
+        family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
             store       => \$family_id,
             strict_type => 1,
-          },
+        },
         genome_lib_dir_path => {
-            required    => 1,
+            default     => $arg_href->{active_parameter_href}{reference_dir},
             store       => \$genome_lib_dir_path,
             strict_type => 1,
         },
@@ -156,9 +158,10 @@ sub analysis_star_fusion {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_file_suffix get_merged_infile_prefix };
+    use MIP::Get::File qw{ get_file_suffix };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::Program::Variantcalling::Star_fusion qw{ star_fusion };
+    use MIP::Processmanagement::Processes qw{ print_wait };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
     use MIP::QC::Record
@@ -185,32 +188,31 @@ sub analysis_star_fusion {
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    ## Add merged infile name prefix after merging all BAM files per sample_id
-    my $merged_infile_prefix = get_merged_infile_prefix(
-        {
-            file_info_href => $file_info_href,
-            sample_id      => $sample_id,
-        }
-    );
-
     ## Assign file_tags
-    my $infile_tag =
-      $file_info_href->{$sample_id}{UPPSTREAM_DEPENDENCY_PROGRAM}{file_tag};
     my $outfile_tag =
       $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
+    my $outfile_prefix =
+      $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
 
-    my $infile_prefix  = $merged_infile_prefix . $infile_tag;
-    my $outfile_prefix = $merged_infile_prefix . $outfile_tag;
+    my $infile_path;
 
-    ## Get infile_suffix from baserecalibration jobid chain
-    my $infile_suffix = get_file_suffix(
-        {
-            jobid_chain =>
-              $parameter_href->{UPPSTREAM_DEPENDENCY_PROGRAM}{chain},
-            parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
-        }
-    );
+  INFILE_PREFIX:
+    while ( my ( $infile_index, $infile_prefix ) =
+        each @{ $infile_lane_prefix_href->{$sample_id} } )
+    {
+
+        ## Assign tags
+        my $infile_star_aln_prefix =
+          $file_info_href->{$sample_id}{pstar_aln}{file_tag};
+        my $infile_suffix = q{Chimeric.out.junction};
+
+        ## Paths
+        $infile_path = catfile( $insample_directory,
+            $infile_prefix . $infile_star_aln_prefix . $DOT . $infile_suffix );
+        my $outfile_path_prefix = $infile_path . $outfile_tag;
+
+    }
+
     my $outfile_suffix = get_file_suffix(
         {
             parameter_href => $parameter_href,
@@ -220,11 +222,9 @@ sub analysis_star_fusion {
     );
 
     ## Files
-    my $infile_name  = $infile_prefix . $infile_suffix;
     my $outfile_name = $outfile_prefix . $outfile_suffix;
 
     ## Paths
-    my $infile_path  = catfile( $insample_directory,  $infile_name );
     my $outfile_path = catfile( $outsample_directory, $outfile_name );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
@@ -242,6 +242,8 @@ sub analysis_star_fusion {
         }
     );
 
+    my $process_batches_count = 1;
+
     while ( my ( $sample_id_index, $sample_id ) =
         each @{ $active_parameter_href->{sample_ids} } )
     {
@@ -258,11 +260,10 @@ sub analysis_star_fusion {
         ## Star_fusion
         star_fusion(
             {
-                FILEHANDLE          => $FILEHANDLE,
-                genome_lib_dir_path => $genome_lib_dir_path,
-                infile_path         => $file_path_prefix{$sample_id}{in}
-                  . $infile_suffix,
-                output_directory_path => $file_path_prefix{$sample_id}{out},
+                FILEHANDLE            => $FILEHANDLE,
+                genome_lib_dir_path   => $genome_lib_dir_path,
+                infile_path           => $infile_path,
+                output_directory_path => $outsample_directory,
             }
         );
         say {$FILEHANDLE} $AMPERSAND . $SPACE . $NEWLINE;
@@ -277,30 +278,30 @@ sub analysis_star_fusion {
         my $program_outfile_path = catfile( $outsample_directory,
             $outfile_prefix . $UNDERSCORE . q{ENDING} );
         ## Collect QC metadata info for later use
-        add_program_outfile_to_sample_info(
-            {
-                infile           => $merged_infile_prefix,
-                path             => $program_outfile_path,
-                program_name     => q{star_fusion},
-                sample_id        => $sample_id,
-                sample_info_href => $sample_info_href,
-            }
-        );
+        #        add_program_outfile_to_sample_info(
+        #            {
+        #                infile           => $infile_prefix,
+        #                path             => $program_outfile_path,
+        #                program_name     => q{star_fusion},
+        #                sample_id        => $sample_id,
+        #                sample_info_href => $sample_info_href,
+        #            }
+        #        );
 
         my $most_complete_format_key =
           q{most_complete} . $UNDERSCORE . substr $outfile_suffix, 1;
-        my $qc_metafile_path =
-          catfile( $outsample_directory, $infile_prefix . $outfile_suffix );
-        add_processing_metafile_to_sample_info(
-            {
-                metafile_tag     => $most_complete_format_key,
-                path             => $qc_metafile_path,
-                sample_id        => $sample_id,
-                sample_info_href => $sample_info_href,
-            }
-        );
 
-        ## MODIY THE CHOICE OF SUB ACCORDING TO HOW YOU WANT SLURM TO PROCESSES IT AND DOWNSTREAM DEPENDENCIES
+   #        my $qc_metafile_path =
+   #          catfile( $outsample_directory, $infile_prefix . $outfile_suffix );
+   #        add_processing_metafile_to_sample_info(
+   #            {
+   #                metafile_tag     => $most_complete_format_key,
+   #                path             => $qc_metafile_path,
+   #                sample_id        => $sample_id,
+   #                sample_info_href => $sample_info_href,
+   #            }
+   #        );
+
         slurm_submit_job_sample_id_dependency_add_to_sample(
             {
                 family_id               => $family_id,

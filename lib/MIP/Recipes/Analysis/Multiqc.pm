@@ -1,18 +1,18 @@
 package MIP::Recipes::Analysis::Multiqc;
 
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catdir catfile };
+use Params::Check qw{ check allow last_error };
+use open qw{ :encoding(UTF-8) :std };
 use strict;
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use autodie qw{ :all };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
-use File::Spec::Functions qw{ catdir catfile };
 
 ## CPANM
+use autodie qw{ :all };
 use Readonly;
 
 BEGIN {
@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_multiqc };
@@ -45,9 +45,6 @@ sub analysis_multiqc {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $family_id;
-
     ## Flatten argument(s)
     my $parameter_href;
     my $active_parameter_href;
@@ -56,57 +53,61 @@ sub analysis_multiqc {
     my $job_id_href;
     my $program_name;
 
+    ## Default(s)
+    my $family_id;
+
     my $tmpl = {
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
         },
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         sample_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$sample_info_href,
+            strict_type => 1,
         },
         infile_lane_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$infile_lane_prefix_href,
+            strict_type => 1,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$job_id_href,
+            strict_type => 1,
         },
         program_name => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
-            strict_type => 1,
             store       => \$family_id,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_chain_job_ids_dependency_add_to_path };
     use MIP::Program::Qc::Multiqc qw{ multiqc };
@@ -121,9 +122,12 @@ sub analysis_multiqc {
 
     ## Alias
     my $job_id_chain = $parameter_href->{$mip_program_name}{chain};
-    my $core_number =
-      $active_parameter_href->{module_core_number}{$mip_program_name};
-    my $time = $active_parameter_href->{module_time}{$mip_program_name};
+    my ( $core_number, $time, $source_environment_cmd ) = get_module_parameters(
+        {
+            active_parameter_href => $active_parameter_href,
+            mip_program_name      => $mip_program_name,
+        }
+    );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -132,14 +136,15 @@ sub analysis_multiqc {
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_path) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
-            directory_id          => $family_id,
-            program_name          => $program_name,
-            program_directory     => $program_name,
-            core_number           => $core_number,
-            process_time          => $time,
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $core_number,
+            directory_id                    => $family_id,
+            FILEHANDLE                      => $FILEHANDLE,
+            job_id_href                     => $job_id_href,
+            process_time                    => $time,
+            program_directory               => $program_name,
+            program_name                    => $program_name,
+            source_environment_commands_ref => [$source_environment_cmd],
         }
     );
 
@@ -158,10 +163,10 @@ sub analysis_multiqc {
 
         multiqc(
             {
+                FILEHANDLE  => $FILEHANDLE,
+                force       => 1,
                 indir_path  => $insample_directory,
                 outdir_path => $outsample_directory,
-                force       => 1,
-                FILEHANDLE  => $FILEHANDLE,
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -174,8 +179,8 @@ sub analysis_multiqc {
         slurm_submit_chain_job_ids_dependency_add_to_path(
             {
                 job_id_href      => $job_id_href,
-                path             => $job_id_chain,
                 log              => $log,
+                path             => $job_id_chain,
                 sbatch_file_name => $file_path,
             }
         );

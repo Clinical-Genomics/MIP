@@ -38,14 +38,15 @@ use lib catdir( $Bin, q{lib} );
 use MIP::Check::Cluster qw{ check_max_core_number };
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Check::Parameter
-  qw{ check_allowed_temp_directory check_cmd_config_vs_definition_file check_parameter_hash };
+  qw{ check_allowed_temp_directory check_cmd_config_vs_definition_file check_email_address check_parameter_hash };
 use MIP::Check::Path qw{ check_target_bed_file_suffix check_parameter_files };
 use MIP::Check::Reference
   qw{ check_bwa_prerequisites check_capture_file_prerequisites check_human_genome_file_endings check_human_genome_prerequisites check_parameter_metafiles check_references_for_vt check_rtg_prerequisites };
 use MIP::File::Format::Pedigree
   qw{ create_fam_file parse_yaml_pedigree_file reload_previous_pedigree_info };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
-use MIP::Get::Analysis qw{ get_overall_analysis_type print_program };
+use MIP::Get::Analysis
+  qw{ get_dependency_tree get_overall_analysis_type print_program };
 use MIP::Get::File qw{ get_select_file_contigs };
 use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
 use MIP::Script::Utils qw{ help };
@@ -57,7 +58,7 @@ use MIP::Update::Parameters
   qw{ update_dynamic_config_parameters update_reference_parameters update_vcfparser_outfile_counter };
 use MIP::Update::Path qw{ update_to_absolute_path };
 use MIP::Update::Programs
-  qw{ update_program_mode_with_dry_run_all update_program_mode update_prioritize_flag };
+  qw{ update_prioritize_flag update_program_mode_for_analysis_type update_program_mode_with_dry_run_all update_program_mode_with_start_with };
 
 ## Recipes
 use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
@@ -150,7 +151,7 @@ check_parameter_hash(
 );
 
 ## Set MIP version
-our $VERSION = 'v5.0.14';
+our $VERSION = 'v6.0.11';
 
 ## Holds all active parameters
 my %active_parameter;
@@ -216,6 +217,7 @@ GetOptions(
     q{cfa|config_file_analysis:s} => \$active_parameter{config_file_analysis},
     q{sif|sample_info_file:s}     => \$active_parameter{sample_info_file},
     q{dra|dry_run_all}            => \$active_parameter{dry_run_all},
+    q{swp|start_with_program:s}   => \$active_parameter{start_with_program},
     q{jul|java_use_large_pages}   => \$active_parameter{java_use_large_pages},
     q{ges|genomic_set:s}          => \$active_parameter{genomic_set},
     q{rio|reduce_io}              => \$active_parameter{reduce_io},
@@ -279,6 +281,7 @@ GetOptions(
       \$active_parameter{chim_junction_overhang_min},
     q{stn_csm|chim_segment_min=n} => \$active_parameter{chim_segment_min},
     q{stn_tpm|two_pass_mode=n}    => \$active_parameter{two_pass_mode},
+    q{pstf|pstar_fusion=n}        => \$active_parameter{pstar_fusion},
     q{ptp|picardtools_path:s}     => \$active_parameter{picardtools_path},
     q{pptm|ppicardtools_mergesamfiles=n} =>
       \$active_parameter{ppicardtools_mergesamfiles},
@@ -353,7 +356,9 @@ GetOptions(
       \$active_parameter{sv_genmod_filter_threshold},
     q{svcbcf|sv_combinevariantcallsets_bcf_file} =>
       \$active_parameter{sv_combinevariantcallsets_bcf_file},
-    q{pv2cs|pvcf2cytosure:n}      => \$active_parameter{pvcf2cytosure},
+    q{pv2cs|pvcf2cytosure:n} => \$active_parameter{pvcf2cytosure},
+    q{vc2csef|vcf2cytosure_exclude_filter=s} =>
+      \$active_parameter{vcf2cytosure_exclude_filter},
     q{v2csfq|vcf2cytosure_freq=n} => \$active_parameter{vcf2cytosure_freq},
     q{v2csfqt|vcf2cytosure_freq_tag=s} =>
       \$active_parameter{vcf2cytosure_freq_tag},
@@ -573,15 +578,16 @@ GetOptions(
       \$active_parameter{psamtools_subsample_mt},
     q{ssmtd|samtools_subsample_mt_depth=n} =>
       \$active_parameter{samtools_subsample_mt_depth},
-    q{pvrd|pvardict=n}           => \$active_parameter{pvardict},
-    q{pvdraf|vrd_af_threshold}   => \$active_parameter{vrd_af_threshold},
-    q{pvrdcs|vrd_chrom_start}    => \$active_parameter{vrd_chrom_start},
-    q{qvrdmm|vrd_max_mm}         => \$active_parameter{vrd_max_mm},
-    q{qvrdmp|vrd_max_pval}       => \$active_parameter{vrd_max_pval},
-    q{qvrdre|vrd_region_end}     => \$active_parameter{vrd_region_end},
-    q{qvrdrs|vrd_region_start}   => \$active_parameter{vrd_region_start},
-    q{qvrdsa|vrd_segment_annotn} => \$active_parameter{vrd_segment_annotn},
-    q{qvrdso|vrd_somatic_only}   => \$active_parameter{vrd_somatic_only},
+    q{pvrd|pvardict=n}            => \$active_parameter{pvardict},
+    q{pvdraf|vrd_af_threshold}    => \$active_parameter{vrd_af_threshold},
+    q{pvrdcs|vrd_chrom_start}     => \$active_parameter{vrd_chrom_start},
+    q{pvrdbed|vrd_input_bed_file} => \$active_parameter{vrd_input_bed_file},
+    q{pvrdmm|vrd_max_mm}          => \$active_parameter{vrd_max_mm},
+    q{pvrdmp|vrd_max_pval}        => \$active_parameter{vrd_max_pval},
+    q{pvrdre|vrd_region_end}      => \$active_parameter{vrd_region_end},
+    q{pvrdrs|vrd_region_start}    => \$active_parameter{vrd_region_start},
+    q{pvrdsa|vrd_segment_annotn}  => \$active_parameter{vrd_segment_annotn},
+    q{pvrdso|vrd_somatic_only}    => \$active_parameter{vrd_somatic_only},
   )
   or help(
     {
@@ -592,6 +598,17 @@ GetOptions(
 
 ## Special case:Enable/activate MIP. Cannot be changed from cmd or config
 $active_parameter{mip} = $parameter{mip}{default};
+
+## Special case for boolean flag that will be removed from
+## config upon loading
+my @boolean_parameter = qw{dry_run_all};
+foreach my $parameter (@boolean_parameter) {
+
+    if ( not defined $active_parameter{$parameter} ) {
+
+        delete $active_parameter{$parameter};
+    }
+}
 
 ## Change relative path to absolute path for parameter with "update_path: absolute_path" in config
 update_to_absolute_path(
@@ -612,7 +629,7 @@ if ( exists $active_parameter{config_file}
       load_yaml( { yaml_file => $active_parameter{config_file}, } );
 
     ## Remove previous analysis specific info not relevant for current run e.g. log file, which is read from pedigree or cmd
-    my @remove_keys = (qw{ log_file });
+    my @remove_keys = (qw{ log_file dry_run_all });
 
   KEY:
     foreach my $key (@remove_keys) {
@@ -909,10 +926,15 @@ detect_founders(
     }
 );
 
-## Check email adress format
-if ( defined $active_parameter{email} ) {    #Allow no malformed email adress
+## Check email adress syntax and mail host
+if ( defined $active_parameter{email} ) {
 
-    check_email_address( { email_ref => \$active_parameter{email}, } );
+    check_email_address(
+        {
+            email => $active_parameter{email},
+            log   => $log,
+        }
+    );
 }
 
 if (
@@ -1088,6 +1110,40 @@ check_program_mode(
     }
 );
 
+## Get initiation program, downstream dependencies and update program modes
+if ( $active_parameter{start_with_program} ) {
+
+    my %dependency_tree = load_yaml(
+        {
+            yaml_file =>
+              catfile( $Bin, qw{ definitions define_wgs_initiation.yaml } ),
+        }
+    );
+    my @start_with_programs;
+    my $is_program_found = 0;
+    my $is_chain_found   = 0;
+
+    ## Collects all downstream programs from initation point
+    get_dependency_tree(
+        {
+            dependency_tree_href    => \%dependency_tree,
+            is_program_found_ref    => \$is_program_found,
+            is_chain_found_ref      => \$is_chain_found,
+            program                 => $active_parameter{start_with_program},
+            start_with_programs_ref => \@start_with_programs,
+        }
+    );
+
+    ## Update program mode depending on start with flag
+    update_program_mode_with_start_with(
+        {
+            active_parameter_href => \%active_parameter,
+            programs_ref => \@{ $parameter{dynamic_parameter}{program} },
+            start_with_programs_ref => \@start_with_programs,
+        }
+    );
+}
+
 ## Update program mode depending on dry_run_all flag
 update_program_mode_with_dry_run_all(
     {
@@ -1147,7 +1203,7 @@ foreach my $parameter_info (@broadcasts) {
 }
 
 ## Update program mode depending on analysis run value as some programs are not applicable for e.g. wes
-update_program_mode(
+update_program_mode_for_analysis_type(
     {
         active_parameter_href => \%active_parameter,
         consensus_analysis_type =>
@@ -1176,7 +1232,7 @@ if ( $active_parameter{config_file_analysis} ne 0 ) {
     make_path( dirname( $active_parameter{config_file_analysis} ) );
 
     ## Remove previous analysis specific info not relevant for current run e.g. log file, sample_ids which are read from pedigree or cmd
-    my @remove_keys = (qw{ associated_program dry_run_all });
+    my @remove_keys = (qw{ associated_program });
 
   KEY:
     foreach my $key (@remove_keys) {
@@ -1682,6 +1738,7 @@ sub build_usage {
     -cfa/--config_file_analysis                                    Write YAML configuration file for analysis parameters (defaults to "")
     -sif/--sample_info_file                                        YAML file for sample info used in the analysis (defaults to "{outdata_dir}/{family_id}/{family_id}_qc_sample_info.yaml")
     -dra/--dry_run_all                                             Sets all programs to dry run mode i.e. no sbatch submission (supply flag to enable)
+    -swp/--start_with_program                                      Start analysis with program (defaults to "")
     -jul/--java_use_large_pages                                    Use large page memory. (supply flag to enable)
     -ges/--genomic_set                                             Selection of relevant regions post alignment (Format=sorted BED; defaults to "")
     -rio/--reduce_io                                               Run consecutive models at nodes (supply flag to enable)
@@ -1729,6 +1786,8 @@ sub build_usage {
       -stn_cjom/--chim_junction_overhang_min                       Minimum overhang for a chimeric junction (defaults to "12")
       -stn_csm/--chim_segment_min                                  Minimum length of chimaeric segment (defaults to "12")
       -stn_tpm/--two_pass_mode                                     Two pass mode setting (defaults to "Basic")
+    -pstf/--pstar_fusion                                           Detect fusion transcripts with star fusion (defaults to "0" (=no))
+
 
     ## Picardtools
     -ptp/--picardtools_path                                        Path to Picardtools. Mandatory for use of Picardtools (defaults to "")
@@ -1812,6 +1871,7 @@ sub build_usage {
       -svrevbf/--sv_rankvariant_binary_file                        Produce binary file from the rank variant chromosome sorted vcfs (supply flag to enable)
       -svrergf/--sv_reformat_remove_genes_file                     Remove variants in hgnc_ids (defaults to "")
     -pv2cs/--vcf2cytosure                                          Convert a VCF with structural variants to the “.CGH” format used by the commercial Cytosure software (defaults to "0" (=no))
+      -vc2csef/--vcf2cytosure_exclude_filter                       Filter vcf using bcftools exclude filter string (defaults to "")
       -v2csfq/--vcf2cytosure_freq                                  Specify maximum frequency (defaults to "0.01")
       -v2csfqt/--vcf2cytosure_freq_tag                             Specify frequency tag (defaults to "FRQ")
       -v2csnf/--vf2cytosure_no_filter                              Don't use any filtering (defaults to "0" (=no))
@@ -1974,13 +2034,13 @@ sub build_usage {
     -pvrd/--pvardict                                               Variant calling using Vardict (defaults to "0" (=no))
        -pvdraf/--vrd_af_threshold                                  AF threshold for variant calling (default 0.01)
        -pvrdcs/--vrd_chrom_start                                   Column for chromosome in the output (default 1)
-       -qvrdre/--vrd_region_end                                    Column for region end position in the output (default 3)
-       -qvrdrs/--vrd_region_start                                  Column for region start position in the output (default 2)
-       -qvrdsa/--vrd_segment_annotn                                Column for segment annotation in the output (default 4)
-       -qvrdmm/--vrd_max_mm                                        The maximum mean mismatches allowed (default 4.5)
-       -qvrdmp/--vrd_max_pval                                      The maximum p-valuem, set to 0 to keep all variants (default 0.9)
-       -qvrdso/--vrd_somatic_only                                  Output only candidate somatic (default no)
-       
+       -pvrdbed/--vrd_input_bed_file                               Infile path for region info bed file (mandatory, default none)
+       -pvrdmm/--vrd_max_mm                                        The maximum mean mismatches allowed (default 4.5)
+       -pvrdmp/--vrd_max_pval                                      The maximum p-valuem, set to 0 to keep all variants (default 0.9)
+       -pvrdre/--vrd_region_end                                    Column for region end position in the output (default 3)
+       -pvrdrs/--vrd_region_start                                  Column for region start position in the output (default 2)
+       -pvrdsa/--vrd_segment_annotn                                Column for segment annotation in the output (default 4)
+       -pvrdso/--vrd_somatic_only                                  Output only candidate somatic (default no)
 END_USAGE
 }
 
@@ -2106,114 +2166,111 @@ sub collect_infiles {
 
 sub infiles_reformat {
 
-##infiles_reformat
-
-##Function : Reformat files for MIP output, which have not yet been created into, correct format so that a sbatch script can be generated with the correct filenames.
-##Returns  : "$uncompressed_file_counter"
-##Arguments: $active_parameter_href, $sample_info_href, $file_info_href, $infile_href, $indir_path_href, $infile_lane_prefix_href, $infile_both_strands_prefix_href, $lane_href, $job_id_href, $program_name, $outaligner_dir_ref
-##         : $active_parameter_href              => Active parameters for this analysis hash {REF}
-##         : $sample_info_href                   => Info on samples and family hash {REF}
-##         : $file_info_href                     => File info hash {REF}
-##         : $infile_href                        => Infiles hash {REF}
-##         : $indir_path_href                    => Indirectories path(s) hash {REF}
-##         : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
-##         : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
-##         : $lane_href                          => The lane info hash {REF}
-##         : $job_id_href                        => Job id hash {REF}
-##         : $program_name                       => Program name {REF}
-##         : $outaligner_dir_ref                 => Outaligner_dir used in the analysis {REF}
+## Function : Reformat files for MIP output, which have not yet been created into, correct format so that a sbatch script can be generated with the correct filenames.
+## Returns  : "$uncompressed_file_counter"
+## Arguments: $active_parameter_href           => Active parameters for this analysis hash {REF}
+##          : $file_info_href                  => File info hash {REF}
+##          : $indir_path_href                 => Indirectories path(s) hash {REF}
+##          : $infile_both_strands_prefix_href => The infile(s) without the ".ending" and strand info {REF}
+##          : $infile_href                     => Infiles hash {REF}
+##          : $infile_lane_prefix_href         => Infile(s) without the ".ending" {REF}
+##          : $job_id_href                     => Job id hash {REF}
+##          : $lane_href                       => The lane info hash {REF}
+##          : $outaligner_dir_ref              => Outaligner_dir used in the analysis {REF}
+##          : $program_name                    => Program name {REF}
+##          : $sample_info_href                => Info on samples and family hash {REF}
 
     my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $file_info_href;
+    my $indir_path_href;
+    my $infile_both_strands_prefix_href;
+    my $infile_href;
+    my $infile_lane_prefix_href;
+    my $job_id_href;
+    my $lane_href;
+    my $program_name;
+    my $sample_info_href;
 
     ## Default(s)
     my $outaligner_dir_ref;
 
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $infile_href;
-    my $indir_path_href;
-    my $infile_lane_prefix_href;
-    my $infile_both_strands_prefix_href;
-    my $lane_href;
-    my $job_id_href;
-    my $program_name;
-
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
             strict_type => 1,
-            store       => \$sample_info_href,
         },
         file_info_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$file_info_href,
-        },
-        infile_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
             strict_type => 1,
-            store       => \$infile_href
         },
         indir_path_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$indir_path_href
-        },
-        infile_lane_prefix_href => {
-            required    => 1,
             defined     => 1,
-            default     => {},
+            required    => 1,
+            store       => \$indir_path_href,
             strict_type => 1,
-            store       => \$infile_lane_prefix_href,
         },
         infile_both_strands_prefix_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_both_strands_prefix_href,
             strict_type => 1,
-            store       => \$infile_both_strands_prefix_href
         },
-        lane_href => {
-            required    => 1,
-            defined     => 1,
+        infile_href => {
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_href,
             strict_type => 1,
-            store       => \$lane_href
+        },
+        infile_lane_prefix_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_lane_prefix_href,
+            strict_type => 1,
         },
         job_id_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
-            store       => \$job_id_href,
-        },
-        program_name => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
             strict_type => 1,
-            store       => \$program_name,
+        },
+        lane_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$lane_href,
+            strict_type => 1,
         },
         outaligner_dir_ref => {
             default     => \$arg_href->{active_parameter_href}{outaligner_dir},
-            strict_type => 1,
             store       => \$outaligner_dir_ref,
+            strict_type => 1,
+        },
+        program_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$program_name,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
         },
     };
 
@@ -2231,6 +2288,7 @@ sub infiles_reformat {
         # Needed to be able to track when lanes are finished
         my $lane_tracker = 0;
 
+      INFILE:
         while ( my ( $file_index, $file_name ) =
             each( @{ $infile_href->{$sample_id} } ) )
         {
@@ -2238,51 +2296,54 @@ sub infiles_reformat {
             ## Check if a file is gzipped.
             my $compressed_switch =
               check_gzipped( { file_name_ref => \$file_name, } );
-            my $read_file_command = "zcat";
+            my $read_file_command = q{zcat};
 
-            if ( !$compressed_switch ) {    #Not compressed
+            ## Not compressed
+            if ( not $compressed_switch ) {
 
-                $uncompressed_file_counter = "uncompressed"
-                  ; #File needs compression before starting analysis. Note: All files are rechecked downstream and uncompressed ones are gzipped automatically
-                $read_file_command = "cat";
+                ## File needs compression before starting analysis. Note: All files are rechecked downstream and uncompressed ones are gzipped automatically
+                $uncompressed_file_counter = q{uncompressed};
+                $read_file_command         = q{cat};
             }
 
+            ## Parse 'new' no "index" format $1=lane, $2=date,
+            ## $3=Flow-cell, $4=Sample_id, $5=index,$6=direction
             if (
                 $file_name =~ /(\d+)_(\d+)_([^_]+)_([^_]+)_([^_]+)_(\d).fastq/ )
-            { #Parse 'new' no "index" format $1=lane, $2=date, $3=Flow-cell, $4=Sample_id, $5=index,$6=direction
+            {
 
                 ## Check that the sample_id provided and sample_id in infile name match.
                 check_sample_id_match(
                     {
                         active_parameter_href => $active_parameter_href,
+                        file_index            => $file_index,
                         infile_href           => $infile_href,
-                        sample_id             => $sample_id,
                         infile_sample_id => $4,    #$4 = Sample_id from filename
-                        file_index => $file_index,
+                        sample_id => $sample_id,
                     }
                 );
 
                 ## Adds information derived from infile name to sample_info hash. Tracks the number of lanes sequenced and checks unique array elementents.
                 add_infile_info(
                     {
-                        active_parameter_href   => $active_parameter_href,
-                        sample_info_href        => $sample_info_href,
-                        file_info_href          => $file_info_href,
-                        lane_href               => $lane_href,
-                        infile_href             => $infile_href,
-                        indir_path_href         => $indir_path_href,
-                        infile_lane_prefix_href => $infile_lane_prefix_href,
+                        active_parameter_href => $active_parameter_href,
+                        compressed_switch     => $compressed_switch,
+                        date                  => $2,
+                        direction             => $6,
+                        file_info_href        => $file_info_href,
+                        file_index            => $file_index,
+                        flowcell              => $3,
+                        index                 => $5,
+                        indir_path_href       => $indir_path_href,
                         infile_both_strands_prefix_href =>
                           $infile_both_strands_prefix_href,
-                        lane              => $1,
-                        date              => $2,
-                        flowcell          => $3,
-                        sample_id         => $4,
-                        index             => $5,
-                        direction         => $6,
-                        lane_tracker_ref  => \$lane_tracker,
-                        file_index        => $file_index,
-                        compressed_switch => $compressed_switch,
+                        infile_href             => $infile_href,
+                        infile_lane_prefix_href => $infile_lane_prefix_href,
+                        lane                    => $1,
+                        lane_href               => $lane_href,
+                        lane_tracker_ref        => \$lane_tracker,
+                        sample_id               => $4,
+                        sample_info_href        => $sample_info_href,
                     }
                 );
             }
@@ -2290,19 +2351,17 @@ sub infiles_reformat {
             {    #No regexp match i.e. file does not follow filename convention
 
                 $log->warn(
-                        "Could not detect MIP file name convention for file: "
+                        q{Could not detect MIP file name convention for file: }
                       . $file_name
-                      . ". \n" );
+                      . q{.} );
                 $log->warn(
-                    "Will try to find mandatory information in fastq header.",
-                    "\n" );
+                    q{Will try to find mandatory information in fastq header.});
 
-                ##Check that file name at least contains sample_id
+                ## Check that file name at least contains sample_id
                 if ( $file_name !~ /$sample_id/ ) {
 
                     $log->fatal(
-"Please check that the file name contains the sample_id.",
-                        "\n"
+q{Please check that the file name contains the sample_id.}
                     );
                 }
 
@@ -2310,49 +2369,49 @@ sub infiles_reformat {
                 my @fastq_info_headers = get_run_info(
                     {
                         directory         => $indir_path_href->{$sample_id},
-                        read_file_command => $read_file_command,
                         file              => $file_name,
+                        read_file_command => $read_file_command,
                     }
                 );
 
                 ## Adds information derived from infile name to sample_info hash. Tracks the number of lanes sequenced and checks unique array elementents.
                 add_infile_info(
                     {
-                        active_parameter_href   => $active_parameter_href,
-                        sample_info_href        => $sample_info_href,
-                        file_info_href          => $file_info_href,
-                        lane_href               => $lane_href,
-                        infile_href             => $infile_href,
-                        indir_path_href         => $indir_path_href,
-                        infile_lane_prefix_href => $infile_lane_prefix_href,
+                        active_parameter_href => $active_parameter_href,
+                        compressed_switch     => $compressed_switch,
+                        ## fastq format does not contain a date of the run,
+                        ## so fake it with constant impossible date
+                        date            => q{000101},
+                        direction       => $fastq_info_headers[4],
+                        file_index      => $file_index,
+                        file_info_href  => $file_info_href,
+                        flowcell        => $fastq_info_headers[2],
+                        index           => $fastq_info_headers[5],
+                        indir_path_href => $indir_path_href,
                         infile_both_strands_prefix_href =>
                           $infile_both_strands_prefix_href,
-                        lane => $fastq_info_headers[3],
-                        date => "000101"
-                        , #fastq format does not contain a date of the run, so fake it with constant impossible date
-                        flowcell          => $fastq_info_headers[2],
-                        sample_id         => $sample_id,
-                        index             => $fastq_info_headers[5],
-                        direction         => $fastq_info_headers[4],
-                        lane_tracker_ref  => \$lane_tracker,
-                        file_index        => $file_index,
-                        compressed_switch => $compressed_switch,
+                        infile_href             => $infile_href,
+                        infile_lane_prefix_href => $infile_lane_prefix_href,
+                        lane                    => $fastq_info_headers[3],
+                        lane_href               => $lane_href,
+                        lane_tracker_ref        => \$lane_tracker,
+                        sample_id               => $sample_id,
+                        sample_info_href        => $sample_info_href,
                     }
                 );
 
                 $log->info(
-                    "Found following information from fastq header: lane="
+                        q{Found following information from fastq header: lane=}
                       . $fastq_info_headers[3]
-                      . " flow-cell="
+                      . q{ flow-cell=}
                       . $fastq_info_headers[2]
-                      . " index="
+                      . q{ index=}
                       . $fastq_info_headers[5]
-                      . " direction="
+                      . q{ direction=}
                       . $fastq_info_headers[4],
-                    "\n"
                 );
                 $log->warn(
-"Will add fake date '20010101' to follow file convention since this is not recorded in fastq header\n"
+q{Will add fake date '20010101' to follow file convention since this is not recorded in fastq header}
                 );
             }
         }
@@ -4293,47 +4352,6 @@ sub remove_pedigree_elements {
     }
 }
 
-sub check_email_address {
-
-##check_email_address
-
-##Function : Check the syntax of the email adress is valid not that it is actually exists.
-##Returns  : ""
-##Arguments: $email_ref
-##         : $email_ref => The email adress
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $email_ref;
-
-    my $tmpl = {
-        email_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$email_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    $$email_ref =~
-      /[ |\t|\r|\n]*\"?([^\"]+\"?@[^ <>\t]+\.[^ <>\t][^ <>\t]+)[ |\t|\r|\n]*/;
-
-    unless ( defined($1) ) {
-
-        $log->fatal(
-            "The supplied email: " . $$email_ref . " seem to be malformed. ",
-            "\n" );
-        exit 1;
-    }
-}
-
 sub break_string {
 
 ##break_string
@@ -5349,50 +5367,54 @@ sub check_aligner {
 
 sub collect_read_length {
 
-##collect_read_length
-
-##Function : Collect read length from an infile
-##Returns  : "readLength"
-##Arguments: $directory, $read_file, $file
-##         : $directory => Directory of file
-##         : $read_file => Command used to read file
-##         : $file      => File to parse
+## Function : Collect read length from an infile
+## Returns  : "readLength"
+## Arguments: $directory => Directory of file
+##          : $file      => File to parse
+##          : $read_file => Command used to read file
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $directory;
-    my $read_file_command;
     my $file;
+    my $read_file_command;
 
     my $tmpl = {
         directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$directory,
             strict_type => 1,
-            store       => \$directory
         },
         read_file_command => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$read_file_command,
             strict_type => 1,
-            store       => \$read_file_command
         },
         file =>
-          { required => 1, defined => 1, strict_type => 1, store => \$file },
+          { defined => 1, required => 1, store => \$file, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    ## Prints sequence length and exits
     my $seq_length_regexp =
-q?perl -ne 'if ($_!~/@/) {chomp($_);my $seq_length = length($_);print $seq_length;last;}' ?
-      ;    #Prints sequence length and exits
+q?perl -ne 'if ($_!~/@/) {chomp($_);my $seq_length = length($_);print $seq_length;last;}' ?;
 
-    my $pwd = cwd();      #Save current direcory
-    chdir($directory);    #Move to sample_id infile directory
+    ## Save current direcory
+    my $pwd = cwd();
 
-    my $ret =
-      `$read_file_command $file | $seq_length_regexp;`; #Collect sequence length
+    ## Move to sample_id infile directory
+    chdir($directory);
+
+    ## Collect sequence length
+    my $ret = `$read_file_command $file | $seq_length_regexp;`;
+
+    ## Move to original directory
+    chdir($pwd);
+
     return $ret;
 }
 

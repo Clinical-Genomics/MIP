@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.0.14;
+    our $VERSION = 1.0.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -41,16 +41,18 @@ sub check_conda_installation {
 
 ## Function  : Checks that conda is installed and returns installation path
 ## Returns   : $conda_prefix_path
-## Arguments : $conda_dir_path => Path to conda environment (default: conda root)
-##           : $conda_env      => Name of conda environment
-##           : $quiet          => Log only warnings and above
-##           : $verbose        => Log debug messages
+## Arguments : $conda_dir_path    => Path to conda environment (default: conda root)
+##           : $conda_env         => Name of conda environment
+##           : $disable_env_check => Disable environment check
+##           : $quiet             => Log only warnings and above
+##           : $verbose           => Log debug messages
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $conda_dir_path;
     my $conda_env;
+    my $disable_env_check;
     my $quiet;
     my $verbose;
 
@@ -62,6 +64,12 @@ sub check_conda_installation {
         },
         conda_env => {
             store       => \$conda_env,
+            strict_type => 1,
+        },
+        disable_env_check => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            store       => \$disable_env_check,
             strict_type => 1,
         },
         quiet => {
@@ -108,7 +116,12 @@ sub check_conda_installation {
     );
 
     ## Check for active conda environment (exit if true)
-    conda_check_env_status( { log => $log } );
+    conda_check_env_status(
+        {
+            disable_env_check => $disable_env_check,
+            log               => $log
+        }
+    );
 
     ## Add env to conda_prefix_path if applicable
     my $conda_prefix_path;

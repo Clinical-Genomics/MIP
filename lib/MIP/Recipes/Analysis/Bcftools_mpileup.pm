@@ -476,9 +476,9 @@ sub analysis_bcftools_mpileup {
     close $XARGSFILEHANDLE
       or $log->logcroak(q{Could not close XARGSFILEHANDLE});
 
-    if ( $active_parameter_href->{$mip_program_name} == 1 ) {
+    if ( $mip_program_mode == 1 ) {
 
-        my $path =>
+        my $path =
           catfile( $outfamily_directory, $outfile_prefix . $outfile_suffix );
 
         ## Collect bcftools version in qccollect
@@ -489,6 +489,7 @@ sub analysis_bcftools_mpileup {
                 sample_info_href => $sample_info_href,
             }
         );
+
         ## Locating bcftools_mpileup file
         add_program_outfile_to_sample_info(
             {

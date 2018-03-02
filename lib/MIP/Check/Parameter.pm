@@ -13,6 +13,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie;
+use Email::Valid;
 use Readonly;
 use List::MoreUtils qw { any };
 
@@ -22,11 +23,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ check_allowed_array_values check_allowed_temp_directory check_cmd_config_vs_definition_file check_parameter_hash };
+      qw{ check_allowed_array_values check_allowed_temp_directory check_cmd_config_vs_definition_file check_email_address check_parameter_hash };
 }
 
 ##Constants
@@ -48,18 +49,18 @@ sub check_allowed_array_values {
 
     my $tmpl = {
         allowed_values_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$allowed_values_ref,
             strict_type => 1,
-            store       => \$allowed_values_ref
         },
         values_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$values_ref,
             strict_type => 1,
-            store       => \$values_ref
         },
     };
 
@@ -97,10 +98,10 @@ sub check_allowed_temp_directory {
 
     my $tmpl = {
         temp_directory => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$temp_directory,
             strict_type => 1,
-            store       => \$temp_directory
         },
     };
 
@@ -136,18 +137,18 @@ sub check_cmd_config_vs_definition_file {
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$active_parameter_href,
+            strict_type => 1,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
         },
     };
 
@@ -181,6 +182,51 @@ sub check_cmd_config_vs_definition_file {
     return;
 }
 
+sub check_email_address {
+
+## Function : Check the syntax of the email adress is valid and has a mail host.
+## Returns  :
+## Arguments: $email => The email adress
+##          : $log   => Log object
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $email;
+    my $log;
+
+    my $tmpl = {
+        email => {
+            defined     => 1,
+            required    => 1,
+            store       => \$email,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Check syntax and mail host
+    my $address = Email::Valid->address(
+        -address => $email,
+        -mxcheck => 1,
+    );
+    if ( not defined $address ) {
+
+        $log->fatal( q{The supplied email: }
+              . $email
+              . q{ seem to be malformed according to }
+              . Email::Valid->details() );
+        exit 1;
+    }
+    return;
+}
+
 sub check_parameter_hash {
 
 ## Function : Evaluate parameters in parameters hash
@@ -200,28 +246,28 @@ sub check_parameter_hash {
 
     my $tmpl = {
         file_path => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$file_path,
+            strict_type => 1,
         },
         mandatory_key_href => {
-            required    => 1,
             default     => {},
-            strict_type => 1,
+            required    => 1,
             store       => \$mandatory_key_href,
+            strict_type => 1,
         },
         non_mandatory_key_href => {
-            required    => 1,
             default     => {},
-            strict_type => 1,
+            required    => 1,
             store       => \$non_mandatory_key_href,
+            strict_type => 1,
         },
         parameter_href => {
-            required    => 1,
             default     => {},
-            strict_type => 1,
+            required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
         },
     };
 
@@ -230,9 +276,9 @@ sub check_parameter_hash {
     ## Check that mandatory keys exists for each parameter
     _check_parameter_mandatory_keys_exits(
         {
-            parameter_href     => $parameter_href,
-            mandatory_key_href => $mandatory_key_href,
             file_path          => $file_path,
+            mandatory_key_href => $mandatory_key_href,
+            parameter_href     => $parameter_href,
         }
     );
 
@@ -245,9 +291,9 @@ sub check_parameter_hash {
         ## Mandatory keys
         _check_parameter_keys(
             {
-                parameter_href => $parameter_href,
-                key_href       => $argument_href,
                 file_path      => $file_path,
+                key_href       => $argument_href,
+                parameter_href => $parameter_href,
             }
         );
     }
@@ -271,22 +317,22 @@ sub _check_parameter_mandatory_keys_exits {
 
     my $tmpl = {
         file_path => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$file_path,
+            strict_type => 1,
         },
         mandatory_key_href => {
-            required    => 1,
             default     => {},
-            strict_type => 1,
+            required    => 1,
             store       => \$mandatory_key_href,
+            strict_type => 1,
         },
         parameter_href => {
-            required    => 1,
             default     => {},
-            strict_type => 1,
+            required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
         },
     };
 
@@ -332,22 +378,22 @@ sub _check_parameter_keys {
 
     my $tmpl = {
         file_path => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$file_path,
+            strict_type => 1,
         },
         key_href => {
-            required    => 1,
             default     => {},
-            strict_type => 1,
+            required    => 1,
             store       => \$key_href,
+            strict_type => 1,
         },
         parameter_href => {
-            required    => 1,
             default     => {},
-            strict_type => 1,
+            required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
         },
     };
 
@@ -365,22 +411,22 @@ sub _check_parameter_keys {
                 ## Check key data type
                 _check_parameter_data_type(
                     {
-                        parameter_href => $parameter_href,
+                        file_path      => $file_path,
+                        key            => $key,
                         key_href       => $key_href,
                         parameter      => $parameter,
-                        key            => $key,
-                        file_path      => $file_path,
+                        parameter_href => $parameter_href,
                     }
                 );
 
                 ## Evaluate key values
                 _check_parameter_values(
                     {
-                        parameter_href => $parameter_href,
+                        file_path      => $file_path,
+                        key            => $key,
                         key_href       => $key_href,
                         parameter      => $parameter,
-                        key            => $key,
-                        file_path      => $file_path,
+                        parameter_href => $parameter_href,
                     }
                 );
             }
@@ -410,30 +456,30 @@ sub _check_parameter_values {
 
     my $tmpl = {
         file_path => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$file_path,
+            strict_type => 1,
         },
         key =>
-          { required => 1, defined => 1, strict_type => 1, store => \$key, },
+          { defined => 1, required => 1, store => \$key, strict_type => 1, },
         key_href => {
-            required    => 1,
             default     => {},
-            strict_type => 1,
+            required    => 1,
             store       => \$key_href,
+            strict_type => 1,
         },
         parameter => {
-            required    => 1,
             defined     => 1,
-            strict_type => 1,
+            required    => 1,
             store       => \$parameter,
+            strict_type => 1,
         },
         parameter_href => {
-            required    => 1,
             default     => {},
-            strict_type => 1,
+            required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
         },
     };
 
@@ -486,30 +532,30 @@ sub _check_parameter_data_type {
 
     my $tmpl = {
         file_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$file_path,
             strict_type => 1,
-            store       => \$file_path
         },
         key =>
-          { required => 1, defined => 1, strict_type => 1, store => \$key },
+          { defined => 1, required => 1, store => \$key, strict_type => 1, },
         key_href => {
-            required    => 1,
             default     => {},
+            required    => 1,
+            store       => \$key_href,
             strict_type => 1,
-            store       => \$key_href
         },
         parameter => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$parameter,
             strict_type => 1,
-            store       => \$parameter
         },
         parameter_href => {
-            required    => 1,
             default     => {},
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
-            store       => \$parameter_href
         },
     };
 

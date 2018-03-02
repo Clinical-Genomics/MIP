@@ -837,32 +837,6 @@ sub pipeline_wgs {
             }
         );
     }
-    if ( $active_parameter_href->{pvcf2cytosure} ) {
-
-        $log->info(q{[Vcf2cytosure]});
-
-        my $v2cs_program_name = q{vcf2cytosure};
-
-        my $outfamily_directory = catfile(
-            $active_parameter_href->{outdata_dir},
-            $active_parameter_href->{family_id},
-            $active_parameter_href->{outaligner_dir},
-            $v2cs_program_name,
-        );
-
-        analysis_vcf2cytosure(
-            {
-                parameter_href          => $parameter_href,
-                active_parameter_href   => $active_parameter_href,
-                sample_info_href        => $sample_info_href,
-                file_info_href          => $file_info_href,
-                infile_lane_prefix_href => $infile_lane_prefix_href,
-                job_id_href             => $job_id_href,
-                outfamily_directory     => $outfamily_directory,
-                program_name            => $v2cs_program_name,
-            }
-        );
-    }
     if ( $active_parameter_href->{psv_varianteffectpredictor} ) {
 
         $log->info(q{[SV varianteffectpredictor]});
@@ -948,6 +922,32 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
                 program_name            => q{sv_reformat},
+            }
+        );
+    }
+    if ( $active_parameter_href->{pvcf2cytosure} ) {
+
+        $log->info(q{[Vcf2cytosure]});
+
+        my $v2cs_program_name = q{vcf2cytosure};
+
+        my $outfamily_directory = catfile(
+            $active_parameter_href->{outdata_dir},
+            $active_parameter_href->{family_id},
+            $active_parameter_href->{outaligner_dir},
+            $v2cs_program_name,
+        );
+
+        analysis_vcf2cytosure(
+            {
+                parameter_href          => $parameter_href,
+                active_parameter_href   => $active_parameter_href,
+                sample_info_href        => $sample_info_href,
+                file_info_href          => $file_info_href,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                outfamily_directory     => $outfamily_directory,
+                program_name            => $v2cs_program_name,
             }
         );
     }

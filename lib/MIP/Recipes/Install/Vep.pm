@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.06;
+    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vep };
@@ -98,7 +98,7 @@ sub install_vep {
     ## Modules
     use MIP::Check::Installation qw{ check_existing_installation };
     use MIP::Gnu::Bash qw{ gnu_cd gnu_unset };
-    use MIP::Gnu::Coreutils qw{ gnu_ln gnu_mkdir gnu_mv gnu_rm };
+    use MIP::Gnu::Coreutils qw{ gnu_ln gnu_mkdir gnu_rm };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
     use MIP::Package_manager::Conda
       qw{ conda_source_activate conda_source_deactivate };
@@ -106,7 +106,6 @@ sub install_vep {
     use MIP::Program::Download::Wget qw{ wget };
     use MIP::Program::Variantcalling::Vep
       qw{ variant_effect_predictor_install };
-    use MIP::Recipes::Install::Conda qw{ get_conda_dir_path };
     use MIP::Versionmanager::Git qw{ git_checkout git_clone };
 
     ## Unpack parameters
@@ -123,7 +122,13 @@ sub install_vep {
     my $auto = $vep_parameters_href->{vep_auto_flag};
 
     # Set destination directory for cache files
-    my $cache_directory = $vep_parameters_href->{vep_cache_dir};
+    my $cache_directory = catdir( $vep_parameters_href->{vep_cache_dir} );
+
+    # Set vep api installation directory
+    my $vep_dir_path = catdir( $conda_prefix_path, q{ensembl-vep} );
+
+    # Set vep plugin directory
+    my $vep_plugin_dir = catdir( $cache_directory, q{Plugins} );
 
     ## Retrieve logger object
     my $log = retrieve_log(
@@ -140,26 +145,33 @@ sub install_vep {
     ## Install VEP
     say {$FILEHANDLE} q{### Install varianteffectpredictor};
 
-    ## Check if installation exists and remove directory unless a noupdate flag is provided
-    my $vep_dir_path = catdir( $conda_prefix_path, q{ensembl-vep} );
-    my $install_check = check_existing_installation(
-        {
-            conda_environment      => $conda_environment,
-            conda_prefix_path      => $conda_prefix_path,
-            FILEHANDLE             => $FILEHANDLE,
-            log                    => $log,
-            noupdate               => $noupdate,
-            program_directory_path => $vep_dir_path,
-            program_name           => q{VEP},
-        }
-    );
-
-    # Return if the directory is found and a noupdate flag has been provided
-    if ($install_check) {
-        say {$FILEHANDLE} $NEWLINE;
-        return;
+    ## Vipe the api if a reinstallation has been requested
+    my $install_check;
+    if ( $auto =~ m/[al]/xms ) {
+        ## Check if installation exists and remove directory unless a noupdate flag is provided
+        $install_check = check_existing_installation(
+            {
+                conda_environment      => $conda_environment,
+                conda_prefix_path      => $conda_prefix_path,
+                FILEHANDLE             => $FILEHANDLE,
+                log                    => $log,
+                noupdate               => $noupdate,
+                program_directory_path => $vep_dir_path,
+                program_name           => q{VEP-api},
+            }
+        );
+        print $FILEHANDLE $NEWLINE;
     }
 
+  # Return if all the directories is found and a noupdate flag has been provided
+    if ($install_check) {
+        ## Skip api installation but continue with rest
+        $auto =~ s/[al]//gxms;
+        if ( not $auto =~ m/[cfp]/xms ) {
+            say {$FILEHANDLE} $NEWLINE;
+            return;
+        }
+    }
     ## Only activate conda environment if supplied by user
     if ($conda_environment) {
 
@@ -174,50 +186,65 @@ sub install_vep {
         say {$FILEHANDLE} $NEWLINE;
     }
 
-    ## Set LD_LIBRARY_PATH for VEP isntallation
-    my $conda_dir_path = get_conda_dir_path(
-        {
-            log => $log
+    ## Make sure that the VEP:s INSTALL.pl exist if the user has selected to skip api installation
+    if ( ( $auto =~ m/[cfp]/xms ) && ( not $auto =~ m/[al]/xms ) ) {
+
+        if ( not -s catfile( $vep_dir_path, q{INSTALL.pl} ) ) {
+            $log->fatal(
+q{Can't install cache, fasta files or plugins without a VEP installation file!}
+            );
+            $log->fatal(
+q{Please add the [a] and/or [l] flag to --vep_auto_flag when running mip_install.pl}
+            );
+            exit 1;
         }
-    );
+    }
+
+    ## Make sure that the cache directory exists
+    if ( not -d $cache_directory ) {
+        say {$FILEHANDLE} q{## Create cache directory};
+        gnu_mkdir(
+            {
+                FILEHANDLE       => $FILEHANDLE,
+                indirectory_path => $cache_directory,
+                parents          => 1,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+    }
+
+    ## Set LD_LIBRARY_PATH for VEP installation
     say $FILEHANDLE q{LD_LIBRARY_PATH=}
-      . $conda_dir_path
+      . $conda_prefix_path
       . q{/lib/:$LD_LIBRARY_PATH};
     say $FILEHANDLE q{export LD_LIBRARY_PATH} . $NEWLINE;
 
-    ## Make sure that the cache directory exists
-    gnu_mkdir(
-        {
-            FILEHANDLE       => $FILEHANDLE,
-            indirectory_path => $cache_directory,
-            parents          => 1,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
+    ## Download VEP
+    if ( $auto =~ m/[al]/xms ) {
+        ## Move to miniconda environment
+        gnu_cd(
+            {
+                directory_path => catdir($conda_prefix_path),
+                FILEHANDLE     => $FILEHANDLE,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
 
-    ## Move to miniconda environment
-    gnu_cd(
-        {
-            directory_path => catdir($conda_prefix_path),
-            FILEHANDLE     => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-    ## Git clone
-    say {$FILEHANDLE} q{## Git clone VEP};
-    git_clone(
-        {
-            FILEHANDLE => $FILEHANDLE,
-            url        => q{https://github.com/Ensembl/ensembl-vep.git},
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
+        ## Git clone
+        say {$FILEHANDLE} q{## Git clone VEP};
+        git_clone(
+            {
+                FILEHANDLE => $FILEHANDLE,
+                url        => q{https://github.com/Ensembl/ensembl-vep.git},
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+    }
 
     ## Move to vep directory
     gnu_cd(
         {
-            directory_path => catdir(q{ensembl-vep}),
+            directory_path => $vep_dir_path,
             FILEHANDLE     => $FILEHANDLE,
         }
     );
@@ -236,6 +263,10 @@ sub install_vep {
     ## Install VEP
     say {$FILEHANDLE} q{## Install VEP};
 
+    ## Don't install plugins unless specified in the auto flag
+    if ( not $auto =~ m/p/xms ) {
+        @plugins = qw{};
+    }
     variant_effect_predictor_install(
         {
             assembly        => $assemblies[0],
@@ -253,6 +284,10 @@ sub install_vep {
         && ( $auto =~ / [cf] /xsm ) )
     {
 
+        ## Remove api and plugins from the auto flag
+        my $cf_auto = $auto;
+        $cf_auto =~ s/[alp]//gxms;
+
         # Find last index of array and initate
         Readonly my $NUMBER_OF_ASSEMBLIES => $#assemblies;
 
@@ -266,7 +301,7 @@ sub install_vep {
             variant_effect_predictor_install(
                 {
                     assembly        => $assemblies[$assembly_version],
-                    auto            => q{cf},
+                    auto            => $cf_auto,
                     cache_directory => $cache_directory,
                     FILEHANDLE      => $FILEHANDLE,
                     species_ref     => [qw{ homo_sapiens }],
@@ -276,19 +311,18 @@ sub install_vep {
         }
     }
 
-    # Initate
-    my $vep_plugin_dir = catdir( $cache_directory, q{Plugins} );
-
-    if (@plugins) {
+    ## Install and download extra plugin files
+    if ( @plugins && $auto =~ m/p/xms ) {
 
         if ( any { $_ eq q{MaxEntScan} } @plugins ) {
-
             ## Add MaxEntScan required text file
             say {$FILEHANDLE} q{## Add MaxEntScan required text file};
             wget(
                 {
                     FILEHANDLE => $FILEHANDLE,
-                    quiet      => $quiet,
+                    outfile_path =>
+                      catfile( $vep_plugin_dir, q{fordownload.tar.gz} ),
+                    quiet => $quiet,
                     url =>
 q{http://genes.mit.edu/burgelab/maxent/download/fordownload.tar.gz},
                     verbose => $verbose,
@@ -302,17 +336,20 @@ q{http://genes.mit.edu/burgelab/maxent/download/fordownload.tar.gz},
                     extract     => 1,
                     FILEHANDLE  => $FILEHANDLE,
                     filter_gzip => 1,
-                    file_path   => catfile(q{fordownload.tar.gz}),
+                    file_path =>
+                      catfile( $vep_plugin_dir, q{fordownload.tar.gz} ),
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
 
-            gnu_mv(
+            ## Clean up
+            say {$FILEHANDLE} q{## Clean up};
+            gnu_rm(
                 {
-                    FILEHANDLE   => $FILEHANDLE,
-                    force        => 1,
-                    infile_path  => q{fordownload},
-                    outfile_path => catfile($vep_plugin_dir),
+                    FILEHANDLE => $FILEHANDLE,
+                    force      => 1,
+                    infile_path =>
+                      catfile( $vep_plugin_dir, q{fordownload.tar.gz} ),
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
@@ -337,31 +374,43 @@ q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/LoFtool_scores.tx
         }
     }
 
-    ## Make available from conda environment
-    say {$FILEHANDLE} q{## Make available from conda environment};
-    my $target_path = catfile( $vep_dir_path,      q{vep} );
-    my $link_path   = catfile( $conda_prefix_path, qw{ bin vep } );
-    gnu_ln(
-        {
-            FILEHANDLE  => $FILEHANDLE,
-            force       => 1,
-            link_path   => $link_path,
-            symbolic    => 1,
-            target_path => $target_path,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
+    if ( $auto =~ m/[al]/xms ) {
 
-    ## Clean up
-    say {$FILEHANDLE} q{## Clean up};
-    gnu_rm(
+        ## Make VEP-api available from conda environment
+        say {$FILEHANDLE} q{## Make VEP-api available from conda environment};
+        my $target_path = catfile( $vep_dir_path,      q{vep} );
+        my $link_path   = catfile( $conda_prefix_path, qw{ bin vep } );
+        gnu_ln(
+            {
+                FILEHANDLE  => $FILEHANDLE,
+                force       => 1,
+                link_path   => $link_path,
+                symbolic    => 1,
+                target_path => $target_path,
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+
+        ## Clean up
+        say {$FILEHANDLE} q{## Clean up};
+        gnu_rm(
+            {
+                FILEHANDLE  => $FILEHANDLE,
+                force       => 1,
+                infile_path => catdir(
+                    $conda_prefix_path,
+                    q{VariantEffectPredictor-} . $vep_version . $DOT . q{zip}
+                ),
+            }
+        );
+        say {$FILEHANDLE} $NEWLINE;
+    }
+
+    ## Unset LD_LIBRARY_PATH as to not pollute the rest of the installation
+    gnu_unset(
         {
-            FILEHANDLE  => $FILEHANDLE,
-            force       => 1,
-            infile_path => catdir(
-                $conda_prefix_path,
-                q{VariantEffectPredictor-} . $vep_version . $DOT . q{zip}
-            ),
+            bash_variable => q{LD_LIBRARY_PATH},
+            FILEHANDLE    => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -372,15 +421,6 @@ q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/LoFtool_scores.tx
         {
             directory_path => $pwd,
             FILEHANDLE     => $FILEHANDLE,
-        }
-    );
-    say {$FILEHANDLE} $NEWLINE;
-
-    ## Unset LD_LIBRARY_PATH as to not pollute the rest of the installation
-    gnu_unset(
-        {
-            bash_variable => q{LD_LIBRARY_PATH},
-            FILEHANDLE    => $FILEHANDLE,
         }
     );
     say {$FILEHANDLE} $NEWLINE;

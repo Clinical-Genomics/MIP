@@ -144,6 +144,7 @@ sub pipeline_wts {
 
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
     use MIP::Recipes::Analysis::Star_aln qw{ analysis_star_aln };
+    use MIP::Recipes::Analysis::Star_fusion qw{ analysis_star_fusion };
 
     ## Run FastQC
     if ( $active_parameter_href->{pfastqc} ) {
@@ -199,6 +200,37 @@ sub pipeline_wts {
                     outsample_directory     => $star_outsample_directory,
                     sample_id               => $sample_id,
                     program_name            => q{star_aln},
+                }
+            );
+        }
+    }
+    ## Star fusion
+    if ( $active_parameter_href->{pstar_fusion} ) {
+
+        $log->info(q{[Star Fusion]});
+
+      SAMPLE_ID:
+        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+            my $star_insample_directory =
+              catdir( $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir} );
+            my $star_outsample_directory =
+              catdir( $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir} );
+
+            analysis_star_fusion(
+                {
+                    parameter_href          => $parameter_href,
+                    active_parameter_href   => $active_parameter_href,
+                    sample_info_href        => $sample_info_href,
+                    file_info_href          => $file_info_href,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    job_id_href             => $job_id_href,
+                    insample_directory      => $star_insample_directory,
+                    outsample_directory     => $star_outsample_directory,
+                    sample_id               => $sample_id,
+                    program_name            => q{star_fusion},
                 }
             );
         }

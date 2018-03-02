@@ -60,7 +60,8 @@ BEGIN {
 Readonly my $NEWLINE => qq{\n};
 Readonly my $SPACE   => q{ };
 
-my ( $sample_info_file, $regexp_file, $print_regexp, $skip_evaluation );
+my ( $sample_info_file, $regexp_file, $print_regexp, $skip_evaluation,
+    $evaluate_plink_gender );
 
 ## Scalar parameters with defaults
 my ( $outfile, $print_regexp_outfile, $log_file ) =
@@ -74,7 +75,7 @@ my %qc_header;
 ## Save data in each outfile
 my %qc_program_data;
 
-my $qccollect_version = q{2.0.5};
+my $qccollect_version = q{2.0.6};
 
 ###User Options
 GetOptions(
@@ -84,6 +85,7 @@ GetOptions(
     q{preg|print_regexp}            => \$print_regexp,
     q{prego|print_regexp_outfile:s} => \$print_regexp_outfile,
     q{ske|skip_evaluation}          => \$skip_evaluation,
+    q{epg|evaluate_plink_gender}    => \$evaluate_plink_gender,
     q{l|log_file:s}                 => \$log_file,
     ## Display help text
     q{h|help} => sub { say STDOUT $USAGE; exit; },
@@ -231,15 +233,16 @@ sub build_usage {
 
     return <<"END_USAGE";
  $program_name [options] -si [sample_info.yaml] -r [regexp.yaml] -o [outfile]
-   -si/--sample_info_file Sample info file (YAML format, Supply whole path, mandatory)
-   -r/--regexp_file Regular expression file (YAML format, Supply whole path, mandatory)
-   -o/--outfile The data file output (Supply whole path, defaults to "qcmetrics.yaml")
-   -preg/--print_regexp Print the regexp used at CMMS switch (defaults to "0" (=no))
+   -si/--sample_info_file        Sample info file (YAML format, Supply whole path, mandatory)
+   -r/--regexp_file              Regular expression file (YAML format, Supply whole path, mandatory)
+   -o/--outfile                  Data file output (Supply whole path, defaults to "qcmetrics.yaml")
+   -preg/--print_regexp          Print the regexp used at CMMS switch (defaults to "0" (=no))
    -prego/--print_regexp_outfile Regexp YAML outfile (defaults to "qc_regexp.yaml")
-   -ske/--skip_evaluation Skip evaluation step
-   -l/--log_file Log file (Default: "qccollect.log")
-   -h/--help Display this help message
-   -v/--version Display version;
+   -ske/--skip_evaluation        Skip evaluation step (boolean)
+   -epg/--evaluate_plink_gender  Evaluate plink gender (boolean)
+   -l/--log_file                 Log file (Default: "qccollect.log")
+   -h/--help                     Display this help message
+   -v/--version                  Display version
 END_USAGE
 }
 
@@ -347,12 +350,13 @@ sub family_qc {
         ## Add extracted information to qc_data
         add_to_qc_data(
             {
-                sample_info_href     => $sample_info_href,
-                regexp_href          => $regexp_href,
-                qc_data_href         => $qc_data_href,
-                qc_header_href       => $qc_header_href,
-                qc_program_data_href => $qc_program_data_href,
-                program              => $program,
+                evaluate_plink_gender => $evaluate_plink_gender,
+                qc_data_href          => $qc_data_href,
+                qc_header_href        => $qc_header_href,
+                qc_program_data_href  => $qc_program_data_href,
+                program               => $program,
+                regexp_href           => $regexp_href,
+                sample_info_href      => $sample_info_href,
             }
         );
     }
@@ -476,14 +480,14 @@ sub sample_qc {
                 ## Add extracted information to qc_data
                 add_to_qc_data(
                     {
-                        sample_info_href     => $sample_info_href,
-                        regexp_href          => $regexp_href,
+                        infile               => $infile,
                         qc_data_href         => $qc_data_href,
                         qc_header_href       => $qc_header_href,
                         qc_program_data_href => $qc_program_data_href,
-                        sample_id            => $sample_id,
                         program              => $program,
-                        infile               => $infile,
+                        regexp_href          => $regexp_href,
+                        sample_id            => $sample_id,
+                        sample_info_href     => $sample_info_href,
                     }
                 );
             }
@@ -670,18 +674,20 @@ sub add_to_qc_data {
 
 ## Function  : Add to qc_data hash to enable write to yaml format
 ## Returns   :
-## Arguments : $infile               => infile to program
-##           : $program              => The program to examine
-##           : $qc_data_href         => QCData hash {REF}
-##           : $qc_header_href       => Save header(s) in each outfile {REF}
-##           : $qc_program_data_href => Hash to save data in each outfile {REF}
-##           : $regexp_href          => RegExp hash {REF}
-##           : $sample_id            => SampleID
-##           : $sample_info_href     => Info on samples and family hash {REF}
+## Arguments : $evaluate_plink_gender => Evaluate plink gender
+##           : $infile                => Infile to program
+##           : $program               => Program to examine
+##           : $qc_data_href          => QCData hash {REF}
+##           : $qc_header_href        => Save header(s) in each outfile {REF}
+##           : $qc_program_data_href  => Hash to save data in each outfile {REF}
+##           : $regexp_href           => RegExp hash {REF}
+##           : $sample_id             => SampleID
+##           : $sample_info_href      => Info on samples and family hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $evaluate_plink_gender;
     my $infile;
     my $program;
     my $qc_data_href;
@@ -692,18 +698,16 @@ sub add_to_qc_data {
     my $sample_info_href;
 
     my $tmpl = {
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
+        evaluate_plink_gender => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$evaluate_plink_gender,
             strict_type => 1,
         },
-        regexp_href => {
-            default     => {},
+        infile  => { store => \$infile, strict_type => 1, },
+        program => {
             defined     => 1,
             required    => 1,
-            store       => \$regexp_href,
+            store       => \$program,
             strict_type => 1,
         },
         qc_data_href => {
@@ -727,14 +731,21 @@ sub add_to_qc_data {
             store       => \$qc_program_data_href,
             strict_type => 1,
         },
-        sample_id => { store => \$sample_id, strict_type => 1, },
-        program   => {
+        regexp_href => {
+            default     => {},
             defined     => 1,
             required    => 1,
-            store       => \$program,
+            store       => \$regexp_href,
             strict_type => 1,
         },
-        infile => { store => \$infile, strict_type => 1, },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+        sample_id => { store => \$sample_id, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -813,11 +824,13 @@ sub add_to_qc_data {
                           [$regexp_key_counter];
                     }
                     ## Check gender for sample_id
-                    if ( $program eq q{plink_sexcheck} ) {
+                    if (   $program eq q{plink_sexcheck}
+                        && $evaluate_plink_gender )
+                    {
 
                         ## Array ref
                         my @sexchecks = split(
-                            ":",
+                            q{:},
                             @{
                                 $qc_program_data_href->{$program}{$regexp_key}
                             }[$regexp_key_counter]
@@ -1874,7 +1887,7 @@ q?perl -nae 'if($_=~/##SnpSiftVersion=\"(.+),/) {my $ret=$1; $ret=~s/\s/_/g;prin
       ;    #Collect SnpEff version
 
     $regexp{varianteffectpredictor}{version} =
-      q?perl -nae 'if($_=~/##VEP=(\w+)/) {print $1;last;}' ?
+      q?perl -nae 'if($_=~/##VEP="(\w+)"/) {print $1;last;}' ?
       ;    #Collect varianteffectpredictor version
 
     $regexp{varianteffectpredictor}{cache} =
@@ -1950,7 +1963,7 @@ q?perl -nae 'if($_=~/SVMETHOD=EMBL\.DELLY(v\d+\.\d+\.\d+)/) {print $1;last }' ?
       ;    #Collect SVVCFAnno version
 
     $regexp{sv_varianteffectpredictor}{version} =
-      q?perl -nae 'if($_=~/##VEP=(\w+)/) {print $1;last;}' ?
+      q?perl -nae 'if($_=~/##VEP="(\w+)"/) {print $1;last;}' ?
       ;    #Collect sv_varianteffectpredictor version
 
     $regexp{sv_varianteffectpredictor}{cache} =

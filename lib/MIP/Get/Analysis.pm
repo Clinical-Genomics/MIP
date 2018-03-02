@@ -27,16 +27,170 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ get_overall_analysis_type print_program };
+    our @EXPORT_OK =
+      qw{ get_dependency_tree get_overall_analysis_type print_program };
 
 }
 
 ## Constants
 Readonly my $SPACE   => q{ };
 Readonly my $NEWLINE => qq{\n};
+
+sub get_dependency_tree {
+
+## Function  : Collects all downstream programs from initation point.
+## Returns   :
+## Arguments : $is_program_found_ref    => Found initiation program {REF}
+##           : $is_chain_found_ref      => Found program chain
+##           : $program                 => Initiation point
+##           : $start_with_programs_ref => Store programs
+##           : $dependency_tree_href    => Dependency hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $is_program_found_ref;
+    my $is_chain_found_ref;
+    my $program;
+    my $start_with_programs_ref;
+    my $dependency_tree_href;
+
+    my $tmpl = {
+        is_program_found_ref => {
+            default     => \$$,
+            store       => \$is_program_found_ref,
+            strict_type => 1,
+        },
+        is_chain_found_ref => {
+            default     => \$$,
+            store       => \$is_chain_found_ref,
+            strict_type => 1,
+        },
+        program => {
+            required    => 1,
+            store       => \$program,
+            strict_type => 1,
+        },
+        start_with_programs_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$start_with_programs_ref,
+            strict_type => 1,
+        },
+        dependency_tree_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$dependency_tree_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Copy hash to enable recursive removal of keys
+    my %tree = %{$dependency_tree_href};
+
+  KEY_VALUE_PAIR:
+    while ( my ( $key, $value ) = each %tree ) {
+
+        ## Do not enter into more chains than one if program and chain is found
+        next KEY_VALUE_PAIR
+          if ( $key =~ /CHAIN_/sxm
+            && ${$is_program_found_ref}
+            && ${$is_chain_found_ref} );
+
+        ## Call recursive
+        if ( ref $value eq q{HASH} ) {
+
+            get_dependency_tree(
+                {
+                    dependency_tree_href    => $value,
+                    is_program_found_ref    => $is_program_found_ref,
+                    is_chain_found_ref      => $is_chain_found_ref,
+                    program                 => $program,
+                    start_with_programs_ref => $start_with_programs_ref,
+                }
+            );
+        }
+        elsif ( ref $value eq q{ARRAY} ) {
+            ## Inspect element
+
+          ELEMENT:
+            foreach my $element ( @{$value} ) {
+
+                ## Call recursive
+                if ( ref $element eq q{HASH} ) {
+
+                    get_dependency_tree(
+                        {
+                            dependency_tree_href    => $element,
+                            is_program_found_ref    => $is_program_found_ref,
+                            is_chain_found_ref      => $is_chain_found_ref,
+                            program                 => $program,
+                            start_with_programs_ref => $start_with_programs_ref,
+                        }
+                    );
+                }
+                ## Found initiator program
+                if ( ref $element ne q{HASH}
+                    && $element eq $program )
+                {
+
+                    ## Start collecting programs downstream
+                    ${$is_program_found_ref} = 1;
+
+                    ## Found chain that program belongs to
+                    if ( $key !~ /initiation/sxm
+                        && ${$is_program_found_ref} )
+                    {
+
+                        ## Set is part of chain signal
+                        ${$is_chain_found_ref} = 1;
+                    }
+
+                    ## Hash in PARALLEL section take all elements in list
+                    ## E.g. haplotypecaller->genotypegvcfs
+                    if ( $key eq $element ) {
+
+                        push @{$start_with_programs_ref}, @{$value};
+                        last ELEMENT;
+                    }
+                }
+                ## Special case for parallel section
+                if ( $key eq q{PARALLEL}
+                    && ${$is_program_found_ref} )
+                {
+
+                    if ( any { $_ eq $program } @{$value} ) {
+
+                        ## Add only start_with program from parallel section
+                        push @{$start_with_programs_ref}, $program;
+
+                        ## Skip any remaining hash_ref or element
+                        last ELEMENT;
+                    }
+                }
+
+                ## Add downstream programs
+                if ( ref $element ne q{HASH}
+                    && ${$is_program_found_ref} )
+                {
+
+                    push @{$start_with_programs_ref}, $element;
+                }
+            }
+        }
+
+        ## Remove identifier
+        delete $tree{$key};
+    }
+    return;
+}
 
 sub get_overall_analysis_type {
 

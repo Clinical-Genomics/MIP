@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_delly_reformat };
@@ -933,147 +933,148 @@ sub analysis_delly_reformat {
                 say {$XARGSFILEHANDLE} $NEWLINE;
             }
         }
+    }
 
-        ### Concatenate SV types
-        if ( scalar( @{ $active_parameter_href->{sample_ids} } ) > 1 ) {
+    ## Assemble filepaths
+    my @file_paths;
 
-            say {$FILEHANDLE} q{## bcftools concat - merge all SV types};
+    ### Concatenate SV types
+    if ( scalar( @{ $active_parameter_href->{sample_ids} } ) > 1 ) {
 
-            @file_paths = map {
-                    $outfile_path_prefix
-                  . $UNDERSCORE
-                  . $_
-                  . $UNDERSCORE
-                  . q{filtered}
-                  . $suffix{pdelly_call}
-            } @{ $active_parameter_href->{delly_types} };
-        }
-        else {    #Only one sample
+        say {$FILEHANDLE} q{## bcftools concat - merge all SV types};
 
-            say {$FILEHANDLE}
-              q{## Only one sample - skip merging and regenotyping};
-            say {$FILEHANDLE}
-              q{## bcftools concat - merge all SV types and contigs};
+        @file_paths = map {
+                $outfile_path_prefix
+              . $UNDERSCORE
+              . $_
+              . $UNDERSCORE
+              . q{filtered}
+              . $suffix{pdelly_call}
+        } @{ $active_parameter_href->{delly_types} };
+    }
+    else {    #Only one sample
 
-          SV_TYPE:
-            foreach my $sv_type ( @{ $active_parameter_href->{delly_types} } ) {
+        say {$FILEHANDLE} q{## Only one sample - skip merging and regenotyping};
+        say {$FILEHANDLE}
+          q{## bcftools concat - merge all SV types and contigs};
 
-                if ( $sv_type ne q{TRA} ) {
+      SV_TYPE:
+        foreach my $sv_type ( @{ $active_parameter_href->{delly_types} } ) {
 
-                  CONTIG:
-                    foreach my $contig (@contigs) {
+            if ( $sv_type ne q{TRA} ) {
 
-                        ## Assemble file paths by adding file ending
-                        push @file_paths, map {
-                                $infile_path_prefix{$_}{pdelly_call}
-                              . $UNDERSCORE
-                              . $contig
-                              . $UNDERSCORE
-                              . $sv_type
-                              . $suffix{pdelly_call}
-                        } @{ $active_parameter_href->{sample_ids} };
-                    }
-                }
-                else {
+              CONTIG:
+                foreach my $contig (@contigs) {
 
+                    ## Assemble file paths by adding file ending
                     push @file_paths, map {
                             $infile_path_prefix{$_}{pdelly_call}
+                          . $UNDERSCORE
+                          . $contig
                           . $UNDERSCORE
                           . $sv_type
                           . $suffix{pdelly_call}
                     } @{ $active_parameter_href->{sample_ids} };
                 }
             }
+            else {
+
+                push @file_paths, map {
+                        $infile_path_prefix{$_}{pdelly_call}
+                      . $UNDERSCORE
+                      . $sv_type
+                      . $suffix{pdelly_call}
+                } @{ $active_parameter_href->{sample_ids} };
+            }
         }
-        bcftools_concat(
-            {
-                allow_overlaps   => 1,
-                FILEHANDLE       => $FILEHANDLE,
-                infile_paths_ref => \@file_paths,
-                outfile_path     => $outfile_path_prefix
+    }
+    bcftools_concat(
+        {
+            allow_overlaps   => 1,
+            FILEHANDLE       => $FILEHANDLE,
+            infile_paths_ref => \@file_paths,
+            outfile_path     => $outfile_path_prefix
+              . $UNDERSCORE
+              . q{concat}
+              . $outfile_suffix,
+            output_type     => q{v},
+            rm_dups         => q{all},
+            stderrfile_path => $program_info_path
+              . $UNDERSCORE
+              . q{concat.stderr.txt},
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
+    ## Writes sbatch code to supplied filehandle to sort variants in vcf format
+    say {$FILEHANDLE} q{## Picard SortVcf};
+    picardtools_sortvcf(
+        {
+            FILEHANDLE       => $FILEHANDLE,
+            infile_paths_ref => [
+                    $outfile_path_prefix
                   . $UNDERSCORE
                   . q{concat}
-                  . $outfile_suffix,
-                output_type     => q{v},
-                rm_dups         => q{all},
-                stderrfile_path => $program_info_path
-                  . $UNDERSCORE
-                  . q{concat.stderr.txt},
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-
-        ## Writes sbatch code to supplied filehandle to sort variants in vcf format
-        say {$FILEHANDLE} q{## Picard SortVcf};
-        picardtools_sortvcf(
-            {
-                FILEHANDLE       => $FILEHANDLE,
-                infile_paths_ref => [
-                        $outfile_path_prefix
-                      . $UNDERSCORE
-                      . q{concat}
-                      . $outfile_suffix
-                ],
-                java_jar => catfile(
-                    $active_parameter_href->{picardtools_path},
-                    q{picard.jar}
-                ),
-                java_use_large_pages =>
-                  $active_parameter_href->{java_use_large_pages},
-                memory_allocation   => q{Xmx2g},
-                outfile_path        => $outfile_path_prefix . $outfile_suffix,
-                referencefile_path  => $referencefile_path,
-                sequence_dictionary => catfile(
-                    $reference_dir,
-                    $file_info_href->{human_genome_reference_name_prefix}
-                      . $DOT . q{dict}
-                ),
-                temp_directory => $temp_directory,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-
-        ## Copies file from temporary directory.
-        say {$FILEHANDLE} $NEWLINE . q{## Copy file from temporary directory};
-        migrate_file(
-            {
-                FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $outfile_path_prefix . $outfile_suffix,
-                outfile_path => $outfamily_directory,
-            }
-        );
-        say {$FILEHANDLE} q{wait}, $NEWLINE;
-
-        if ( $mip_program_mode == 1 ) {
-
-            add_program_outfile_to_sample_info(
-                {
-                    program_name => q{delly},
-                    path         => catfile(
-                        $outfamily_directory, $outfile_prefix . $outfile_suffix
-                    ),
-                    sample_info_href => $sample_info_href,
-                }
-            );
-
-            slurm_submit_job_sample_id_dependency_add_to_family(
-                {
-                    family_id               => $family_id,
-                    infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
-                    log                     => $log,
-                    path                    => $job_id_chain,
-                    sample_ids_ref =>
-                      \@{ $active_parameter_href->{sample_ids} },
-                    sbatch_file_name => $file_path,
-                }
-            );
+                  . $outfile_suffix
+            ],
+            java_jar => catfile(
+                $active_parameter_href->{picardtools_path},
+                q{picard.jar}
+            ),
+            java_use_large_pages =>
+              $active_parameter_href->{java_use_large_pages},
+            memory_allocation   => q{Xmx2g},
+            outfile_path        => $outfile_path_prefix . $outfile_suffix,
+            referencefile_path  => $referencefile_path,
+            sequence_dictionary => catfile(
+                $reference_dir,
+                $file_info_href->{human_genome_reference_name_prefix}
+                  . $DOT . q{dict}
+            ),
+            temp_directory => $temp_directory,
         }
+    );
+    say {$FILEHANDLE} $NEWLINE;
 
-        close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
-        close $XARGSFILEHANDLE
-          or $log->logcroak(q{Could not close $XARGSFILEHANDLE});
+    ## Copies file from temporary directory.
+    say {$FILEHANDLE} $NEWLINE . q{## Copy file from temporary directory};
+    migrate_file(
+        {
+            FILEHANDLE   => $FILEHANDLE,
+            infile_path  => $outfile_path_prefix . $outfile_suffix,
+            outfile_path => $outfamily_directory,
+        }
+    );
+    say {$FILEHANDLE} q{wait}, $NEWLINE;
+
+    if ( $mip_program_mode == 1 ) {
+
+        add_program_outfile_to_sample_info(
+            {
+                program_name => q{delly},
+                path         => catfile(
+                    $outfamily_directory, $outfile_prefix . $outfile_suffix
+                ),
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        slurm_submit_job_sample_id_dependency_add_to_family(
+            {
+                family_id               => $family_id,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                log                     => $log,
+                path                    => $job_id_chain,
+                sample_ids_ref   => \@{ $active_parameter_href->{sample_ids} },
+                sbatch_file_name => $file_path,
+            }
+        );
     }
+
+    close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
+    close $XARGSFILEHANDLE
+      or $log->logcroak(q{Could not close $XARGSFILEHANDLE});
     return;
 }
 

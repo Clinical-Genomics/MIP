@@ -90,9 +90,11 @@ $ mip --family_id [family_id] --pbwa_mem 1 --config_file [mip_config.yaml] --ped
 MIP is written in perl and therefore requires that perl is installed on your OS.
 
 #### Prerequisites
-* [Perl], version 5.18.2 or above
+* [Perl], version 5.26.0 or above
 * [Cpanm](http://search.cpan.org/~miyagawa/App-cpanminus-1.7043/lib/App/cpanminus.pm)
 * [Miniconda]
+
+We recommend perlbrew for installing and managing perl and cpanm libraries. Installation instructions and setting up specific cpanm libraries can be found [here](https://github.com/Clinical-Genomics/development/blob/master/perl/installation/installation.md).
 
 #### Automated Installation \(Linux x86\_64\)  
 ##### 1.Clone the official git repository
@@ -108,9 +110,6 @@ $ cd definitions
 $ cpanm --installdeps .
 $ cd -
 ```  
-  ###### *Note:*  
-  - Some versions of the cpan module List::MoreUtils has conflicts with certain versions of Perl. Perl v 5.18.2 has been confirmed to be compatible with version 0.4.13 of the List::MoreUtils module.
-  If you experience issues with that module, try to reinstall it by running: ``cpanm --reinstall List::MoreUtils@0.4.13 ``
 
 ##### 3.Test conda and mip_installation (optional)
 
@@ -127,8 +126,6 @@ This will generate a batch script "mip.sh" for the install in your working direc
 
   ###### *Note:*  
   - The batch script will install the MIP dependencies in Conda's root environment. Often it is beneficial to create a separate environment for each of your applications. In order to create a separate environment for MIP supply the ``-env [env_name]`` flag when running *mip_install.pl*.  
-
-  - There is currently an issue with installing GATK via Conda causing the installation process to freeze. The solution at the moment is to turn of the GATK installation by running the install script together with the ``-skip gatk`` flag and install [GATK] manually.
 
   - For a full list of available options and parameters, run: ``$ perl mip_install.pl --help``
 
@@ -149,23 +146,24 @@ This will install MIP and most of its dependencies into a conda environment.
 Make sure to activate your conda environment if that option was used above.  
 
 ```Bash
-$ cd t; prove run_tests.t
+$ cd t; prove -r
 $ cd -
 ```
 ##### 7.Install tools with conflicting dependencies  
 Tools that have conflicting dependencies needs to be installed in separate conda environments. Currently these programs requires separate environments:  
 
-  * Genmod, Chanjo and Variant_integrity
+  * Genmod, Chanjo, Multiqc and Variant_integrity
     - requires python 3
   * Peddy
-    - conflicts with SVDB dependencies  
   * CNVnator  
     - Requires access to ROOT which disturbs the normal linking of C libraries  
+  * SVDB  
+  * VEP
 
 
   ```bash
   ## Python 3 tools
-  $ perl mip_install.pl -env mip_pyv3.6 --python_version 3.6 --select_program genmod --select_program chanjo --select_program variant_integrity
+  $ perl mip_install.pl -env mip_pyv3.6 --python_version 3.6 --select_program genmod --select_program chanjo --select_program variant_integrity --select_program multiqc
   $ bash mip.sh
 
   ## Peddy
@@ -175,20 +173,36 @@ Tools that have conflicting dependencies needs to be installed in separate conda
   ## CNVnator
   $ perl mip_install.pl -env mip_cnvnator --select_program cnvnator
   $ bash mip.sh
+
+  ## SVDB
+  $ perl mip_install.pl -env mip_svdb --select_program svdb
+  $ bash mip.sh
+
+  ## VEP
+  $ perl mip_install.pl -env mip_vep --select_program vep
+  $ bash mip.sh
   ```
 
-  In your config yaml file or on the command line you will have to supply the ``module_source_environment_command`` parameter to activate the conda environment specific for the tool. Here is an example with three Python 3 tools in their own environment and Peddy and VEP and CNVnator in each own, with some extra initialization:
+  In your config yaml file or on the command line you will have to supply the ``module_source_environment_command`` parameter to activate the conda environment specific for the tool. Here is an example with three Python 3 tools in their own environment and Peddy, CNVnator, SVDB and VEP in each own, with some extra initialization:
 
   ```Yml
+  program_source_environment_command:
+    pgenmod: "source activate mip_pyv3.6"
   module_source_environment_command:
     pchanjo_sexcheck: "source activate mip_pyv3.6"
+    pcnvnator: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source [CONDA_PATH]/envs/mip_cnvnator/root/bin/thisroot.sh; source activate mip_cnvnator"
+    pmultiqc: "source activate mip_pyv3.6"
+    ppeddy: "source activate mip_peddy"
     prankvariant: "source activate mip_pyv3.6"
     psv_rankvariant: "source activate mip_pyv3.6"
+    psv_combinevariantcallsets: "source activate mip_svdb"
+    psv_varianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/envs/mip_vep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source activate mip_vep"
+    pvarianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/envs/mip_vep/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source activate mip_vep"
     pvariant_integrity: "source activate mip_pyv3.6"
-    ppeddy: "source activate mip_peddy"
-    pvarianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source activate mip_vep"
-    psv_varianteffectpredictor: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source activate mip_vep"
-    pcnvnator: "LD_LIBRARY_PATH=[CONDA_PATH]/lib/:$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; source [CONDA_PATH]/envs/mip_cnvnator/root/bin/thisroot.sh; source activate mip_cnvnator"
+  source_main_environment_commands:
+    - source
+    - activate
+    - mip
   ```
 
   MIP will execute this on the node before executing the program and then revert to the ``--source_main_environment_command`` if set. Otherwise ``source deactivate`` is used to return to the conda root environment.
@@ -219,9 +233,12 @@ All references and template files should be placed directly in the reference dir
 
 ##### Meta-Data
 
-* [Pedigree file] \(YAML-format\)
 * [Configuration file] \(YAML-format\)
-
+* [Gene panel file]
+* [Pedigree file] \(YAML-format\)
+* [Rank model file] \(Ini-format; Snv/indel\)
+* [SV rank model file] \(Ini-format; SV\)
+* [Qc regexp file] \(YAML-format\)
 
 #### Output
 
@@ -235,9 +252,13 @@ MIP will create sbatch scripts \(.sh\) and submit them in proper order with atta
 
 MIP will place any generated datafiles in the output data directory specified by `--outdata_dir`. All data files are regenerated for each analysis. STDOUT and STDERR for each program is written in the program/info directory prior to alignment and in the aligner/info directory post alignment.
 
-[Miniconda]: http://conda.pydata.org/miniconda.html
-[CPAN]: https://www.cpan.org/
-[Pedigree file]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/643594-miptest_pedigree.yaml
 [Configuration file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/mip_config.yaml
+[CPAN]: https://www.cpan.org/
 [GATK]:https://software.broadinstitute.org/gatk/
+[Gene panel file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/aggregated_master.txt
+[Miniconda]: http://conda.pydata.org/miniconda.html
+[Pedigree file]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/643594-miptest_pedigree.yaml
 [Perl]:https://www.perl.org/
+[Rank model file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/rank_model_cmms_-v1.20-.ini
+[SV rank model file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/svrank_model_cmms_-v1.2-.ini
+[Qc regexp file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/qc_regexp_-v1.17-.yaml
