@@ -32,6 +32,32 @@ sub _build_usage {
 ## Arguments:
 
     option(
+        q{bash_set_errexit} => (
+            cmd_aliases   => [qw{ bse }],
+            documentation => q{Set errexit in bash scripts},
+            is            => q{rw},
+            isa           => q{Bool},
+        )
+    );
+
+    option(
+        q{bash_set_nounset} => (
+            cmd_aliases   => [qw{ bsu }],
+            documentation => q{Set nounset in bash scripts},
+            is            => q{rw},
+            isa           => q{Bool},
+        )
+    );
+
+    option(
+        q{bash_set_pipefail} => (
+            cmd_aliases   => [qw{ bsp }],
+            documentation => q{Set pipefail in bash scripts},
+            is            => q{rw},
+            isa           => q{Bool},
+        )
+    );
+    option(
         q{config_file} => (
             cmd_aliases   => [qw{ config }],
             documentation => q{YAML config file for analysis parameters},
@@ -41,7 +67,7 @@ sub _build_usage {
         )
     );
 
-   option(
+    option(
         q{log_file} => (
             cmd_aliases   => [qw{ log }],
             documentation => q{Log file},

@@ -45,8 +45,7 @@ use MIP::Check::Reference
 use MIP::File::Format::Pedigree
   qw{ create_fam_file parse_yaml_pedigree_file reload_previous_pedigree_info };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
-use MIP::Get::Analysis
-  qw{ get_dependency_tree get_overall_analysis_type };
+use MIP::Get::Analysis qw{ get_dependency_tree get_overall_analysis_type };
 use MIP::Get::File qw{ get_select_file_contigs };
 use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
 use MIP::Script::Utils qw{ help };
@@ -170,23 +169,15 @@ sub mip_analyse {
 
 ### User Options
     GetOptions(
-        q{l|log_file:s} => \$active_parameter{log_file},
-        q{h|help}       => sub { say STDOUT $USAGE; exit; },
-        q{v|version}    => sub {
-            say STDOUT $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
-              $NEWLINE;
-            exit;
-        },
+
+ #        q{h|help}       => sub { say STDOUT $USAGE; exit; },
+ #        q{v|version}    => sub {
+ #            say STDOUT $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
+ #              $NEWLINE;
+ #            exit;
+ #        },
 
         #### Bash
-        q{bse|bash_set_errexit}  => \$active_parameter{bash_set_errexit},
-        q{bsu|bash_set_nounset}  => \$active_parameter{bash_set_nounset},
-        q{bsp|bash_set_pipefail} => \$active_parameter{bash_set_pipefail},
-        q{em|email:s}            => \$active_parameter{email},
-        q{emt|email_types:s}     => \@{ $active_parameter{email_types} },
-        q{mcn|module_core_number:s} =>
-          \%{ $active_parameter{module_core_number} },
-        q{mot|module_time:s} => \%{ $active_parameter{module_time} },
         q{mse|module_source_environment_command:s} =>
           \%{ $active_parameter{module_source_environment_command} },
         q{sen|source_main_environment_commands=s{,}} =>
@@ -207,7 +198,7 @@ sub mip_analyse {
         q{memsts|bwa_mem_bamstats} => \$active_parameter{bwa_mem_bamstats},
         q{memssm|bwa_sambamba_sort_memory_limit:s} =>
           \$active_parameter{bwa_sambamba_sort_memory_limit},
-        q{ptp|picardtools_path:s}     => \$active_parameter{picardtools_path},
+        q{ptp|picardtools_path:s} => \$active_parameter{picardtools_path},
         q{pptm|ppicardtools_mergesamfiles=n} =>
           \$active_parameter{ppicardtools_mergesamfiles},
         q{pmd|pmarkduplicates=n} => \$active_parameter{pmarkduplicates},
