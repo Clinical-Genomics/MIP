@@ -29,6 +29,8 @@ BEGIN {
 }
 
 ## Constants
+Readonly my $ASTERIX    => q{*};
+Readonly my $DOT        => q{.};
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $UNDERSCORE => q{_};
 
@@ -223,7 +225,7 @@ sub analysis_star_aln {
 
         ## Assign file tags
         my $file_path_prefix = catfile( $temp_directory, $infile_prefix );
-        my $outfile_path_prefix = $file_path_prefix . $outfile_tag;
+        my $outfile_path_prefix = $file_path_prefix . $outfile_tag . $DOT;
 
         # Collect paired-end or single-end sequence run mode
         my $sequence_run_mode =
@@ -325,9 +327,16 @@ sub analysis_star_aln {
 
         picardtools_addorreplacereadgroups(
             {
-                FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $outfile_path_prefix . $outfile_suffix,
-                outfile_path => $outfile_path_prefix
+                FILEHANDLE  => $FILEHANDLE,
+                infile_path => $outfile_path_prefix . $outfile_suffix,
+                java_jar    => catfile(
+                    $active_parameter_href->{picardtools_path},
+                    q{picard.jar}
+                ),
+                java_use_large_pages =>
+                  $active_parameter_href->{java_use_large_pages},
+                memory_allocation => q{Xmx1g},
+                outfile_path      => $outfile_path_prefix
                   . $DOT . q{RG}
                   . $outfile_suffix,
                 readgroup_id            => $infile_prefix,
@@ -345,7 +354,7 @@ sub analysis_star_aln {
         migrate_file(
             {
                 FILEHANDLE   => $FILEHANDLE,
-                infile_path  => $outfile_path_prefix,
+                infile_path  => $outfile_path_prefix . $ASTERIX,
                 outfile_path => $outsample_directory,
             }
         );
