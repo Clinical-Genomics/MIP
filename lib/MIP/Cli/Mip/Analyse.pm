@@ -46,13 +46,12 @@ sub _build_usage {
 ## Returns  :
 ## Arguments:
 
-  option(
+    option(
         q{analysis_constant_path} => (
-            cmd_aliases => [qw{ acp }],
-            documentation =>
-              q{Set the analysis constant path},
-            is  => q{rw},
-            isa => q{Str},
+            cmd_aliases   => [qw{ acp }],
+            documentation => q{Set the analysis constant path},
+            is            => q{rw},
+            isa           => q{Str},
         )
     );
 
@@ -68,18 +67,17 @@ sub _build_usage {
 
     option(
         q{cluster_constant_path} => (
-            cmd_aliases => [qw{ ccp }],
-            documentation =>
-              q{Set the cluster constant path},
-            is  => q{rw},
-            isa => q{Str},
+            cmd_aliases   => [qw{ ccp }],
+            documentation => q{Set the cluster constant path},
+            is            => q{rw},
+            isa           => q{Str},
         )
     );
 
-        option(
+    option(
         q{config_file_analysis} => (
             cmd_aliases => [qw{ cfa }],
-				    cmd_tags      => [q{YAML}],
+            cmd_tags    => [q{YAML}],
             documentation =>
               q{Write YAML configuration file the analysis parameters},
             is  => q{rw},
@@ -94,6 +92,25 @@ sub _build_usage {
               q{Sets all programs to dry run mode i.e. no sbatch submission},
             is  => q{rw},
             isa => q{Bool},
+        )
+    );
+
+    option(
+        q{email} => (
+            cmd_aliases   => [qw{ em }],
+            documentation => q{E-mail},
+            is            => q{rw},
+            isa           => q{Str},
+        )
+    );
+
+    option(
+        q{email_types} => (
+            cmd_aliases   => [qw{ emt }],
+            cmd_tags      => [q{SLURM}],
+            documentation => q{E-mail type},
+            is            => q{rw},
+            isa           => q{ArrayRef},
         )
     );
 
@@ -137,12 +154,32 @@ sub _build_usage {
         )
     );
 
-  option(
+    option(
         q{java_use_large_pages} => (
             cmd_aliases   => [qw{ jul }],
             documentation => q{Use large page memory},
             is            => q{rw},
             isa           => q{Bool},
+        )
+    );
+
+    option(
+        q{module_core_number} => (
+            cmd_aliases   => [qw{ mcn }],
+            cmd_tags      => [q{program_name=X(cores)}],
+            documentation => q{Set the number of cores for each module},
+            is            => q{rw},
+            isa           => q{HashRef},
+        )
+    );
+
+    option(
+        q{module_time} => (
+            cmd_aliases   => [qw{ mot }],
+            cmd_tags      => [q{program_name=time(hours)}],
+            documentation => q{Set the time allocation for each module},
+            is            => q{rw},
+            isa           => q{HashRef},
         )
     );
 
@@ -177,7 +214,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     option(
         q{pedigree_file} => (
             cmd_aliases   => [qw{ ped }],
-			     cmd_tags      => [q{YAML}],
+            cmd_tags      => [q{YAML}],
             documentation => q{Meta data on samples},
             is            => q{rw},
             isa           => q{Str},
@@ -193,12 +230,12 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
         )
     );
 
-  option(
+    option(
         q{print_program_mode} => (
             cmd_aliases   => [qw{ ppm }],
             documentation => q{Print all programs that are supported},
             is            => q{rw},
-            isa           => enum([0, 1, 2]),
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 
@@ -211,7 +248,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
         )
     );
 
-  option(
+    option(
         q{print_programs} => (
             cmd_aliases   => [qw{ pp }],
             documentation => q{Print all programs that are supported},
@@ -220,7 +257,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
         )
     );
 
-  option(
+    option(
         q{reference_dir} => (
             cmd_aliases   => [qw{ rd }],
             documentation => q{Reference(s) directory},
@@ -238,26 +275,27 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
         )
     );
 
-  option(
+    option(
         q{replace_iupac} => (
-            cmd_aliases   => [qw{ riu }],
-            documentation => q{Replace IUPAC code in alternative alleles with N},
-            is            => q{rw},
-            isa           => q{Bool},
+            cmd_aliases => [qw{ riu }],
+            documentation =>
+              q{Replace IUPAC code in alternative alleles with N},
+            is  => q{rw},
+            isa => q{Bool},
         )
     );
 
-  option(
+    option(
         q{sample_info_file} => (
             cmd_aliases   => [qw{ sif }],
-				cmd_tags      => [q{YAML}],
+            cmd_tags      => [q{YAML}],
             documentation => q{File for sample info used in the analysis},
             is            => q{rw},
             isa           => q{Str},
         )
     );
 
-  option(
+    option(
         q{start_with_program} => (
             cmd_aliases   => [qw{ swp }],
             documentation => q{Start analysis with program},
