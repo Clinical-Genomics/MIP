@@ -38,7 +38,7 @@ sub salmon_index {
 ## Returns   : @commands
 ## Arguments : $fasta_path             => Input reference fasta path, note salmon does not use the genome reference fasta, it uses a fasta file of transcripts
 ##           : $FILEHANDLE             => Filehandle to write to
-##           : $outfile_path           => outfile path
+##           : $outfile_path           => Outfile path
 ##           : $stderrfile_path        => Stderrfile path
 ##           : $stderrfile_path_append => Append stderr info to file path
 ##           : $stdoutfile_path        => Stdoutfile path
@@ -88,7 +88,7 @@ sub salmon_index {
     ## Stores commands depending on input parameters
     my @commands = q{salmon index};
 
-    #options
+    # Options
     push @commands, q{--transcripts} . $SPACE . $fasta_path;
 
     push @commands, q{--index} . $SPACE . $outfile_path;
@@ -118,16 +118,16 @@ sub salmon_quant {
 
 ## Function  : Perl wrapper for Salmon quant, version 0.9.1.
 ## Returns   : @commands
-## Arguments : $FILEHANDLE                 => Filehandle to write to
-##           : $index_path                 => Path to the index folder
-##           : $lib                        => Library visit the salmon website for more  info
-##           : $outfile_path               => The path of the  output directory
-##           : $read_1_fastq_path          => Read 1 Fastq path
-##           : $read_2_fastq_path          => Read 2 Fastq path
-##           : $read_files_command         => command applied to the input FASTQ files
-##           : $stderrfile_path            => Stderrfile path
-##           : $stderrfile_path_append     => Append stderr info to file path
-##           : $stdoutfile_path            => Stdoutfile path
+## Arguments : $FILEHANDLE             => Filehandle to write to
+##           : $index_path             => Path to the index folder
+##           : $lib                    => Library visit the salmon website for more  info
+##           : $outfile_path           => The path of the  output directory
+##           : $read_1_fastq_path      => Read 1 Fastq path
+##           : $read_2_fastq_path      => Read 2 Fastq path
+##           : $read_files_command     => command applied to the input FASTQ files
+##           : $stderrfile_path        => Stderrfile path
+##           : $stderrfile_path_append => Append stderr info to file path
+##           : $stdoutfile_path        => Stdoutfile path
 
     my ($arg_href) = @_;
 
@@ -177,7 +177,6 @@ sub salmon_quant {
             store       => \$read_2_fastq_path,
             strict_type => 1,
         },
-
         read_files_command => {
             default     => q{bunzip2},
             store       => \$read_files_command,
@@ -204,10 +203,12 @@ sub salmon_quant {
 
     push @commands, q{--index} . $SPACE . $index_path;
 
+    # Library type, defines if the library is stranded or not, and the orientation of the reads, according to the documentation http://salmon.readthedocs.io/en/latest/library_type.html
     push @commands, q{--libType} . $SPACE . $lib_type;
 
     push @commands, q{--output} . $SPACE . $outfile_path;
 
+    # The input Fastq files, either single reads or paired. Salmon uses a bash command to stream the reads. Here, the default is <( bunzip2 file.fastq.gz )
     push @commands,
         q{-1}
       . $SPACE . q{<(}
