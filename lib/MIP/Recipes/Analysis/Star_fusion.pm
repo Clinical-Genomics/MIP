@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_fusion };
@@ -163,7 +163,7 @@ sub analysis_star_fusion {
     use MIP::Program::Variantcalling::Star_fusion qw{ star_fusion };
     use MIP::Processmanagement::Processes qw{ print_wait };
     use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
+      qw{ slurm_submit_job_sample_id_dependency_dead_end };
     use MIP::QC::Record
       qw{ add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -188,12 +188,7 @@ sub analysis_star_fusion {
     # Create anonymous filehandle
     my $FILEHANDLE = IO::Handle->new();
 
-    ## Assign file_tags
-    my $outfile_tag =
-      $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
-    my $outfile_prefix =
-      $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
-
+    ## Paths
     my $infile_path;
 
   INFILE_PREFIX:
@@ -209,23 +204,7 @@ sub analysis_star_fusion {
         ## Paths
         $infile_path = catfile( $insample_directory,
             $infile_prefix . $infile_star_aln_prefix . $DOT . $infile_suffix );
-        my $outfile_path_prefix = $infile_path . $outfile_tag;
-
     }
-
-    my $outfile_suffix = get_file_suffix(
-        {
-            parameter_href => $parameter_href,
-            program_name   => $mip_program_name,
-            suffix_key     => q{outfile_suffix},
-        }
-    );
-
-    ## Files
-    my $outfile_name = $outfile_prefix . $outfile_suffix;
-
-    ## Paths
-    my $outfile_path = catfile( $outsample_directory, $outfile_name );
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ( $file_path, $program_info_path ) = setup_script(
@@ -275,13 +254,7 @@ sub analysis_star_fusion {
 
     if ( $mip_program_mode == 1 ) {
 
-        my $program_outfile_path = catfile( $outsample_directory,
-            $outfile_prefix . $UNDERSCORE . q{ENDING} );
-
-        my $most_complete_format_key =
-          q{most_complete} . $UNDERSCORE . substr $outfile_suffix, 1;
-
-        slurm_submit_job_sample_id_dependency_add_to_sample(
+        slurm_submit_job_sample_id_dependency_dead_end(
             {
                 family_id               => $family_id,
                 infile_lane_prefix_href => $infile_lane_prefix_href,

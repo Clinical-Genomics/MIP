@@ -173,9 +173,9 @@ sub analysis_star_aln {
       qw{ picardtools_addorreplacereadgroups };
     use MIP::Program::Alignment::Star qw{ star_aln };
     use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_sample_id_dependency_add_to_sample };
+      qw{ slurm_submit_job_sample_id_dependency_step_in_parallel };
     use MIP::QC::Record
-      qw{ add_program_metafile_to_sample_info add_program_outfile_to_sample_info };
+      qw{ add_program_outfile_to_sample_info add_processing_metafile_to_sample_info };
     use MIP::Set::File qw{ set_file_suffix };
     use MIP::Script::Setup_script qw{ setup_script };
 

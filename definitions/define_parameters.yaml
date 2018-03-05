@@ -573,7 +573,7 @@ outaligner_dir:
 pstar_fusion:
   associated_program:
    - mip
-  chain: FUSION
+  chain: MAIN
   data_type: SCALAR
   default: 0
   file_tag: _fusion
