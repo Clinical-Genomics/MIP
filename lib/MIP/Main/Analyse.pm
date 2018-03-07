@@ -177,23 +177,6 @@ sub mip_analyse {
  #            exit;
  #        },
 
-        #### Bash
-        q{qos|slurm_quality_of_service=s} =>
-          \$active_parameter{slurm_quality_of_service},
-        q{psfq|psplit_fastq_file=n} => \$active_parameter{psplit_fastq_file},
-        q{sfqrdb|split_fastq_file_read_batch=n} =>
-          \$active_parameter{split_fastq_file_read_batch},
-        q{pgz|pgzip_fastq=n}       => \$active_parameter{pgzip_fastq},
-        q{pfqc|pfastqc=n}          => \$active_parameter{pfastqc},
-        q{pmem|pbwa_mem=n}         => \$active_parameter{pbwa_mem},
-        q{memhla|bwa_mem_hla}      => \$active_parameter{bwa_mem_hla},
-        q{memcrm|bwa_mem_cram}     => \$active_parameter{bwa_mem_cram},
-        q{memsts|bwa_mem_bamstats} => \$active_parameter{bwa_mem_bamstats},
-        q{memssm|bwa_sambamba_sort_memory_limit:s} =>
-          \$active_parameter{bwa_sambamba_sort_memory_limit},
-        q{ptp|picardtools_path:s} => \$active_parameter{picardtools_path},
-        q{pptm|ppicardtools_mergesamfiles=n} =>
-          \$active_parameter{ppicardtools_mergesamfiles},
         q{pmd|pmarkduplicates=n} => \$active_parameter{pmarkduplicates},
         q{mdpmd|markduplicates_picardtools_markduplicates} =>
           \$active_parameter{markduplicates_picardtools_markduplicates},
