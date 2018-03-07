@@ -27,7 +27,7 @@ command_long_description(
     q{Rare disease analysis on wes, wgs or mixed sequence data});
 
 command_usage(
-    q{mip <analyse> <rare_disease> --config <config_file> --fam <family_id>});
+    q{mip <analyse> <rare_disease> <family_id> --config <config_file> });
 
 ## Define, check and get Cli supplied parameters
 _build_usage();
@@ -146,6 +146,67 @@ sub _build_usage {
             documentation => q{Selection of relevant regions post alignment},
             is            => q{ro},
             isa           => q{Str},
+        )
+    );
+
+    option(
+        q{pbwa_mem} => (
+            cmd_aliases   => [qw{ pmem }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Align reads using Bwa Mem},
+            is            => q{rw},
+            isa           => enum( [ 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{bwa_mem_hla} => (
+            cmd_aliases   => [qw{ memhla }],
+            documentation => q{Apply HLA typing},
+            is            => q{rw},
+            isa           => q{Bool},
+        )
+    );
+
+    option(
+        q{bwa_mem_cram} => (
+            cmd_aliases   => [qw{ memcrm }],
+            documentation => q{Use CRAM-format for additional output file},
+            is            => q{rw},
+            isa           => q{Bool},
+        )
+    );
+
+    option(
+        q{bwa_mem_bamstats} => (
+            cmd_aliases   => [qw{ memsts }],
+            documentation => q{Collect statistics from BAM files},
+            is            => q{rw},
+            isa           => q{Bool},
+        )
+    );
+
+    option(
+        q{bwa_sambamba_sort_memory_limit} => (
+            cmd_aliases => [qw{ memssm }],
+            cmd_flag    => q{bwa_sbm_srt_ml},
+            cmd_tags    => [q{Default: 32G}],
+            documentation =>
+              q{Set the memory limit for Sambamba sort after bwa alignment},
+            is  => q{rw},
+            isa => q{Str},
+        )
+    );
+
+    option(
+        q{ppicardtools_mergesamfiles} => (
+            cmd_aliases => [qw{ pptm }],
+            cmd_flag    => q{ppicard_mergesamfiles},
+            cmd_tags    => [q{Analysis recipe switch}],
+            documentation =>
+q{Merge (BAM file(s) ) or rename single samples for downstream processing},
+            is  => q{rw},
+            isa => enum( [ 1, 2 ] ),
         )
     );
 

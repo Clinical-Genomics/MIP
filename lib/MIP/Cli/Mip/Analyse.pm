@@ -164,9 +164,8 @@ sub _build_usage {
         )
     );
 
-    option(
+    parameter(
         q{family_id} => (
-            cmd_aliases   => [qw{ fam }],
             documentation => q{Group id of samples to be compared},
             is            => q{rw},
             isa           => q{Str},
@@ -304,6 +303,15 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     );
 
     option(
+        q{picardtools_path} => (
+            cmd_aliases   => [qw{ ptp }],
+            documentation => q{Path to Picardtools},
+            is            => q{rw},
+            isa           => q{Str},
+        )
+    );
+
+    option(
         q{print_program_mode} => (
             cmd_aliases   => [qw{ ppm }],
             documentation => q{Print all programs that are supported},
@@ -327,6 +335,16 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
             documentation => q{Print all programs that are supported},
             is            => q{rw},
             isa           => q{Bool},
+        )
+    );
+
+    option(
+        q{slurm_quality_of_service} => (
+            cmd_aliases   => [qw{ qos }],
+            cmd_flag      => q{slurm_quly_sri},
+            documentation => q{SLURM quality of service},
+            is            => q{rw},
+            isa           => enum( [qw{ low normal high }] ),
         )
     );
 
@@ -410,12 +428,44 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     );
 
     option(
-        q{pbwa_mem} => (
-            cmd_aliases   => [qw{ pmem }],
-            cmd_tags      => [q{Analysis recipe switch}],
-            documentation => q{Align reads using Bwa Mem},
+        q{psplit_fastq_file} => (
+            cmd_aliases => [qw{ psfq }],
+            cmd_tags    => [q{Analysis recipe switch}],
+            documentation =>
+              q{Split fastq files in batches of X reads and exits},
+            is  => q{rw},
+            isa => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{split_fastq_file_read_batch} => (
+            cmd_aliases   => [qw{ sfqrdb }],
+            cmd_flag      => q{spt_fsq_rd_bt},
+            cmd_tags      => [q{Default: 25,000,000}],
+            documentation => q{Number of sequence reads to place in each batch},
             is            => q{rw},
-            isa           => enum( [ 1, 2 ] ),
+            isa           => q{Int},
+        )
+    );
+
+    option(
+        q{pgzip_fastq} => (
+            cmd_aliases   => [qw{ pgz }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Gzip fastq files},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{pfastqc} => (
+            cmd_aliases   => [qw{ pfqc }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Sequence quality analysis using FastQC},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 
