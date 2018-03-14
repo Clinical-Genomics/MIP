@@ -30,7 +30,6 @@ _build_usage();
 sub run {
     my ($arg_href) = @_;
 
-    # do something
     say STDERR
 q{Please choose a pipeline to start generation of the installation script};
 

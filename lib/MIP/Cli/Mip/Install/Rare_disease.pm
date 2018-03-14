@@ -32,7 +32,7 @@ q{Generates an installation script (mip.sh), which is used for installation of t
 );
 command_usage(q{mip <install> <rare_disease> [options]});
 
-##Constants
+## Constants
 Readonly my $SPACE => q{ };
 Readonly my $COLON => q{:};
 
@@ -63,7 +63,7 @@ sub run {
     }
 
     ## Merge arrays and overwrite flat values in config YAML with command line
-    @parameter{ keys %$arg_href } = values %$arg_href;
+    @parameter{ keys %{$arg_href} } = values %{$arg_href};
 
     ## Nest the command line parameters and overwrite the default
     _nest_hash( { cmd_href => \%parameter } );
@@ -127,11 +127,12 @@ sub _build_usage {
         q{shell:cnvnator:cnvnator_root_binary} => (
             cmd_aliases => [qw{ cnvnr }],
             cmd_flag    => q{cnvnator_root_binary},
-            documentation =>
-q{Set the cnvnator root binary (Default: root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz)},
-            is       => q{rw},
-            isa      => Str,
-            required => 0,
+            cmd_tags =>
+              [q{Default: root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz}],
+            documentation => q{Set the cnvnator root binary},
+            is            => q{rw},
+            isa           => Str,
+            required      => 0,
         ),
     );
 
@@ -139,7 +140,7 @@ q{Set the cnvnator root binary (Default: root_v6.06.00.Linux-slc6-x86_64-gcc4.8.
         q{conda_dir_path} => (
             cmd_aliases   => [qw{ cdp }],
             cmd_flag      => q{conda_dir_path},
-            documentation => q{path to conda_directory},
+            documentation => q{Path to conda_directory},
             is            => q{rw},
             isa           => Str,
             required      => 0,
@@ -148,25 +149,25 @@ q{Set the cnvnator root binary (Default: root_v6.06.00.Linux-slc6-x86_64-gcc4.8.
 
     option(
         q{conda_environment} => (
-            cmd_aliases => [qw{ env }],
-            cmd_flag    => q{conda_environment},
-            documentation =>
-              q{Name of conda environmnet to use. (Default: Root/Base)},
-            is       => q{rw},
-            isa      => Str,
-            required => 0,
+            cmd_aliases   => [qw{ env }],
+            cmd_flag      => q{conda_environment},
+            cmd_tags      => [q{Default: root/base environment}],
+            documentation => q{Name of conda environmnet to use},
+            is            => q{rw},
+            isa           => Str,
+            required      => 0,
         ),
     );
 
     option(
         q{conda_packages} => (
-            cmd_aliases => [qw{ cpa }],
-            cmd_flag    => q{conda_packages},
-            documentation =>
-q{Base conda packages that are always installed. (Default: Pip, Python 2.7)},
-            is       => q{rw},
-            isa      => HashRef,
-            required => 0,
+            cmd_aliases   => [qw{ cpa }],
+            cmd_flag      => q{conda_packages},
+            cmd_tags      => [q{Default: pip, python=2.7}],
+            documentation => q{Base conda packages that are always installed},
+            is            => q{rw},
+            isa           => HashRef,
+            required      => 0,
         ),
     );
     option(
@@ -188,18 +189,6 @@ q{Base conda packages that are always installed. (Default: Pip, Python 2.7)},
             is            => q{rw},
             isa           => Bool,
             required      => 0,
-        ),
-    );
-
-    option(
-        q{install_log} => (
-            cmd_aliases => [qw{ il }],
-            cmd_flag    => q{install_log},
-            documentation =>
-              q{Name of log file (Default: mip_install_TIMESTAMP.log)},
-            is       => q{rw},
-            isa      => Str,
-            required => 0,
         ),
     );
 
@@ -257,7 +246,8 @@ q{Shell will be used for overlapping shell and biconda installations},
         q{conda_packages:python} => (
             cmd_aliases   => [qw{ pyv }],
             cmd_flag      => q{python_version},
-            documentation => q{Python version to install (Default: 2.7)},
+            cmd_tags      => [q{Default: 2.7}],
+            documentation => q{Python version to install},
             is            => q{rw},
             isa           => Num,
             required      => 0,
@@ -274,21 +264,12 @@ q{Shell will be used for overlapping shell and biconda installations},
             required      => 0,
         ),
     );
-    option(
-        q{quiet} => (
-            cmd_aliases   => [qw{ q }],
-            cmd_flag      => q{quiet},
-            documentation => q{Limit output from programs},
-            is            => q{rw},
-            isa           => Bool,
-            required      => 0,
-        ),
-    );
 
     option(
         q{reference_dir} => (
             cmd_aliases   => [qw{ rd }],
             cmd_flag      => q{reference_dir},
+            cmd_tags      => [q{Default: ""}],
             documentation => q{Install references to this dir},
             is            => q{rw},
             isa           => Str,
@@ -300,6 +281,7 @@ q{Shell will be used for overlapping shell and biconda installations},
         q{reference_genome_versions} => (
             cmd_aliases   => [qw{ rg }],
             cmd_flag      => q{reference_genome_versions},
+            cmd_tags      => [q{Default: GRCh37, hg38}],
             documentation => q{Reference genomes to download},
             is            => q{rw},
             isa           => ArrayRef [ enum( [qw{ GRCh37 hg38 }] ), ],
@@ -308,9 +290,9 @@ q{Shell will be used for overlapping shell and biconda installations},
     );
 
     option(
-        q{select_program} => (
+        q{select_programs} => (
             cmd_aliases   => [qw{ sp }],
-            cmd_flag      => q{select_program},
+            cmd_flag      => q{select_programs},
             documentation => q{Install only selected programs},
             is            => q{rw},
             isa           => ArrayRef [
@@ -336,7 +318,7 @@ q{Shell will be used for overlapping shell and biconda installations},
               q{Install supplied programs via shell instead of via conda},
             is  => q{rw},
             isa => ArrayRef [
-                enum( [qw{ bedtools picard plink2 ambamba snpeff vt }] ),
+                enum( [qw{ bedtools picard plink2 sambamba snpeff vt }] ),
             ],
             required => 0,
         ),
@@ -369,7 +351,7 @@ q{Shell will be used for overlapping shell and biconda installations},
     option(
         q{skip_programs} => (
             cmd_aliases   => [qw{ skip }],
-            cmd_flag      => q{skip_program},
+            cmd_flag      => q{skip_programs},
             documentation => q{Disable installation of supplied programs},
             is            => q{rw},
             isa           => ArrayRef [
@@ -392,6 +374,7 @@ q{Shell will be used for overlapping shell and biconda installations},
         q{shell:snpeff:snpeff_genome_versions} => (
             cmd_aliases   => [qw{ snpg }],
             cmd_flag      => q{snpeff_genome_versions},
+            cmd_tags      => [q{Default: GRCh37.75, GRCh38.86}],
             documentation => q{Set the SnpEff genome versions},
             is            => q{rw},
             isa           => ArrayRef,
@@ -403,6 +386,7 @@ q{Shell will be used for overlapping shell and biconda installations},
         q{shell:vep:vep_auto_flag} => (
             cmd_aliases   => [qw{ vepf }],
             cmd_flag      => q{vep_auto_flag},
+            cmd_tags      => [q{Default: acfp}],
             documentation => q{Set the vep auto installer flags},
             is            => q{rw},
             isa           => Str,
@@ -412,13 +396,13 @@ q{Shell will be used for overlapping shell and biconda installations},
 
     option(
         q{shell:vep:vep_assemblies} => (
-            cmd_aliases => [qw{ vepa }],
-            cmd_flag    => q{vep_assemblies},
-            documentation =>
-              q{Select the assembly version (Default: GRCh37 and hg38)},
-            is       => q{rw},
-            isa      => ArrayRef [ enum( [qw{ GRCh37 hg38 }] ), ],
-            required => 0,
+            cmd_aliases   => [qw{ vepa }],
+            cmd_flag      => q{vep_assemblies},
+            cmd_tags      => [q{Default: GRCh37, hg38}],
+            documentation => q{Select the assembly version},
+            is            => q{rw},
+            isa           => ArrayRef [ enum( [qw{ GRCh37 hg38 }] ), ],
+            required      => 0,
         ),
     );
 
@@ -426,23 +410,25 @@ q{Shell will be used for overlapping shell and biconda installations},
         q{shell:vep:vep_cache_dir} => (
             cmd_aliases => [qw{ vepc }],
             cmd_flag    => q{vep_cache_dir},
-            documentation =>
-q{Specify the cache directory to use (Default: [path_to_miniconda_env]/ensembl-tools-release-91/cache},
-            is       => q{rw},
-            isa      => Str,
-            required => 0,
+            cmd_tags    => [
+q{Default: [path_to_conda_env]/ensembl-tools-release-[vep_version]/cache}
+            ],
+            documentation => q{Specify the cache directory to use},
+            is            => q{rw},
+            isa           => Str,
+            required      => 0,
         ),
     );
 
     option(
         q{shell:vep:vep_plugins} => (
-            cmd_aliases => [qw{ vepp }],
-            cmd_flag    => q{vep_plugins},
-            documentation =>
-              q{Select the vep plugins (Default: MaxEntScan and LoFtool)},
-            is       => q{rw},
-            isa      => ArrayRef [ enum( [qw{ MaxEntScan Loftool }] ), ],
-            required => 0,
+            cmd_aliases   => [qw{ vepp }],
+            cmd_flag      => q{vep_plugins},
+            cmd_tags      => [q{Default: MaxEntScan, LoFtool}],
+            documentation => q{Select the vep plugins to install},
+            is            => q{rw},
+            isa           => ArrayRef [ enum( [qw{ MaxEntScan Loftool }] ), ],
+            required      => 0,
         ),
     );
 
@@ -545,10 +531,10 @@ sub _recursive_nesting {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Assign and remove the first value from the array
-    my $value = shift @$array_to_shift_ref;
+    my $value = shift @{$array_to_shift_ref};
 
     ## If the array is empty, give the last hash key the final value and return
-    if ( scalar @$array_to_shift_ref == 0 ) {
+    if ( scalar @{$array_to_shift_ref} == 0 ) {
         return $hash_to_populate_href->{$value} = $final_value;
     }
 
@@ -564,9 +550,9 @@ sub _recursive_nesting {
 
 sub _print_defaults {
 
-##Function : Print all parameters and the default values
-##Returns  : ""
-##Arguments: $parameter_href => Holds all parameters {REF}
+## Function : Print all parameters and the default values
+## Returns  :
+## Arguments: $parameter_href => Holds all parameters {REF}
 
     my ($arg_href) = @_;
 
@@ -575,11 +561,11 @@ sub _print_defaults {
 
     my $tmpl = {
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
-            store       => \$parameter_href
         },
     };
 
