@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -1349,9 +1349,7 @@ sub analysis_sv_vcfparser {
         || $consensus_analysis_type eq q{mixed} )
     {
 
-        #my $concatenate_ending = $UNDERSCORE . q{cat};
         my @vcfparser_analysis_types = ( $EMPTY_STR, $DOT . q{selected} );
-
       VCFPARSER_ANALYSIS_TYPE:
         foreach my $vcfparser_analysis_type (@vcfparser_analysis_types) {
             gatk_concatenate_variants(

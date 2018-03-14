@@ -1900,7 +1900,7 @@ sub gatk_concatenate_variants {
 ## Function : Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
 ## Returns  :
 ## Arguments: $active_parameter_href  => Active parameters for this analysis hash {REF}
-##          : $continue               => Ads an ampersand to the end of the command
+##          : $continue               => Adds an ampersand to the end of the command
 ##          : $FILEHANDLE             => SBATCH script FILEHANDLE to print to
 ##          : $elements_ref           => Holding the number and part of file names to be combined
 ##          : $infile_prefix          => Will be combined with the each array element

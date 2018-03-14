@@ -356,7 +356,7 @@ sub analysis_sv_reformat {
                 $infile_prefix
               . $_
               . $UNDERSCORE
-              . q{filtersed}
+              . q{filtered}
               . $file_suffix
         } @vcfparser_analysis_types;
         migrate_files(

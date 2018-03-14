@@ -1199,7 +1199,7 @@ sub analysis_vep_sv {
         my $vep_outfile_prefix         = $outfile_prefix;
         my $vep_xargs_file_path_prefix = $xargs_file_path_prefix;
         my @regions;
-        my $MT_name;
+        my $mt_name;
 
         ## Contig specific
         # Update endings with contig info
@@ -1216,11 +1216,11 @@ sub analysis_vep_sv {
             ## Otherwise VEP will complain.
             if ( $contig =~ /chrM/xms ) {
                 unshift @regions, q{chr21};
-                $MT_name = $contig;
+                $mt_name = $contig;
             }
             if ( $contig =~ /MT/xms ) {
                 unshift @regions, q{21};
-                $MT_name = $contig;
+                $mt_name = $contig;
             }
         }
 
@@ -1304,7 +1304,7 @@ sub analysis_vep_sv {
         }
 
         ## Filter out the MT annotations from the combined chr21 chrM call
-        if ($MT_name) {
+        if ($mt_name) {
 
             say {$FILEHANDLE} q{## Filter out MT annotations};
             _subset_vcf(
