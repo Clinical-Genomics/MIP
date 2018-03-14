@@ -9,7 +9,8 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use MooseX::App qw{ BashCompletion Color Typo };
+use MooseX::App qw{ BashCompletion Color MutexGroup Typo };
+use Moose::Util::TypeConstraints;
 
 ## MIPs lib/
 use MIP::Cli::Mip;

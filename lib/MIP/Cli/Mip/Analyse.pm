@@ -12,6 +12,7 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw{ :all };
 use MooseX::App::Command;
+use MooseX::Types::Moose qw{ Str Int HashRef Num Bool ArrayRef };
 use Moose::Util::TypeConstraints;
 
 our $VERSION = 0.01;
@@ -24,11 +25,8 @@ command_long_description(q{Entry point for performing MIP analysis});
 
 command_usage(q{analyse <pipeline>});
 
-## Set coderef for checking valid values
-my %coderef = _build_check();
-
 ## Define, check and get Cli supplied parameters
-_build_usage( { coderef_href => \%coderef, } );
+_build_usage();
 
 sub run {
     my ($arg_href) = @_;
@@ -37,53 +35,13 @@ sub run {
     return;
 }
 
-sub _build_check {
-
-## Function : Initilize code reference for validating values
-## Returns  : %code_ref
-## Arguments:
-
-    use MIP::Check::Parameter qw{check_cli_valid_array_values};
-
-## To store coderefs
-    my %code_ref;
-
-## Define coderefs per parameter
-    $code_ref{email_types_cref} = sub {
-
-        my ($arg_href) = @_;
-
-        check_cli_valid_array_values(
-            {
-                valid_values_ref => [qw{ BEGIN FAIL END }],
-                parameter_name   => q{email_types},
-                values_ref       => $arg_href->{email_types},
-            }
-        );
-    };
-    return %code_ref;
-}
-
 sub _build_usage {
 
 ## Function : Get and/or set input parameters
 ## Returns  :
-## Arguments: $coderef_href => Hash with code refs
+## Arguments:
 
     my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $coderef_href;
-
-    my $tmpl = {
-        coderef_href => {
-            defined  => 1,
-            required => 1,
-            store    => \$coderef_href,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     option(
         q{analysis_constant_path} => (
@@ -147,10 +105,20 @@ sub _build_usage {
         q{email_types} => (
             cmd_aliases   => [qw{ emt }],
             cmd_tags      => [q{Default: FAIL}],
-            trigger       => $coderef_href->{email_types_cref},
             documentation => q{E-mail type},
             is            => q{rw},
-            isa           => q{ArrayRef},
+            isa           => ArrayRef [ enum( [qw{ FAIL BEGIN END }] ), ],
+        )
+    );
+
+    option(
+        q{exome_target_bed} => (
+            cmd_aliases => [qw{ extb }],
+            cmd_tags =>
+              [q{file.bed=Sample_id; Default: latest_supported_capturekit.bed}],
+            documentation => q{Exome target bed file per sample id},
+            is            => q{rw},
+            isa           => q{HashRef},
         )
     );
 
@@ -382,7 +350,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
             documentation =>
               q{Sets all programs to dry run mode i.e. no sbatch submission},
             is  => q{rw},
-            isa => q{ArrayRef},
+            isa => q{ArrayRef[Str]},
         )
     );
 
