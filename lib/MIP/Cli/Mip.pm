@@ -59,8 +59,8 @@ sub _build_usage {
     );
     option(
         q{config_file} => (
-            cmd_aliases   => [qw{ config }],
-            documentation => q{YAML config file for analysis parameters},
+            cmd_aliases   => [qw{ config c }],
+            documentation => q{File with configuration parameters in YAML format},
             is            => q{rw},
             isa           => q{Str},
             required      => 1,
