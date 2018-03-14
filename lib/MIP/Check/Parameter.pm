@@ -23,11 +23,16 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ check_allowed_array_values check_allowed_temp_directory check_cmd_config_vs_definition_file check_email_address check_parameter_hash };
+    our @EXPORT_OK = qw{
+      check_allowed_array_values
+      check_allowed_temp_directory
+      check_cmd_config_vs_definition_file
+      check_email_address check_parameter_hash
+      check_gzipped
+    };
 }
 
 ##Constants
@@ -601,4 +606,36 @@ sub _check_parameter_data_type {
     return;
 }
 
+sub check_gzipped {
+
+##Function : Check if a file is gzipped.
+##Returns  : "0 (=uncompressed)| 1 (=compressed)"
+##Arguments: $file_name => File name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_name;
+
+    my $tmpl = {
+        file_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $file_compression_status = 0;
+
+    if ( $file_name =~ / .gz$ /xms ) {
+
+        $file_compression_status = 1;
+    }
+    return $file_compression_status;
+}
+
 1;
+
