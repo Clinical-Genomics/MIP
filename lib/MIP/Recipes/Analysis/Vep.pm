@@ -1043,7 +1043,9 @@ sub analysis_vep_sv {
     use MIP::IO::Files qw{ migrate_file };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
+
     use MIP::Program::Variantcalling::Vep qw{ variant_effect_predictor };
+
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::QC::Record
@@ -1197,6 +1199,7 @@ sub analysis_vep_sv {
         my $vep_outfile_prefix         = $outfile_prefix;
         my $vep_xargs_file_path_prefix = $xargs_file_path_prefix;
         my @regions;
+        my $mt_name;
 
         ## Contig specific
         # Update endings with contig info
@@ -1208,6 +1211,17 @@ sub analysis_vep_sv {
             $vep_xargs_file_path_prefix =
               $xargs_file_path_prefix . $DOT . $contig;
             push @regions, $contig;
+
+            ## The MT needs to be analyzed together with another contig to guarantee that SV:s are found.
+            ## Otherwise VEP will complain.
+            if ( $contig =~ /chrM/xms ) {
+                unshift @regions, q{chr21};
+                $mt_name = $contig;
+            }
+            if ( $contig =~ /MT/xms ) {
+                unshift @regions, q{21};
+                $mt_name = $contig;
+            }
         }
 
         ## VEP plugins
@@ -1287,6 +1301,20 @@ sub analysis_vep_sv {
         if ( $consensus_analysis_type eq q{wes} ) {
 
             last CONTIG;
+        }
+
+        ## Filter out the MT annotations from the combined chr21 chrM call
+        if ($mt_name) {
+
+            say {$FILEHANDLE} q{## Filter out MT annotations};
+            _subset_vcf(
+                {
+                    FILEHANDLE   => $FILEHANDLE,
+                    infile_path  => $outfile_path,
+                    outfile_path => $outfile_path,
+                    regions_ref  => [qw{ chrM MT }],
+                }
+            );
         }
     }
 
@@ -1486,6 +1514,84 @@ q?if($alt=~ /\<|\[|\]|\>/) { $alt=~ s/\<|\>//g; $alt=~ s/\:.+//g; if($start >= $
       . q{fixedsvlength}
       . $file_suffix
       . $SPACE, $NEWLINE;
+    return;
+}
+
+sub _subset_vcf {
+
+## Function : Subsets the input vcf to only contain a subset, defined in the regions variable
+## Returns  :
+## Arguments: $FILEHANDLE   => Filehandle
+##          : $infile_path  => Path to infile
+##          : $outfile_path => Path to outfile
+##          : $regions_ref  => Array with regions to be included in the subset {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $infile_path;
+    my $outfile_path;
+    my $regions_ref;
+
+    my $tmpl = {
+        FILEHANDLE => {
+            required => 1,
+            store    => \$FILEHANDLE,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        outfile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+        regions_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$regions_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Program::Utility::Htslib qw{ htslib_bgzip };
+    use MIP::Program::Variantcalling::Bcftools
+      qw{ bcftools_index bcftools_view };
+
+    my $MT_infile_path = $outfile_path;
+    ## Prepare for bcftools_view
+    htslib_bgzip(
+        {
+            FILEHANDLE  => $FILEHANDLE,
+            infile_path => $infile_path,
+        }
+    );
+    print {$FILEHANDLE} $NEWLINE;
+    bcftools_index(
+        {
+            FILEHANDLE  => $FILEHANDLE,
+            infile_path => $infile_path . q{.gz},
+        }
+    );
+    print {$FILEHANDLE} $NEWLINE;
+    bcftools_view(
+        {
+            regions_ref  => $regions_ref,
+            FILEHANDLE   => $FILEHANDLE,
+            infile_path  => $infile_path . q{.gz},
+            outfile_path => $outfile_path,
+        }
+    );
+    say {$FILEHANDLE} $NEWLINE;
+
     return;
 }
 

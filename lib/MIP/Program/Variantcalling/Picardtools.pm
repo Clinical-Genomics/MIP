@@ -429,7 +429,6 @@ sub sort_vcf {
             temp_directory      => $active_parameter_href->{temp_directory},
         }
     );
-    say {$FILEHANDLE} $NEWLINE;
     return;
 }
 
