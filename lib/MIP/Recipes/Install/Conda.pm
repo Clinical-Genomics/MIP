@@ -987,7 +987,7 @@ sub _get_full_snpeff_version {
     my $command =
 
       # Get the snpeff version that will be installed
-      qq{conda search --spec snpeff=$snpeff_version}
+      qq{conda search -c bioconda --spec snpeff=$snpeff_version}
 
       # Isolate the version with the latest sub patch
       . q{ | tail -1 };
