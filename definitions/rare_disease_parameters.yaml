@@ -709,7 +709,6 @@ sambamba_depth_bed:
   associated_program:
    - psambamba_depth
   data_type: SCALAR
-  default: CCDS.current.bed
   exists_check: file
   reference: reference_dir
   type: path
@@ -879,6 +878,13 @@ tiddit_minimum_number_supporting_pairs:
   data_type: SCALAR
   default: 6
   type: program_argument
+tiddit_bin_size:
+  associated_program:
+   - pvcf2cytosure
+   - ptiddit
+  data_type: SCALAR
+  default: 500
+  type: program_argument
 psv_combinevariantcallsets:
   associated_program:
    - mip
@@ -891,57 +897,6 @@ psv_combinevariantcallsets:
    - vt
    - bcftools
   type: program
-pvcf2cytosure:
-  associated_program:
-    - mip
-  chain: SV
-  data_type: SCALAR
-  default: 0
-  file_tag: cyto_
-  outfile_suffix: ".cgh"
-  outdir_name: vcf2cytosure
-  program_name_path:
-    - TIDDIT.py
-    - vcf2cytosure
-    - bcftools
-  type: program
-vcf2cytosure_exclude_filter:
-  associated_program:
-   - pvcf2cytosure
-  data_type: SCALAR
-  default: ""
-  type: program_argument
-vcf2cytosure_freq:
-  associated_program:
-   - pvcf2cytosure
-  data_type: SCALAR
-  default: 0.01
-  type: program_argument
-vcf2cytosure_freq_tag:
-  associated_program:
-   - pvcf2cytosure
-  data_type: SCALAR
-  default: FRQ
-  type: program_argument
-vf2cytosure_no_filter:
-  associated_program:
-   - pvcf2cytosure
-  data_type: SCALAR
-  default: 0
-  type: program_argument
-vcf2cytosure_var_size:
-  associated_program:
-   - pvcf2cytosure
-  data_type: SCALAR
-  default: 0
-  type: program_argument
-tiddit_bin_size:
-  associated_program:
-   - pvcf2cytosure
-   - ptiddit
-  data_type: SCALAR
-  default: 500
-  type: program_argument
 sv_vt_decompose:
   associated_program:
    - psv_combinevariantcallsets
@@ -1031,6 +986,50 @@ sv_genmod_filter_threshold:
 sv_combinevariantcallsets_bcf_file:
   associated_program:
    - psv_combinevariantcallsets
+  data_type: SCALAR
+  default: 0
+  type: program_argument
+pvcf2cytosure:
+  associated_program:
+    - mip
+  chain: SV
+  data_type: SCALAR
+  default: 0
+  file_tag: cyto_
+  outfile_suffix: ".cgh"
+  outdir_name: vcf2cytosure
+  program_name_path:
+    - TIDDIT.py
+    - vcf2cytosure
+    - bcftools
+  type: program
+vcf2cytosure_exclude_filter:
+  associated_program:
+   - pvcf2cytosure
+  data_type: SCALAR
+  default: ""
+  type: program_argument
+vcf2cytosure_freq:
+  associated_program:
+   - pvcf2cytosure
+  data_type: SCALAR
+  default: 0.01
+  type: program_argument
+vcf2cytosure_freq_tag:
+  associated_program:
+   - pvcf2cytosure
+  data_type: SCALAR
+  default: FRQ
+  type: program_argument
+vf2cytosure_no_filter:
+  associated_program:
+   - pvcf2cytosure
+  data_type: SCALAR
+  default: 0
+  type: program_argument
+vcf2cytosure_var_size:
+  associated_program:
+   - pvcf2cytosure
   data_type: SCALAR
   default: 0
   type: program_argument

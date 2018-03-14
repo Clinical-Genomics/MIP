@@ -27,7 +27,7 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ check_allowed_array_values check_allowed_temp_directory check_cli_valid_array_values check_cmd_config_vs_definition_file check_email_address check_parameter_hash };
+      qw{ check_allowed_array_values check_allowed_temp_directory check_cmd_config_vs_definition_file check_email_address check_parameter_hash };
 }
 
 ## Constants
@@ -117,75 +117,6 @@ sub check_allowed_temp_directory {
     if ( exists $is_not_allowed{$temp_directory} ) {
 
         return 0;
-    }
-
-    # All ok
-    return 1;
-}
-
-sub check_cli_valid_array_values {
-
-## Function : Check that the array values are valid
-## Returns  :
-## Arguments: $valid_values_ref => Valid values for parameter {REF}
-##          : $parameter_name   => Parameter name
-##          : $values_ref       => Values for parameter {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $valid_values_ref;
-    my $parameter_name;
-    my $values_ref;
-
-    my $tmpl = {
-        valid_values_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$valid_values_ref,
-            strict_type => 1,
-        },
-        parameter_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_name,
-            strict_type => 1,
-        },
-        values_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$values_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my %is_valid;
-
-    # Remake valid values into keys in is_valid hash
-    map { $is_valid{$_} = undef } @{$valid_values_ref};
-
-  VALUES:
-    foreach my $value ( @{$values_ref} ) {
-
-        # Test if value is valid
-        if ( not exists $is_valid{$value} ) {
-
-            say {*STDERR} q{Not valid value: '}
-              . $value
-              . q{' for flag: '--}
-              . $parameter_name
-              . $SINGLE_QUOTE;
-            say {*STDERR} q{Allowed values are: '}
-              . join(
-                $SINGLE_QUOTE . $SPACE . $SINGLE_QUOTE,
-                @{$valid_values_ref}
-              ) . $SINGLE_QUOTE;
-            exit 1;
-        }
     }
 
     # All ok
