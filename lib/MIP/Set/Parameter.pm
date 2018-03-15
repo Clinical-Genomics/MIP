@@ -354,11 +354,12 @@ sub set_dynamic_parameter {
 
 sub set_human_genome_reference_features {
 
-##Function : Detect version and source of the human_genome_reference: Source (hg19 or GRCh).
-##Returns  : 
-##         : $file_info_href             => File info hash {REF}
-##         : $human_genome_reference     => The human genome
-##         : $log                        => Log
+## Function : Detect version and source of the human_genome_reference: Source (hg19 or GRCh).
+##            Used to change capture kit genome reference version later
+## Returns  :
+##          : $file_info_href         => File info hash {REF}
+##          : $human_genome_reference => The human genome
+##          : $log                    => Log
 
     my ($arg_href) = @_;
 
@@ -392,24 +393,33 @@ sub set_human_genome_reference_features {
 
     use MIP::Check::Parameter qw{ check_gzipped };
 
-    ## Check for ensembl syntax
-    if ( $human_genome_reference =~ / GRCh(\d+\.\d+|\d+)_homo_sapiens_ /xms )
-    {    #Used to change capture kit genome reference version later
+    ## Different regexes for the two sources.
+    ## i.e. Don't allow subversion of Refseq genome
+    my %genome_source = (
+        GRCh => qr/GRCh(\d+\.\d+|\d+)/,
+        hg   => qr/hg(\d+)/,
+    );
 
-        $file_info_href->{human_genome_reference_version} = $1;
-        $file_info_href->{human_genome_reference_source}  = q{GRCh};
-    }
-    ## Check for Refseq syntax
-    elsif ( $human_genome_reference =~ / hg(\d+)_homo_sapiens /xms  )
-    {    #Used to change capture kit genome reference version later
+  GENOME_PREFIX:
+    foreach my $genome_prefix ( keys %genome_source ) {
 
-        $file_info_href->{human_genome_reference_version} = $1;
-        $file_info_href->{human_genome_reference_source}  = q{hg};
+        ## Capture version
+        my ($genome_version) = $human_genome_reference =~
+          m/ $genome_source{$genome_prefix}_homo_sapiens /xms;
+
+        if ($genome_version) {
+
+            $file_info_href->{human_genome_reference_version} = $genome_version;
+            $file_info_href->{human_genome_reference_source}  = $genome_prefix;
+            last;
+        }
     }
-    else {
+    if ( not $file_info_href->{human_genome_reference_version} ) {
 
         $log->fatal(
-q{MIP cannot detect what version of human_genome_reference you have supplied. Please supply the reference on this format: [sourceversion]_[species] e.g. 'GRCh37_homo_sapiens' or 'hg19_homo_sapiens'}
+q{MIP cannot detect what version of human_genome_reference you have supplied.}
+              . $SPACE
+              . q{Please supply the reference on this format: [sourceversion]_[species] e.g. 'GRCh37_homo_sapiens' or 'hg19_homo_sapiens'}
               . $NEWLINE );
         exit 1;
     }

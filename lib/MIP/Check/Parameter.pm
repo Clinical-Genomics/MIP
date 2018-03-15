@@ -35,7 +35,7 @@ BEGIN {
     };
 }
 
-##Constants
+## Constants
 Readonly my $SINGLE_QUOTE => q{'};
 Readonly my $NEWLINE      => qq{\n};
 
@@ -608,9 +608,9 @@ sub _check_parameter_data_type {
 
 sub check_gzipped {
 
-##Function : Check if a file is gzipped.
-##Returns  : "0 (=uncompressed)| 1 (=compressed)"
-##Arguments: $file_name => File name
+## Function : Check if a file is gzipped.
+## Returns  : "0 (=uncompressed)| 1 (=compressed)"
+## Arguments: $file_name => File name
 
     my ($arg_href) = @_;
 
