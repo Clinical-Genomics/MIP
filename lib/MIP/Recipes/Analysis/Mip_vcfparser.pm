@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -346,9 +346,14 @@ sub analysis_mip_vcfparser {
                 $select_file_matching_column = $active_parameter_href
                   ->{vcfparser_select_file_matching_column};
 
-                @select_feature_annotation_columns = @{ $active_parameter_href
-                      ->{vcfparser_select_feature_annotation_columns} };
-
+                if (
+                    exists $active_parameter_href
+                    ->{vcfparser_select_feature_annotation_columns} )
+                {
+                    @select_feature_annotation_columns =
+                      @{ $active_parameter_href
+                          ->{vcfparser_select_feature_annotation_columns} };
+                }
                 $select_outfile =
                     $outfile_path_prefix
                   . $UNDERSCORE
@@ -1215,13 +1220,19 @@ sub analysis_sv_vcfparser {
                 $select_file =
                   catfile( $active_parameter_href->{sv_vcfparser_select_file} );
 
-                ##Column of HGNC Symbol in SelectFile (-sf)
+                ## Column of HGNC Symbol in SelectFile (-sf)
                 $select_file_matching_column = $active_parameter_href
                   ->{sv_vcfparser_select_file_matching_column};
 
-                @select_feature_annotation_columns =
-                  @{ $active_parameter_href
-                      ->{sv_vcfparser_select_feature_annotation_columns} };
+                if (
+                    exists $active_parameter_href
+                    ->{sv_vcfparser_select_feature_annotation_columns} )
+                {
+
+                    @select_feature_annotation_columns =
+                      @{ $active_parameter_href
+                          ->{sv_vcfparser_select_feature_annotation_columns} };
+                }
 
                 ## Select outfile
                 $select_outfile = catfile( $temp_directory,

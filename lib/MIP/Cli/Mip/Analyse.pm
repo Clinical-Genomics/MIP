@@ -48,7 +48,7 @@ sub _build_usage {
             cmd_aliases   => [qw{ acp }],
             documentation => q{Set the analysis constant path},
             is            => q{rw},
-            isa           => q{Str},
+            isa           => Str,
         )
     );
 
@@ -58,7 +58,7 @@ sub _build_usage {
             cmd_tags      => [q{sample_id=analysis_type}],
             documentation => q{Type of analysis},
             is            => q{rw},
-            isa           => q{HashRef},
+            isa           => HashRef,
         )
     );
 
@@ -67,7 +67,7 @@ sub _build_usage {
             cmd_aliases   => [qw{ ccp }],
             documentation => q{Set the cluster constant path},
             is            => q{rw},
-            isa           => q{Str},
+            isa           => Str,
         )
     );
 
@@ -78,7 +78,7 @@ sub _build_usage {
             documentation =>
               q{Write YAML configuration file the analysis parameters},
             is  => q{rw},
-            isa => q{Str},
+            isa => Str,
         )
     );
 
@@ -88,7 +88,7 @@ sub _build_usage {
             documentation =>
               q{Sets all programs to dry run mode i.e. no sbatch submission},
             is  => q{rw},
-            isa => q{Bool},
+            isa => Bool,
         )
     );
 
@@ -97,7 +97,7 @@ sub _build_usage {
             cmd_aliases   => [qw{ em }],
             documentation => q{E-mail},
             is            => q{rw},
-            isa           => q{Str},
+            isa           => Str,
         )
     );
 
@@ -118,7 +118,7 @@ sub _build_usage {
               [q{file.bed=Sample_id; Default: latest_supported_capturekit.bed}],
             documentation => q{Exome target bed file per sample id},
             is            => q{rw},
-            isa           => q{HashRef},
+            isa           => HashRef,
         )
     );
 
@@ -128,7 +128,7 @@ sub _build_usage {
             cmd_tags      => [q{sample_id=expected_coverage}],
             documentation => q{Expected mean target coverage for analysis},
             is            => q{rw},
-            isa           => q{HashRef},
+            isa           => HashRef,
         )
     );
 
@@ -136,8 +136,58 @@ sub _build_usage {
         q{family_id} => (
             documentation => q{Group id of samples to be compared},
             is            => q{rw},
-            isa           => q{Str},
+            isa           => Str,
             required      => 1,
+        )
+    );
+
+    option(
+        q{gatk_path} => (
+            cmd_aliases   => [qw{ gtp }],
+            documentation => q{Path to GATK},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{gatk_logging_level} => (
+            cmd_aliases   => [qw{ gll }],
+            cmd_tags      => [q{Default: INFO}],
+            documentation => q{Set the GATK log level},
+            is            => q{rw},
+            isa           => enum( [qw{ DEBUG INFO ERROR FATAL }] ),
+        )
+    );
+
+    option(
+        q{gatk_bundle_download_version} => (
+            cmd_aliases   => [qw{ gbdv }],
+            cmd_tags      => [q{Default: 2.8}],
+            documentation => q{GATK FTP bundle download version},
+            is            => q{rw},
+            isa           => Num,
+        )
+    );
+
+    option(
+        q{gatk_downsample_to_coverage} => (
+            cmd_aliases   => [qw{ gdco }],
+            cmd_tags      => [q{Default: 1000}],
+            documentation => q{Coverage to downsample to at any given locus},
+            is            => q{rw},
+            isa           => Int,
+        )
+    );
+
+    option(
+        q{gatk_disable_auto_index_and_file_lock} => (
+            cmd_aliases => [qw{ gdai }],
+            cmd_flag    => q{gatk_dis_auto_ind_fl},
+            documentation =>
+              q{Disable auto index creation and locking when reading rods},
+            is  => q{rw},
+            isa => Bool,
         )
     );
 
@@ -147,7 +197,7 @@ sub _build_usage {
             cmd_tags      => [q{Default: GRCh37_homo_sapiens_-d5-.fasta}],
             documentation => q{Human genome reference},
             is            => q{rw},
-            isa           => q{Str},
+            isa           => Str,
         )
     );
 
@@ -157,7 +207,7 @@ sub _build_usage {
             cmd_tags      => [q{infile_dirs=sample_id}],
             documentation => q{Infile directory(s)},
             is            => q{rw},
-            isa           => q{HashRef},
+            isa           => HashRef,
         )
     );
 
@@ -166,7 +216,7 @@ sub _build_usage {
             cmd_aliases   => [qw{ jul }],
             documentation => q{Use large page memory},
             is            => q{rw},
-            isa           => q{Bool},
+            isa           => Bool,
         )
     );
 
@@ -176,7 +226,7 @@ sub _build_usage {
             cmd_tags      => [q{Default: 24}],
             documentation => q{RAM memory size of the node(s) in GigaBytes},
             is            => q{rw},
-            isa           => q{Int},
+            isa           => Int,
         )
     );
 
@@ -186,7 +236,7 @@ sub _build_usage {
             cmd_tags      => [q{Default: 16}],
             documentation => q{Maximum number of processor cores per node},
             is            => q{rw},
-            isa           => q{Int},
+            isa           => Int,
         )
     );
 
@@ -196,7 +246,7 @@ sub _build_usage {
             cmd_tags      => [q{program_name=X(cores)}],
             documentation => q{Set the number of cores for each module},
             is            => q{rw},
-            isa           => q{HashRef},
+            isa           => HashRef,
         )
     );
 
@@ -208,7 +258,7 @@ sub _build_usage {
             documentation =>
               q{Set environment variables specific for each module},
             is  => q{rw},
-            isa => q{HashRef},
+            isa => HashRef,
         )
     );
 
@@ -218,7 +268,7 @@ sub _build_usage {
             cmd_tags      => [q{program_name=time(hours)}],
             documentation => q{Set the time allocation for each module},
             is            => q{rw},
-            isa           => q{HashRef},
+            isa           => HashRef,
         )
     );
 
@@ -237,7 +287,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
             cmd_aliases   => [qw{ odd }],
             documentation => q{Data output directory},
             is            => q{rw},
-            isa           => q{Str},
+            isa           => Str,
         )
     );
 
@@ -246,7 +296,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
             cmd_aliases   => [qw{ osd }],
             documentation => q{Script files (.sh) output directory},
             is            => q{rw},
-            isa           => q{Str},
+            isa           => Str,
         )
     );
 
@@ -256,7 +306,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
             cmd_tags      => [q{YAML}],
             documentation => q{Meta data on samples},
             is            => q{rw},
-            isa           => q{Str},
+            isa           => Str,
         )
     );
 
@@ -275,7 +325,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
             cmd_aliases   => [qw{ ptp }],
             documentation => q{Path to Picardtools},
             is            => q{rw},
-            isa           => q{Str},
+            isa           => Str,
         )
     );
 
@@ -293,7 +343,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
             cmd_aliases   => [qw{ pro }],
             documentation => q{Project id},
             is            => q{rw},
-            isa           => q{Str},
+            isa           => Str,
         )
     );
 
@@ -302,7 +352,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
             cmd_aliases   => [qw{ pp }],
             documentation => q{Print all programs that are supported},
             is            => q{rw},
-            isa           => q{Bool},
+            isa           => Bool,
         )
     );
 
@@ -321,7 +371,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
             cmd_aliases   => [qw{ rd }],
             documentation => q{Reference(s) directory},
             is            => q{rw},
-            isa           => q{Str},
+            isa           => Str,
         )
     );
 
@@ -330,7 +380,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
             cmd_aliases   => [qw{ rio }],
             documentation => q{Run consecutive models at node},
             is            => q{rw},
-            isa           => q{Bool},
+            isa           => Bool,
         )
     );
 
@@ -340,7 +390,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
             documentation =>
               q{Replace IUPAC code in alternative alleles with N},
             is  => q{rw},
-            isa => q{Bool},
+            isa => Bool,
         )
     );
 
@@ -360,7 +410,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
             cmd_tags      => [q{YAML}],
             documentation => q{File for sample info used in the analysis},
             is            => q{rw},
-            isa           => q{Str},
+            isa           => Str,
         )
     );
 
@@ -369,7 +419,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
             cmd_aliases   => [qw{ swp }],
             documentation => q{Start analysis with program},
             is            => q{rw},
-            isa           => q{Str},
+            isa           => Str,
         )
     );
 
@@ -380,7 +430,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
             documentation =>
               q{Set the capture kit acronym shortcut in pedigree file},
             is  => q{rw},
-            isa => q{HashRef},
+            isa => HashRef,
         )
     );
 
@@ -391,7 +441,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
             documentation =>
               q{Source main environment command in sbatch scripts},
             is  => q{rw},
-            isa => q{ArrayRef},
+            isa => ArrayRef,
         )
     );
 
@@ -413,7 +463,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
             cmd_tags      => [q{Default: 25,000,000}],
             documentation => q{Number of sequence reads to place in each batch},
             is            => q{rw},
-            isa           => q{Int},
+            isa           => Int,
         )
     );
 

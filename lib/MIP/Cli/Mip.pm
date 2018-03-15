@@ -10,6 +10,7 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw{ :all };
 use MooseX::App qw{ BashCompletion Color MutexGroup Typo };
+use MooseX::Types::Moose qw{ Str Int HashRef Num Bool ArrayRef };
 use Moose::Util::TypeConstraints;
 
 ## MIPs lib/
@@ -37,7 +38,7 @@ sub _build_usage {
             cmd_aliases   => [qw{ bse }],
             documentation => q{Set errexit in bash scripts},
             is            => q{rw},
-            isa           => q{Bool},
+            isa           => Bool,
         )
     );
 
@@ -46,7 +47,7 @@ sub _build_usage {
             cmd_aliases   => [qw{ bsu }],
             documentation => q{Set nounset in bash scripts},
             is            => q{rw},
-            isa           => q{Bool},
+            isa           => Bool,
         )
     );
 
@@ -55,16 +56,17 @@ sub _build_usage {
             cmd_aliases   => [qw{ bsp }],
             documentation => q{Set pipefail in bash scripts},
             is            => q{rw},
-            isa           => q{Bool},
+            isa           => Bool,
         )
     );
     option(
         q{config_file} => (
-            cmd_aliases   => [qw{ config c }],
-            documentation => q{File with configuration parameters in YAML format},
-            is            => q{rw},
-            isa           => q{Str},
-            required      => 1,
+            cmd_aliases => [qw{ config c }],
+            documentation =>
+              q{File with configuration parameters in YAML format},
+            is       => q{rw},
+            isa      => Str,
+            required => 1,
         )
     );
 
@@ -73,7 +75,7 @@ sub _build_usage {
             cmd_aliases   => [qw{ log }],
             documentation => q{Log file},
             is            => q{rw},
-            isa           => q{Str},
+            isa           => Str,
         )
     );
 
@@ -83,7 +85,7 @@ sub _build_usage {
             cmd_tags      => [q{Deafult: "/scratch/$SLURM_JOB_ID"}],
             documentation => q{Set the temporary directory for all programs},
             is            => q{rw},
-            isa           => q{Str},
+            isa           => Str,
         )
     );
 
@@ -92,7 +94,7 @@ sub _build_usage {
             cmd_aliases   => q{v},
             documentation => q{Show version},
             is            => q{rw},
-            isa           => q{Bool},
+            isa           => Bool,
         )
     );
     return;
