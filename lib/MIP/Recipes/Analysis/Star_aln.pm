@@ -225,7 +225,7 @@ sub analysis_star_aln {
 
         ## Assign file tags
         my $file_path_prefix = catfile( $temp_directory, $infile_prefix );
-        my $outfile_path_prefix = $file_path_prefix . $outfile_tag . $DOT;
+        my $outfile_path_prefix = $file_path_prefix . $outfile_tag;
 
         # Collect paired-end or single-end sequence run mode
         my $sequence_run_mode =
@@ -318,7 +318,7 @@ sub analysis_star_aln {
                 chim_segment_min => $active_parameter_href->{chim_segment_min},
                 genome_dir_path  => $referencefile_dir_path,
                 infile_paths_ref => \@fastq_files,
-                outfile_name_prefix => $outfile_path_prefix,
+                outfile_name_prefix => $outfile_path_prefix . $DOT,
                 thread_number       => $core_number,
                 two_pass_mode       => $active_parameter_href->{two_pass_mode},
             },
@@ -328,7 +328,7 @@ sub analysis_star_aln {
         picardtools_addorreplacereadgroups(
             {
                 FILEHANDLE  => $FILEHANDLE,
-                infile_path => $outfile_path_prefix . $outfile_suffix,
+                infile_path => $outfile_path_prefix . $DOT .  q{Aligned.sortedByCoord.out}  . $outfile_suffix,
                 java_jar    => catfile(
                     $active_parameter_href->{picardtools_path},
                     q{picard.jar}
