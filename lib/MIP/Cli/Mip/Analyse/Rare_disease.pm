@@ -51,12 +51,12 @@ sub run {
       catfile( $Bin, qw{ definitions rare_disease_parameters.yaml } );
 
     ## Non mandatory parameter definition keys to check
-    my $non_mandatory_parameter_keys_path = catfile( $Bin,
-        qw{ definitions rare_disease_non_mandatory_parameter_keys.yaml } );
+    my $non_mandatory_parameter_keys_path =
+      catfile( $Bin, qw{ definitions non_mandatory_parameter_keys.yaml } );
 
     ## Mandatory parameter definition keys to check
-    my $mandatory_parameter_keys_path = catfile( $Bin,
-        qw{ definitions rare_disease_mandatory_parameter_keys.yaml } );
+    my $mandatory_parameter_keys_path =
+      catfile( $Bin, qw{ definitions mandatory_parameter_keys.yaml } );
 
     ### %parameter holds all defined parameters for MIP
     ### analyse rare_disease
@@ -105,11 +105,6 @@ sub run {
         # RTG human genome reference file endings
         rtg_vcfeval_reference_genome => [qw{ _sdf_dir }],
     );
-
-    # write_args(\%parameter);
-    #write_args( \%active_parameter );
-
-    #exit;
 
     mip_analyse(
         {
@@ -1744,21 +1739,319 @@ q{Default: SIFT_pred, Polyphen2_HDIV_pred, Polyphen2_HVAR_pred, GERP++_NR, GERP+
         )
     );
 
-    return;
-}
+    option(
+        q{prankvariant} => (
+            cmd_aliases   => [qw{ prav }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Ranking of annotated variants},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
 
-sub write_args {
+    option(
+        q{genmod_annotate_regions} => (
+            cmd_aliases => [qw{ ravanr }],
+            cmd_flag    => q{genmod_ann_reg},
+            documentation =>
+q{Use predefined gene annotation supplied with genmod for defining genes},
+            is  => q{rw},
+            isa => Bool,
+        )
+    );
 
-    my ($arg_href) = @_;
+    option(
+        q{genmod_annotate_cadd_files} => (
+            cmd_aliases   => [qw{ ravcad }],
+            cmd_flag      => q{genmod_mod_ann_cadd_fs},
+            documentation => q{CADD score files},
+            is            => q{rw},
+            isa           => ArrayRef [Str],
+        )
+    );
 
-    # do something
-    use Data::Dumper;
+    option(
+        q{genmod_annotate_cadd_files} => (
+            cmd_aliases   => [qw{ ravcad }],
+            cmd_flag      => q{genmod_ann_cadd_fs},
+            documentation => q{CADD score files},
+            is            => q{rw},
+            isa           => ArrayRef [Str],
+        )
+    );
 
-    #    say STDERR $arg_href->{pbwa_mem};
-    #    foreach my $sample ( @{ $arg_href->{sample_ids} } ) {
-    #        say STDERR $sample;
-    #    }
-    print Dumper($arg_href);
+    option(
+        q{genmod_annotate_spidex_file} => (
+            cmd_aliases   => [qw{ ravspi }],
+            cmd_flag      => q{genmod_ann_spidex_f},
+            documentation => q{Spidex database for alternative splicing},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{genmod_models_family_type} => (
+            cmd_aliases   => [qw{ ravgft }],
+            cmd_flag      => q{genmod_mod_fam_typ},
+            cmd_tags      => [q{Default: mip}],
+            documentation => q{Use one of the known setups},
+            is            => q{rw},
+            isa           => enum( [qw{ped alt cmms mip}] ),
+        )
+    );
+
+    option(
+        q{genmod_models_reduced_penetrance_file} => (
+            cmd_aliases   => [qw{ ravrpf }],
+            cmd_flag      => q{genmod_mod_red_pen_f},
+            documentation => q{File containing genes with reduced penetrance},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{genmod_models_whole_gene} => (
+            cmd_aliases   => [qw{ ravwg }],
+            cmd_flag      => q{genmod_mod_whl_gene},
+            documentation => q{Allow compound pairs in intronic regions},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
+        q{rank_model_file} => (
+            cmd_aliases   => [qw{ ravrm }],
+            documentation => q{Rank model config file},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{pendvariantannotationblock} => (
+            cmd_aliases => [qw{ pevab }],
+            cmd_tags    => [q{Analysis recipe switch}],
+            documentation =>
+              q{End variant annotation block by concatenating files},
+            is  => q{rw},
+            isa => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{endvariantannotationblock_remove_genes_file} => (
+            cmd_aliases   => [qw{ evabrgf }],
+            cmd_flag      => q{endvarannbl_rem_gen_f},
+            documentation => q{Remove variants with hgnc_ids from file},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{rankvariant_binary_file} => (
+            cmd_aliases => [qw{ ravbf }],
+            documentation =>
+q{Produce binary file from the rank variant chromosomal sorted vcfs},
+            is  => q{rw},
+            isa => Bool,
+        )
+    );
+
+    option(
+        q{ppeddy} => (
+            cmd_aliases   => [qw{ pped }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{QC for familial-relationships and sexes},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{pplink} => (
+            cmd_aliases   => [qw{ pplink }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{QC for samples gender and relationship},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{pvariant_integrity} => (
+            cmd_aliases   => [qw{ pvai }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{QC for samples relationship},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{prtg_vcfeval} => (
+            cmd_aliases   => [qw{ prte }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Compare concordance with benchmark data set},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{pevaluation} => (
+            cmd_aliases   => [qw{ pevl }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Compare concordance with NIST data set},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{nist_id} => (
+            cmd_aliases   => [qw{ evlnid }],
+            cmd_tags      => [q{Default: NA12878}],
+            documentation => q{NIST high-confidence sample_id},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{nist_high_confidence_call_set} => (
+            cmd_aliases => [qw{ evlnhc }],
+            cmd_flag    => q{nist_hc_call_s},
+            cmd_tags    => [q{Default: GRCh37_nist_hg001_-na12878_v2.19-.vcf}],
+            documentation => q{NIST high-confidence variant calls},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{nist_high_confidence_call_set_bed} => (
+            cmd_aliases => [qw{ evlnil }],
+            cmd_flag    => q{nist_hc_call_sb},
+            cmd_tags    => [q{Default: GRCh37_nist_hg001_-na12878_v2.19-.bed}],
+            documentation =>
+              q{NIST high-confidence variant calls interval list},
+            is  => q{rw},
+            isa => Str,
+        )
+    );
+
+    option(
+        q{pqccollect} => (
+            cmd_aliases   => [qw{ pqcc }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Collect QC metrics from programs output},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{qccollect_sampleinfo_file} => (
+            cmd_aliases => [qw{ qccsi }],
+            cmd_tags    => [
+q{Default: {outdata_dir}/{family_id}/{family_id}_qc_sample_info.yaml}
+            ],
+            documentation =>
+q{Sample info file containing info on what to parse from this analysis run},
+            is  => q{rw},
+            isa => Str,
+        )
+    );
+
+    option(
+        q{qccollect_regexp_file} => (
+            cmd_aliases => [qw{ qccref }],
+            cmd_tags    => [q{Default: qc_regexp_-v1.18-.yaml}],
+            documentation =>
+q{Regular expression file containing the regular expression to be used for each program},
+            is  => q{rw},
+            isa => Str,
+        )
+    );
+
+    option(
+        q{qccollect_skip_evaluation} => (
+            cmd_aliases   => [qw{ qccske }],
+            documentation => q{Skip evaluation step in qccollect},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
+        q{pmultiqc} => (
+            cmd_aliases => [qw{ pmqc }],
+            cmd_tags    => [q{Analysis recipe switch}],
+            documentation =>
+q{Create aggregate bioinformatics analysis report across many samples},
+            is  => q{rw},
+            isa => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{panalysisrunstatus} => (
+            cmd_aliases => [qw{ pars }],
+            cmd_tags    => [q{Analysis recipe switch}],
+            documentation =>
+q{Check analysis output and sets the analysis run status flag to finished in sample_info_file},
+            is  => q{rw},
+            isa => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{psacct} => (
+            cmd_aliases => [qw{ psac }],
+            cmd_tags    => [q{Analysis recipe switch}],
+            documentation =>
+              q{Generating sbatch script for SLURM info on each submitted job},
+            is  => q{rw},
+            isa => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{sacct_format_fields} => (
+            cmd_aliases => [qw{ sacfrf }],
+            cmd_tags    => [
+q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, start, end, state, exitcode}
+            ],
+            documentation => q{Format and fields of sacct output},
+            is            => q{rw},
+            isa           => ArrayRef [Str],
+        )
+    );
+
+    option(
+        q{psamtools_subsample_mt} => (
+            cmd_aliases   => [qw{ pssmt }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Subsample the mitochondria reads},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{samtools_subsample_mt_depth} => (
+            cmd_aliases   => [qw{ ssmtd }],
+            cmd_tags      => [q{Default: 60}],
+            documentation => q{Set approximate coverage of subsampled bam file},
+            is            => q{rw},
+            isa           => Int,
+        )
+    );
+
     return;
 }
 

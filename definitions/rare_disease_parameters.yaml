@@ -122,12 +122,6 @@ expected_coverage:
   data_type: HASH
   mandatory: no
   type: mip
-sample_origin:
-  associated_program:
-   - mip
-  data_type: HASH
-  mandatory: no
-  type: mip
 infile_dirs:
   associated_program:
    - mip
@@ -207,7 +201,6 @@ human_genome_reference:
    - pgatk_variantevalexome
    - ppicardtools_collecthsmetrics
    - ppicardtools_collectmultiplemetrics
-   - pvardict
   build_file: 1
   data_type: SCALAR
   default: GRCh37_homo_sapiens_-d5-.fasta
@@ -285,7 +278,6 @@ module_time:
     psv_varianteffectpredictor: 10
     psv_vcfparser: 2
     ptiddit: 10
-    pvardict: 40
     pvarianteffectpredictor: 10
     pvariant_integrity: 1
     pvcfparser: 5
@@ -339,7 +331,6 @@ module_core_number:
     psv_reformat: 1
     psv_varianteffectpredictor: 16
     psv_vcfparser: 16
-    pvardict: 8
     pvariant_integrity: 1
     pvcf2cytosure: 1
   type: mip
@@ -785,7 +776,6 @@ pcnvnator:
   default: 0
   file_tag: _cnvnator
   program_name_path:
-#   - root
    - bcftools
    - samtools
   outdir_name: cnvnator
@@ -1200,7 +1190,7 @@ sv_reformat_remove_genes_file:
   mandatory: no
   reference: reference_dir
   type: path
-##Samtools
+##Bcftools
 pbcftools_mpileup:
   associated_program:
    - mip
@@ -1501,77 +1491,6 @@ rhocall_frequency_file:
   exists_check: file
   reference: reference_dir
   type: path
-## Vardict
-pvardict:
-  associated_program:
-    - mip
-  chain: VRDCT
-  data_type: SCALAR
-  default: 0
-  file_tag: _vardict_
-  program_name_path:
-    - vardict
-  outdir_name: vardict
-  program_type: variant_callers
-  file_endings:
-    - ".vcf"
-  outfile_suffx: ".vcf"
-  type: program
-vrd_af_threshold:
-  associated_program:
-   - pvardict
-  data_type: SCALAR
-  default: 0.01
-  type: program_argument
-vrd_chrom_start:
-  associated_program:
-   - pvardict
-  data_type: SCALAR
-  default: 1
-  type: program_argument
-vrd_input_bed_file:
-  associated_program:
-   - pvardict
-  data_type: SCALAR
-  exists_check: file
-  type: path
-  update_path: absolute_path
-vrd_max_mm:
-  associated_program:
-   - pvardict
-  data_type: SCALAR
-  default: 4.5
-  type: program_argument
-vrd_max_pval:
-  associated_program:
-   - pvardict
-  data_type: SCALAR
-  default: 0.9
-  type: program_argument
-vrd_region_end:
-  associated_program:
-   - pvardict
-  data_type: SCALAR
-  default: 3
-  type: program_argument
-vrd_region_start:
-  associated_program:
-   - pvardict
-  data_type: SCALAR
-  default: 2
-  type: program_argument
-vrd_segment_annotn:
-  associated_program:
-   - pvardict
-  data_type: SCALAR
-  default: 4
-  type: program_argument
-vrd_somatic_only:
-  associated_program:
-   - pvardict
-  data_type: SCALAR
-  default: 0
-  type: program_argument
 ##VT
 pvt:
   associated_program:
@@ -2160,7 +2079,7 @@ qccollect_regexp_file:
   associated_program:
    - pqccollect
   data_type: SCALAR
-  default: qc_regexp_v1.13.yaml
+  default: qc_regexp_v1.18.yaml
   exists_check: file
   reference: reference_dir
   type: path

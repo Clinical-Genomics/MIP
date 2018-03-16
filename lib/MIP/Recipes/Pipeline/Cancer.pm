@@ -1,4 +1,4 @@
-package MIP::Recipes::Pipeline::Mip_c;
+package MIP::Recipes::Pipeline::Cancer;
 
 use strict;
 use warnings;
@@ -25,13 +25,13 @@ BEGIN {
     our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ pipeline_mip_c };
+    our @EXPORT_OK = qw{ pipeline_cancer };
 }
 
 ## Constants
 Readonly my $SPACE => q{ };
 
-sub pipeline_mip_c {
+sub pipeline_cancer {
 
 ## Function : Pipeline recipe for cancer data analysis.
 ## Returns  :
