@@ -3,6 +3,7 @@ package MIP::Cli::Mip::Analyse;
 use 5.018;
 use Carp;
 use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use strict;
 use utf8;
 use warnings;
@@ -23,28 +24,66 @@ command_long_description(q{Entry point for performing MIP analysis});
 
 command_usage(q{analyse <pipeline>});
 
+## Set coderef for checking valid values
+my %coderef = _build_check();
+
 ## Define, check and get Cli supplied parameters
-_build_usage();
+_build_usage( { coderef_href => \%coderef, } );
 
 sub run {
     my ($arg_href) = @_;
 
-    # do something
-    say STDERR q{Please choose an subcommand to start the analysis};
-    use Data::Dumper;
-    say STDERR $arg_href->{pbwa_mem};
-    foreach my $sample ( @{ $arg_href->{sample_ids} } ) {
-        say STDERR $sample;
-    }
-    print Dumper($arg_href);
+    say {*STDERR} q{Please choose an subcommand to start the analysis};
     return;
+}
+
+sub _build_check {
+
+## Function : Initilize code reference for validating values
+## Returns  : %code_ref
+## Arguments:
+
+    use MIP::Check::Parameter qw{check_cli_valid_array_values};
+
+## To store coderefs
+    my %code_ref;
+
+## Define coderefs per parameter
+    $code_ref{email_types_cref} = sub {
+
+        my ($arg_href) = @_;
+
+        check_cli_valid_array_values(
+            {
+                valid_values_ref => [qw{ BEGIN FAIL END }],
+                parameter_name   => q{email_types},
+                values_ref       => $arg_href->{email_types},
+            }
+        );
+    };
+    return %code_ref;
 }
 
 sub _build_usage {
 
 ## Function : Get and/or set input parameters
 ## Returns  :
-## Arguments:
+## Arguments: $coderef_href => Hash with code refs
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $coderef_href;
+
+    my $tmpl = {
+        coderef_href => {
+            defined  => 1,
+            required => 1,
+            store    => \$coderef_href,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     option(
         q{analysis_constant_path} => (
@@ -107,7 +146,8 @@ sub _build_usage {
     option(
         q{email_types} => (
             cmd_aliases   => [qw{ emt }],
-            cmd_tags      => [q{SLURM}],
+            cmd_tags      => [q{Default: FAIL}],
+            trigger       => $coderef_href->{email_types_cref},
             documentation => q{E-mail type},
             is            => q{rw},
             isa           => q{ArrayRef},
@@ -137,7 +177,7 @@ sub _build_usage {
     option(
         q{human_genome_reference} => (
             cmd_aliases   => [qw{ hgr }],
-            cmd_tags      => [q{Fasta}],
+            cmd_tags      => [q{Default: GRCh37_homo_sapiens_-d5-.fasta}],
             documentation => q{Human genome reference},
             is            => q{rw},
             isa           => q{Str},
@@ -164,12 +204,44 @@ sub _build_usage {
     );
 
     option(
+        q{node_ram_memory} => (
+            cmd_aliases   => [qw{ nrm }],
+            cmd_tags      => [q{Default: 24}],
+            documentation => q{RAM memory size of the node(s) in GigaBytes},
+            is            => q{rw},
+            isa           => q{Int},
+        )
+    );
+
+    option(
+        q{max_cores_per_node} => (
+            cmd_aliases   => [qw{ mcpn }],
+            cmd_tags      => [q{Default: 16}],
+            documentation => q{Maximum number of processor cores per node},
+            is            => q{rw},
+            isa           => q{Int},
+        )
+    );
+
+    option(
         q{module_core_number} => (
             cmd_aliases   => [qw{ mcn }],
             cmd_tags      => [q{program_name=X(cores)}],
             documentation => q{Set the number of cores for each module},
             is            => q{rw},
             isa           => q{HashRef},
+        )
+    );
+
+    option(
+        q{module_source_environment_command} => (
+            cmd_aliases => [qw{ mse }],
+            cmd_flag    => q{mod_src_env},
+            cmd_tags    => [q{program_name=command}],
+            documentation =>
+              q{Set environment variables specific for each module},
+            is  => q{rw},
+            isa => q{HashRef},
         )
     );
 
@@ -224,6 +296,7 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     option(
         q{platform} => (
             cmd_aliases   => [qw{ pla }],
+            cmd_tags      => [q{Default: ILLUMINA}],
             documentation => q{Platform/technology used to produce the reads},
             is            => q{rw},
             isa           => enum( [qw{ ILLUMINA }] ),
@@ -286,6 +359,16 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     );
 
     option(
+        q{sample_ids} => (
+            cmd_aliases => [qw{ spi }],
+            documentation =>
+              q{Sets all programs to dry run mode i.e. no sbatch submission},
+            is  => q{rw},
+            isa => q{ArrayRef},
+        )
+    );
+
+    option(
         q{sample_info_file} => (
             cmd_aliases   => [qw{ sif }],
             cmd_tags      => [q{YAML}],
@@ -316,10 +399,11 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     );
 
     option(
-        q{sample_ids} => (
-            cmd_aliases => [qw{ spi }],
+        q{source_main_environment_commands} => (
+            cmd_aliases => [qw{ sen }],
+            cmd_flag    => q{src_main_env},
             documentation =>
-              q{Sets all programs to dry run mode i.e. no sbatch submission},
+              q{Source main environment command in sbatch scripts},
             is  => q{rw},
             isa => q{ArrayRef},
         )
@@ -328,7 +412,6 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
     option(
         q{pbwa_mem} => (
             cmd_aliases   => [qw{ pmem }],
-            cmd_flag      => q{pbwa_mem},
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Align reads using Bwa Mem},
             is            => q{rw},

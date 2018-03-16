@@ -178,13 +178,6 @@ sub mip_analyse {
  #        },
 
         #### Bash
-        q{mse|module_source_environment_command:s} =>
-          \%{ $active_parameter{module_source_environment_command} },
-        q{sen|source_main_environment_commands=s{,}} =>
-          \@{ $active_parameter{source_main_environment_commands} },
-        q{mcn|max_cores_per_node=n} => \$active_parameter{max_cores_per_node},
-        q{nrm|node_ram_memory=n}    => \$active_parameter{node_ram_memory},
-        q{tmd|temp_directory:s}     => \$active_parameter{temp_directory},
         q{qos|slurm_quality_of_service=s} =>
           \$active_parameter{slurm_quality_of_service},
         q{psfq|psplit_fastq_file=n} => \$active_parameter{psplit_fastq_file},

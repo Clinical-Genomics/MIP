@@ -26,7 +26,8 @@ command_short_description(q{Rare disease analysis});
 command_long_description(
     q{Rare disease analysis on wes, wgs or mixed sequence data});
 
-command_usage(q{mip <analyse> <rare_disease> --config <config_file> --fam <family_id>});
+command_usage(
+    q{mip <analyse> <rare_disease> --config <config_file> --fam <family_id>});
 
 ## Define, check and get Cli supplied parameters
 _build_usage();
@@ -68,16 +69,16 @@ sub run {
     );
 
     ## Print programs and exit
-    if($active_parameter{print_programs}) {
+    if ( $active_parameter{print_programs} ) {
 
-      print_program(
-		    {
-		     define_parameters_file => $define_parameters_path,
-		     parameter_href     => \%parameter,
-		     print_program_mode => $active_parameter{print_program_mode},
-		    }
-		   );
-      exit;
+        print_program(
+            {
+                define_parameters_file => $define_parameters_path,
+                parameter_href         => \%parameter,
+                print_program_mode     => $active_parameter{print_program_mode},
+            }
+        );
+        exit;
     }
 
     ### To add/write parameters in the correct order
@@ -141,10 +142,10 @@ sub _build_usage {
     option(
         q{genomic_set} => (
             cmd_aliases   => [qw{ ges }],
-			   cmd_tags      => [q{sorted BED}],
+            cmd_tags      => [q{sorted BED}],
             documentation => q{Selection of relevant regions post alignment},
-            is            => q{rw},
-            isa           => q{Bool},
+            is            => q{ro},
+            isa           => q{Str},
         )
     );
 
