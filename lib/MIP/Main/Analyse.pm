@@ -51,7 +51,7 @@ use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
 use MIP::Script::Utils qw{ help };
 use MIP::Set::Contigs qw{ set_contigs };
 use MIP::Set::Parameter
-  qw{ set_config_to_active_parameters set_custom_default_to_active_parameter set_default_config_dynamic_parameters set_dynamic_parameter set_parameter_reference_dir_path set_parameter_to_broadcast };
+  qw{ set_config_to_active_parameters set_custom_default_to_active_parameter set_default_config_dynamic_parameters set_dynamic_parameter set_human_genome_reference_features set_parameter_reference_dir_path set_parameter_to_broadcast };
 use MIP::Update::Contigs qw{ update_contigs_for_run };
 use MIP::Update::Parameters
   qw{ update_dynamic_config_parameters update_reference_parameters update_vcfparser_outfile_counter };
@@ -351,11 +351,12 @@ sub mip_analyse {
     );
 
 ## Detect version and source of the human_genome_reference: Source (hg19 or GRCh).
-    parse_human_genome_reference(
+    set_human_genome_reference_features(
         {
             file_info_href => \%file_info,
-            human_genome_reference_ref =>
-              \basename( $active_parameter{human_genome_reference} ),
+            human_genome_reference =>
+              basename( $active_parameter{human_genome_reference} ),
+            log => $log,
         }
     );
 
@@ -1493,6 +1494,8 @@ sub infiles_reformat {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Check::Parameter qw{ check_gzipped };
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger(q{MIP});
 
@@ -1512,7 +1515,7 @@ sub infiles_reformat {
 
             ## Check if a file is gzipped.
             my $compressed_switch =
-              check_gzipped( { file_name_ref => \$file_name, } );
+              check_gzipped( { file_name => $file_name, } );
             my $read_file_command = q{zcat};
 
             ## Not compressed
@@ -2974,73 +2977,6 @@ sub check_unique_ids {
     }
 }
 
-sub parse_human_genome_reference {
-
-##parse_human_genome_reference
-
-##Function : Detect version and source of the human_genome_reference: Source (hg19 or GRCh).
-##Returns  : ""
-##Arguments: $file_info_href, $human_genome_reference_ref
-##         : $file_info_href             => File info hash {REF}
-##         : $human_genome_reference_ref => The human genome {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_info_href;
-    my $human_genome_reference_ref;
-
-    my $tmpl = {
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href,
-        },
-        human_genome_reference_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$human_genome_reference_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    if ( $$human_genome_reference_ref =~ /GRCh(\d+\.\d+|\d+)_homo_sapiens_/ )
-    {    #Used to change capture kit genome reference version later
-
-        $file_info_href->{human_genome_reference_version} = $1;
-        $file_info_href->{human_genome_reference_source}  = "GRCh";    #Ensembl
-    }
-    elsif ( $$human_genome_reference_ref =~ /hg(\d+)_homo_sapiens/ )
-    {    #Used to change capture kit genome reference version later
-
-        $file_info_href->{human_genome_reference_version} = $1;
-        $file_info_href->{human_genome_reference_source}  = "hg";    #Refseq
-    }
-    else {
-
-        $log->fatal(
-q{MIP cannot detect what version of human_genome_reference you have supplied. Please supply the reference on this format: [sourceversion]_[species] e.g. 'GRCh37_homo_sapiens' or 'hg19_homo_sapiens'},
-            "\n"
-        );
-        exit 1;
-    }
-
-    ## Removes ".file_ending" in filename.FILENDING(.gz)
-    $file_info_href->{human_genome_reference_name_prefix} =
-      fileparse( $$human_genome_reference_ref, qr/\.fasta|\.fasta\.gz/ );
-
-    $file_info_href->{human_genome_compressed} =
-      check_gzipped( { file_name_ref => $human_genome_reference_ref, } );
-}
-
 sub check_user_supplied_info {
 
 ##check_user_supplied_info
@@ -3120,41 +3056,6 @@ sub check_user_supplied_info {
         }
     }
     return $user_supplied_info_switch;
-}
-
-sub check_gzipped {
-
-##check_gzipped
-
-##Function : Check if a file is gzipped.
-##Returns  : "0 (=uncompressed)| 1 (=compressed)"
-##Arguments: $file_name_ref
-##         : $file_name_ref => File name {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_name_ref;
-
-    my $tmpl = {
-        file_name_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$file_name_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $file_compression_status = 0;
-
-    if ( $$file_name_ref =~ /.gz$/ ) {
-
-        $file_compression_status = 1;
-    }
-    return $file_compression_status;
 }
 
 sub compare_array_elements {
