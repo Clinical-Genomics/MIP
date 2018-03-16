@@ -382,3 +382,17 @@ pstar_fusion:
   outfile_suffix: ".tsv"
   outdir_name: star
   type: program
+picardtools_path:
+  associated_program:
+   - pstar_aln
+  data_type: SCALAR
+  exists_check: directory
+  type: path
+  update_path: absolute_path
+## java large pages - effects all modules using java
+java_use_large_pages:
+  associated_program:
+   - pstar_aln
+  data_type: SCALAR
+  default: 0
+  type: program_argument
