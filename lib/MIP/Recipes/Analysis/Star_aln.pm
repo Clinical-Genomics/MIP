@@ -328,7 +328,7 @@ sub analysis_star_aln {
         picardtools_addorreplacereadgroups(
             {
                 FILEHANDLE  => $FILEHANDLE,
-                infile_path => $outfile_path_prefix .q{.Aligned.sortedByCoord.out}  . $outfile_suffix,
+                infile_path => $outfile_path_prefix . $DOT .  q{Aligned.sortedByCoord.out}  . $outfile_suffix,
                 java_jar    => catfile(
                     $active_parameter_href->{picardtools_path},
                     q{picard.jar}
