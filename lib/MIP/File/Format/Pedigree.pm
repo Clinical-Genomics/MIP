@@ -360,6 +360,7 @@ sub parse_yaml_pedigree_file {
 
     ## Use to collect which sample_ids have used a certain capture_kit
     my $family_id = $pedigree_href->{family};
+
     ## User supplied sample_ids via cmd or config
     my @user_input_sample_ids;
 
@@ -401,7 +402,9 @@ sub parse_yaml_pedigree_file {
         }
     );
 
-    if ( not $user_supply_switch{sample_ids} ) {
+    if ( $user_supply_switch{sample_ids}
+        and exists $active_parameter_href->{sample_ids} )
+    {
 
         ## Set cmd or config supplied sample_ids
         @user_input_sample_ids = @{ $active_parameter_href->{sample_ids} };

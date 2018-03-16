@@ -352,13 +352,9 @@ sub analysis_sv_reformat {
 
         ## Copies file from temporary directory.
         say {$FILEHANDLE} q{## Copy file from temporary directory};
-        my @filtered_files = map {
-                $infile_prefix
-              . $_
-              . $UNDERSCORE
-              . q{filtered}
-              . $file_suffix
-        } @vcfparser_analysis_types;
+        my @filtered_files =
+          map { $infile_prefix . $_ . $UNDERSCORE . q{filtered} . $file_suffix }
+          @vcfparser_analysis_types;
         migrate_files(
             {
                 FILEHANDLE   => $FILEHANDLE,
@@ -433,7 +429,7 @@ sub analysis_sv_reformat {
 
         ## Adds the most complete vcf file to sample_info
         my $vcfparser_outfile_counter =
-          first_index { $_ == $vcfparser_analysis_type }
+          first_index { $_ eq $vcfparser_analysis_type }
         @vcfparser_analysis_types;
         add_most_complete_vcf(
             {

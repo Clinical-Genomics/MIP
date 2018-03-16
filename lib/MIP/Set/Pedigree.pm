@@ -182,15 +182,26 @@ sub set_pedigree_capture_kit_info {
         my $capture_kit =
           $sample_info_href->{sample}{$sample_id}{capture_kit};
 
+        ## Get supported capture kit depending in user info
+        my %supported_capture_kit =
+          %{ $parameter_href->{supported_capture_kit}{default} };
+
+        ## User supplied info on parameter
+        if ( $user_supply_switch_href->{supported_capture_kit} ) {
+
+            %supported_capture_kit =
+              %{ $active_parameter_href->{supported_capture_kit} };
+
+        }
+
         ## No recorded capture kit from pedigree or previous run
         next SAMPLE_HREF if ( not $capture_kit );
 
         ## Return a capture kit depending on user info
         my $exome_target_bed_file = get_capture_kit(
             {
-                capture_kit => $capture_kit,
-                supported_capture_kit_href =>
-                  $parameter_href->{supported_capture_kit},
+                capture_kit                => $capture_kit,
+                supported_capture_kit_href => \%supported_capture_kit,
                 user_supplied_parameter_switch =>
                   $user_supply_switch_href->{exome_target_bed},
             }
@@ -489,9 +500,9 @@ sub _add_pedigree_sample_info {
 
 ## Function : Add pedigree sample level keys and values to sample info
 ## Returns  :
-## Arguments: $pedigree_sample_href                   => YAML sample info hash {REF}
-##          : $sample_id                              => Sample ID
-##          : $sample_info_href                       => Info on samples and family hash {REF}
+## Arguments: $pedigree_sample_href => YAML sample info hash {REF}
+##          : $sample_id            => Sample ID
+##          : $sample_info_href     => Info on samples and family hash {REF}
 
     my ($arg_href) = @_;
 
@@ -531,7 +542,6 @@ sub _add_pedigree_sample_info {
 
         $sample_info_href->{sample}{$sample_id}{$key} =
           $pedigree_sample_href->{$key};
-
     }
     return;
 }

@@ -1,0 +1,44 @@
+#!/usr/bin/env perl
+
+use 5.018;
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Spec::Functions qw{ catdir catfile };
+use FindBin qw{ $Bin };
+use open qw{ :encoding(UTF-8) :std };
+use strict;
+use utf8;
+use warnings;
+use warnings qw{ FATAL utf8 };
+
+## CPANM
+use autodie qw{ :all };
+
+## MIPs lib/
+use lib catdir( $Bin, q{lib} );
+use MIP::Cli::Mip;
+
+our $VERSION = 0.01;
+
+BEGIN {
+
+    require MIP::Check::Modules;
+    use MIP::Check::Modules qw{ check_perl_modules parse_cpan_file };
+
+    my @modules =
+      parse_cpan_file {
+        cpanfile_path => catfile( $Bin, qw{ definitions cpanfile } ),
+      };
+
+    ## Evaluate that all modules required are installed
+    check_perl_modules(
+        {
+            modules_ref  => \@modules,
+            program_name => $PROGRAM_NAME,
+        }
+    );
+}
+
+## Parse command line options
+MIP::Cli::Mip->new_with_command->run();

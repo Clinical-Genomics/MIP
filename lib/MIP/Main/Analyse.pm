@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+package MIP::Main::Analyse;
 
 #### Master script for analysing paired end reads from the Illumina plattform in fastq(.gz) format to annotated ranked disease causing variants. The program performs QC, aligns reads using BWA, performs variant discovery and annotation as well as ranking the found variants according to disease potential.
 
@@ -45,8 +45,7 @@ use MIP::Check::Reference
 use MIP::File::Format::Pedigree
   qw{ create_fam_file parse_yaml_pedigree_file reload_previous_pedigree_info };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
-use MIP::Get::Analysis
-  qw{ get_dependency_tree get_overall_analysis_type print_program };
+use MIP::Get::Analysis qw{ get_dependency_tree get_overall_analysis_type };
 use MIP::Get::File qw{ get_select_file_contigs };
 use MIP::Log::MIP_log4perl qw{ initiate_logger set_default_log4perl_file };
 use MIP::Script::Utils qw{ help };
@@ -65,28 +64,19 @@ use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
 use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
 use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core };
 use MIP::Recipes::Pipeline::Wgs qw{ pipeline_wgs };
-use MIP::Recipes::Pipeline::Wts qw{ pipeline_wts };
-use MIP::Recipes::Pipeline::Mip_c qw{ pipeline_mip_c };
-
-our $USAGE = build_usage( {} );
+use MIP::Recipes::Pipeline::Rna qw{ pipeline_rna };
+use MIP::Recipes::Pipeline::Cancer qw{ pipeline_cancer };
 
 BEGIN {
 
-    require MIP::Check::Modules;
-    use MIP::Check::Modules qw{ check_perl_modules parse_cpan_file };
+    use base qw{ Exporter };
+    require Exporter;
 
-    my @modules =
-      parse_cpan_file {
-        cpanfile_path => catfile( $Bin, qw{ definitions cpanfile } ),
-      };
+    # Set the version for version checking
+    our $VERSION = 1.00;
 
-    ## Evaluate that all modules required are installed
-    check_perl_modules(
-        {
-            modules_ref  => \@modules,
-            program_name => $PROGRAM_NAME,
-        }
-    );
+    # Functions and variables which can be optionally exported
+    our @EXPORT_OK = qw{ mip_analyse };
 }
 
 ## Constants
@@ -96,1954 +86,1181 @@ Readonly my $NEWLINE   => qq{\n};
 Readonly my $SPACE     => q{ };
 Readonly my $TAB       => qq{\t};
 
-#### Script parameters
-
-## Add date_time_stamp for later use in log and qc_metrics yaml file
-my $date_time       = localtime;
-my $date_time_stamp = $date_time->datetime;
-my $date            = $date_time->ymd;
-
-# Catches script name and removes ending
-my $script = fileparse( basename( $PROGRAM_NAME, $DOT . q{pl} ) );
-my $definitions_file =
-  catfile( $Bin, qw{ definitions define_parameters.yaml } );
-chomp( $date_time_stamp, $date, $script );
-
-#### Set program parameters
-
-### %parameter holds all defined parameters for MIP
-## Loads a YAML file into an arbitrary hash and returns it.
-my %parameter = load_yaml( { yaml_file => $definitions_file, } );
-
-### To add/write parameters in the correct order
-## Adds the order of first level keys from yaml file to array
-my @order_parameters = order_parameter_names(
-    {
-        file_path => $definitions_file,
-    }
-);
-
-## Load mandatory keys and values for parameters
-my %mandatory_key = load_yaml(
-    {
-        yaml_file =>
-          catfile( $Bin, qw{ definitions mandatory_parameter_keys.yaml } ),
-    }
-);
-
-## Load non mandatory keys and values for parameters
-my %non_mandatory_key = load_yaml(
-    {
-        yaml_file =>
-          catfile( $Bin, qw{ definitions non_mandatory_parameter_keys.yaml } ),
-
-    }
-);
-
-## Eval parameter hash
-check_parameter_hash(
-    {
-        file_path              => $definitions_file,
-        non_mandatory_key_href => \%non_mandatory_key,
-        mandatory_key_href     => \%mandatory_key,
-        parameter_href         => \%parameter,
-    }
-);
-
-## Set MIP version
-our $VERSION = 'v6.0.12';
-
-## Holds all active parameters
-my %active_parameter;
-
-## Directories, files, job_ids and sample_info
-my ( %infile, %indir_path, %infile_lane_prefix, %lane,
-    %infile_both_strands_prefix, %job_id, %sample_info );
-
-my %file_info = (
-
-    # BWA human genome reference file endings
-    bwa_build_reference => [qw{ .bwt .ann .amb .pac .sa }],
-
-    exome_target_bed =>
-      [qw{ .infile_list .pad100.infile_list .pad100.interval_list }],
-
-    # Human genome meta files
-    human_genome_reference_file_endings => [qw{ .dict .fai }],
-
-    # RTG human genome reference file endings
-    rtg_vcfeval_reference_genome => [qw{ _sdf_dir }],
-);
-
-#### Staging Area
-### Get and/or set input parameters
-
-## Print usage help if no arguments
-if ( not @ARGV ) {
-
-    help(
-        {
-            exit_code => 0,
-            USAGE     => $USAGE,
-        }
-    );
-}
-
-### User Options
-GetOptions(
-    q{ifd|infile_dirs:s}   => \%{ $active_parameter{infile_dirs} },
-    q{rd|reference_dir:s}  => \$active_parameter{reference_dir},
-    q{p|project_id:s}      => \$active_parameter{project_id},
-    q{s|sample_ids:s}      => \@{ $active_parameter{sample_ids} },
-    q{odd|outdata_dir:s}   => \$active_parameter{outdata_dir},
-    q{osd|outscript_dir:s} => \$active_parameter{outscript_dir},
-    q{f|family_id:s}       => \$active_parameter{family_id},
-    q{sck|supported_capture_kit:s} =>
-      \%{ $active_parameter{supported_capture_kit} },
-    q{dnr|decompose_normalize_references:s} =>
-      \@{ $active_parameter{decompose_normalize_references} },
-    q{ped|pedigree_file:s} => \$active_parameter{pedigree_file},
-    q{hgr|human_genome_reference:s} =>
-      \$active_parameter{human_genome_reference},
-    q{al|outaligner_dir:s}    => \$active_parameter{outaligner_dir},
-    q{at|analysis_type:s}     => \%{ $active_parameter{analysis_type} },
-    q{pl|platform:s}          => \$active_parameter{platform},
-    q{ec|expected_coverage:s} => \%{ $active_parameter{expected_coverage} },
-    q{sao|sample_origin:s}    => \%{ $active_parameter{sample_origin} },
-    q{c|config_file:s}        => \$active_parameter{config_file},
-    q{ccp|cluster_constant_path:s} => \$active_parameter{cluster_constant_path},
-    q{acp|analysis_constant_path:s} =>
-      \$active_parameter{analysis_constant_path},
-    q{cfa|config_file_analysis:s} => \$active_parameter{config_file_analysis},
-    q{sif|sample_info_file:s}     => \$active_parameter{sample_info_file},
-    q{dra|dry_run_all}            => \$active_parameter{dry_run_all},
-    q{swp|start_with_program:s}   => \$active_parameter{start_with_program},
-    q{jul|java_use_large_pages}   => \$active_parameter{java_use_large_pages},
-    q{ges|genomic_set:s}          => \$active_parameter{genomic_set},
-    q{rio|reduce_io}              => \$active_parameter{reduce_io},
-    q{riu|replace_iupac}          => \$active_parameter{replace_iupac},
-    q{ppm|print_program_mode=n}   => \$active_parameter{print_program_mode},
-    q{pp|print_program}           => sub {
-        ## Force ppm to be read before function call
-        GetOptions( q{ppm|print_program_mode=n} =>
-              \$active_parameter{print_program_mode} );
-        print_program(
-            {
-                parameter_href     => \%parameter,
-                print_program_mode => $active_parameter{print_program_mode},
-            }
-        );
-        exit;
-    },
-    q{l|log_file:s} => \$active_parameter{log_file},
-    q{h|help}       => sub { say STDOUT $USAGE; exit; },
-    q{v|version}    => sub {
-        say STDOUT $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
-          $NEWLINE;
-        exit;
-    },
-
-    #### Bash
-    q{bse|bash_set_errexit}     => \$active_parameter{bash_set_errexit},
-    q{bsu|bash_set_nounset}     => \$active_parameter{bash_set_nounset},
-    q{bsp|bash_set_pipefail}    => \$active_parameter{bash_set_pipefail},
-    q{em|email:s}               => \$active_parameter{email},
-    q{emt|email_types:s}        => \@{ $active_parameter{email_types} },
-    q{mcn|module_core_number:s} => \%{ $active_parameter{module_core_number} },
-    q{mot|module_time:s}        => \%{ $active_parameter{module_time} },
-    q{mse|module_source_environment_command:s} =>
-      \%{ $active_parameter{module_source_environment_command} },
-    q{sen|source_main_environment_commands=s{,}} =>
-      \@{ $active_parameter{source_main_environment_commands} },
-    q{mcn|max_cores_per_node=n} => \$active_parameter{max_cores_per_node},
-    q{nrm|node_ram_memory=n}    => \$active_parameter{node_ram_memory},
-    q{tmd|temp_directory:s}     => \$active_parameter{temp_directory},
-    q{qos|slurm_quality_of_service=s} =>
-      \$active_parameter{slurm_quality_of_service},
-    q{psfq|psplit_fastq_file=n} => \$active_parameter{psplit_fastq_file},
-    q{sfqrdb|split_fastq_file_read_batch=n} =>
-      \$active_parameter{split_fastq_file_read_batch},
-    q{pgz|pgzip_fastq=n}       => \$active_parameter{pgzip_fastq},
-    q{pfqc|pfastqc=n}          => \$active_parameter{pfastqc},
-    q{pcta|pcutadapt=n}        => \$active_parameter{pcutadapt},
-    q{pmem|pbwa_mem=n}         => \$active_parameter{pbwa_mem},
-    q{memhla|bwa_mem_hla}      => \$active_parameter{bwa_mem_hla},
-    q{memcrm|bwa_mem_cram}     => \$active_parameter{bwa_mem_cram},
-    q{memsts|bwa_mem_bamstats} => \$active_parameter{bwa_mem_bamstats},
-    q{memssm|bwa_sambamba_sort_memory_limit:s} =>
-      \$active_parameter{bwa_sambamba_sort_memory_limit},
-    q{pstn|pstar_aln=n}              => \$active_parameter{pstar_aln},
-    q{stn_aim|align_intron_max=n}    => \$active_parameter{align_intron_max},
-    q{stn_amg|align_mates_gap_max=n} => \$active_parameter{align_mates_gap_max},
-    q{stn_asom|align_sjdb_overhang_min=n} =>
-      \$active_parameter{align_sjdb_overhang_min},
-    q{stn_cjom|chim_junction_overhang_min=n} =>
-      \$active_parameter{chim_junction_overhang_min},
-    q{stn_csm|chim_segment_min=n} => \$active_parameter{chim_segment_min},
-    q{stn_tpm|two_pass_mode=n}    => \$active_parameter{two_pass_mode},
-    q{pstf|pstar_fusion=n}        => \$active_parameter{pstar_fusion},
-    q{ptp|picardtools_path:s}     => \$active_parameter{picardtools_path},
-    q{pptm|ppicardtools_mergesamfiles=n} =>
-      \$active_parameter{ppicardtools_mergesamfiles},
-    q{pmd|pmarkduplicates=n} => \$active_parameter{pmarkduplicates},
-    q{mdpmd|markduplicates_picardtools_markduplicates} =>
-      \$active_parameter{markduplicates_picardtools_markduplicates},
-    q{mdsmd|markduplicates_sambamba_markdup} =>
-      \$active_parameter{markduplicates_sambamba_markdup},
-    q{mdshts|markduplicates_sambamba_markdup_hash_table_size=n} =>
-      \$active_parameter{markduplicates_sambamba_markdup_hash_table_size},
-    q{mdsols|markduplicates_sambamba_markdup_overflow_list_size=n} =>
-      \$active_parameter{markduplicates_sambamba_markdup_overflow_list_size},
-    q{mdsibs|markduplicates_sambamba_markdup_io_buffer_size=n} =>
-      \$active_parameter{markduplicates_sambamba_markdup_io_buffer_size},
-    q{pchs|pchanjo_sexcheck=n} => \$active_parameter{pchanjo_sexcheck},
-    q{chslle|chanjo_sexcheck_log_level:s} =>
-      \$active_parameter{chanjo_sexcheck_log_level},
-    q{psdt|psambamba_depth=n}       => \$active_parameter{psambamba_depth},
-    q{sdtmod|sambamba_depth_mode:s} => \$active_parameter{sambamba_depth_mode},
-    q{sdtcut|sambamba_depth_cutoffs:s} =>
-      \@{ $active_parameter{sambamba_depth_cutoffs} },
-    q{sdtbed|sambamba_depth_bed:s} => \$active_parameter{sambamba_depth_bed},
-    q{sdtbaq|sambamba_depth_base_quality=n} =>
-      \$active_parameter{sambamba_depth_base_quality},
-    q{sdtmaq|sambamba_depth_mapping_quality=n} =>
-      \$active_parameter{sambamba_depth_mapping_quality},
-    q{sdtndu|sambamba_depth_noduplicates} =>
-      \$active_parameter{sambamba_depth_noduplicates},
-    q{sdtfqc|sambamba_depth_quality_control} =>
-      \$active_parameter{sambamba_depth_quality_control},
-    q{pbgc|pbedtools_genomecov=n} => \$active_parameter{pbedtools_genomecov},
-    q{bgcmc|bedtools_genomecov_max_coverage=n} =>
-      \$active_parameter{bedtools_genomecov_max_coverage},
-    q{pptcmm|ppicardtools_collectmultiplemetrics=n} =>
-      \$active_parameter{ppicardtools_collectmultiplemetrics},
-    q{pptchs|ppicardtools_collecthsmetrics=n} =>
-      \$active_parameter{ppicardtools_collecthsmetrics},
-    q{extb|exome_target_bed=s}     => \%{ $active_parameter{exome_target_bed} },
-    q{prcp|prcovplots=n}           => \$active_parameter{prcovplots},
-    q{pcnv|pcnvnator=n}            => \$active_parameter{pcnvnator},
-    q{cnvhbs|cnv_bin_size=n}       => \$active_parameter{cnv_bin_size},
-    q{pdelc|pdelly_call=n}         => \$active_parameter{pdelly_call},
-    q{pdel|pdelly_reformat=n}      => \$active_parameter{pdelly_reformat},
-    q{deltyp|delly_types:s}        => \@{ $active_parameter{delly_types} },
-    q{delexc|delly_exclude_file:s} => \$active_parameter{delly_exclude_file},
-    q{pmna|pmanta=n}               => \$active_parameter{pmanta},
-    q{ptid|ptiddit=n}              => \$active_parameter{ptiddit},
-    q{tidmsp|tiddit_minimum_number_supporting_pairs=n} =>
-      \$active_parameter{tiddit_minimum_number_supporting_pairs},
-    q{tid_bin|tiddit_bin_size=n} => \$active_parameter{tiddit_bin_size},
-    q{psvc|psv_combinevariantcallsets=n} =>
-      \$active_parameter{psv_combinevariantcallsets},
-    q{svcvtd|sv_vt_decompose} => \$active_parameter{sv_vt_decompose},
-    q{svsvdbmp|sv_svdb_merge_prioritize:s} =>
-      \$active_parameter{sv_svdb_merge_prioritize},
-    q{svcbtv|sv_bcftools_view_filter} =>
-      \$active_parameter{sv_bcftools_view_filter},
-    q{svcdbq|sv_svdb_query} => \$active_parameter{sv_svdb_query},
-    q{svcdbqd|sv_svdb_query_db_files:s} =>
-      \%{ $active_parameter{sv_svdb_query_db_files} },
-    q{svcvan|sv_vcfanno}          => \$active_parameter{sv_vcfanno},
-    q{svcval|sv_vcfanno_lua:s}    => \$active_parameter{sv_vcfanno_lua},
-    q{svcvac|sv_vcfanno_config:s} => \$active_parameter{sv_vcfanno_config},
-    q{svcvacf|sv_vcfanno_config_file:s} =>
-      \$active_parameter{sv_vcfanno_config_file},
-    q{svcvah|sv_vcfannotation_header_lines_file:s} =>
-      \$active_parameter{sv_vcfannotation_header_lines_file},
-    q{svcgmf|sv_genmod_filter} => \$active_parameter{sv_genmod_filter},
-    q{svcgfr|sv_genmod_filter_1000g:s} =>
-      \$active_parameter{sv_genmod_filter_1000g},
-    q{svcgft|sv_genmod_filter_threshold:s} =>
-      \$active_parameter{sv_genmod_filter_threshold},
-    q{svcbcf|sv_combinevariantcallsets_bcf_file} =>
-      \$active_parameter{sv_combinevariantcallsets_bcf_file},
-    q{pv2cs|pvcf2cytosure:n} => \$active_parameter{pvcf2cytosure},
-    q{vc2csef|vcf2cytosure_exclude_filter=s} =>
-      \$active_parameter{vcf2cytosure_exclude_filter},
-    q{v2csfq|vcf2cytosure_freq=n} => \$active_parameter{vcf2cytosure_freq},
-    q{v2csfqt|vcf2cytosure_freq_tag=s} =>
-      \$active_parameter{vcf2cytosure_freq_tag},
-    q{v2csnf|vf2cytosure_no_filter=s} =>
-      \$active_parameter{vf2cytosure_no_filter},
-    q{v2csvs|vcf2cytosure_var_size=n} =>
-      \$active_parameter{vcf2cytosure_var_size},
-    q{psvv|psv_varianteffectpredictor=n} =>
-      \$active_parameter{psv_varianteffectpredictor},
-    q{svvepf|sv_vep_features:s} => \@{ $active_parameter{sv_vep_features} },
-    q{svvepl|sv_vep_plugins:s}  => \@{ $active_parameter{sv_vep_plugins} },
-    q{psvvcp|psv_vcfparser=n}   => \$active_parameter{psv_vcfparser},
-    q{svvcpvt|sv_vcfparser_vep_transcripts} =>
-      \$active_parameter{sv_vcfparser_vep_transcripts},
-    q{svvcppg|sv_vcfparser_per_gene} =>
-      \$active_parameter{sv_vcfparser_per_gene},
-    q{svvcprff|sv_vcfparser_range_feature_file:s} =>
-      \$active_parameter{sv_vcfparser_range_feature_file},
-    q{svvcprfa|sv_vcfparser_range_feature_annotation_columns:s} =>
-      \@{ $active_parameter{sv_vcfparser_range_feature_annotation_columns} },
-    q{svvcpsf|sv_vcfparser_select_file:s} =>
-      \$active_parameter{sv_vcfparser_select_file},
-    q{svvcpsfm|sv_vcfparser_select_file_matching_column=n} =>
-      \$active_parameter{sv_vcfparser_select_file_matching_column},
-    q{svvcpsfa|sv_vcfparser_select_feature_annotation_columns:s} =>
-      \@{ $active_parameter{sv_vcfparser_select_feature_annotation_columns} },
-    q{psvr|psv_rankvariant=n} => \$active_parameter{psv_rankvariant},
-    q{svravanr|sv_genmod_annotate_regions} =>
-      \$active_parameter{sv_genmod_annotate_regions},
-    q{svravgft|sv_genmod_models_family_type:s} =>
-      \$active_parameter{sv_genmod_models_family_type},
-    q{svravrpf|sv_genmod_models_reduced_penetrance_file:s} =>
-      \$active_parameter{sv_genmod_models_reduced_penetrance_file},
-    q{svravwg|sv_genmod_models_whole_gene} =>
-      \$active_parameter{sv_genmod_models_whole_gene},
-    q{svravrm|sv_rank_model_file:s} => \$active_parameter{sv_rank_model_file},
-    q{psvre|psv_reformat=n}         => \$active_parameter{psv_reformat},
-    q{svrevbf|sv_rankvariant_binary_file} =>
-      \$active_parameter{sv_rankvariant_binary_file},
-    q{svrergf|sv_reformat_remove_genes_file:s} =>
-      \$active_parameter{sv_reformat_remove_genes_file},
-    q{pbmp|pbcftools_mpileup=n} => \$active_parameter{pbcftools_mpileup},
-    q{pbmpfv|bcftools_mpileup_filter_variant} =>
-      \$active_parameter{bcftools_mpileup_filter_variant},
-    q{pfrb|pfreebayes=n}        => \$active_parameter{pfreebayes},
-    q{gtp|gatk_path:s}          => \$active_parameter{gatk_path},
-    q{gll|gatk_logging_level:s} => \$active_parameter{gatk_logging_level},
-    q{gbdv|gatk_bundle_download_version:s} =>
-      \$active_parameter{gatk_bundle_download_version},
-    q{gdco|gatk_downsample_to_coverage=n} =>
-      \$active_parameter{gatk_downsample_to_coverage},
-    q{gdai|gatk_disable_auto_index_and_file_lock} =>
-      \$active_parameter{gatk_disable_auto_index_and_file_lock},
-    q{pgra|pgatk_realigner=n} => \$active_parameter{pgatk_realigner},
-    q{graks|gatk_realigner_indel_known_sites:s} =>
-      \@{ $active_parameter{gatk_realigner_indel_known_sites} },
-    q{pgbr|pgatk_baserecalibration=n} =>
-      \$active_parameter{pgatk_baserecalibration},
-    q{gbrcov|gatk_baserecalibration_covariates:s} =>
-      \@{ $active_parameter{gatk_baserecalibration_covariates} },
-    q{gbrkst|gatk_baserecalibration_known_sites:s} =>
-      \@{ $active_parameter{gatk_baserecalibration_known_sites} },
-    q{gbrrf|gatk_baserecalibration_read_filters=s} =>
-      \@{ $active_parameter{gatk_baserecalibration_read_filters} },
-    q{gbrdiq|gatk_baserecalibration_disable_indel_qual} =>
-      \$active_parameter{gatk_baserecalibration_disable_indel_qual},
-    q{gbrsqq|gatk_baserecalibration_static_quantized_quals:s} =>
-      \@{ $active_parameter{gatk_baserecalibration_static_quantized_quals} },
-    q{pghc|pgatk_haplotypecaller=n} =>
-      \$active_parameter{pgatk_haplotypecaller},
-    q{ghcann|gatk_haplotypecaller_annotation:s} =>
-      \@{ $active_parameter{gatk_haplotypecaller_annotation} },
-    q{ghckse|gatk_haplotypecaller_snp_known_set:s} =>
-      \$active_parameter{gatk_haplotypecaller_snp_known_set},
-    q{ghcscb|gatk_haplotypecaller_no_soft_clipped_bases} =>
-      \$active_parameter{gatk_haplotypecaller_no_soft_clipped_bases},
-    q{ghcpim|gatk_haplotypecaller_pcr_indel_model:s} =>
-      \$active_parameter{gatk_haplotypecaller_pcr_indel_model},
-    q{pggt|pgatk_genotypegvcfs=n} => \$active_parameter{pgatk_genotypegvcfs},
-    q{ggtgrl|gatk_genotypegvcfs_ref_gvcf:s} =>
-      \$active_parameter{gatk_genotypegvcfs_ref_gvcf},
-    q{ggtals|gatk_genotypegvcfs_all_sites} =>
-      \$active_parameter{gatk_genotypegvcfs_all_sites},
-    q{ggbcf|gatk_concatenate_genotypegvcfs_bcf_file} =>
-      \$active_parameter{gatk_concatenate_genotypegvcfs_bcf_file},
-    q{pgvr|pgatk_variantrecalibration=n} =>
-      \$active_parameter{pgatk_variantrecalibration},
-    q{gvrann|gatk_variantrecalibration_annotations:s} =>
-      \@{ $active_parameter{gatk_variantrecalibration_annotations} },
-    q{gvrres|gatk_variantrecalibration_resource_snv=s} =>
-      \%{ $active_parameter{gatk_variantrecalibration_resource_snv} },
-    q{gvrrei|gatk_variantrecalibration_resource_indel=s} =>
-      \%{ $active_parameter{gatk_variantrecalibration_resource_indel} },
-    q{gvrstf|gatk_variantrecalibration_snv_tsfilter_level:s} =>
-      \$active_parameter{gatk_variantrecalibration_snv_tsfilter_level},
-    q{gvritf|gatk_variantrecalibration_indel_tsfilter_level:s} =>
-      \$active_parameter{gatk_variantrecalibration_indel_tsfilter_level},
-    q{gvrdpa|gatk_variantrecalibration_dp_annotation} =>
-      \$active_parameter{gatk_variantrecalibration_dp_annotation},
-    q{gvrsmg|gatk_variantrecalibration_snv_max_gaussians} =>
-      \$active_parameter{gatk_variantrecalibration_snv_max_gaussians},
-    q{gvrimg|gatk_variantrecalibration_indel_max_gaussians} =>
-      \$active_parameter{gatk_variantrecalibration_indel_max_gaussians},
-    q{gcgpss|gatk_calculategenotypeposteriors_support_set:s} =>
-      \$active_parameter{gatk_calculategenotypeposteriors_support_set},
-    q{pgcv|pgatk_combinevariantcallsets=n} =>
-      \$active_parameter{pgatk_combinevariantcallsets},
-    q{gcvgmo|gatk_combinevariants_genotype_merge_option:s} =>
-      \$active_parameter{gatk_combinevariants_genotype_merge_option},
-    q{gcvpc|gatk_combinevariants_prioritize_caller:s} =>
-      \$active_parameter{gatk_combinevariants_prioritize_caller},
-    q{gcvbcf|gatk_combinevariantcallsets_bcf_file} =>
-      \$active_parameter{gatk_combinevariantcallsets_bcf_file},
-    q{pgvea|pgatk_variantevalall=n} => \$active_parameter{pgatk_variantevalall},
-    q{pgvee|pgatk_variantevalexome=n} =>
-      \$active_parameter{pgatk_variantevalexome},
-    q{gveedbs|gatk_varianteval_dbsnp:s} =>
-      \$active_parameter{gatk_varianteval_dbsnp},
-    q{gveedbg|gatk_varianteval_gold:s} =>
-      \$active_parameter{gatk_varianteval_gold},
-    q{ppvab|pprepareforvariantannotationblock=n} =>
-      \$active_parameter{pprepareforvariantannotationblock},
-    q{prhc|prhocall=n} => \$active_parameter{prhocall},
-    q{rhcf|rhocall_frequency_file:s} =>
-      \$active_parameter{rhocall_frequency_file},
-    q{pvt|pvt=n}                   => \$active_parameter{pvt},
-    q{vtddec|vt_decompose}         => \$active_parameter{vt_decompose},
-    q{vtdnor|vt_normalize}         => \$active_parameter{vt_normalize},
-    q{vtunq|vt_uniq}               => \$active_parameter{vt_uniq},
-    q{vtmaa|vt_missing_alt_allele} => \$active_parameter{vt_missing_alt_allele},
-    q{pfqf|pfrequency_filter=n}    => \$active_parameter{pfrequency_filter},
-    q{fqfgmf|frequency_genmod_filter} =>
-      \$active_parameter{frequency_genmod_filter},
-    q{fqfgfr|frequency_genmod_filter_1000g:s} =>
-      \$active_parameter{frequency_genmod_filter_1000g},
-    q{fqfmaf|frequency_genmod_filter_max_af=n} =>
-      \$active_parameter{frequency_genmod_filter_max_af},
-    q{fqfgft|frequency_genmod_filter_threshold:s} =>
-      \$active_parameter{frequency_genmod_filter_threshold},
-    q{pvep|pvarianteffectpredictor=n} =>
-      \$active_parameter{pvarianteffectpredictor},
-    q{vepp|vep_directory_path:s}  => \$active_parameter{vep_directory_path},
-    q{vepc|vep_directory_cache:s} => \$active_parameter{vep_directory_cache},
-    q{vepf|vep_features:s}        => \@{ $active_parameter{vep_features} },
-    q{veppl|vep_plugins:s}        => \@{ $active_parameter{vep_plugins} },
-    q{veppldp|vep_plugins_dir_paths:s} =>
-      \$active_parameter{vep_plugins_dir_path},
-    q{pvcp|pvcfparser=n} => \$active_parameter{pvcfparser},
-    q{vcpvt|vcfparser_vep_transcripts} =>
-      \$active_parameter{vcfparser_vep_transcripts},
-    q{vcprff|vcfparser_range_feature_file:s} =>
-      \$active_parameter{vcfparser_range_feature_file},
-    q{vcprfa|vcfparser_range_feature_annotation_columns:s} =>
-      \@{ $active_parameter{vcfparser_range_feature_annotation_columns} },
-    q{vcpsf|vcfparser_select_file:s} =>
-      \$active_parameter{vcfparser_select_file},
-    q{vcpsfm|vcfparser_select_file_matching_column=n} =>
-      \$active_parameter{vcfparser_select_file_matching_column},
-    q{vcpsfa|vcfparser_select_feature_annotation_columns:s} =>
-      \@{ $active_parameter{vcfparser_select_feature_annotation_columns} },
-    q{psne|psnpeff=n}     => \$active_parameter{psnpeff},
-    q{snep|snpeff_path:s} => \$active_parameter{snpeff_path},
-    q{sneann|snpeff_ann}  => \$active_parameter{snpeff_ann},
-    q{snegbv|snpeff_genome_build_version:s} =>
-      \$active_parameter{snpeff_genome_build_version},
-    q{snesaf|snpsift_annotation_files=s} =>
-      \%{ $active_parameter{snpsift_annotation_files} },
-    q{snesaoi|snpsift_annotation_outinfo_key=s} =>
-      \%{ $active_parameter{snpsift_annotation_outinfo_key} },
-    q{snesdbnsfp|snpsift_dbnsfp_file:s} =>
-      \$active_parameter{snpsift_dbnsfp_file},
-    q{snesdbnsfpa|snpsift_dbnsfp_annotations:s} =>
-      \@{ $active_parameter{snpsift_dbnsfp_annotations} },
-    q{prav|prankvariant=n} => \$active_parameter{prankvariant},
-    q{ravgft|genmod_models_family_type:s} =>
-      \$active_parameter{genmod_models_family_type},
-    q{ravanr|genmod_annotate_regions} =>
-      \$active_parameter{genmod_annotate_regions},
-    q{ravcad|genmod_annotate_cadd_files:s} =>
-      \@{ $active_parameter{genmod_annotate_cadd_files} },
-    q{ravspi|genmod_annotate_spidex_file:s} =>
-      \$active_parameter{genmod_annotate_spidex_file},
-    q{ravwg|genmod_models_whole_gene} =>
-      \$active_parameter{genmod_models_whole_gene},
-    q{ravrpf|genmod_models_reduced_penetrance_file:s} =>
-      \$active_parameter{genmod_models_reduced_penetrance_file},
-    q{ravrm|rank_model_file:s} => \$active_parameter{rank_model_file},
-    q{pevab|pendvariantannotationblock=n} =>
-      \$active_parameter{pendvariantannotationblock},
-    q{evabrgf|endvariantannotationblock_remove_genes_file:s} =>
-      \$active_parameter{endvariantannotationblock_remove_genes_file},
-    q{ravbf|rankvariant_binary_file} =>
-      \$active_parameter{rankvariant_binary_file},
-    q{pped|ppeddy=n}             => \$active_parameter{ppeddy},
-    q{pplink|pplink=n}           => \$active_parameter{pplink},
-    q{pvai|pvariant_integrity=n} => \$active_parameter{pvariant_integrity},
-    q{prte|prtg_vcfeval=n}       => \$active_parameter{prtg_vcfeval},
-    q{pevl|pevaluation=n}        => \$active_parameter{pevaluation},
-    q{evlnid|nist_id:s}          => \$active_parameter{nist_id},
-    q{evlnhc|nist_high_confidence_call_set:s} =>
-      \$active_parameter{nist_high_confidence_call_set},
-    q{evlnil|nist_high_confidence_call_set_bed:s} =>
-      \$active_parameter{nist_high_confidence_call_set_bed},
-    q{pqcc|pqccollect=n} => \$active_parameter{pqccollect},
-    q{qccsi|qccollect_sampleinfo_file:s} =>
-      \$active_parameter{qccollect_sampleinfo_file},
-    q{qccref|qccollect_regexp_file:s} =>
-      \$active_parameter{qccollect_regexp_file},
-    q{qccske|qccollect_skip_evaluation} =>
-      \$active_parameter{qccollect_skip_evaluation},
-    q{pmqc|pmultiqc=n}           => \$active_parameter{pmultiqc},
-    q{pars|panalysisrunstatus=n} => \$active_parameter{panalysisrunstatus},
-    q{psac|psacct=n}             => \$active_parameter{psacct},
-    q{sacfrf|sacct_format_fields:s} =>
-      \@{ $active_parameter{sacct_format_fields} },
-    q{pssmt|psamtools_subsample_mt=n} =>
-      \$active_parameter{psamtools_subsample_mt},
-    q{ssmtd|samtools_subsample_mt_depth=n} =>
-      \$active_parameter{samtools_subsample_mt_depth},
-    q{pvrd|pvardict=n}            => \$active_parameter{pvardict},
-    q{pvdraf|vrd_af_threshold}    => \$active_parameter{vrd_af_threshold},
-    q{pvrdcs|vrd_chrom_start}     => \$active_parameter{vrd_chrom_start},
-    q{pvrdbed|vrd_input_bed_file} => \$active_parameter{vrd_input_bed_file},
-    q{pvrdmm|vrd_max_mm}          => \$active_parameter{vrd_max_mm},
-    q{pvrdmp|vrd_max_pval}        => \$active_parameter{vrd_max_pval},
-    q{pvrdre|vrd_region_end}      => \$active_parameter{vrd_region_end},
-    q{pvrdrs|vrd_region_start}    => \$active_parameter{vrd_region_start},
-    q{pvrdsa|vrd_segment_annotn}  => \$active_parameter{vrd_segment_annotn},
-    q{pvrdso|vrd_somatic_only}    => \$active_parameter{vrd_somatic_only},
-  )
-  or help(
-    {
-        exit_code => 1,
-        USAGE     => $USAGE,
-    }
-  );
-
-## Special case:Enable/activate MIP. Cannot be changed from cmd or config
-$active_parameter{mip} = $parameter{mip}{default};
-
-## Special case for boolean flag that will be removed from
-## config upon loading
-my @boolean_parameter = qw{dry_run_all};
-foreach my $parameter (@boolean_parameter) {
-
-    if ( not defined $active_parameter{$parameter} ) {
-
-        delete $active_parameter{$parameter};
-    }
-}
-
-## Change relative path to absolute path for parameter with "update_path: absolute_path" in config
-update_to_absolute_path(
-    {
-        active_parameter_href => \%active_parameter,
-        parameter_href        => \%parameter,
-    }
-);
-
-### Config file
-## If config from cmd
-if ( exists $active_parameter{config_file}
-    && defined $active_parameter{config_file} )
-{
-
-    ## Loads a YAML file into an arbitrary hash and returns it.
-    my %config_parameter =
-      load_yaml( { yaml_file => $active_parameter{config_file}, } );
-
-    ## Remove previous analysis specific info not relevant for current run e.g. log file, which is read from pedigree or cmd
-    my @remove_keys = (qw{ log_file dry_run_all });
-
-  KEY:
-    foreach my $key (@remove_keys) {
-
-        delete $config_parameter{$key};
-    }
-
-## Set config parameters into %active_parameter unless $parameter
-## has been supplied on the command line
-    set_config_to_active_parameters(
-        {
-            active_parameter_href => \%active_parameter,
-            config_parameter_href => \%config_parameter,
-        }
-    );
-
-    ## Compare keys from config and cmd (%active_parameter) with definitions file (%parameter)
-    check_cmd_config_vs_definition_file(
-        {
-            active_parameter_href => \%active_parameter,
-            parameter_href        => \%parameter,
-        }
-    );
-
-    my @config_dynamic_parameters = qw{ analysis_constant_path outaligner_dir };
-
-    ## Replace config parameter with cmd info for config dynamic parameter
-    set_default_config_dynamic_parameters(
-        {
-            active_parameter_href => \%active_parameter,
-            parameter_href        => \%parameter,
-            parameter_names_ref   => \@config_dynamic_parameters,
-        }
-    );
-
-    ## Loop through all parameters and update info
-  PARAMETER:
-    foreach my $parameter_name (@order_parameters) {
-
-        ## Updates the active parameters to particular user/cluster for dynamic config parameters following specifications. Leaves other entries untouched.
-        update_dynamic_config_parameters(
-            {
-                active_parameter_href => \%active_parameter,
-                parameter_name        => $parameter_name,
-            }
-        );
-    }
-}
-
-## Set the default Log4perl file using supplied dynamic parameters.
-$active_parameter{log_file} = set_default_log4perl_file(
-    {
-        active_parameter_href => \%active_parameter,
-        cmd_input             => $active_parameter{log_file},
-        date                  => $date,
-        date_time_stamp       => $date_time_stamp,
-        script                => $script,
-    }
-);
-
-## Creates log object
-my $log = initiate_logger(
-    {
-        file_path => $active_parameter{log_file},
-        log_name  => q{MIP},
-    }
-);
-
-## Parse pedigree file
-## Reads family_id_pedigree file in YAML format. Checks for pedigree data for allowed entries and correct format. Add data to sample_info depending on user info.
-# Meta data in YAML format
-if ( defined $active_parameter{pedigree_file} ) {
-
-    ## Loads a YAML file into an arbitrary hash and returns it. Load parameters from previous run from sample_info_file
-    my %pedigree =
-      load_yaml( { yaml_file => $active_parameter{pedigree_file}, } );
-
-    $log->info( q{Loaded: } . $active_parameter{pedigree_file} );
-
-    parse_yaml_pedigree_file(
-        {
-            active_parameter_href => \%active_parameter,
-            file_path             => $active_parameter{pedigree_file},
-            parameter_href        => \%parameter,
-            pedigree_href         => \%pedigree,
-            sample_info_href      => \%sample_info,
-        }
-    );
-}
-
-## Detect if all samples has the same sequencing type and return consensus if reached
-$parameter{dynamic_parameter}{consensus_analysis_type} =
-  get_overall_analysis_type(
-    { analysis_type_href => \%{ $active_parameter{analysis_type} }, } );
-
-### Populate uninitilized active_parameters{parameter_name} with default from parameter
-PARAMETER:
-foreach my $parameter_name (@order_parameters) {
-
-    ## If hash and set - skip
-    next PARAMETER
-      if ( ref $active_parameter{$parameter_name} eq qw{HASH}
-        && keys %{ $active_parameter{$parameter_name} } );
-
-    ## If array and set - skip
-    next PARAMETER
-      if ( ref $active_parameter{$parameter_name} eq qw{ARRAY}
-        && @{ $active_parameter{$parameter_name} } );
-
-    ## If scalar and set - skip
-    next PARAMETER
-      if ( defined $active_parameter{$parameter_name}
-        and not ref $active_parameter{$parameter_name} );
-
-    ### Special case for parameters that are dependent on other parameters values
-    my @custom_default_parameters =
-      qw{ analysis_type bwa_build_reference exome_target_bed infile_dirs sample_info_file rtg_vcfeval_reference_genome };
-
-    if ( any { $_ eq $parameter_name } @custom_default_parameters ) {
-
-        set_custom_default_to_active_parameter(
-            {
-                active_parameter_href => \%active_parameter,
-                parameter_href        => \%parameter,
-                parameter_name        => $parameter_name,
-            }
-        );
-        next PARAMETER;
-    }
-
-    ## Checks and sets user input or default values to active_parameters
-    set_default_to_active_parameter(
-        {
-            active_parameter_href => \%active_parameter,
-            associated_programs_ref =>
-              \@{ $parameter{$parameter_name}{associated_program} },
-            parameter_href => \%parameter,
-            parameter_name => $parameter_name,
-        }
-    );
-}
-
-## Update path for supplied reference(s) associated with parameter that should reside in the mip reference directory to full path
-set_parameter_reference_dir_path(
-    {
-        active_parameter_href => \%active_parameter,
-        parameter_name        => q{human_genome_reference},
-    }
-);
-
-## Detect version and source of the human_genome_reference: Source (hg19 or GRCh).
-set_human_genome_reference_features(
-    {
-        file_info_href => \%file_info,
-        human_genome_reference =>
-          basename( $active_parameter{human_genome_reference} ),
-        log => $log,
-    }
-);
-
-## Update exome_target_bed files with human_genome_reference_source_ref and human_genome_reference_version_ref
-update_exome_target_bed(
-    {
-        exome_target_bed_file_href => $active_parameter{exome_target_bed},
-        human_genome_reference_source_ref =>
-          \$file_info{human_genome_reference_source},
-        human_genome_reference_version_ref =>
-          \$file_info{human_genome_reference_version},
-    }
-);
-
-# Holds all active parameters values for broadcasting
-my @broadcasts;
-
-set_parameter_to_broadcast(
-    {
-        parameter_href        => \%parameter,
-        active_parameter_href => \%active_parameter,
-        order_parameters_ref  => \@order_parameters,
-        broadcasts_ref        => \@broadcasts,
-    }
-);
-
-## Reference in MIP reference directory
-PARAMETER:
-foreach my $parameter_name ( keys %parameter ) {
-
-    ## Expect file to be in reference directory
-    if ( exists $parameter{$parameter_name}{reference} ) {
-
-        update_reference_parameters(
-            {
-                active_parameter_href => \%active_parameter,
-                associated_programs_ref =>
-                  \@{ $parameter{$parameter_name}{associated_program} },
-                parameter_name => $parameter_name,
-            }
-        );
-    }
-}
-
-### Checks
-
-## Check existence of files and directories
-PARAMETER:
-foreach my $parameter_name ( keys %parameter ) {
-
-    if ( exists $parameter{$parameter_name}{exists_check} ) {
-
-        check_parameter_files(
-            {
-                parameter_href        => \%parameter,
-                active_parameter_href => \%active_parameter,
-                associated_programs_ref =>
-                  \@{ $parameter{$parameter_name}{associated_program} },
-                parameter_name => $parameter_name,
-                parameter_exists_check =>
-                  $parameter{$parameter_name}{exists_check},
-            }
-        );
-    }
-}
-
-## Updates sample_info hash with previous run pedigree info
-reload_previous_pedigree_info(
-    {
-        active_parameter_href => \%active_parameter,
-        sample_info_href      => \%sample_info,
-        sample_info_file_path => $active_parameter{sample_info_file},
-    }
-);
-
-## Special case since dict is created with .fastq removed
-## Check the existance of associated human genome files
-check_human_genome_file_endings(
-    {
-        parameter_href        => \%parameter,
-        active_parameter_href => \%active_parameter,
-        file_info_href        => \%file_info,
-        parameter_name        => q{human_genome_reference},
-    }
-);
-
-## Check that supplied target file ends with ".bed" and otherwise croaks
-TARGET_FILE:
-foreach my $target_bed_file ( keys %{ $active_parameter{exome_target_bed} } ) {
-
-    check_target_bed_file_suffix(
-        {
-            parameter_name => q{exome_target_bed},
-            path           => $target_bed_file,
-        }
-    );
-}
-
-## Checks parameter metafile exists and set build_file parameter
-check_parameter_metafiles(
-    {
-        parameter_href        => \%parameter,
-        active_parameter_href => \%active_parameter,
-        file_info_href        => \%file_info,
-    }
-);
-
-## Update the expected number of outfile after vcfparser
-update_vcfparser_outfile_counter(
-    { active_parameter_href => \%active_parameter, } );
-
-## Collect select file contigs to loop over downstream
-if ( $active_parameter{vcfparser_select_file} ) {
-
-## Collects sequences contigs used in select file
-    @{ $file_info{select_file_contigs} } = get_select_file_contigs(
-        {
-            select_file_path =>
-              catfile( $active_parameter{vcfparser_select_file} ),
-            log => $log,
-        }
-    );
-}
-
-## Detect family constellation based on pedigree file
-$parameter{dynamic_parameter}{trio} = detect_trio(
-    {
-        active_parameter_href => \%active_parameter,
-        sample_info_href      => \%sample_info,
-    }
-);
-
-## Detect number of founders (i.e. parents ) based on pedigree file
-detect_founders(
-    {
-        active_parameter_href => \%active_parameter,
-        sample_info_href      => \%sample_info,
-    }
-);
-
-## Check email adress syntax and mail host
-if ( defined $active_parameter{email} ) {
-
-    check_email_address(
-        {
-            email => $active_parameter{email},
-            log   => $log,
-        }
-    );
-}
-
-if (
-    not check_allowed_temp_directory(
-        { temp_directory => $active_parameter{temp_directory}, }
-    )
-  )
-{
-
-    $log->fatal( q{'--temp_directory }
-          . $active_parameter{temp_directory}
-          . q{' is not allowed because MIP will remove the temp directory after processing.}
-          . "\n" );
-    exit 1;
-}
-
-## Parameters that have keys as MIP program names
-my @parameter_keys_to_check =
-  (qw{ module_time module_core_number module_source_environment_command });
-foreach my $parameter_name (@parameter_keys_to_check) {
-
-    ## Test if key from query hash exists truth hash
-    check_key_exists_in_hash(
-        {
-            truth_href     => \%parameter,
-            query_href     => \%{ $active_parameter{$parameter_name} },
-            parameter_name => $parameter_name,
-        }
-    );
-}
-
-## Check that the module core number do not exceed the maximum per node
-foreach my $program_name ( keys %{ $active_parameter{module_core_number} } ) {
-
-    ## Limit number of cores requested to the maximum number of cores available per node
-    $active_parameter{module_core_number}{$program_name} =
-      check_max_core_number(
-        {
-            max_cores_per_node => $active_parameter{max_cores_per_node},
-            core_number_requested =>
-              $active_parameter{module_core_number}{$program_name},
-        }
-      );
-}
-
-## Parameters that have elements as MIP program names
-my @parameter_elements_to_check =
-  (qw(associated_program decompose_normalize_references));
-foreach my $parameter_name (@parameter_elements_to_check) {
-
-    ## Test if element from query array exists truth hash
-    check_element_exists_in_hash(
-        {
-            truth_href     => \%parameter,
-            queryies       => \@{ $active_parameter{$parameter_name} },
-            parameter_name => $parameter_name,
-        }
-    );
-}
-
-## Parameters with key(s) that have elements as MIP program names
-my @parameter_key_to_check = qw(associated_program);
-PARAMETER:
-foreach my $parameter ( keys %parameter ) {
-
-  KEY:
-    foreach my $parameter_name (@parameter_key_to_check) {
-
-        if ( exists $parameter{$parameter}{$parameter_name} ) {
-
-            ## Test if element from query array exists truth hash
-            check_element_exists_in_hash(
-                {
-                    truth_href => \%parameter,
-                    queryies   => \@{ $parameter{$parameter}{$parameter_name} },
-                    parameter_name => $parameter_name,
-                }
-            );
-        }
-    }
-}
-
-## Check programs in path, and executable
-check_command_in_path(
-    {
-        parameter_href        => \%parameter,
-        active_parameter_href => \%active_parameter,
-    }
-);
-
-## Test that the family_id and the sample_id(s) exists and are unique. Check if id sample_id contains "_".
-check_unique_ids(
-    {
-        active_parameter_href => \%active_parameter,
-        sample_ids_ref        => \@{ $active_parameter{sample_ids} },
-    }
-);
-
-## Check sample_id provided in hash parameter is included in the analysis and only represented once
-check_sample_id_in_parameter(
-    {
-        active_parameter_href => \%active_parameter,
-        sample_ids_ref        => \@{ $active_parameter{sample_ids} },
-        parameter_names_ref =>
-          [qw{ analysis_type expected_coverage sample_origin }],
-        parameter_href => \%parameter,
-    }
-);
-
-## Check sample_id provided in hash path parameter is included in the analysis and only represented once
-check_sample_id_in_parameter_path(
-    {
-        active_parameter_href => \%active_parameter,
-        sample_ids_ref        => \@{ $active_parameter{sample_ids} },
-        parameter_names_ref   => [qw{ infile_dirs exome_target_bed }],
-    }
-);
-
-## Check that VEP directory and VEP cache match
-check_vep_directories(
-    {
-        vep_directory_path_ref  => \$active_parameter{vep_directory_path},
-        vep_directory_cache_ref => \$active_parameter{vep_directory_cache},
-    }
-);
-
-## Check that the supplied vcfanno toml frequency file match record 'file=' within toml config file
-if (   ( $active_parameter{psv_combinevariantcallsets} > 0 )
-    && ( $active_parameter{sv_vcfanno} > 0 ) )
-{
-
-    check_vcfanno_toml(
-        {
-            vcfanno_file_toml => $active_parameter{sv_vcfanno_config},
-            vcfanno_file_freq => $active_parameter{sv_vcfanno_config_file},
-        }
-    );
-}
-
-check_snpsift_keys(
-    {
-        snpsift_annotation_files_href =>
-          \%{ $active_parameter{snpsift_annotation_files} },
-        snpsift_annotation_outinfo_key_href =>
-          \%{ $active_parameter{snpsift_annotation_outinfo_key} },
-    }
-);
-
-## Adds dynamic aggregate information from definitions to parameter hash
-set_dynamic_parameter(
-    {
-        parameter_href => \%parameter,
-        aggregates_ref => [
-            ## Collects all programs that MIP can handle
-            q{type:program},
-            ## Collects all variant_callers
-            q{program_type:variant_callers},
-            ## Collects all structural variant_callers
-            q{program_type:structural_variant_callers},
-            ## Collect all aligners
-            q{program_type:aligners},
-            ## Collects all references in that are supposed to be in reference directory
-            q{reference:reference_dir},
-        ],
-    }
-);
-
-## Check correct value for program mode in MIP
-check_program_mode(
-    {
-        parameter_href        => \%parameter,
-        active_parameter_href => \%active_parameter
-    }
-);
-
-## Get initiation program, downstream dependencies and update program modes
-if ( $active_parameter{start_with_program} ) {
-
-    my %dependency_tree = load_yaml(
-        {
-            yaml_file =>
-              catfile( $Bin, qw{ definitions define_wgs_initiation.yaml } ),
-        }
-    );
-    my @start_with_programs;
-    my $is_program_found = 0;
-    my $is_chain_found   = 0;
-
-    ## Collects all downstream programs from initation point
-    get_dependency_tree(
-        {
-            dependency_tree_href    => \%dependency_tree,
-            is_program_found_ref    => \$is_program_found,
-            is_chain_found_ref      => \$is_chain_found,
-            program                 => $active_parameter{start_with_program},
-            start_with_programs_ref => \@start_with_programs,
-        }
-    );
-
-    ## Update program mode depending on start with flag
-    update_program_mode_with_start_with(
-        {
-            active_parameter_href => \%active_parameter,
-            programs_ref => \@{ $parameter{dynamic_parameter}{program} },
-            start_with_programs_ref => \@start_with_programs,
-        }
-    );
-}
-
-## Update program mode depending on dry_run_all flag
-update_program_mode_with_dry_run_all(
-    {
-        active_parameter_href => \%active_parameter,
-        programs_ref          => \@{ $parameter{dynamic_parameter}{program} },
-        dry_run_all           => $active_parameter{dry_run_all},
-    }
-);
-
-## Check that the correct number of aligners is used in MIP and sets the aligner flag accordingly
-check_aligner(
-    {
-        parameter_href        => \%parameter,
-        active_parameter_href => \%active_parameter,
-        broadcasts_ref        => \@broadcasts,
-    }
-);
-
-## Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller.
-my %priority_call_parameter = (
-    variant_callers            => 'gatk_combinevariants_prioritize_caller',
-    structural_variant_callers => 'sv_svdb_merge_prioritize',
-);
-while ( my ( $variant_caller_type, $prioritize_parameter_name ) =
-    each %priority_call_parameter )
-{
-
-    ## Check if we have any active callers
-    my $activate_caller_tracker = 0;
-    foreach my $variant_caller (
-        @{ $parameter{dynamic_parameter}{$variant_caller_type} } )
-    {
-
-        if ( $active_parameter{$variant_caller} > 0 ) {
-
-            $activate_caller_tracker++;
-        }
-    }
-    if ( $activate_caller_tracker > 0 ) {
-
-        check_prioritize_variant_callers(
-            {
-                parameter_href        => \%parameter,
-                active_parameter_href => \%active_parameter,
-                variant_callers_ref =>
-                  \@{ $parameter{dynamic_parameter}{$variant_caller_type} },
-                parameter_names_ref => \$prioritize_parameter_name,
-            }
-        );
-    }
-}
-
-## Broadcast set parameters info
-foreach my $parameter_info (@broadcasts) {
-
-    $log->info($parameter_info);
-}
-
-## Update program mode depending on analysis run value as some programs are not applicable for e.g. wes
-update_program_mode_for_analysis_type(
-    {
-        active_parameter_href => \%active_parameter,
-        consensus_analysis_type =>
-          $parameter{dynamic_parameter}{consensus_analysis_type},
-        log          => $log,
-        programs_ref => [
-            qw{ cnvnator delly_call delly_reformat tiddit samtools_subsample_mt }
-        ],
-    }
-);
-
-## Update prioritize flag depending on analysis run value as some programs are not applicable for e.g. wes
-$active_parameter{sv_svdb_merge_prioritize} = update_prioritize_flag(
-    {
-        prioritize_key => $active_parameter{sv_svdb_merge_prioritize},
-        programs_ref   => [qw{ cnvnator delly_call delly_reformat tiddit }],
-        consensus_analysis_type =>
-          $parameter{dynamic_parameter}{consensus_analysis_type},
-    }
-);
-
-## Write config file for family
-if ( $active_parameter{config_file_analysis} ne 0 ) {
-
-    ## Create directory unless it already exists
-    make_path( dirname( $active_parameter{config_file_analysis} ) );
-
-    ## Remove previous analysis specific info not relevant for current run e.g. log file, sample_ids which are read from pedigree or cmd
-    my @remove_keys = (qw{ associated_program });
-
-  KEY:
-    foreach my $key (@remove_keys) {
-
-        delete $active_parameter{$key};
-    }
-
-    ## Writes a YAML hash to file
-    write_yaml(
-        {
-            yaml_href      => \%active_parameter,
-            yaml_file_path => $active_parameter{config_file_analysis},
-        }
-    );
-    $log->info( 'Wrote: ' . $active_parameter{config_file_analysis}, "\n" );
-
-    ## Add to qc_sample_info
-    $sample_info{config_file_analysis} =
-      $active_parameter{config_file_analysis};
-}
-
-## Detect the gender included in current analysis
-(
-
-    $active_parameter{found_male},
-    $active_parameter{found_female},
-    $active_parameter{found_other},
-    $active_parameter{found_other_count},
-  )
-  = detect_sample_id_gender(
-    {
-        active_parameter_href => \%active_parameter,
-        sample_info_href      => \%sample_info,
-    }
-  );
-
-### Contigs
-## Set contig prefix and contig names depending on reference used
-set_contigs(
-    {
-        file_info_href         => \%file_info,
-        human_genome_reference => $active_parameter{human_genome_reference},
-    }
-);
-
-## Update contigs depending on settings in run (wes or if only male samples)
-update_contigs_for_run(
-    {
-        file_info_href     => \%file_info,
-        analysis_type_href => \%{ $active_parameter{analysis_type} },
-        found_male         => $active_parameter{found_male},
-    }
-);
-
-## Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
-@{ $file_info{sorted_select_file_contigs} } = size_sort_select_file_contigs(
-    {
-        file_info_href => \%file_info,
-        consensus_analysis_type_ref =>
-          \$parameter{dynamic_parameter}{consensus_analysis_type},
-        hash_key_to_sort        => 'select_file_contigs',
-        hash_key_sort_reference => 'contigs_size_ordered',
-    }
-);
-
-## Write CMD to MIP log file
-write_cmd_mip_log(
-    {
-        parameter_href        => \%parameter,
-        active_parameter_href => \%active_parameter,
-        order_parameters_ref  => \@order_parameters,
-        script_ref            => \$script,
-        log_file_ref          => \$active_parameter{log_file},
-        mip_version_ref       => \$VERSION,
-    }
-);
-
-## Collects the ".fastq(.gz)" files from the supplied infiles directory. Checks if any of the files exist
-collect_infiles(
-    {
-        active_parameter_href => \%active_parameter,
-        indir_path_href       => \%indir_path,
-        infile_href           => \%infile,
-    }
-);
-
-## Reformat files for MIP output, which have not yet been created into, correct format so that a sbatch script can be generated with the correct filenames
-my $uncompressed_file_switch = infiles_reformat(
-    {
-        active_parameter_href           => \%active_parameter,
-        sample_info_href                => \%sample_info,
-        file_info_href                  => \%file_info,
-        infile_href                     => \%infile,
-        indir_path_href                 => \%indir_path,
-        infile_lane_prefix_href         => \%infile_lane_prefix,
-        infile_both_strands_prefix_href => \%infile_both_strands_prefix,
-        lane_href                       => \%lane,
-        job_id_href                     => \%job_id,
-        outaligner_dir_ref              => \$active_parameter{outaligner_dir},
-        program_name                    => 'infiles_reformat',
-    }
-);
-
-## Creates all fileendings as the samples is processed depending on the chain of modules activated
-create_file_endings(
-    {
-        parameter_href          => \%parameter,
-        active_parameter_href   => \%active_parameter,
-        file_info_href          => \%file_info,
-        infile_lane_prefix_href => \%infile_lane_prefix,
-        order_parameters_ref    => \@order_parameters,
-    }
-);
-
-## Create .fam file to be used in variant calling analyses
-create_fam_file(
-    {
-        parameter_href        => \%parameter,
-        active_parameter_href => \%active_parameter,
-        sample_info_href      => \%sample_info,
-        execution_mode        => 'system',
-        fam_file_path         => catfile(
-            $active_parameter{outdata_dir},
-            $active_parameter{family_id},
-            $active_parameter{family_id} . '.fam'
-        ),
-    }
-);
-
-## Add to SampleInfo
-add_to_sample_info(
-    {
-        active_parameter_href => \%active_parameter,
-        sample_info_href      => \%sample_info,
-        file_info_href        => \%file_info,
-    }
-);
-
-############
-####MAIN####
-############
-
-if ( not $active_parameter{dry_run_all} ) {
-
-    my %no_dry_run_info = (
-        analysisrunstatus => q{not_finished},
-        analysis_date     => $date_time_stamp,
-        mip_version       => $VERSION,
-    );
-
-  KEY_VALUE_PAIR:
-    while ( my ( $key, $value ) = each %no_dry_run_info ) {
-
-        $sample_info{$key} = $value;
-    }
-}
-
-### Build recipes
-$log->info(q{[Reference check - Reference prerequisites]});
-## Check capture file prerequistes exists
-PROGRAM:
-foreach
-  my $program_name ( @{ $parameter{exome_target_bed}{associated_program} } )
-{
-
-    next PROGRAM if ( not $active_parameter{$program_name} );
-
-    ## Remove initial "p" from program_name
-    substr( $program_name, 0, 1 ) = $EMPTY_STR;
-
-    check_capture_file_prerequisites(
-        {
-            parameter_href              => \%parameter,
-            active_parameter_href       => \%active_parameter,
-            sample_info_href            => \%sample_info,
-            infile_lane_prefix_href     => \%infile_lane_prefix,
-            job_id_href                 => \%job_id,
-            infile_list_suffix          => $file_info{exome_target_bed}[0],
-            padded_infile_list_suffix   => $file_info{exome_target_bed}[1],
-            padded_interval_list_suffix => $file_info{exome_target_bed}[2],
-            program_name                => $program_name,
-            log                         => $log,
-        }
-    );
-}
-
-## Check human genome prerequistes exists
-PROGRAM:
-foreach my $program_name (
-    @{ $parameter{human_genome_reference}{associated_program} } )
-{
-
-    next PROGRAM if ( $program_name eq q{mip} );
-
-    next PROGRAM if ( not $active_parameter{$program_name} );
-
-    ## Remove initial "p" from program_name
-    substr( $program_name, 0, 1 ) = $EMPTY_STR;
-
-    my $is_finished = check_human_genome_prerequisites(
-        {
-            parameter_href          => \%parameter,
-            active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
-            file_info_href          => \%file_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            program_name            => $program_name,
-            log                     => $log,
-        }
-    );
-    last PROGRAM if ($is_finished);
-}
-
-## Check Rtg build prerequisites
-
-if ( $active_parameter{prtg_vcfeval} ) {
-
-    check_rtg_prerequisites(
-        {
-            parameter_href          => \%parameter,
-            active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
-            file_info_href          => \%file_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            program_name            => q{rtg_vcfeval},
-            parameter_build_name    => q{rtg_vcfeval_reference_genome},
-        }
-    );
-}
-
-## Check BWA build prerequisites
-
-if ( $active_parameter{pbwa_mem} ) {
-
-    check_bwa_prerequisites(
-        {
-            parameter_href          => \%parameter,
-            active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
-            file_info_href          => \%file_info,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            job_id_href             => \%job_id,
-            program_name            => q{bwa_mem},
-            parameter_build_name    => q{bwa_build_reference},
-        }
-    );
-}
-$log->info( $TAB . q{Reference check: Reference prerequisites checked} );
-
-## Check if vt has processed references, if not try to reprocesses them before launcing modules
-$log->info(q{[Reference check - Reference processed by VT]});
-if (   $active_parameter{vt_decompose}
-    || $active_parameter{vt_normalize} )
-{
-
-    my @to_process_references = check_references_for_vt(
-        {
-            parameter_href        => \%parameter,
-            active_parameter_href => \%active_parameter,
-            vt_references_ref =>
-              \@{ $active_parameter{decompose_normalize_references} },
-            log => $log,
-        }
-    );
-
-  REFERENCE:
-    foreach my $reference_file_path (@to_process_references) {
-
-        $log->info(q{[VT - Normalize and decompose]});
-        $log->info( $TAB . q{File: } . $reference_file_path );
-
-        ## Split multi allelic records into single records and normalize
-        analysis_vt_core(
-            {
-                parameter_href          => \%parameter,
-                active_parameter_href   => \%active_parameter,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                infile_path             => $reference_file_path,
-                program_directory       => q{vt},
-                decompose               => 1,
-                normalize               => 1,
-            }
-        );
-    }
-}
-
-## Split of fastq files in batches
-if ( $active_parameter{psplit_fastq_file} ) {
-
-    $log->info(q{[Split fastq files in batches]});
-
-  SAMPLE_ID:
-    foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-        ## Split input fastq files into batches of reads, versions and compress. Moves original file to subdirectory
-        analysis_split_fastq_file(
-            {
-                parameter_href        => \%parameter,
-                active_parameter_href => \%active_parameter,
-                infile_href           => \%infile,
-                job_id_href           => \%job_id,
-                insample_directory    => $indir_path{$sample_id},
-                outsample_directory   => $indir_path{$sample_id},
-                sample_id             => $sample_id,
-                program_name          => q{split_fastq_file},
-                sequence_read_batch =>
-                  $active_parameter{split_fastq_file_read_batch},
-            }
-        );
-    }
-
-    ## End here if this module is turned on
-    exit;
-}
-
-## GZip of fastq files
-if (   $active_parameter{pgzip_fastq}
-    && $uncompressed_file_switch eq q{uncompressed} )
-{
-
-    $log->info(q{[Gzip for fastq files]});
-
-  SAMPLES:
-    foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-        ## Determine which sample id had the uncompressed files
-      INFILES:
-        foreach my $infile ( @{ $infile{$sample_id} } ) {
-
-            my $infile_suffix = $parameter{pgzip_fastq}{infile_suffix};
-
-            if ( $infile =~ /$infile_suffix$/ ) {
-
-                ## Automatically gzips fastq files
-                analysis_gzip_fastq(
-                    {
-                        parameter_href          => \%parameter,
-                        active_parameter_href   => \%active_parameter,
-                        sample_info_href        => \%sample_info,
-                        infile_href             => \%infile,
-                        infile_lane_prefix_href => \%infile_lane_prefix,
-                        job_id_href             => \%job_id,
-                        insample_directory      => $indir_path{$sample_id},
-                        sample_id               => $sample_id,
-                        program_name            => q{gzip_fastq},
-                    }
-                );
-
-                # Call once per sample_id
-                last INFILES;
-            }
-        }
-    }
-}
-
-my $consensus_analysis_type =
-  $parameter{dynamic_parameter}{consensus_analysis_type};
-
-### mip_c
-if ( $consensus_analysis_type eq q{cancer} )
-
-{
-
-    $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
-
-    ## Pipeline recipe for cancer data
-    pipeline_mip_c(
-        {
-            parameter_href          => \%parameter,
-            active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
-            file_info_href          => \%file_info,
-            indir_path_href         => \%indir_path,
-            infile_href             => \%infile,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            lane_href               => \%lane,
-            job_id_href             => \%job_id,
-            outaligner_dir          => $active_parameter{outaligner_dir},
-            log                     => $log,
-        }
-    );
-}
-
-### WTS
-if ( $consensus_analysis_type eq q{wts} ) {
-
-    $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
-
-    ## Pipeline recipe for wts data
-    pipeline_wts(
-        {
-            parameter_href          => \%parameter,
-            active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
-            file_info_href          => \%file_info,
-            indir_path_href         => \%indir_path,
-            infile_href             => \%infile,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            lane_href               => \%lane,
-            job_id_href             => \%job_id,
-            outaligner_dir          => $active_parameter{outaligner_dir},
-            log                     => $log,
-        }
-    );
-}
-
-### WES|WGS
-if (   $consensus_analysis_type eq q{wgs}
-    || $consensus_analysis_type eq q{wes}
-    || $consensus_analysis_type eq q{mixed} )
-{
-
-    $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
-
-    ## Pipeline recipe for wts data
-    pipeline_wgs(
-        {
-            parameter_href          => \%parameter,
-            active_parameter_href   => \%active_parameter,
-            sample_info_href        => \%sample_info,
-            file_info_href          => \%file_info,
-            indir_path_href         => \%indir_path,
-            infile_href             => \%infile,
-            infile_lane_prefix_href => \%infile_lane_prefix,
-            lane_href               => \%lane,
-            job_id_href             => \%job_id,
-            outaligner_dir          => $active_parameter{outaligner_dir},
-            log                     => $log,
-        }
-    );
-}
-
-## Write QC for programs used in analysis
-# Write SampleInfo to yaml file
-if ( $active_parameter{sample_info_file} ) {
-
-    ## Writes a YAML hash to file
-    write_yaml(
-        {
-            yaml_href      => \%sample_info,
-            yaml_file_path => $active_parameter{sample_info_file},
-        }
-    );
-    $log->info( q{Wrote: } . $active_parameter{sample_info_file} );
-}
-
-######################
-####Sub routines######
-######################
-
-sub build_usage {
-
-##Function : Build the USAGE instructions
-##Returns  :
-##Arguments: $program_name => Name of the script
+sub mip_analyse {
+
+## Function : Creates program directories (info & programData & programScript), program script filenames and writes sbatch header.
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $file_info_href                       => File info hash {REF}
+##          : $parameter_href        => Parameter hash {REF}
+#           : $order_parameters_ref  => Order of addition to parameter array {REF}
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $program_name;
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $parameter_href;
+    my $file_info_href;
+    my $order_parameters_ref;
 
     my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
             strict_type => 1,
-            store       => \$program_name,
+        },
+        file_info_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$file_info_href,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        order_parameters_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$order_parameters_ref,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    return <<"END_USAGE";
- $program_name [options] -ifd [infile_dirs=sample_id] -rd [reference_dir] -p [project_id] -s [sample_ids,.,.,.,n] -em [email] -osd [outscript_dir] -odd [outdata_dir] -f [family_id] -p[program] -at [sample_id=analysis_type]
+    ## Transfer to lexical variables
+    my %active_parameter = %{$active_parameter_href};
+    my %file_info        = %{$file_info_href};
+    my @order_parameters = @{$order_parameters_ref};
+    my %parameter        = %{$parameter_href};
 
-    #### MIP
-    -ifd/--infile_dirs                                             Infile directory(s) (Hash infile_dirs=sample_id; mandatory)
-    -rd/--reference_dir                                            Reference(s) directory (mandatory)
-    -p/--project_id                                                Project ID (mandatory)
-    -s/--sample_ids                                                Sample ID(s)(comma sep; mandatory)
-    -odd/--outdata_dir                                             Data output directory (mandatory)
-    -osd/--outscript_dir                                           Script files (.sh) output directory (mandatory)
-    -f/--family_id                                                 Group id of samples to be compared (defaults to "", (Ex: 1 for IDN 1-1-1A))
-    -sck/--supported_capture_kit                                   Set the capture kit acronym shortcut in pedigree file
-    -dnr/--decompose_normalize_references                          Set the references to be decomposed and normalized (defaults:
-                                                                   "gatk_realigner_indel_known_sites",         "gatk_baserecalibration_known_sites",
-                                                                   "gatk_haplotypecaller_snp_known_set",       "gatk_variantrecalibration_resource_snv",
-                                                                   "gatk_variantrecalibration_resource_indel", "frequency_genmod_filter_1000g",
-                                                                   "sv_vcfanno_config_file",                   "gatk_varianteval_gold",
-                                                                   "gatk_varianteval_dbsnp",                   "snpsift_annotation_files")
-    -ped/--pedigree_file                                           Meta data on samples (defaults to "")
-    -hgr/--human_genome_reference                                  Fasta file for the human genome reference (defaults to "GRCh37_homo_sapiens_-d5-.fasta;1000G decoy version 5")
-    -ald/--outaligner_dir                                          Setting which aligner out directory was used for alignment in previous analysis (defaults to "{outdata_dir}{outaligner_dir}")
-    -at/--analysis_type                                            Type of analysis to perform (sample_id=analysis_type, defaults to "wgs";Valid entries: "wgs", "wes", "wts")
-    -pl/--platform                                                 Platform/technology used to produce the reads (defaults to "ILLUMINA")
-    -ec/--expected_coverage                                        Expected mean target coverage for analysis (sample_id=expected_coverage, defaults to "")
-    -sao/--sample_origin                                           Sample origin for analysis (sample_id=sample_origin, defaults to "")
-    -c/--config_file                                               YAML config file for analysis parameters (defaults to "")
-    -ccp/--cluster_constant_path                                   Set the cluster constant path (defaults to "")
-    -acp/--analysis_constant_path                                  Set the analysis constant path (defaults to "analysis")
-    -cfa/--config_file_analysis                                    Write YAML configuration file for analysis parameters (defaults to "")
-    -sif/--sample_info_file                                        YAML file for sample info used in the analysis (defaults to "{outdata_dir}/{family_id}/{family_id}_qc_sample_info.yaml")
-    -dra/--dry_run_all                                             Sets all programs to dry run mode i.e. no sbatch submission (supply flag to enable)
-    -swp/--start_with_program                                      Start analysis with program (defaults to "")
-    -jul/--java_use_large_pages                                    Use large page memory. (supply flag to enable)
-    -ges/--genomic_set                                             Selection of relevant regions post alignment (Format=sorted BED; defaults to "")
-    -rio/--reduce_io                                               Run consecutive models at nodes (supply flag to enable)
-    -riu/--replace_iupac                                           Replace IUPAC code in alternative alleles with N (supply flag to enable)
-    -pp/--print_program                                            Print all programs that are supported
-    -ppm/--print_program_mode                                      Print all programs that are supported in: 0 (off mode), 1 (on mode), 2 (dry run mode; defaults to "2")
-    -l/--log_file                                                  MIP log file (defaults to "{outdata_dir}/{family_id}/mip_log/{date}/{scriptname}_{timestamp}.log")
-    -h/--help                                                      Display this help message
-    -v/--version                                                   Display version of MIP
+#### Script parameters
 
-    #### Bash
-    -bse/--bash_set_errexit                                        Set errexit in bash scripts (supply flag to enable)
-    -bsu/--bash_set_nounset                                        Set nounset in bash scripts (supply flag to enable)
-    -bsp/--bash_set_pipefail                                       Set pipefail in bash scripts (supply flag to enable)
-    -mot/--module_time                                             Set the time allocation for each module (Format: module "program name"=time(Hours))
-    -mcn/--module_core_number                                      Set the number of cores for each module (Format: module "program_name"=X(cores))
-    -mse/--module_source_environment_command                       Set environment variables specific for each module (Format: module "program_name"="command"
-    -sen/--source_main_environment_commands                        Source main environment command in sbatch scripts (defaults to "")
-    -mcn/--max_cores_per_node                                      Maximum number of processor cores per node used in the analysis (defaults to "16")
-    -nrm/--node_ram_memory                                         RAM memory size of the node(s) in GigaBytes (Defaults to 24)
-    -tmd/--temp_directory                                          Set the temporary directory for all programs (defaults to "/scratch/SLURM_JOB_ID";supply whole path)
-    -em/--email                                                    E-mail (defaults to "")
-    -emt/--email_types                                             E-mail type (defaults to FAIL (=FAIL);Options: BEGIN (=BEGIN) and/or F (=FAIL) and/or END=(END))
-    -qos/--slurm_quality_of_service                                SLURM quality of service command in sbatch scripts (defaults to "normal")
+## Add date_time_stamp for later use in log and qc_metrics yaml file
+    my $date_time       = localtime;
+    my $date_time_stamp = $date_time->datetime;
+    my $date            = $date_time->ymd;
 
-    #### Programs
-    -psfq/--psplit_fastq_file                                      Split fastq files in batches of X reads and exits (defaults to "0" (=no))
-      -sfqrdb/--split_fastq_file_read_batch                        Number of sequence reads to place in each batch (defaults to "25,000,000")
-    -pgz/--pgzip_fastq                                             Gzip fastq files (defaults to "0" (=no))
-    -pfqc/--pfastqc                                                Sequence quality analysis using FastQC (defaults to "0" (=no))
-    -pcta/--pcutadapt                                              Trim input reads using cutadapt (defaults to "0" (=no))
+    # Catches script name and removes ending
+    my $script = fileparse( basename( $PROGRAM_NAME, $DOT . q{pl} ) );
+    chomp( $date_time_stamp, $date, $script );
 
-    ## BWA
-    -pmem/--pbwa_mem                                               Align reads using Bwa Mem (defaults to "0" (=no))
-      -memhla/--bwa_mem_hla                                        Apply HLA typing (supply flag to enable)
-      -memcrm/--bwa_mem_cram                                       Use CRAM-format for additional output file (supply flag to enable)
-      -memsts/--bwa_mem_bamstats                                   Collect statistics from BAM files (supply flag to enable)
-      -memssm/--bwa_sambamba_sort_memory_limit                     Set the memory limit for Sambamba sort after bwa alignment (defaults to "32G")
+#### Set program parameters
 
-    ## Star
-    -pstn/--pstar_aln                                              Align reads using Star aln (defaults to "0" (=no))
-      -stn_aim/--align_intron_max                                  Maximum intron size (defaults to "100000")
-      -stn_amg/--align_mates_gap_max                               Maximum gap between two mates (defaults to "100000")
-      -stn_asom/--align_sjdb_overhang_min                          Minimum overhang (i.e. block size) for spliced alignments (defaults to "10")
-      -stn_cjom/--chim_junction_overhang_min                       Minimum overhang for a chimeric junction (defaults to "12")
-      -stn_csm/--chim_segment_min                                  Minimum length of chimaeric segment (defaults to "12")
-      -stn_tpm/--two_pass_mode                                     Two pass mode setting (defaults to "Basic")
-    -pstf/--pstar_fusion                                           Detect fusion transcripts with star fusion (defaults to "0" (=no))
+## Set MIP version
+    our $VERSION = 'v7.0.0';
 
+## Directories, files, job_ids and sample_info
+    my ( %infile, %indir_path, %infile_lane_prefix, %lane,
+        %infile_both_strands_prefix, %job_id, %sample_info );
 
-    ## Picardtools
-    -ptp/--picardtools_path                                        Path to Picardtools. Mandatory for use of Picardtools (defaults to "")
-    -pptm/--ppicardtools_mergesamfiles                             Merge (BAM file(s) ) using Picardtools mergesamfiles or rename single samples for downstream processing (defaults to "0" (=no))
+#### Staging Area
+### Get and/or set input parameters
 
-    ## Markduplicates
-    -pmd/--pmarkduplicates                                         Markduplicates using either Picardtools markduplicates or sambamba markdup (defaults to "0" (=no))
-    -mdpmd/--markduplicates_picardtools_markduplicates             Markduplicates using Picardtools markduplicates (supply flag to enable)
-    -mdsmd/--markduplicates_sambamba_markdup                       Markduplicates using Sambamba markduplicates (supply flag to enable)
-      -mdshts/--markduplicates_sambamba_markdup_hash_table_size    Sambamba size of hash table for finding read pairs (defaults to "262144")
-      -mdsols/--markduplicates_sambamba_markdup_overflow_list_size Sambamba size of the overflow list (defaults to "200000")
-      -mdsibs/--markduplicates_sambamba_markdup_io_buffer_size     Sambamba size of the io buffer for reading and writing BAM during the second pass (defaults to "2048")
+## Special case:Enable/activate MIP. Cannot be changed from cmd or config
+    $active_parameter{mip} = $parameter{mip}{default};
 
-    ### Coverage calculations
-    -pchs/--pchanjo_sexcheck                                       Predicts gender from sex chromosome coverage (defaults to "0" (=no))
-      -chslle/--chanjo_sexcheck_log_level                          Set chanjo sex log level (defaults to "DEBUG")
-    -psdt/--psambamba_depth                                        Sambamba depth coverage analysis (defaults to "0" (=no))
-      -sdtmod/--sambamba_depth_mode                                Mode unit to print the statistics on (defaults to "region")
-      -sdtcut/--sambamba_depth_cutoffs                             Read depth cutoff (comma sep; defaults to "10", "20", "30", "50", "100")
-      -sdtbed/--sambamba_depth_bed                                 Reference database (defaults to "CCDS.current.bed")
-      -sdtbaq/--sambamba_depth_base_quality                        Do not count bases with lower base quality (defaults to "10")
-      -stdmaq/--sambamba_depth_mapping_quality                     Do not count reads with lower mapping quality (defaults to "10")
-      -stdndu/--sambamba_depth_noduplicates                        Do not include duplicates in coverage calculation (supply flag to enable)
-      -stdfqc/--sambamba_depth_quality_control                     Do not include reads with failed quality control (supply flag to enable)
-    -pbgc/--pbedtools_genomecov                                    Genome coverage calculation using bedtools genomecov (defaults to "0" (=no))
-     -bgcmc/--bedtools_genomecov_max_coverage                      Max coverage depth when using '-pbedtools_genomecov' (defaults to "30")
-    -pptcmm/--ppicardtools_collectmultiplemetrics                  Metrics calculation using Picardtools CollectMultipleMetrics (defaults to "0" (=no))
-    -pptchs/--ppicardtools_collecthsmetrics                        Capture calculation using Picardtools Collecthsmetrics (defaults to "0" (=no))
-      -extb/--exome_target_bed                                     Exome target bed file per sample_id (defaults to "latest_supported_capturekit.bed";
-                                                                   -extb file.bed=Sample_idX,Sample_idY -extb file.bed=Sample_idZ)
-    -prcp/--prcovplots                                             Plots of genome coverage using rcovplots (defaults to "0" (=no))
+## Special case for boolean flag that will be removed from
+## config upon loading
+    my @boolean_parameter = qw{dry_run_all};
+    foreach my $parameter (@boolean_parameter) {
 
-    ### Structural variant callers
-    -pcnv/--pcnvnator                                              Structural variant calling using CNVnator (defaults to "0" (=no))
-      -cnvhbs/--cnv_bin_size                                       CNVnator bin size (defaults to "1000")
-    -pdelc/--pdelly_call                                           Structural variant calling using Delly (defaults to "0" (=no))
-    -pdel/--pdelly_reformat                                        Merge, regenotype and filter using Delly (defaults to "0" (=no))
-      -deltyp/--delly_types                                        Type of SV to call (defaults to "DEL,DUP,INV,TRA"; comma sep)
-      -delexc/--delly_exclude_file                                 Exclude centomere and telemore regions in delly calling (defaults to "hg19_human_excl_-0.7.6-.tsv")
-    -pmna/--pmanta                                                 Structural variant calling using Manta (defaults to "0" (=no))
-    -ptid/--ptiddit                                                Structural variant calling using Tiddit (defaults to "0" (=no))
-      -tidmsp/--tiddit_minimum_number_supporting_pairs             Minimum number of supporting reads (defaults to "6")
-      -tid_bin/--tiddit_bin_size                                   Compute coverage within bins of a specified size across the entire genome (defaults to "500")
-    -psvc/--psv_combinevariantcallsets                             Combine variant call sets (defaults to "0" (=no))
-      -svcvtd/--sv_vt_decompose                                    Split multi allelic records into single records (supply flag to enable)
-      -svsvdbmp/--sv_svdb_merge_prioritize                         Prioritization order of structural variant callers.(defaults to ""; comma sep; Options: manta|delly|cnvnator|tiddit)
-      -svcbtv/--sv_bcftools_view_filter                            Include structural variants with PASS in FILTER column (supply flag to enable)
-      -svcdbq/--sv_svdb_query                                      Annotate structural variants using svdb query (supply flag to enable)
-      -svcdbqd/--sv_svdb_query_db_files                            Database file(s) for annotation (defaults to "")
-      -svcvan/--sv_vcfanno                                         Annotate structural variants (supply flag to enable)
-      -svcval/--sv_vcfanno_lua                                     VcfAnno lua postscripting file (defaults to "")
-      -svcvac/--sv_vcfanno_config                                  VcfAnno toml config (defaults to "")
-      -svcvacf/--sv_vcfanno_config_file                            Annotation file within vcfAnno config toml file (defaults to "GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz")
-      -svcvah/--sv_vcfannotation_header_lines_file                 Adjust for postscript by adding required header lines to vcf (defaults to "")
-      -svcgmf/--sv_genmod_filter                                   Remove common structural variants from vcf (supply flag to enable)
-      -svcgfr/--sv_genmod_filter_1000g                             Genmod annotate structural variants from 1000G reference (defaults to "GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz")
-      -svcgft/--sv_genmod_filter_threshold                         Threshold for filtering structural variants (defaults to "0.10")
-      -svcbcf/--sv_combinevariantcallsets_bcf_file                 Produce a bcf from the CombineStructuralVariantCallSet vcf (supply flag to enable)
-    -psvv/--psv_varianteffectpredictor                             Annotate SV variants using VEP (defaults to "0" (=no))
-      -svvepf/--sv_vep_features                                    VEP features , comma sep;(defaults to
-                                                                   "hgvs",       "symbol",     "numbers",   "sift",      "polyphen",
-                                                                   "humdiv",     "domains",    "protein",   "ccds",      "uniprot",
-                                                                   "biotype",    "regulatory"  "tsl",       "canonical", "per_gene",
-                                                                   "appris")
-      -svveppl/--sv_vep_plugins                                    VEP plugins (defaults to ("UpDownDistance, LoFtool"); comma sep)
-    -psvvcp/--psv_vcfparser                                        Parse structural variants using vcfParser.pl (defaults to "0" (=no))
-      -svvcpvt/--sv_vcfparser_vep_transcripts                      Parse VEP transcript specific entries (supply flag to enable)
-      -svvcppg/--sv_vcfparser_per_gene                             Keep only most severe consequence per gene (supply flag to enable)
-      -svvcprff/--sv_vcfparser_range_feature_file                  Range annotations file (defaults to ""; tab-sep)
-      -svvcprfa/--sv_vcfparser_range_feature_annotation_columns    Range annotations feature columns (defaults to ""; comma sep)
-      -svvcpsf/--sv_vcfparser_select_file                          File containging list of genes to analyse seperately (defaults to "";tab-sep file and HGNC Symbol required)
-      -svvcpsfm/--sv_vcfparser_select_file_matching_column         Position of HGNC Symbol column in select file (defaults to "")
-      -svvcpsfa/--sv_vcfparser_select_feature_annotation_columns   Feature columns to use in annotation (defaults to ""; comma sep)
-    -psvr/--psv_rankvariant                                        Ranking of annotated SV variants (defaults to "0" (=no))
-      -svravanr/--sv_genmod_annotate_regions                       Use predefined gene annotation supplied with genmod for defining genes (supply flag to enable)
-      -svravgft/--sv_genmod_models_family_type                     Use one of the known setups (defaults to "mip")
-      -svravwg/--sv_genmod_models_whole_gene                       Allow compound pairs in intronic regions (supply flag to enable)
-      -svravrpf/--sv_genmod_models_reduced_penetrance_file         File containg genes with reduced penetrance (defaults to "")
-      -svravrm/--sv_rank_model_file                                Rank model config file (defaults to "")
-    -psvre/--psv_reformat                                          Concatenating files (defaults to "0" (=no))
-      -svrevbf/--sv_rankvariant_binary_file                        Produce binary file from the rank variant chromosome sorted vcfs (supply flag to enable)
-      -svrergf/--sv_reformat_remove_genes_file                     Remove variants in hgnc_ids (defaults to "")
-    -pv2cs/--vcf2cytosure                                          Convert a VCF with structural variants to the “.CGH” format used by the commercial Cytosure software (defaults to "0" (=no))
-      -vc2csef/--vcf2cytosure_exclude_filter                       Filter vcf using bcftools exclude filter string (defaults to "")
-      -v2csfq/--vcf2cytosure_freq                                  Specify maximum frequency (defaults to "0.01")
-      -v2csfqt/--vcf2cytosure_freq_tag                             Specify frequency tag (defaults to "FRQ")
-      -v2csnf/--vf2cytosure_no_filter                              Don't use any filtering (defaults to "0" (=no))
-      -v2csvs/--vcf2cytosure_var_size                              Specify minimum variant size (defaults to "5000")
+        if ( not defined $active_parameter{$parameter} ) {
 
-    ## Bcftools
-    -pbmp/--pbcftools_mpileup                                      Variant calling using bcftools mpileup (defaults to "0" (=no))
-      -pbmpfv/--bcftools_mpileup_filter_variant                    Use standard bcftools filters (Supply flag to enable)
+            delete $active_parameter{$parameter};
+        }
+    }
 
-    ## Freebayes
-    -pfrb/--pfreebayes                                             Variant calling using Freebayes and bcftools (defaults to "0" (=no))
+## Change relative path to absolute path for parameter with "update_path: absolute_path" in config
+    update_to_absolute_path(
+        {
+            active_parameter_href => \%active_parameter,
+            parameter_href        => \%parameter,
+        }
+    );
 
+### Config file
+## If config from cmd
+    if ( exists $active_parameter{config_file}
+        && defined $active_parameter{config_file} )
+    {
 
-    ## GATK
-    -gtp/--gatk_path                                               Path to GATK. Mandatory for use of GATK (defaults to "")
-    -gll/--gatk_logging_level                                      Set the GATK log level (defaults to "INFO")
-    -gbdv/--gatk_bundle_download_version                           GATK FTP bundle download version.(defaults to "2.8")
-    -gdco/--gatk_downsample_to_coverage                            Coverage to downsample to at any given locus (defaults to "1000")
-    -gdai/--gatk_disable_auto_index_and_file_lock                  Disable auto index creation and locking when reading rods (supply flag to enable)
-    -pgra/--pgatk_realigner                                        Realignments of reads using GATK ReAlignerTargetCreator/IndelRealigner (defaults to "0" (=no))
-      -graks/--gatk_realigner_indel_known_sites                    GATK ReAlignerTargetCreator/IndelRealigner known indel site (defaults to
-                                                                   "GRCh37_1000g_indels_-phase1-.vcf",
-                                                                   "GRCh37_mills_and_1000g_indels_-gold_standard-.vcf")
-    -pgbr/--pgatk_baserecalibration                                Recalibration of bases using GATK BaseReCalibrator/PrintReads (defaults to "0" (=no))
-      -gbrcov/--gatk_baserecalibration_covariates                  GATK BaseReCalibration covariates (defaults to
-                                                                   "ReadGroupCovariate", "ContextCovariate",
-                                                                   "CycleCovariate",     "QualityScoreCovariate")
-      -gbrkst/--gatk_baserecalibration_known_sites                 GATK BaseReCalibration known SNV and INDEL sites (defaults to
-                                                                   "GRCh37_dbsnp_-138-.vcf", "GRCh37_1000g_indels_-phase1-.vcf",
-                                                                   "GRCh37_mills_and_1000g_indels_-gold_standard-.vcf")
-      -gbrrf/--gatk_baserecalibration_read_filters                 Filter out reads according to set filter (defaults to "1" (=yes))
-      -gbrdiq/--gatk_baserecalibration_disable_indel_qual          Disable indel quality scores (supply flag to enable)
-      -gbrsqq/--gatk_baserecalibration_static_quantized_quals      Static binning of base quality scores (defaults to "10,20,30,40"; comma sep)
-    -pghc/--pgatk_haplotypecaller                                  Variant discovery using GATK HaplotypeCaller (defaults to "0" (=no))
-      -ghcann/--gatk_haplotypecaller_annotation                    GATK HaploTypeCaller annotations (defaults to
-                                                                   "BaseQualityRankSumTest",    "ChromosomeCounts", "Coverage",          "DepthPerAlleleBySample", "FisherStrand",
-                                                                   "MappingQualityRankSumTest", "QualByDepth",      "RMSMappingQuality", "ReadPosRankSumTest",     "StrandOddsRatio")
-      -ghckse/--gatk_haplotypecaller_snp_known_set                 GATK HaplotypeCaller dbSNP set for annotating ID columns (defaults to "GRCh37_dbsnp_-138-.vcf")
-      -ghcscb/--gatk_haplotypecaller_no_soft_clipped_bases         Do not include soft clipped bases in the variant calling (supply flag to enable)
-      -ghcpim/--gatk_haplotypecaller_pcr_indel_model               PCR indel model to use (defaults to "None"; Set to "0" to disable)
-    -pggt/--pgatk_genotypegvcfs                                    Merge gVCF records using GATK GenotypeGVCFs (defaults to "0" (=no))
-      -ggtgrl/--gatk_genotypegvcfs_ref_gvcf                        GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping (defaults to "")
-      -ggtals/--gatk_genotypegvcfs_all_sites                       Emit non-variant sites to the output vcf file (supply flag to enable)
-      -ggbcf/gatk_concatenate_genotypegvcfs_bcf_file               Produce a bcf from the GATK ConcatenateGenoTypeGVCFs vcf (supply flag to enable)
-    -pgvr/--pgatk_variantrecalibration                             Variant recalibration using GATK VariantRecalibrator/ApplyRecalibration (defaults to "0" (=no))
-      -gvrann/--gatk_variantrecalibration_annotations              Annotations to use with GATK VariantRecalibrator (defaults to
-                                                                   "QD", "MQRankSum", "ReadPosRankSum",
-                                                                   "FS", "SOR",       "DP")
-      -gvrres/gatk_variantrecalibration_resource_snv               Resource to use with GATK VariantRecalibrator in SNV|BOTH mode (defaults to
-                                                                   "GRCh37_dbsnp_-138-.vcf:dbsnp,known=true,training=false,truth=false,prior=2.0",
-                                                                   "GRCh37_hapmap_-3.3-.vcf:hapmap,VCF,known=false,training=true,truth=true,prior=15.0",
-                                                                   "GRCh37_1000g_omni_-2.5-.vcf: omni,VCF,known=false,training=true,truth=false,prior=12.0",
-                                                                   "GRCh37_1000g_snps_high_confidence_-phase1-.vcf: 1000G,known=false,training=true,truth=false,prior=10.0")
-      -gvrrei/gatk_variantrecalibration_resource_indel             Resource to use with GATK VariantRecalibrator in INDEL|BOTH (defaults to
-                                                                   "GRCh37_dbsnp_-138-.vcf: dbsnp,known=true,training=false,truth=false,prior=2.0",
-                                                                   "GRCh37_mills_and_1000g_indels_-gold_standard-.vcf: mills,VCF,known=true,training=true,truth=true,prior=12.0")
-      -gvrstf/--gatk_variantrecalibration_snv_tsfilter_level       Truth sensitivity level for snvs at which to start filtering used in GATK VariantRecalibrator (defaults to "99.9")
-      -gvritf/--gatk_variantrecalibration_indel_tsfilter_level     Truth sensitivity level for indels at which to start filtering used in GATK VariantRecalibrator (defaults to "99.9")
-      -gvrdpa/--gatk_variantrecalibration_dp_annotation            Use the DP annotation in variant recalibration (supply flag to enable)
-      -gvrsmg/--gatk_variantrecalibration_snv_max_gaussians        Use hard filtering for snvs (supply flag to enable)
-      -gvrimg/--gatk_variantrecalibration_indel_max_gaussians      Use hard filtering for indels (supply flag to enable)
-      -gcgpss/--gatk_calculategenotypeposteriors_support_set       GATK CalculateGenotypePosteriors support set (defaults to "1000g_sites_GRCh37_phase3_v4_20130502.vcf")
-    -pgcv/--pgatk_combinevariantcallsets                           Combine variant call sets (defaults to "0" (=no))
-      -gcvbcf/--gatk_combinevariantcallsets_bcf_file               Produce a bcf from the GATK CombineVariantCallSet vcf (supply flag to enable)
-      -gcvgmo/--gatk_combinevariants_genotype_merge_option         Type of merge to perform (defaults to "PRIORITIZE")
-      -gcvpc/--gatk_combinevariants_prioritize_caller              Prioritization order of variant callers.(defaults to ""; comma sep; Options: gatk|bcftools|freebayes)
-    -pgvea/--pgatk_variantevalall                                  Variant evaluation using GATK varianteval for all variants  (defaults to "0" (=no))
-    -pgvee/--pgatk_variantevalexome                                Variant evaluation using GATK varianteval for exonic variants  (defaults to "0" (=no))
-      -gveedbs/--gatk_varianteval_dbsnp                            DbSNP file used in GATK varianteval (defaults to "dbsnp_GRCh37_138_esa_129.vcf")
-      -gveedbg/--gatk_varianteval_gold                             Gold indel file used in GATK varianteval (defaults to "GRCh37_mills_and_1000g_indels_-gold_standard-.vcf")
+        ## Loads a YAML file into an arbitrary hash and returns it.
+        my %config_parameter =
+          load_yaml( { yaml_file => $active_parameter{config_file}, } );
 
-    ###Annotation
-    -ppvab/--pprepareforvariantannotationblock                     Prepare for variant annotation block by copying and splitting files per contig (defaults to "0" (=no))
-    -prhc/--prhocall                                               Rhocall performs annotation of variants in autozygosity regions (defaults to "0" (=no))
-      -rhcf/--rhocall_frequency_file                               Frequency file for bcftools roh calculation (defaults to "GRCh37_anon_swegen_snp_-2016-10-19-.tab.gz", tab sep)
-    -pvt/--pvt VT                                                  Decompose and normalize (defaults to "0" (=no))
-      -vtdec/--vt_decompose                                        Split multi allelic records into single records (supply flag to enable)
-      -vtnor/--vt_normalize                                        Normalize variants (supply flag to enable)
-      -vtunq/--vt_uniq                                             Remove variant duplicates (supply flag to enable)
-      -vtmaa/--vt_missing_alt_allele                               Remove missing alternative alleles '*' (supply flag to enable)
-      -fqfgmf/--frequency_genmod_filter                            Remove common variants from vcf file (supply flag to enable)
-      -fqfgfr/--frequency_genmod_filter_1000g                      Genmod annotate 1000G reference (defaults to "GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz")
-      -fqfmaf/--frequency_genmod_filter_max_af                     Annotate MAX_AF from reference (defaults to "")
-      -fqfgft/--frequency_genmod_filter_threshold                  Threshold for filtering variants (defaults to "0.10")
-    -pvep/--pvarianteffectpredictor                                Annotate variants using VEP (defaults to "0" (=no))
-      -vepp/--vep_directory_path                                   Path to VEP script directory (defaults to "")
-      -vepc/--vep_directory_cache                                  Specify the cache directory to use (defaults to "")
-      -vepf/--vep_features                                         VEP features , comma sep; (defaults to
-                                                                   "hgvs",    "symbol",     "numbers", "sift",      "polyphen",
-                                                                   "humdiv",  "domains",    "protein", "ccds",      "uniprot",
-                                                                   "biotype", "regulatory", "tsl",     "canonical", "appris")
-      -veppl/--vep_plugins                                         VEP plugins (defaults to ("UpDownDistance, LoFtool, LoF"); comma sep)
-      -veppldp/--vep_plugins_dir_paths                             Path to directory with VEP plugins (defaults to "")
-    -pvcp/--pvcfparser                                             Parse variants using vcfParser.pl (defaults to "0" (=no))
-      -vcpvt/--vcfparser_vep_transcripts                           Parse VEP transcript specific entries (supply flag to enable)
-      -vcprff/--vcfparser_range_feature_file                       Range annotations file (defaults to ""; tab-sep)
-      -vcprfa/--vcfparser_range_feature_annotation_columns         Range annotations feature columns (defaults to ""; comma sep)
-      -vcpsf/--vcfparser_select_file                               File containging list of genes to analyse seperately (defaults to "";tab-sep file and HGNC Symbol required)
-      -vcpsfm/--vcfparser_select_file_matching_column              Position of HGNC symbol column in SelectFile (defaults to "")
-      -vcpsfa/--vcfparser_select_feature_annotation_columns        Feature columns to use in annotation (defaults to ""; comma sep)
-    -psne/--psnpeff                                                Variant annotation using snpEff (defaults to "0" (=no))
-      -snep/--snpeff_path                                          Path to snpEff. Mandatory for use of snpEff (defaults to "")
-      -sneann/--snpeff_ann                                         Annotate variants using snpeff (supply flag to enable)
-      -snegbv/--snpeff_genome_build_version                        Snpeff genome build version (defaults to "GRCh37.75")
-      -snesaf/--snpsift_annotation_files                           Annotation files to use with snpsift, hash flag i.e. --Flag key=value; (default to
-                                                                   "GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz=AF"
-                                                                   "GRCh37_exac_reheader_-r0.3.1-.vcf.gz=AF"
-                                                                   "GRCh37_anon-swegen_snp_-1000samples-.vcf.gz=AF"
-                                                                   "GRCh37_anon-swegen_indel_-1000samples-.vcf.gz=AF"
-      -snesaoi/--snpsift_annotation_outinfo_key                    Snpsift output INFO key, Hash flag i.e. --Flag key=value; (default to
-                                                                   "GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf=1000G"
-                                                                   "GRCh37_exac_reheader_-r0.3.1-.vcf.gz=EXAC"
-                                                                   "GRCh37_anon-swegen_snp_-1000samples-.vcf.gz=SWEREF"
-                                                                   "GRCh37_anon-swegen_indel_-1000samples-.vcf.gz=SWEREF")
-      -snesdbnsfp/--snpsift_dbnsfp_file                            DbNSFP File (defaults to "GRCh37_dbnsfp_-v2.9-.txt.gz")
-      -snesdbnsfpa/--snpsift_dbnsfp_annotations                    DbNSFP annotations to use with snpsift, comma sep; (defaults to
-                                                                   "SIFT_pred", "Polyphen2_HDIV_pred", "Polyphen2_HVAR_pred",
-                                                                   "GERP++_NR", "GERP++_RS",           "phastCons100way_vertebrate")
+        ## Remove previous analysis specific info not relevant for current run e.g. log file, which is read from pedigree or cmd
+        my @remove_keys = (qw{ log_file dry_run_all });
 
-    ## Rankvariant
-    -prav/--prankvariant                                           Ranking of annotated variants (defaults to "0" (=no))
-      -ravgft/--genmod_models_family_type                          Use one of the known setups (defaults to "mip")
-      -ravanr/--genmod_annotate_regions                            Use predefined gene annotation supplied with genmod for defining genes (supply flag to enable)
-      -ravcad/--genmod_annotate_cadd_files                         CADD score files (defaults to ""; comma sep)
-      -ravspi/--genmod_annotate_spidex_file                        Spidex database for alternative splicing (defaults to "")
-      -ravwg/--genmod_models_whole_gene                            Allow compound pairs in intronic regions (supply flag to enable)
-      -ravrpf/--genmod_models_reduced_penetrance_file              File containg genes with reduced penetrance (defaults to "")
-      -ravrm/--rank_model_file                                     Rank model config file (defaults to "")
+      KEY:
+        foreach my $key (@remove_keys) {
 
-    -pevab/--pendvariantannotationblock                            End variant annotation block by concatenating files (defaults to "0" (=no))
-      -ravbf/--rankvariant_binary_file                             Produce binary file from the rank variant chromosomal sorted vcfs (supply flag to enable)
-      -evabrgf/--endvariantannotationblock_remove_genes_file       Remove variants in hgnc_ids (defaults to "")
+            delete $config_parameter{$key};
+        }
 
-    ## Subsample the mitochondria
-    -pssmt/--psamtools_subsample_mt                                Subsample the mitochondria (defaults to "0" (=no))
-    -ssmtd/--samtools_subsample_mt_depth                           Set approximate coverage of subsampled bam file (defaults to "60")
+## Set config parameters into %active_parameter unless $parameter
+## has been supplied on the command line
+        set_config_to_active_parameters(
+            {
+                active_parameter_href => \%active_parameter,
+                config_parameter_href => \%config_parameter,
+            }
+        );
 
-    ### Utility
-    -pped/--ppeddy                                                 QC for familial-relationships and sexes (defaults to "0" (=no) )
-    -pplink/--pplink                                               QC for samples gender and relationship (defaults to "0" (=no) )
-    -pvai/--pvariant_integrity                                     QC for samples relationship (defaults to "0" (=no) )
-    -prte/--prtg_vcfeval                                           Compare concordance with benchmark data set (defaults to "0" (=no) )
-    -pevl/--pevaluation                                            Compare concordance with NIST data set (defaults to "0" (=no) )
-      -evlnid/--nist_id                                            NIST high-confidence sample_id (defaults to "NA12878")
-      -evlnhc/--nist_high_confidence_call_set                      NIST high-confidence variant calls (defaults to "GRCh37_nist_hg001_-na12878_v2.19-.vcf")
-      -evlnil/--nist_high_confidence_call_set_bed                  NIST high-confidence variant calls interval list (defaults to "GRCh37_nist_hg001_-na12878_v2.19-.bed")
-    -pqcc/--pqccollect                                             Collect QC metrics from programs processed (defaults to "0" (=no) )
-      -qccsi/--qccollect_sampleinfo_file                           Sample info file containing info on what to parse from this analysis run (defaults to
-                                                                   "{outdata_dir}/{family_id}/{family_id}_qc_sample_info.yaml")
-      -qccref/--qccollect_regexp_file                              Regular expression file containing the regular expression to be used for each program (defaults to "qc_regexp_-v1.13-.yaml")
-      -qccske/--qccollect_skip_evaluation                          Skip evaluation step in qccollect (supply flag to enable)
-    -pmqc/--pmultiqc                                               Create aggregate bioinformatics analysis report across many samples (defaults to "0" (=no))
-    -pars/--panalysisrunstatus                                     Sets the analysis run status flag to finished in sample_info_file (defaults to "0" (=no))
-    -psac/--psacct                                                 Generating sbatch script for SLURM info on each submitted job (defaults to "0" (=no))
-    -sacfrf/--sacct_format_fields                                  Format and fields of sacct output (defaults to
-                                                                   "jobid",    "jobname%50", "account", "partition", "alloccpus",
-                                                                   "TotalCPU", "elapsed",    "start",   "end",       "state",
-                                                                   "exitcode")
-    ## Vardict
-    -pvrd/--pvardict                                               Variant calling using Vardict (defaults to "0" (=no))
-       -pvdraf/--vrd_af_threshold                                  AF threshold for variant calling (default 0.01)
-       -pvrdcs/--vrd_chrom_start                                   Column for chromosome in the output (default 1)
-       -pvrdbed/--vrd_input_bed_file                               Infile path for region info bed file (mandatory, default none)
-       -pvrdmm/--vrd_max_mm                                        The maximum mean mismatches allowed (default 4.5)
-       -pvrdmp/--vrd_max_pval                                      The maximum p-valuem, set to 0 to keep all variants (default 0.9)
-       -pvrdre/--vrd_region_end                                    Column for region end position in the output (default 3)
-       -pvrdrs/--vrd_region_start                                  Column for region start position in the output (default 2)
-       -pvrdsa/--vrd_segment_annotn                                Column for segment annotation in the output (default 4)
-       -pvrdso/--vrd_somatic_only                                  Output only candidate somatic (default no)
-END_USAGE
+        ## Compare keys from config and cmd (%active_parameter) with definitions file (%parameter)
+        check_cmd_config_vs_definition_file(
+            {
+                active_parameter_href => \%active_parameter,
+                parameter_href        => \%parameter,
+            }
+        );
+
+        my @config_dynamic_parameters =
+          qw{ analysis_constant_path outaligner_dir };
+
+        ## Replace config parameter with cmd info for config dynamic parameter
+        set_default_config_dynamic_parameters(
+            {
+                active_parameter_href => \%active_parameter,
+                parameter_href        => \%parameter,
+                parameter_names_ref   => \@config_dynamic_parameters,
+            }
+        );
+
+        ## Loop through all parameters and update info
+      PARAMETER:
+        foreach my $parameter_name (@order_parameters) {
+
+            ## Updates the active parameters to particular user/cluster for dynamic config parameters following specifications. Leaves other entries untouched.
+            update_dynamic_config_parameters(
+                {
+                    active_parameter_href => \%active_parameter,
+                    parameter_name        => $parameter_name,
+                }
+            );
+        }
+    }
+
+## Set the default Log4perl file using supplied dynamic parameters.
+    $active_parameter{log_file} = set_default_log4perl_file(
+        {
+            active_parameter_href => \%active_parameter,
+            cmd_input             => $active_parameter{log_file},
+            date                  => $date,
+            date_time_stamp       => $date_time_stamp,
+            script                => $script,
+        }
+    );
+
+## Creates log object
+    my $log = initiate_logger(
+        {
+            file_path => $active_parameter{log_file},
+            log_name  => q{MIP},
+        }
+    );
+
+## Parse pedigree file
+## Reads family_id_pedigree file in YAML format. Checks for pedigree data for allowed entries and correct format. Add data to sample_info depending on user info.
+    # Meta data in YAML format
+    if ( defined $active_parameter{pedigree_file} ) {
+
+        ## Loads a YAML file into an arbitrary hash and returns it. Load parameters from previous run from sample_info_file
+        my %pedigree =
+          load_yaml( { yaml_file => $active_parameter{pedigree_file}, } );
+
+        $log->info( q{Loaded: } . $active_parameter{pedigree_file} );
+
+        parse_yaml_pedigree_file(
+            {
+                active_parameter_href => \%active_parameter,
+                file_path             => $active_parameter{pedigree_file},
+                parameter_href        => \%parameter,
+                pedigree_href         => \%pedigree,
+                sample_info_href      => \%sample_info,
+            }
+        );
+    }
+
+# Detect if all samples has the same sequencing type and return consensus if reached
+    $parameter{dynamic_parameter}{consensus_analysis_type} =
+      get_overall_analysis_type(
+        { analysis_type_href => \%{ $active_parameter{analysis_type} }, } );
+
+### Populate uninitilized active_parameters{parameter_name} with default from parameter
+  PARAMETER:
+    foreach my $parameter_name (@order_parameters) {
+
+        ## If hash and set - skip
+        next PARAMETER
+          if ( ref $active_parameter{$parameter_name} eq qw{HASH}
+            && keys %{ $active_parameter{$parameter_name} } );
+
+        ## If array and set - skip
+        next PARAMETER
+          if ( ref $active_parameter{$parameter_name} eq qw{ARRAY}
+            && @{ $active_parameter{$parameter_name} } );
+
+        ## If scalar and set - skip
+        next PARAMETER
+          if ( defined $active_parameter{$parameter_name}
+            and not ref $active_parameter{$parameter_name} );
+
+        ### Special case for parameters that are dependent on other parameters values
+        my @custom_default_parameters =
+          qw{ analysis_type bwa_build_reference exome_target_bed infile_dirs sample_info_file rtg_vcfeval_reference_genome };
+
+        if ( any { $_ eq $parameter_name } @custom_default_parameters ) {
+
+            set_custom_default_to_active_parameter(
+                {
+                    active_parameter_href => \%active_parameter,
+                    parameter_href        => \%parameter,
+                    parameter_name        => $parameter_name,
+                }
+            );
+            next PARAMETER;
+        }
+
+        ## Checks and sets user input or default values to active_parameters
+        set_default_to_active_parameter(
+            {
+                active_parameter_href => \%active_parameter,
+                associated_programs_ref =>
+                  \@{ $parameter{$parameter_name}{associated_program} },
+                parameter_href => \%parameter,
+                parameter_name => $parameter_name,
+            }
+        );
+    }
+
+## Update path for supplied reference(s) associated with parameter that should reside in the mip reference directory to full path
+    set_parameter_reference_dir_path(
+        {
+            active_parameter_href => \%active_parameter,
+            parameter_name        => q{human_genome_reference},
+        }
+    );
+
+## Detect version and source of the human_genome_reference: Source (hg19 or GRCh).
+    set_human_genome_reference_features(
+        {
+            file_info_href => \%file_info,
+            human_genome_reference =>
+              basename( $active_parameter{human_genome_reference} ),
+            log => $log,
+        }
+    );
+
+## Update exome_target_bed files with human_genome_reference_source_ref and human_genome_reference_version_ref
+    update_exome_target_bed(
+        {
+            exome_target_bed_file_href => $active_parameter{exome_target_bed},
+            human_genome_reference_source_ref =>
+              \$file_info{human_genome_reference_source},
+            human_genome_reference_version_ref =>
+              \$file_info{human_genome_reference_version},
+        }
+    );
+
+    # Holds all active parameters values for broadcasting
+    my @broadcasts;
+
+    set_parameter_to_broadcast(
+        {
+            parameter_href        => \%parameter,
+            active_parameter_href => \%active_parameter,
+            order_parameters_ref  => \@order_parameters,
+            broadcasts_ref        => \@broadcasts,
+        }
+    );
+
+## Reference in MIP reference directory
+  PARAMETER:
+    foreach my $parameter_name ( keys %parameter ) {
+
+        ## Expect file to be in reference directory
+        if ( exists $parameter{$parameter_name}{reference} ) {
+
+            update_reference_parameters(
+                {
+                    active_parameter_href => \%active_parameter,
+                    associated_programs_ref =>
+                      \@{ $parameter{$parameter_name}{associated_program} },
+                    parameter_name => $parameter_name,
+                }
+            );
+        }
+    }
+
+### Checks
+
+## Check existence of files and directories
+  PARAMETER:
+    foreach my $parameter_name ( keys %parameter ) {
+
+        if ( exists $parameter{$parameter_name}{exists_check} ) {
+
+            check_parameter_files(
+                {
+                    parameter_href        => \%parameter,
+                    active_parameter_href => \%active_parameter,
+                    associated_programs_ref =>
+                      \@{ $parameter{$parameter_name}{associated_program} },
+                    parameter_name => $parameter_name,
+                    parameter_exists_check =>
+                      $parameter{$parameter_name}{exists_check},
+                }
+            );
+        }
+    }
+
+## Updates sample_info hash with previous run pedigree info
+    reload_previous_pedigree_info(
+        {
+            active_parameter_href => \%active_parameter,
+            sample_info_href      => \%sample_info,
+            sample_info_file_path => $active_parameter{sample_info_file},
+        }
+    );
+
+## Special case since dict is created with .fastq removed
+## Check the existance of associated human genome files
+    check_human_genome_file_endings(
+        {
+            parameter_href        => \%parameter,
+            active_parameter_href => \%active_parameter,
+            file_info_href        => \%file_info,
+            parameter_name        => q{human_genome_reference},
+        }
+    );
+
+## Check that supplied target file ends with ".bed" and otherwise croaks
+  TARGET_FILE:
+    foreach
+      my $target_bed_file ( keys %{ $active_parameter{exome_target_bed} } )
+    {
+
+        check_target_bed_file_suffix(
+            {
+                parameter_name => q{exome_target_bed},
+                path           => $target_bed_file,
+            }
+        );
+    }
+
+## Checks parameter metafile exists and set build_file parameter
+    check_parameter_metafiles(
+        {
+            parameter_href        => \%parameter,
+            active_parameter_href => \%active_parameter,
+            file_info_href        => \%file_info,
+        }
+    );
+
+## Update the expected number of outfile after vcfparser
+    update_vcfparser_outfile_counter(
+        { active_parameter_href => \%active_parameter, } );
+
+## Collect select file contigs to loop over downstream
+    if ( $active_parameter{vcfparser_select_file} ) {
+
+## Collects sequences contigs used in select file
+        @{ $file_info{select_file_contigs} } = get_select_file_contigs(
+            {
+                select_file_path =>
+                  catfile( $active_parameter{vcfparser_select_file} ),
+                log => $log,
+            }
+        );
+    }
+
+## Detect family constellation based on pedigree file
+    $parameter{dynamic_parameter}{trio} = detect_trio(
+        {
+            active_parameter_href => \%active_parameter,
+            sample_info_href      => \%sample_info,
+        }
+    );
+
+## Detect number of founders (i.e. parents ) based on pedigree file
+    detect_founders(
+        {
+            active_parameter_href => \%active_parameter,
+            sample_info_href      => \%sample_info,
+        }
+    );
+
+## Check email adress syntax and mail host
+    if ( defined $active_parameter{email} ) {
+
+        check_email_address(
+            {
+                email => $active_parameter{email},
+                log   => $log,
+            }
+        );
+    }
+
+    if (
+        not check_allowed_temp_directory(
+            { temp_directory => $active_parameter{temp_directory}, }
+        )
+      )
+    {
+
+        $log->fatal( q{'--temp_directory }
+              . $active_parameter{temp_directory}
+              . q{' is not allowed because MIP will remove the temp directory after processing.}
+              . "\n" );
+        exit 1;
+    }
+
+## Parameters that have keys as MIP program names
+    my @parameter_keys_to_check =
+      (qw{ module_time module_core_number module_source_environment_command });
+    foreach my $parameter_name (@parameter_keys_to_check) {
+
+        ## Test if key from query hash exists truth hash
+        check_key_exists_in_hash(
+            {
+                truth_href     => \%parameter,
+                query_href     => \%{ $active_parameter{$parameter_name} },
+                parameter_name => $parameter_name,
+            }
+        );
+    }
+
+## Check that the module core number do not exceed the maximum per node
+    foreach my $program_name ( keys %{ $active_parameter{module_core_number} } )
+    {
+
+        ## Limit number of cores requested to the maximum number of cores available per node
+        $active_parameter{module_core_number}{$program_name} =
+          check_max_core_number(
+            {
+                max_cores_per_node => $active_parameter{max_cores_per_node},
+                core_number_requested =>
+                  $active_parameter{module_core_number}{$program_name},
+            }
+          );
+    }
+
+## Parameters that have elements as MIP program names
+    my @parameter_elements_to_check =
+      (qw(associated_program decompose_normalize_references));
+    foreach my $parameter_name (@parameter_elements_to_check) {
+
+        ## Test if element from query array exists truth hash
+        check_element_exists_in_hash(
+            {
+                truth_href     => \%parameter,
+                queryies       => \@{ $active_parameter{$parameter_name} },
+                parameter_name => $parameter_name,
+            }
+        );
+    }
+
+## Parameters with key(s) that have elements as MIP program names
+    my @parameter_key_to_check = qw(associated_program);
+  PARAMETER:
+    foreach my $parameter ( keys %parameter ) {
+
+      KEY:
+        foreach my $parameter_name (@parameter_key_to_check) {
+
+            if ( exists $parameter{$parameter}{$parameter_name} ) {
+
+                ## Test if element from query array exists truth hash
+                check_element_exists_in_hash(
+                    {
+                        truth_href => \%parameter,
+                        queryies =>
+                          \@{ $parameter{$parameter}{$parameter_name} },
+                        parameter_name => $parameter_name,
+                    }
+                );
+            }
+        }
+    }
+
+## Check programs in path, and executable
+    check_command_in_path(
+        {
+            parameter_href        => \%parameter,
+            active_parameter_href => \%active_parameter,
+        }
+    );
+
+## Test that the family_id and the sample_id(s) exists and are unique. Check if id sample_id contains "_".
+    check_unique_ids(
+        {
+            active_parameter_href => \%active_parameter,
+            sample_ids_ref        => \@{ $active_parameter{sample_ids} },
+        }
+    );
+
+## Check sample_id provided in hash parameter is included in the analysis and only represented once
+    check_sample_id_in_parameter(
+        {
+            active_parameter_href => \%active_parameter,
+            sample_ids_ref        => \@{ $active_parameter{sample_ids} },
+            parameter_names_ref =>
+              [qw{ analysis_type expected_coverage sample_origin }],
+            parameter_href => \%parameter,
+        }
+    );
+
+## Check sample_id provided in hash path parameter is included in the analysis and only represented once
+    check_sample_id_in_parameter_path(
+        {
+            active_parameter_href => \%active_parameter,
+            sample_ids_ref        => \@{ $active_parameter{sample_ids} },
+            parameter_names_ref   => [qw{ infile_dirs exome_target_bed }],
+        }
+    );
+
+## Check that VEP directory and VEP cache match
+    check_vep_directories(
+        {
+            vep_directory_path_ref  => \$active_parameter{vep_directory_path},
+            vep_directory_cache_ref => \$active_parameter{vep_directory_cache},
+        }
+    );
+
+## Check that the supplied vcfanno toml frequency file match record 'file=' within toml config file
+    if (   ( $active_parameter{psv_combinevariantcallsets} > 0 )
+        && ( $active_parameter{sv_vcfanno} > 0 ) )
+    {
+
+        check_vcfanno_toml(
+            {
+                vcfanno_file_toml => $active_parameter{sv_vcfanno_config},
+                vcfanno_file_freq => $active_parameter{sv_vcfanno_config_file},
+            }
+        );
+    }
+
+    check_snpsift_keys(
+        {
+            snpsift_annotation_files_href =>
+              \%{ $active_parameter{snpsift_annotation_files} },
+            snpsift_annotation_outinfo_key_href =>
+              \%{ $active_parameter{snpsift_annotation_outinfo_key} },
+        }
+    );
+
+## Adds dynamic aggregate information from definitions to parameter hash
+    set_dynamic_parameter(
+        {
+            parameter_href => \%parameter,
+            aggregates_ref => [
+                ## Collects all programs that MIP can handle
+                q{type:program},
+                ## Collects all variant_callers
+                q{program_type:variant_callers},
+                ## Collects all structural variant_callers
+                q{program_type:structural_variant_callers},
+                ## Collect all aligners
+                q{program_type:aligners},
+                ## Collects all references in that are supposed to be in reference directory
+                q{reference:reference_dir},
+            ],
+        }
+    );
+
+## Check correct value for program mode in MIP
+    check_program_mode(
+        {
+            parameter_href        => \%parameter,
+            active_parameter_href => \%active_parameter
+        }
+    );
+
+## Get initiation program, downstream dependencies and update program modes
+    if ( $active_parameter{start_with_program} ) {
+
+        my %dependency_tree = load_yaml(
+            {
+                yaml_file =>
+                  catfile( $Bin, qw{ definitions define_wgs_initiation.yaml } ),
+            }
+        );
+        my @start_with_programs;
+        my $is_program_found = 0;
+        my $is_chain_found   = 0;
+
+        ## Collects all downstream programs from initation point
+        get_dependency_tree(
+            {
+                dependency_tree_href => \%dependency_tree,
+                is_program_found_ref => \$is_program_found,
+                is_chain_found_ref   => \$is_chain_found,
+                program              => $active_parameter{start_with_program},
+                start_with_programs_ref => \@start_with_programs,
+            }
+        );
+
+        ## Update program mode depending on start with flag
+        update_program_mode_with_start_with(
+            {
+                active_parameter_href => \%active_parameter,
+                programs_ref => \@{ $parameter{dynamic_parameter}{program} },
+                start_with_programs_ref => \@start_with_programs,
+            }
+        );
+    }
+
+## Update program mode depending on dry_run_all flag
+    update_program_mode_with_dry_run_all(
+        {
+            active_parameter_href => \%active_parameter,
+            programs_ref => \@{ $parameter{dynamic_parameter}{program} },
+            dry_run_all  => $active_parameter{dry_run_all},
+        }
+    );
+
+## Check that the correct number of aligners is used in MIP and sets the aligner flag accordingly
+    check_aligner(
+        {
+            parameter_href        => \%parameter,
+            active_parameter_href => \%active_parameter,
+            broadcasts_ref        => \@broadcasts,
+        }
+    );
+
+## Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller.
+    my %priority_call_parameter = (
+        variant_callers            => 'gatk_combinevariants_prioritize_caller',
+        structural_variant_callers => 'sv_svdb_merge_prioritize',
+    );
+    while ( my ( $variant_caller_type, $prioritize_parameter_name ) =
+        each %priority_call_parameter )
+    {
+
+        ## Check if we have any active callers
+        my $activate_caller_tracker = 0;
+        foreach my $variant_caller (
+            @{ $parameter{dynamic_parameter}{$variant_caller_type} } )
+        {
+
+            if ( $active_parameter{$variant_caller} > 0 ) {
+
+                $activate_caller_tracker++;
+            }
+        }
+        if ( $activate_caller_tracker > 0 ) {
+
+            check_prioritize_variant_callers(
+                {
+                    parameter_href        => \%parameter,
+                    active_parameter_href => \%active_parameter,
+                    variant_callers_ref =>
+                      \@{ $parameter{dynamic_parameter}{$variant_caller_type} },
+                    parameter_names_ref => \$prioritize_parameter_name,
+                }
+            );
+        }
+    }
+
+## Broadcast set parameters info
+    foreach my $parameter_info (@broadcasts) {
+
+        $log->info($parameter_info);
+    }
+
+## Update program mode depending on analysis run value as some programs are not applicable for e.g. wes
+    update_program_mode_for_analysis_type(
+        {
+            active_parameter_href => \%active_parameter,
+            consensus_analysis_type =>
+              $parameter{dynamic_parameter}{consensus_analysis_type},
+            log          => $log,
+            programs_ref => [
+                qw{ cnvnator delly_call delly_reformat tiddit samtools_subsample_mt }
+            ],
+        }
+    );
+
+## Update prioritize flag depending on analysis run value as some programs are not applicable for e.g. wes
+    $active_parameter{sv_svdb_merge_prioritize} = update_prioritize_flag(
+        {
+            prioritize_key => $active_parameter{sv_svdb_merge_prioritize},
+            programs_ref   => [qw{ cnvnator delly_call delly_reformat tiddit }],
+            consensus_analysis_type =>
+              $parameter{dynamic_parameter}{consensus_analysis_type},
+        }
+    );
+
+## Write config file for family
+    if ( $active_parameter{config_file_analysis} ne 0 ) {
+
+        ## Create directory unless it already exists
+        make_path( dirname( $active_parameter{config_file_analysis} ) );
+
+        ## Remove previous analysis specific info not relevant for current run e.g. log file, sample_ids which are read from pedigree or cmd
+        my @remove_keys = (qw{ associated_program });
+
+      KEY:
+        foreach my $key (@remove_keys) {
+
+            delete $active_parameter{$key};
+        }
+
+        ## Writes a YAML hash to file
+        write_yaml(
+            {
+                yaml_href      => \%active_parameter,
+                yaml_file_path => $active_parameter{config_file_analysis},
+            }
+        );
+        $log->info( 'Wrote: ' . $active_parameter{config_file_analysis}, "\n" );
+
+        ## Add to qc_sample_info
+        $sample_info{config_file_analysis} =
+          $active_parameter{config_file_analysis};
+    }
+
+## Detect the gender included in current analysis
+    (
+
+        $active_parameter{found_male},
+        $active_parameter{found_female},
+        $active_parameter{found_other},
+        $active_parameter{found_other_count},
+      )
+      = detect_sample_id_gender(
+        {
+            active_parameter_href => \%active_parameter,
+            sample_info_href      => \%sample_info,
+        }
+      );
+
+### Contigs
+## Set contig prefix and contig names depending on reference used
+    set_contigs(
+        {
+            file_info_href         => \%file_info,
+            human_genome_reference => $active_parameter{human_genome_reference},
+        }
+    );
+
+## Update contigs depending on settings in run (wes or if only male samples)
+    update_contigs_for_run(
+        {
+            file_info_href     => \%file_info,
+            analysis_type_href => \%{ $active_parameter{analysis_type} },
+            found_male         => $active_parameter{found_male},
+        }
+    );
+
+## Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
+    @{ $file_info{sorted_select_file_contigs} } = size_sort_select_file_contigs(
+        {
+            file_info_href => \%file_info,
+            consensus_analysis_type_ref =>
+              \$parameter{dynamic_parameter}{consensus_analysis_type},
+            hash_key_to_sort        => 'select_file_contigs',
+            hash_key_sort_reference => 'contigs_size_ordered',
+        }
+    );
+
+## Write CMD to MIP log file
+    write_cmd_mip_log(
+        {
+            parameter_href        => \%parameter,
+            active_parameter_href => \%active_parameter,
+            order_parameters_ref  => \@order_parameters,
+            script_ref            => \$script,
+            log_file_ref          => \$active_parameter{log_file},
+            mip_version_ref       => \$VERSION,
+        }
+    );
+
+## Collects the ".fastq(.gz)" files from the supplied infiles directory. Checks if any of the files exist
+    collect_infiles(
+        {
+            active_parameter_href => \%active_parameter,
+            indir_path_href       => \%indir_path,
+            infile_href           => \%infile,
+        }
+    );
+
+## Reformat files for MIP output, which have not yet been created into, correct format so that a sbatch script can be generated with the correct filenames
+    my $uncompressed_file_switch = infiles_reformat(
+        {
+            active_parameter_href           => \%active_parameter,
+            sample_info_href                => \%sample_info,
+            file_info_href                  => \%file_info,
+            infile_href                     => \%infile,
+            indir_path_href                 => \%indir_path,
+            infile_lane_prefix_href         => \%infile_lane_prefix,
+            infile_both_strands_prefix_href => \%infile_both_strands_prefix,
+            lane_href                       => \%lane,
+            job_id_href                     => \%job_id,
+            outaligner_dir_ref => \$active_parameter{outaligner_dir},
+            program_name       => 'infiles_reformat',
+        }
+    );
+
+## Creates all fileendings as the samples is processed depending on the chain of modules activated
+    create_file_endings(
+        {
+            parameter_href          => \%parameter,
+            active_parameter_href   => \%active_parameter,
+            file_info_href          => \%file_info,
+            infile_lane_prefix_href => \%infile_lane_prefix,
+            order_parameters_ref    => \@order_parameters,
+        }
+    );
+
+## Create .fam file to be used in variant calling analyses
+    create_fam_file(
+        {
+            parameter_href        => \%parameter,
+            active_parameter_href => \%active_parameter,
+            sample_info_href      => \%sample_info,
+            execution_mode        => 'system',
+            fam_file_path         => catfile(
+                $active_parameter{outdata_dir},
+                $active_parameter{family_id},
+                $active_parameter{family_id} . '.fam'
+            ),
+        }
+    );
+
+## Add to SampleInfo
+    add_to_sample_info(
+        {
+            active_parameter_href => \%active_parameter,
+            sample_info_href      => \%sample_info,
+            file_info_href        => \%file_info,
+        }
+    );
+
+############
+####MAIN####
+############
+
+    if ( not $active_parameter{dry_run_all} ) {
+
+        my %no_dry_run_info = (
+            analysisrunstatus => q{not_finished},
+            analysis_date     => $date_time_stamp,
+            mip_version       => $VERSION,
+        );
+
+      KEY_VALUE_PAIR:
+        while ( my ( $key, $value ) = each %no_dry_run_info ) {
+
+            $sample_info{$key} = $value;
+        }
+    }
+
+### Build recipes
+    $log->info(q{[Reference check - Reference prerequisites]});
+## Check capture file prerequistes exists
+  PROGRAM:
+    foreach
+      my $program_name ( @{ $parameter{exome_target_bed}{associated_program} } )
+    {
+
+        next PROGRAM if ( not $active_parameter{$program_name} );
+
+        ## Remove initial "p" from program_name
+        substr( $program_name, 0, 1 ) = $EMPTY_STR;
+
+        check_capture_file_prerequisites(
+            {
+                parameter_href              => \%parameter,
+                active_parameter_href       => \%active_parameter,
+                sample_info_href            => \%sample_info,
+                infile_lane_prefix_href     => \%infile_lane_prefix,
+                job_id_href                 => \%job_id,
+                infile_list_suffix          => $file_info{exome_target_bed}[0],
+                padded_infile_list_suffix   => $file_info{exome_target_bed}[1],
+                padded_interval_list_suffix => $file_info{exome_target_bed}[2],
+                program_name                => $program_name,
+                log                         => $log,
+            }
+        );
+    }
+
+## Check human genome prerequistes exists
+  PROGRAM:
+    foreach my $program_name (
+        @{ $parameter{human_genome_reference}{associated_program} } )
+    {
+
+        next PROGRAM if ( $program_name eq q{mip} );
+
+        next PROGRAM if ( not $active_parameter{$program_name} );
+
+        ## Remove initial "p" from program_name
+        substr( $program_name, 0, 1 ) = $EMPTY_STR;
+
+        my $is_finished = check_human_genome_prerequisites(
+            {
+                parameter_href          => \%parameter,
+                active_parameter_href   => \%active_parameter,
+                sample_info_href        => \%sample_info,
+                file_info_href          => \%file_info,
+                infile_lane_prefix_href => \%infile_lane_prefix,
+                job_id_href             => \%job_id,
+                program_name            => $program_name,
+                log                     => $log,
+            }
+        );
+        last PROGRAM if ($is_finished);
+    }
+
+## Check Rtg build prerequisites
+
+    if ( $active_parameter{prtg_vcfeval} ) {
+
+        check_rtg_prerequisites(
+            {
+                parameter_href          => \%parameter,
+                active_parameter_href   => \%active_parameter,
+                sample_info_href        => \%sample_info,
+                file_info_href          => \%file_info,
+                infile_lane_prefix_href => \%infile_lane_prefix,
+                job_id_href             => \%job_id,
+                program_name            => q{rtg_vcfeval},
+                parameter_build_name    => q{rtg_vcfeval_reference_genome},
+            }
+        );
+    }
+
+## Check BWA build prerequisites
+
+    if ( $active_parameter{pbwa_mem} ) {
+
+        check_bwa_prerequisites(
+            {
+                parameter_href          => \%parameter,
+                active_parameter_href   => \%active_parameter,
+                sample_info_href        => \%sample_info,
+                file_info_href          => \%file_info,
+                infile_lane_prefix_href => \%infile_lane_prefix,
+                job_id_href             => \%job_id,
+                program_name            => q{bwa_mem},
+                parameter_build_name    => q{bwa_build_reference},
+            }
+        );
+    }
+    $log->info( $TAB . q{Reference check: Reference prerequisites checked} );
+
+## Check if vt has processed references, if not try to reprocesses them before launcing modules
+    $log->info(q{[Reference check - Reference processed by VT]});
+    if (   $active_parameter{vt_decompose}
+        || $active_parameter{vt_normalize} )
+    {
+
+        my @to_process_references = check_references_for_vt(
+            {
+                parameter_href        => \%parameter,
+                active_parameter_href => \%active_parameter,
+                vt_references_ref =>
+                  \@{ $active_parameter{decompose_normalize_references} },
+                log => $log,
+            }
+        );
+
+      REFERENCE:
+        foreach my $reference_file_path (@to_process_references) {
+
+            $log->info(q{[VT - Normalize and decompose]});
+            $log->info( $TAB . q{File: } . $reference_file_path );
+
+            ## Split multi allelic records into single records and normalize
+            analysis_vt_core(
+                {
+                    parameter_href          => \%parameter,
+                    active_parameter_href   => \%active_parameter,
+                    infile_lane_prefix_href => \%infile_lane_prefix,
+                    job_id_href             => \%job_id,
+                    infile_path             => $reference_file_path,
+                    program_directory       => q{vt},
+                    decompose               => 1,
+                    normalize               => 1,
+                }
+            );
+        }
+    }
+
+## Split of fastq files in batches
+    if ( $active_parameter{psplit_fastq_file} ) {
+
+        $log->info(q{[Split fastq files in batches]});
+
+      SAMPLE_ID:
+        foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
+
+            ## Split input fastq files into batches of reads, versions and compress. Moves original file to subdirectory
+            analysis_split_fastq_file(
+                {
+                    parameter_href        => \%parameter,
+                    active_parameter_href => \%active_parameter,
+                    infile_href           => \%infile,
+                    job_id_href           => \%job_id,
+                    insample_directory    => $indir_path{$sample_id},
+                    outsample_directory   => $indir_path{$sample_id},
+                    sample_id             => $sample_id,
+                    program_name          => q{split_fastq_file},
+                    sequence_read_batch =>
+                      $active_parameter{split_fastq_file_read_batch},
+                }
+            );
+        }
+
+        ## End here if this module is turned on
+        exit;
+    }
+
+## GZip of fastq files
+    if (   $active_parameter{pgzip_fastq}
+        && $uncompressed_file_switch eq q{uncompressed} )
+    {
+
+        $log->info(q{[Gzip for fastq files]});
+
+      SAMPLES:
+        foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
+
+            ## Determine which sample id had the uncompressed files
+          INFILES:
+            foreach my $infile ( @{ $infile{$sample_id} } ) {
+
+                my $infile_suffix = $parameter{pgzip_fastq}{infile_suffix};
+
+                if ( $infile =~ /$infile_suffix$/ ) {
+
+                    ## Automatically gzips fastq files
+                    analysis_gzip_fastq(
+                        {
+                            parameter_href          => \%parameter,
+                            active_parameter_href   => \%active_parameter,
+                            sample_info_href        => \%sample_info,
+                            infile_href             => \%infile,
+                            infile_lane_prefix_href => \%infile_lane_prefix,
+                            job_id_href             => \%job_id,
+                            insample_directory      => $indir_path{$sample_id},
+                            sample_id               => $sample_id,
+                            program_name            => q{gzip_fastq},
+                        }
+                    );
+
+                    # Call once per sample_id
+                    last INFILES;
+                }
+            }
+        }
+    }
+
+    my $consensus_analysis_type =
+      $parameter{dynamic_parameter}{consensus_analysis_type};
+
+### Cancer
+    if ( $consensus_analysis_type eq q{cancer} )
+
+    {
+
+        $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
+
+        ## Pipeline recipe for cancer data
+        pipeline_cancer(
+            {
+                parameter_href          => \%parameter,
+                active_parameter_href   => \%active_parameter,
+                sample_info_href        => \%sample_info,
+                file_info_href          => \%file_info,
+                indir_path_href         => \%indir_path,
+                infile_href             => \%infile,
+                infile_lane_prefix_href => \%infile_lane_prefix,
+                lane_href               => \%lane,
+                job_id_href             => \%job_id,
+                outaligner_dir          => $active_parameter{outaligner_dir},
+                log                     => $log,
+            }
+        );
+    }
+
+### RNA
+    if ( $consensus_analysis_type eq q{wts} ) {
+
+        $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
+
+        ## Pipeline recipe for rna data
+        pipeline_rna(
+            {
+                parameter_href          => \%parameter,
+                active_parameter_href   => \%active_parameter,
+                sample_info_href        => \%sample_info,
+                file_info_href          => \%file_info,
+                indir_path_href         => \%indir_path,
+                infile_href             => \%infile,
+                infile_lane_prefix_href => \%infile_lane_prefix,
+                lane_href               => \%lane,
+                job_id_href             => \%job_id,
+                outaligner_dir          => $active_parameter{outaligner_dir},
+                log                     => $log,
+            }
+        );
+    }
+
+### WES|WGS
+    if (   $consensus_analysis_type eq q{wgs}
+        || $consensus_analysis_type eq q{wes}
+        || $consensus_analysis_type eq q{mixed} )
+    {
+
+        $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
+
+        ## Pipeline recipe for rna data
+        pipeline_wgs(
+            {
+                parameter_href          => \%parameter,
+                active_parameter_href   => \%active_parameter,
+                sample_info_href        => \%sample_info,
+                file_info_href          => \%file_info,
+                indir_path_href         => \%indir_path,
+                infile_href             => \%infile,
+                infile_lane_prefix_href => \%infile_lane_prefix,
+                lane_href               => \%lane,
+                job_id_href             => \%job_id,
+                outaligner_dir          => $active_parameter{outaligner_dir},
+                log                     => $log,
+            }
+        );
+    }
+
+## Write QC for programs used in analysis
+    # Write SampleInfo to yaml file
+    if ( $active_parameter{sample_info_file} ) {
+
+        ## Writes a YAML hash to file
+        write_yaml(
+            {
+                yaml_href      => \%sample_info,
+                yaml_file_path => $active_parameter{sample_info_file},
+            }
+        );
+        $log->info( q{Wrote: } . $active_parameter{sample_info_file} );
+    }
+
 }
+######################
+####Sub routines######
+######################
 
 sub collect_infiles {
 
@@ -3046,7 +2263,6 @@ sub set_default_to_active_parameter {
                 && $parameter_href->{$parameter_name}{mandatory} eq q{no} );
 
             ## Mandatory parameter not supplied
-            $log->fatal($USAGE);
             $log->fatal( q{Supply '-}
                   . $parameter_name
                   . q{' if you want to run }
@@ -4526,11 +3742,12 @@ sub check_command_in_path {
         {
 
             my $program_name_paths_ref =
-              \@{ $parameter{$parameter_name}{program_name_path} };    #Alias
+              \@{ $parameter_href->{$parameter_name}{program_name_path} }
+              ;    #Alias
 
             if (   (@$program_name_paths_ref)
                 && ( $active_parameter_href->{$parameter_name} > 0 ) )
-            {    #Only check path(s) for active programs
+            {      #Only check path(s) for active programs
 
                 foreach my $program ( @{$program_name_paths_ref} ) {
 
@@ -5255,7 +4472,6 @@ sub check_aligner {
         && ( $aligner{total_active_aligner_count} > 1 ) )
     {
 
-        $log->fatal( $USAGE, "\n" );
         $log->fatal(
             "You have activate more than 1 aligner: "
               . join( ", ", @{ $aligner{active_aligners} } )
@@ -5956,3 +5172,5 @@ elsif ($@) {
 
     say "A non-autodie exception.";
 }
+
+1;
