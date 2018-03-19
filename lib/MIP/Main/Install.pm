@@ -324,9 +324,9 @@ sub get_programs_for_installation {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Remove selected programs from installation
-    if ( @{ $parameter_href->{skip_program} } ) {
+    if ( @{ $parameter_href->{skip_programs} } ) {
       PROGRAM:
-        foreach my $program ( @{ $parameter_href->{skip_program} } ) {
+        foreach my $program ( @{ $parameter_href->{skip_programs} } ) {
             delete $parameter_href->{shell}{$program};
             delete $parameter_href->{bioconda}{$program};
             delete $parameter_href->{pip}{$program};
@@ -338,7 +338,7 @@ sub get_programs_for_installation {
             log                => $log,
             py3_packages_ref   => $parameter_href->{py3_packages},
             python_version     => $parameter_href->{conda_packages}{python},
-            select_program_ref => $parameter_href->{select_program}
+            select_programs_ref => $parameter_href->{select_programs}
         }
     );
 
@@ -346,36 +346,36 @@ sub get_programs_for_installation {
     ## needs to be explicetly installed. Also, depedening on how the analysis
     ## recipes have been written, a module can be dependent on more than one
     ## conda program to function.
-    if ( any { $_ eq q{chanjo} } @{ $parameter_href->{select_program} } ) {
-        push @{ $parameter_href->{select_program} }, q{sambamba};
+    if ( any { $_ eq q{chanjo} } @{ $parameter_href->{select_programs} } ) {
+        push @{ $parameter_href->{select_programs} }, q{sambamba};
     }
-    if ( any { $_ eq q{cnvnator} } @{ $parameter_href->{select_program} } ) {
-        push @{ $parameter_href->{select_program} }, qw{ samtools bcftools };
+    if ( any { $_ eq q{cnvnator} } @{ $parameter_href->{select_programs} } ) {
+        push @{ $parameter_href->{select_programs} }, qw{ samtools bcftools };
     }
-    if ( any { $_ eq q{peddy} } @{ $parameter_href->{select_program} } ) {
-        push @{ $parameter_href->{select_program} }, qw{ bcftools };
+    if ( any { $_ eq q{peddy} } @{ $parameter_href->{select_programs} } ) {
+        push @{ $parameter_href->{select_programs} }, qw{ bcftools };
     }
-    if ( any { $_ eq q{svdb} } @{ $parameter_href->{select_program} } ) {
-        push @{ $parameter_href->{select_program} },
+    if ( any { $_ eq q{svdb} } @{ $parameter_href->{select_programs} } ) {
+        push @{ $parameter_href->{select_programs} },
           qw{ bcftools htslib picard vcfanno vt };
     }
-    if ( any { $_ eq q{vcf2cytosure} } @{ $parameter_href->{select_program} } )
+    if ( any { $_ eq q{vcf2cytosure} } @{ $parameter_href->{select_programs} } )
     {
-        push @{ $parameter_href->{select_program} }, qw{ libxml2 libxslt };
+        push @{ $parameter_href->{select_programs} }, qw{ libxml2 libxslt };
     }
-    if ( any { $_ eq q{vep} } @{ $parameter_href->{select_program} } ) {
-        push @{ $parameter_href->{select_program} }, qw{ bcftools htslib };
+    if ( any { $_ eq q{vep} } @{ $parameter_href->{select_programs} } ) {
+        push @{ $parameter_href->{select_programs} }, qw{ bcftools htslib };
     }
 
     ## Remove all programs except those selected for installation
-    if ( @{ $parameter_href->{select_program} } ) {
+    if ( @{ $parameter_href->{select_programs} } ) {
         my @programs = (
             keys %{ $parameter_href->{shell} },
             keys %{ $parameter_href->{bioconda} },
             keys %{ $parameter_href->{pip} },
         );
         my @programs_to_skip =
-          array_minus( @programs, @{ $parameter_href->{select_program} } );
+          array_minus( @programs, @{ $parameter_href->{select_programs} } );
 
       PROGRAM:
         foreach my $program (@programs_to_skip) {
@@ -386,13 +386,13 @@ sub get_programs_for_installation {
     }
 
     ## Some programs have conflicting dependencies and require seperate environments to function properly
-    ## These are excluded from installation unless specified with the select_program flag
+    ## These are excluded from installation unless specified with the select_programs flag
     my @conflicting_programs = qw{ cnvnator peddy svdb vep };
   CONFLICTING_PROGRAM:
     foreach my $conflicting_program (@conflicting_programs) {
         if (
             not any { $_ eq $conflicting_program }
-            @{ $parameter_href->{select_program} }
+            @{ $parameter_href->{select_programs} }
           )
         {
             delete $parameter_href->{shell}{$conflicting_program};
@@ -401,7 +401,7 @@ sub get_programs_for_installation {
     }
 
     ## Assure a gcc version of 4.8 in the case of a cnvnator installation
-    if ( any { $_ eq q{cnvnator} } @{ $parameter_href->{select_program} } ) {
+    if ( any { $_ eq q{cnvnator} } @{ $parameter_href->{select_programs} } ) {
         $parameter_href->{conda_packages}{gcc} = q{4.8};
     }
 
@@ -442,7 +442,7 @@ sub _assure_python_3_compability {
 ## Arguments: $sub_log            => Log
 ##          : $py3_packages_ref   => Array with packages that requires python 3 {REF}
 ##          : $python_version     => The python version that are to be used for the environment
-##          : $select_program_ref => Programs selected for installation by the user {REF}
+##          : $select_programs_ref => Programs selected for installation by the user {REF}
 
     my ($arg_href) = @_;
 
@@ -450,7 +450,7 @@ sub _assure_python_3_compability {
     my $sub_log;
     my $py3_packages_ref;
     my $python_version;
-    my $select_program_ref;
+    my $select_programs_ref;
 
     my $tmpl = {
         log => {
@@ -476,10 +476,10 @@ sub _assure_python_3_compability {
                          }xms,
             store => \$python_version,
         },
-        select_program_ref => {
+        select_programs_ref => {
             required => 1,
             default  => [],
-            store    => \$select_program_ref,
+            store    => \$select_programs_ref,
         },
     };
 
@@ -493,7 +493,7 @@ sub _assure_python_3_compability {
         3 [.] \d+ |    # Python 3 release with minor version eg 3.6
         3 [.] \d+ [.] \d+ # Python 3 release with minor and patch e.g. 3.6.2
         }xms
-        and array_minus( @{$select_program_ref}, @{$py3_packages_ref} )
+        and array_minus( @{$select_programs_ref}, @{$py3_packages_ref} )
       )
     {
         $sub_log->fatal(
@@ -554,7 +554,7 @@ sub _assure_python_2_compability {
         ## Check if a python 3 package has been selected for installation in a python 2 environment
         if (
             intersect(
-                @{ $parameter_href->{select_program} },
+                @{ $parameter_href->{select_programs} },
                 @{ $parameter_href->{py3_packages} }
             )
           )
