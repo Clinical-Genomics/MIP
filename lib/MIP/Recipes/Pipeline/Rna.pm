@@ -143,7 +143,7 @@ sub pipeline_rna {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
-    use MIP::Recipes::Analysis::Salmon_quant qw{ salmon_quant };
+    use MIP::Recipes::Analysis::Salmon_quant qw{ analysis_salmon_quant };
     use MIP::Recipes::Analysis::Star_aln qw{ analysis_star_aln };
     use MIP::Recipes::Analysis::Star_fusion qw{ analysis_star_fusion };
 

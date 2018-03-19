@@ -307,10 +307,10 @@ sub analysis_salmon_quant {
         if ( $sequence_run_mode ne q{paired-end} ) {
             salmon_quant(
                 {
-                    FILEHANDLE       => $FILEHANDLE,
-                    index_path       => $referencefile_dir_path,
-                    outfile_path     => $outfile_path_prefix,
-                    read_1_fastq_path => @fastq_files[0],
+                    FILEHANDLE        => $FILEHANDLE,
+                    index_path        => $referencefile_dir_path,
+                    outfile_path      => $outfile_path_prefix,
+                    read_1_fastq_path => $fastq_files[0],
                },
             );
             say {$FILEHANDLE} $NEWLINE;
@@ -318,11 +318,11 @@ sub analysis_salmon_quant {
         }else {
             salmon_quant(
                 {
-                    FILEHANDLE       => $FILEHANDLE,
-                    index_path       => $referencefile_dir_path,
-                    outfile_path     => $outfile_path_prefix,
-                    read_1_fastq_path => @fastq_files[0],
-                    read_2_fastq_path => @fastq_files[1],
+                    FILEHANDLE        => $FILEHANDLE,
+                    index_path        => $referencefile_dir_path,
+                    outfile_path      => $outfile_path_prefix,
+                    read_1_fastq_path => $fastq_files[0],
+                    read_2_fastq_path => $fastq_files[1],
                },
             );
             say {$FILEHANDLE} $NEWLINE;
