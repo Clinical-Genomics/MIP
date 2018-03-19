@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -102,10 +102,8 @@ my $capture_kit = q{agilent_sureselect.v5};
 
 my %parameter = (
     supported_capture_kit => {
-        default => {
-            q{agilent_sureselect.v5} =>
+        q{agilent_sureselect.v5} =>
 q{genome_reference_source_version_agilent_sureselect_targets_-v5-.bed}
-        },
     },
 );
 
