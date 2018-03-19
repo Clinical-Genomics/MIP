@@ -2,6 +2,7 @@
 
 use Carp;
 use charnames qw{ :full :short };
+use Cwd qw{abs_path};
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use File::Basename qw{ dirname basename };
@@ -26,7 +27,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 ## Constants
 Readonly my $SPACE   => q{ };
@@ -107,13 +108,17 @@ my %active_parameter = (
     hash => {
         file => q{annotation},
     },
-    array =>
-      [ catfile(qw{ data references GRCh37_homo_sapiens_-d5-.fasta.gz }) ],
-    scalar => catfile(qw{ data references GRCh37_homo_sapiens_-d5-.fasta.gz }),
+    array => [
+        catfile(
+            $Bin, qw{ data references GRCh37_homo_sapiens_-d5-.fasta.gz }
+        )
+    ],
+    scalar =>
+      catfile( $Bin, qw{ data references GRCh37_homo_sapiens_-d5-.fasta.gz } ),
 );
 
 ## Expected id for hash key after update_to_absolute_path
-my $hash_key_path = catfile( $Bin, q{file} );
+my $hash_key_path = abs_path( catfile(q{file}) );
 
 update_to_absolute_path(
     {
