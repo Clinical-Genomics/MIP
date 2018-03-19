@@ -82,7 +82,7 @@ sub _build_usage {
     option(
         q{temp_directory} => (
             cmd_aliases   => [qw{ tmd }],
-            cmd_tags      => [q{Deafult: "/scratch/$SLURM_JOB_ID"}],
+            cmd_tags      => [q{Default: "/scratch/$SLURM_JOB_ID"}],
             documentation => q{Set the temporary directory for all programs},
             is            => q{rw},
             isa           => Str,
