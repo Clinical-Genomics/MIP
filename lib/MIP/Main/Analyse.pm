@@ -158,15 +158,19 @@ sub mip_analyse {
 ## Set MIP version
     our $VERSION = 'v7.0.0';
 
+    if ( $active_parameter{version} ) {
+
+        say STDOUT $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
+          $NEWLINE;
+        exit;
+    }
+
 ## Directories, files, job_ids and sample_info
     my ( %infile, %indir_path, %infile_lane_prefix, %lane,
         %infile_both_strands_prefix, %job_id, %sample_info );
 
 #### Staging Area
 ### Get and/or set input parameters
-
-## Special case:Enable/activate MIP. Cannot be changed from cmd or config
-    $active_parameter{mip} = $parameter{mip}{default};
 
 ## Special case for boolean flag that will be removed from
 ## config upon loading

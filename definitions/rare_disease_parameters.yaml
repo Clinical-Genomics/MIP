@@ -1,12 +1,6 @@
 ---
 ## Version: 2.0.0
 ##Enable/activate MIP
-mip:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 1
-  type: mip
 cluster_constant_path:
   associated_program:
    - mip
@@ -30,24 +24,11 @@ outdata_dir:
   data_type: SCALAR
   type: path
   update_path: absolute_path
-log_file:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  type: path
-  update_path: absolute_path
 project_id:
   associated_program:
    - mip
   data_type: SCALAR
   type: mip
-config_file:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 0
-  type: path
-  update_path: absolute_path
 platform:
   associated_program:
    - mip
@@ -208,24 +189,6 @@ human_genome_reference:
   reference: reference_dir
   type: path
 ####Bash
-bash_set_errexit:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 0
-  type: mip
-bash_set_nounset:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 0
-  type: mip
-bash_set_pipefail:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 0
-  type: mip
 module_time:
   associated_program:
    - mip
@@ -346,12 +309,6 @@ node_ram_memory:
   data_type: SCALAR
   default: 128
   type: mip
-temp_directory:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: /scratch/$SLURM_JOB_ID
-  type: path
 email:
   associated_program:
    - mip

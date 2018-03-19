@@ -27,7 +27,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -254,7 +254,7 @@ sub print_program {
 
 ## Function : Print all supported programs in '-ppm' mode
 ## Returns  :
-## Arguments: $define_parameters_file => MIPs define parameters file
+## Arguments: $define_parameters_files_ref => MIPs define parameters file
 ##          : $parameter_href         => Parameter hash {REF}
 ##          : $print_program_mode     => Mode to run modules in
 
@@ -264,28 +264,27 @@ sub print_program {
     my $parameter_href;
 
     ## Default(s)
-    my $define_parameters_file;
+    my $define_parameters_files_ref;
     my $print_program_mode;
 
     my $tmpl = {
-        define_parameters_file => {
-            default =>
-              catfile( $Bin, qw{ definitions define_parameters.yaml } ),
+        define_parameters_files_ref => {
+            default     => [],
+            store       => \$define_parameters_files_ref,
             strict_type => 1,
-            store       => \$define_parameters_file
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
         },
         print_program_mode => {
+            allow => [ undef, 0, 1, 2 ],
             default => $arg_href->{print_program_mode} //= 2,
-            allow       => [ undef, 0, 1, 2 ],
+            store => \$print_program_mode,
             strict_type => 1,
-            store       => \$print_program_mode
         },
     };
 
@@ -298,17 +297,22 @@ sub print_program {
 
     set_dynamic_parameter(
         {
-            parameter_href => $parameter_href,
             aggregates_ref => [q{type:program}],
+            parameter_href => $parameter_href,
         }
     );
 
     ## Adds the order of first level keys from yaml file to array
-    my @order_parameters = order_parameter_names(
-        {
-            file_path => $define_parameters_file,
-        }
-    );
+    my @order_parameters;
+    foreach my $define_parameters_file ( @{$define_parameters_files_ref} ) {
+
+        push @order_parameters,
+          order_parameter_names(
+            {
+                file_path => $define_parameters_file,
+            }
+          );
+    }
 
   PARAMETER:
     foreach my $parameter (@order_parameters) {
@@ -337,6 +341,7 @@ sub print_program {
         }
     }
     print {*STDOUT} $NEWLINE;
+
     return @printed_programs;
 }
 

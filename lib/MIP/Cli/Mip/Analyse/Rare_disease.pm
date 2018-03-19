@@ -47,8 +47,11 @@ sub run {
     use MIP::Get::Analysis qw{ print_program };
 
     ## Mip analyse rare_disease parameters
-    my $define_parameters_path =
-      catfile( $Bin, qw{ definitions rare_disease_parameters.yaml } );
+    ## The order of files in @definition_files should follow commands inheritance
+    my @definition_files = (
+        catfile( $Bin, qw{ definitions mip_parameters.yaml } ),
+        catfile( $Bin, qw{ definitions rare_disease_parameters.yaml } ),
+    );
 
     ## Non mandatory parameter definition keys to check
     my $non_mandatory_parameter_keys_path =
@@ -58,37 +61,50 @@ sub run {
     my $mandatory_parameter_keys_path =
       catfile( $Bin, qw{ definitions mandatory_parameter_keys.yaml } );
 
-    ### %parameter holds all defined parameters for MIP
-    ### analyse rare_disease
-    my %parameter = parse_definition_file(
-        {
-            define_parameters_path => $define_parameters_path,
-            non_mandatory_parameter_keys_path =>
-              $non_mandatory_parameter_keys_path,
-            mandatory_parameter_keys_path => $mandatory_parameter_keys_path,
-        }
-    );
+    ## %parameter holds all defined parameters for MIP
+    ## mip analyse rare_disease parameters
+    my %parameter;
+    foreach my $definition_file (@definition_files) {
+
+        %parameter = (
+            %parameter,
+            parse_definition_file(
+                {
+                    define_parameters_path => $definition_file,
+                    non_mandatory_parameter_keys_path =>
+                      $non_mandatory_parameter_keys_path,
+                    mandatory_parameter_keys_path =>
+                      $mandatory_parameter_keys_path,
+                }
+            )
+        );
+    }
 
     ## Print programs and exit
     if ( $active_parameter{print_programs} ) {
 
         print_program(
             {
-                define_parameters_file => $define_parameters_path,
-                parameter_href         => \%parameter,
-                print_program_mode     => $active_parameter{print_program_mode},
+                define_parameters_files_ref => \@definition_files,
+                parameter_href              => \%parameter,
+                print_program_mode => $active_parameter{print_program_mode},
             }
         );
         exit;
     }
 
     ### To add/write parameters in the correct order
-    ## Adds the order of first level keys from yaml file to array
-    my @order_parameters = order_parameter_names(
-        {
-            file_path => $define_parameters_path,
-        }
-    );
+    ## Adds the order of first level keys from yaml files to array
+    my @order_parameters;
+    foreach my $define_parameters_file (@definition_files) {
+
+        push @order_parameters,
+          order_parameter_names(
+            {
+                file_path => $define_parameters_file,
+            }
+          );
+    }
 
     ## File info hash
     my %file_info = (

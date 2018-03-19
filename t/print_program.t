@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = 1.0.1;
 
 ## Constants
 Readonly my $SPACE   => q{ };
@@ -103,8 +103,8 @@ my @printed_programs = print_program(
     {
         parameter_href     => \%parameter,
         print_program_mode => 1,
-        define_parameters_file =>
-          catfile( $Bin, qw{ data test_data define_parameters.yaml } ),
+        define_parameters_files_ref =>
+          [ catfile( $Bin, qw{ data test_data define_parameters.yaml } ) ],
     }
 );
 
