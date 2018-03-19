@@ -131,13 +131,7 @@ is( $file_info{contigs}[-1], q{MT}, q{Set GRCh reference contigs} );
 is( $file_info{contigs_size_ordered}[$INDEX_SIZE_ORDERED_CHR_X],
     q{X}, q{Set GRCh reference size ordered contigs} );
 
-is( $file_info{contigs_sv}[-1], q{Y}, q{Set GRCh reference contigs} );
-
-is( $file_info{contigs_sv_size_ordered}[$INDEX_SIZE_ORDERED_CHR_X],
-    q{X}, q{Set GRCh reference size ordered contigs} );
-
 # Hg38
-
 set_contigs(
     {
         file_info_href         => \%file_info,
@@ -148,11 +142,6 @@ set_contigs(
 is( $file_info{contigs}[-1], q{chrM}, q{Set hg38 reference contigs} );
 
 is( $file_info{contigs_size_ordered}[$INDEX_SIZE_ORDERED_CHR_X],
-    q{chrX}, q{Set hg38 reference size ordered contigs} );
-
-is( $file_info{contigs_sv}[-1], q{chrY}, q{Set hg38 reference contigs} );
-
-is( $file_info{contigs_sv_size_ordered}[$INDEX_SIZE_ORDERED_CHR_X],
     q{chrX}, q{Set hg38 reference size ordered contigs} );
 
 done_testing();
