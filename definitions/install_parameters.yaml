@@ -136,7 +136,7 @@ shell:
     version: gitRepo
 
 # Don't write installation instructions for these programs
-skip_program: []
+skip_programs: []
 
 # Verbose output when running the generated install script
 verbose: ~
