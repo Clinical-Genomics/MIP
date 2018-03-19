@@ -206,6 +206,7 @@ module_time:
   default:
     pfastqc: 10
     pgzip_fastq: 2
+    psalmon_quant: 5
     pstar_aln: 5
     pstar_fusion: 1
   type: mip
@@ -216,6 +217,7 @@ module_core_number:
   default:
     pfastqc: 0
     pgzip_fastq: 0
+    psalmon_quant: 1
     pstar_aln: 16
     pstar_fusion: 1
   type: mip
@@ -314,6 +316,28 @@ pcutadapt:
   program_name_path:
    - cutadapt
   type: program
+## Salmon
+psalmon_quant:
+  associated_program:
+   - mip
+  chain: MAIN
+  data_type: SCALAR
+  default: 0
+  file_tag: _salmon
+  outfile_suffix: ".sf"
+  outdir_name: salmon
+  program_name_path:
+   - salmon
+  file_endings:
+   - .sf
+  type: program
+lib:
+  associated_program:
+   - psalmon_quant
+  data_type: SCALAR
+  default: ISF
+  type: program_argument
+## Star Aln
 pstar_aln:
   associated_program:
    - mip

@@ -112,6 +112,24 @@ sub _build_usage {
 ## Function : Get and/or set input parameters
 ## Returns  :
 ## Arguments:
+    option(
+        q{psalmon_quant} => (
+            cmd_aliases   => [qw{ psqt }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{quantify transcripts using salmon},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+    option(
+        q{lib} => (
+            cmd_aliases   => [qw{ psqt_bob }],
+            cmd_tags      => [q{Default: ISF}],
+            documentation => q{Library orientation and strandedness},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
 
     option(
         q{pstar_aln} => (
