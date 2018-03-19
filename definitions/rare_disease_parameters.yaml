@@ -122,12 +122,6 @@ expected_coverage:
   data_type: HASH
   mandatory: no
   type: mip
-sample_origin:
-  associated_program:
-   - mip
-  data_type: HASH
-  mandatory: no
-  type: mip
 infile_dirs:
   associated_program:
    - mip
@@ -207,7 +201,6 @@ human_genome_reference:
    - pgatk_variantevalexome
    - ppicardtools_collecthsmetrics
    - ppicardtools_collectmultiplemetrics
-   - pvardict
   build_file: 1
   data_type: SCALAR
   default: GRCh37_homo_sapiens_-d5-.fasta
@@ -279,15 +272,12 @@ module_time:
     psamtools_subsample_mt: 1
     psplit_fastq_file: 10
     psnpeff: 10
-    pstar_aln: 5
-    pstar_fusion: 5
     psv_combinevariantcallsets: 2
     psv_rankvariant: 2
     psv_reformat: 1
     psv_varianteffectpredictor: 10
     psv_vcfparser: 2
     ptiddit: 10
-    pvardict: 40
     pvarianteffectpredictor: 10
     pvariant_integrity: 1
     pvcfparser: 5
@@ -336,14 +326,11 @@ module_core_number:
     psambamba_depth: 2
     psamtools_subsample_mt: 1
     psplit_fastq_file: 4
-    pstar_aln: 16
-    pstar_fusion: 1
     psv_combinevariantcallsets: 1
-    psv_rankvariant: 4
-    psv_reformat: 2
+    psv_rankvariant: 16
+    psv_reformat: 1
     psv_varianteffectpredictor: 16
     psv_vcfparser: 16
-    pvardict: 8
     pvariant_integrity: 1
     pvcf2cytosure: 1
   type: mip
@@ -365,7 +352,6 @@ temp_directory:
   data_type: SCALAR
   default: /scratch/$SLURM_JOB_ID
   type: path
-  update_path: absolute_path
 email:
   associated_program:
    - mip
@@ -450,18 +436,6 @@ pfastqc:
   program_name_path:
    - fastqc
   type: program
-## Cutadapt
-pcutadapt:
-  associated_program:
-   - mip
-  chain: MAIN
-  data_type: SCALAR
-  default: 0
-  file_tag: _cuta
-  infile_suffix: ".fastq"
-  program_name_path:
-   - cutadapt
-  type: program
 ## BWA
 pbwa_mem:
   associated_program:
@@ -512,57 +486,6 @@ bwa_build_reference:
   exists_check: file
   reference: reference_dir
   type: path
-pstar_aln:
-  associated_program:
-   - mip
-  chain: MAIN
-  data_type: SCALAR
-  default: 0
-  file_tag: _star
-  outfile_suffix: ".bam"
-  outdir_name: star
-  program_name_path:
-   - STAR
-  program_type: aligners
-  file_endings:
-   - .bam
-  type: program
-align_intron_max:
-  associated_program:
-   - pstar_aln
-  data_type: SCALAR
-  default: 100000
-  type: program_argument
-align_mates_gap_max:
-  associated_program:
-   - pstar_aln
-  data_type: SCALAR
-  default: 100000
-  type: program_argument
-align_sjdb_overhang_min:
-  associated_program:
-   - pstar_aln
-  data_type: SCALAR
-  default: 10
-  type: program_argument
-chim_junction_overhang_min:
-  associated_program:
-   - pstar_aln
-  data_type: SCALAR
-  default: 12
-  type: program_argument
-chim_segment_min:
-  associated_program:
-   - pstar_aln
-  data_type: SCALAR
-  default: 12
-  type: program_argument
-two_pass_mode:
-  associated_program:
-   - pstar_aln
-  data_type: SCALAR
-  default: Basic
-  type: program_argument
 ## Choosen MIP Aligner
 outaligner_dir:
   associated_program:
@@ -570,16 +493,6 @@ outaligner_dir:
   data_type: SCALAR
   mandatory: no
   type: mip
-pstar_fusion:
-  associated_program:
-   - mip
-  chain: MAIN
-  data_type: SCALAR
-  default: 0
-  file_tag: _fusion
-  outfile_suffix: ".tsv"
-  outdir_name: star
-  type: program
 ## BAMCalibrationBlock
 pbamcalibrationblock:
   associated_program:
@@ -787,7 +700,6 @@ sambamba_depth_bed:
   associated_program:
    - psambamba_depth
   data_type: SCALAR
-  default: CCDS.current.bed
   exists_check: file
   reference: reference_dir
   type: path
@@ -864,7 +776,6 @@ pcnvnator:
   default: 0
   file_tag: _cnvnator
   program_name_path:
-#   - root
    - bcftools
    - samtools
   outdir_name: cnvnator
@@ -957,6 +868,13 @@ tiddit_minimum_number_supporting_pairs:
   data_type: SCALAR
   default: 6
   type: program_argument
+tiddit_bin_size:
+  associated_program:
+   - pvcf2cytosure
+   - ptiddit
+  data_type: SCALAR
+  default: 500
+  type: program_argument
 psv_combinevariantcallsets:
   associated_program:
    - mip
@@ -969,13 +887,6 @@ psv_combinevariantcallsets:
    - vt
    - bcftools
   type: program
-tiddit_bin_size:
-  associated_program:
-   - pvcf2cytosure
-   - ptiddit
-  data_type: SCALAR
-  default: 500
-  type: program_argument
 sv_vt_decompose:
   associated_program:
    - psv_combinevariantcallsets
@@ -1065,6 +976,50 @@ sv_genmod_filter_threshold:
 sv_combinevariantcallsets_bcf_file:
   associated_program:
    - psv_combinevariantcallsets
+  data_type: SCALAR
+  default: 0
+  type: program_argument
+pvcf2cytosure:
+  associated_program:
+    - mip
+  chain: SV
+  data_type: SCALAR
+  default: 0
+  file_tag: cyto_
+  outfile_suffix: ".cgh"
+  outdir_name: vcf2cytosure
+  program_name_path:
+    - TIDDIT.py
+    - vcf2cytosure
+    - bcftools
+  type: program
+vcf2cytosure_exclude_filter:
+  associated_program:
+   - pvcf2cytosure
+  data_type: SCALAR
+  default: ""
+  type: program_argument
+vcf2cytosure_freq:
+  associated_program:
+   - pvcf2cytosure
+  data_type: SCALAR
+  default: 0.01
+  type: program_argument
+vcf2cytosure_freq_tag:
+  associated_program:
+   - pvcf2cytosure
+  data_type: SCALAR
+  default: FRQ
+  type: program_argument
+vf2cytosure_no_filter:
+  associated_program:
+   - pvcf2cytosure
+  data_type: SCALAR
+  default: 0
+  type: program_argument
+vcf2cytosure_var_size:
+  associated_program:
+   - pvcf2cytosure
   data_type: SCALAR
   default: 0
   type: program_argument
@@ -1235,51 +1190,7 @@ sv_reformat_remove_genes_file:
   mandatory: no
   reference: reference_dir
   type: path
-pvcf2cytosure:
-  associated_program:
-    - mip
-  chain: SV
-  data_type: SCALAR
-  default: 0
-  file_tag: cyto_
-  outfile_suffix: ".cgh"
-  outdir_name: vcf2cytosure
-  program_name_path:
-    - TIDDIT.py
-    - vcf2cytosure
-    - bcftools
-  type: program
-vcf2cytosure_exclude_filter:
-  associated_program:
-   - pvcf2cytosure
-  data_type: SCALAR
-  default: ""
-  type: program_argument
-vcf2cytosure_freq:
-  associated_program:
-   - pvcf2cytosure
-  data_type: SCALAR
-  default: 0.01
-  type: program_argument
-vcf2cytosure_freq_tag:
-  associated_program:
-   - pvcf2cytosure
-  data_type: SCALAR
-  default: FRQ
-  type: program_argument
-vf2cytosure_no_filter:
-  associated_program:
-   - pvcf2cytosure
-  data_type: SCALAR
-  default: 0
-  type: program_argument
-vcf2cytosure_var_size:
-  associated_program:
-   - pvcf2cytosure
-  data_type: SCALAR
-  default: 0
-  type: program_argument
-##Samtools
+##Bcftools
 pbcftools_mpileup:
   associated_program:
    - mip
@@ -1580,77 +1491,6 @@ rhocall_frequency_file:
   exists_check: file
   reference: reference_dir
   type: path
-## Vardict
-pvardict:
-  associated_program:
-    - mip
-  chain: VRDCT
-  data_type: SCALAR
-  default: 0
-  file_tag: _vardict_
-  program_name_path:
-    - vardict
-  outdir_name: vardict
-  program_type: variant_callers
-  file_endings:
-    - ".vcf"
-  outfile_suffx: ".vcf"
-  type: program
-vrd_af_threshold:
-  associated_program:
-   - pvardict
-  data_type: SCALAR
-  default: 0.01
-  type: program_argument
-vrd_chrom_start:
-  associated_program:
-   - pvardict
-  data_type: SCALAR
-  default: 1
-  type: program_argument
-vrd_input_bed_file:
-  associated_program:
-   - pvardict
-  data_type: SCALAR
-  exists_check: file
-  type: path
-  update_path: absolute_path
-vrd_max_mm:
-  associated_program:
-   - pvardict
-  data_type: SCALAR
-  default: 4.5
-  type: program_argument
-vrd_max_pval:
-  associated_program:
-   - pvardict
-  data_type: SCALAR
-  default: 0.9
-  type: program_argument
-vrd_region_end:
-  associated_program:
-   - pvardict
-  data_type: SCALAR
-  default: 3
-  type: program_argument
-vrd_region_start:
-  associated_program:
-   - pvardict
-  data_type: SCALAR
-  default: 2
-  type: program_argument
-vrd_segment_annotn:
-  associated_program:
-   - pvardict
-  data_type: SCALAR
-  default: 4
-  type: program_argument
-vrd_somatic_only:
-  associated_program:
-   - pvardict
-  data_type: SCALAR
-  default: 0
-  type: program_argument
 ##VT
 pvt:
   associated_program:
@@ -2239,7 +2079,7 @@ qccollect_regexp_file:
   associated_program:
    - pqccollect
   data_type: SCALAR
-  default: qc_regexp_v1.13.yaml
+  default: qc_regexp_v1.18.yaml
   exists_check: file
   reference: reference_dir
   type: path

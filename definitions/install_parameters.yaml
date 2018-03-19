@@ -31,6 +31,7 @@ bioconda:
   scikit-learn: 0.15.2
   snpeff: 4.3.1
   snpsift: 4.3.1
+  star:  2.5.4a
   vcfanno: 0.1.0
   vt: 2015.11.10
 
@@ -118,7 +119,7 @@ shell:
   svdb:
     version: 1.0.7
   tiddit:
-    version: 2.0.3
+    version: 2.2.1
   vcf2cytosure:
     version: 0.2.0
   vep:

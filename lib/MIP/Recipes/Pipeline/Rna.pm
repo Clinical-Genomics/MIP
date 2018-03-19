@@ -1,4 +1,4 @@
-package MIP::Recipes::Pipeline::Wts;
+package MIP::Recipes::Pipeline::Rna;
 
 use strict;
 use warnings;
@@ -24,15 +24,15 @@ BEGIN {
     our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ pipeline_wts };
+    our @EXPORT_OK = qw{ pipeline_rna };
 }
 
 ## Constants
 Readonly my $SPACE => q{ };
 
-sub pipeline_wts {
+sub pipeline_rna {
 
-## Function : Pipeline recipe for wts data analysis.
+## Function : Pipeline recipe for rna data analysis.
 ## Returns  :
 
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}

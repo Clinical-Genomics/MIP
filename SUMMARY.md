@@ -14,3 +14,4 @@
       * [Tests](documentation/API/Tests.md)
         * [Log](documentation/API/Tests/Log.md)
       * [Subroutines](documentation/API/Subroutines.md)
+    * [Cli](documentation/Cli.md)

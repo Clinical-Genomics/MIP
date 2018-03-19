@@ -690,95 +690,91 @@ sub sambamba_depth {
 
 sub split_and_index_aligment_file {
 
-##split_and_index_aligment_file
-
-##Function : Split alignemnt file per contig and index new file. Creates the command line for xargs. Writes to sbatch FILEHANDLE and opens xargs FILEHANDLE
-##Returns  : $xargs_file_counter
-##Arguments: $active_parameter_href, $contigs_ref, $FILEHANDLE, $XARGSFILEHANDLE, $memory_allocation, $file_path, $program_info_path, $core_number, $infile, $temp_directory, $xargs_file_counter, $output_format
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $contigs_ref        => Contigs to process {REF}
-##         : $FILEHANDLE         => Sbatch filehandle to write to
-##         : $XARGSFILEHANDLE    => XARGS filehandle to write to
-##         : $memory_allocation  => Memory allocation for jar
-##         : $file_path          => File name - ususally sbatch
-##         : $program_info_path  => Program info path
-##         : $core_number        => Number of cores to use
-##         : $infile             => Infile
-##         : $temp_directory     => Temporary directory
-##         : $xargs_file_counter => The xargs file counter
-##         : $output_format      => Output format
+## Function : Split alignemnt file per contig and index new file. Creates the command line for xargs. Writes to sbatch FILEHANDLE and opens xargs FILEHANDLE
+## Returns  : $xargs_file_counter
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $contigs_ref        => Contigs to process {REF}
+##          : $core_number        => Number of cores to use
+##          : $FILEHANDLE         => Sbatch filehandle to write to
+##          : $file_path          => File name - ususally sbatch
+##          : $infile             => Infile
+##          : $output_format      => Output format
+##          : $program_info_path  => Program info path
+##          : $temp_directory     => Temporary directory
+##          : $XARGSFILEHANDLE    => XARGS filehandle to write to
+##          : $xargs_file_counter => The xargs file counter
 
     my ($arg_href) = @_;
-
-    ## Default(s)
-    my $temp_directory;
-    my $xargs_file_counter;
-    my $output_format;
 
     ## Flatten argument(s)
     my $active_parameter_href;
     my $contigs_ref;
-    my $FILEHANDLE;
-    my $XARGSFILEHANDLE;
-    my $file_path;
-    my $program_info_path;
     my $core_number;
+    my $FILEHANDLE;
+    my $file_path;
     my $infile;
+    my $program_info_path;
+    my $XARGSFILEHANDLE;
+
+    ## Default(s)
+    my $output_format;
+    my $temp_directory;
+    my $xargs_file_counter;
 
     my $tmpl = {
         active_parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
             strict_type => 1,
-            store       => \$active_parameter_href
         },
         contigs_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
-            strict_type => 1,
-            store       => \$contigs_ref
-        },
-        FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
-        XARGSFILEHANDLE =>
-          { required => 1, defined => 1, store => \$XARGSFILEHANDLE },
-        file_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$contigs_ref,
             strict_type => 1,
-            store       => \$file_path
+        },
+        FILEHANDLE => { defined => 1, required => 1, store => \$FILEHANDLE, },
+        XARGSFILEHANDLE =>
+          { defined => 1, required => 1, store => \$XARGSFILEHANDLE, },
+        file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_path,
+            strict_type => 1,
         },
         program_info_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$program_info_path,
             strict_type => 1,
-            store       => \$program_info_path
         },
         core_number => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$core_number,
             strict_type => 1,
-            store       => \$core_number
         },
         infile =>
-          { required => 1, defined => 1, strict_type => 1, store => \$infile },
+          { defined => 1, required => 1, store => \$infile, strict_type => 1, },
         temp_directory => {
             default     => $arg_href->{active_parameter_href}{temp_directory},
+            store       => \$temp_directory,
             strict_type => 1,
-            store       => \$temp_directory
         },
         xargs_file_counter => {
-            default     => 0,
             allow       => qr/ ^\d+$ /xsm,
+            default     => 0,
+            store       => \$xargs_file_counter,
             strict_type => 1,
-            store       => \$xargs_file_counter
         },
         output_format => {
-            default     => q{bam},
             allow       => [qw{ sam bam cram json }],
+            default     => q{bam},
+            store       => \$output_format,
             strict_type => 1,
-            store       => \$output_format
         },
     };
 
@@ -793,11 +789,11 @@ sub split_and_index_aligment_file {
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
+            core_number        => $core_number,
             FILEHANDLE         => $FILEHANDLE,
-            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             file_path          => $file_path,
             program_info_path  => $program_info_path,
-            core_number        => $core_number,
+            XARGSFILEHANDLE    => $XARGSFILEHANDLE,
             xargs_file_counter => $xargs_file_counter,
         }
     );
@@ -820,14 +816,14 @@ sub split_and_index_aligment_file {
 
         sambamba_view(
             {
+                FILEHANDLE      => $XARGSFILEHANDLE,
                 infile_path     => $infile_path,
                 outfile_path    => $outfile_path,
-                stderrfile_path => $stderrfile_path_view,
                 output_format   => $output_format,
-                FILEHANDLE      => $XARGSFILEHANDLE,
                 regions_ref     => [$contig],
-                with_header     => 1,
                 show_progress   => 1,
+                stderrfile_path => $stderrfile_path_view,
+                with_header     => 1,
             }
         );
 
@@ -844,10 +840,10 @@ sub split_and_index_aligment_file {
           . q{stderr.txt};
         sambamba_index(
             {
-                infile_path     => $infile_path,
-                stderrfile_path => $stderrfile_path_index,
                 FILEHANDLE      => $XARGSFILEHANDLE,
+                infile_path     => $outfile_path,
                 show_progress   => 1,
+                stderrfile_path => $stderrfile_path_index,
             }
         );
         print {$XARGSFILEHANDLE} $NEWLINE;

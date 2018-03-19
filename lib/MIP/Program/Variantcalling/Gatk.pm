@@ -37,6 +37,7 @@ BEGIN {
 }
 
 ## Constants
+Readonly my $AMPERSAND => q{&};
 Readonly my $EMPTY_STR => q{};
 Readonly my $NEWLINE   => qq{\n};
 Readonly my $SPACE     => q{ };
@@ -1899,6 +1900,7 @@ sub gatk_concatenate_variants {
 ## Function : Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
 ## Returns  :
 ## Arguments: $active_parameter_href  => Active parameters for this analysis hash {REF}
+##          : $continue               => Adds an ampersand to the end of the command
 ##          : $FILEHANDLE             => SBATCH script FILEHANDLE to print to
 ##          : $elements_ref           => Holding the number and part of file names to be combined
 ##          : $infile_prefix          => Will be combined with the each array element
@@ -1911,6 +1913,7 @@ sub gatk_concatenate_variants {
 
     ## Flatten argument(s)
     my $active_parameter_href;
+    my $continue;
     my $elements_ref;
     my $FILEHANDLE;
     my $infile_prefix;
@@ -1928,6 +1931,10 @@ sub gatk_concatenate_variants {
             default     => {},
             strict_type => 1,
             store       => \$active_parameter_href,
+        },
+        continue => {
+            allow => [0, 1],
+            store => \$continue,
         },
         elements_ref => {
             required    => 1,
@@ -2007,6 +2014,12 @@ sub gatk_concatenate_variants {
             FILEHANDLE         => $FILEHANDLE,
         }
     );
+
+    ## Launch multiple processes
+    if ($continue) {
+        print {$FILEHANDLE} $AMPERSAND;
+    }
+
     say {$FILEHANDLE} $NEWLINE;
     return;
 }

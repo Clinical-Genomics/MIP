@@ -1,22 +1,22 @@
 #!/usr/bin/env perl
 
-use Modern::Perl qw{ 2014 };
-use warnings qw{ FATAL utf8 };
-use autodie;
 use 5.018;
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
 use Carp;
+use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
+use open qw{ :encoding(UTF-8) :std };
+use File::Basename qw{ basename dirname };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
-use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catdir };
 use Getopt::Long;
+use Params::Check qw{ allow check last_error };
 use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
 
 ## CPANM
+use autodie qw { :all };
+use Modern::Perl qw{ 2014 };
 use Readonly;
 
 ## MIPs lib/
@@ -29,9 +29,9 @@ my $VERBOSE = 1;
 our $VERSION = '1.0.0';
 
 ## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
 Readonly my $COMMA   => q{,};
+Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => q{ };
 
 ### User Options
 GetOptions(
@@ -69,9 +69,7 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module;
-
-    $perl_module{q{MIP::Script::Utils}} = [qw{ help }];
+    my %perl_module = ( q{MIP::Script::Utils} => [qw{ help }], );
 
   PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
@@ -80,7 +78,7 @@ BEGIN {
     }
 
 ## Modules
-    my @modules = (q{MIP::Set::Contigs});
+    my @modules = (q{MIP::Check::Parameter});
 
   MODULE:
     for my $module (@modules) {
@@ -88,10 +86,10 @@ BEGIN {
     }
 }
 
-use MIP::Set::Contigs qw{ set_contigs };
+use MIP::Check::Parameter qw{ check_gzipped };
 
-diag(   q{Test set_contigs from List.pm v}
-      . $MIP::Set::Contigs::VERSION
+diag(   q{Test check_gzipped from Parameter.pm v}
+      . $MIP::Check::Parameter::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -99,50 +97,12 @@ diag(   q{Test set_contigs from List.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Constants
-Readonly my $INDEX_SIZE_ORDERED_CHR_X => 7;
+my $filename         = catfile(q{text.txt});
+my $gzipped_filename = catfile(q{test.gz});
 
-my %file_info;
-
-my @refseq_contigs = qw{
-  chr1 chr2 chr3 chr4 chr5 chr6
-  chr7 chr8 chr9 chr10 chr11 chr12
-  chr13 chr14 chr15 chr16 chr17 chr18
-  chr19 chr20 chr21 chr22 chrX chrY
-  chrM };
-
-my @ensembl_contigs = qw{
-  1 2 3 4 5 6 7 8 9 10
-  11 12 13 14 15 16 17 18 19 20
-  21 22 X Y MT };
-
-## Tests
-
-# GRCh
-set_contigs(
-    {
-        file_info_href         => \%file_info,
-        human_genome_reference => q{GRCh37_homo_sapiens_-d5-.fasta},
-    }
-);
-
-is( $file_info{contigs}[-1], q{MT}, q{Set GRCh reference contigs} );
-
-is( $file_info{contigs_size_ordered}[$INDEX_SIZE_ORDERED_CHR_X],
-    q{X}, q{Set GRCh reference size ordered contigs} );
-
-# Hg38
-set_contigs(
-    {
-        file_info_href         => \%file_info,
-        human_genome_reference => q{hg38_homo_sapiens_-decoy_hla-.fasta},
-    }
-);
-
-is( $file_info{contigs}[-1], q{chrM}, q{Set hg38 reference contigs} );
-
-is( $file_info{contigs_size_ordered}[$INDEX_SIZE_ORDERED_CHR_X],
-    q{chrX}, q{Set hg38 reference size ordered contigs} );
+## Test
+is( check_gzipped( { file_name => $filename } ),         0, q{plain_file} );
+is( check_gzipped( { file_name => $gzipped_filename } ), 1, q{gzipped_file} );
 
 done_testing();
 
@@ -152,12 +112,9 @@ done_testing();
 
 sub build_usage {
 
-## build_usage
-
 ## Function  : Build the USAGE instructions
-## Returns   : ""
-## Arguments : $program_name
-##          : $program_name => Name of the script
+## Returns   :
+## Arguments : $program_name => Name of the script
 
     my ($arg_href) = @_;
 
@@ -167,8 +124,8 @@ sub build_usage {
     my $tmpl = {
         program_name => {
             default     => basename($PROGRAM_NAME),
-            strict_type => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
     };
 
@@ -177,7 +134,7 @@ sub build_usage {
     return <<"END_USAGE";
  $program_name [options]
     -vb/--verbose Verbose
-    -h/--help Display this help message
-    -v/--version Display version
+    -h/--help     Display this help message
+    -v/--version  Display version
 END_USAGE
 }

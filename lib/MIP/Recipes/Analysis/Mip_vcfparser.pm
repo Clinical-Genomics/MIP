@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -31,6 +31,7 @@ BEGIN {
 }
 
 ## Constants
+Readonly my $AMPERSAND    => q{&};
 Readonly my $ASTERIX      => q{*};
 Readonly my $DOT          => q{.};
 Readonly my $EMPTY_STR    => q{};
@@ -315,7 +316,7 @@ sub analysis_mip_vcfparser {
 
         ## Get parameters
         my $padding;
-        if ( $contig =~ /MT|M/ ) {
+        if ( $contig =~ / MT | M /xms ) {
 
             # Special case for mitochondrial contig annotation
             $padding = $MITO_PADDING;
@@ -346,9 +347,14 @@ sub analysis_mip_vcfparser {
                 $select_file_matching_column = $active_parameter_href
                   ->{vcfparser_select_file_matching_column};
 
-                @select_feature_annotation_columns = @{ $active_parameter_href
-                      ->{vcfparser_select_feature_annotation_columns} };
-
+                if (
+                    exists $active_parameter_href
+                    ->{vcfparser_select_feature_annotation_columns} )
+                {
+                    @select_feature_annotation_columns =
+                      @{ $active_parameter_href
+                          ->{vcfparser_select_feature_annotation_columns} };
+                }
                 $select_outfile =
                     $outfile_path_prefix
                   . $UNDERSCORE
@@ -749,7 +755,7 @@ sub analysis_mip_vcfparser_rio {
 
         ## Get parameters
         my $padding;
-        if ( $contig =~ /MT|M/ ) {
+        if ( $contig =~ / MT | M /xms ) {
 
             # Special case for mitochondrial contig annotation
             $padding = $MITO_PADDING;
@@ -938,8 +944,11 @@ sub analysis_sv_vcfparser {
             store       => \$active_parameter_href,
             strict_type => 1,
         },
-        call_type =>
-          { default => q{SV}, store => \$call_type, strict_type => 1, },
+        call_type => {
+            default     => q{SV},
+            store       => \$call_type,
+            strict_type => 1,
+        },
         family_id => {
             default     => $arg_href->{active_parameter_href}{family_id},
             store       => \$family_id,
@@ -1007,12 +1016,13 @@ sub analysis_sv_vcfparser {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Check::Hash qw{ check_element_exist_hash_of_array };
-    use MIP::Delete::List qw{ delete_contig_elements delete_male_contig };
+    use MIP::Delete::List qw{ delete_male_contig };
     use MIP::Get::File qw{ get_file_suffix };
     use MIP::Get::Parameter qw{ get_module_parameters };
     use MIP::IO::Files qw{ migrate_file xargs_migrate_contig_files };
     use MIP::Processmanagement::Slurm_processes
       qw{ slurm_submit_job_sample_id_dependency_add_to_family };
+    use MIP::Program::Variantcalling::Gatk qw{ gatk_concatenate_variants };
     use MIP::Program::Variantcalling::Mip_vcfparser qw{ mip_vcfparser };
     use MIP::QC::Record
       qw{ add_most_complete_vcf add_program_outfile_to_sample_info };
@@ -1097,13 +1107,7 @@ sub analysis_sv_vcfparser {
         }
     );
 
-    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    my @contigs = delete_contig_elements(
-        {
-            elements_ref       => \@{ $file_info_href->{contigs_size_ordered} },
-            remove_contigs_ref => [qw{ MT M }],
-        }
-    );
+    my @contigs = @{ $file_info_href->{contigs_size_ordered} };
 
     ### If no males or other remove contig Y from all downstream analysis
     ## Removes contig_names from contigs array if no male or other found
@@ -1215,13 +1219,19 @@ sub analysis_sv_vcfparser {
                 $select_file =
                   catfile( $active_parameter_href->{sv_vcfparser_select_file} );
 
-                ##Column of HGNC Symbol in SelectFile (-sf)
+                ## Column of HGNC Symbol in SelectFile (-sf)
                 $select_file_matching_column = $active_parameter_href
                   ->{sv_vcfparser_select_file_matching_column};
 
-                @select_feature_annotation_columns =
-                  @{ $active_parameter_href
-                      ->{sv_vcfparser_select_feature_annotation_columns} };
+                if (
+                    exists $active_parameter_href
+                    ->{sv_vcfparser_select_feature_annotation_columns} )
+                {
+
+                    @select_feature_annotation_columns =
+                      @{ $active_parameter_href
+                          ->{sv_vcfparser_select_feature_annotation_columns} };
+                }
 
                 ## Select outfile
                 $select_outfile = catfile( $temp_directory,
@@ -1345,6 +1355,34 @@ sub analysis_sv_vcfparser {
     close $XARGSFILEHANDLE
       or $log->logcroak(q{Could not close XARGSFILEHANDLE});
 
+    ## Concatenate vcf:s for downstream analysis
+    if (   $consensus_analysis_type eq q{wgs}
+        || $consensus_analysis_type eq q{mixed} )
+    {
+
+        my @vcfparser_analysis_types = ( $EMPTY_STR, $DOT . q{selected} );
+      VCFPARSER_ANALYSIS_TYPE:
+        foreach my $vcfparser_analysis_type (@vcfparser_analysis_types) {
+            gatk_concatenate_variants(
+                {
+                    active_parameter_href => $active_parameter_href,
+                    elements_ref          => \@contigs,
+                    continue              => 1,
+                    FILEHANDLE            => $FILEHANDLE,
+                    infile_postfix => $vcfparser_analysis_type . $file_suffix,
+                    infile_prefix =>
+                      catfile( $temp_directory, $outfile_prefix . $UNDERSCORE ),
+                    outfile_path_prefix => catfile(
+                        $temp_directory,
+                        $outfile_prefix . $vcfparser_analysis_type
+                    ),
+                    outfile_suffix => $file_suffix,
+                }
+            );
+        }
+        say {$FILEHANDLE} q{wait} . $NEWLINE;
+    }
+
     my $vcfparser_analysis_type = $EMPTY_STR;
 
     ## Determined by vcfparser output
@@ -1355,76 +1393,22 @@ sub analysis_sv_vcfparser {
             ## Select file variants
             $vcfparser_analysis_type = $DOT . q{selected};
 
-            ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-            @contigs = delete_contig_elements(
-                {
-                    elements_ref =>
-                      \@{ $file_info_href->{sorted_select_file_contigs} },
-                    remove_contigs_ref => [qw{ MT M }],
-                }
-            );
         }
 
-        if (   $consensus_analysis_type eq q{wgs}
-            || $consensus_analysis_type eq q{mixed} )
-        {
+        ## Copies file from temporary directory.
+        say {$FILEHANDLE} q{## Copy file from temporary directory};
+        migrate_file(
+            {
+                FILEHANDLE  => $FILEHANDLE,
+                infile_path => $outfile_path_prefix
+                  . $vcfparser_analysis_type
+                  . $file_suffix
+                  . $ASTERIX,
+                outfile_path => $outfamily_directory,
+            }
+        );
+        say {$FILEHANDLE} q{wait}, $NEWLINE;
 
-            ## Copies file from temporary directory.
-            say {$FILEHANDLE} q{## Copy file(s) from temporary directory};
-            ($xargs_file_counter) = xargs_migrate_contig_files(
-                {
-                    contigs_ref => \@contigs,
-                    core_number => $core_number,
-                    FILEHANDLE  => $FILEHANDLE,
-                    file_path   => $file_path,
-                    file_ending => $vcfparser_analysis_type
-                      . $file_suffix
-                      . $ASTERIX,
-                    outdirectory       => $outfamily_directory,
-                    outfile            => $outfile_prefix,
-                    program_info_path  => $program_info_path,
-                    XARGSFILEHANDLE    => $XARGSFILEHANDLE,
-                    xargs_file_counter => $xargs_file_counter,
-                    temp_directory     => $temp_directory,
-                }
-            );
-        }
-        else {
-
-            ## Copies file from temporary directory.
-            say {$FILEHANDLE} q{## Copy file from temporary directory};
-            migrate_file(
-                {
-                    FILEHANDLE  => $FILEHANDLE,
-                    infile_path => $outfile_path_prefix
-                      . $vcfparser_analysis_type
-                      . $file_suffix
-                      . $ASTERIX,
-                    outfile_path => $outfamily_directory,
-                }
-            );
-            say {$FILEHANDLE} q{wait}, $NEWLINE;
-
-            ## Adds the most complete vcf file to sample_info
-            add_most_complete_vcf(
-                {
-                    active_parameter_href => $active_parameter_href,
-                    path                  => catfile(
-                        $outfamily_directory,
-                        $outfile_prefix
-                          . $vcfparser_analysis_type
-                          . $file_suffix
-                    ),
-                    program_name              => $program_name,
-                    sample_info_href          => $sample_info_href,
-                    vcfparser_outfile_counter => $vcfparser_outfile_counter,
-                    vcf_file_key              => q{sv}
-                      . $UNDERSCORE
-                      . substr( $file_suffix, 1 )
-                      . $UNDERSCORE . q{file},
-                }
-            );
-        }
     }
     close $FILEHANDLE or $log->logcroak(q{Could not close FILEHANDLE});
 

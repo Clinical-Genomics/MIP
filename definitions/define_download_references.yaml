@@ -1,5 +1,5 @@
 ---
-## Version: 0.0.1
+## Version: 1.0.0
 #Not implemented:  http://www.mitomap.org/pub/MITOMAP/Mitobank/genbank_haplogroup_2015_August.zip
 reference:
   human_reference:
@@ -10,9 +10,8 @@ reference:
   1000g_all_sv:
     - phase3_v2.20130502
   clinvar:
-    - 20170104
-    - 20170501
     - 20171029
+    - 20180128
   1000g_omni:
     - 2.5
   1000g_indels:
@@ -93,24 +92,6 @@ human_reference:
       url_prefix: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/integrated_sv_map/
 clinvar:
   grch37:
-    20170104:
-      file: clinvar_20170104.vcf.gz
-      file_check: clinvar_20170104.vcf.gz.md5
-      file_index: clinvar_20170104.vcf.gz.tbi
-      outfile: GRCh37_clinvar_-2017-01-04-.vcf.gz
-      outfile_check: GRCh37_clinvar_-2017-01-04-.vcf.gz.md5
-      outfile_index: GRCh37_clinvar_-2017-01-04-.vcf.gz.tbi
-      outfile_check_method: md5sum
-      url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/
-    20170501:
-      file: clinvar_20170501.vcf.gz
-      file_check: clinvar_20170501.vcf.gz.md5
-      file_index: clinvar_20170501.vcf.gz.tbi
-      outfile: GRCh37_clinvar_-2017-05-01-.vcf.gz
-      outfile_check: GRCh37_clinvar_-2017-05-01-.vcf.gz.md5
-      outfile_index: GRCh37_clinvar_-2017-05-01-.vcf.gz.tbi
-      outfile_check_method: md5sum
-      url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/
     20171029:
       file: clinvar_20171029.vcf.gz
       file_check: clinvar_20171029.vcf.gz.md5
@@ -123,33 +104,19 @@ clinvar:
       outfile_bgzip_command: 'bgzip GRCh37_clinvar_reformat_-2017-10-29-.vcf'
       outfile_tabix_command: 'tabix -p vcf GRCh37_clinvar_reformat_-2017-10-29-.vcf.gz'
       url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/archive_2.0/2017/
+    20180128:
+      file: clinvar_20180128.vcf.gz
+      file_check: clinvar_20180128.vcf.gz.md5
+      file_index: clinvar_20180128.vcf.gz.tbi
+      outfile: GRCh37_clinvar_-2018-01-28-.vcf.gz
+      outfile_check: GRCh37_clinvar_-2018-01-28-.vcf.gz.md5
+      outfile_index: GRCh37_clinvar_-2018-01-28-.vcf.gz.tbi
+      outfile_check_method: md5sum
+      outfile_reformat_command: "perl -e ' print q{##INFO=<ID=CLNVID,Number=1,Type=Integer,Description=\"ClinVar Variation ID\">} ' > header_lines.txt; bcftools annotate -h header_lines.txt GRCh37_clinvar_-2018-01-28-.vcf.gz | perl -nae ' if($_=~/^#/) { print $_;} else { chomp; my $line = $_; say STDOUT $_ . q{;CLNVID=} . $F[2] }' > GRCh37_clinvar_reformat_-2018-01-28-.vcf"
+      outfile_bgzip_command: 'bgzip GRCh37_clinvar_reformat_-2018-01-28-.vcf'
+      outfile_tabix_command: 'tabix -p vcf GRCh37_clinvar_reformat_-2018-01-28-.vcf.gz'
+      url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/archive_2.0/2018/
   hg38:
-    20170104:
-      file: clinvar_20170104.vcf.gz
-      file_check: clinvar_20170104.vcf.gz.md5
-      file_index: clinvar_20170104.vcf.gz.tbi
-      outfile: hg38_clinvar_-2017-01-04-.vcf.gz
-      outfile_check: hg38_clinvar_-2017-01-04-.vcf.gz.md5
-      outfile_index: hg38_clinvar_-2017-01-04-.vcf.gz.tbi
-      outfile_check_method: md5sum
-      outfile_decompress: gzip
-      outfile_reformat_command: "perl -n -a -e ' if($_=~/^#/) { print $_;} else { $_ =~ s/^(MT)/M/g; print $_;}' hg38_clinvar_-2017-01-04-.vcf | perl -n -a -e ' if($_=~/^#/) { print $_; } else {$_ =~ s/^(.+)/chr$1/g; print $_; }' > hg38_clinvar_reformat_-2017-01-04-.vcf"
-      outfile_bgzip_command: 'bgzip hg38_clinvar_reformat_-2017-01-04-.vcf'
-      outfile_tabix_command: 'tabix -p vcf hg38_clinvar_reformat_-2017-01-04-.vcf.gz'
-      url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/
-    20170501:
-      file: clinvar_20170501.vcf.gz
-      file_check: clinvar_20170501.vcf.gz.md5
-      file_index: clinvar_20170501.vcf.gz.tbi
-      outfile: hg38_clinvar_-2017-05-01-.vcf.gz
-      outfile_check: hg38_clinvar_-2017-05-01-.vcf.gz.md5
-      outfile_index: hg38_clinvar_-2017-05-01-.vcf.gz.tbi
-      outfile_check_method: md5sum
-      outfile_decompress: gzip
-      outfile_reformat_command: "perl -n -a -e ' if($_=~/^#/) { print $_;} else { $_ =~ s/^(MT)/M/g; print $_;}' hg38_clinvar_-2017-05-01-.vcf | perl -n -a -e ' if($_=~/^#/) { print $_; } else {$_ =~ s/^(.+)/chr$1/g; print $_; }' > hg38_clinvar_reformat_-2017-05-01-.vcf"
-      outfile_bgzip_command: 'bgzip hg38_clinvar_reformat_-2017-05-01-.vcf'
-      outfile_tabix_command: 'tabix -p vcf hg38_clinvar_reformat_-2017-05-01-.vcf.gz'
-      url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/
     20171029:
       file: clinvar_20171029.vcf.gz
       file_check: clinvar_20171029.vcf.gz.md5
@@ -162,7 +129,7 @@ clinvar:
       outfile_reformat_command: "perl -n -a -e ' if($_=~/^#/) { print $_;} else { $_ =~ s/^(MT)/M/g; print $_;}' hg38_clinvar_-2017-10-29-.vcf | perl -n -a -e ' if($_=~/^#/) { print $_; } else {$_ =~ s/^(.+)/chr$1/g; print $_; }' > hg38_clinvar_reformat_-2017-10-29-.vcf"
       outfile_bgzip_command: 'bgzip hg38_clinvar_reformat_-2017-10-29-.vcf'
       outfile_tabix_command: 'tabix -p vcf hg38_clinvar_reformat_-2017-10-29-.vcf.gz'
-      url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/
+      url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/archive_2.0/2017/
 1000g_omni:
   grch37:
     2.5:

@@ -849,7 +849,7 @@ sub pipeline_wgs {
                 file_info_href          => $file_info_href,
                 infile_lane_prefix_href => $infile_lane_prefix_href,
                 job_id_href             => $job_id_href,
-                contigs_ref             => \@{ $file_info_href->{contigs_sv} },
+                contigs_ref             => \@{ $file_info_href->{contigs} },
                 program_name            => q{sv_varianteffectpredictor},
             }
         );

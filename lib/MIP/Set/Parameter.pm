@@ -3,6 +3,7 @@ package MIP::Set::Parameter;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
+use File::Basename qw{ fileparse };
 use File::Spec::Functions qw{ catfile splitpath };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
@@ -19,11 +20,18 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ set_config_to_active_parameters set_custom_default_to_active_parameter set_default_config_dynamic_parameters set_dynamic_parameter set_parameter_reference_dir_path set_parameter_to_broadcast };
+    our @EXPORT_OK = qw{
+      set_config_to_active_parameters
+      set_custom_default_to_active_parameter
+      set_default_config_dynamic_parameters
+      set_dynamic_parameter
+      set_human_genome_reference_features
+      set_parameter_reference_dir_path
+      set_parameter_to_broadcast
+    };
 }
 
 ## Constants
@@ -342,6 +350,89 @@ sub set_dynamic_parameter {
         }
     }
     return;
+}
+
+sub set_human_genome_reference_features {
+
+## Function : Detect version and source of the human_genome_reference: Source (hg19 or GRCh).
+##            Used to change capture kit genome reference version later
+## Returns  :
+##          : $file_info_href         => File info hash {REF}
+##          : $human_genome_reference => The human genome
+##          : $log                    => Log
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_info_href;
+    my $human_genome_reference;
+    my $log;
+
+    my $tmpl = {
+        file_info_href => {
+            default     => {},
+            strict_type => 1,
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+        },
+        human_genome_reference => {
+            defined     => 1,
+            required    => 1,
+            store       => \$human_genome_reference,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Check::Parameter qw{ check_gzipped };
+
+    ## Different regexes for the two sources.
+    ## i.e. Don't allow subversion of Refseq genome
+    my %genome_source = (
+        GRCh => qr/GRCh(\d+\.\d+|\d+)/,
+        hg   => qr/hg(\d+)/,
+    );
+
+  GENOME_PREFIX:
+    foreach my $genome_prefix ( keys %genome_source ) {
+
+        ## Capture version
+        my ($genome_version) = $human_genome_reference =~
+          m/ $genome_source{$genome_prefix}_homo_sapiens /xms;
+
+        if ($genome_version) {
+
+            $file_info_href->{human_genome_reference_version} = $genome_version;
+            $file_info_href->{human_genome_reference_source}  = $genome_prefix;
+            last;
+        }
+    }
+    if ( not $file_info_href->{human_genome_reference_version} ) {
+
+        $log->fatal(
+q{MIP cannot detect what version of human_genome_reference you have supplied.}
+              . $SPACE
+              . q{Please supply the reference on this format: [sourceversion]_[species] e.g. 'GRCh37_homo_sapiens' or 'hg19_homo_sapiens'}
+              . $NEWLINE );
+        exit 1;
+    }
+
+    ## Removes ".file_ending" in filename.FILENDING(.gz)
+    $file_info_href->{human_genome_reference_name_prefix} =
+      fileparse( $human_genome_reference, qr/\.fasta|\.fasta\.gz/ );
+
+    $file_info_href->{human_genome_compressed} =
+      check_gzipped( { file_name => $human_genome_reference, } );
+
+    return;
+
 }
 
 sub set_parameter_reference_dir_path {

@@ -306,8 +306,8 @@ sub mip_scripts {
 ## Arguments:
 
     my @mip_scripts = qw{ download_reference.pl
-      mip_install.pl mip.pl qccollect.pl
-      vcfparser.pl perl_install.pl };
+      qccollect.pl
+      vcfparser.pl };
 
   SCRIPT:
     foreach my $script (@mip_scripts) {
