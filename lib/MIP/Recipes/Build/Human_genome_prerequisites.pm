@@ -221,23 +221,26 @@ sub build_human_genome_prerequisites {
         $file_info_href->{human_genome_compressed} = q{uncompressed};
     }
 
-    check_capture_file_prerequisites(
-        {
-            parameter_href            => $parameter_href,
-            active_parameter_href     => $active_parameter_href,
-            sample_info_href          => $sample_info_href,
-            infile_lane_prefix_href   => $infile_lane_prefix_href,
-            job_id_href               => $job_id_href,
-            infile_list_suffix        => $file_info_href->{exome_target_bed}[0],
-            padded_infile_list_suffix => $file_info_href->{exome_target_bed}[1],
-            padded_interval_list_suffix =>
-              $file_info_href->{exome_target_bed}[2],
-            program_name => $program_name,
-            FILEHANDLE   => $FILEHANDLE,
-            log          => $log,
-        }
-    );
+    if ( exists $file_info_href->{exome_target_bed} ) {
 
+        check_capture_file_prerequisites(
+            {
+                parameter_href          => $parameter_href,
+                active_parameter_href   => $active_parameter_href,
+                sample_info_href        => $sample_info_href,
+                infile_lane_prefix_href => $infile_lane_prefix_href,
+                job_id_href             => $job_id_href,
+                infile_list_suffix => $file_info_href->{exome_target_bed}[0],
+                padded_infile_list_suffix =>
+                  $file_info_href->{exome_target_bed}[1],
+                padded_interval_list_suffix =>
+                  $file_info_href->{exome_target_bed}[2],
+                program_name => $program_name,
+                FILEHANDLE   => $FILEHANDLE,
+                log          => $log,
+            }
+        );
+    }
     if ( $parameter_href->{q{human_genome_reference}}{build_file} == 1 ) {
 
       FILE_ENDING:

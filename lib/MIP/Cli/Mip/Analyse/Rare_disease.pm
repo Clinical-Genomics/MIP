@@ -165,6 +165,28 @@ q{gatk_realigner_indel_known_sites, gatk_baserecalibration_known_sites, gatk_hap
     );
 
     option(
+        q{exome_target_bed} => (
+            cmd_aliases => [qw{ extb }],
+            cmd_tags =>
+              [q{file.bed=Sample_id; Default: latest_supported_capturekit.bed}],
+            documentation => q{Exome target bed file per sample id},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+    option(
+        q{supported_capture_kit} => (
+            cmd_aliases => [qw{ sck }],
+            cmd_tags    => [q{acronym=file.bed}],
+            documentation =>
+              q{Set the capture kit acronym shortcut in pedigree file},
+            is  => q{rw},
+            isa => HashRef,
+        )
+    );
+
+    option(
         q{pbwa_mem} => (
             cmd_aliases   => [qw{ pmem }],
             cmd_tags      => [q{Analysis recipe switch}],

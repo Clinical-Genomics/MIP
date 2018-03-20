@@ -149,6 +149,17 @@ sub _build_usage {
     );
 
     option(
+        q{exome_target_bed} => (
+            cmd_aliases => [qw{ extb }],
+            cmd_tags =>
+              [q{file.bed=Sample_id; Default: latest_supported_capturekit.bed}],
+            documentation => q{Exome target bed file per sample id},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+    option(
         q{sample_origin} => (
             cmd_aliases   => [qw{ sao }],
             cmd_tags      => [q{sample_id=sample_origin}],
