@@ -1,4 +1,4 @@
-package MIP::Cli::Mip::Install::Rare_disease;
+package MIP::Cli::Mip::Install::Rna;
 
 use 5.022;
 use Carp;
@@ -29,7 +29,7 @@ extends(qw{ MIP::Cli::Mip::Install });
 
 command_short_description(q{Generate mip.sh for installation});
 command_long_description(
-q{Generates an installation script (mip.sh), which is used for installation of the Mutation Identification Pipeline (MIP) for rare diseases.}
+q{Generates an installation script (mip.sh), which is used for installation of the RNA flavor of the Mutation Identification Pipeline (MIP).}
 );
 command_usage(q{mip <install> <rare_disease> [options]});
 
@@ -91,49 +91,15 @@ sub _build_usage {
             documentation => q{Set bioconda version of programs},
             is            => q{rw},
             isa           => Dict [
-                bcftools        => Optional [Num],
-                bedtools        => Optional [Num],
-                bwa             => Optional [Num],
-                bwakit          => Optional [Num],
-                cmake           => Optional [Num],
-                cramtools       => Optional [Str],
-                cutadapt        => Optional [Num],
-                delly           => Optional [Num],
-                fastqc          => Optional [Num],
-                freebayes       => Optional [Num],
-                gatk            => Optional [Num],
-                gcc             => Optional [Num],
-                htslib          => Optional [Num],
-                libxml2         => Optional [Num],
-                libxslt         => Optional [Num],
-                manta           => Optional [Num],
-                numpy           => Optional [Num],
-                peddy           => Optional [Num],
-                picard          => Optional [Num],
-                plink2          => Optional [Str],
-                q{rtg-tools}    => Optional [Num],
-                sambamba        => Optional [Num],
-                samtools        => Optional [Num],
-                q{scikit-learn} => Optional [Num],
-                snpeff          => Optional [Num],
-                snpsift         => Optional [Num],
-                vcfanno         => Optional [Num],
-                vt              => Optional [Num],
+                cufflinks => Optional [Num],
+                fastqc    => Optional [Num],
+                htslib    => Optional [Num],
+                picard    => Optional [Num],
+                salmon    => Optional [Num],
+                samtools  => Optional [Num],
+                star      => Optional [Num],
             ],
             required => 0,
-        ),
-    );
-
-    option(
-        q{shell:cnvnator:cnvnator_root_binary} => (
-            cmd_aliases => [qw{ cnvnr }],
-            cmd_flag    => q{cnvnator_root_binary},
-            cmd_tags =>
-              [q{Default: root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz}],
-            documentation => q{Set the cnvnator root binary},
-            is            => q{rw},
-            isa           => Str,
-            required      => 0,
         ),
     );
 
@@ -155,13 +121,8 @@ sub _build_usage {
             cmd_flag      => q{pip_programs},
             documentation => q{Set the version of programs installed via pip},
             is            => q{rw},
-            isa           => Dict [
-                chanjo            => Optional [Num],
-                multiqc           => Optional [Num],
-                genmod            => Optional [Num],
-                variant_integrity => Optional [Num],
-            ],
-            required => 0,
+            isa           => HashRef,
+            required      => 0,
         ),
     );
 
@@ -210,12 +171,8 @@ sub _build_usage {
             isa           => ArrayRef [
                 enum(
                     [
-                        qw{ bcftools bedtools bwa bwakit cmake cnvnator
-                          cramtools cutadapt delly fastqc freebayes gatk gcc
-                          htslib libxml2 libxslt manta numpy peddy picard
-                          plink rhocall rtg-tools sambamba samtools scikit-learn
-                          snpeff snpsift svdb tiddit vcf2cytosure vcfanno vep vt
-                          }
+                        qw{ cufflinks fastqc htslib mip_scripts picard salmon
+                          samtools star star_fusion }
                     ]
                 ),
             ],
@@ -228,10 +185,8 @@ sub _build_usage {
             cmd_flag    => q{shell_install},
             documentation =>
               q{Install supplied programs via shell instead of via conda},
-            is  => q{rw},
-            isa => ArrayRef [
-                enum( [qw{ bedtools picard plink2 sambamba snpeff vt }] ),
-            ],
+            is       => q{rw},
+            isa      => ArrayRef [ enum( [qw{ picard }] ), ],
             required => 0,
         ),
     );
@@ -243,18 +198,8 @@ sub _build_usage {
             documentation => q{Set shell version of programs},
             is            => q{rw},
             isa           => Dict [
-                bedtools     => Optional [Num],
-                cnvnator     => Optional [Num],
-                plink2       => Optional [Num],
-                picard       => Optional [Num],
-                rhocall      => Optional [Num],
-                sambamba     => Optional [Num],
-                snpeff       => Optional [Str],
-                svdb         => Optional [Num],
-                tiddit       => Optional [Num],
-                vcf2cytosure => Optional [Num],
-                vep          => Optional [Num],
-                vt           => Optional [Str],
+                picard      => Optional [Num],
+                star_fusion => Optional [Num],
             ],
             required => 0,
         ),
@@ -269,78 +214,12 @@ sub _build_usage {
             isa           => ArrayRef [
                 enum(
                     [
-                        qw{ bcftools bedtools bwa bwakit cmake cnvnator
-                          cramtools cutadapt delly fastqc freebayes gatk gcc
-                          htslib libxml2 libxslt manta mip_scripts numpy peddy
-                          picard plink rhocall rtg-tools sambamba samtools
-                          scikit-learn snpeff snpsift svdb tiddit vcf2cytosure
-                          vcfanno vep vt }
+                        qw{ cufflinks fastqc htslib mip_scripts picard salmon
+                          samtools star star_fusion }
                     ]
                 ),
             ],
             required => 0,
-        ),
-    );
-
-    option(
-        q{shell:snpeff:snpeff_genome_versions} => (
-            cmd_aliases   => [qw{ snpg }],
-            cmd_flag      => q{snpeff_genome_versions},
-            cmd_tags      => [q{Default: GRCh37.75, GRCh38.86}],
-            documentation => q{Set the SnpEff genome versions},
-            is            => q{rw},
-            isa           => ArrayRef,
-            required      => 0,
-        ),
-    );
-
-    option(
-        q{shell:vep:vep_auto_flag} => (
-            cmd_aliases   => [qw{ vepf }],
-            cmd_flag      => q{vep_auto_flag},
-            cmd_tags      => [q{Default: acfp}],
-            documentation => q{Set the vep auto installer flags},
-            is            => q{rw},
-            isa           => Str,
-            required      => 0,
-        ),
-    );
-
-    option(
-        q{shell:vep:vep_assemblies} => (
-            cmd_aliases   => [qw{ vepa }],
-            cmd_flag      => q{vep_assemblies},
-            cmd_tags      => [q{Default: GRCh37, hg38}],
-            documentation => q{Select the assembly version},
-            is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ GRCh37 hg38 }] ), ],
-            required      => 0,
-        ),
-    );
-
-    option(
-        q{shell:vep:vep_cache_dir} => (
-            cmd_aliases => [qw{ vepc }],
-            cmd_flag    => q{vep_cache_dir},
-            cmd_tags    => [
-q{Default: [path_to_conda_env]/ensembl-tools-release-[vep_version]/cache}
-            ],
-            documentation => q{Specify the cache directory to use},
-            is            => q{rw},
-            isa           => Str,
-            required      => 0,
-        ),
-    );
-
-    option(
-        q{shell:vep:vep_plugins} => (
-            cmd_aliases   => [qw{ vepp }],
-            cmd_flag      => q{vep_plugins},
-            cmd_tags      => [q{Default: MaxEntScan, LoFtool}],
-            documentation => q{Select the vep plugins to install},
-            is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ MaxEntScan Loftool }] ), ],
-            required      => 0,
         ),
     );
 
@@ -471,11 +350,6 @@ sub _print_defaults {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Set default for vep cache dir
-    $parameter_href->{shell}{vep}{vep_cache_dir} = catdir( qw{ PATH TO CONDA },
-        q{ensembl-tools-release-} . $parameter_href->{shell}{vep}{version},
-        q{cache} );
 
     ## Looping over the parameter hash to extract keys and values
   KEY:

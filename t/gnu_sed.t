@@ -1,47 +1,59 @@
 #!/usr/bin/env perl
 
-#### Copyright 2017 Henrik Stranneheim
-
-use Modern::Perl qw(2014);
-use warnings qw(FATAL utf8);
-use autodie;
-use 5.018;    #Require at least perl 5.18
-use utf8;
-use open qw( :encoding(UTF-8) :std );
-use charnames qw( :full :short );
+use 5.018;
 use Carp;
-use English qw(-no_match_vars);
-use Params::Check qw(check allow last_error);
-
-use FindBin qw($Bin);    #Find directory of script
-use File::Basename qw(dirname basename);
-use File::Spec::Functions qw(catdir);
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Basename qw{ basename dirname  };
+use File::Spec::Functions qw{ catdir };
+use FindBin qw{ $Bin };
 use Getopt::Long;
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use Test::More;
+use utf8;
+use warnings qw{ FATAL utf8 };
+
+## CPANM
+use autodie qw{ :all };
+use Modern::Perl qw{ 2014 };
+use Readonly;
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
-use MIP::Script::Utils qw(help);
+use lib catdir( dirname($Bin), q{lib} );
+use MIP::Script::Utils qw{ help };
 
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '0.0.0';
+our $VERSION = 1.0.0;
 
-###User Options
+## Constants
+Readonly my $COMMA   => q{,};
+Readonly my $NEWLINE => qq{\n};
+Readonly my $SPACE   => q{ };
+
+### User Options
 GetOptions(
-    'h|help' => sub {
+
+    # Display help text
+    q{h|help} => sub {
         done_testing();
-        print {*STDOUT} $USAGE, "\n";
+        say {*STDOUT} $USAGE;
         exit;
-    },    #Display help text
-    'v|version' => sub {
+    },
+
+    # Display version number
+    q{v|version} => sub {
         done_testing();
-        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION,
-          "\n\n";
+        say {*STDOUT} $NEWLINE
+          . basename($PROGRAM_NAME)
+          . $SPACE
+          . $VERSION
+          . $NEWLINE;
         exit;
-    },    #Display version number
-    'vb|verbose' => $VERBOSE,
+    },
+    q{vb|verbose} => $VERBOSE,
   )
   or (
     done_testing(),
@@ -57,71 +69,80 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module;
+    my %perl_module = ( q{MIP::Script::Utils} => [qw{ help }], );
 
     $perl_module{'MIP::Script::Utils'} = [qw(help)];
 
+  PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
-
         use_ok( $module, @{$module_import} )
-          or BAIL_OUT 'Cannot load ' . $module;
+          or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 
 ## Modules
-    my @modules = ('MIP::Gnu::Software::Gnu_sed');
+    my @modules = (q{MIP::Gnu::Software::Gnu_sed});
 
+  MODULE:
     for my $module (@modules) {
-
-        require_ok($module) or BAIL_OUT 'Cannot load ' . $module;
+        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
     }
 }
 
-use MIP::Gnu::Software::Gnu_sed qw(gnu_sed);
-use MIP::Test::Commands qw(test_function);
+use MIP::Gnu::Software::Gnu_sed qw{ gnu_sed };
+use MIP::Test::Commands qw{ test_function };
 
-diag(
-"Test gnu_sed $MIP::Gnu::Software::Gnu_sed::VERSION, Perl $^V, $EXECUTABLE_NAME"
-);
+diag(   q{Test gnu_sed from Gnu_sed.pm v}
+      . $MIP::Gnu::Software::Gnu_sed::VERSION
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+      . $EXECUTABLE_NAME );
 
 ## Base arguments
-my $function_base_command = 'sed';
+my $function_base_command = q{sed};
 
 my %base_argument = (
-    stderrfile_path => {
-        input           => 'stderrfile.test',
-        expected_output => '2> stderrfile.test',
-    },
-    stderrfile_path_append => {
-        input           => 'stderrfile.test',
-        expected_output => '2>> stderrfile.test',
-    },
     FILEHANDLE => {
         input           => undef,
         expected_output => $function_base_command,
+    },
+    stderrfile_path => {
+        input           => q{stderrfile.test},
+        expected_output => q{2> stderrfile.test},
+    },
+    stderrfile_path_append => {
+        input           => q{stderrfile.test},
+        expected_output => q{2>> stderrfile.test},
     },
 );
 
 ## Can be duplicated with %base and/or %specific to enable testing of each individual argument
 my %required_argument = (
     infile_path => {
-        input           => 'infile.test',
-        expected_output => 'infile.test',
+        input           => q{infile.test},
+        expected_output => q{infile.test},
     },
 );
 
 ## Specific arguments
 my %specific_argument = (
     infile_path => {
-        input           => 'infile.test',
-        expected_output => 'infile.test',
+        input           => q{infile.test},
+        expected_output => q{infile.test},
+    },
+    inplace_edit => {
+        input           => 1,
+        expected_output => q{-i},
     },
     outfile_path => {
-        input           => 'outfile.test',
-        expected_output => '> outfile.test',
+        input           => q{outfile.test},
+        expected_output => q{> outfile.test},
     },
     script => {
-        input           => 'script.test',
-        expected_output => 'script.test',
+        input           => q{script.test},
+        expected_output => q{script.test},
     },
 );
 
@@ -150,11 +171,8 @@ done_testing();
 
 sub build_usage {
 
-##build_usage
-
 ##Function : Build the USAGE instructions
 ##Returns  : ""
-##Arguments: $program_name
 ##         : $program_name => Name of the script
 
     my ($arg_href) = @_;
@@ -165,17 +183,17 @@ sub build_usage {
     my $tmpl = {
         program_name => {
             default     => basename($PROGRAM_NAME),
-            strict_type => 1,
             store       => \$program_name,
+            strict_type => 1,
         },
     };
 
-    check( $tmpl, $arg_href, 1 ) or croak qw(Could not parse arguments!);
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     return <<"END_USAGE";
  $program_name [options]
     -vb/--verbose Verbose
-    -h/--help Display this help message
-    -v/--version Display version
+    -h/--help     Display this help message
+    -v/--version  Display version
 END_USAGE
 }

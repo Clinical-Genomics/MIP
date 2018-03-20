@@ -44,6 +44,7 @@ use MIP::Recipes::Install::Reference qw{ download_genome_references };
 use MIP::Recipes::Install::Rhocall qw{ install_rhocall };
 use MIP::Recipes::Install::Sambamba qw{ install_sambamba };
 use MIP::Recipes::Install::SnpEff qw{ install_snpeff };
+use MIP::Recipes::Install::Star_fusion qw{ install_star_fusion };
 use MIP::Recipes::Install::Svdb qw{ install_svdb };
 use MIP::Recipes::Install::Tiddit qw{ install_tiddit };
 use MIP::Recipes::Install::Vcf2cytosure qw{ install_vcf2cytosure };
@@ -54,7 +55,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
@@ -130,7 +131,9 @@ sub mip_install {
         }
     );
 
-    if ( not $parameter{vep_cache_dir} ) {
+    if (    ( $parameter{shell}{vep}{version} )
+        and ( not $parameter{shell}{vep}{cache_dir} ) )
+    {
 
         # Cache directory
         $parameter{shell}{vep}{vep_cache_dir} =
@@ -230,6 +233,7 @@ sub mip_install {
         sambamba     => \&install_sambamba,
         snpeff       => \&install_snpeff,
         svdb         => \&install_svdb,
+        star_fusion  => \&install_star_fusion,
         tiddit       => \&install_tiddit,
         vep          => \&install_vep,
         vcf2cytosure => \&install_vcf2cytosure,
@@ -333,14 +337,16 @@ sub get_programs_for_installation {
         }
     }
     ## Exit if a python 3 env has ben specified for something else than Chanjo or Genmod
-    _assure_python_3_compability(
-        {
-            log                => $log,
-            py3_packages_ref   => $parameter_href->{py3_packages},
-            python_version     => $parameter_href->{conda_packages}{python},
-            select_programs_ref => $parameter_href->{select_programs}
-        }
-    );
+    if ( $parameter_href->{py3_packages_ref} ) {
+        _assure_python_3_compability(
+            {
+                log              => $log,
+                py3_packages_ref => $parameter_href->{py3_packages},
+                python_version   => $parameter_href->{conda_packages}{python},
+                select_programs_ref => $parameter_href->{select_programs}
+            }
+        );
+    }
 
     ## Programs that are not installed via conda can have dependencies that
     ## needs to be explicetly installed. Also, depedening on how the analysis
