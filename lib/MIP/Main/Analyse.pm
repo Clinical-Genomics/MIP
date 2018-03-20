@@ -41,7 +41,7 @@ use MIP::Check::Parameter
   qw{ check_allowed_temp_directory check_cmd_config_vs_definition_file check_email_address check_parameter_hash };
 use MIP::Check::Path qw{ check_target_bed_file_suffix check_parameter_files };
 use MIP::Check::Reference
-  qw{ check_bwa_prerequisites check_capture_file_prerequisites check_human_genome_file_endings check_human_genome_prerequisites check_parameter_metafiles check_references_for_vt check_rtg_prerequisites };
+  qw{ check_human_genome_file_endings check_parameter_metafiles };
 use MIP::File::Format::Pedigree
   qw{ create_fam_file parse_yaml_pedigree_file reload_previous_pedigree_info };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
@@ -63,7 +63,7 @@ use MIP::Update::Programs
 use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
 use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
 use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core };
-use MIP::Recipes::Pipeline::Wgs qw{ pipeline_wgs };
+use MIP::Recipes::Pipeline::Rare_disease qw{ pipeline_rare_disease };
 use MIP::Recipes::Pipeline::Rna qw{ pipeline_rna };
 use MIP::Recipes::Pipeline::Cancer qw{ pipeline_cancer };
 
@@ -156,7 +156,14 @@ sub mip_analyse {
 #### Set program parameters
 
 ## Set MIP version
-    our $VERSION = 'v7.0.0';
+    our $VERSION = 'v7.0.1';
+
+    if ( $active_parameter{version} ) {
+
+        say STDOUT $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION,
+          $NEWLINE;
+        exit;
+    }
 
 ## Directories, files, job_ids and sample_info
     my ( %infile, %indir_path, %infile_lane_prefix, %lane,
@@ -164,9 +171,6 @@ sub mip_analyse {
 
 #### Staging Area
 ### Get and/or set input parameters
-
-## Special case:Enable/activate MIP. Cannot be changed from cmd or config
-    $active_parameter{mip} = $parameter{mip}{default};
 
 ## Special case for boolean flag that will be removed from
 ## config upon loading
@@ -690,10 +694,12 @@ sub mip_analyse {
 
         my %dependency_tree = load_yaml(
             {
-                yaml_file =>
-                  catfile( $Bin, qw{ definitions define_wgs_initiation.yaml } ),
+                yaml_file => catfile(
+                    $Bin, qw{ definitions rare_disease_initiation.yaml }
+                ),
             }
         );
+
         my @start_with_programs;
         my $is_program_found = 0;
         my $is_chain_found   = 0;
@@ -965,137 +971,8 @@ sub mip_analyse {
         }
     }
 
-### Build recipes
-    $log->info(q{[Reference check - Reference prerequisites]});
-## Check capture file prerequistes exists
-  PROGRAM:
-    foreach
-      my $program_name ( @{ $parameter{exome_target_bed}{associated_program} } )
-    {
-
-        next PROGRAM if ( not $active_parameter{$program_name} );
-
-        ## Remove initial "p" from program_name
-        substr( $program_name, 0, 1 ) = $EMPTY_STR;
-
-        check_capture_file_prerequisites(
-            {
-                parameter_href              => \%parameter,
-                active_parameter_href       => \%active_parameter,
-                sample_info_href            => \%sample_info,
-                infile_lane_prefix_href     => \%infile_lane_prefix,
-                job_id_href                 => \%job_id,
-                infile_list_suffix          => $file_info{exome_target_bed}[0],
-                padded_infile_list_suffix   => $file_info{exome_target_bed}[1],
-                padded_interval_list_suffix => $file_info{exome_target_bed}[2],
-                program_name                => $program_name,
-                log                         => $log,
-            }
-        );
-    }
-
-## Check human genome prerequistes exists
-  PROGRAM:
-    foreach my $program_name (
-        @{ $parameter{human_genome_reference}{associated_program} } )
-    {
-
-        next PROGRAM if ( $program_name eq q{mip} );
-
-        next PROGRAM if ( not $active_parameter{$program_name} );
-
-        ## Remove initial "p" from program_name
-        substr( $program_name, 0, 1 ) = $EMPTY_STR;
-
-        my $is_finished = check_human_genome_prerequisites(
-            {
-                parameter_href          => \%parameter,
-                active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
-                file_info_href          => \%file_info,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                program_name            => $program_name,
-                log                     => $log,
-            }
-        );
-        last PROGRAM if ($is_finished);
-    }
-
-## Check Rtg build prerequisites
-
-    if ( $active_parameter{prtg_vcfeval} ) {
-
-        check_rtg_prerequisites(
-            {
-                parameter_href          => \%parameter,
-                active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
-                file_info_href          => \%file_info,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                program_name            => q{rtg_vcfeval},
-                parameter_build_name    => q{rtg_vcfeval_reference_genome},
-            }
-        );
-    }
-
-## Check BWA build prerequisites
-
-    if ( $active_parameter{pbwa_mem} ) {
-
-        check_bwa_prerequisites(
-            {
-                parameter_href          => \%parameter,
-                active_parameter_href   => \%active_parameter,
-                sample_info_href        => \%sample_info,
-                file_info_href          => \%file_info,
-                infile_lane_prefix_href => \%infile_lane_prefix,
-                job_id_href             => \%job_id,
-                program_name            => q{bwa_mem},
-                parameter_build_name    => q{bwa_build_reference},
-            }
-        );
-    }
-    $log->info( $TAB . q{Reference check: Reference prerequisites checked} );
-
-## Check if vt has processed references, if not try to reprocesses them before launcing modules
-    $log->info(q{[Reference check - Reference processed by VT]});
-    if (   $active_parameter{vt_decompose}
-        || $active_parameter{vt_normalize} )
-    {
-
-        my @to_process_references = check_references_for_vt(
-            {
-                parameter_href        => \%parameter,
-                active_parameter_href => \%active_parameter,
-                vt_references_ref =>
-                  \@{ $active_parameter{decompose_normalize_references} },
-                log => $log,
-            }
-        );
-
-      REFERENCE:
-        foreach my $reference_file_path (@to_process_references) {
-
-            $log->info(q{[VT - Normalize and decompose]});
-            $log->info( $TAB . q{File: } . $reference_file_path );
-
-            ## Split multi allelic records into single records and normalize
-            analysis_vt_core(
-                {
-                    parameter_href          => \%parameter,
-                    active_parameter_href   => \%active_parameter,
-                    infile_lane_prefix_href => \%infile_lane_prefix,
-                    job_id_href             => \%job_id,
-                    infile_path             => $reference_file_path,
-                    program_directory       => q{vt},
-                    decompose               => 1,
-                    normalize               => 1,
-                }
-            );
-        }
-    }
+    my $consensus_analysis_type =
+      $parameter{dynamic_parameter}{consensus_analysis_type};
 
 ## Split of fastq files in batches
     if ( $active_parameter{psplit_fastq_file} ) {
@@ -1166,9 +1043,6 @@ sub mip_analyse {
         }
     }
 
-    my $consensus_analysis_type =
-      $parameter{dynamic_parameter}{consensus_analysis_type};
-
 ### Cancer
     if ( $consensus_analysis_type eq q{cancer} )
 
@@ -1226,7 +1100,7 @@ sub mip_analyse {
         $log->info( q{Pipeline analysis type: } . $consensus_analysis_type );
 
         ## Pipeline recipe for rna data
-        pipeline_wgs(
+        pipeline_rare_disease(
             {
                 parameter_href          => \%parameter,
                 active_parameter_href   => \%active_parameter,

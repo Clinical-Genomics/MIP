@@ -163,8 +163,25 @@ sub pipeline_cancer {
     use MIP::Recipes::Analysis::Qccollect qw{ analysis_qccollect };
     use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
     use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
+    use MIP::Recipes::Build::Cancer qw{build_cancer_meta_files};
 
-## FastQC oer sample_id
+    ### Build recipes
+    $log->info(q{[Reference check - Reference prerequisites]});
+
+    build_cancer_meta_files(
+        {
+            parameter_href          => $parameter_href,
+            active_parameter_href   => $active_parameter_href,
+            sample_info_href        => $sample_info_href,
+            file_info_href          => $file_info_href,
+            infile_lane_prefix_href => $infile_lane_prefix_href,
+            job_id_href             => $job_id_href,
+            log                     => $log,
+        }
+    );
+
+    ### Analysis Recipes
+    ## FastQC per sample_id
     if ( $active_parameter_href->{pfastqc} ) {
 
         $log->info(q{[Fastqc]});

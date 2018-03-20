@@ -1,4 +1,4 @@
-package MIP::Recipes::Pipeline::Wgs;
+package MIP::Recipes::Pipeline::Rare_disease;
 
 use strict;
 use warnings;
@@ -25,15 +25,15 @@ BEGIN {
     our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ pipeline_wgs };
+    our @EXPORT_OK = qw{ pipeline_rare_disease };
 }
 
 ## Constants
 Readonly my $SPACE => q{ };
 
-sub pipeline_wgs {
+sub pipeline_rare_disease {
 
-## Function : Pipeline recipe for wgs data analysis.
+## Function : Pipeline recipe for wes and or wgs data analysis.
 ## Returns  :
 
 ## Arguments: $parameter_href          => Parameter hash {REF}
@@ -222,7 +222,24 @@ sub pipeline_wgs {
     use MIP::Recipes::Analysis::Vcf2cytosure qw{ analysis_vcf2cytosure };
     use MIP::Recipes::Analysis::Vep qw{ analysis_vep analysis_vep_sv };
     use MIP::Recipes::Analysis::Vt qw{ analysis_vt };
+    use MIP::Recipes::Build::Rare_disease qw{build_rare_disease_meta_files};
 
+    ### Build recipes
+    $log->info(q{[Reference check - Reference prerequisites]});
+
+    build_rare_disease_meta_files(
+        {
+            parameter_href          => $parameter_href,
+            active_parameter_href   => $active_parameter_href,
+            sample_info_href        => $sample_info_href,
+            file_info_href          => $file_info_href,
+            infile_lane_prefix_href => $infile_lane_prefix_href,
+            job_id_href             => $job_id_href,
+            log                     => $log,
+        }
+    );
+
+    ### Analysis recipes
     if ( $active_parameter_href->{pfastqc} ) {
 
         $log->info(q{[Fastqc]});

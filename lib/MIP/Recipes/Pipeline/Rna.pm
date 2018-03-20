@@ -146,7 +146,24 @@ sub pipeline_rna {
     use MIP::Recipes::Analysis::Salmon_quant qw{ analysis_salmon_quant };
     use MIP::Recipes::Analysis::Star_aln qw{ analysis_star_aln };
     use MIP::Recipes::Analysis::Star_fusion qw{ analysis_star_fusion };
+    use MIP::Recipes::Build::Rna qw{build_rna_meta_files};
 
+    ### Build recipes
+    $log->info(q{[Reference check - Reference prerequisites]});
+
+    build_rna_meta_files(
+        {
+            parameter_href          => $parameter_href,
+            active_parameter_href   => $active_parameter_href,
+            sample_info_href        => $sample_info_href,
+            file_info_href          => $file_info_href,
+            infile_lane_prefix_href => $infile_lane_prefix_href,
+            job_id_href             => $job_id_href,
+            log                     => $log,
+        }
+    );
+
+    ### Analysis recipes
     ## Run FastQC
     if ( $active_parameter_href->{pfastqc} ) {
 

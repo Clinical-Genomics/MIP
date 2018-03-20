@@ -79,6 +79,15 @@ sub _build_usage {
         )
     );
 
+    ## Special case:Enable/activate MIP. Cannot be changed from cmd or config
+    has(
+        q{mip} => (
+            default => 1,
+            is      => q{rw},
+            isa     => q{Int},
+        )
+    );
+
     option(
         q{temp_directory} => (
             cmd_aliases   => [qw{ tmd }],
