@@ -288,7 +288,7 @@ psalmon_quant:
   file_endings:
    - .sf
   type: program
-lib:
+salmon_rna_lib_configuration:
   associated_program:
    - psalmon_quant
   data_type: SCALAR
