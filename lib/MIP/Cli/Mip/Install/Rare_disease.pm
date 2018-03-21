@@ -22,6 +22,7 @@ use Readonly;
 ## MIPs lib
 use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Main::Install qw{ mip_install };
+use MIP::Script::Utils qw{ nest_hash print_install_defaults };
 
 our $VERSION = 0.02;
 
@@ -35,7 +36,6 @@ command_usage(q{mip <install> <rare_disease> [options]});
 
 ## Constants
 Readonly my $SPACE => q{ };
-Readonly my $COLON => q{:};
 
 ## Define, check and get Cli supplied parameters
 _build_usage();
@@ -56,7 +56,7 @@ sub run {
 
     ## Print parameters from config file and exit
     if ( $arg_href->print_parameter_default ) {
-        _print_defaults(
+        print_install_defaults(
             {
                 parameter_href => \%parameter,
             }
@@ -67,7 +67,7 @@ sub run {
     @parameter{ keys %{$arg_href} } = values %{$arg_href};
 
     ## Nest the command line parameters and overwrite the default
-    _nest_hash( { cmd_href => \%parameter } );
+    nest_hash( { cmd_href => \%parameter } );
 
     ## Start generating the installation script
     mip_install(
@@ -347,216 +347,4 @@ q{Default: [path_to_conda_env]/ensembl-tools-release-[vep_version]/cache}
     return;
 }
 
-sub _nest_hash {
-## Function : If necessary, nests the command line hash to fit the structure used in mip_install
-## Returns  :
-## Arguments: $cmd_ref => Arguments from command line {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $cmd_href;
-
-    my $tmpl = {
-        cmd_href => {
-            defined  => 1,
-            required => 1,
-            store    => \$cmd_href,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Fix the shell programs into the hash
-    if ( $cmd_href->{shell_programs} ) {
-      PROGRAM:
-        foreach my $program ( keys %{ $cmd_href->{shell_programs} } ) {
-
-            $cmd_href->{shell}{$program}{version} =
-              $cmd_href->{shell_programs}{$program};
-            delete $cmd_href->{shell_programs}{$program};
-        }
-    }
-
-    ## Nest the shell parameters
-    my @colon_keys = grep { /:/ } keys %{$cmd_href};
-  PARAMETER:
-    foreach my $parameter (@colon_keys) {
-
-        my $final_value = $cmd_href->{$parameter};
-        _recursive_nesting(
-            {
-                array_to_shift_ref => [ ( split /:/, $parameter ) ],
-                final_value => $final_value,
-                hash_to_populate_href => $cmd_href,
-            }
-        );
-        delete $cmd_href->{$parameter};
-    }
-    return;
-}
-
-sub _recursive_nesting {
-## Function  : Recursive sub to nest values into a hash from an array
-## Returns   :
-## Arguments : $array_to_shift_ref    => Array of keys
-##           : $final_value           => Value to be stored
-##           : $hash_to_populate_href => Shift array values to this hash
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $hash_to_populate_href;
-    my $array_to_shift_ref;
-    my $final_value;
-
-    my $tmpl = {
-        final_value => {
-            required => 1,
-            store    => \$final_value,
-        },
-        hash_to_populate_href => {
-            defined  => 1,
-            required => 1,
-            store    => \$hash_to_populate_href,
-        },
-        array_to_shift_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$array_to_shift_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Assign and remove the first value from the array
-    my $value = shift @{$array_to_shift_ref};
-
-    ## If the array is empty, give the last hash key the final value and return
-    if ( scalar @{$array_to_shift_ref} == 0 ) {
-        return $hash_to_populate_href->{$value} = $final_value;
-    }
-
-    ## Call same subroutine but increment the hash_ref to include the value as a key
-    _recursive_nesting(
-        {
-            hash_to_populate_href => \%{ $hash_to_populate_href->{$value} },
-            final_value           => $final_value,
-            array_to_shift_ref    => $array_to_shift_ref,
-        }
-    );
-}
-
-sub _print_defaults {
-
-## Function : Print all parameters and the default values
-## Returns  :
-## Arguments: $parameter_href => Holds all parameters {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-
-    my $tmpl = {
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Set default for vep cache dir
-    $parameter_href->{shell}{vep}{vep_cache_dir} = catdir( qw{ PATH TO CONDA },
-        q{ensembl-tools-release-} . $parameter_href->{shell}{vep}{version},
-        q{cache} );
-
-    ## Looping over the parameter hash to extract keys and values
-  KEY:
-    foreach my $key ( keys %{$parameter_href} ) {
-        ## If the first level value is not a hash or array ref
-        if ( ref( $parameter_href->{$key} ) !~ / ARRAY | HASH /xms ) {
-            print {*STDOUT} $key . $SPACE;
-            ## Check if scalar exists and print
-            if ( $parameter_href->{$key} ) {
-                say {*STDOUT} $parameter_href->{$key};
-            }
-            ## Boolean value
-            else {
-                say {*STDOUT} q{0};
-            }
-        }
-        ## If the first level value is a hash ref
-        elsif ( ref( $parameter_href->{$key} ) =~ /HASH/xms ) {
-            ## Loop over the next set of hash keys
-          PROGRAM:
-            foreach my $program ( keys %{ $parameter_href->{$key} } ) {
-                ## If the value is a hash ref
-                if ( ref( $parameter_href->{$key}{$program} ) =~ /HASH/xms ) {
-                    ## Loop over the next set of hash keys
-                  NESTED_PARAM:
-                    foreach my $nested_param (
-                        keys %{ $parameter_href->{$key}{$program} } )
-                    {
-                        ## Print the key
-                        print {*STDOUT} $key
-                          . $SPACE
-                          . $program
-                          . $SPACE
-                          . $nested_param
-                          . $COLON
-                          . $SPACE;
-                        ## If the value is an array ref
-                        if (
-                            ref(
-                                $parameter_href->{$key}{$program}{$nested_param}
-                            ) =~ /ARRAY/xms
-                          )
-                        {
-                            ## Print array
-                            say {*STDOUT} join $SPACE,
-                              @{ $parameter_href->{$key}{$program}
-                                  {$nested_param} };
-                        }
-                        else {
-                            ## Otherwise print the hash value
-                            say {*STDOUT}
-                              $parameter_href->{$key}{$program}{$nested_param};
-                        }
-                    }
-                }
-                ## Print values
-                else {
-                    ## Don't print value if it is undef
-                    if ( not $parameter_href->{$key}{$program} ) {
-                        say {*STDOUT} $key . $SPACE . $program;
-                    }
-                    else {
-                        ## Print hash value
-                        say {*STDOUT} $key
-                          . $SPACE
-                          . $program
-                          . $COLON
-                          . $SPACE
-                          . $parameter_href->{$key}{$program};
-                    }
-                }
-            }
-        }
-        ## Check for ref to array and print
-        elsif ( ref( $parameter_href->{$key} ) =~ /ARRAY/xms ) {
-            say {*STDOUT} $key . $COLON . $SPACE . join $SPACE,
-              @{ $parameter_href->{$key} };
-        }
-    }
-    exit 0;
-}
-
 1;
-
