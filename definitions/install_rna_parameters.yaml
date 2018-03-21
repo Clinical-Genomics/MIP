@@ -1,0 +1,84 @@
+---
+# Bash paramters
+bash_set_errexit: 0
+bash_set_nounset: 0
+
+# Conda packages and versions be installed via the bioconda channel
+bioconda:
+  cufflinks: 2.2
+  fastqc: 0.11.4
+  htslib: 1.7
+  picard: 2.18
+  salmon: 0.9.1
+  samtools: 1.7
+  star:  2.5.4a
+
+# Path to conda
+conda_dir_path: ~
+
+# Optional name of conda envronment. Defaults to root
+conda_environment: ~
+
+# Packages and versionsthat are to be installed via conda's default channels
+conda_packages:
+  pip: ~
+  python: 2.7
+  java-jdk:
+
+# Optionally update conda
+conda_update: ~
+
+# Disable environment check
+disable_env_check: 0
+
+# Optional name of log file
+log_file: ~
+
+# Skip updating existing packages
+noupdate: ~
+
+# Python packages to be installed via pip
+pip:
+
+# Prefer installation via shell instead of via conda,
+# only applicaple for shell programs that overlap with existing conda packages
+prefer_shell: ~
+
+# Python 3 packages
+py3_packages: 
+
+# Specify python version
+python_version: ~
+
+# Supress output, both when generating the install script and running it
+quiet: ~
+
+# Path to directory to which reference genomes are to be downloaded
+reference_dir: ~
+
+# Reference genomes to download
+reference_genome_versions:
+  - GRCh37
+  - hg38
+
+# Select programs to install, skip the rest
+select_programs: []
+
+# Select programs that are to be installed via shell instead of conda
+shell_install: []
+
+# Shell programs
+shell:
+  mip_scripts:
+    version: Your current MIP version
+  picard:
+    version: 2.17.11
+  star_fusion:
+    version: 1.3.2
+
+
+# Don't write installation instructions for these programs
+skip_programs: []
+
+# Verbose output when running the generated install script
+verbose: ~

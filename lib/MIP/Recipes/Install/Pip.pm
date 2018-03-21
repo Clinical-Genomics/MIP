@@ -49,24 +49,21 @@ sub install_pip_packages {
 
     my $tmpl = {
         conda_env => {
-            strict_type => 1,
             store       => \$conda_env,
+            strict_type => 1,
         },
         FILEHANDLE => {
             required => 1,
             store    => \$FILEHANDLE,
         },
         pip_packages_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
             store       => \$pip_packages_href,
         },
         quiet => {
             allow       => [ undef, 0, 1 ],
-            strict_type => 1,
             store       => \$quiet,
+            strict_type => 1,
         },
         verbose => {
             allow => [ undef, 0, 1 ],

@@ -31,7 +31,6 @@ bioconda:
   scikit-learn: 0.15.2
   snpeff: 4.3.1
   snpsift: 4.3.1
-  star:  2.5.4a
   vcfanno: 0.1.0
   vt: 2015.11.10
 

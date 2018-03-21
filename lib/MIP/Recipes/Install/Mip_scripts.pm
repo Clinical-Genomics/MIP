@@ -1,16 +1,16 @@
 package MIP::Recipes::Install::Mip_scripts;
 
-use strict;
-use warnings;
-use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
 use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
+use charnames qw{ :full :short };
 use Cwd;
+use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
+use strict;
+use utf8;
+use warnings qw{ FATAL utf8 };
+use warnings;
 
 ## Cpanm
 use Readonly;
@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_mip_scripts };
@@ -36,61 +36,62 @@ sub install_mip_scripts {
 
 ## Function : Install mip_scripts
 ## Returns  :
-## Arguments: $program_parameters_href => Hash with mip_scripts specific parameters {REF}
-##          : $conda_prefix_path       => Conda prefix path
 ##          : $conda_environment       => Conda environment
+##          : $conda_prefix_path       => Conda prefix path
+##          : $FILEHANDLE              => Filehandle to write to
 ##          : $noupdate                => Do not update
+##          : $program_parameters_href => Hash with mip_scripts specific parameters {REF}
 ##          : $quiet                   => Be quiet
 ##          : $verbose                 => Set verbosity
-##          : $FILEHANDLE              => Filehandle to write to
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $mip_scripts_parameters_href;
-    my $conda_prefix_path;
     my $conda_environment;
+    my $conda_prefix_path;
+    my $FILEHANDLE;
+    my $mip_scripts_parameters_href;
     my $noupdate;
     my $quiet;
     my $verbose;
-    my $FILEHANDLE;
 
     my $tmpl = {
-        program_parameters_href => {
-            required    => 1,
-            default     => {},
+        conda_environment => {
+            store       => \$conda_environment,
             strict_type => 1,
-            store       => \$mip_scripts_parameters_href
         },
         conda_prefix_path => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
+            store       => \$conda_prefix_path,
             strict_type => 1,
-            store       => \$conda_prefix_path
         },
-        conda_environment => {
-            strict_type => 1,
-            store       => \$conda_environment
+        FILEHANDLE => {
+            defined  => 1,
+            required => 1,
+            store    => \$FILEHANDLE,
         },
         noupdate => {
+            store       => \$noupdate,
             strict_type => 1,
-            store       => \$noupdate
+        },
+        program_parameters_href => {
+            default     => {},
+            required    => 1,
+            store       => \$mip_scripts_parameters_href,
+            strict_type => 1,
         },
         quiet => {
             allow       => [ undef, 0, 1 ],
+            store       => \$quiet,
             strict_type => 1,
-            store       => \$quiet
         },
         verbose => {
             allow       => [ undef, 0, 1 ],
+            store       => \$verbose,
             strict_type => 1,
-            store       => \$verbose
         },
-        FILEHANDLE => {
-            required => 1,
-            defined  => 1,
-            store    => \$FILEHANDLE
-        },
+
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -98,7 +99,7 @@ sub install_mip_scripts {
     ## Modules
     use File::Basename qw{ fileparse };
     use FindBin qw{ $Bin };
-    use MIP::Gnu::Coreutils qw{ gnu_mkdir gnu_cp gnu_ln gnu_chmod };
+    use MIP::Gnu::Coreutils qw{ gnu_chmod gnu_cp gnu_ln gnu_mkdir};
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
 
     ## Unpack parameters
@@ -118,7 +119,7 @@ sub install_mip_scripts {
 
     ## Define MIP scripts and yaml files
     my @mip_scripts =
-      qw{ perl_install.pl mip_install.pl download_reference.pl mip.pl vcfparser.pl qccollect.pl };
+      qw{ download_reference.pl vcfparser.pl qccollect.pl };
 
     my %mip_sub_script = (
         utility_scripts =>
@@ -155,9 +156,9 @@ sub install_mip_scripts {
         my $indirectory_path = catdir( $conda_prefix_path, q{bin}, $directory );
         gnu_mkdir(
             {
+                FILEHANDLE       => $FILEHANDLE,
                 indirectory_path => $indirectory_path,
                 parents          => 1,
-                FILEHANDLE       => $FILEHANDLE,
             }
         );
         print {$FILEHANDLE} $NEWLINE;
@@ -172,10 +173,10 @@ sub install_mip_scripts {
         gnu_cp(
             {
                 FILEHANDLE   => $FILEHANDLE,
-                recursive    => 1,
                 force        => 1,
                 infile_path  => catdir( $Bin, $directory ),
                 outfile_path => catdir( $conda_prefix_path, q{bin} ),
+                recursive    => 1,
             }
         );
         print {$FILEHANDLE} $NEWLINE;
@@ -189,7 +190,7 @@ q{## Copy mip scripts and subdirectory scripts to conda env and make executable}
   SCRIPT:
     foreach my $script (@mip_scripts) {
 
-        my $script_no_ending = fileparse( $script, qr/\.[^.]*/ );
+        my $script_no_ending = fileparse( $script, qr/\.[^.]*/xms );
         gnu_cp(
             {
                 FILEHANDLE  => $FILEHANDLE,
@@ -204,9 +205,9 @@ q{## Copy mip scripts and subdirectory scripts to conda env and make executable}
           catfile( $conda_prefix_path, q{bin}, $script_no_ending );
         gnu_chmod(
             {
-                permission => q{a+x},
                 file_path  => $file_path,
                 FILEHANDLE => $FILEHANDLE,
+                permission => q{a+x},
             }
         );
         say {$FILEHANDLE} $NEWLINE;
@@ -232,9 +233,9 @@ q{## Copy mip scripts and subdirectory scripts to conda env and make executable}
               catfile( $conda_prefix_path, q{bin}, $directory, $script );
             gnu_chmod(
                 {
-                    permission => q{a+x},
-                    file_path  => $file_path,
                     FILEHANDLE => $FILEHANDLE,
+                    file_path  => $file_path,
+                    permission => q{a+x},
                 }
             );
             say {$FILEHANDLE} $NEWLINE;
