@@ -95,6 +95,7 @@ use File::Spec::Functions qw{ catfile catdir devnull };
 use Getopt::Long;
 use IPC::Cmd qw{ can_run run };
 use Params::Check qw{ check allow last_error };
+use Readonly;
 use Test::More;
 
 ## MIPs lib/
@@ -105,7 +106,7 @@ our $USAGE = build_usage( {} );
 
 my $conda_dir_path;
 my $verbose = 1;
-our $VERSION = q{1.0.1};
+our $VERSION = q{1.2.1};
 
 ###User Options
 GetOptions(
@@ -133,32 +134,53 @@ GetOptions(
     )
   );
 
+## Conda check
 ok( can_run(q{conda}), q{Checking can run of conda binary} );
 
-ok(
-    catfile( dirname($Bin), q{mip_install.pl} ),
-    q{Locating install script in MIP dir}
+## Pipeline installations to test
+my %config_file = (
+    rare_disease => q{install_rare_disease_parameters.yaml},
+    rna          => q{install_rna_parameters.yaml},
+);
+my %install_file = (
+    rare_disease => q{Rare_disease.pm},
+    rna          => q{Rna.pm},
 );
 
-my $install_script = catfile( dirname($Bin), q{mip_install.pl} );
+foreach my $pipeline ( keys %install_file ) {
 
-## Test execution of install.pl
-# Create array ref for cmd
-my $cmds_ref = [ qw{ perl }, $install_script, qw{ -sp mip_scripts -dec } ];
-if ($conda_dir_path) {
+    ok(
+        catfile(
+            dirname($Bin), qw{ lib MIP Cli Mip Install },
+            $install_file{$pipeline}
+        ),
+        qq{Locating $pipeline install script}
+    );
 
-    push @{$cmds_ref}, q{--conda_dir_path}, $conda_dir_path;
+    ## Test execution of install script
+    my $config_path =
+      catfile( dirname($Bin), q{definitions}, $config_file{$pipeline} );
+    my $cmds_ref = [
+        q{perl}, catfile( dirname($Bin), q{mip} ),
+        q{install}, $pipeline, q{--config_file}, $config_path,
+        qw{ --sp mip_scripts --dec }
+    ];
+    if ($conda_dir_path) {
+
+        push @{$cmds_ref}, q{--conda_dir_path}, $conda_dir_path;
+    }
+
+    my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) = run(
+        command => $cmds_ref,
+        verbose => $verbose
+    );
+
+    ok( $success, qq{Executed $pipeline install} );
+
+    ## Test that mip.sh has been created
+    ok( -e catfile( getcwd(), q{mip.sh} ), qq{Located $pipeline mip.sh} );
+
 }
-
-my ( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) = run(
-    command => $cmds_ref,
-    verbose => $verbose
-);
-
-ok( $success, q{Executed mip_install.pl} );
-
-is( -e catfile( getcwd(), q{mip.sh} ),
-    1, q{Locating created mip.sh in MIP dir} );
 
 ## Clean-up mip_install.pl output
 my @outfiles = qw{ mip.sh mip_install_*.log };

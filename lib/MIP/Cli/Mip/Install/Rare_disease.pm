@@ -2,8 +2,8 @@ package MIP::Cli::Mip::Install::Rare_disease;
 
 use 5.022;
 use Carp;
+use Cwd qw{ abs_path };
 use File::Spec::Functions qw{ catdir catfile };
-use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use strict;
 use utf8;
@@ -24,7 +24,7 @@ use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ nest_hash print_install_defaults };
 
-our $VERSION = 0.02;
+our $VERSION = 0.03;
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -47,8 +47,8 @@ sub run {
     delete $arg_href->{extra_argv};
 
     ## Load default parameters from config file
-    my $install_parameters_path = catfile( $Bin, $arg_href->config_file );
-    my %parameter = load_yaml(
+    my $install_parameters_path = abs_path( $arg_href->config_file );
+    my %parameter               = load_yaml(
         {
             yaml_file => $install_parameters_path
         }
@@ -212,9 +212,10 @@ sub _build_usage {
                     [
                         qw{ bcftools bedtools bwa bwakit cmake cnvnator
                           cramtools cutadapt delly fastqc freebayes gatk gcc
-                          htslib libxml2 libxslt manta numpy peddy picard
-                          plink rhocall rtg-tools sambamba samtools scikit-learn
-                          snpeff snpsift svdb tiddit vcf2cytosure vcfanno vep vt
+                          htslib libxml2 libxslt manta mip_scripts numpy peddy
+                          picard plink rhocall rtg-tools sambamba samtools
+                          scikit-learn snpeff snpsift svdb tiddit vcf2cytosure
+                          vcfanno vep vt
                           }
                     ]
                 ),
