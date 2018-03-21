@@ -26,7 +26,7 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -234,8 +234,12 @@ set_pedigree_capture_kit_info(
         user_supply_switch_href => \%user_supply_switch,
     }
 );
-is( $active_parameter{exome_target_bed},
-    undef, q(No capture kit from cmd, config or pedigree) );
+
+is(
+    $active_parameter{exome_target_bed}{latest},
+    q{sample_1,sample_2,sample_3,sample_4},
+    q(No capture kit from cmd, config or pedigree)
+);
 
 done_testing();
 

@@ -195,11 +195,11 @@ sub set_pedigree_capture_kit_info {
         }
 
         ## No recorded capture kit from pedigree or previous run
-	if ( not $capture_kit ) {
+	    if ( not $capture_kit ) {
 
-	  ## Set to default i.e "latest in supported"
-	  $capture_kit = q{latest};
-	}
+	    ## Set to default i.e "latest in supported"
+	        $capture_kit = q{latest};
+	    }
 
         ## Return a capture kit depending on user info
         my $exome_target_bed_file = get_capture_kit(
