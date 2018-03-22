@@ -13,13 +13,13 @@ Recipes are a list of ordered commands and subroutines that has a defined input 
 4. Pipeline
 
 ### Install Recipes
-Used in `mip_install.pl` to handle installation of programs and references.
+Used in `Install.pm` to handle installation of programs and references.
 
 ### Build Recipes
-Used in `mip.pl` to build metadatafiles for references. 
+Used in `mip.pl` to build metadatafiles for references.
 
 ### Analysis Recipes
 Used in `mip.pl` to perform operation with a defined input and ouput for a process with specific upstream and/or downstream dependencies, e.g. qc of fastqc files or aligning and sorting reads.
 
 ### Pipeline
-Used in `mip.pl` to string together several analysis recipes into entire pipelines. 
+Used in `mip.pl` to string together several analysis recipes into entire pipelines.
