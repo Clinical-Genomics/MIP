@@ -99,6 +99,8 @@ shell:
   cnvnator:
     cnvnator_root_binary: root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz
     version: 0.3.3
+  expansionhunter:
+    version: 2.5.5
   mip_scripts:
     version: Your current MIP version
   picard:

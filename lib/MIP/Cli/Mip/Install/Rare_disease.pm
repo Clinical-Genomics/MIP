@@ -24,7 +24,7 @@ use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ nest_hash print_install_defaults };
 
-our $VERSION = 0.03;
+our $VERSION = q{0.1.3};
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -211,12 +211,11 @@ sub _build_usage {
                 enum(
                     [
                         qw{ bcftools bedtools bwa bwakit cmake cnvnator
-                          cramtools cutadapt delly fastqc freebayes gatk gcc
-                          htslib libxml2 libxslt manta mip_scripts numpy peddy
-                          picard plink rhocall rtg-tools sambamba samtools
-                          scikit-learn snpeff snpsift svdb tiddit vcf2cytosure
-                          vcfanno vep vt
-                          }
+                          cramtools cutadapt delly expansionhunter fastqc
+                          freebayes gatk gcc htslib libxml2 libxslt manta
+                          mip_scripts numpy peddy picard plink rhocall
+                          rtg-tools sambamba samtools scikit-learn snpeff
+                          snpsift svdb tiddit vcf2cytosure vcfanno vep vt }
                     ]
                 ),
             ],
@@ -244,18 +243,19 @@ sub _build_usage {
             documentation => q{Set shell version of programs},
             is            => q{rw},
             isa           => Dict [
-                bedtools     => Optional [Num],
-                cnvnator     => Optional [Num],
-                plink2       => Optional [Num],
-                picard       => Optional [Num],
-                rhocall      => Optional [Num],
-                sambamba     => Optional [Num],
-                snpeff       => Optional [Str],
-                svdb         => Optional [Num],
-                tiddit       => Optional [Num],
-                vcf2cytosure => Optional [Num],
-                vep          => Optional [Num],
-                vt           => Optional [Str],
+                bedtools        => Optional [Num],
+                cnvnator        => Optional [Num],
+                expansionhunter => Optional [Num],
+                plink2          => Optional [Num],
+                picard          => Optional [Num],
+                rhocall         => Optional [Num],
+                sambamba        => Optional [Num],
+                snpeff          => Optional [Str],
+                svdb            => Optional [Num],
+                tiddit          => Optional [Num],
+                vcf2cytosure    => Optional [Num],
+                vep             => Optional [Num],
+                vt              => Optional [Str],
             ],
             required => 0,
         ),
@@ -271,11 +271,11 @@ sub _build_usage {
                 enum(
                     [
                         qw{ bcftools bedtools bwa bwakit cmake cnvnator
-                          cramtools cutadapt delly fastqc freebayes gatk gcc
-                          htslib libxml2 libxslt manta mip_scripts numpy peddy
-                          picard plink rhocall rtg-tools sambamba samtools
-                          scikit-learn snpeff snpsift svdb tiddit vcf2cytosure
-                          vcfanno vep vt }
+                          cramtools cutadapt delly expansionhunter fastqc
+                          freebayes gatk gcc htslib libxml2 libxslt manta
+                          mip_scripts numpy peddy picard plink rhocall
+                          rtg-tools sambamba samtools scikit-learn snpeff
+                          snpsift svdb tiddit vcf2cytosure vcfanno vep vt }
                     ]
                 ),
             ],
