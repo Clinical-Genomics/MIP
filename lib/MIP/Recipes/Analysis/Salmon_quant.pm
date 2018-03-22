@@ -208,7 +208,7 @@ sub analysis_salmon_quant {
             file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
             job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
-            suffix_key     => q{alignment_file_suffix},
+            suffix_key     => q{sailfish_quantification_file_suffix},
         }
     );
 
@@ -315,7 +315,8 @@ sub analysis_salmon_quant {
             );
             say {$FILEHANDLE} $NEWLINE;
 
-        }else {
+        }
+        else {
             salmon_quant(
                 {
                     FILEHANDLE        => $FILEHANDLE,
@@ -346,26 +347,13 @@ sub analysis_salmon_quant {
         if ( $mip_program_mode == 1 ) {
 
             my $program_outfile_path =
-              $outfile_path_prefix . $UNDERSCORE . q{bam};
+              $outfile_path_prefix . $UNDERSCORE . q{sf};
 
             ## Collect QC metadata info for later use
             add_program_outfile_to_sample_info(
                 {
                     path             => $program_outfile_path,
                     program_name     => $program_name,
-                    sample_id        => $sample_id,
-                    sample_info_href => $sample_info_href,
-                }
-            );
-
-            my $most_complete_format_key =
-              q{most_complete} . $UNDERSCORE . substr $outfile_suffix, 1;
-            my $qc_metafile_path =
-              catfile( $outsample_directory, $infile_prefix . $outfile_suffix );
-            add_processing_metafile_to_sample_info(
-                {
-                    metafile_tag     => $most_complete_format_key,
-                    path             => $qc_metafile_path,
                     sample_id        => $sample_id,
                     sample_info_href => $sample_info_href,
                 }

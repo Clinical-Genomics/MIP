@@ -237,17 +237,17 @@ sub pipeline_rna {
 
             analysis_salmon_quant(
                 {
-                    parameter_href          => $parameter_href,
                     active_parameter_href   => $active_parameter_href,
-                    sample_info_href        => $sample_info_href,
                     file_info_href          => $file_info_href,
                     infiles_ref             => \@{ $infile_href->{$sample_id} },
                     infile_lane_prefix_href => $infile_lane_prefix_href,
-                    job_id_href             => $job_id_href,
                     insample_directory      => $indir_path_href->{$sample_id},
+                    job_id_href             => $job_id_href,
                     outsample_directory     => $salmon_outsample_directory,
-                    sample_id               => $sample_id,
+                    parameter_href          => $parameter_href,
                     program_name            => q{salmon_quant},
+                    sample_info_href        => $sample_info_href,
+                    sample_id               => $sample_id,
                 }
             );
         }
