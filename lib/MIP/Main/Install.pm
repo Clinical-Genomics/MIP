@@ -36,6 +36,7 @@ use MIP::Recipes::Install::Bedtools qw{ install_bedtools };
 use MIP::Recipes::Install::Cnvnator qw{ install_cnvnator };
 use MIP::Recipes::Install::Conda
   qw{ check_conda_installation setup_conda_env install_bioconda_packages };
+use MIP::Recipes::Install::Expansionhunter qw{ install_expansionhunter };
 use MIP::Recipes::Install::Mip_scripts qw{ install_mip_scripts };
 use MIP::Recipes::Install::Picard qw{ install_picard };
 use MIP::Recipes::Install::Pip qw{ install_pip_packages };
@@ -55,7 +56,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = q{1.1.1};
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
@@ -224,20 +225,21 @@ sub mip_install {
     ### Install shell programs
     ## Create dispatch table for shell installation subs
     my %shell_subs = (
-        bedtools     => \&install_bedtools,
-        cnvnator     => \&install_cnvnator,
-        mip_scripts  => \&install_mip_scripts,
-        picard       => \&install_picard,
-        plink2       => \&install_plink2,
-        rhocall      => \&install_rhocall,
-        sambamba     => \&install_sambamba,
-        snpeff       => \&install_snpeff,
-        svdb         => \&install_svdb,
-        star_fusion  => \&install_star_fusion,
-        tiddit       => \&install_tiddit,
-        vep          => \&install_vep,
-        vcf2cytosure => \&install_vcf2cytosure,
-        vt           => \&install_vt,
+        bedtools        => \&install_bedtools,
+        cnvnator        => \&install_cnvnator,
+        expansionhunter => \&install_expansionhunter,
+        mip_scripts     => \&install_mip_scripts,
+        picard          => \&install_picard,
+        plink2          => \&install_plink2,
+        rhocall         => \&install_rhocall,
+        sambamba        => \&install_sambamba,
+        snpeff          => \&install_snpeff,
+        svdb            => \&install_svdb,
+        star_fusion     => \&install_star_fusion,
+        tiddit          => \&install_tiddit,
+        vep             => \&install_vep,
+        vcf2cytosure    => \&install_vcf2cytosure,
+        vt              => \&install_vt,
     );
 
     ## Launch shell installation subroutines
@@ -768,3 +770,5 @@ q{echo -e "\tMIP's installation script has attempted to install CNVnator"};
 q{echo -e '\n##############################################################\n'};
     return;
 }
+
+1;
