@@ -161,8 +161,8 @@ sub pipeline_rare_disease {
     use MIP::Recipes::Analysis::Delly_call qw{ analysis_delly_call };
     use MIP::Recipes::Analysis::Delly_reformat qw{ analysis_delly_reformat };
     use MIP::Recipes::Analysis::Endvariantannotationblock
-      use MIP::Recipes::Analysis::Expansionhunter
-      qw{ analysis_expansionhunter };
+      qw{ analysis_endvariantannotationblock };
+    use MIP::Recipes::Analysis::Expansionhunter qw{ analysis_expansionhunter };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
     use MIP::Recipes::Analysis::Freebayes qw { analysis_freebayes_calling };
     use MIP::Recipes::Analysis::Frequency_filter
@@ -868,7 +868,7 @@ sub pipeline_rare_disease {
                     job_id_href             => $job_id_href,
                     outsample_directory     => $outsample_directory,
                     parameter_href          => $parameter_href,
-                    program_name            => $cnvnator_program_name,
+                    program_name            => $expansionhunter_program_name,
                     sample_id               => $sample_id,
                     sample_info_href        => $sample_info_href,
                 }
