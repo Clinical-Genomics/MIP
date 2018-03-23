@@ -161,7 +161,8 @@ sub pipeline_rare_disease {
     use MIP::Recipes::Analysis::Delly_call qw{ analysis_delly_call };
     use MIP::Recipes::Analysis::Delly_reformat qw{ analysis_delly_reformat };
     use MIP::Recipes::Analysis::Endvariantannotationblock
-      qw{ analysis_endvariantannotationblock };
+    use MIP::Recipes::Analysis::Expansionhunter
+      qw{ analysis_expansionhunter };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
     use MIP::Recipes::Analysis::Freebayes qw { analysis_freebayes_calling };
     use MIP::Recipes::Analysis::Frequency_filter
@@ -837,6 +838,41 @@ sub pipeline_rare_disease {
                 outfamily_directory     => $outfamily_directory,
             }
         );
+    }
+    if ( $active_parameter_href->{pexpansionhunter} ) {
+
+        $log->info(q{[ExpansionHunter]});
+
+        my $cnvnator_program_name = q{expansionhunter};
+
+        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+            ## Assign directories
+            my $insample_directory =
+              catdir( $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir} );
+
+            my $outsample_directory = catdir(
+                $active_parameter_href->{outdata_dir},
+                $sample_id, $active_parameter_href->{outaligner_dir},
+                $cnvnator_program_name
+            );
+
+            analysis_expansionhunter(
+                {
+                    parameter_href          => $parameter_href,
+                    active_parameter_href   => $active_parameter_href,
+                    sample_info_href        => $sample_info_href,
+                    file_info_href          => $file_info_href,
+                    infile_lane_prefix_href => $infile_lane_prefix_href,
+                    job_id_href             => $job_id_href,
+                    sample_id               => $sample_id,
+                    insample_directory      => $insample_directory,
+                    outsample_directory     => $outsample_directory,
+                    program_name            => $cnvnator_program_name,
+                }
+            );
+        }
     }
     if ( $active_parameter_href->{psv_combinevariantcallsets} ) {
 

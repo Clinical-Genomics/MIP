@@ -43,7 +43,7 @@ sub expansionhunter {
 ##          : $min_anchor_mapq         => Min MAPQ of an in-repeat read anchor
 ##          : $min_baseq               => Min base quality of a high confidece base call
 ##          : $min_score               => Min weigheted matching score
-##          : $read_depth              => Expansion Hunter will not calciulate read depth if set
+##          : $read_depth              => Expansion Hunter will not calculate read depth if set
 ##          : $reference_genome_path   => Path to reference fasta file
 ##          : $region_extension_length => Specifies how far from on/off-target regions to search for informative reads
 ##          : $repeat_specs_dir_path   => Path to dir with repeat-specification files
@@ -218,8 +218,8 @@ sub expansionhunter {
 
     unix_write_to_file(
         {
-            FILEHANDLE   => $FILEHANDLE,
             commands_ref => \@commands,
+            FILEHANDLE   => $FILEHANDLE,
             separator    => $SPACE,
 
         }
