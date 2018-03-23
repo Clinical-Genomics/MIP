@@ -1,4 +1,4 @@
-”# MIP - Mutation Identification Pipeline
+# MIP - Mutation Identification Pipeline
 
 [![Build Status](https://travis-ci.org/Clinical-Genomics/MIP.svg?branch=develop)](https://travis-ci.org/Clinical-Genomics/MIP)
 
@@ -137,7 +137,7 @@ This will generate a batch script called "mip.sh" in your working directory.
 ```Bash
 $ bash mip.sh
 ```
-A conda environment will be created and MIP, together with most of its dependencies will be installed.
+A conda environment will be created where MIP with most of its dependencies will be installed.
 
   ###### *Note:*  
   - Some references are quite large and will take time to download. You might want to run this using screen or tmux.
