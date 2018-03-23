@@ -279,6 +279,7 @@ module_time:
     psamtools_subsample_mt: 1
     psplit_fastq_file: 10
     psnpeff: 10
+    psalmon_quant: 5
     pstar_aln: 5
     pstar_fusion: 5
     psv_combinevariantcallsets: 2
@@ -333,6 +334,7 @@ module_core_number:
     prcovplots: 1
     prtg_vcfeval: 1
     psacct: 1
+    psalmon_quant: 1
     psambamba_depth: 2
     psamtools_subsample_mt: 1
     psplit_fastq_file: 4
@@ -512,6 +514,26 @@ bwa_build_reference:
   exists_check: file
   reference: reference_dir
   type: path
+psalmon_quant:
+  associated_program:
+   - mip
+  chain: MAIN
+  data_type: SCALAR
+  default: 0
+  file_tag: _salmon
+  outfile_suffix: ".sf"
+  outdir_name: salmon
+  program_name_path:
+   - salmon
+  file_endings:
+   - .sf
+  type: program
+lib:
+  associated_program:
+   - psalmon_quant
+  data_type: SCALAR
+  default: "ISF"
+  type: program_argument
 pstar_aln:
   associated_program:
    - mip
