@@ -183,10 +183,6 @@ Tools that have conflicting dependencies needs to be installed in separate conda
   $ perl mip install rare_disease --config_file definitions/install_rare_disease_parameters.yaml --env MIP_vep --select_programs vep
   $ bash mip.sh
   ```
-  ##### 8. Test the new MIP Installation (optional)
-  ```Bash
-  $ prove t/mip.t
-  ```
 
   ###### When setting up your analysis config file
   In your config yaml file or on the command line you will have to supply the ``module_source_environment_command`` parameter to activate the conda environment specific for the tool. Here is an example with three Python 3 tools in their own environment and Peddy, CNVnator, SVDB and VEP in each own, with some extra initialization:
