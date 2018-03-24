@@ -48,6 +48,7 @@ sub run {
     ## The order of files in @definition_files should follow commands inheritance
     my @definition_files = (
         catfile( $Bin, qw{ definitions mip_parameters.yaml } ),
+        catfile( $Bin, qw{ definitions analyse_parameters.yaml } ),
         catfile( $Bin, qw{ definitions rna_parameters.yaml } ),
     );
 
@@ -128,6 +129,55 @@ sub _build_usage {
 ## Function : Get and/or set input parameters
 ## Returns  :
 ## Arguments:
+
+   option(
+        q{java_use_large_pages} => (
+            cmd_aliases   => [qw{ jul }],
+            documentation => q{Use large page memory},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+   option(
+        q{module_core_number} => (
+            cmd_aliases   => [qw{ mcn }],
+            cmd_tags      => [q{program_name=X(cores)}],
+            documentation => q{Set the number of cores for each module},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+    option(
+        q{module_time} => (
+            cmd_aliases   => [qw{ mot }],
+            cmd_tags      => [q{program_name=time(hours)}],
+            documentation => q{Set the time allocation for each module},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+   option(
+        q{outaligner_dir} => (
+            cmd_aliases => [qw{ ald }],
+            documentation =>
+q{Sets which aligner out directory was used for alignment in previous analysis},
+            is  => q{rw},
+            isa => enum( [qw{ star }] ),
+        )
+    );
+
+   option(
+        q{picardtools_path} => (
+            cmd_aliases   => [qw{ ptp }],
+            documentation => q{Path to Picardtools},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
     option(
         q{psalmon_quant} => (
             cmd_aliases   => [qw{ psqt }],

@@ -48,6 +48,7 @@ sub run {
     ## Mip analyse cancer parameters
     my @definition_files = (
         catfile( $Bin, qw{ definitions mip_parameters.yaml } ),
+        catfile( $Bin, qw{ definitions analyse_parameters.yaml } ),
         catfile( $Bin, qw{ definitions cancer_parameters.yaml } )
     );
 
@@ -156,6 +157,125 @@ sub _build_usage {
             documentation => q{Exome target bed file per sample id},
             is            => q{rw},
             isa           => HashRef,
+        )
+    );
+
+    option(
+        q{gatk_bundle_download_version} => (
+            cmd_aliases   => [qw{ gbdv }],
+            cmd_tags      => [q{Default: 2.8}],
+            documentation => q{GATK FTP bundle download version},
+            is            => q{rw},
+            isa           => Num,
+        )
+    );
+
+    option(
+        q{gatk_disable_auto_index_and_file_lock} => (
+            cmd_aliases => [qw{ gdai }],
+            cmd_flag    => q{gatk_dis_auto_ind_fl},
+            documentation =>
+              q{Disable auto index creation and locking when reading rods},
+            is  => q{rw},
+            isa => Bool,
+        )
+    );
+
+    option(
+        q{gatk_downsample_to_coverage} => (
+            cmd_aliases   => [qw{ gdco }],
+            cmd_tags      => [q{Default: 1000}],
+            documentation => q{Coverage to downsample to at any given locus},
+            is            => q{rw},
+            isa           => Int,
+        )
+    );
+
+    option(
+        q{gatk_logging_level} => (
+            cmd_aliases   => [qw{ gll }],
+            cmd_tags      => [q{Default: INFO}],
+            documentation => q{Set the GATK log level},
+            is            => q{rw},
+            isa           => enum( [qw{ DEBUG INFO ERROR FATAL }] ),
+        )
+    );
+
+    option(
+        q{gatk_path} => (
+            cmd_aliases   => [qw{ gtp }],
+            documentation => q{Path to GATK},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{human_genome_reference} => (
+            cmd_aliases   => [qw{ hgr }],
+            cmd_tags      => [q{Default: GRCh37_homo_sapiens_-d5-.fasta}],
+            documentation => q{Human genome reference},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+   option(
+        q{java_use_large_pages} => (
+            cmd_aliases   => [qw{ jul }],
+            documentation => q{Use large page memory},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+   option(
+        q{module_core_number} => (
+            cmd_aliases   => [qw{ mcn }],
+            cmd_tags      => [q{program_name=X(cores)}],
+            documentation => q{Set the number of cores for each module},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+
+    option(
+        q{module_time} => (
+            cmd_aliases   => [qw{ mot }],
+            cmd_tags      => [q{program_name=time(hours)}],
+            documentation => q{Set the time allocation for each module},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+    option(
+        q{outaligner_dir} => (
+            cmd_aliases => [qw{ ald }],
+            documentation =>
+q{Sets which aligner out directory was used for alignment in previous analysis},
+            is  => q{rw},
+            isa => enum( [qw{ bwa }] ),
+        )
+    );
+
+    option(
+        q{picardtools_path} => (
+            cmd_aliases   => [qw{ ptp }],
+            documentation => q{Path to Picardtools},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{platform} => (
+            cmd_aliases   => [qw{ pla }],
+            cmd_tags      => [q{Default: ILLUMINA}],
+            documentation => q{Platform/technology used to produce the reads},
+            is            => q{rw},
+            isa           => enum( [qw{ ILLUMINA }] ),
         )
     );
 

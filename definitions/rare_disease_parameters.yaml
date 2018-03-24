@@ -1,68 +1,5 @@
 ---
 ## Version: 2.0.0
-##Enable/activate MIP
-cluster_constant_path:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  type: path
-### Project specific
-analysis_constant_path:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: analysis
-  type: path
-family_id:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  type: mip
-outdata_dir:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  type: path
-  update_path: absolute_path
-project_id:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  type: mip
-platform:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: ILLUMINA
-  type: mip
-outscript_dir:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  type: path
-  update_path: absolute_path
-config_file_analysis:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 0
-  type: path
-  update_path: absolute_path
-supported_capture_kit:
-  associated_program:
-   - mip
-  data_type: HASH
-  default:
-    nimblegen_seqcapezexome.v2: genome_reference_source_version_nimblegen_seqcapezexome_targets_-v2-.bed
-    nimblegen_seqcapezexome.v3: genome_reference_source_version_nimblegen_seqcapezexome_targets_-v3-.bed
-    agilent_sureselect.v2: genome_reference_source_version_agilent_sureselect_targets_-v2-.bed
-    agilent_sureselect.v3: genome_reference_source_version_agilent_sureselect_targets_-v3-.bed
-    agilent_sureselect.v4: genome_reference_source_version_agilent_sureselect_targets_-v4-.bed
-    agilent_sureselect.v5: genome_reference_source_version_agilent_sureselect_targets_-v5-.bed
-    agilent_sureselect_cre.v1: genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed
-    agilent_sureselect_focusedexome.v1: genome_reference_source_version_agilent_sureselect_targets_focusedexome_-v1-.bed
-    latest: genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed
-  type: mip
 decompose_normalize_references:
   associated_program:
    - mip
@@ -80,61 +17,6 @@ decompose_normalize_references:
    - snpsift_annotation_files
   element_separator: ,
   type: mip
-pedigree_file:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  type: path
-  update_path: absolute_path
-sample_ids:
-  associated_program:
-   - mip
-  element_separator: ,
-  data_type: ARRAY
-  type: mip
-analysis_type:
-  associated_program:
-   - mip
-  data_type: HASH
-  type: mip
-expected_coverage:
-  associated_program:
-   - mip
-  data_type: HASH
-  mandatory: no
-  type: mip
-infile_dirs:
-  associated_program:
-   - mip
-  exists_check: directory
-  data_type: HASH
-  type: path
-  update_path: absolute_path
-sample_info_file:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  type: path
-  update_path: absolute_path
-reference_dir:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  exists_check: directory
-  type: path
-  update_path: absolute_path
-dry_run_all:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  mandatory: no
-  type: mip
-start_with_program:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  mandatory: no
-  type: mip
 genomic_set:
   associated_program:
    - mip
@@ -143,6 +25,12 @@ genomic_set:
   mandatory: no
   reference: reference_dir
   type: path
+platform:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: ILLUMINA
+  type: mip
 reduce_io:
   associated_program:
    - mip
@@ -154,12 +42,6 @@ replace_iupac:
    - mip
   data_type: SCALAR
   default: 0
-  type: mip
-print_program_mode:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 2
   type: mip
 ## HumanGenomeReference
 human_genome_reference:
@@ -297,102 +179,7 @@ module_core_number:
     pvariant_integrity: 1
     pvcf2cytosure: 1
   type: mip
-max_cores_per_node:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 16
-  type: mip
-node_ram_memory:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 128
-  type: mip
-email:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  mandatory: no
-  type: mip
-email_types:
-  associated_program:
-   - mip
-  element_separator: ","
-  data_type: ARRAY
-  mandatory: no
-  default:
-   - FAIL
-  type: mip
-slurm_quality_of_service:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: normal
-  type: mip
-program_source_environment_command:
-  associated_program:
-   - mip
-  data_type: HASH
-  mandatory: no
-  type: mip
-module_source_environment_command:
-  associated_program:
-   - mip
-  data_type: HASH
-  mandatory: no
-  type: mip
-source_main_environment_commands:
-  associated_program:
-   - mip
-  element_separator: " "
-  data_type: ARRAY
-  mandatory: no
-  type: mip
 ###Programs
-## GZip
-psplit_fastq_file:
-  associated_program:
-   - mip
-  chain: MAIN
-  data_type: SCALAR
-  default: 0
-  file_tag: nofile_tag
-  infile_suffix: ".fastq"
-  outfile_suffix: ".fastq.gz"
-  program_name_path:
-   - pigz
-   - split
-  type: program
-split_fastq_file_read_batch:
-  associated_program:
-   - psplit_fastq_file
-  data_type: SCALAR
-  default: 25000000
-  type: program_argument
-pgzip_fastq:
-  associated_program:
-   - mip
-  chain: MAIN
-  data_type: SCALAR
-  default: 1
-  file_tag: nofile_tag
-  infile_suffix: ".fastq"
-  program_name_path:
-   - gzip
-  type: program
-## FastQC
-pfastqc:
-  associated_program:
-   - mip
-  chain: RawSeqQC
-  data_type: SCALAR
-  default: 0
-  file_tag: nofile_tag
-  infile_suffix: ".fastq"
-  program_name_path:
-   - fastqc
-  type: program
 ## BWA
 pbwa_mem:
   associated_program:
@@ -1800,7 +1587,7 @@ snpsift_dbnsfp_annotations:
    - GERP++_RS
    - phastCons100way_vertebrate
   type: path
-## java large pages - effects all modules using java
+## java large pages - affects all modules using java
 java_use_large_pages:
   associated_program:
    - pgatk_realigner
