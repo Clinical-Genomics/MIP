@@ -168,7 +168,7 @@ sub set_custom_default_to_active_parameter {
             {
                 capture_kit => q{latest},
                 supported_capture_kit_href =>
-                  $parameter_href->{supported_capture_kit},
+                  $parameter_href->{supported_capture_kit}{default},
             }
         );
 

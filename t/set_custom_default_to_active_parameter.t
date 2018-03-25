@@ -127,15 +127,28 @@ my %active_parameter = (
     sample_ids             => [qw{ sample_1 }],
 );
 
-my %parameter = load_yaml(
-    {
-        yaml_file =>
-          catfile( dirname($Bin), qw{ definitions define_parameters.yaml } ),
-    }
+## Mip analyse rare_disease parameters
+## The order of files in @definition_files should follow commands inheritance
+my @definition_files = (
+    catfile( dirname($Bin), qw{ definitions analyse_parameters.yaml } ),
+    catfile( dirname($Bin), qw{ definitions rare_disease_parameters.yaml } ),
 );
 
+my %parameter;
+foreach my $definition_file (@definition_files) {
+
+    %parameter = (
+        %parameter,
+        load_yaml(
+            {
+                yaml_file => $definition_file,
+            }
+        ),
+    );
+}
+
 my @custom_default_parameters =
-  qw{ analysis_type bwa_build_reference exome_target_bed rtg_vcfeval_reference_genome sample_info_file };
+  qw{ analysis_type exome_target_bed bwa_build_reference exome_target_bed rtg_vcfeval_reference_genome sample_info_file };
 
 foreach my $parameter_name (@custom_default_parameters) {
 

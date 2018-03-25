@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -182,30 +182,15 @@ sub set_pedigree_capture_kit_info {
         my $capture_kit =
           $sample_info_href->{sample}{$sample_id}{capture_kit};
 
-        ## Get supported capture kit depending in user info
-        my %supported_capture_kit =
-          %{ $parameter_href->{supported_capture_kit}{default} };
-
-        ## User supplied info on parameter
-        if ( $user_supply_switch_href->{supported_capture_kit} ) {
-
-            %supported_capture_kit =
-              %{ $active_parameter_href->{supported_capture_kit} };
-
-        }
-
         ## No recorded capture kit from pedigree or previous run
-	    if ( not $capture_kit ) {
-
-	    ## Set to default i.e "latest in supported"
-	        $capture_kit = q{latest};
-	    }
+        next SAMPLE_HREF if ( not $capture_kit );
 
         ## Return a capture kit depending on user info
         my $exome_target_bed_file = get_capture_kit(
             {
-                capture_kit                => $capture_kit,
-                supported_capture_kit_href => \%supported_capture_kit,
+                capture_kit => $capture_kit,
+                supported_capture_kit_href =>
+                  $parameter_href->{supported_capture_kit}{default},
                 user_supplied_parameter_switch =>
                   $user_supply_switch_href->{exome_target_bed},
             }
