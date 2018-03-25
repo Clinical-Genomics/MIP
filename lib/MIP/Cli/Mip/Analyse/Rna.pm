@@ -75,7 +75,7 @@ sub run {
                     mandatory_parameter_keys_path =>
                       $mandatory_parameter_keys_path,
                 }
-            )
+            ),
         );
     }
 
