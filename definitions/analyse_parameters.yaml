@@ -1,39 +1,21 @@
 ---
 ## Version: 1.0.0
-cluster_constant_path:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  type: path
-### Project specific
 analysis_constant_path:
   associated_program:
    - mip
   data_type: SCALAR
   default: analysis
   type: path
-family_id:
+analysis_type:
   associated_program:
    - mip
-  data_type: SCALAR
+  data_type: HASH
   type: mip
-outdata_dir:
+cluster_constant_path:
   associated_program:
    - mip
   data_type: SCALAR
   type: path
-  update_path: absolute_path
-project_id:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  type: mip
-outscript_dir:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  type: path
-  update_path: absolute_path
 config_file_analysis:
   associated_program:
    - mip
@@ -41,93 +23,11 @@ config_file_analysis:
   default: 0
   type: path
   update_path: absolute_path
-supported_capture_kit:
-  associated_program:
-   - mip
-  data_type: HASH
-  default:
-    nimblegen_seqcapezexome.v2: genome_reference_source_version_nimblegen_seqcapezexome_targets_-v2-.bed
-    nimblegen_seqcapezexome.v3: genome_reference_source_version_nimblegen_seqcapezexome_targets_-v3-.bed
-    agilent_sureselect.v2: genome_reference_source_version_agilent_sureselect_targets_-v2-.bed
-    agilent_sureselect.v3: genome_reference_source_version_agilent_sureselect_targets_-v3-.bed
-    agilent_sureselect.v4: genome_reference_source_version_agilent_sureselect_targets_-v4-.bed
-    agilent_sureselect.v5: genome_reference_source_version_agilent_sureselect_targets_-v5-.bed
-    agilent_sureselect_cre.v1: genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed
-    agilent_sureselect_focusedexome.v1: genome_reference_source_version_agilent_sureselect_targets_focusedexome_-v1-.bed
-    latest: genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed
-  type: mip
-pedigree_file:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  type: path
-  update_path: absolute_path
-sample_ids:
-  associated_program:
-   - mip
-  element_separator: ,
-  data_type: ARRAY
-  type: mip
-analysis_type:
-  associated_program:
-   - mip
-  data_type: HASH
-  type: mip
-expected_coverage:
-  associated_program:
-   - mip
-  data_type: HASH
-  mandatory: no
-  type: mip
-infile_dirs:
-  associated_program:
-   - mip
-  exists_check: directory
-  data_type: HASH
-  type: path
-  update_path: absolute_path
-sample_info_file:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  type: path
-  update_path: absolute_path
-reference_dir:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  exists_check: directory
-  type: path
-  update_path: absolute_path
 dry_run_all:
   associated_program:
    - mip
   data_type: SCALAR
   mandatory: no
-  type: mip
-start_with_program:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  mandatory: no
-  type: mip
-print_program_mode:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 2
-  type: mip
-max_cores_per_node:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 16
-  type: mip
-node_ram_memory:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 128
   type: mip
 email:
   associated_program:
@@ -144,17 +44,35 @@ email_types:
   default:
    - FAIL
   type: mip
-slurm_quality_of_service:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: normal
-  type: mip
-program_source_environment_command:
+expected_coverage:
   associated_program:
    - mip
   data_type: HASH
   mandatory: no
+  type: mip
+family_id:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  type: mip
+infile_dirs:
+  associated_program:
+   - mip
+  exists_check: directory
+  data_type: HASH
+  type: path
+  update_path: absolute_path
+node_ram_memory:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 128
+  type: mip
+max_cores_per_node:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 16
   type: mip
 module_source_environment_command:
   associated_program:
@@ -162,12 +80,99 @@ module_source_environment_command:
   data_type: HASH
   mandatory: no
   type: mip
+outdata_dir:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  type: path
+  update_path: absolute_path
+outscript_dir:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  type: path
+  update_path: absolute_path
+pedigree_file:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  type: path
+  update_path: absolute_path
+platform:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: ILLUMINA
+  type: mip
+print_program_mode:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 2
+  type: mip
+program_source_environment_command:
+  associated_program:
+   - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
+project_id:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  type: mip
+reference_dir:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  exists_check: directory
+  type: path
+  update_path: absolute_path
+sample_ids:
+  associated_program:
+   - mip
+  element_separator: ,
+  data_type: ARRAY
+  type: mip
+sample_info_file:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  type: path
+  update_path: absolute_path
+slurm_quality_of_service:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: normal
+  type: mip
 source_main_environment_commands:
   associated_program:
    - mip
   element_separator: " "
   data_type: ARRAY
   mandatory: no
+  type: mip
+start_with_program:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  mandatory: no
+  type: mip
+supported_capture_kit:
+  associated_program:
+   - mip
+  data_type: HASH
+  default:
+    nimblegen_seqcapezexome.v2: genome_reference_source_version_nimblegen_seqcapezexome_targets_-v2-.bed
+    nimblegen_seqcapezexome.v3: genome_reference_source_version_nimblegen_seqcapezexome_targets_-v3-.bed
+    agilent_sureselect.v2: genome_reference_source_version_agilent_sureselect_targets_-v2-.bed
+    agilent_sureselect.v3: genome_reference_source_version_agilent_sureselect_targets_-v3-.bed
+    agilent_sureselect.v4: genome_reference_source_version_agilent_sureselect_targets_-v4-.bed
+    agilent_sureselect.v5: genome_reference_source_version_agilent_sureselect_targets_-v5-.bed
+    agilent_sureselect_cre.v1: genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed
+    agilent_sureselect_focusedexome.v1: genome_reference_source_version_agilent_sureselect_targets_focusedexome_-v1-.bed
+    latest: genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed
   type: mip
 ### Programs
 psplit_fastq_file:
@@ -189,6 +194,7 @@ split_fastq_file_read_batch:
   data_type: SCALAR
   default: 25000000
   type: program_argument
+## Gzip
 pgzip_fastq:
   associated_program:
    - mip

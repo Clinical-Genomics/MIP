@@ -221,6 +221,16 @@ sub _build_usage {
     );
 
     option(
+        q{platform} => (
+            cmd_aliases   => [qw{ pla }],
+            cmd_tags      => [q{Default: ILLUMINA}],
+            documentation => q{Platform/technology used to produce the reads},
+            is            => q{rw},
+            isa           => enum( [qw{ ILLUMINA }] ),
+        )
+    );
+
+    option(
         q{print_programs} => (
             cmd_aliases   => [qw{ pp }],
             documentation => q{Print all programs that are supported},
@@ -253,16 +263,6 @@ sub _build_usage {
             documentation => q{Reference(s) directory},
             is            => q{rw},
             isa           => Str,
-        )
-    );
-
-    option(
-        q{replace_iupac} => (
-            cmd_aliases => [qw{ riu }],
-            documentation =>
-              q{Replace IUPAC code in alternative alleles with N},
-            is  => q{rw},
-            isa => Bool,
         )
     );
 

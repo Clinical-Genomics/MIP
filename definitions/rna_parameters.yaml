@@ -11,6 +11,13 @@ human_genome_reference:
   exists_check: file
   reference: reference_dir
   type: path
+## java large pages - affects all modules using java
+java_use_large_pages:
+  associated_program:
+   - pstar_aln
+  data_type: SCALAR
+  default: 0
+  type: program_argument
 ####Bash
 module_time:
   associated_program:
@@ -34,33 +41,20 @@ module_core_number:
     pstar_aln: 16
     pstar_fusion: 1
   type: mip
-max_cores_per_node:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 16
-  type: mip
-node_ram_memory:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 128
-  type: mip
-email:
+## Choosen MIP Aligner
+outaligner_dir:
   associated_program:
    - mip
   data_type: SCALAR
   mandatory: no
   type: mip
-email_types:
+picardtools_path:
   associated_program:
-   - mip
-  element_separator: ","
-  data_type: ARRAY
-  mandatory: no
-  default:
-   - FAIL
-  type: mip
+   - pstar_aln
+  data_type: SCALAR
+  exists_check: directory
+  type: path
+  update_path: absolute_path
 ###Programs
 ## Salmon
 psalmon_quant:
@@ -135,13 +129,6 @@ two_pass_mode:
   data_type: SCALAR
   default: Basic
   type: program_argument
-## Choosen MIP Aligner
-outaligner_dir:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  mandatory: no
-  type: mip
 pstar_fusion:
   associated_program:
    - mip
@@ -152,17 +139,3 @@ pstar_fusion:
   outfile_suffix: ".tsv"
   outdir_name: star
   type: program
-picardtools_path:
-  associated_program:
-   - pstar_aln
-  data_type: SCALAR
-  exists_check: directory
-  type: path
-  update_path: absolute_path
-## java large pages - affects all modules using java
-java_use_large_pages:
-  associated_program:
-   - pstar_aln
-  data_type: SCALAR
-  default: 0
-  type: program_argument

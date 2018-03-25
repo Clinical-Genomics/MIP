@@ -1,25 +1,6 @@
 ---
 ## Version: 1.0.0
 ## Enable MIP
-mip:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 1
-  type: mip
-log_file:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  type: path
-  update_path: absolute_path
-config_file:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 0
-  type: path
-  update_path: absolute_path
 ## Bash
 bash_set_errexit:
   associated_program:
@@ -38,6 +19,25 @@ bash_set_pipefail:
    - mip
   data_type: SCALAR
   default: 0
+  type: mip
+config_file:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 0
+  type: path
+  update_path: absolute_path
+log_file:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  type: path
+  update_path: absolute_path
+mip:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 1
   type: mip
 temp_directory:
   associated_program:

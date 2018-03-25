@@ -245,7 +245,6 @@ q{gatk_realigner_indel_known_sites, gatk_baserecalibration_known_sites, gatk_hap
         )
     );
 
-
     option(
         q{module_core_number} => (
             cmd_aliases   => [qw{ mcn }],
@@ -282,16 +281,6 @@ q{Sets which aligner out directory was used for alignment in previous analysis},
             documentation => q{Path to Picardtools},
             is            => q{rw},
             isa           => Str,
-        )
-    );
-
-    option(
-        q{platform} => (
-            cmd_aliases   => [qw{ pla }],
-            cmd_tags      => [q{Default: ILLUMINA}],
-            documentation => q{Platform/technology used to produce the reads},
-            is            => q{rw},
-            isa           => enum( [qw{ ILLUMINA }] ),
         )
     );
 

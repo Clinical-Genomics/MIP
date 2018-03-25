@@ -8,18 +8,51 @@ decompose_normalize_references:
    - gatk_baserecalibration_known_sites
   element_separator: ,
   type: mip
-platform:
+exome_target_bed:
   associated_program:
-   - mip
-  data_type: SCALAR
-  default: ILLUMINA
-  type: mip
-sample_origin:
-  associated_program:
-   - mip
+   - ppicardtools_collecthsmetrics
+   - pgatk_baserecalibration
+  build_file: 1
   data_type: HASH
-  mandatory: no
-  type: mip
+  exists_check: file
+  reference: reference_dir
+  type: path
+## genomeAnalysisToolKitPath
+## GATK FTP Bundle Download version. Needed for all programs that download the human genome reference
+gatk_bundle_download_version:
+  associated_program:
+   - pbwa_mem
+   - pgatk_baserecalibration
+   - ppicardtools_collecthsmetrics
+   - ppicardtools_collectmultiplemetrics
+  data_type: SCALAR
+  default: 2.8
+  type: program_argument
+gatk_disable_auto_index_and_file_lock:
+  associated_program:
+   - pgatk_baserecalibration
+  data_type: SCALAR
+  default: 0
+  type: program_argument
+gatk_downsample_to_coverage:
+  associated_program:
+   - pgatk_baserecalibration
+  data_type: SCALAR
+  default: 1000
+  type: program_argument
+gatk_logging_level:
+  associated_program:
+   - pgatk_baserecalibration
+  data_type: SCALAR
+  default: INFO
+  type: program_argument
+gatk_path:
+  associated_program:
+   - pgatk_baserecalibration
+  data_type: SCALAR
+  exists_check: directory
+  type: path
+  update_path: absolute_path
 ## HumanGenomeReference
 human_genome_reference:
   associated_program:
@@ -35,6 +68,13 @@ human_genome_reference:
   exists_check: file
   reference: reference_dir
   type: path
+## java large pages - affects all modules using java
+java_use_large_pages:
+  associated_program:
+   - pgatk_baserecalibration
+  data_type: SCALAR
+  default: 0
+  type: program_argument
 ####Bash
 module_time:
   associated_program:
@@ -78,6 +118,30 @@ module_core_number:
     psambamba_depth: 2
     pvardict: 8
   type: mip
+## Choosen MIP Aligner
+outaligner_dir:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  mandatory: no
+  type: mip
+picardtools_path:
+  associated_program:
+   - pbwa_mem
+   - ppicardtools_mergesamfiles
+   - pmarkduplicates
+   - ppicardtools_collecthsmetrics
+   - ppicardtools_collectmultiplemetrics
+  data_type: SCALAR
+  exists_check: directory
+  type: path
+  update_path: absolute_path
+sample_origin:
+  associated_program:
+   - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
 ###Programs
 ## Cutadapt
 pcutadapt:
@@ -109,30 +173,6 @@ pbwa_mem:
   file_endings:
    - .bam
   type: program
-bwa_mem_hla:
-  associated_program:
-   - pbwa_mem
-  data_type: SCALAR
-  default: 0
-  type: program_argument
-bwa_mem_cram:
-  associated_program:
-   - pbwa_mem
-  data_type: SCALAR
-  default: 0
-  type: program_argument
-bwa_mem_bamstats:
-  associated_program:
-   - pbwa_mem
-  data_type: SCALAR
-  default: 1
-  type: program_argument
-bwa_sambamba_sort_memory_limit:
-  associated_program:
-   - pbwa_mem
-  data_type: SCALAR
-  default: 32G
-  type: program_argument
 bwa_build_reference:
   associated_program:
    - pbwa_mem
@@ -141,13 +181,30 @@ bwa_build_reference:
   exists_check: file
   reference: reference_dir
   type: path
-## Choosen MIP Aligner
-outaligner_dir:
+bwa_mem_bamstats:
   associated_program:
-   - mip
+   - pbwa_mem
   data_type: SCALAR
-  mandatory: no
-  type: mip
+  default: 1
+  type: program_argument
+bwa_mem_cram:
+  associated_program:
+   - pbwa_mem
+  data_type: SCALAR
+  default: 0
+  type: program_argument
+bwa_mem_hla:
+  associated_program:
+   - pbwa_mem
+  data_type: SCALAR
+  default: 0
+  type: program_argument
+bwa_sambamba_sort_memory_limit:
+  associated_program:
+   - pbwa_mem
+  data_type: SCALAR
+  default: 32G
+  type: program_argument
 ppicardtools_mergesamfiles:
   associated_program:
    - mip
@@ -188,17 +245,17 @@ markduplicates_sambamba_markdup_hash_table_size:
   data_type: SCALAR
   default: 262144
   type: program_argument
-markduplicates_sambamba_markdup_overflow_list_size:
-  associated_program:
-   - pmarkduplicates
-  data_type: SCALAR
-  default: 200000
-  type: program_argument
 markduplicates_sambamba_markdup_io_buffer_size:
   associated_program:
    - pmarkduplicates
   data_type: SCALAR
   default: 2048
+  type: program_argument
+markduplicates_sambamba_markdup_overflow_list_size:
+  associated_program:
+   - pmarkduplicates
+  data_type: SCALAR
+  default: 200000
   type: program_argument
 ## GATK BAM Calibration
 pgatk_baserecalibration:
@@ -222,6 +279,12 @@ gatk_baserecalibration_covariates:
    - CycleCovariate
    - QualityScoreCovariate
   type: program_argument
+gatk_baserecalibration_disable_indel_qual:
+  associated_program:
+   - pgatk_baserecalibration
+  data_type: SCALAR
+  default: 0
+  type: program_argument
 gatk_baserecalibration_known_sites:
   associated_program:
    - pgatk_baserecalibration
@@ -241,12 +304,6 @@ gatk_baserecalibration_read_filters:
   data_type: ARRAY
   default:
    - OverclippedRead
-  type: program_argument
-gatk_baserecalibration_disable_indel_qual:
-  associated_program:
-   - pgatk_baserecalibration
-  data_type: SCALAR
-  default: 0
   type: program_argument
 gatk_baserecalibration_static_quantized_quals:
   associated_program:
@@ -287,12 +344,20 @@ psambamba_depth:
   program_name_path:
    - sambamba
   type: program
-sambamba_depth_mode:
+sambamba_depth_base_quality:
   associated_program:
    - psambamba_depth
   data_type: SCALAR
-  default: region
+  default: 10
   type: program_argument
+sambamba_depth_bed:
+  associated_program:
+   - psambamba_depth
+  data_type: SCALAR
+  default: CCDS.current.bed
+  exists_check: file
+  reference: reference_dir
+  type: path
 sambamba_depth_cutoffs:
   associated_program:
    - psambamba_depth
@@ -305,19 +370,11 @@ sambamba_depth_cutoffs:
    - 50
    - 100
   type: program_argument
-sambamba_depth_bed:
+sambamba_depth_noduplicates:
   associated_program:
    - psambamba_depth
   data_type: SCALAR
-  default: CCDS.current.bed
-  exists_check: file
-  reference: reference_dir
-  type: path
-sambamba_depth_base_quality:
-  associated_program:
-   - psambamba_depth
-  data_type: SCALAR
-  default: 10
+  default: 0
   type: program_argument
 sambamba_depth_mapping_quality:
   associated_program:
@@ -325,11 +382,11 @@ sambamba_depth_mapping_quality:
   data_type: SCALAR
   default: 10
   type: program_argument
-sambamba_depth_noduplicates:
+sambamba_depth_mode:
   associated_program:
    - psambamba_depth
   data_type: SCALAR
-  default: 0
+  default: region
   type: program_argument
 sambamba_depth_quality_control:
   associated_program:
@@ -353,17 +410,6 @@ ppicardtools_collecthsmetrics:
   default: 0
   file_tag: _collecthsmetrics
   type: program
-picardtools_path:
-  associated_program:
-   - pbwa_mem
-   - ppicardtools_mergesamfiles
-   - pmarkduplicates
-   - ppicardtools_collecthsmetrics
-   - ppicardtools_collectmultiplemetrics
-  data_type: SCALAR
-  exists_check: directory
-  type: path
-  update_path: absolute_path
 ## Vardict
 pvardict:
   associated_program:
@@ -435,49 +481,6 @@ vrd_somatic_only:
   data_type: SCALAR
   default: 0
   type: program_argument
-gatk_downsample_to_coverage:
-  associated_program:
-   - pgatk_baserecalibration
-  data_type: SCALAR
-  default: 1000
-  type: program_argument
-gatk_disable_auto_index_and_file_lock:
-  associated_program:
-   - pgatk_baserecalibration
-  data_type: SCALAR
-  default: 0
-  type: program_argument
-## GATK FTP Bundle Download version. Needed for all programs that download the human genome reference
-gatk_bundle_download_version:
-  associated_program:
-   - pbwa_mem
-   - pgatk_baserecalibration
-   - ppicardtools_collecthsmetrics
-   - ppicardtools_collectmultiplemetrics
-  data_type: SCALAR
-  default: 2.8
-  type: program_argument
-## java large pages - affects all modules using java
-java_use_large_pages:
-  associated_program:
-   - pgatk_baserecalibration
-  data_type: SCALAR
-  default: 0
-  type: program_argument
-## genomeAnalysisToolKitPath
-gatk_path:
-  associated_program:
-   - pgatk_baserecalibration
-  data_type: SCALAR
-  exists_check: directory
-  type: path
-  update_path: absolute_path
-gatk_logging_level:
-  associated_program:
-   - pgatk_baserecalibration
-  data_type: SCALAR
-  default: INFO
-  type: program_argument
 ## QCCollect
 pqccollect:
   associated_program:
@@ -487,12 +490,6 @@ pqccollect:
   default: 0
   file_tag: nofile_tag
   type: program
-qccollect_sampleinfo_file:
-  associated_program:
-   - pqccollect
-  data_type: SCALAR
-  type: program_argument
-  update_path: absolute_path
 qccollect_regexp_file:
   associated_program:
    - pqccollect
@@ -501,6 +498,12 @@ qccollect_regexp_file:
   exists_check: file
   reference: reference_dir
   type: path
+qccollect_sampleinfo_file:
+  associated_program:
+   - pqccollect
+  data_type: SCALAR
+  type: program_argument
+  update_path: absolute_path
 qccollect_skip_evaluation:
   associated_program:
    - pqccollect
@@ -553,12 +556,3 @@ sacct_format_fields:
    - exitcode
   element_separator: ,
   type: program_argument
-exome_target_bed:
-  associated_program:
-   - ppicardtools_collecthsmetrics
-   - pgatk_baserecalibration
-  build_file: 1
-  data_type: HASH
-  exists_check: file
-  reference: reference_dir
-  type: path
