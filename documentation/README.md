@@ -115,8 +115,7 @@ $ cd -
 ##### 3.Test conda and mip installation files (optional)
 
 ```Bash
-$ cd t; prove mip_install.t
-$ cd -
+$ perl t/mip_install.test
 ```
 
 ##### 4.Create the install instructions for MIP  
@@ -147,8 +146,8 @@ A conda environment will be created where MIP together with most of its dependen
 Make sure to activate your conda environment if that option was used above.  
 
 ```Bash
-$ cd t; prove -r
-$ cd -
+$ prove t -r
+$ perl t/mip_analyse_rare_disease.test
 ```
 ##### 7.Install tools with conflicting dependencies  
 Tools that have conflicting dependencies needs to be installed in separate conda environments. Currently these programs requires separate environments:  
@@ -182,10 +181,6 @@ Tools that have conflicting dependencies needs to be installed in separate conda
   ## VEP
   $ perl mip install rare_disease --config_file definitions/install_rare_disease_parameters.yaml --env MIP_vep --select_programs vep
   $ bash mip.sh
-  ```
-  ##### 8. Test the new MIP Installation (optional)
-  ```Bash
-  $ prove t/mip.t
   ```
 
   ###### When setting up your analysis config file

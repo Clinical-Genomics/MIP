@@ -33,6 +33,7 @@ requires qw{ Readonly 2.05 };                       # MIP
 requires qw{ Sereal::Decoder 4.004 };               # VEP
 requires qw{ Sereal::Encoder 4.004 };               # VEP
 requires qw{ Set::IntervalTree 0.11};               # MIP
+requires qw{ Text::WagnerFischer 0.04 };            # MIP
 requires qw{ Try::Tiny 0.28 };                      # MIP
 requires qw{ URI::Escape 3.31 };                    # STAR-Fusion
 requires qw{ YAML 1.24 };                           # MIP

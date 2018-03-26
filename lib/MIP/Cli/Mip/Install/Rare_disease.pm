@@ -15,7 +15,7 @@ use Params::Check qw{ check allow last_error };
 use autodie qw{ :all };
 use MooseX::App::Command;
 use Moose::Util::TypeConstraints;
-use MooseX::Types::Moose qw{ Str Int HashRef Num Bool ArrayRef };
+use MooseX::Types::Moose qw{ Str Int HashRef Bool ArrayRef };
 use MooseX::Types::Structured qw{ Dict Optional };
 use Readonly;
 
@@ -24,7 +24,7 @@ use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ nest_hash print_install_defaults };
 
-our $VERSION = q{0.1.3};
+our $VERSION = q{0.1.4};
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -91,34 +91,34 @@ sub _build_usage {
             documentation => q{Set bioconda version of programs},
             is            => q{rw},
             isa           => Dict [
-                bcftools        => Optional [Num],
-                bedtools        => Optional [Num],
-                bwa             => Optional [Num],
-                bwakit          => Optional [Num],
-                cmake           => Optional [Num],
+                bcftools        => Optional [Str],
+                bedtools        => Optional [Str],
+                bwa             => Optional [Str],
+                bwakit          => Optional [Str],
+                cmake           => Optional [Str],
                 cramtools       => Optional [Str],
-                cutadapt        => Optional [Num],
-                delly           => Optional [Num],
-                fastqc          => Optional [Num],
-                freebayes       => Optional [Num],
-                gatk            => Optional [Num],
-                gcc             => Optional [Num],
-                htslib          => Optional [Num],
-                libxml2         => Optional [Num],
-                libxslt         => Optional [Num],
-                manta           => Optional [Num],
-                numpy           => Optional [Num],
-                peddy           => Optional [Num],
-                picard          => Optional [Num],
+                cutadapt        => Optional [Str],
+                delly           => Optional [Str],
+                fastqc          => Optional [Str],
+                freebayes       => Optional [Str],
+                gatk            => Optional [Str],
+                gcc             => Optional [Str],
+                htslib          => Optional [Str],
+                libxml2         => Optional [Str],
+                libxslt         => Optional [Str],
+                manta           => Optional [Str],
+                numpy           => Optional [Str],
+                peddy           => Optional [Str],
+                picard          => Optional [Str],
                 plink2          => Optional [Str],
-                q{rtg-tools}    => Optional [Num],
-                sambamba        => Optional [Num],
-                samtools        => Optional [Num],
-                q{scikit-learn} => Optional [Num],
-                snpeff          => Optional [Num],
-                snpsift         => Optional [Num],
-                vcfanno         => Optional [Num],
-                vt              => Optional [Num],
+                q{rtg-tools}    => Optional [Str],
+                sambamba        => Optional [Str],
+                samtools        => Optional [Str],
+                q{scikit-learn} => Optional [Str],
+                snpeff          => Optional [Str],
+                snpsift         => Optional [Str],
+                vcfanno         => Optional [Str],
+                vt              => Optional [Str],
             ],
             required => 0,
         ),
@@ -156,10 +156,10 @@ sub _build_usage {
             documentation => q{Set the version of programs installed via pip},
             is            => q{rw},
             isa           => Dict [
-                chanjo            => Optional [Num],
-                multiqc           => Optional [Num],
-                genmod            => Optional [Num],
-                variant_integrity => Optional [Num],
+                chanjo            => Optional [Str],
+                multiqc           => Optional [Str],
+                genmod            => Optional [Str],
+                variant_integrity => Optional [Str],
             ],
             required => 0,
         ),
@@ -172,7 +172,7 @@ sub _build_usage {
             cmd_tags      => [q{Default: 2.7}],
             documentation => q{Python version to install},
             is            => q{rw},
-            isa           => Num,
+            isa           => Str,
             required      => 0,
         ),
     );
@@ -211,11 +211,12 @@ sub _build_usage {
                 enum(
                     [
                         qw{ bcftools bedtools bwa bwakit cmake cnvnator
-                          cramtools cutadapt delly expansionhunter fastqc
-                          freebayes gatk gcc htslib libxml2 libxslt manta
-                          mip_scripts numpy peddy picard plink rhocall
-                          rtg-tools sambamba samtools scikit-learn snpeff
-                          snpsift svdb tiddit vcf2cytosure vcfanno vep vt }
+                          cramtools chanjo cutadapt delly expansionhunter
+                          fastqc freebayes gatk gcc genmod htslib libxml2
+                          libxslt manta mip_scripts multiqc numpy peddy picard
+                          plink rhocall rtg-tools sambamba samtools
+                          scikit-learn snpeff snpsift svdb tiddit
+                          variant_integrity vcf2cytosure vcfanno vep vt }
                     ]
                 ),
             ],
@@ -243,18 +244,18 @@ sub _build_usage {
             documentation => q{Set shell version of programs},
             is            => q{rw},
             isa           => Dict [
-                bedtools        => Optional [Num],
-                cnvnator        => Optional [Num],
-                expansionhunter => Optional [Num],
-                plink2          => Optional [Num],
-                picard          => Optional [Num],
-                rhocall         => Optional [Num],
-                sambamba        => Optional [Num],
+                bedtools        => Optional [Str],
+                cnvnator        => Optional [Str],
+                expansionhunter => Optional [Str],
+                plink2          => Optional [Str],
+                picard          => Optional [Str],
+                rhocall         => Optional [Str],
+                sambamba        => Optional [Str],
                 snpeff          => Optional [Str],
-                svdb            => Optional [Num],
-                tiddit          => Optional [Num],
-                vcf2cytosure    => Optional [Num],
-                vep             => Optional [Num],
+                svdb            => Optional [Str],
+                tiddit          => Optional [Str],
+                vcf2cytosure    => Optional [Str],
+                vep             => Optional [Str],
                 vt              => Optional [Str],
             ],
             required => 0,
@@ -270,12 +271,13 @@ sub _build_usage {
             isa           => ArrayRef [
                 enum(
                     [
-                        qw{ bcftools bedtools bwa bwakit cmake cnvnator
+                        qw{ bcftools bedtools bwa bwakit chanjo cmake cnvnator
                           cramtools cutadapt delly expansionhunter fastqc
-                          freebayes gatk gcc htslib libxml2 libxslt manta
-                          mip_scripts numpy peddy picard plink rhocall
-                          rtg-tools sambamba samtools scikit-learn snpeff
-                          snpsift svdb tiddit vcf2cytosure vcfanno vep vt }
+                          freebayes gatk genmod gcc htslib libxml2 libxslt
+                          manta mip_scripts multiqc numpy peddy picard plink
+                          rhocall rtg-tools sambamba samtools scikit-learn
+                          snpeff snpsift svdb tiddit variant_integrity
+                          vcf2cytosure vcfanno vep vt }
                     ]
                 ),
             ],

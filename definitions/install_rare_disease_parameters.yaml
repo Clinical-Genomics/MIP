@@ -26,7 +26,6 @@ bioconda:
   picard: 2.14.1
   plink2: 1.90b3.35
   rtg-tools: 3.8.4
-  salmon: 0.8.1
   sambamba: 0.6.6
   samtools: 1.6
   scikit-learn: 0.15.2
@@ -61,8 +60,8 @@ noupdate: ~
 # Python packages to be installed via pip
 pip:
   chanjo: 4.2.0
-  multiqc: 1.4
   genmod: 3.7.2
+  multiqc: 1.4
   variant_integrity: 0.0.4
 
 # Prefer installation via shell instead of via conda,

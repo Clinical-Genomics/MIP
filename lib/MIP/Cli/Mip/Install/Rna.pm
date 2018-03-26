@@ -15,7 +15,7 @@ use Params::Check qw{ check allow last_error };
 use autodie qw{ :all };
 use MooseX::App::Command;
 use Moose::Util::TypeConstraints;
-use MooseX::Types::Moose qw{ Str Int HashRef Num Bool ArrayRef };
+use MooseX::Types::Moose qw{ Str Int HashRef Bool ArrayRef };
 use MooseX::Types::Structured qw{ Dict Optional };
 use Readonly;
 
@@ -24,7 +24,7 @@ use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils qw{ nest_hash print_install_defaults };
 
-our $VERSION = 0.03;
+our $VERSION = '0.0.4';
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -91,13 +91,13 @@ sub _build_usage {
             documentation => q{Set bioconda version of programs},
             is            => q{rw},
             isa           => Dict [
-                cufflinks => Optional [Num],
-                fastqc    => Optional [Num],
-                htslib    => Optional [Num],
-                picard    => Optional [Num],
-                salmon    => Optional [Num],
-                samtools  => Optional [Num],
-                star      => Optional [Num],
+                cufflinks => Optional [Str],
+                fastqc    => Optional [Str],
+                htslib    => Optional [Str],
+                picard    => Optional [Str],
+                salmon    => Optional [Str],
+                samtools  => Optional [Str],
+                star      => Optional [Str],
             ],
             required => 0,
         ),
@@ -133,7 +133,7 @@ sub _build_usage {
             cmd_tags      => [q{Default: 2.7}],
             documentation => q{Python version to install},
             is            => q{rw},
-            isa           => Num,
+            isa           => Str,
             required      => 0,
         ),
     );
@@ -198,8 +198,8 @@ sub _build_usage {
             documentation => q{Set shell version of programs},
             is            => q{rw},
             isa           => Dict [
-                picard      => Optional [Num],
-                star_fusion => Optional [Num],
+                picard      => Optional [Str],
+                star_fusion => Optional [Str],
             ],
             required => 0,
         ),

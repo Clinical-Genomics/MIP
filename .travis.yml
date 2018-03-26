@@ -25,20 +25,21 @@ install:
   - conda config --add channels bioconda
   
 ## Download cpan libraries
+## # For some reason DB_File installation fails, it is not needed for the test
+  - sed -i '/DB_File/d' ./definitions/cpanfile
   - cd definitions; cpanm --quiet --notest --installdeps .
   - cd -
 
 script:
-## Run MIP install script
-  - cd t; prove mip_install.t; cd -
-  - perl mip_install.pl --quiet --bash_set_errexit -env test_environment -vep 91 --vep_auto_flag al --vep_plugin 0 -snpg GRCh37.75 -skip gatk --bioconda fastqc=0.11.4
+## Run MIP install script for the rare disease piplines's main environment programs 
+  - perl t/mip_install.test
+  - perl mip install rare_disease --config definitions/install_rare_disease_parameters.yaml --quiet --bash_set_errexit --env test_environment --vep_auto_flag al --snpg GRCh37.75 --skip gatk
   # Set user specific path to data
-  - echo 'cluster_constant_path:' /home/travis/build/${TRAVIS_REPO_SLUG}/t/data >> /home/travis/build/${TRAVIS_REPO_SLUG}/templates/mip_travis_config.yaml
+  #- echo 'cluster_constant_path:' /home/travis/build/${TRAVIS_REPO_SLUG}/t/data >> /home/travis/build/${TRAVIS_REPO_SLUG}/templates/mip_travis_config.yaml
   - bash mip.sh
-  - source ~/.bash_profile
-  - source ~/.bashrc
   - source activate test_environment
   - cd /lib/x86_64-linux-gnu
   - sudo ln -s "$ROOTSYS"/lib/*so .
   - cd -
-  - cd t; prove -r
+  - prove t -r
+  - perl t/mip_analyse_rare_disease.test
