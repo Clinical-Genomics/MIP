@@ -25,6 +25,8 @@ install:
   - conda config --add channels bioconda
   
 ## Download cpan libraries
+## # For some reason DB_File installation fails, it is not needed for the test
+  - sed -i '/DB_File/d' ./definitions/cpanfile
   - cd definitions; cpanm --quiet --notest --installdeps .
   - cd -
 
