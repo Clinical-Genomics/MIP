@@ -340,6 +340,7 @@ sub mip_analyse {
                 active_parameter_href => \%active_parameter,
                 associated_programs_ref =>
                   \@{ $parameter{$parameter_name}{associated_program} },
+                log            => $log,
                 parameter_href => \%parameter,
                 parameter_name => $parameter_name,
             }
