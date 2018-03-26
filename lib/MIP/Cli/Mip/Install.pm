@@ -12,9 +12,9 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 use MooseX::App::Command;
 use Moose::Util::TypeConstraints;
-use MooseX::Types::Moose qw{ Str Int HashRef Num Bool };
+use MooseX::Types::Moose qw{ Str Int HashRef Bool };
 
-our $VERSION = 0.0.2;
+our $VERSION = 0.0.3;
 
 extends(qw{ MIP::Cli::Mip });
 

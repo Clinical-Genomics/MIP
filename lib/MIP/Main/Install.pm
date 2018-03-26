@@ -56,7 +56,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = q{1.1.1};
+    our $VERSION = q{1.1.2};
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
@@ -339,10 +339,11 @@ sub get_programs_for_installation {
         }
     }
     ## Exit if a python 3 env has ben specified for something else than Chanjo or Genmod
-    if ( $parameter_href->{py3_packages_ref} ) {
+    if ( $parameter_href->{py3_packages} ) {
         _assure_python_3_compability(
             {
                 log              => $log,
+                parameter_href   => $parameter_href,
                 py3_packages_ref => $parameter_href->{py3_packages},
                 python_version   => $parameter_href->{conda_packages}{python},
                 select_programs_ref => $parameter_href->{select_programs}
@@ -447,16 +448,18 @@ sub _assure_python_3_compability {
 
 ## Function : Test if specified programs are to be installed in a python 3 environment
 ## Returns  :
-## Arguments: $sub_log            => Log
-##          : $py3_packages_ref   => Array with packages that requires python 3 {REF}
-##          : $python_version     => The python version that are to be used for the environment
+## Arguments: $parameter_href      => The entire parameter hash {REF}
+##          : $py3_packages_ref    => Array with packages that requires python 3 {REF}
+##          : $python_version      => The python version that are to be used for the environment
 ##          : $select_programs_ref => Programs selected for installation by the user {REF}
+##          : $sub_log             => Log
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $sub_log;
     my $py3_packages_ref;
+    my $parameter_href;
     my $python_version;
     my $select_programs_ref;
 
@@ -465,6 +468,13 @@ sub _assure_python_3_compability {
             required => 1,
             defined  => 1,
             store    => \$sub_log,
+        },
+        parameter_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$parameter_href,
         },
         py3_packages_ref => {
             default     => [],
@@ -493,17 +503,33 @@ sub _assure_python_3_compability {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use Array::Utils qw{ array_minus };
+    use Array::Utils qw{ array_minus unique};
+
+    ## Cover the case where no program has ben actively chosen for installation
+    my @programs_to_check;
+    if ( not defined $select_programs_ref ) {
+        @programs_to_check = unique(
+            keys %{ $parameter_href->{shell} },
+            keys %{ $parameter_href->{bioconda} },
+            keys %{ $parameter_href->{pip} },
+        );
+    }
+    else {
+        @programs_to_check = @{$select_programs_ref};
+    }
 
     ## Check if a python 3 environment has been specified and a python 2 program has been specified for installation
     if (
-        $python_version =~ m{
+        (
+            $python_version =~ m{
         3 [.] \d+ |    # Python 3 release with minor version eg 3.6
         3 [.] \d+ [.] \d+ # Python 3 release with minor and patch e.g. 3.6.2
         }xms
-        and array_minus( @{$select_programs_ref}, @{$py3_packages_ref} )
+        )
+        and ( array_minus( @programs_to_check, @{$py3_packages_ref} ) )
       )
     {
+
         $sub_log->fatal(
 q{A python 3 env has been specified. Please use a python 2 environment for all programs except:}
               . $NEWLINE
