@@ -20,13 +20,14 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       set_config_to_active_parameters
       set_custom_default_to_active_parameter
       set_default_config_dynamic_parameters
+      set_default_to_active_parameter
       set_dynamic_parameter
       set_human_genome_reference_features
       set_parameter_reference_dir_path
@@ -278,6 +279,133 @@ sub set_default_config_dynamic_parameters {
             ## Transfer to active parameter
             $active_parameter_href->{$parameter_name} =
               $parameter_href->{$parameter_name}{default};
+        }
+    }
+    return;
+}
+
+sub set_default_to_active_parameter {
+
+## Function : Checks and sets user input or default values to active_parameters.
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis
+##          : $associated_programs   => The parameters program(s) {array, REF}
+##          : $log                   => Log object
+##          : $parameter_href        => Holds all parameters
+##          : $parameter_name        => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $associated_programs_ref;
+    my $log;
+    my $parameter_href;
+    my $parameter_name;
+
+    ## Default(s)
+    my $family_id;
+
+    my $tmpl = {
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        associated_programs_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$associated_programs_ref,
+            strict_type => 1,
+        },
+        log => {
+            required => 1,
+            defined  => 1,
+            store    => \$log
+        },
+        parameter_name =>
+          { defined => 1, required => 1, store => \$parameter_name, },
+        family_id => {
+            default     => $arg_href->{active_parameter_href}{family_id},
+            store       => \$family_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %only_wgs = ( gatk_genotypegvcfs_ref_gvcf => 1, );
+
+    ## Alias
+    my $consensus_analysis_type =
+      $parameter_href->{dynamic_parameter}{consensus_analysis_type};
+
+    ## Do nothing since parameter is not required unless exome mode is enabled
+    return
+      if ( exists $only_wgs{$parameter_name}
+        && $consensus_analysis_type =~ / wgs /xsm );
+
+    ## Check all programs that use parameter
+  ASSOCIATED_PROGRAM:
+    foreach my $associated_program ( @{$associated_programs_ref} ) {
+
+        ## Only add active programs parameters
+        next ASSOCIATED_PROGRAM
+          if ( not defined $active_parameter_href->{$associated_program} );
+
+        next ASSOCIATED_PROGRAM
+          if ( not $active_parameter_href->{$associated_program} );
+
+        ## Default exists
+        if ( exists $parameter_href->{$parameter_name}{default} ) {
+
+            ## Array reference
+            if ( $parameter_href->{$parameter_name}{data_type} eq q{ARRAY} ) {
+
+                push
+                  @{ $active_parameter_href->{$parameter_name} },
+                  @{ $parameter_href->{$parameter_name}{default} };
+            }
+            elsif ( $parameter_href->{$parameter_name}{data_type} eq q{HASH} ) {
+                ## Hash reference
+
+                $active_parameter_href->{$parameter_name} =
+                  $parameter_href->{$parameter_name}{default};
+            }
+            else {
+                ## Scalar
+
+                $active_parameter_href->{$parameter_name} =
+                  $parameter_href->{$parameter_name}{default};
+            }
+
+            ## Set default - no use in continuing
+            return;
+        }
+        else {
+            ## No default
+
+            ## Not mandatory - skip
+            return
+              if ( exists $parameter_href->{$parameter_name}{mandatory}
+                && $parameter_href->{$parameter_name}{mandatory} eq q{no} );
+
+            ## Mandatory parameter not supplied
+            $log->fatal( q{Supply '-}
+                  . $parameter_name
+                  . q{' if you want to run }
+                  . $associated_program );
+            exit 1;
         }
     }
     return;

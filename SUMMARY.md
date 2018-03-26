@@ -15,5 +15,6 @@
       * [Pedigree](documentation/API/Pedigree.md)
       * [Tests](documentation/API/Tests.md)
         * [Log](documentation/API/Tests/Log.md)
+        * [Data](documentation/API/Tests/Data.md)
       * [Subroutines](documentation/API/Subroutines.md)
     * [Cli](documentation/Cli.md)
