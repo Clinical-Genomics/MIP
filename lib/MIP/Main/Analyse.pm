@@ -54,7 +54,7 @@ use MIP::Set::Parameter
   qw{ set_config_to_active_parameters set_custom_default_to_active_parameter set_default_config_dynamic_parameters set_default_to_active_parameter set_dynamic_parameter set_human_genome_reference_features set_parameter_reference_dir_path set_parameter_to_broadcast };
 use MIP::Update::Contigs qw{ update_contigs_for_run };
 use MIP::Update::Parameters
-  qw{ update_dynamic_config_parameters update_reference_parameters update_vcfparser_outfile_counter };
+  qw{ update_dynamic_config_parameters update_exome_target_bed update_reference_parameters update_vcfparser_outfile_counter };
 use MIP::Update::Path qw{ update_to_absolute_path };
 use MIP::Update::Programs
   qw{ update_prioritize_flag update_program_mode_for_analysis_type update_program_mode_with_dry_run_all update_program_mode_with_start_with };
@@ -365,14 +365,14 @@ sub mip_analyse {
         }
     );
 
-## Update exome_target_bed files with human_genome_reference_source_ref and human_genome_reference_version_ref
+## Update exome_target_bed files with human_genome_reference_source and human_genome_reference_version
     update_exome_target_bed(
         {
             exome_target_bed_file_href => $active_parameter{exome_target_bed},
-            human_genome_reference_source_ref =>
-              \$file_info{human_genome_reference_source},
-            human_genome_reference_version_ref =>
-              \$file_info{human_genome_reference_version},
+            human_genome_reference_source =>
+              $file_info{human_genome_reference_source},
+            human_genome_reference_version =>
+              $file_info{human_genome_reference_version},
         }
     );
 
@@ -4347,70 +4347,6 @@ sub check_program_mode {
             exit 1;
         }
     }
-}
-
-sub update_exome_target_bed {
-
-##update_exome_target_bed
-
-##Function : Update exome_target_bed files with human_genome_reference_source_ref and human_genome_reference_version_ref
-##Returns  : ""
-##Arguments: $exome_target_bed_file_href, $human_genome_reference_source_ref, human_genome_reference_version_ref
-##         : $exome_target_bed_file_href        => ExomeTargetBedTestFile hash {REF}
-##         : human_genome_reference_source_ref  => The human genome reference source {REF}
-##         : human_genome_reference_version_ref => The human genome reference version {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $exome_target_bed_file_href;
-    my $human_genome_reference_source_ref;
-    my $human_genome_reference_version_ref;
-
-    my $tmpl = {
-        exome_target_bed_file_href =>
-          { required => 1, store => \$exome_target_bed_file_href },
-        human_genome_reference_source_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$human_genome_reference_source_ref
-        },
-        human_genome_reference_version_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$human_genome_reference_version_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    if ( defined $$human_genome_reference_source_ref ) {
-
-      EXOME_FILE:
-        foreach
-          my $exome_target_bed_file ( keys %{$exome_target_bed_file_href} )
-        {
-
-            my $original_file_name = $exome_target_bed_file;
-
-            ## Replace with actual version
-            if ( $exome_target_bed_file =~
-                s/genome_reference_source/$$human_genome_reference_source_ref/
-                && $exome_target_bed_file =~
-                s/_version/$$human_genome_reference_version_ref/ )
-            {
-
-                ## The delete operator returns the value being deleted i.e. updating hash key while preserving original info
-                $exome_target_bed_file_href->{$exome_target_bed_file} =
-                  delete $exome_target_bed_file_href->{$original_file_name};
-            }
-        }
-    }
-    return;
 }
 
 sub check_sample_id_in_parameter_path {
