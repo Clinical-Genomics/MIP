@@ -187,6 +187,7 @@ sub update_reference_parameters {
                 parameter_name        => $parameter_name,
             }
         );
+
         ## Only need to perform update once per parameter
         return;
     }
