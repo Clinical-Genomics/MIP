@@ -45,3 +45,9 @@ temp_directory:
   data_type: SCALAR
   default: /scratch/$SLURM_JOB_ID
   type: path
+verbose:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 0
+  type: mip

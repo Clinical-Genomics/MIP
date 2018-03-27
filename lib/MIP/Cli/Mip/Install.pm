@@ -14,7 +14,7 @@ use MooseX::App::Command;
 use Moose::Util::TypeConstraints;
 use MooseX::Types::Moose qw{ Str Int HashRef Bool };
 
-our $VERSION = 0.0.3;
+our $VERSION = 0.0.4;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -115,17 +115,6 @@ q{Shell will be used for overlapping shell and biconda installations},
             cmd_aliases   => [qw{ ppd }],
             cmd_flag      => q{print_parameter_default},
             documentation => q{print the default parameters},
-            is            => q{rw},
-            isa           => Bool,
-            required      => 0,
-        ),
-    );
-
-    option(
-        q{verbose} => (
-            cmd_aliases   => [qw{ vb }],
-            cmd_flag      => q{verbose},
-            documentation => q{Turn on chatty output},
             is            => q{rw},
             isa           => Bool,
             required      => 0,

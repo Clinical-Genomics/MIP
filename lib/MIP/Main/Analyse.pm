@@ -73,7 +73,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.00;
+    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -379,14 +379,17 @@ sub mip_analyse {
     # Holds all active parameters values for broadcasting
     my @broadcasts;
 
-    set_parameter_to_broadcast(
-        {
-            parameter_href        => \%parameter,
-            active_parameter_href => \%active_parameter,
-            order_parameters_ref  => \@order_parameters,
-            broadcasts_ref        => \@broadcasts,
-        }
-    );
+    if ( $active_parameter{verbose} ) {
+
+        set_parameter_to_broadcast(
+            {
+                parameter_href        => \%parameter,
+                active_parameter_href => \%active_parameter,
+                order_parameters_ref  => \@order_parameters,
+                broadcasts_ref        => \@broadcasts,
+            }
+        );
+    }
 
 ## Reference in MIP reference directory
   PARAMETER:
@@ -738,9 +741,10 @@ sub mip_analyse {
 ## Check that the correct number of aligners is used in MIP and sets the aligner flag accordingly
     check_aligner(
         {
-            parameter_href        => \%parameter,
             active_parameter_href => \%active_parameter,
             broadcasts_ref        => \@broadcasts,
+            parameter_href        => \%parameter,
+            verbose               => $active_parameter{verbose},
         }
     );
 
@@ -880,17 +884,19 @@ sub mip_analyse {
         }
     );
 
+    if ( $active_parameter{verbose} ) {
 ## Write CMD to MIP log file
-    write_cmd_mip_log(
-        {
-            parameter_href        => \%parameter,
-            active_parameter_href => \%active_parameter,
-            order_parameters_ref  => \@order_parameters,
-            script_ref            => \$script,
-            log_file_ref          => \$active_parameter{log_file},
-            mip_version_ref       => \$VERSION,
-        }
-    );
+        write_cmd_mip_log(
+            {
+                parameter_href        => \%parameter,
+                active_parameter_href => \%active_parameter,
+                order_parameters_ref  => \@order_parameters,
+                script_ref            => \$script,
+                log_file_ref          => \$active_parameter{log_file},
+                mip_version_ref       => \$VERSION,
+            }
+        );
+    }
 
 ## Collects the ".fastq(.gz)" files from the supplied infiles directory. Checks if any of the files exist
     collect_infiles(
@@ -4153,11 +4159,13 @@ sub check_aligner {
 ##         : $active_parameter_href => Active parameters for this analysis hash {REF}
 ##         : $broadcasts_ref        => Holds the parameters info for broadcasting later {REF}
 ##         : $outaligner_dir_ref    => Outaligner_dir used in the analysis {REF}
+##         : $verbose               => Verbosity level
 
     my ($arg_href) = @_;
 
     ## Default(s)
     my $outaligner_dir_ref;
+    my $verbose;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -4191,6 +4199,11 @@ sub check_aligner {
             strict_type => 1,
             store       => \$outaligner_dir_ref,
         },
+        verbose => {
+            default     => 0,
+            store       => \$verbose,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -4215,8 +4228,14 @@ sub check_aligner {
                 $$outaligner_dir_ref = $parameter_href->{$aligner}{outdir_name}
                   ;    #Set outaligner_dir parameter depending on active aligner
 
-                my $info = "Set outaligner_dir to: " . $$outaligner_dir_ref;
-                push( @$broadcasts_ref, $info );    #Add info to broadcasts
+                if ($verbose) {
+
+                    my $info =
+                      q{Set outaligner_dir to: } . $$outaligner_dir_ref;
+
+                    ## Add info to broadcasts
+                    push( @$broadcasts_ref, $info );
+                }
             }
         }
     }
