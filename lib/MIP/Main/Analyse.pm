@@ -419,13 +419,14 @@ sub mip_analyse {
 
             check_parameter_files(
                 {
-                    parameter_href        => \%parameter,
                     active_parameter_href => \%active_parameter,
                     associated_programs_ref =>
                       \@{ $parameter{$parameter_name}{associated_program} },
-                    parameter_name => $parameter_name,
+                    log => $log,
                     parameter_exists_check =>
                       $parameter{$parameter_name}{exists_check},
+                    parameter_href => \%parameter,
+                    parameter_name => $parameter_name,
                 }
             );
         }
