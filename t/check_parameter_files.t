@@ -22,6 +22,7 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
 
@@ -72,8 +73,9 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Log::MIP_log4perl} => [qw{ initiate_logger }],
-        q{MIP::Script::Utils}     => [qw{ help }],
+        q{MIP::File::Format::Yaml} => [qw{ load_yaml }],
+        q{MIP::Log::MIP_log4perl}  => [qw{ initiate_logger }],
+        q{MIP::Script::Utils}      => [qw{ help }],
     );
 
   PERL_MODULE:
@@ -92,7 +94,6 @@ BEGIN {
 }
 
 use MIP::Check::Path qw{ check_parameter_files };
-use MIP::File::Format::Yaml qw{ load_yaml };
 
 diag(   q{Test check_parameter_files from Path.pm v}
       . $MIP::Check::Path::VERSION

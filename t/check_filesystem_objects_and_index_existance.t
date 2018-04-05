@@ -22,6 +22,7 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
 
@@ -72,8 +73,9 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Log::MIP_log4perl} => [qw{ initiate_logger }],
-        q{MIP::Script::Utils}     => [qw{ help }],
+        q{MIP::File::Format::Yaml} => [qw{ load_yaml }],
+        q{MIP::Log::MIP_log4perl}  => [qw{ initiate_logger }],
+        q{MIP::Script::Utils}      => [qw{ help }],
     );
 
   PERL_MODULE:
@@ -114,24 +116,20 @@ my $log = initiate_logger(
     }
 );
 
-## Create a temp dir
-my $dir = tempdir( CLEANUP => 1 );
-
-## Create a temp file using newly created temp dir
-my ( $fh, $file_name ) = tempfile( DIR => $dir );
-
-my %parameter = (
-    dir       => $dir,
-    file_name => { build_file => 1 },
-);
-
 my %active_parameter = (
     gatk_baserecalibration_known_sites =>
       catfile( $Bin, qw{ data references GRCh37_dbsnp_-138-.vcf} ),
-    human_genome_reference =>
-      catfile( $Bin, qw{data references GRCh37_homo_sapiens_-d5-.fasta} ),
+    human_genome_reference => catfile( $Bin, qw{Should_not_exist_file} ),
     snpsift_annotation_files =>
       catfile( $Bin, qw{data references GRCh37_clinvar_-2017-01-04-.vcf.gz} ),
+);
+
+my %parameter = load_yaml(
+    {
+        yaml_file => catfile(
+            dirname($Bin), qw{ definitions rare_disease_parameters.yaml}
+        ),
+    }
 );
 
 ### TEST
