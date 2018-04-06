@@ -6,6 +6,7 @@ requires qw{ Archive::Zip 1.59 };                   # VEP
 requires qw{ Array::Utils 0.5 };                    # MIP
 requires qw{ Bio::Root::Version 1.007002 };         # VEP
 requires qw{ CGI 4.37 };                            # VEP
+requires qw{ Data::Printer 0.40 };                  # MIP
 requires qw{ DB_File 1.840 };                       # STAR-Fusion
 requires qw{ DBD::mysql 4.043 };                    # VEP
 requires qw{ DBI 1.637 };                           # VEP

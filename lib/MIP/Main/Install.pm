@@ -56,7 +56,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = q{1.1.2};
+    our $VERSION = q{1.2.0};
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
@@ -98,8 +98,6 @@ sub mip_install {
     ## Transfer to lexical variables
     my %parameter = %{$parameter_href};
 
-    our $VERSION = q{1.2.35};
-
     ## Create default log name
     if ( not $parameter{log_file} ) {
 
@@ -121,27 +119,24 @@ sub mip_install {
     $log->info(
         q{Writing log messages to} . $COLON . $SPACE . $parameter{log_file} );
 
-    ## Check the conda installation and get the conda path
-    $parameter{conda_prefix_path} = check_conda_installation(
+    ## Check the conda installation and set the conda path
+    check_conda_installation(
         {
             conda_dir_path    => $parameter{conda_dir_path},
-            conda_env         => $parameter{conda_environment},
             disable_env_check => $parameter{disable_env_check},
+            parameter_href    => \%parameter,
             quiet             => $parameter{quiet},
             verbose           => $parameter{verbose},
         }
     );
 
-    if (    ( $parameter{shell}{vep}{version} )
-        and ( not $parameter{shell}{vep}{cache_dir} ) )
-    {
-
-        # Cache directory
-        $parameter{shell}{vep}{vep_cache_dir} =
-          catdir( $parameter{conda_prefix_path},
-            q{ensembl-tools-release-} . $parameter{shell}{vep}{version},
-            q{cache} );
-    }
+    ## Set environment names and environment specific conda paths
+    set_conda_env_names_and_paths(
+        {
+            log            => $log,
+            parameter_href => \%parameter,
+        }
+    );
 
     ##########
     ###MAIN###
@@ -177,116 +172,137 @@ sub mip_install {
     $log->info(
         q{Writing install instructions to:} . $SPACE . $file_name_path );
 
-    ## Process input parameters to get a correct combination of programs that are to be installed
-    %parameter = get_programs_for_installation(
-        {
-            log            => $log,
-            parameter_href => \%parameter,
-        }
-    );
+    ## Loop over the selected installations
+    foreach my $installation ( @{ $parameter{installations} } ) {
 
-    ## Seting up conda environment and installing default packages
-    setup_conda_env(
-        {
-            conda_packages_href => $parameter{conda_packages},
-            conda_env           => $parameter{conda_environment},
-            conda_env_path      => $parameter{conda_prefix_path},
-            FILEHANDLE          => $FILEHANDLE,
-            conda_update        => $parameter{conda_update},
-            quiet               => $parameter{quiet},
-            verbose             => $parameter{verbose},
-        }
-    );
+        ## Create some space
+        $log->info($NEWLINE);
+        $log->info( q{Working on environment: }
+              . $parameter{environment_name}{$installation} );
 
-    ## Installing bioconda packages
-    install_bioconda_packages(
-        {
-            bioconda_packages_href => $parameter{bioconda},
-            conda_env              => $parameter{conda_environment},
-            conda_env_path         => $parameter{conda_prefix_path},
-            FILEHANDLE             => $FILEHANDLE,
-            snpeff_genome_versions_ref =>
-              $parameter{shell}{snpeff}{snpeff_genome_versions},
-            quiet   => $parameter{quiet},
-            verbose => $parameter{verbose},
-        }
-    );
-
-    ## Install PIP packages
-    install_pip_packages(
-        {
-            conda_env         => $parameter{conda_environment},
-            FILEHANDLE        => $FILEHANDLE,
-            pip_packages_href => $parameter{pip},
-            quiet             => $parameter{quiet},
-        }
-    );
-
-    ### Install shell programs
-    ## Create dispatch table for shell installation subs
-    my %shell_subs = (
-        bedtools        => \&install_bedtools,
-        cnvnator        => \&install_cnvnator,
-        expansionhunter => \&install_expansionhunter,
-        mip_scripts     => \&install_mip_scripts,
-        picard          => \&install_picard,
-        plink2          => \&install_plink2,
-        rhocall         => \&install_rhocall,
-        sambamba        => \&install_sambamba,
-        snpeff          => \&install_snpeff,
-        svdb            => \&install_svdb,
-        star_fusion     => \&install_star_fusion,
-        tiddit          => \&install_tiddit,
-        vep             => \&install_vep,
-        vcf2cytosure    => \&install_vcf2cytosure,
-        vt              => \&install_vt,
-    );
-
-    ## Launch shell installation subroutines
-  SHELL_PROGRAM:
-    for my $shell_program ( @{ $parameter{shell_programs_to_install} } ) {
-
-        $shell_subs{$shell_program}->(
+        ## Process input parameters to get a correct combination of programs that are to be installed
+        get_programs_for_installation(
             {
-                conda_environment       => $parameter{conda_environment},
-                conda_prefix_path       => $parameter{conda_prefix_path},
-                FILEHANDLE              => $FILEHANDLE,
-                noupdate                => $parameter{noupdate},
-                program_parameters_href => $parameter{shell}{$shell_program},
-                quiet                   => $parameter{quiet},
-                verbose                 => $parameter{verbose},
+                log            => $log,
+                installation   => $installation,
+                parameter_href => \%parameter,
             }
         );
-    }
 
-    ## Download reference genome if requested
-    if ( $parameter{reference_dir} ) {
-
-        download_genome_references(
+        ## Seting up conda environment and installing default packages
+        setup_conda_env(
             {
-                conda_environment  => $parameter{conda_environment},
-                conda_prefix_path  => $parameter{conda_prefix_path},
-                FILEHANDLE         => $FILEHANDLE,
-                reference_dir_path => $parameter{reference_dir},
-                reference_genome_versions_ref =>
-                  $parameter{reference_genome_versions},
+                conda_packages_href => $parameter{$installation}{conda},
+                conda_env      => $parameter{environment_name}{$installation},
+                conda_env_path => $parameter{$installation}{conda_prefix_path},
+                FILEHANDLE     => $FILEHANDLE,
+                conda_update   => $parameter{conda_update},
+                quiet          => $parameter{quiet},
+                verbose        => $parameter{verbose},
+            }
+        );
+
+        ## Installing bioconda packages
+        install_bioconda_packages(
+            {
+                bioconda_packages_href => $parameter{$installation}{bioconda},
+                conda_env      => $parameter{environment_name}{$installation},
+                conda_env_path => $parameter{$installation}{conda_prefix_path},
+                FILEHANDLE     => $FILEHANDLE,
+                snpeff_genome_versions_ref =>
+                  $parameter{$installation}{shell}{snpeff}
+                  {snpeff_genome_versions},
                 quiet   => $parameter{quiet},
                 verbose => $parameter{verbose},
             }
         );
+
+        ## Install PIP packages
+        install_pip_packages(
+            {
+                conda_env => $parameter{environment_name}{$installation},
+                ,
+                FILEHANDLE        => $FILEHANDLE,
+                pip_packages_href => $parameter{$installation}{pip},
+                quiet             => $parameter{quiet},
+            }
+        );
+
+        ### Install shell programs
+        ## Create dispatch table for shell installation subs
+        my %shell_subs = (
+            bedtools        => \&install_bedtools,
+            cnvnator        => \&install_cnvnator,
+            expansionhunter => \&install_expansionhunter,
+            mip_scripts     => \&install_mip_scripts,
+            picard          => \&install_picard,
+            plink2          => \&install_plink2,
+            rhocall         => \&install_rhocall,
+            sambamba        => \&install_sambamba,
+            snpeff          => \&install_snpeff,
+            svdb            => \&install_svdb,
+            star_fusion     => \&install_star_fusion,
+            tiddit          => \&install_tiddit,
+            vep             => \&install_vep,
+            vcf2cytosure    => \&install_vcf2cytosure,
+            vt              => \&install_vt,
+        );
+
+        ## Launch shell installation subroutines
+      SHELL_PROGRAM:
+        for my $shell_program (
+            @{ $parameter{$installation}{shell_programs_to_install} } )
+        {
+
+            $shell_subs{$shell_program}->(
+                {
+                    conda_environment =>
+                      $parameter{environment_name}{$installation},
+                    ,
+                    conda_prefix_path =>
+                      $parameter{$installation}{conda_prefix_path},
+                    FILEHANDLE => $FILEHANDLE,
+                    noupdate   => $parameter{noupdate},
+                    program_parameters_href =>
+                      $parameter{$installation}{shell}{$shell_program},
+                    quiet   => $parameter{quiet},
+                    verbose => $parameter{verbose},
+                }
+            );
+        }
+
+        ## Download reference genome if requested, only downloads to MIPs main environment
+        if ( ( $parameter{reference_dir} ) and ( $installation eq q{emip} ) ) {
+
+            download_genome_references(
+                {
+                    conda_environment  => $parameter{environment_name}{emip},
+                    conda_prefix_path  => $parameter{emip}{conda_prefix_path},
+                    FILEHANDLE         => $FILEHANDLE,
+                    reference_dir_path => $parameter{reference_dir},
+                    reference_genome_versions_ref =>
+                      $parameter{reference_genome_versions},
+                    quiet   => $parameter{quiet},
+                    verbose => $parameter{verbose},
+                }
+            );
+        }
     }
 
-    ## Add final message to FILEHANDLE
-    display_final_message(
-        {
-            bioconda_programs_href => $parameter{bioconda},
-            conda_env_name         => $parameter{conda_environment},
-            conda_programs_href    => $parameter{conda_packages},
-            FILEHANDLE             => $FILEHANDLE,
-            pip_programs_href      => $parameter{pip},
-            shell_programs_ref     => $parameter{shell_programs_to_install},
-        }
-    );
+    foreach my $installation ( @{ $parameter{installations} } ) {
+        ## Add final message to FILEHANDLE
+        display_final_message(
+            {
+                bioconda_programs_href => $parameter{$installation}{bioconda},
+                conda_env_name => $parameter{environment_name}{$installation},
+                conda_programs_href => $parameter{$installation}{conda},
+                FILEHANDLE          => $FILEHANDLE,
+                pip_programs_href   => $parameter{$installation}{pip},
+                shell_programs_ref =>
+                  $parameter{$installation}{shell_programs_to_install},
+            }
+        );
+    }
 
     $log->info(q{Finished writing installation instructions for MIP});
 
@@ -299,10 +315,9 @@ sub mip_install {
 ###SubRoutines###
 #################
 
-sub get_programs_for_installation {
-
-## Function : Procces the lists of programs that has been seleceted for installation and returns them
-## Returns  : %{ $parameter_href }
+sub set_conda_env_names_and_paths {
+## Function : Set environmnet specific names and paths
+## Returns  :
 ## Arguments: $log            => Log
 ##          : $parameter_href => The entire parameter hash {REF}
 
@@ -329,232 +344,76 @@ sub get_programs_for_installation {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Remove selected programs from installation
-    if ( @{ $parameter_href->{skip_programs} } ) {
-      PROGRAM:
-        foreach my $program ( @{ $parameter_href->{skip_programs} } ) {
-            delete $parameter_href->{shell}{$program};
-            delete $parameter_href->{bioconda}{$program};
-            delete $parameter_href->{pip}{$program};
+    my @environments = @{ $parameter_href->{installations} };
+
+    ## Set up conda prefix path for MIP main environment
+    if ( any { $_ eq q{emip} } @environments ) {
+
+        if ( $parameter_href->{environment_name}{emip} ) {
+            $parameter_href->{emip}{conda_prefix_path} =
+              catdir( $parameter_href->{conda_dir_path},
+                q{envs}, $parameter_href->{environment_name}{emip} );
+        }
+        else {
+            $log->warn(
+q{No environment name has been specified for MIP's main environment.}
+            );
+            $log->warn(q{MIP will be installed in conda's base environment.});
+            $parameter_href->{emip}{conda_prefix_path} =
+              $parameter_href->{conda_dir_path};
         }
     }
-    ## Exit if a python 3 env has ben specified for something else than Chanjo or Genmod
-    if ( $parameter_href->{py3_packages} ) {
-        _assure_python_3_compability(
-            {
-                log              => $log,
-                parameter_href   => $parameter_href,
-                py3_packages_ref => $parameter_href->{py3_packages},
-                python_version   => $parameter_href->{conda_packages}{python},
-                select_programs_ref => $parameter_href->{select_programs}
+
+    ## Set up conda environment names and prefix paths for non mip environmnents
+    foreach my $environment (@environments) {
+
+        ## Give the env a default name if not given
+        if ( not $parameter_href->{environment_name}{$environment} ) {
+
+            ## Add the env name to mip base name if it is named
+            if ( $parameter_href->{environment_name}{emip} ) {
+
+                $parameter_href->{environment_name}{$environment} =
+                  $parameter_href->{environment_name}{emip} . q{_}
+                  . substr $environment, 1;
             }
-        );
-    }
-
-    ## Programs that are not installed via conda can have dependencies that
-    ## needs to be explicetly installed. Also, depedening on how the analysis
-    ## recipes have been written, a module can be dependent on more than one
-    ## conda program to function.
-    if ( any { $_ eq q{chanjo} } @{ $parameter_href->{select_programs} } ) {
-        push @{ $parameter_href->{select_programs} }, q{sambamba};
-    }
-    if ( any { $_ eq q{cnvnator} } @{ $parameter_href->{select_programs} } ) {
-        push @{ $parameter_href->{select_programs} }, qw{ samtools bcftools };
-    }
-    if ( any { $_ eq q{peddy} } @{ $parameter_href->{select_programs} } ) {
-        push @{ $parameter_href->{select_programs} }, qw{ bcftools };
-    }
-    if ( any { $_ eq q{svdb} } @{ $parameter_href->{select_programs} } ) {
-        push @{ $parameter_href->{select_programs} },
-          qw{ bcftools htslib picard vcfanno vt };
-    }
-    if ( any { $_ eq q{vcf2cytosure} } @{ $parameter_href->{select_programs} } )
-    {
-        push @{ $parameter_href->{select_programs} }, qw{ libxml2 libxslt };
-    }
-    if ( any { $_ eq q{vep} } @{ $parameter_href->{select_programs} } ) {
-        push @{ $parameter_href->{select_programs} }, qw{ bcftools htslib };
-    }
-
-    ## Remove all programs except those selected for installation
-    if ( @{ $parameter_href->{select_programs} } ) {
-        my @programs = (
-            keys %{ $parameter_href->{shell} },
-            keys %{ $parameter_href->{bioconda} },
-            keys %{ $parameter_href->{pip} },
-        );
-        my @programs_to_skip =
-          array_minus( @programs, @{ $parameter_href->{select_programs} } );
-
-      PROGRAM:
-        foreach my $program (@programs_to_skip) {
-            delete $parameter_href->{shell}{$program};
-            delete $parameter_href->{bioconda}{$program};
-            delete $parameter_href->{pip}{$program};
+            else {
+                $parameter_href->{environment_name}{$environment} =
+                  $environment;
+            }
         }
-    }
 
-    ## Some programs have conflicting dependencies and require seperate environments to function properly
-    ## These are excluded from installation unless specified with the select_programs flag
-    my @conflicting_programs = qw{ cnvnator peddy svdb vep };
-  CONFLICTING_PROGRAM:
-    foreach my $conflicting_program (@conflicting_programs) {
-        if (
-            not any { $_ eq $conflicting_program }
-            @{ $parameter_href->{select_programs} }
-          )
-        {
-            delete $parameter_href->{shell}{$conflicting_program};
-            delete $parameter_href->{bioconda}{$conflicting_program};
-        }
-    }
-
-    ## Assure a gcc version of 4.8 in the case of a cnvnator installation
-    if ( any { $_ eq q{cnvnator} } @{ $parameter_href->{select_programs} } ) {
-        $parameter_href->{conda_packages}{gcc} = q{4.8};
-    }
-
-    ## Exclude Chanjo, Genmod and Variant_integrity unless a python 3 env has been specified
-    $parameter_href = _assure_python_2_compability(
-        {
-            log            => $log,
-            parameter_href => $parameter_href,
-        }
-    );
-
-    my @shell_programs_to_install = get_programs_for_shell_installation(
-        {
-            conda_programs_href        => $parameter_href->{bioconda},
-            log                        => $log,
-            prefer_shell               => $parameter_href->{prefer_shell},
-            shell_install_programs_ref => $parameter_href->{shell_install},
-            shell_programs_href        => $parameter_href->{shell},
-        }
-    );
-
-    ## Removing the bioconda packages that has been selected to be installed via SHELL
-    delete @{ $parameter_href->{bioconda} }{@shell_programs_to_install};
-    ## Special case for snpsift since it is installed together with SnpEff
-    ## if shell installation of SnpEff has been requested.
-    if ( any { $_ eq q{snpeff} } @shell_programs_to_install ) {
-        delete $parameter_href->{bioconda}{snpsift};
-    }
-    $parameter_href->{shell_programs_to_install} = [@shell_programs_to_install];
-
-    return %{$parameter_href};
-}
-
-sub _assure_python_3_compability {
-
-## Function : Test if specified programs are to be installed in a python 3 environment
-## Returns  :
-## Arguments: $parameter_href      => The entire parameter hash {REF}
-##          : $py3_packages_ref    => Array with packages that requires python 3 {REF}
-##          : $python_version      => The python version that are to be used for the environment
-##          : $select_programs_ref => Programs selected for installation by the user {REF}
-##          : $sub_log             => Log
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $sub_log;
-    my $py3_packages_ref;
-    my $parameter_href;
-    my $python_version;
-    my $select_programs_ref;
-
-    my $tmpl = {
-        log => {
-            required => 1,
-            defined  => 1,
-            store    => \$sub_log,
-        },
-        parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$parameter_href,
-        },
-        py3_packages_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            strict_type => 1,
-            store       => \$py3_packages_ref,
-        },
-        python_version => {
-            required => 1,
-            defined  => 1,
-            allow    => qr{
-                         ^( [23] )    # Assert that the python major version starts with 2 or 3
-                         [.]            # Major version separator
-                         ( \d+$        # Assert that the minor version is a digit
-                         | \d+ [.] \d+$ ) # Case when minor and patch version has been supplied, allow only digits
-                         }xms,
-            store => \$python_version,
-        },
-        select_programs_ref => {
-            required => 1,
-            default  => [],
-            store    => \$select_programs_ref,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use Array::Utils qw{ array_minus unique};
-
-    ## Cover the case where no program has ben actively chosen for installation
-    my @programs_to_check;
-    if ( not defined $select_programs_ref ) {
-        @programs_to_check = unique(
-            keys %{ $parameter_href->{shell} },
-            keys %{ $parameter_href->{bioconda} },
-            keys %{ $parameter_href->{pip} },
-        );
-    }
-    else {
-        @programs_to_check = @{$select_programs_ref};
-    }
-
-    ## Check if a python 3 environment has been specified and a python 2 program has been specified for installation
-    if (
-        (
-            $python_version =~ m{
-        3 [.] \d+ |    # Python 3 release with minor version eg 3.6
-        3 [.] \d+ [.] \d+ # Python 3 release with minor and patch e.g. 3.6.2
-        }xms
-        )
-        and ( array_minus( @programs_to_check, @{$py3_packages_ref} ) )
-      )
-    {
-
-        $sub_log->fatal(
-q{A python 3 env has been specified. Please use a python 2 environment for all programs except:}
-              . $NEWLINE
-              . join $TAB,
-            @{$py3_packages_ref}
-        );
-        exit 1;
+        ## Add environmnet specific conda prefix path
+        $parameter_href->{$environment}{conda_prefix_path} =
+          catdir( $parameter_href->{conda_dir_path},
+            q{envs}, $parameter_href->{environment_name}{$environment} );
     }
     return;
 }
 
-sub _assure_python_2_compability {
+sub get_programs_for_installation {
 
-## Function : Exclude programs that are not compatible with python 2 and exit when a program with python 3 dependency has been selected.
-## Returns  : $parameter_href
-## Arguments: $log            => Log
-##          : $parameter_href => Parameter hash {REF}
+## Function : Procces the lists of programs that has been seleceted for or omitted from installation
+##          : and update the environment packages
+## Returns  :
+## Arguments: $installation   => Environment to be installed
+##          : $log            => Log
+##          : $parameter_href => The entire parameter hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $log;
+    my $installation;
     my $parameter_href;
+    my $log;
 
     my $tmpl = {
+        installation => {
+            required    => 1,
+            defined     => 1,
+            store       => \$installation,
+            strict_type => 1,
+        },
         log => {
             required => 1,
             defined  => 1,
@@ -571,39 +430,210 @@ sub _assure_python_2_compability {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use Array::Utils qw{ intersect };
-
-    if (
-        $parameter_href->{conda_packages}{python} =~
-        m{ 2 [.] \d+ |    # Python 2 release with minor version eg 2.7.14
-           2 [.] \d+ [.] \d+ # Python 3 release with minor and patch e.g. 3.6.2
-        }xms
-      )
-    {
-        ## Delete python 3 packages if a python 2 env has been specified
-        foreach my $py3_package ( @{ $parameter_href->{py3_packages} } ) {
-            delete $parameter_href->{pip}{$py3_package};
-        }
-
-        ## Check if a python 3 package has been selected for installation in a python 2 environment
-        if (
-            intersect(
-                @{ $parameter_href->{select_programs} },
-                @{ $parameter_href->{py3_packages} }
-            )
-          )
-        {
-            $log->fatal(
-                q{Please specify a python 3 environment for:}
-                  . $NEWLINE
-                  . join $TAB,
-                @{ $parameter_href->{py3_packages} }
-            );
-            exit 1;
+    ## Remove selected programs from installation
+    if ( @{ $parameter_href->{skip_programs} } ) {
+      PROGRAM:
+        foreach my $program ( @{ $parameter_href->{skip_programs} } ) {
+            delete $parameter_href->{$installation}{conda}{$program};
+            delete $parameter_href->{$installation}{shell}{$program};
+            delete $parameter_href->{$installation}{bioconda}{$program};
+            delete $parameter_href->{$installation}{pip}{$program};
         }
     }
 
-    return $parameter_href;
+    ## Exit if a python 2 env has ben specified for a python 3 program
+    _assure_python_compability(
+        {
+            sublog                => $log,
+            installation_set_href => $parameter_href->{$installation},
+            python_version => $parameter_href->{$installation}{conda}{python},
+            select_programs_ref => $parameter_href->{select_programs}
+        }
+    );
+
+    ## Programs that are not installed via conda can have dependencies that
+    ## needs to be explicetly installed. Also, depedening on how the analysis
+    ## recipes have been written, a module can be dependent on more than one
+    ## conda program to function.
+    my %dependency = (
+        chanjo      => [qw{ sambamba }],
+        cnvnator    => [qw{ bcftools gcc samtools }],
+        peddy       => [qw{ bcftools }],
+        picard      => [qw{ java-jdk }],
+        star_fusion => [qw{ star }],
+        svdb        => [qw{ bcftools htslib numpy picard vcfanno vt }],
+        tiddit      => [qw{ cmake numpy scikit-learn }],
+        vep         => [qw{ bcftools htslib }],
+    );
+
+    if ( @{ $parameter_href->{select_programs} } ) {
+
+        ## Check that only one environment has been specified for installation
+        if ( scalar @{ $parameter_href->{installations} } > 1 ) {
+            $log->fatal(
+q{Please select a single installation environment when using the option select_programs.}
+            );
+            exit 1;
+        }
+
+        ## Add pip since it is required in many cases
+        push @{ $parameter_href->{select_programs} }, q{pip};
+
+        ## Add neccessary dependencies
+      DEPENDENT:
+        foreach my $dependent ( keys %dependency ) {
+            if (
+                any { $_ eq $dependent }
+                @{ $parameter_href->{select_programs} }
+              )
+            {
+                push @{ $parameter_href->{select_programs} },
+                  @{ $dependency{$dependent} };
+            }
+        }
+
+        ## Remove all programs except those selected for installation
+        my @programs = (
+            keys %{ $parameter_href->{$installation}{conda} },
+            keys %{ $parameter_href->{$installation}{shell} },
+            keys %{ $parameter_href->{$installation}{bioconda} },
+            keys %{ $parameter_href->{$installation}{pip} },
+        );
+        my @programs_to_skip =
+          array_minus( @programs, @{ $parameter_href->{select_programs} } );
+
+      PROGRAM_TO_SKIP:
+        foreach my $program_to_skip (@programs_to_skip) {
+            delete $parameter_href->{$installation}{conda}{$program_to_skip};
+            delete $parameter_href->{$installation}{shell}{$program_to_skip};
+            delete $parameter_href->{$installation}{bioconda}{$program_to_skip};
+            delete $parameter_href->{$installation}{pip}{$program_to_skip};
+        }
+    }
+
+    ## Some programs have conflicting dependencies and require seperate environments to function properly
+    ## These are excluded from installation unless specified with the select_programs flag
+
+    my @shell_programs_to_install = get_programs_for_shell_installation(
+        {
+            conda_programs_href => $parameter_href->{$installation}{bioconda},
+            log                 => $log,
+            prefer_shell        => $parameter_href->{prefer_shell},
+            shell_install_programs_ref => $parameter_href->{shell_install},
+            shell_programs_href => $parameter_href->{$installation}{shell},
+        }
+    );
+
+    ## Removing the bioconda packages that has been selected to be installed via SHELL
+    delete @{ $parameter_href->{$installation}{bioconda} }
+      {@shell_programs_to_install};
+    ## Special case for snpsift since it is installed together with SnpEff
+    ## if shell installation of SnpEff has been requested.
+    if ( any { $_ eq q{snpeff} } @shell_programs_to_install ) {
+        delete $parameter_href->{$installation}{bioconda}{snpsift};
+    }
+    $parameter_href->{$installation}{shell_programs_to_install} =
+      [@shell_programs_to_install];
+
+    return;
+}
+
+sub _assure_python_compability {
+
+## Function : Test if specified programs are to be installed in a python 3 environment
+## Returns  :
+## Arguments: $installation_set_href => The environment specific installation hash {REF}
+##          : $python_version        => The python version that are to be used for the environment
+##          : $select_programs_ref   => Programs selected for installation by the user {REF}
+##          : $sub_log               => Log
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $sub_log;
+    my $installation_set_href;
+    my $python_version;
+    my $select_programs_ref;
+
+    my $tmpl = {
+        sublog => {
+            required => 1,
+            defined  => 1,
+            store    => \$sub_log,
+        },
+        installation_set_href => {
+            required    => 1,
+            defined     => 1,
+            default     => {},
+            strict_type => 1,
+            store       => \$installation_set_href,
+        },
+        python_version => {
+            required => 1,
+            store    => \$python_version,
+        },
+        select_programs_ref => {
+            required => 1,
+            default  => [],
+            store    => \$select_programs_ref,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use Array::Utils qw{ intersect unique };
+
+    ## Display warning if python isn't part of the installation
+    if ( not $python_version ) {
+        $sub_log->warn(
+q{Python is not part of the installation. Skipping python compability check.}
+        );
+        return;
+    }
+
+    ## Check format of python version
+    if (
+        $python_version !~ m/
+        ^(?: [23] )      # Assert that the python major version starts with 2 or 3
+        [.]              # Major version separator
+        (?: \d+$         # Assert that the minor version is a digit
+        | \d+ [.] \d+$ ) # Case when minor and patch version has been supplied, allow only digits 
+        /xms
+      )
+    {
+        $sub_log->fatal( q{Please specify a python 2 or 3 version, given: }
+              . $python_version );
+        exit 1;
+    }
+
+    ## Define python 3 programs
+    my @py3_programs = qw{ chanoj genmod variant_integrity multiqc };
+
+    ## Cover the case where no program has ben actively chosen for installation
+    my @programs_to_check;
+    if ( not defined $select_programs_ref ) {
+        @programs_to_check = unique(
+            keys %{ $installation_set_href->{conda} },
+            keys %{ $installation_set_href->{shell} },
+            keys %{ $installation_set_href->{bioconda} },
+            keys %{ $installation_set_href->{pip} },
+        );
+    }
+    else {
+        @programs_to_check = @{$select_programs_ref};
+    }
+
+    my @conflicts = intersect( @programs_to_check, @py3_programs );
+
+    ## Check if a python 2 environment has been specified and a python 3
+    ## program has been specified for installation in that environment
+    if ( ( $python_version =~ m/^2/xms ) and ( scalar @conflicts > 0 ) ) {
+        $sub_log->fatal(
+            q{Please use a python 3 environment for:} . $NEWLINE . join $TAB,
+            @conflicts );
+        exit 1;
+    }
+    return;
 }
 
 sub get_programs_for_shell_installation {
@@ -652,17 +682,17 @@ sub get_programs_for_shell_installation {
             store       => \$shell_install_programs_ref,
         },
         shell_programs_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$shell_programs_href,
+            required => 1,
+            default  => {},
+            store    => \$shell_programs_href,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use Array::Utils qw{ intersect array_minus unique };
+
+    return if not keys %{$shell_programs_href};
 
     my @shell_programs = keys %{$shell_programs_href};
     my @conda_programs = keys %{$conda_programs_href};
@@ -781,8 +811,6 @@ q{echo -e "\tMIP's installation script has attempted to install CNVnator"};
           q{echo -e "\tPlease exit the current session before continuing"};
     }
     else {
-        say {$FILEHANDLE}
-          q{echo -e "\tMIP's installation script has finished\n"};
         say {$FILEHANDLE}
           q{echo -e "\tMIP has attempted to install the following programs"};
         say {$FILEHANDLE} q{echo -e "\tin the specified conda environment: }

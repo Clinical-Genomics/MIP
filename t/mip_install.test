@@ -106,7 +106,7 @@ our $USAGE = build_usage( {} );
 
 my $conda_dir_path;
 my $verbose = 1;
-our $VERSION = q{1.2.1};
+our $VERSION = q{1.2.2};
 
 ###User Options
 GetOptions(
@@ -163,7 +163,7 @@ foreach my $pipeline ( keys %install_file ) {
     my $cmds_ref = [
         q{perl}, catfile( dirname($Bin), q{mip} ),
         q{install}, $pipeline, q{--config_file}, $config_path,
-        qw{ --sp mip_scripts --dec }
+        qw{--installation full --dec }
     ];
     if ($conda_dir_path) {
 
