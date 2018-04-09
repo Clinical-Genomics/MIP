@@ -8,10 +8,9 @@ use English qw{ -no_match_vars };
 use File::Basename qw{ dirname basename fileparse };
 use File::Spec::Functions qw{ catfile catdir devnull };
 
-#use FindBin qw{ $Bin };
 use Getopt::Long;
 use IO::Handle;
-use List::Util qw{ any };
+use List::Util qw{ any uniq };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
@@ -258,7 +257,6 @@ sub mip_install {
                 {
                     conda_environment =>
                       $parameter{environment_name}{$installation},
-                    ,
                     conda_prefix_path =>
                       $parameter{$installation}{conda_prefix_path},
                     FILEHANDLE => $FILEHANDLE,
@@ -329,16 +327,16 @@ sub set_conda_env_names_and_paths {
 
     my $tmpl = {
         log => {
-            required => 1,
             defined  => 1,
+            required => 1,
             store    => \$log,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
         },
     };
 
@@ -393,7 +391,7 @@ q{No environment name has been specified for MIP's main environment.}
 
 sub get_programs_for_installation {
 
-## Function : Procces the lists of programs that has been seleceted for or omitted from installation
+## Function : Proccess the lists of programs that has been selected for or omitted from installation
 ##          : and update the environment packages
 ## Returns  :
 ## Arguments: $installation   => Environment to be installed
@@ -404,50 +402,53 @@ sub get_programs_for_installation {
 
     ## Flatten argument(s)
     my $installation;
-    my $parameter_href;
     my $log;
+    my $parameter_href;
 
     my $tmpl = {
         installation => {
-            required    => 1,
             defined     => 1,
+            required    => 1,
             store       => \$installation,
             strict_type => 1,
         },
         log => {
-            required => 1,
             defined  => 1,
+            required => 1,
             store    => \$log,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Remove selected programs from installation
-    if ( @{ $parameter_href->{skip_programs} } ) {
-      PROGRAM:
-        foreach my $program ( @{ $parameter_href->{skip_programs} } ) {
-            delete $parameter_href->{$installation}{conda}{$program};
-            delete $parameter_href->{$installation}{shell}{$program};
-            delete $parameter_href->{$installation}{bioconda}{$program};
-            delete $parameter_href->{$installation}{pip}{$program};
-        }
+    ## Set install modes to loop over
+    my @install_modes = qw{ bioconda conda pip shell };
+
+    ## Remove selected programs from installation and gather the rest in an array
+    my @programs;
+  INSTALL_MODE:
+    foreach my $install_mode (@install_modes) {
+        delete @{ $parameter_href->{$installation}{$install_mode} }
+          { @{ $parameter_href->{skip_programs} } };
+        push @programs,
+          keys %{ $parameter_href->{$installation}{$install_mode} };
     }
+    @programs = uniq @programs;
 
     ## Exit if a python 2 env has ben specified for a python 3 program
     _assure_python_compability(
         {
-            sublog                => $log,
             installation_set_href => $parameter_href->{$installation},
             python_version => $parameter_href->{$installation}{conda}{python},
-            select_programs_ref => $parameter_href->{select_programs}
+            select_programs_ref => $parameter_href->{select_programs},
+            sublog              => $log,
         }
     );
 
@@ -493,21 +494,13 @@ q{Please select a single installation environment when using the option select_p
         }
 
         ## Remove all programs except those selected for installation
-        my @programs = (
-            keys %{ $parameter_href->{$installation}{conda} },
-            keys %{ $parameter_href->{$installation}{shell} },
-            keys %{ $parameter_href->{$installation}{bioconda} },
-            keys %{ $parameter_href->{$installation}{pip} },
-        );
         my @programs_to_skip =
           array_minus( @programs, @{ $parameter_href->{select_programs} } );
 
-      PROGRAM_TO_SKIP:
-        foreach my $program_to_skip (@programs_to_skip) {
-            delete $parameter_href->{$installation}{conda}{$program_to_skip};
-            delete $parameter_href->{$installation}{shell}{$program_to_skip};
-            delete $parameter_href->{$installation}{bioconda}{$program_to_skip};
-            delete $parameter_href->{$installation}{pip}{$program_to_skip};
+      INSTALL_MODE:
+        foreach my $install_mode (@install_modes) {
+            delete @{ $parameter_href->{$installation}{$install_mode} }
+              {@programs_to_skip};
         }
     }
 
@@ -550,31 +543,31 @@ sub _assure_python_compability {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $sub_log;
     my $installation_set_href;
     my $python_version;
     my $select_programs_ref;
+    my $sub_log;
 
     my $tmpl = {
         sublog => {
-            required => 1,
             defined  => 1,
+            required => 1,
             store    => \$sub_log,
         },
         installation_set_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$installation_set_href,
+            strict_type => 1,
         },
         python_version => {
             required => 1,
             store    => \$python_version,
         },
         select_programs_ref => {
-            required => 1,
             default  => [],
+            required => 1,
             store    => \$select_programs_ref,
         },
     };
@@ -593,12 +586,12 @@ q{Python is not part of the installation. Skipping python compability check.}
 
     ## Check format of python version
     if (
-        $python_version !~ m/
+        $python_version !~ m{
         ^(?: [23] )      # Assert that the python major version starts with 2 or 3
         [.]              # Major version separator
         (?: \d+$         # Assert that the minor version is a digit
         | \d+ [.] \d+$ ) # Case when minor and patch version has been supplied, allow only digits 
-        /xms
+        }xms
       )
     {
         $sub_log->fatal( q{Please specify a python 2 or 3 version, given: }

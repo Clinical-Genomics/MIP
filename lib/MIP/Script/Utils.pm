@@ -207,7 +207,7 @@ sub print_install_defaults {
     use Data::Printer {
         colored       => 0,
         index         => 0,
-        scalar_quotes => '',
+        scalar_quotes => 0,
     };
 
     ## Set default for vep cache dir

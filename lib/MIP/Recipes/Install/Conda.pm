@@ -63,17 +63,17 @@ sub check_conda_installation {
             strict_type => 1,
         },
         disable_env_check => {
-            default     => 0,
             allow       => [ 0, 1 ],
+            default     => 0,
             store       => \$disable_env_check,
             strict_type => 1,
         },
         parameter_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$parameter_href,
+            strict_type => 1,
         },
         quiet => {
             allow => [ undef, 0, 1 ],
@@ -475,7 +475,7 @@ sub finish_bioconda_package_install {
 ## Arguments : $bioconda_packages_href     => Hash with bioconda packages {REF}
 ##           : $conda_env                  => Name of conda env
 ##           : $conda_env_path             => Path to conda environment
-##           : $custom_solutions_ref           => Regex with programs that requires some fiddling
+##           : $custom_solutions_ref       => Regex with programs that requires some fiddling
 ##           : $FILEHANDLE                 => Filehandle to write to
 ##           : $log                        => Log
 ##           : $quiet                      => Log only warnings and above
