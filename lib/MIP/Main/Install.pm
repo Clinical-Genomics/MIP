@@ -650,33 +650,33 @@ sub get_programs_for_shell_installation {
 
     my $tmpl = {
         conda_programs_href => {
-            required    => 1,
-            defined     => 1,
             default     => {},
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$conda_programs_href,
+            strict_type => 1,
         },
         log => {
-            required => 1,
             defined  => 1,
+            required => 1,
             store    => \$log,
         },
         prefer_shell => {
-            required    => 1,
             allow       => [ undef, 0, 1 ],
-            strict_type => 1,
+            required    => 1,
             store       => \$prefer_shell
+            strict_type => 1,
         },
         shell_install_programs_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$shell_install_programs_ref,
+            strict_type => 1,
         },
         shell_programs_href => {
-            required => 1,
             default  => {},
+            required => 1,
             store    => \$shell_programs_href,
         },
     };
