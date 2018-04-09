@@ -664,7 +664,7 @@ sub get_programs_for_shell_installation {
         prefer_shell => {
             allow       => [ undef, 0, 1 ],
             required    => 1,
-            store       => \$prefer_shell
+            store       => \$prefer_shell,
             strict_type => 1,
         },
         shell_install_programs_ref => {
