@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.08;
+    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vep };
@@ -122,7 +122,15 @@ sub install_vep {
     my $auto = $vep_parameters_href->{vep_auto_flag};
 
     # Set destination directory for cache files
-    my $cache_directory = catdir( $vep_parameters_href->{vep_cache_dir} );
+    my $cache_directory;
+    if ( not $vep_parameters_href->{vep_cache_dir} ) {
+        $cache_directory =
+          catdir( $conda_prefix_path, q{ensembl-tools-release-} . $vep_version,
+            q{cache} );
+    }
+    else {
+        $cache_directory = catdir( $vep_parameters_href->{vep_cache_dir} );
+    }
 
     # Set vep api installation directory
     my $vep_dir_path = catdir( $conda_prefix_path, q{ensembl-vep} );

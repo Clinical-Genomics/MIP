@@ -14,7 +14,7 @@ use MooseX::App::Command;
 use Moose::Util::TypeConstraints;
 use MooseX::Types::Moose qw{ Str Int HashRef Bool };
 
-our $VERSION = 0.0.4;
+our $VERSION = 0.0.5;
 
 extends(qw{ MIP::Cli::Mip });
 
@@ -54,18 +54,6 @@ sub _build_usage {
     );
 
     option(
-        q{conda_environment} => (
-            cmd_aliases   => [qw{ env }],
-            cmd_flag      => q{conda_environment},
-            cmd_tags      => [q{Default: root/base environment}],
-            documentation => q{Name of conda environmnet to use},
-            is            => q{rw},
-            isa           => Str,
-            required      => 0,
-        ),
-    );
-
-    option(
         q{conda_update} => (
             cmd_aliases   => [qw{ cdu }],
             cmd_flag      => q{conda_update},
@@ -88,7 +76,7 @@ sub _build_usage {
     );
 
     option(
-        q{no_update} => (
+        q{noupdate} => (
             cmd_aliases   => [qw{ nup }],
             cmd_flag      => q{noupdate},
             documentation => q{Do not update existing shell programs},

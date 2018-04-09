@@ -118,17 +118,24 @@ $ cd -
 $ perl t/mip_install.test
 ```
 
-##### 4.Create the install instructions for MIP  
+##### 4.Create the install instructions for MIP
 ```Bash
-$ perl mip install rare_disease --config_file definitions/install_rare_disease_parameters.yaml --env MIP
+$ perl mip install rare_disease --config_file definitions/install_rare_disease_parameters.yaml --installations full --environment_name emip=MIP
 ```
 This will generate a batch script called "mip.sh" in your working directory.
 
-  ###### *Note:*  
-  - The batch script will attempt to install the MIP dependencies in a conda environment called MIP. Omit the --env flag if you want to install MIP in conda's base environment (discouraged).
+  ###### *Note:*
+  The batch script will attempt to install the MIP dependencies in a conda environment called MIP. Some programs does not play nicely together and are installed in separate conda environments. MIP will install the following environments by default:
+  * MIP's base environment (named MIP in the example above)
+  * MIP_cnvnator
+  * MIP_peddy
+  * MIP_py3
+  * MIP_svdb
+  * MIP_vep
+
+It is possible to specify which environments to install using the ``--installations`` flag, as well as the names of the environments using the ``environment_name`` flag. E.g. ``--installations emip ecnvnator --environment_name emip=MIP ecnvnator=CNVNATOR``.
 
   - For a full list of available options and parameters, run: ``$ perl mip install rare_disease --help``
-
   - For a full list of parameter defaults, run: ``$ perl mip install rare_disease --ppd``
 
 ##### 5.Run the bash script
@@ -136,54 +143,21 @@ This will generate a batch script called "mip.sh" in your working directory.
 ```Bash
 $ bash mip.sh
 ```
-A conda environment will be created where MIP together with most of its dependencies will be installed.
+A conda environment will be created where MIP with most of its dependencies will be installed.
 
-  ###### *Note:*  
+  ###### *Note:*
   - Some references are quite large and will take time to download. You might want to run this using screen or tmux.
 
 ##### 6.Test your MIP installation (optional)
 
-Make sure to activate your conda environment if that option was used above.  
+Make sure to activate your conda environment if that option was used above.
 
 ```Bash
 $ prove t -r
 $ perl t/mip_analyse_rare_disease.test
 ```
-##### 7.Install tools with conflicting dependencies  
-Tools that have conflicting dependencies needs to be installed in separate conda environments. Currently these programs requires separate environments:  
 
-  * Genmod, Chanjo, Multiqc and Variant_integrity
-    - requires python 3
-  * Peddy
-  * CNVnator  
-    - Requires access to ROOT which disturbs the normal linking of C libraries  
-  * SVDB  
-  * VEP
-
-
-  ```Bash
-  ## Python 3 tools
-  $ perl mip install rare_disease --config_file definitions/install_rare_disease_parameters.yaml --env MIP_py3.6 --python_version 3.6 --select_programs genmod chanjo variant_integrity multiqc
-  $ bash mip.sh
-
-  ## Peddy
-  $ perl mip install rare_disease --config_file definitions/install_rare_disease_parameters.yaml --env MIP_peddy --select_programs peddy
-  $ bash mip.sh
-
-  ## CNVnator
-  $ perl mip install rare_disease --config_file definitions/install_rare_disease_parameters.yaml --env MIP_cnvnator --select_programs cnvnator
-  $ bash mip.sh
-
-  ## SVDB
-  $ perl mip install rare_disease --config_file definitions/install_rare_disease_parameters.yaml --env MIP_svdb --select_programs svdb
-  $ bash mip.sh
-
-  ## VEP
-  $ perl mip install rare_disease --config_file definitions/install_rare_disease_parameters.yaml --env MIP_vep --select_programs vep
-  $ bash mip.sh
-  ```
-
-  ###### When setting up your analysis config file
+###### When setting up your analysis config file
   In your config yaml file or on the command line you will have to supply the ``module_source_environment_command`` parameter to activate the conda environment specific for the tool. Here is an example with three Python 3 tools in their own environment and Peddy, CNVnator, SVDB and VEP in each own, with some extra initialization:
 
   ```Yml
