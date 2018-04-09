@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.0.15;
+    our $VERSION = 1.0.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -39,11 +39,11 @@ BEGIN {
 
 sub check_conda_installation {
 
-## Function  : Checks that conda is installed and returns installation path
-## Returns   : $conda_prefix_path
+## Function  : Checks that conda is installed sets conda directory path
+## Returns   :
 ## Arguments : $conda_dir_path    => Path to conda environment (default: conda root)
-##           : $conda_env         => Name of conda environment
 ##           : $disable_env_check => Disable environment check
+##           : $parameter_href    => The entire parameter hash {REF}
 ##           : $quiet             => Log only warnings and above
 ##           : $verbose           => Log debug messages
 
@@ -51,8 +51,8 @@ sub check_conda_installation {
 
     ## Flatten argument(s)
     my $conda_dir_path;
-    my $conda_env;
     my $disable_env_check;
+    my $parameter_href;
     my $quiet;
     my $verbose;
 
@@ -62,14 +62,17 @@ sub check_conda_installation {
             store       => \$conda_dir_path,
             strict_type => 1,
         },
-        conda_env => {
-            store       => \$conda_env,
+        disable_env_check => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$disable_env_check,
             strict_type => 1,
         },
-        disable_env_check => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            store       => \$disable_env_check,
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
             strict_type => 1,
         },
         quiet => {
@@ -108,7 +111,7 @@ sub check_conda_installation {
     );
 
     ## Establish path to conda, Exit if not found
-    $conda_dir_path = get_conda_dir_path(
+    $parameter_href->{conda_dir_path} = get_conda_dir_path(
         {
             conda_dir_path => $conda_dir_path,
             log            => $log,
@@ -123,16 +126,7 @@ sub check_conda_installation {
         }
     );
 
-    ## Add env to conda_prefix_path if applicable
-    my $conda_prefix_path;
-    if ($conda_env) {
-        $conda_prefix_path = catdir( $conda_dir_path, q{envs}, $conda_env );
-    }
-    else {
-        $conda_prefix_path = $conda_dir_path;
-    }
-
-    return $conda_prefix_path;
+    return;
 }
 
 sub setup_conda_env {
@@ -351,13 +345,17 @@ sub install_bioconda_packages {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments};
 
+    use Array::Utils qw{ intersect };
     use MIP::Gnu::Bash qw{ gnu_unset };
     use MIP::Gnu::Coreutils qw{ gnu_ln };
     use MIP::Log::MIP_log4perl qw{ retrieve_log };
     use MIP::Package_manager::Conda qw{ conda_install };
 
+    ## Packages to be installed
+    my @bioconda_packages = keys %{$bioconda_packages_href};
+
     ## Return if no packages are to be installed
-    return if not keys %{$bioconda_packages_href};
+    return if not @bioconda_packages;
 
     ## Retrieve logger object
     my $log = retrieve_log(
@@ -389,30 +387,37 @@ sub install_bioconda_packages {
     );
     say {$FILEHANDLE} $NEWLINE;
 
+    ## Linking and custom solutions
+    my @custom_solutions = qw{ bwakit | gatk | manta | snpeff | snpsift };
+
     ## Link bioconda packages
     # Creating target-link paths
     my %target_link_paths = _create_target_link_paths(
         {
             bioconda_packages_href => $bioconda_packages_href,
             conda_env_path         => $conda_env_path,
+            custom_solutions_ref   => \@custom_solutions,
             FILEHANDLE             => $FILEHANDLE,
         }
     );
-    say {$FILEHANDLE} q{## Creating symbolic links for bioconda packages};
-  TARGET_AND_LINK_PATHS:
-    while ( my ( $target_path, $link_path ) = each %target_link_paths ) {
-        gnu_ln(
-            {
-                FILEHANDLE  => $FILEHANDLE,
-                force       => 1,
-                link_path   => $link_path,
-                symbolic    => 1,
-                target_path => $target_path,
-            }
-        );
+
+    if (%target_link_paths) {
+        say {$FILEHANDLE} q{## Creating symbolic links for bioconda packages};
+      TARGET_AND_LINK_PATHS:
+        while ( my ( $target_path, $link_path ) = each %target_link_paths ) {
+            gnu_ln(
+                {
+                    FILEHANDLE  => $FILEHANDLE,
+                    force       => 1,
+                    link_path   => $link_path,
+                    symbolic    => 1,
+                    target_path => $target_path,
+                }
+            );
+            print {$FILEHANDLE} $NEWLINE;
+        }
         print {$FILEHANDLE} $NEWLINE;
     }
-    print {$FILEHANDLE} $NEWLINE;
 
     ## Custom solutions for BWA, SnpEff, Manta and GATK
     ## Copying files, downloading necessary databases and make files executable
@@ -421,6 +426,7 @@ sub install_bioconda_packages {
             bioconda_packages_href     => $bioconda_packages_href,
             conda_env                  => $conda_env,
             conda_env_path             => $conda_env_path,
+            custom_solutions_ref       => \@custom_solutions,
             FILEHANDLE                 => $FILEHANDLE,
             log                        => $log,
             snpeff_genome_versions_ref => $snpeff_genome_versions_ref,
@@ -430,31 +436,34 @@ sub install_bioconda_packages {
     );
 
     ## Unset variables
-    say {$FILEHANDLE} q{## Unset variables};
-    my %program_path_aliases = (
-        bwakit  => q{BWAKIT_PATH},
-        snpeff  => q{SNPEFF_PATH},
-        snpsift => q{SNPSIFT_PATH},
-        manta   => q{MANTA_PATH},
-        picard  => q{PICARD_PATH},
-    );
 
-  PROGRAM:
-    foreach my $program ( keys %program_path_aliases ) {
-
-        # Check if the program has been set to be installed via shell and
-        # thus has been removed from the bioconda_packages hash
-        next PROGRAM if ( not $bioconda_packages_href->{$program} );
-
-        gnu_unset(
-            {
-                bash_variable => $program_path_aliases{$program},
-                FILEHANDLE    => $FILEHANDLE,
-            }
+    if ( intersect( @custom_solutions, @bioconda_packages ) ) {
+        say {$FILEHANDLE} q{## Unset variables};
+        my %program_path_aliases = (
+            bwakit  => q{BWAKIT_PATH},
+            snpeff  => q{SNPEFF_PATH},
+            snpsift => q{SNPSIFT_PATH},
+            manta   => q{MANTA_PATH},
+            picard  => q{PICARD_PATH},
         );
-        print {$FILEHANDLE} $NEWLINE;
+
+      PROGRAM:
+        foreach my $program ( keys %program_path_aliases ) {
+
+            # Check if the program has been set to be installed via shell and
+            # thus has been removed from the bioconda_packages hash
+            next PROGRAM if ( not $bioconda_packages_href->{$program} );
+
+            gnu_unset(
+                {
+                    bash_variable => $program_path_aliases{$program},
+                    FILEHANDLE    => $FILEHANDLE,
+                }
+            );
+            print {$FILEHANDLE} $NEWLINE;
+        }
+        say {$FILEHANDLE} $NEWLINE;
     }
-    say {$FILEHANDLE} $NEWLINE;
 
     return;
 }
@@ -466,6 +475,7 @@ sub finish_bioconda_package_install {
 ## Arguments : $bioconda_packages_href     => Hash with bioconda packages {REF}
 ##           : $conda_env                  => Name of conda env
 ##           : $conda_env_path             => Path to conda environment
+##           : $custom_solutions_ref       => Regex with programs that requires some fiddling
 ##           : $FILEHANDLE                 => Filehandle to write to
 ##           : $log                        => Log
 ##           : $quiet                      => Log only warnings and above
@@ -478,6 +488,7 @@ sub finish_bioconda_package_install {
     my $bioconda_packages_href;
     my $conda_env;
     my $conda_env_path;
+    my $custom_solutions_ref;
     my $FILEHANDLE;
     my $log;
     my $quiet;
@@ -499,8 +510,15 @@ sub finish_bioconda_package_install {
         conda_env_path => {
             defined     => 1,
             required    => 1,
-            strict_type => 1,
             store       => \$conda_env_path,
+            strict_type => 1,
+        },
+        custom_solutions_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$custom_solutions_ref,
+            strict_type => 1,
         },
         FILEHANDLE => {
             defined  => 1,
@@ -529,6 +547,7 @@ sub finish_bioconda_package_install {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use Array::Utils qw{ intersect };
     use File::Spec::Functions qw{ catdir catfile };
     use IPC::Cmd qw{ run };
     use MIP::Gnu::Coreutils qw{ gnu_cp gnu_chmod gnu_rm };
@@ -537,6 +556,11 @@ sub finish_bioconda_package_install {
     use MIP::Program::Variantcalling::Snpeff qw{ snpeff_download };
     use MIP::Recipes::Install::Gatk qw{ gatk_download };
     use MIP::Recipes::Install::SnpEff qw{ check_mt_codon_table };
+
+    my @bioconda_packages = keys %{$bioconda_packages_href};
+
+    ## Return if no custom solutions are required
+    return if not intersect( @{$custom_solutions_ref}, @bioconda_packages );
 
     ## Only activate conda environment if supplied by user
     if ($conda_env) {
@@ -771,6 +795,7 @@ sub _create_target_link_paths {
 ## Returns   : %target_link_paths
 ## Arguments : $bioconda_packages_href => Hash with bioconda packages {REF}
 ##           : $conda_env_path         => Path to conda environment
+##           : $custom_solutions_ref   => Array with programs that requires som fiddling {REF}
 ##           : $FILEHANDLE             => Filehandle to write to
 
     my ($arg_href) = @_;
@@ -778,6 +803,7 @@ sub _create_target_link_paths {
     ## Flatten arguments
     my $bioconda_packages_href;
     my $conda_env_path;
+    my $custom_solutions_ref;
     my $FILEHANDLE;
 
     my $tmpl = {
@@ -794,6 +820,13 @@ sub _create_target_link_paths {
             store       => \$conda_env_path,
             strict_type => 1,
         },
+        custom_solutions_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$custom_solutions_ref,
+            strict_type => 1,
+        },
         FILEHANDLE => {
             store => \$FILEHANDLE
         },
@@ -801,9 +834,15 @@ sub _create_target_link_paths {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use Array::Utils qw{ intersect };
     use File::Spec::Functions qw{ catfile catdir };
     use MIP::Gnu::Coreutils qw{ gnu_tail };
     use MIP::Gnu::Findutils qw{ gnu_find };
+
+    my @bioconda_packages = keys %{$bioconda_packages_href};
+
+    ## Skip if no program requires linking
+    return if not intersect( @{$custom_solutions_ref}, @bioconda_packages );
 
     my %target_link_paths;
 

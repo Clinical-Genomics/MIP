@@ -4,6 +4,7 @@ use 5.022;
 use Carp;
 use Cwd qw{ abs_path };
 use File::Spec::Functions qw{ catdir catfile };
+use List::Util qw{ any };
 use open qw{ :encoding(UTF-8) :std };
 use strict;
 use utf8;
@@ -22,9 +23,10 @@ use Readonly;
 ## MIPs lib
 use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Main::Install qw{ mip_install };
-use MIP::Script::Utils qw{ nest_hash print_install_defaults };
+use MIP::Script::Utils
+  qw{ nest_hash print_install_defaults update_program_versions };
 
-our $VERSION = '0.0.4';
+our $VERSION = '0.2.0';
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -33,9 +35,6 @@ command_long_description(
 q{Generates an installation script (mip.sh), which is used for installation of the RNA flavor of the Mutation Identification Pipeline (MIP).}
 );
 command_usage(q{mip <install> <rare_disease> [options]});
-
-## Constants
-Readonly my $SPACE => q{ };
 
 ## Define, check and get Cli supplied parameters
 _build_usage();
@@ -66,8 +65,20 @@ sub run {
     ## Merge arrays and overwrite flat values in config YAML with command line
     @parameter{ keys %{$arg_href} } = values %{$arg_href};
 
+    ## Update installation array
+    if ( any { $_ eq q{full} } @{ $parameter{installations} } ) {
+        @{ $parameter{installations} } = qw{ emip etrinity };
+    }
+
     ## Nest the command line parameters and overwrite the default
     nest_hash( { cmd_href => \%parameter } );
+
+    ## Update the program versions with the user input
+    update_program_versions(
+        {
+            parameter_href => \%parameter,
+        }
+    );
 
     ## Start generating the installation script
     mip_install(
@@ -85,56 +96,51 @@ sub _build_usage {
 ## Arguments:
 
     option(
-        q{bioconda_programs} => (
-            cmd_aliases   => [qw{ bc }],
-            cmd_flag      => q{bioconda},
-            documentation => q{Set bioconda version of programs},
+        q{environment_name} => (
+            cmd_aliases   => [qw{ envn }],
+            cmd_flag      => q{environment_name},
+            documentation => q{Set environment names},
             is            => q{rw},
             isa           => Dict [
-                cufflinks => Optional [Str],
-                fastqc    => Optional [Str],
-                htslib    => Optional [Str],
-                picard    => Optional [Str],
-                salmon    => Optional [Str],
-                samtools  => Optional [Str],
-                star      => Optional [Str],
+                emip     => Optional [Str],
+                etrinity => Optional [Str],
             ],
             required => 0,
         ),
     );
 
     option(
-        q{conda_packages} => (
-            cmd_aliases   => [qw{ cpa }],
-            cmd_flag      => q{conda_packages},
-            cmd_tags      => [q{Default: pip, python=2.7}],
-            documentation => q{Base conda packages that are always installed},
+        q{installations} => (
+            cmd_aliases   => [qw{ install }],
+            cmd_flag      => q{installations},
+            cmd_tags      => [q{Default: emip, etrinity}],
+            documentation => q{Environments to install},
             is            => q{rw},
-            isa           => HashRef,
+            isa           => ArrayRef [ enum( [qw{ emip etrinity full }] ), ],
             required      => 0,
         ),
     );
 
     option(
-        q{pip} => (
-            cmd_aliases   => [qw{ pip }],
-            cmd_flag      => q{pip_programs},
-            documentation => q{Set the version of programs installed via pip},
+        q{program_versions} => (
+            cmd_aliases   => [qw{ pv }],
+            cmd_flag      => q{program_versions},
+            documentation => q{Set program versions},
             is            => q{rw},
-            isa           => HashRef,
-            required      => 0,
-        ),
-    );
-
-    option(
-        q{conda_packages:python} => (
-            cmd_aliases   => [qw{ pyv }],
-            cmd_flag      => q{python_version},
-            cmd_tags      => [q{Default: 2.7}],
-            documentation => q{Python version to install},
-            is            => q{rw},
-            isa           => Str,
-            required      => 0,
+            isa           => Dict [
+                cufflinks   => Optional [Str],
+                fastqc      => Optional [Str],
+                htslib      => Optional [Str],
+                java_jdk    => Optional [Str],
+                picard      => Optional [Str],
+                pip         => Optional [Str],
+                python      => Optional [Str],
+                salmon      => Optional [Str],
+                samtools    => Optional [Str],
+                star        => Optional [Str],
+                star_fusion => Optional [Str],
+            ],
+            required => 0,
         ),
     );
 
@@ -187,20 +193,6 @@ sub _build_usage {
               q{Install supplied programs via shell instead of via conda},
             is       => q{rw},
             isa      => ArrayRef [ enum( [qw{ picard }] ), ],
-            required => 0,
-        ),
-    );
-
-    option(
-        q{shell_programs} => (
-            cmd_aliases   => [qw{ shell }],
-            cmd_flag      => q{shell_programs},
-            documentation => q{Set shell version of programs},
-            is            => q{rw},
-            isa           => Dict [
-                picard      => Optional [Str],
-                star_fusion => Optional [Str],
-            ],
             required => 0,
         ),
     );

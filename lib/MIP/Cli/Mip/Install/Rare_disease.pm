@@ -4,6 +4,7 @@ use 5.022;
 use Carp;
 use Cwd qw{ abs_path };
 use File::Spec::Functions qw{ catdir catfile };
+use List::Util qw{ any };
 use open qw{ :encoding(UTF-8) :std };
 use strict;
 use utf8;
@@ -22,9 +23,10 @@ use Readonly;
 ## MIPs lib
 use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Main::Install qw{ mip_install };
-use MIP::Script::Utils qw{ nest_hash print_install_defaults };
+use MIP::Script::Utils
+  qw{ nest_hash print_install_defaults update_program_versions};
 
-our $VERSION = q{0.1.4};
+our $VERSION = q{0.2.0};
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -33,9 +35,6 @@ command_long_description(
 q{Generates an installation script (mip.sh), which is used for installation of the Mutation Identification Pipeline (MIP) for rare diseases.}
 );
 command_usage(q{mip <install> <rare_disease> [options]});
-
-## Constants
-Readonly my $SPACE => q{ };
 
 ## Define, check and get Cli supplied parameters
 _build_usage();
@@ -66,8 +65,28 @@ sub run {
     ## Merge arrays and overwrite flat values in config YAML with command line
     @parameter{ keys %{$arg_href} } = values %{$arg_href};
 
+    ## Add all environments to installation if full installation was selected
+    if ( any { $_ eq q{full} } @{ $parameter{installations} } ) {
+        @{ $parameter{installations} } =
+          qw{ emip epeddy epy3 esvdb evep ecnvnator };
+    }
+
+    ## Make sure that the cnvnator environment is installed last
+    if ( any { $_ eq q{ecnvnator} } @{ $parameter{installations} } ) {
+        @{ $parameter{installations} } =
+          grep { !m/ecnvnator/xms } @{ $parameter{installations} };
+        push @{ $parameter{installations} }, q{ecnvnator};
+    }
+
     ## Nest the command line parameters and overwrite the default
     nest_hash( { cmd_href => \%parameter } );
+
+    ## Update the program versions with the user input
+    update_program_versions(
+        {
+            parameter_href => \%parameter,
+        }
+    );
 
     ## Start generating the installation script
     mip_install(
@@ -85,40 +104,86 @@ sub _build_usage {
 ## Arguments:
 
     option(
-        q{bioconda_programs} => (
-            cmd_aliases   => [qw{ bc }],
-            cmd_flag      => q{bioconda},
-            documentation => q{Set bioconda version of programs},
+        q{environment_name} => (
+            cmd_aliases   => [qw{ envn }],
+            cmd_flag      => q{environment_name},
+            documentation => q{Set environment names},
             is            => q{rw},
             isa           => Dict [
-                bcftools        => Optional [Str],
-                bedtools        => Optional [Str],
-                bwa             => Optional [Str],
-                bwakit          => Optional [Str],
-                cmake           => Optional [Str],
-                cramtools       => Optional [Str],
-                cutadapt        => Optional [Str],
-                delly           => Optional [Str],
-                fastqc          => Optional [Str],
-                freebayes       => Optional [Str],
-                gatk            => Optional [Str],
-                gcc             => Optional [Str],
-                htslib          => Optional [Str],
-                libxml2         => Optional [Str],
-                libxslt         => Optional [Str],
-                manta           => Optional [Str],
-                numpy           => Optional [Str],
-                peddy           => Optional [Str],
-                picard          => Optional [Str],
-                plink2          => Optional [Str],
-                q{rtg-tools}    => Optional [Str],
-                sambamba        => Optional [Str],
-                samtools        => Optional [Str],
-                q{scikit-learn} => Optional [Str],
-                snpeff          => Optional [Str],
-                snpsift         => Optional [Str],
-                vcfanno         => Optional [Str],
-                vt              => Optional [Str],
+                emip      => Optional [Str],
+                epeddy    => Optional [Str],
+                epy3      => Optional [Str],
+                esvdb     => Optional [Str],
+                evep      => Optional [Str],
+                ecnvnator => Optional [Str],
+            ],
+            required => 0,
+        ),
+    );
+
+    option(
+        q{installations} => (
+            cmd_aliases   => [qw{ install }],
+            cmd_flag      => q{installations},
+            cmd_tags      => [q{Default: emip, epeddy, epy3, esvdb, evep}],
+            documentation => q{Environments to install},
+            is            => q{rw},
+            isa           => ArrayRef [
+                enum( [qw{ emip epeddy epy3 esvdb evep ecnvnator full }] ),
+            ],
+            required => 0,
+        ),
+    );
+
+    option(
+        q{program_versions} => (
+            cmd_aliases   => [qw{ pv }],
+            cmd_flag      => q{program_versions},
+            documentation => q{Set program versions},
+            is            => q{rw},
+            isa           => Dict [
+                bcftools          => Optional [Str],
+                bedtools          => Optional [Str],
+                bwa               => Optional [Str],
+                bwakit            => Optional [Str],
+                chanjo            => Optional [Str],
+                cmake             => Optional [Str],
+                cnvnator          => Optional [Str],
+                cramtools         => Optional [Str],
+                cutadapt          => Optional [Str],
+                delly             => Optional [Str],
+                expansionhunter   => Optional [Str],
+                fastqc            => Optional [Str],
+                freebayes         => Optional [Str],
+                gatk              => Optional [Str],
+                gcc               => Optional [Str],
+                genmod            => Optional [Str],
+                htslib            => Optional [Str],
+                libxml2           => Optional [Str],
+                libxslt           => Optional [Str],
+                manta             => Optional [Str],
+                multiqc           => Optional [Str],
+                numpy             => Optional [Str],
+                peddy             => Optional [Str],
+                picard            => Optional [Str],
+                pip               => Optional [Str],
+                plink2            => Optional [Str],
+                python            => Optional [Str],
+                q{rtg-tools}      => Optional [Str],
+                q{scikit-learn}   => Optional [Str],
+                rhocall           => Optional [Str],
+                sambamba          => Optional [Str],
+                samtools          => Optional [Str],
+                snpeff            => Optional [Str],
+                snpeff            => Optional [Str],
+                snpsift           => Optional [Str],
+                svdb              => Optional [Str],
+                tiddit            => Optional [Str],
+                variant_integrity => Optional [Str],
+                vcf2cytosure      => Optional [Str],
+                vcfanno           => Optional [Str],
+                vep               => Optional [Str],
+                vt                => Optional [Str],
             ],
             required => 0,
         ),
@@ -131,46 +196,6 @@ sub _build_usage {
             cmd_tags =>
               [q{Default: root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz}],
             documentation => q{Set the cnvnator root binary},
-            is            => q{rw},
-            isa           => Str,
-            required      => 0,
-        ),
-    );
-
-    option(
-        q{conda_packages} => (
-            cmd_aliases   => [qw{ cpa }],
-            cmd_flag      => q{conda_packages},
-            cmd_tags      => [q{Default: pip, python=2.7}],
-            documentation => q{Base conda packages that are always installed},
-            is            => q{rw},
-            isa           => HashRef,
-            required      => 0,
-        ),
-    );
-
-    option(
-        q{pip} => (
-            cmd_aliases   => [qw{ pip }],
-            cmd_flag      => q{pip_programs},
-            documentation => q{Set the version of programs installed via pip},
-            is            => q{rw},
-            isa           => Dict [
-                chanjo            => Optional [Str],
-                multiqc           => Optional [Str],
-                genmod            => Optional [Str],
-                variant_integrity => Optional [Str],
-            ],
-            required => 0,
-        ),
-    );
-
-    option(
-        q{conda_packages:python} => (
-            cmd_aliases   => [qw{ pyv }],
-            cmd_flag      => q{python_version},
-            cmd_tags      => [q{Default: 2.7}],
-            documentation => q{Python version to install},
             is            => q{rw},
             isa           => Str,
             required      => 0,
@@ -210,11 +235,11 @@ sub _build_usage {
             isa           => ArrayRef [
                 enum(
                     [
-                        qw{ bcftools bedtools bwa bwakit cmake cnvnator
-                          cramtools chanjo cutadapt delly expansionhunter
-                          fastqc freebayes gatk gcc genmod htslib libxml2
-                          libxslt manta mip_scripts multiqc numpy peddy picard
-                          plink rhocall rtg-tools sambamba samtools
+                        qw{ bcftools bedtools bwa bwakit chanjo cmake cnvnator
+                          cramtools cutadapt delly expansionhunter fastqc
+                          freebayes gatk genmod gcc htslib libxml2 libxslt
+                          manta mip_scripts multiqc numpy peddy picard pip
+                          plink python rhocall rtg-tools sambamba samtools
                           scikit-learn snpeff snpsift svdb tiddit
                           variant_integrity vcf2cytosure vcfanno vep vt }
                     ]
@@ -238,31 +263,6 @@ sub _build_usage {
     );
 
     option(
-        q{shell_programs} => (
-            cmd_aliases   => [qw{ shell }],
-            cmd_flag      => q{shell_programs},
-            documentation => q{Set shell version of programs},
-            is            => q{rw},
-            isa           => Dict [
-                bedtools        => Optional [Str],
-                cnvnator        => Optional [Str],
-                expansionhunter => Optional [Str],
-                plink2          => Optional [Str],
-                picard          => Optional [Str],
-                rhocall         => Optional [Str],
-                sambamba        => Optional [Str],
-                snpeff          => Optional [Str],
-                svdb            => Optional [Str],
-                tiddit          => Optional [Str],
-                vcf2cytosure    => Optional [Str],
-                vep             => Optional [Str],
-                vt              => Optional [Str],
-            ],
-            required => 0,
-        ),
-    );
-
-    option(
         q{skip_programs} => (
             cmd_aliases   => [qw{ skip }],
             cmd_flag      => q{skip_programs},
@@ -274,10 +274,10 @@ sub _build_usage {
                         qw{ bcftools bedtools bwa bwakit chanjo cmake cnvnator
                           cramtools cutadapt delly expansionhunter fastqc
                           freebayes gatk genmod gcc htslib libxml2 libxslt
-                          manta mip_scripts multiqc numpy peddy picard plink
-                          rhocall rtg-tools sambamba samtools scikit-learn
-                          snpeff snpsift svdb tiddit variant_integrity
-                          vcf2cytosure vcfanno vep vt }
+                          manta mip_scripts multiqc numpy peddy picard pip
+                          plink python rhocall rtg-tools sambamba samtools
+                          scikit-learn snpeff snpsift svdb tiddit
+                          variant_integrity vcf2cytosure vcfanno vep vt }
                     ]
                 ),
             ],
