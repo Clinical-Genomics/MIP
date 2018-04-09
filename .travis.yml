@@ -37,7 +37,7 @@ script:
   # Set user specific path to data
   #- echo 'cluster_constant_path:' /home/travis/build/${TRAVIS_REPO_SLUG}/t/data >> /home/travis/build/${TRAVIS_REPO_SLUG}/templates/mip_travis_config.yaml
   - bash mip.sh
-  - source activate test_environment
+  - source activate mip_travis
   - cd /lib/x86_64-linux-gnu
   - sudo ln -s "$ROOTSYS"/lib/*so .
   - cd -
