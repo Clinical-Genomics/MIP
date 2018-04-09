@@ -24,7 +24,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -496,23 +496,23 @@ sub reload_previous_pedigree_info {
 
 ## Function : Updates sample_info hash with previous run pedigree info
 ## Returns  :
-## Arguments: $active_parameter_href => Holds all set parameter for analysis
-##          : $sample_info_href      => Info on samples and family hash {REF}
+## Arguments: $log                   => Log object to write to
 ##          : $sample_info_file_path => Previuos sample info file
+##          : $sample_info_href      => Info on samples and family hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $active_parameter_href;
-    my $sample_info_href;
+    my $log;
     my $sample_info_file_path;
+    my $sample_info_href;
 
     my $tmpl = {
-        active_parameter_href => {
-            default     => {},
+        log                   => { required => 1, store => \$log, },
+        sample_info_file_path => {
             defined     => 1,
             required    => 1,
-            store       => \$active_parameter_href,
+            store       => \$sample_info_file_path,
             strict_type => 1,
         },
         sample_info_href => {
@@ -522,33 +522,23 @@ sub reload_previous_pedigree_info {
             store       => \$sample_info_href,
             strict_type => 1,
         },
-        sample_info_file_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_file_path,
-            strict_type => 1,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::File::Format::Yaml qw{ load_yaml };
 
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    if ( -f $active_parameter_href->{sample_info_file} ) {
-
-        $log->info( q{Loaded: } . $active_parameter_href->{sample_info_file},
-            $NEWLINE );
+    if ( -f $sample_info_file_path ) {
 
         ## Loads a YAML file into an arbitrary hash and returns it.
         # Load parameters from previous run from sample_info_file
         my %previous_sample_info = load_yaml(
             {
-                yaml_file => $active_parameter_href->{sample_info_file},
+                yaml_file => $sample_info_file_path,
             }
         );
+
+        $log->info( q{Loaded: } . $sample_info_file_path, $NEWLINE );
 
         ## Update sample_info with pedigree information from previous run
         ## Should be only pedigree keys in %allowed_entries
@@ -613,22 +603,22 @@ sub _update_sample_info_hash {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $sample_info_href;
     my $previous_sample_info_href;
+    my $sample_info_href;
 
     my $tmpl = {
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
         previous_sample_info_href => {
             default     => {},
             defined     => 1,
             required    => 1,
             store       => \$previous_sample_info_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
             strict_type => 1,
         },
     };

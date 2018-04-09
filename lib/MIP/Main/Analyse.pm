@@ -435,7 +435,7 @@ sub mip_analyse {
 ## Updates sample_info hash with previous run pedigree info
     reload_previous_pedigree_info(
         {
-            active_parameter_href => \%active_parameter,
+            log                   => $log,
             sample_info_href      => \%sample_info,
             sample_info_file_path => $active_parameter{sample_info_file},
         }

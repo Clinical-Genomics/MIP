@@ -1,0 +1,33 @@
+sample:
+  sample_1:
+    analysis_type: cancer
+    capture_kit: agilent_sureselect.v5
+    expected_coverage: 150
+    father: sample_2
+    mother: sample_3
+    phenotype: affected
+    sample_id: sample_1
+    sample_name: sample_1
+    sample_origin: normal
+    sex: female
+  sample_2:
+    analysis_type: cancer
+    capture_kit: agilent_sureselect.v5
+    expected_coverage: 150
+    father: 0
+    mother: 0
+    phenotype: unaffected
+    sample_id: sample_2
+    sample_name: sample_2
+    sample_origin: tumor
+    sex: male
+  sample_3:
+    analysis_type: wts
+    capture_kit: agilent_sureselect.v5
+    expected_coverage: 150
+    father: 0
+    mother: 0
+    phenotype: unaffected
+    sample_id: sample_3
+    sample_name: sample_3
+    sex: unknown
