@@ -116,15 +116,15 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
+    infile_path => {
+        input           => catfile(qw{ dir infile.bam }),
+        expected_output => q{-I} . $SPACE . catfile(qw{ dir infile.bam }),
+    },
     referencefile_path => {
         input           => catfile(qw{reference_dir human_genome_build.fasta }),
         expected_output => q{--reference_sequence}
           . $SPACE
           . catfile(qw{reference_dir human_genome_build.fasta }),
-    },
-    infile_path => {
-        input           => catfile(qw{ dir infile.bam }),
-        expected_output => q{-I} . $SPACE . catfile(qw{ dir infile.bam }),
     },
     outfile_path => {
         input           => catfile(qw{ dir outfile.bam }),
@@ -133,23 +133,9 @@ my %required_argument = (
 );
 
 my %specific_argument = (
-    referencefile_path => {
-        input           => catfile(qw{reference_dir human_genome_build.fasta }),
-        expected_output => q{--reference_sequence}
-          . $SPACE
-          . catfile(qw{reference_dir human_genome_build.fasta }),
-    },
     infile_path => {
         input           => catfile(qw{ dir infile.bam }),
         expected_output => q{-I} . $SPACE . catfile(qw{ dir infile.bam }),
-    },
-    outfile_path => {
-        input           => catfile(qw{ dir outfile.bam }),
-        expected_output => q{-o} . $SPACE . catfile(qw{ dir outfile.bam }),
-    },
-    readfilter => {
-        input           => q{deleteAllReads},
-        expected_output => q{-rf} . $SPACE . q{deleteAllReads},
     },
     maping_quality_from => {
         input           => q{60},
@@ -161,9 +147,23 @@ my %specific_argument = (
         expected_output => q{-RMQT} . $SPACE . q{60},
 
     },
+    outfile_path => {
+        input           => catfile(qw{ dir outfile.bam }),
+        expected_output => q{-o} . $SPACE . catfile(qw{ dir outfile.bam }),
+    },
     operation => {
         input           => q{STUFF},
         expected_output => q{-U} . $SPACE . q{STUFF},
+    },
+    referencefile_path => {
+        input           => catfile(qw{reference_dir human_genome_build.fasta }),
+        expected_output => q{--reference_sequence}
+          . $SPACE
+          . catfile(qw{reference_dir human_genome_build.fasta }),
+    },
+    readfilter => {
+        input           => q{deleteAllReads},
+        expected_output => q{-rf} . $SPACE . q{deleteAllReads},
     },
 );
 
