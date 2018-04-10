@@ -109,6 +109,7 @@ human_genome_reference:
   associated_program:
    - mip
    - pbwa_mem
+   - pexpansionhunter
    - pgatk_realigner
    - pgatk_baserecalibration
    - pgatk_haplotypecaller
@@ -160,9 +161,10 @@ module_time:
     pchanjo_sexcheck: 2
     pcnvnator: 5
     pdelly_call: 10
-    pdelly_reformat: 5
+    pdelly_reformat: 7
     pendvariantannotationblock: 2
     pevaluation: 1
+    pexpansionhunter: 1
     pfastqc: 10
     pfreebayes: 20
     pfrequency_filter: 2
@@ -221,6 +223,7 @@ module_core_number:
     pdelly_reformat: 16
     pendvariantannotationblock: 1
     pevaluation: 1
+    pexpansionhunter: 1
     pfastqc: 0
     pfreebayes: 16
     pfrequency_filter: 16
@@ -680,6 +683,27 @@ delly_types:
    - INV
    - INS
   type: program_argument
+pexpansionhunter:
+  associated_program:  
+   - mip
+  chain: SVEXP
+  data_type: SCALAR
+  default: 0
+  file_tag: _exphun
+  outdir_name: expansionhunter
+  outfile_suffix: ".vcf"
+  program_name_path:
+   - ExpansionHunter
+  program_type: structural_variant_callers
+  type: program
+expansionhunter_repeat_specs_dir:
+  associated_program:
+   - pexpansionhunter
+  data_type: SCALAR
+  exists_check: directory
+  mandatory: no
+  type: path
+  update_path: absolute_path
 pmanta:
   associated_program:
    - mip

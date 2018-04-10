@@ -162,9 +162,7 @@ sub pipeline_rare_disease {
     use MIP::Recipes::Analysis::Delly_reformat qw{ analysis_delly_reformat };
     use MIP::Recipes::Analysis::Endvariantannotationblock
       qw{ analysis_endvariantannotationblock };
-### TEMP FIX TO ENABLE DEVELOP UNTIL EXPLOREHUNTER IS ENABLED
-#    use MIP::Recipes::Analysis::Expansionhunter qw{ analysis_expansionhunter };
-###
+    use MIP::Recipes::Analysis::Expansionhunter qw{ analysis_expansionhunter };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
     use MIP::Recipes::Analysis::Freebayes qw { analysis_freebayes_calling };
     use MIP::Recipes::Analysis::Frequency_filter

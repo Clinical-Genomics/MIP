@@ -797,7 +797,7 @@ sub mip_analyse {
               $parameter{dynamic_parameter}{consensus_analysis_type},
             log          => $log,
             programs_ref => [
-                qw{ cnvnator delly_call delly_reformat tiddit samtools_subsample_mt }
+                qw{ cnvnator delly_call delly_reformat expansionhunter tiddit samtools_subsample_mt }
             ],
         }
     );
