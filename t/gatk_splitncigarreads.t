@@ -120,15 +120,15 @@ my %required_argument = (
         input           => catfile(qw{ dir infile.bam }),
         expected_output => q{-I} . $SPACE . catfile(qw{ dir infile.bam }),
     },
+    outfile_path => {
+        input           => catfile(qw{ dir outfile.bam }),
+        expected_output => q{-o} . $SPACE . catfile(qw{ dir infile.bam }),
+    },
     referencefile_path => {
         input           => catfile(qw{reference_dir human_genome_build.fasta }),
         expected_output => q{--reference_sequence}
           . $SPACE
           . catfile(qw{reference_dir human_genome_build.fasta }),
-    },
-    outfile_path => {
-        input           => catfile(qw{ dir outfile.bam }),
-        expected_output => q{-o} . $SPACE . catfile(qw{ dir infile.bam }),
     },
 );
 
