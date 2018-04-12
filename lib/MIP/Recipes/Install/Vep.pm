@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_vep };
@@ -281,8 +281,10 @@ q{Please add the [a] and/or [l] flag to --vep_auto_flag when running mip_install
             auto            => $auto,
             cache_directory => $cache_directory,
             FILEHANDLE      => $FILEHANDLE,
+            no_update       => 1,
             plugins_ref     => \@plugins,
             species_ref     => [qw{ homo_sapiens }],
+            version         => $vep_version,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -311,7 +313,9 @@ q{Please add the [a] and/or [l] flag to --vep_auto_flag when running mip_install
                     assembly        => $assemblies[$assembly_version],
                     auto            => $cf_auto,
                     cache_directory => $cache_directory,
+                    cache_version   => $vep_version,
                     FILEHANDLE      => $FILEHANDLE,
+                    no_update       => 1,
                     species_ref     => [qw{ homo_sapiens }],
                 }
             );
@@ -395,20 +399,6 @@ q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/LoFtool_scores.tx
                 link_path   => $link_path,
                 symbolic    => 1,
                 target_path => $target_path,
-            }
-        );
-        say {$FILEHANDLE} $NEWLINE;
-
-        ## Clean up
-        say {$FILEHANDLE} q{## Clean up};
-        gnu_rm(
-            {
-                FILEHANDLE  => $FILEHANDLE,
-                force       => 1,
-                infile_path => catdir(
-                    $conda_prefix_path,
-                    q{VariantEffectPredictor-} . $vep_version . $DOT . q{zip}
-                ),
             }
         );
         say {$FILEHANDLE} $NEWLINE;
