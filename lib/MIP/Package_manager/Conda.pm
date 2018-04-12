@@ -1,14 +1,13 @@
 package MIP::Package_manager::Conda;
 
 use Carp;
+use charnames qw{ :full :short };
 use Cwd;
 use English qw{ -no_match_vars };
 use Getopt::Long;
 use IO::Handle;
-use List::Util qw{ any };
-use Params::Check qw{ check allow last_error };
-use charnames qw{ :full :short };
 use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use strict;
 use utf8;
 use warnings qw{ FATAL utf8 };
@@ -62,16 +61,16 @@ sub conda_create {
     my $tmpl = {
         conda_channels_ref => {
             allow => sub {
-                my $channels_ref = shift;
+                my $channels_ref = shift @_;
                 ## Allow undef
                 return 1 if scalar @{$channels_ref} == 0;
                 ## Test values
-                foreach my $channel ( @{$channels_ref} ) {
-                    return
-                      if not any { $_ eq $channel }
-                    (qw{ conda-forge bioconda });
-                }
-                return 1;
+                return _check_array_membership(
+                    {
+                        allowed_elements_ref => [qw{ bioconda conda-forge }],
+                        test_elements_ref    => $channels_ref,
+                    }
+                );
             },
             default     => [],
             store       => \$conda_channels_ref,
@@ -107,6 +106,8 @@ sub conda_create {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use List::Util qw{ uniq };
+
     ##Stores commands depending on input parameters
     # Basic command
     my @commands = q{conda create};
@@ -124,10 +125,9 @@ sub conda_create {
     }
 
     if ( @{$conda_channels_ref} ) {
-        ## Push channels in reverse order so that bioconda gets priority over conda-forge
         push @commands,
           q{--channel} . $SPACE . join $SPACE . q{--channel} . $SPACE,
-          sort @{$conda_channels_ref};
+          @{$conda_channels_ref};
     }
 
     if ( @{$packages_ref} ) {
@@ -300,8 +300,7 @@ sub conda_check_env_status {
     ## Deactivate any activate env prior to installation
     #   Perl options:
     #   n : loop over input
-    #   a : automatically split input and store in array @F
-    #   e : execute code
+
     #
     # Unless the active environment is root the expression will return true
     #   and print the environment name
@@ -350,7 +349,7 @@ sub conda_install {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $conda_channels_ref = $arg_href->{conda_channels_ref};
+    my $conda_channels_ref;
     my $env_name;
     my $FILEHANDLE;
     my $no_confirmation;
@@ -361,16 +360,16 @@ sub conda_install {
         conda_channels_ref => {
             default => [],
             allow   => sub {
-                my $channels_ref = shift;
+                my $channels_ref = shift @_;
                 ## Allow undef
                 return 1 if scalar @{$channels_ref} == 0;
                 ## Test values
-                foreach my $channel ( @{$channels_ref} ) {
-                    return
-                      if not any { $_ eq $channel }
-                    (qw{ conda-forge bioconda });
-                }
-                return 1;
+                return _check_array_membership(
+                    {
+                        allowed_elements_ref => [qw{ bioconda conda-forge }],
+                        test_elements_ref    => $channels_ref,
+                    }
+                );
             },
             store       => \$conda_channels_ref,
             strict_type => 1,
@@ -424,10 +423,9 @@ sub conda_install {
     }
 
     if ( @{$conda_channels_ref} ) {
-        ## Push channels in reverse order so that bioconda gets priority over conda-forge
         push @commands,
           q{--channel} . $SPACE . join $SPACE . q{--channel} . $SPACE,
-          sort @{$conda_channels_ref};
+          @{$conda_channels_ref};
     }
 
     push @commands, join $SPACE, @{$packages_ref};
@@ -533,4 +531,43 @@ sub conda_uninstall {
     return @commands;
 }
 
+sub _check_array_membership {
+
+##Function : Checks if all array elements are part of an array with allowed elements. Returns tru/false
+##Returns  : Boolean
+##Arguments: $allowed_elements_ref => Allowed elements {REF}
+##         : $test_elements_ref    => Array elements to test {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $allowed_elements_ref;
+    my $test_elements_ref;
+
+    my $tmpl = {
+        allowed_elements_ref => {
+            default     => [],
+            required    => 1,
+            store       => \$allowed_elements_ref,
+            strict_type => 1,
+        },
+        test_elements_ref => {
+            default     => [],
+            required    => 1,
+            store       => \$test_elements_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use List::Util qw{ any };
+
+    ## Test values
+  TEST_ELEMENT:
+    foreach my $test_element ( @{$test_elements_ref} ) {
+        return if not any { $_ eq $test_element } @{$allowed_elements_ref};
+    }
+    return 1;
+}
 1;

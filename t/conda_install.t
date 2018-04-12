@@ -113,7 +113,7 @@ my %required_argument = (
 
 my %specific_argument = (
     conda_channels_ref => {
-        inputs_ref      => [qw{ conda-forge bioconda }],
+        inputs_ref      => [qw{ bioconda conda-forge }],
         expected_output => q{--channel bioconda --channel conda-forge},
     },
     env_name => {
