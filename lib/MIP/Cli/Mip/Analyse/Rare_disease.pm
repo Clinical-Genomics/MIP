@@ -18,7 +18,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 0.01;
+our $VERSION = 0.02;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -644,6 +644,26 @@ q{Sambamba size of the io buffer for reading and writing BAM during the second p
             documentation => q{Type of SV to call},
             is            => q{rw},
             isa           => ArrayRef [ enum( [qw{ DEL DUP INV INS TRA }] ), ],
+        )
+    );
+
+    option(
+        q{pexpansionhunter} => (
+            cmd_aliases   => [qw{ pexp }],
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Anaylse expansions of Short Tandem Repeats},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{expansionhunter_repeat_specs_dir} => (
+            cmd_aliases => [qw{ exphun_rep_spec_dir }],
+            documentation =>
+              q{Path to reference genome specic folder with repeat specs},
+            is  => q{rw},
+            isa => Str,
         )
     );
 

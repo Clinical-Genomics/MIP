@@ -4,7 +4,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ fileparse };
-use File::Spec::Functions qw{ catfile splitpath };
+use File::Spec::Functions qw{ catdir catfile splitpath };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use strict;
@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -211,6 +211,7 @@ q{Could not detect a supplied capture kit. Will Try to use 'latest' capture kit:
 
         return;
     }
+    ## Set sample info file
     if ( $parameter_name eq q{sample_info_file} ) {
 
         $parameter_href->{sample_info_file}{default} = catfile(
@@ -223,6 +224,22 @@ q{Could not detect a supplied capture kit. Will Try to use 'latest' capture kit:
 
         $parameter_href->{qccollect_sampleinfo_file}{default} =
           $parameter_href->{sample_info_file}{default};
+        return;
+    }
+
+    ## Set default path to expansionhunter repeat specs if needed
+    if ( $parameter_name eq q{expansionhunter_repeat_specs_dir} ) {
+
+        ## Try to get default directory if variable is unset
+        if ( not $active_parameter_href->{expansionhunter_repeat_specs_dir} ) {
+            $active_parameter_href->{expansionhunter_repeat_specs_dir} =
+              _get_default_repeat_specs_dir_path(
+                {
+                    reference_genome_path =>
+                      $active_parameter_href->{human_genome_reference},
+                }
+              );
+        }
         return;
     }
     return;
@@ -741,4 +758,85 @@ sub set_parameter_to_broadcast {
     return;
 }
 
+sub _get_default_repeat_specs_dir_path {
+
+## Function : Return the path to the repeat specs directory in the Expansionhunter directory
+## Returns  : $repeat_specs_dir_path
+## Arguments: $reference_genome_path => Path to the reference genome used
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $reference_genome_path;
+
+    my $tmpl = {
+        reference_genome_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$reference_genome_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use Cwd qw{ abs_path };
+    use File::Basename qw{ fileparse };
+    use File::Find::Rule;
+    use IPC::Cmd qw{ can_run };
+
+    Readonly my $MINUS_ONE => -1;
+    Readonly my $MINUS_TWO => -2;
+
+    ## Path to set
+    my $repeat_specs_dir_path;
+
+    ## Get path to binary
+    my $expansionhunter_bin_path = can_run(q{ExpansionHunter});
+
+    ## Return if path not found,
+    ## MIP requires a defined variable in order to flag that it can't find the dir
+    if ( not $expansionhunter_bin_path ) {
+        return q{Failed to find default path};
+    }
+
+    ## Follow potential link
+    $expansionhunter_bin_path = abs_path($expansionhunter_bin_path);
+
+    ## Get the path to the repeat specs dirs
+    my @expansionhunter_dirs = File::Spec->splitdir($expansionhunter_bin_path);
+    splice @expansionhunter_dirs, $MINUS_TWO;
+    my $parent_repeat_specs_dir_path =
+      catdir( @expansionhunter_dirs, qw{ data repeat-specs } );
+
+    ## Get list of genome version directories
+    my @repeat_specs_dir_paths =
+      File::Find::Rule->directory->in($parent_repeat_specs_dir_path);
+
+    ## Remove top directory
+    @repeat_specs_dir_paths =
+      grep { !/^$parent_repeat_specs_dir_path$/xms } @repeat_specs_dir_paths;
+
+    ## Find correct repeat spec folder
+    my $genome_reference = fileparse($reference_genome_path);
+  REPEAT_SPECS_VERSION:
+    foreach my $repeat_specs_version (@repeat_specs_dir_paths) {
+
+        ## Get version
+        my @genome_version_dirs = File::Spec->splitdir($repeat_specs_version);
+        my $genome_version_dir = splice @genome_version_dirs, $MINUS_ONE;
+
+        ## Match version to reference used
+        if ( $genome_reference =~ / $genome_version_dir /ixms ) {
+            $repeat_specs_dir_path = $repeat_specs_version;
+            last;
+        }
+    }
+
+    ## MIP requires a defined variable in order to flag that it can't find the dir
+    if ( not -d $repeat_specs_dir_path ) {
+        return q{Failed to find default path};
+    }
+    return $repeat_specs_dir_path;
+}
 1;
