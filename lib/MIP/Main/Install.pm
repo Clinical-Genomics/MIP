@@ -55,7 +55,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = q{1.2.0};
+    our $VERSION = q{1.2.1};
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
@@ -219,9 +219,8 @@ sub mip_install {
         ## Install PIP packages
         install_pip_packages(
             {
-                conda_env => $parameter{environment_name}{$installation},
-                ,
-                FILEHANDLE        => $FILEHANDLE,
+                conda_env  => $parameter{environment_name}{$installation},
+                FILEHANDLE => $FILEHANDLE,
                 pip_packages_href => $parameter{$installation}{pip},
                 quiet             => $parameter{quiet},
             }

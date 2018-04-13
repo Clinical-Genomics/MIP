@@ -6,13 +6,12 @@ use Cwd;
 use English qw{ -no_match_vars };
 use Getopt::Long;
 use IO::Handle;
-use Params::Check qw{ check allow last_error };
-$Params::Check::PRESERVE_CASE = 1;    #Do not convert to lower case
 use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ check allow last_error };
 use strict;
 use utf8;
-use warnings;
 use warnings qw{ FATAL utf8 };
+use warnings;
 
 ## Cpanm
 use IPC::Cmd qw{ can_run run };
@@ -31,7 +30,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.09;
+    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -42,17 +41,17 @@ sub conda_create {
 
 ##Function : Create Conda environment
 ##Returns  : @commands
-##Arguments: $conda_channel   => Search for packages in specified conda channel
-##         : $env_name        => Name of environment to create
-##         : $FILEHANDLE      => Filehandle to write to
-##         : $no_confirmation => Do not ask for confirmation
-##         : $packages_ref    => Packages to be installed
-##         : $quiet           => Do not display progress bar
+##Arguments: $conda_channels_ref => Search for packages in specified conda channels {REF}
+##         : $env_name           => Name of environment to create
+##         : $FILEHANDLE         => Filehandle to write to
+##         : $no_confirmation    => Do not ask for confirmation
+##         : $packages_ref       => Packages to be installed
+##         : $quiet              => Do not display progress bar
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $conda_channel;
+    my $conda_channels_ref;
     my $env_name;
     my $FILEHANDLE;
     my $no_confirmation;
@@ -60,36 +59,48 @@ sub conda_create {
     my $quiet;
 
     my $tmpl = {
-        conda_channel => {
-            defined     => 1,
+        conda_channels_ref => {
+            allow => sub {
+                my $channels_ref = shift @_;
+                ## Allow undef
+                return 1 if scalar @{$channels_ref} == 0;
+                ## Test values
+                return _check_array_membership(
+                    {
+                        allowed_elements_ref => [qw{ bioconda conda-forge }],
+                        test_elements_ref    => $channels_ref,
+                    }
+                );
+            },
+            default     => [],
+            store       => \$conda_channels_ref,
             strict_type => 1,
-            store       => \$conda_channel,
         },
         env_name => {
             default     => q{},
-            strict_type => 1,
             store       => \$env_name,
+            strict_type => 1,
         },
         FILEHANDLE => {
             required => 1,
             store    => \$FILEHANDLE,
         },
         no_confirmation => {
-            default     => 1,
             allow       => [ 0, 1 ],
-            strict_type => 1,
+            default     => 1,
             store       => \$no_confirmation,
+            strict_type => 1,
         },
         packages_ref => {
             default     => [],
-            strict_type => 1,
             store       => \$packages_ref,
+            strict_type => 1,
         },
         quiet => {
-            default     => 1,
             allow       => [ 0, 1 ],
-            strict_type => 1,
+            default     => 1,
             store       => \$quiet,
+            strict_type => 1,
         },
     };
 
@@ -111,8 +122,10 @@ sub conda_create {
         push @commands, q{--yes};
     }
 
-    if ($conda_channel) {
-        push @commands, q{--channel} . $SPACE . $conda_channel;
+    if ( @{$conda_channels_ref} ) {
+        push @commands,
+          q{--channel} . $SPACE . join $SPACE . q{--channel} . $SPACE,
+          @{$conda_channels_ref};
     }
 
     if ( @{$packages_ref} ) {
@@ -122,8 +135,8 @@ sub conda_create {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
 
@@ -146,8 +159,8 @@ sub conda_source_activate {
     my $tmpl = {
         env_name => {
             required    => 1,
-            strict_type => 1,
             store       => \$env_name,
+            strict_type => 1,
         },
         FILEHANDLE => {
             required => 1,
@@ -188,8 +201,8 @@ sub conda_source_deactivate {
 
     my $tmpl = {
         FILEHANDLE => {
-            required => 1,
             defined  => 1,
+            required => 1,
             store    => \$FILEHANDLE,
         },
     };
@@ -227,10 +240,10 @@ sub conda_update {
             store    => \$FILEHANDLE,
         },
         no_confirmation => {
-            default     => 1,
             allow       => [ 0, 1 ],
-            strict_type => 1,
+            default     => 1,
             store       => \$no_confirmation,
+            strict_type => 1,
         },
     };
 
@@ -245,8 +258,8 @@ sub conda_update {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
 
@@ -285,8 +298,7 @@ sub conda_check_env_status {
     ## Deactivate any activate env prior to installation
     #   Perl options:
     #   n : loop over input
-    #   a : automatically split input and store in array @F
-    #   e : execute code
+
     #
     # Unless the active environment is root the expression will return true
     #   and print the environment name
@@ -325,17 +337,17 @@ sub conda_install {
 
 ##Function : Install packages into conda environment
 ##Returns  : @commands
-##Arguments: $conda_channel   => Search for packages in specified conda channel
-##         : $env_name        => Name of environment to create
-##         : $FILEHANDLE      => Filehandle to write to
-##         : $no_confirmation => Do not ask for confirmation
-##         : $packages_ref    => Packages to be installed
-##         : $quiet           => Do not display progress bar
+##Arguments: $conda_channels_ref => Search for packages in specified conda channels {REF}
+##         : $env_name           => Name of environment to create
+##         : $FILEHANDLE         => Filehandle to write to
+##         : $no_confirmation    => Do not ask for confirmation
+##         : $packages_ref       => Packages to be installed
+##         : $quiet              => Do not display progress bar
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $conda_channel;
+    my $conda_channels_ref;
     my $env_name;
     my $FILEHANDLE;
     my $no_confirmation;
@@ -343,38 +355,50 @@ sub conda_install {
     my $quiet;
 
     my $tmpl = {
-        conda_channel => {
-            defined     => 1,
+        conda_channels_ref => {
+            default => [],
+            allow   => sub {
+                my $channels_ref = shift @_;
+                ## Allow undef
+                return 1 if scalar @{$channels_ref} == 0;
+                ## Test values
+                return _check_array_membership(
+                    {
+                        allowed_elements_ref => [qw{ bioconda conda-forge }],
+                        test_elements_ref    => $channels_ref,
+                    }
+                );
+            },
+            store       => \$conda_channels_ref,
             strict_type => 1,
-            store       => \$conda_channel,
         },
         env_name => {
             default     => undef,
-            strict_type => 1,
             store       => \$env_name,
+            strict_type => 1,
         },
         FILEHANDLE => {
             required => 1,
             store    => \$FILEHANDLE,
         },
         no_confirmation => {
-            default     => 1,
             allow       => [ 0, 1 ],
-            strict_type => 1,
+            default     => 1,
             store       => \$no_confirmation,
+            strict_type => 1,
         },
         packages_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$packages_ref,
+            strict_type => 1,
         },
         quiet => {
-            default     => 1,
             allow       => [ undef, 0, 1 ],
-            strict_type => 1,
+            default     => 1,
             store       => \$quiet,
+            strict_type => 1,
         },
     };
 
@@ -396,8 +420,10 @@ sub conda_install {
         push @commands, q{--yes};
     }
 
-    if ($conda_channel) {
-        push @commands, q{--channel} . $SPACE . $conda_channel;
+    if ( @{$conda_channels_ref} ) {
+        push @commands,
+          q{--channel} . $SPACE . join $SPACE . q{--channel} . $SPACE,
+          @{$conda_channels_ref};
     }
 
     push @commands, join $SPACE, @{$packages_ref};
@@ -405,8 +431,8 @@ sub conda_install {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
     return @commands;
@@ -436,37 +462,37 @@ sub conda_uninstall {
     my $tmpl = {
         env_name => {
             default     => undef,
-            strict_type => 1,
             store       => \$env_name,
+            strict_type => 1,
         },
         FILEHANDLE => {
             required => 1,
             store    => \$FILEHANDLE,
         },
         no_confirmation => {
-            default     => 1,
             allow       => [ 0, 1 ],
-            strict_type => 1,
+            default     => 1,
             store       => \$no_confirmation,
+            strict_type => 1,
         },
         packages_ref => {
-            required    => 1,
-            defined     => 1,
             default     => [],
-            strict_type => 1,
+            defined     => 1,
+            required    => 1,
             store       => \$packages_ref,
+            strict_type => 1,
         },
         quiet => {
-            default     => 1,
             allow       => [ undef, 0, 1 ],
-            strict_type => 1,
+            default     => 1,
             store       => \$quiet,
+            strict_type => 1,
         },
         verbose => {
-            default     => 1,
             allow       => [ undef, 0, 1 ],
-            strict_type => 1,
+            default     => 1,
             store       => \$verbose,
+            strict_type => 1,
         },
     };
 
@@ -496,11 +522,50 @@ sub conda_uninstall {
     unix_write_to_file(
         {
             commands_ref => \@commands,
-            separator    => $SPACE,
             FILEHANDLE   => $FILEHANDLE,
+            separator    => $SPACE,
         }
     );
     return @commands;
 }
 
+sub _check_array_membership {
+
+##Function : Checks if all array elements are part of an array with allowed elements. Returns true/false
+##Returns  : Boolean
+##Arguments: $allowed_elements_ref => Allowed elements {REF}
+##         : $test_elements_ref    => Array elements to test {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $allowed_elements_ref;
+    my $test_elements_ref;
+
+    my $tmpl = {
+        allowed_elements_ref => {
+            default     => [],
+            required    => 1,
+            store       => \$allowed_elements_ref,
+            strict_type => 1,
+        },
+        test_elements_ref => {
+            default     => [],
+            required    => 1,
+            store       => \$test_elements_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use List::Util qw{ any };
+
+    ## Test values
+  TEST_ELEMENT:
+    foreach my $test_element ( @{$test_elements_ref} ) {
+        return if not any { $_ eq $test_element } @{$allowed_elements_ref};
+    }
+    return 1;
+}
 1;
