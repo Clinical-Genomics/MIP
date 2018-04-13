@@ -106,8 +106,6 @@ sub conda_create {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use List::Util qw{ uniq };
-
     ##Stores commands depending on input parameters
     # Basic command
     my @commands = q{conda create};
@@ -533,7 +531,7 @@ sub conda_uninstall {
 
 sub _check_array_membership {
 
-##Function : Checks if all array elements are part of an array with allowed elements. Returns tru/false
+##Function : Checks if all array elements are part of an array with allowed elements. Returns true/false
 ##Returns  : Boolean
 ##Arguments: $allowed_elements_ref => Allowed elements {REF}
 ##         : $test_elements_ref    => Array elements to test {REF}
