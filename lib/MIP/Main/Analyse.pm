@@ -318,8 +318,15 @@ sub mip_analyse {
             and not ref $active_parameter{$parameter_name} );
 
         ### Special case for parameters that are dependent on other parameters values
-        my @custom_default_parameters =
-          qw{ analysis_type bwa_build_reference exome_target_bed infile_dirs sample_info_file rtg_vcfeval_reference_genome };
+        my @custom_default_parameters = qw{
+          analysis_type
+          bwa_build_reference
+          exome_target_bed
+          expansionhunter_repeat_specs_dir
+          infile_dirs
+          sample_info_file
+          rtg_vcfeval_reference_genome
+        };
 
         if ( any { $_ eq $parameter_name } @custom_default_parameters ) {
 
@@ -796,7 +803,7 @@ sub mip_analyse {
               $parameter{dynamic_parameter}{consensus_analysis_type},
             log          => $log,
             programs_ref => [
-                qw{ cnvnator delly_call delly_reformat tiddit samtools_subsample_mt }
+                qw{ cnvnator delly_call delly_reformat expansionhunter tiddit samtools_subsample_mt }
             ],
         }
     );
