@@ -701,7 +701,6 @@ expansionhunter_repeat_specs_dir:
    - pexpansionhunter
   data_type: SCALAR
   exists_check: directory
-  mandatory: no
   type: path
   update_path: absolute_path
 pmanta:

@@ -30,11 +30,12 @@ BEGIN {
 
 ## Constants
 Readonly my $ASTERISK => q{*};
+Readonly my $DOT      => q{.};
 Readonly my $NEWLINE  => qq{\n};
 
 sub analysis_expansionhunter {
 
-## Function : Call expansions of STR using Expansion Hunter
+## Function : Call expansions of Short Tandem Repeats (STR) using Expansion Hunter
 ## Returns  :
 ##          : $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $family_id               => Family id
@@ -53,12 +54,6 @@ sub analysis_expansionhunter {
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $family_id;
-    my $outaligner_dir;
-    my $reference_dir;
-    my $temp_directory;
-
     ## Flatten argument(s)
     my $active_parameter_href;
     my $file_info_href;
@@ -71,6 +66,12 @@ sub analysis_expansionhunter {
     my $program_name;
     my $sample_id;
     my $sample_info_href;
+
+    ## Default(s)
+    my $family_id;
+    my $outaligner_dir;
+    my $reference_dir;
+    my $temp_directory;
 
     my $tmpl = {
         active_parameter_href => {
@@ -203,52 +204,58 @@ sub analysis_expansionhunter {
     my ( $file_path, $program_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            job_id_href           => $job_id_href,
-            FILEHANDLE            => $FILEHANDLE,
+            core_number           => $core_number,
             directory_id          => $sample_id,
-            program_name          => $program_name,
+            FILEHANDLE            => $FILEHANDLE,
+            job_id_href           => $job_id_href,
+            process_time          => $time,
             program_directory =>
               catfile( $outaligner_dir, $program_outdirectory_name ),
-            core_number                     => $core_number,
-            process_time                    => $time,
+            program_name                    => $program_name,
             source_environment_commands_ref => [$source_environment_cmd],
             temp_directory                  => $temp_directory,
         }
     );
 
-    #Used downstream
+    # Used downstream
     $parameter_href->{$mip_program_name}{$sample_id}{indirectory} =
       $outsample_directory;
 
-    ## Files
-    my $infile = $file_info_href->{$sample_id}{merged_infile};
+    ## Tags
     my $infile_tag =
       $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag =
       $file_info_href->{$sample_id}{$mip_program_name}{file_tag};
+
+    ## Files
+    my $infile         = $file_info_href->{$sample_id}{merged_infile};
     my $infile_prefix  = $infile . $infile_tag;
     my $outfile_prefix = $infile . $outfile_tag;
 
     ## Paths
     my $file_path_prefix    = catfile( $temp_directory, $infile_prefix );
     my $outfile_path_prefix = catfile( $temp_directory, $outfile_prefix );
+    my $reference_genome_path =
+      $active_parameter_href->{human_genome_reference};
+    my $repeat_specs_dir_path =
+      $active_parameter_href->{expansionhunter_repeat_specs_dir};
 
-    ### Assign suffix
+    ## Assign suffix
     my $infile_suffix = get_file_suffix(
         {
+            jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain},
             parameter_href => $parameter_href,
             suffix_key     => q{alignment_file_suffix},
-            jobid_chain    => $parameter_href->{pgatk_baserecalibration}{chain},
         }
     );
 
     ## Set file suffix for next module within jobid chain
     my $outfile_suffix = set_file_suffix(
         {
+            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
+            job_id_chain   => $job_id_chain,
             parameter_href => $parameter_href,
             suffix_key     => q{variant_file_suffix},
-            job_id_chain   => $job_id_chain,
-            file_suffix => $parameter_href->{$mip_program_name}{outfile_suffix},
         }
     );
 
@@ -276,29 +283,6 @@ sub analysis_expansionhunter {
     );
     say {$FILEHANDLE} $NEWLINE;
 
-    ## Get path to repeat_specs directory
-    my $reference_genome_path =
-      $active_parameter_href->{human_genome_reference};
-    my $repeat_specs_dir_path =
-      $active_parameter_href->{expansionhunter_repeat_specs_dir};
-
-    ## Try to get default directory if varible is unset
-    if ( not $repeat_specs_dir_path ) {
-        $repeat_specs_dir_path = _get_default_repeat_specs_dir_path(
-            {
-                log                   => $log,
-                reference_genome_path => $reference_genome_path,
-            }
-        );
-    }
-
-    if ( not -d $repeat_specs_dir_path ) {
-        $log->fatal(
-q{Can't find repeat specification directory for Expansion Hunter. Please set "expansionhunter_repeat_specs_dir" in config file or on command line.}
-        );
-        exit 1;
-    }
-
     ## Run Expansion Hunter
     say {$FILEHANDLE} q{## Run ExpansionHunter};
     my $sample_sex = $sample_info_href->{sample}{$sample_id}{sex};
@@ -306,8 +290,8 @@ q{Can't find repeat specification directory for Expansion Hunter. Please set "ex
         {
             FILEHANDLE            => $FILEHANDLE,
             infile_path           => $file_path_prefix . $infile_suffix,
-            json_outfile_path     => $outfile_path_prefix . q{.json},
-            log_outfile_path      => $outfile_path_prefix . q{.log},
+            json_outfile_path     => $outfile_path_prefix . $DOT . q{json},
+            log_outfile_path      => $outfile_path_prefix . $DOT . q{log},
             reference_genome_path => $reference_genome_path,
             repeat_specs_dir_path => $repeat_specs_dir_path,
             sex                   => $sample_sex,
@@ -356,89 +340,4 @@ q{Can't find repeat specification directory for Expansion Hunter. Please set "ex
     return;
 }
 
-sub _get_default_repeat_specs_dir_path {
-
-## Function : Return the path to the repeat specs directory in the Expansionhunter directory
-## Returns  : $repeat_specs_dir_path
-## Arguments: $log                   => Log
-##          : $reference_genome_path => Path to the reference genome used
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $log;
-    my $reference_genome_path;
-
-    my $tmpl = {
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        reference_genome_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$reference_genome_path,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use Cwd qw{ abs_path };
-    use File::Basename qw{ fileparse };
-    use File::Find::Rule;
-    use IPC::Cmd qw{ can_run };
-
-    Readonly my $MINUS_ONE => -1;
-    Readonly my $MINUS_TWO => -2;
-
-    ## Path to set
-    my $repeat_specs_dir_path;
-
-    ## Get path to binary
-    my $expansionhunter_bin_path = can_run(q{ExpansionHunter});
-
-    ## Follow potential link
-    $expansionhunter_bin_path = abs_path($expansionhunter_bin_path);
-
-    ## Get the path to the repeat specs dirs
-    my @expansionhunter_dirs = File::Spec->splitdir($expansionhunter_bin_path);
-    splice @expansionhunter_dirs, $MINUS_TWO;
-    my $parent_repeat_specs_dir_path =
-      catdir( @expansionhunter_dirs, qw{ data repeat-specs } );
-
-    ## Get list of genome version directories
-    my @repeat_specs_dir_paths =
-      File::Find::Rule->directory->in($parent_repeat_specs_dir_path);
-
-    ## Remove top directory
-    @repeat_specs_dir_paths =
-      grep { !/^$parent_repeat_specs_dir_path$/xms } @repeat_specs_dir_paths;
-
-    # Test that some directories has been found
-    if ( scalar @repeat_specs_dir_paths == 0 ) {
-        $log->fatal(
-q{Can't find repeat specification directory for Expansion Hunter. Please set "expansionhunter_repeat_specs_dir" in config file or on command line.}
-        );
-        exit 1;
-    }
-
-    ## Find correct repeat spec folder
-    my $genome_reference = fileparse($reference_genome_path);
-  REPEAT_SPECS_VERSION:
-    foreach my $repeat_specs_version (@repeat_specs_dir_paths) {
-
-        ## Get version
-        my @genome_version_dirs = File::Spec->splitdir($repeat_specs_version);
-        my $genome_version_dir = splice @genome_version_dirs, $MINUS_ONE;
-
-        ## Match version to reference used
-        if ( $genome_reference =~ / $genome_version_dir /ixms ) {
-            $repeat_specs_dir_path = $repeat_specs_version;
-            last;
-        }
-    }
-    return $repeat_specs_dir_path;
-}
 1;

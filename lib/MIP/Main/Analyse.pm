@@ -73,7 +73,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.01;
+    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -319,8 +319,15 @@ sub mip_analyse {
             and not ref $active_parameter{$parameter_name} );
 
         ### Special case for parameters that are dependent on other parameters values
-        my @custom_default_parameters =
-          qw{ analysis_type bwa_build_reference exome_target_bed infile_dirs sample_info_file rtg_vcfeval_reference_genome };
+        my @custom_default_parameters = qw{
+          analysis_type
+          bwa_build_reference
+          exome_target_bed
+          expansionhunter_repeat_specs_dir
+          infile_dirs
+          sample_info_file
+          rtg_vcfeval_reference_genome
+        };
 
         if ( any { $_ eq $parameter_name } @custom_default_parameters ) {
 
