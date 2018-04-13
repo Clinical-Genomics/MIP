@@ -31,6 +31,7 @@ our $VERSION = 1.1.0;
 Readonly my $SPACE   => q{ };
 Readonly my $NEWLINE => qq{\n};
 Readonly my $COMMA   => q{,};
+Readonly my $NUMBER  => 91;
 
 ### User Options
 GetOptions(
@@ -140,12 +141,12 @@ my %specific_argument = (
         expected_output => q{--SPECIES homo_spaiens},
     },
     version => {
-        input           => q{91},
-        expected_output => q{--VERSION 91},
+        input           => $NUMBER,
+        expected_output => q{--VERSION} . $SPACE . $NUMBER,
     },
     cache_version => {
-        input           => q{91},
-        expected_output => q{--CACHE_VERSION 91},
+        input           => $NUMBER,
+        expected_output => q{--CACHE_VERSION} . $SPACE . $NUMBER,
     },
     no_update => {
         input           => 1,

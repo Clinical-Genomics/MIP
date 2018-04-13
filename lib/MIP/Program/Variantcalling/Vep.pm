@@ -291,6 +291,7 @@ sub variant_effect_predictor_install {
         cache_version   => { store => \$cache_version,   strict_type => 1, },
         FILEHANDLE      => { store => \$FILEHANDLE, },
         no_update       => {
+            default     => 1,
             allow       => [ undef, 0, 1 ],
             store       => \$no_update,
             strict_type => 1,
@@ -307,7 +308,6 @@ sub variant_effect_predictor_install {
           { store => \$stderrfile_path_append, strict_type => 1, },
         stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
         version         => { store => \$version,         strict_type => 1, },
-
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};

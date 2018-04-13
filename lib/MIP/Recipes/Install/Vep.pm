@@ -281,7 +281,6 @@ q{Please add the [a] and/or [l] flag to --vep_auto_flag when running mip_install
             auto            => $auto,
             cache_directory => $cache_directory,
             FILEHANDLE      => $FILEHANDLE,
-            no_update       => 1,
             plugins_ref     => \@plugins,
             species_ref     => [qw{ homo_sapiens }],
             version         => $vep_version,
@@ -315,7 +314,6 @@ q{Please add the [a] and/or [l] flag to --vep_auto_flag when running mip_install
                     cache_directory => $cache_directory,
                     cache_version   => $vep_version,
                     FILEHANDLE      => $FILEHANDLE,
-                    no_update       => 1,
                     species_ref     => [qw{ homo_sapiens }],
                 }
             );
