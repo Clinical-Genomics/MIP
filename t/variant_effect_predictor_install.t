@@ -28,10 +28,10 @@ my $VERBOSE = 1;
 our $VERSION = 1.1.0;
 
 ## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
-Readonly my $COMMA   => q{,};
-Readonly my $NUMBER  => 91;
+Readonly my $SPACE       => q{ };
+Readonly my $NEWLINE     => qq{\n};
+Readonly my $COMMA       => q{,};
+Readonly my $VEP_VERSION => 91;
 
 ### User Options
 GetOptions(
@@ -141,12 +141,12 @@ my %specific_argument = (
         expected_output => q{--SPECIES homo_spaiens},
     },
     version => {
-        input           => $NUMBER,
-        expected_output => q{--VERSION} . $SPACE . $NUMBER,
+        input           => $VEP_VERSION,
+        expected_output => q{--VERSION} . $SPACE . $VEP_VERSION,
     },
     cache_version => {
-        input           => $NUMBER,
-        expected_output => q{--CACHE_VERSION} . $SPACE . $NUMBER,
+        input           => $VEP_VERSION,
+        expected_output => q{--CACHE_VERSION} . $SPACE . $VEP_VERSION,
     },
     no_update => {
         input           => 1,
