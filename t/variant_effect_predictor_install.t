@@ -25,12 +25,13 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.0;
+our $VERSION = 1.1.0;
 
 ## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
-Readonly my $COMMA   => q{,};
+Readonly my $SPACE       => q{ };
+Readonly my $NEWLINE     => qq{\n};
+Readonly my $COMMA       => q{,};
+Readonly my $VEP_VERSION => 91;
 
 ### User Options
 GetOptions(
@@ -138,6 +139,18 @@ my %specific_argument = (
     species_ref => {
         inputs_ref      => [qw{ homo_spaiens }],
         expected_output => q{--SPECIES homo_spaiens},
+    },
+    version => {
+        input           => $VEP_VERSION,
+        expected_output => q{--VERSION} . $SPACE . $VEP_VERSION,
+    },
+    cache_version => {
+        input           => $VEP_VERSION,
+        expected_output => q{--CACHE_VERSION} . $SPACE . $VEP_VERSION,
+    },
+    no_update => {
+        input           => 1,
+        expected_output => q{--NO_UPDATE},
     },
     auto => {
         input           => q{alcf},
