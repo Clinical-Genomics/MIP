@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -36,6 +36,9 @@ BEGIN {
 }
 
 ## Constants
+Readonly my $MINUS_FOUR => -4;
+Readonly my $MINUS_ONE  => -1;
+Readonly my $MINUS_TWO  => -2;
 Readonly my $NEWLINE    => qq{\n};
 Readonly my $SPACE      => q{ };
 Readonly my $TAB        => qq{\t};
@@ -228,20 +231,55 @@ q{Could not detect a supplied capture kit. Will Try to use 'latest' capture kit:
     }
 
     ## Set default path to expansionhunter repeat specs if needed
-    if ( $parameter_name eq q{expansionhunter_repeat_specs_dir} ) {
+    if (    ( $parameter_name eq q{expansionhunter_repeat_specs_dir} )
+        and ( not $active_parameter_href->{expansionhunter_repeat_specs_dir} ) )
+    {
 
-        ## Try to get default directory if variable is unset
-        if ( not $active_parameter_href->{expansionhunter_repeat_specs_dir} ) {
-            $active_parameter_href->{expansionhunter_repeat_specs_dir} =
-              _get_default_repeat_specs_dir_path(
-                {
-                    reference_genome_path =>
-                      $active_parameter_href->{human_genome_reference},
-                }
-              );
-        }
+        $active_parameter_href->{expansionhunter_repeat_specs_dir} =
+          _get_default_repeat_specs_dir_path(
+            {
+                reference_genome_path =>
+                  $active_parameter_href->{human_genome_reference},
+            }
+          );
         return;
     }
+
+    ## Set default dynamic path if needed
+    my %dynamic_path = (
+        gatk_path => {
+            bin_file        => q{gatk},
+            environment_key => q{pgatk},
+        },
+        picardtools_path => {
+            bin_file        => q{picard.jar},
+            environment_key => q{ppicardtools},
+        },
+        snpeff_path => {
+            bin_file        => q{snpEff.jar},
+            environment_key => q{psnpeff},
+        },
+        vep_directory_path => {
+            bin_file        => q{vep},
+            environment_key => q{pvarianteffectpredictor},
+        },
+    );
+
+    if (    ( defined $dynamic_path{$parameter_name} )
+        and ( not $active_parameter_href->{$parameter_name} ) )
+    {
+
+        $active_parameter_href->{$parameter_name} = _get_dynamic_conda_path(
+            {
+                active_parameter_href => $active_parameter_href,
+                bin_file => $dynamic_path{$parameter_name}{bin_file},
+                environment_key =>
+                  $dynamic_path{$parameter_name}{environment_key},
+            }
+        );
+        return;
+    }
+
     return;
 }
 
@@ -785,9 +823,6 @@ sub _get_default_repeat_specs_dir_path {
     use File::Find::Rule;
     use IPC::Cmd qw{ can_run };
 
-    Readonly my $MINUS_ONE => -1;
-    Readonly my $MINUS_TWO => -2;
-
     ## Path to set
     my $repeat_specs_dir_path;
 
@@ -839,4 +874,144 @@ sub _get_default_repeat_specs_dir_path {
     }
     return $repeat_specs_dir_path;
 }
+
+sub _get_dynamic_conda_path {
+
+## Function : Attempts to find path to directory with binary in conda env
+## Returns  : Path to directory
+## Arguments: $active_parameters_href => Active parameter hash {REF}
+##          : $bin                    => Bin file to test
+##          : $environment_key        => Key to conda environment
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $bin_file;
+    my $environment_key;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default  => {},
+            required => 1,
+            store    => \$active_parameter_href,
+        },
+        bin_file => {
+            defined  => 1,
+            required => 1,
+            store    => \$bin_file,
+        },
+        environment_key => {
+            store => \$environment_key,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use Cwd qw{ abs_path };
+    use List::Util qw{ any };
+
+    ## Establish path to conda
+    if ( not $active_parameter_href->{conda_path} ) {
+        $active_parameter_href->{conda_path} = _get_conda_path();
+    }
+    if ( not -d $active_parameter_href->{conda_path} ) {
+        return q{Failed to find default path};
+    }
+    my $conda_path = $active_parameter_href->{conda_path};
+
+    ## Get module and program environments in use
+    my %environment;
+    if (
+        any { $_ eq q{program_source_environment_command} }
+        keys %{$active_parameter_href}
+      )
+    {
+        @environment{
+            keys
+              %{ $active_parameter_href->{program_source_environment_command} }
+          } =
+          values
+          %{ $active_parameter_href->{program_source_environment_command} };
+    }
+    if (
+        any { $_ eq q{module_source_environment_command} }
+        keys %{$active_parameter_href}
+      )
+    {
+        @environment{
+            keys %{ $active_parameter_href->{module_source_environment_command}
+            }
+          } =
+          values %{ $active_parameter_href->{module_source_environment_command}
+          };
+    }
+
+    ## Get environment and set test path;
+    my $environment;
+    my $test_path;
+    ## Check environments
+    if ( $environment_key and $environment{$environment_key} ) {
+        my @environment_commands = split $SPACE, $environment{$environment_key};
+        $environment = pop @environment_commands;
+        $test_path =
+          catfile( $conda_path, q{envs}, $environment, q{bin}, $bin_file );
+    }
+    ## Check if main environment in use
+    elsif ( $active_parameter_href->{source_main_environment_commands} ) {
+        $environment =
+          @{ $active_parameter_href->{source_main_environment_commands} }
+          [$MINUS_ONE];
+        $test_path =
+          catfile( $conda_path, q{envs}, $environment, q{bin}, $bin_file );
+    }
+    ## Assume installed in conda base environment
+    else {
+        $test_path = catfile( $conda_path, q{bin}, $bin_file );
+    }
+
+    ## Get absolute path
+    $test_path = abs_path($test_path);
+
+    ## Test if path exists
+    if ( not $test_path ) {
+        return q{Failed to find default path};
+    }
+    if ( not -f $test_path ) {
+        return q{Failed to find default path};
+    }
+
+    ## Get directory path
+    my @test_path_dirs = File::Spec->splitdir($test_path);
+    pop @test_path_dirs;
+
+    return catdir(@test_path_dirs);
+}
+
+sub _get_conda_path {
+
+## Function: Get path to conda directory
+## Returns : $conda_path
+
+    use IPC::Cmd qw{ can_run };
+
+    ## Find path to conda bin
+    my $conda_path = can_run(q{conda});
+
+    ## Split ditrs to array
+    my @conda_path_dirs = File::Spec->splitdir($conda_path);
+
+    ## Running from conda_environment
+    if ( $conda_path_dirs[$MINUS_FOUR] eq q{envs} ) {
+        splice @conda_path_dirs, $MINUS_FOUR;
+    }
+    ## Running from conda base environment
+    else {
+        splice @conda_path_dirs, $MINUS_TWO;
+    }
+
+    ## Return path to conda folder
+    return catdir(@conda_path_dirs);
+}
+
 1;
