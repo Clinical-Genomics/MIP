@@ -28,9 +28,11 @@ my $VERBOSE = 1;
 our $VERSION = 1.0.0;
 
 ## Constants
-Readonly my $SPACE   => q{ };
-Readonly my $NEWLINE => qq{\n};
-Readonly my $COMMA   => q{,};
+Readonly my $COMMA                => q{,};
+Readonly my $NEWLINE              => qq{\n};
+Readonly my $MAPPING_QUALITY_FROM => 255;
+Readonly my $MAPPING_QUALITY_TO   => 60;
+Readonly my $SPACE                => q{ };
 
 ### User Options
 GetOptions(
@@ -125,10 +127,10 @@ my %required_argument = (
         expected_output => q{-o} . $SPACE . catfile(qw{ dir infile.bam }),
     },
     referencefile_path => {
-        input           => catfile(qw{reference_dir human_genome_build.fasta }),
+        input => catfile(qw{ reference_dir human_genome_build.fasta }),
         expected_output => q{--reference_sequence}
           . $SPACE
-          . catfile(qw{reference_dir human_genome_build.fasta }),
+          . catfile(qw{ reference_dir human_genome_build.fasta }),
     },
 );
 
@@ -138,13 +140,13 @@ my %specific_argument = (
         expected_output => q{-I} . $SPACE . catfile(qw{ dir infile.bam }),
     },
     maping_quality_from => {
-        input           => q{60},
-        expected_output => q{-RMQF} . $SPACE . q{60},
+        input           => $MAPPING_QUALITY_FROM,
+        expected_output => q{-RMQF} . $SPACE . $MAPPING_QUALITY_FROM,
 
     },
     maping_quality_to => {
-        input           => q{60},
-        expected_output => q{-RMQT} . $SPACE . q{60},
+        input           => $MAPPING_QUALITY_TO,
+        expected_output => q{-RMQT} . $SPACE . $MAPPING_QUALITY_TO,
 
     },
     outfile_path => {
@@ -156,10 +158,10 @@ my %specific_argument = (
         expected_output => q{-U} . $SPACE . q{STUFF},
     },
     referencefile_path => {
-        input           => catfile(qw{reference_dir human_genome_build.fasta }),
+        input => catfile(qw{ reference_dir human_genome_build.fasta }),
         expected_output => q{--reference_sequence}
           . $SPACE
-          . catfile(qw{reference_dir human_genome_build.fasta }),
+          . catfile(qw{ reference_dir human_genome_build.fasta }),
     },
     readfilter => {
         input           => q{deleteAllReads},
