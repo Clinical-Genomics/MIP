@@ -880,7 +880,7 @@ sub _get_dynamic_conda_path {
 ## Function : Attempts to find path to directory with binary in conda env
 ## Returns  : Path to directory
 ## Arguments: $active_parameters_href => Active parameter hash {REF}
-##          : $bin                    => Bin file to test
+##          : $bin_file               => Bin file to test
 ##          : $environment_key        => Key to conda environment
 
     my ($arg_href) = @_;
@@ -908,25 +908,19 @@ sub _get_dynamic_conda_path {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use Cwd qw{ abs_path };
-    use List::Util qw{ any };
-
     ## Establish path to conda
     if ( not $active_parameter_href->{conda_path} ) {
         $active_parameter_href->{conda_path} = _get_conda_path();
     }
     if ( not -d $active_parameter_href->{conda_path} ) {
-        return q{Failed to find default path};
+        return q{Failed to find default conda path};
     }
     my $conda_path = $active_parameter_href->{conda_path};
 
     ## Get module and program environments in use
     my %environment;
-    if (
-        any { $_ eq q{program_source_environment_command} }
-        keys %{$active_parameter_href}
-      )
-    {
+    if ( $active_parameter_href->{program_source_environment_command} ) {
+        ## Build hash with "pprogram_name" as keys and "source env command" as value
         @environment{
             keys
               %{ $active_parameter_href->{program_source_environment_command} }
@@ -934,11 +928,8 @@ sub _get_dynamic_conda_path {
           values
           %{ $active_parameter_href->{program_source_environment_command} };
     }
-    if (
-        any { $_ eq q{module_source_environment_command} }
-        keys %{$active_parameter_href}
-      )
-    {
+    if ( $active_parameter_href->{module_source_environment_command} ) {
+        ## Add to environment hash with "pprogram_name" as keys and "source env command" as value
         @environment{
             keys %{ $active_parameter_href->{module_source_environment_command}
             }
@@ -947,45 +938,44 @@ sub _get_dynamic_conda_path {
           };
     }
 
-    ## Get environment and set test path;
-    my $environment;
-    my $test_path;
-    ## Check environments
-    if ( $environment_key and $environment{$environment_key} ) {
-        my @environment_commands = split $SPACE, $environment{$environment_key};
-        $environment = pop @environment_commands;
-        $test_path =
-          catfile( $conda_path, q{envs}, $environment, q{bin}, $bin_file );
-    }
-    ## Check if main environment in use
-    elsif ( $active_parameter_href->{source_main_environment_commands} ) {
-        $environment =
-          @{ $active_parameter_href->{source_main_environment_commands} }
-          [$MINUS_ONE];
-        $test_path =
-          catfile( $conda_path, q{envs}, $environment, q{bin}, $bin_file );
-    }
-    ## Assume installed in conda base environment
-    else {
-        $test_path = catfile( $conda_path, q{bin}, $bin_file );
-    }
-
-    ## Get absolute path
-    $test_path = abs_path($test_path);
+    ## Get the bin file path
+    my ( $bin_file_path, $environment ) = _get_bin_file_path(
+        {
+            active_parameter_href => $active_parameter_href,
+            bin_file              => $bin_file,
+            conda_path            => $conda_path,
+            environment_href      => \%environment,
+            environment_key       => $environment_key,
+        }
+    );
 
     ## Test if path exists
-    if ( not $test_path ) {
-        return q{Failed to find default path};
+    if ( not $bin_file_path ) {
+        return
+            q{Failed to find default path for}
+          . $SPACE
+          . $bin_file
+          . $SPACE
+          . q{in conda environment}
+          . $SPACE
+          . $environment;
     }
-    if ( not -f $test_path ) {
-        return q{Failed to find default path};
+    if ( not -f $bin_file_path ) {
+        return
+            q{Failed to find default path for}
+          . $SPACE
+          . $bin_file
+          . $SPACE
+          . q{in conda environment}
+          . $SPACE
+          . $environment;
     }
 
     ## Get directory path
-    my @test_path_dirs = File::Spec->splitdir($test_path);
-    pop @test_path_dirs;
+    my @bin_path_dirs = File::Spec->splitdir($bin_file_path);
+    pop @bin_path_dirs;
 
-    return catdir(@test_path_dirs);
+    return catdir(@bin_path_dirs);
 }
 
 sub _get_conda_path {
@@ -1012,6 +1002,85 @@ sub _get_conda_path {
 
     ## Return path to conda folder
     return catdir(@conda_path_dirs);
+}
+
+sub _get_bin_file_path {
+
+## Function : Get the absolute path to the binary file
+## Returns  : $bin_file_path
+## Arguments: active_parameter_href => Hash with active parameters {REF}
+##          : $bin_file             => Name of binary file
+##          : $conda_path           => Path to conda directory
+##          : $environment_href     => Hash with programs and their environments {REF}
+##          : $environment_key      => Key to the environment_href [pprogram]
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $bin_file;
+    my $conda_path;
+    my $environment_href;
+    my $environment_key;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default  => {},
+            required => 1,
+            store    => \$active_parameter_href,
+        },
+        bin_file => {
+            defined  => 1,
+            required => 1,
+            store    => \$bin_file,
+        },
+        conda_path => {
+            defined  => 1,
+            required => 1,
+            store    => \$conda_path,
+        },
+        environment_href => {
+            default  => {},
+            required => 1,
+            store    => \$environment_href,
+        },
+        environment_key => {
+            store => \$environment_key,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use Cwd qw{ abs_path };
+
+    ## Get environment and set test path;
+    my $environment;
+    my $bin_file_path;
+
+    ## Check environments
+    if ( $environment_key and $environment_href->{$environment_key} ) {
+        my @environment_commands = split $SPACE,
+          $environment_href->{$environment_key};
+        $environment = pop @environment_commands;
+        $bin_file_path =
+          catfile( $conda_path, q{envs}, $environment, q{bin}, $bin_file );
+    }
+    ## Check if main environment in use
+    elsif ( $active_parameter_href->{source_main_environment_commands} ) {
+        $environment =
+          @{ $active_parameter_href->{source_main_environment_commands} }
+          [$MINUS_ONE];
+        $bin_file_path =
+          catfile( $conda_path, q{envs}, $environment, q{bin}, $bin_file );
+    }
+    ## Assume installed in conda base environment
+    else {
+        $environment = q{base};
+        $bin_file_path = catfile( $conda_path, q{bin}, $bin_file );
+    }
+
+    ## Return absolute path
+    return ( abs_path($bin_file_path), $environment );
 }
 
 1;
