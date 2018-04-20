@@ -24,9 +24,9 @@ use Readonly;
 use MIP::File::Format::Yaml qw{ load_yaml };
 use MIP::Main::Install qw{ mip_install };
 use MIP::Script::Utils
-  qw{ nest_hash print_install_defaults update_program_versions };
+  qw{ nest_hash print_parameter_defaults update_program_versions };
 
-our $VERSION = '0.2.0';
+our $VERSION = '0.2.1';
 
 extends(qw{ MIP::Cli::Mip::Install });
 
@@ -54,8 +54,9 @@ sub run {
     );
 
     ## Print parameters from config file and exit
-    if ( $arg_href->print_parameter_default ) {
-        print_install_defaults(
+    if ( $arg_href->{print_parameter_default} ) {
+
+        print_parameter_defaults(
             {
                 parameter_href => \%parameter,
             }

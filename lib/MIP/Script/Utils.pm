@@ -21,7 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -29,7 +29,7 @@ BEGIN {
       help
       nest_hash
       print_install_defaults
-      set_default_array_parameters
+      print_parameter_defaults
       update_program_versions };
 }
 
@@ -76,51 +76,6 @@ sub help {
     exit $exit_code;
 }
 
-sub set_default_array_parameters {
-
-## Function : Set default for array parameters unless parameter already exists in parameter hash
-## Returns  :
-## Arguments: $array_parameter_href => Hold the array parameter defaults as {REF}
-##          : $parameter_href       => Parameters hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $array_parameter_href;
-
-    my $tmpl = {
-        array_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$array_parameter_href,
-            strict_type => 1,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-  PARAMETER:
-    foreach my $parameter_name ( keys %{$array_parameter_href} ) {
-
-        ## Unless parameter already exists
-        if ( not @{ $parameter_href->{$parameter_name} } ) {
-
-            $parameter_href->{$parameter_name} =
-              $array_parameter_href->{$parameter_name}{default};
-        }
-    }
-    return;
-}
-
 sub create_temp_dir {
 
 ## Function : Create a temporary directory and returns the path to it
@@ -152,9 +107,7 @@ sub create_temp_dir {
             strict_type => 1,
         },
         FILEHANDLE => {
-            defined  => 1,
-            required => 1,
-            store    => \$FILEHANDLE,
+            store => \$FILEHANDLE,
         },
         max_expression_value => {
             default     => 1000,
@@ -171,29 +124,52 @@ sub create_temp_dir {
     my $temp_dir_path = catdir( $directory_path,
         $directory_base_name . $UNDERSCORE . int rand $max_expression_value );
 
-    gnu_mkdir(
-        {
-            FILEHANDLE       => $FILEHANDLE,
-            indirectory_path => $temp_dir_path,
-            parents          => 1,
-        }
-    );
+    if ($FILEHANDLE) {
+
+        gnu_mkdir(
+            {
+                FILEHANDLE       => $FILEHANDLE,
+                indirectory_path => $temp_dir_path,
+                parents          => 1,
+            }
+        );
+    }
 
     return $temp_dir_path;
 }
 
-sub print_install_defaults {
+sub print_parameter_defaults {
 
 ## Function : Print all parameters and their default values
 ## Returns  :
 ## Arguments: $parameter_href => Holds all parameters {REF}
+##          : $colored        => Colorize output
+##          : $index          => Display array indices
+##          : $scalar_quotes  => Quote symbols to enclose scalar values
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $parameter_href;
 
+    ## Default
+    my $colored;
+    my $index;
+    my $scalar_quotes;
+
     my $tmpl = {
+        colored => {
+            allow       => [ undef, 0, 1 ],
+            default     => 1,
+            store       => \$colored,
+            strict_type => 1,
+        },
+        index => {
+            allow       => [ undef, 0, 1 ],
+            default     => 1,
+            store       => \$index,
+            strict_type => 1,
+        },
         parameter_href => {
             default     => {},
             defined     => 1,
@@ -201,26 +177,27 @@ sub print_install_defaults {
             store       => \$parameter_href,
             strict_type => 1,
         },
+        scalar_quotes => {
+            allow       => [ undef, q{"} ],
+            default     => q{"},
+            store       => \$scalar_quotes,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-    use Data::Printer {
-        colored       => 0,
-        index         => 0,
-        scalar_quotes => 0,
-    };
 
-    ## Set default for vep cache dir
-    if ( $parameter_href->{shell}{vep} ) {
-        $parameter_href->{shell}{vep}{vep_cache_dir} = catdir(
-            qw{ PATH TO CONDA },
-            q{ensembl-tools-release-} . $parameter_href->{shell}{vep}{version},
-            q{cache}
-        );
-    }
+    use Data::Printer;
+
     ## Print parameter hash an exit
     say {*STDERR} q{Default values from config file:};
-    p %{$parameter_href};
+    p(
+        %{$parameter_href},
+        colored       => $colored,
+        index         => $index,
+        scalar_quotes => $scalar_quotes,
+    );
+
     exit 0;
 }
 
