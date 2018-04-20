@@ -27,389 +27,11 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ gatk_realignertargetcreator gatk_indelrealigner gatk_baserecalibrator gatk_printreads gatk_haplotypecaller };
+      qw{ gatk_baserecalibrator gatk_haplotypecaller gatk_indelrealigner gatk_printreads gatk_realignertargetcreator  gatk_splitncigarreads };
 }
 
 ## Constants
 Readonly my $SPACE => q{ };
-
-sub gatk_realignertargetcreator {
-
-## Function : Perl wrapper for writing GATK realignertargetcreator recipe to $FILEHANDLE. Based on GATK 3.7.0.
-## Returns  : @commands
-## Arguments: $known_alleles_ref                     => Input VCF file(s) with known indels {REF}
-##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
-##          : $memory_allocation                     => Memory allocation to run Gatk
-##          : $java_use_large_pages                  => Use java large pages
-##          : $temp_directory                        => Redirect tmp files to java temp
-##          : $java_jar                              => Java jar
-##          : $infile_path                           => Infile paths
-##          : $outfile_path                          => Outfile path
-##          : $referencefile_path                    => Reference sequence file
-##          : $pedigree                              => Pedigree files
-##          : $pedigree_validation_type              => Validation strictness for pedigree
-##          : $downsample_to_coverage                => Target coverage threshold for downsampling to coverage
-##          : $gatk_disable_auto_index_and_file_lock => Disable both auto-generation of index files and index file locking
-##          : $logging_level                         => Set the minimum level of logging
-##          : $stderrfile_path                       => Stderrfile path
-##          : $FILEHANDLE                            => Sbatch filehandle to write to
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $gatk_disable_auto_index_and_file_lock;
-    my $logging_level;
-
-    ## Flatten argument(s)
-    my $known_alleles_ref;
-    my $intervals_ref;
-    my $memory_allocation;
-    my $java_use_large_pages;
-    my $temp_directory;
-    my $java_jar;
-    my $infile_path;
-    my $outfile_path;
-    my $referencefile_path;
-    my $pedigree;
-    my $pedigree_validation_type;
-    my $downsample_to_coverage;
-    my $stderrfile_path;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-        known_alleles_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$known_alleles_ref
-        },
-        intervals_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$intervals_ref
-        },
-        memory_allocation => { strict_type => 1, store => \$memory_allocation },
-        java_use_large_pages => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$java_use_large_pages
-        },
-        temp_directory => { strict_type => 1, store => \$temp_directory },
-        java_jar       => { strict_type => 1, store => \$java_jar },
-        infile_path    => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$infile_path
-        },
-        outfile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$outfile_path
-        },
-        referencefile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$referencefile_path
-        },
-        pedigree                 => { strict_type => 1, store => \$pedigree },
-        pedigree_validation_type => {
-            default     => q{SILENT},
-            allow       => [qw{ STRICT SILENT}],
-            strict_type => 1,
-            store       => \$pedigree_validation_type
-        },
-        downsample_to_coverage => {
-            allow       => qr/ ^\d+$ /sxm,
-            strict_type => 1,
-            store       => \$downsample_to_coverage
-        },
-        gatk_disable_auto_index_and_file_lock => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$gatk_disable_auto_index_and_file_lock
-        },
-        logging_level => {
-            default     => q{INFO},
-            allow       => [qw{ INFO ERROR FATAL }],
-            strict_type => 1,
-            store       => \$logging_level
-        },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        FILEHANDLE => { store => \$FILEHANDLE },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Gatk realignertargetcreator
-    # Stores commands depending on input parameters
-    my @commands;
-
-    ## Write java core commands to filehandle.
-    if ($java_jar) {
-
-        @commands = java_core(
-            {
-                memory_allocation    => $memory_allocation,
-                java_use_large_pages => $java_use_large_pages,
-                temp_directory       => $temp_directory,
-                java_jar             => $java_jar,
-            }
-        );
-    }
-
-    ## Gatk base args
-    @commands = gatk_base(
-        {
-            commands_ref             => \@commands,
-            analysis_type            => q{RealignerTargetCreator},
-            logging_level            => $logging_level,
-            intervals_ref            => $intervals_ref,
-            referencefile_path       => $referencefile_path,
-            pedigree                 => $pedigree,
-            pedigree_validation_type => $pedigree_validation_type,
-            downsample_to_coverage   => $downsample_to_coverage,
-            gatk_disable_auto_index_and_file_lock =>
-              $gatk_disable_auto_index_and_file_lock,
-        }
-    );
-
-    ## Known alleles reference
-    push @commands, q{--known} . $SPACE . join $SPACE . q{--known} . $SPACE,
-      @{$known_alleles_ref};
-
-    ## Infile
-    push @commands, q{--input_file} . $SPACE . $infile_path;
-
-    ## Output
-    push @commands, q{--out} . $SPACE . $outfile_path;
-
-    push @commands,
-      unix_standard_streams(
-        {
-            stderrfile_path => $stderrfile_path,
-        }
-      );
-
-    unix_write_to_file(
-        {
-            commands_ref => \@commands,
-            separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-    return @commands;
-}
-
-sub gatk_indelrealigner {
-
-## Function : Perl wrapper for writing GATK indelrealigner recipe to $FILEHANDLE. Based on GATK 3.7.0.
-## Returns  : @commands
-## Arguments: $known_alleles_ref                     => Input VCF file(s) with known indels {REF}
-##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
-##          : $memory_allocation                     => Memory allocation to run Gatk
-##          : $java_use_large_pages                  => Use java large pages
-##          : $temp_directory                        => Redirect tmp files to java temp
-##          : $java_jar                              => Java jar
-##          : $infile_path                           => Infile paths
-##          : $outfile_path                          => Outfile path
-##          : $target_intervals_file                 => Intervals file output from RealignerTargetCreator
-##          : $referencefile_path                    => Reference sequence file
-##          : $pedigree                              => Pedigree files
-##          : $pedigree_validation_type              => Validation strictness for pedigree
-##          : $downsample_to_coverage                => Target coverage threshold for downsampling to coverage
-##          : $gatk_disable_auto_index_and_file_lock => Disable both auto-generation of index files and index file locking
-##          : $logging_level                         => Set the minimum level of logging
-##          : $consensus_determination_model         => Determines how to compute the possible alternate consenses
-##          : $stderrfile_path                       => Stderrfile path
-##          : $FILEHANDLE                            => Sbatch filehandle to write to
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $gatk_disable_auto_index_and_file_lock;
-    my $logging_level;
-    my $consensus_determination_model;
-
-    ## Flatten argument(s)
-    my $known_alleles_ref;
-    my $intervals_ref;
-    my $memory_allocation;
-    my $java_use_large_pages;
-    my $temp_directory;
-    my $java_jar;
-    my $infile_path;
-    my $outfile_path;
-    my $target_intervals_file;
-    my $referencefile_path;
-    my $pedigree;
-    my $pedigree_validation_type;
-    my $downsample_to_coverage;
-    my $stderrfile_path;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-        known_alleles_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$known_alleles_ref
-        },
-        intervals_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$intervals_ref
-        },
-        memory_allocation => { strict_type => 1, store => \$memory_allocation },
-        java_use_large_pages => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$java_use_large_pages
-        },
-        temp_directory => { strict_type => 1, store => \$temp_directory },
-        java_jar       => { strict_type => 1, store => \$java_jar },
-        infile_path    => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$infile_path
-        },
-        outfile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$outfile_path
-        },
-        target_intervals_file => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$target_intervals_file
-        },
-        referencefile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$referencefile_path
-        },
-        pedigree                 => { strict_type => 1, store => \$pedigree },
-        pedigree_validation_type => {
-            default     => q{SILENT},
-            allow       => [qw{ STRICT SILENT}],
-            strict_type => 1,
-            store       => \$pedigree_validation_type
-        },
-        downsample_to_coverage => {
-            allow       => qr/ ^\d+$ /sxm,
-            strict_type => 1,
-            store       => \$downsample_to_coverage
-        },
-        gatk_disable_auto_index_and_file_lock => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$gatk_disable_auto_index_and_file_lock
-        },
-        logging_level => {
-            default     => q{INFO},
-            allow       => [qw{ INFO ERROR FATAL }],
-            strict_type => 1,
-            store       => \$logging_level
-        },
-        consensus_determination_model => {
-            default     => q{USE_READS},
-            allow       => [qw{ KNOWNS_ONLY USE_READS USE_SW }],
-            strict_type => 1,
-            store       => \$consensus_determination_model
-        },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        FILEHANDLE => { store => \$FILEHANDLE },
-
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Gatk indelrealigne
-    # Stores commands depending on input parameters
-    my @commands;
-
-    ## Write java core commands to filehandle.
-    if ($java_jar) {
-
-        @commands = java_core(
-            {
-                memory_allocation    => $memory_allocation,
-                java_use_large_pages => $java_use_large_pages,
-                temp_directory       => $temp_directory,
-                java_jar             => $java_jar,
-            }
-        );
-    }
-
-    ### Gatk base args
-    @commands = gatk_base(
-        {
-            commands_ref             => \@commands,
-            analysis_type            => q{IndelRealigner},
-            logging_level            => $logging_level,
-            intervals_ref            => $intervals_ref,
-            referencefile_path       => $referencefile_path,
-            pedigree                 => $pedigree,
-            pedigree_validation_type => $pedigree_validation_type,
-            downsample_to_coverage   => $downsample_to_coverage,
-            gatk_disable_auto_index_and_file_lock =>
-              $gatk_disable_auto_index_and_file_lock,
-        }
-    );
-
-    if ($consensus_determination_model) {
-
-        push @commands,
-            q{--consensusDeterminationModel}
-          . $SPACE
-          . $consensus_determination_model;
-    }
-
-    push @commands, q{--targetIntervals} . $SPACE . $target_intervals_file;
-
-    ## Known alleles reference
-    push @commands,
-      q{--knownAlleles} . $SPACE . join $SPACE . q{--knownAlleles} . $SPACE,
-      @{$known_alleles_ref};
-
-    ## Infile
-    push @commands, q{--input_file} . $SPACE . $infile_path;
-
-    ## Output
-    push @commands, q{--out} . $SPACE . $outfile_path;
-
-    push @commands,
-      unix_standard_streams(
-        {
-            stderrfile_path => $stderrfile_path,
-        }
-      );
-
-    unix_write_to_file(
-        {
-            commands_ref => \@commands,
-            separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-    return @commands;
-}
 
 sub gatk_baserecalibrator {
 
@@ -586,206 +208,6 @@ sub gatk_baserecalibrator {
     push @commands,
       q{--covariate} . $SPACE . join $SPACE . q{--covariate} . $SPACE,
       @{$covariates_ref};
-
-    ## Infile
-    push @commands, q{--input_file} . $SPACE . $infile_path;
-
-    ## Output
-    push @commands, q{--out} . $SPACE . $outfile_path;
-
-    push @commands,
-      unix_standard_streams(
-        {
-            stderrfile_path => $stderrfile_path,
-        }
-      );
-
-    unix_write_to_file(
-        {
-            commands_ref => \@commands,
-            separator    => $SPACE,
-            FILEHANDLE   => $FILEHANDLE,
-        }
-    );
-    return @commands;
-}
-
-sub gatk_printreads {
-
-## Function : Perl wrapper for writing GATK printreads recipe to $FILEHANDLE. Based on GATK 3.7.0.
-## Returns  : @commands
-## Arguments: $intervals_ref                         => One or more genomic intervals over which to operate {REF}
-##          : $read_filters_ref                      => Filters to apply to reads before analysis {REF}
-##          : $static_quantized_quals_ref            => Use static quantized quality scores to a given number of levels (with -BQSR) {REF}
-##          : $memory_allocation                     => Memory allocation to run Gatk
-##          : $java_use_large_pages                  => Use java large pages
-##          : $temp_directory                        => Redirect tmp files to java temp
-##          : $java_jar                              => Java jar
-##          : $infile_path                           => Infile paths
-##          : $outfile_path                          => Outfile path
-##          : $referencefile_path                    => Reference sequence file
-##          : $pedigree                              => Pedigree files
-##          : $pedigree_validation_type              => Validation strictness for pedigree
-##          : $base_quality_score_recalibration_file => Input covariates table file for on-the-fly base quality score recalibration
-##          : $num_cpu_threads_per_data_thread       => Number of CPU threads to allocate per data thread
-##          : $downsample_to_coverage                => Target coverage threshold for downsampling to coverage
-##          : $gatk_disable_auto_index_and_file_lock => Disable both auto-generation of index files and index file locking
-##          : $disable_indel_qual                    => Disable printing of base insertion and deletion tags (with -BQSR)
-##          : $logging_level                         => Set the minimum level of logging
-##          : $stderrfile_path                       => Stderrfile path
-##          : $FILEHANDLE                            => Sbatch filehandle to write to
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $gatk_disable_auto_index_and_file_lock;
-    my $disable_indel_qual;
-    my $logging_level;
-
-    ## Flatten argument(s)
-    my $intervals_ref;
-    my $read_filters_ref;
-    my $static_quantized_quals_ref;
-    my $memory_allocation;
-    my $java_use_large_pages;
-    my $temp_directory;
-    my $java_jar;
-    my $infile_path;
-    my $outfile_path;
-    my $referencefile_path;
-    my $pedigree;
-    my $pedigree_validation_type;
-    my $base_quality_score_recalibration_file;
-    my $num_cpu_threads_per_data_thread;
-    my $downsample_to_coverage;
-    my $stderrfile_path;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-        intervals_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$intervals_ref
-        },
-        read_filters_ref =>
-          { default => [], strict_type => 1, store => \$read_filters_ref },
-        static_quantized_quals_ref => {
-            default     => [],
-            strict_type => 1,
-            store       => \$static_quantized_quals_ref
-        },
-        memory_allocation => { strict_type => 1, store => \$memory_allocation },
-        java_use_large_pages => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$java_use_large_pages
-        },
-        temp_directory => { strict_type => 1, store => \$temp_directory },
-        java_jar       => { strict_type => 1, store => \$java_jar },
-        infile_path    => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$infile_path
-        },
-        outfile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$outfile_path
-        },
-        referencefile_path => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$referencefile_path
-        },
-        base_quality_score_recalibration_file => {
-            strict_type => 1,
-            store       => \$base_quality_score_recalibration_file
-        },
-        pedigree                 => { strict_type => 1, store => \$pedigree },
-        pedigree_validation_type => {
-            default     => q{SILENT},
-            allow       => [qw{ STRICT SILENT}],
-            strict_type => 1,
-            store       => \$pedigree_validation_type
-        },
-        num_cpu_threads_per_data_thread => {
-            allow       => qr/ ^\d+$ /sxm,
-            strict_type => 1,
-            store       => \$num_cpu_threads_per_data_thread
-        },
-        downsample_to_coverage => {
-            allow       => qr/ ^\d+$ /sxm,
-            strict_type => 1,
-            store       => \$downsample_to_coverage
-        },
-        gatk_disable_auto_index_and_file_lock => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$gatk_disable_auto_index_and_file_lock
-        },
-        disable_indel_qual => {
-            default     => 0,
-            allow       => [ 0, 1 ],
-            strict_type => 1,
-            store       => \$disable_indel_qual
-        },
-        logging_level => {
-            default     => q{INFO},
-            allow       => [qw{ INFO ERROR FATAL }],
-            strict_type => 1,
-            store       => \$logging_level
-        },
-        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
-        FILEHANDLE => { store => \$FILEHANDLE },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Gatk printreads
-    # Stores commands depending on input parameters
-    my @commands;
-
-    ## Write java core commands to filehandle.
-    if ($java_jar) {
-
-        @commands = java_core(
-            {
-                memory_allocation    => $memory_allocation,
-                java_use_large_pages => $java_use_large_pages,
-                temp_directory       => $temp_directory,
-                java_jar             => $java_jar,
-            }
-        );
-    }
-
-    ### Gatk base args
-    @commands = gatk_base(
-        {
-            commands_ref                    => \@commands,
-            analysis_type                   => q{PrintReads},
-            logging_level                   => $logging_level,
-            intervals_ref                   => $intervals_ref,
-            read_filters_ref                => $read_filters_ref,
-            static_quantized_quals_ref      => $static_quantized_quals_ref,
-            num_cpu_threads_per_data_thread => $num_cpu_threads_per_data_thread,
-            referencefile_path              => $referencefile_path,
-            pedigree                        => $pedigree,
-            pedigree_validation_type        => $pedigree_validation_type,
-            downsample_to_coverage          => $downsample_to_coverage,
-            gatk_disable_auto_index_and_file_lock =>
-              $gatk_disable_auto_index_and_file_lock,
-            base_quality_score_recalibration_file =>
-              $base_quality_score_recalibration_file,
-            disable_indel_qual => $disable_indel_qual,
-        }
-    );
 
     ## Infile
     push @commands, q{--input_file} . $SPACE . $infile_path;
@@ -1084,6 +506,748 @@ sub gatk_haplotypecaller {
 
     ## Output
     push @commands, q{--out} . $SPACE . $outfile_path;
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path => $stderrfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+    return @commands;
+}
+
+sub gatk_indelrealigner {
+
+## Function : Perl wrapper for writing GATK indelrealigner recipe to $FILEHANDLE. Based on GATK 3.7.0.
+## Returns  : @commands
+## Arguments: $known_alleles_ref                     => Input VCF file(s) with known indels {REF}
+##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
+##          : $memory_allocation                     => Memory allocation to run Gatk
+##          : $java_use_large_pages                  => Use java large pages
+##          : $temp_directory                        => Redirect tmp files to java temp
+##          : $java_jar                              => Java jar
+##          : $infile_path                           => Infile paths
+##          : $outfile_path                          => Outfile path
+##          : $target_intervals_file                 => Intervals file output from RealignerTargetCreator
+##          : $referencefile_path                    => Reference sequence file
+##          : $pedigree                              => Pedigree files
+##          : $pedigree_validation_type              => Validation strictness for pedigree
+##          : $downsample_to_coverage                => Target coverage threshold for downsampling to coverage
+##          : $gatk_disable_auto_index_and_file_lock => Disable both auto-generation of index files and index file locking
+##          : $logging_level                         => Set the minimum level of logging
+##          : $consensus_determination_model         => Determines how to compute the possible alternate consenses
+##          : $stderrfile_path                       => Stderrfile path
+##          : $FILEHANDLE                            => Sbatch filehandle to write to
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $gatk_disable_auto_index_and_file_lock;
+    my $logging_level;
+    my $consensus_determination_model;
+
+    ## Flatten argument(s)
+    my $known_alleles_ref;
+    my $intervals_ref;
+    my $memory_allocation;
+    my $java_use_large_pages;
+    my $temp_directory;
+    my $java_jar;
+    my $infile_path;
+    my $outfile_path;
+    my $target_intervals_file;
+    my $referencefile_path;
+    my $pedigree;
+    my $pedigree_validation_type;
+    my $downsample_to_coverage;
+    my $stderrfile_path;
+    my $FILEHANDLE;
+
+    my $tmpl = {
+        known_alleles_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => [],
+            strict_type => 1,
+            store       => \$known_alleles_ref
+        },
+        intervals_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => [],
+            strict_type => 1,
+            store       => \$intervals_ref
+        },
+        memory_allocation => { strict_type => 1, store => \$memory_allocation },
+        java_use_large_pages => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$java_use_large_pages
+        },
+        temp_directory => { strict_type => 1, store => \$temp_directory },
+        java_jar       => { strict_type => 1, store => \$java_jar },
+        infile_path    => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$infile_path
+        },
+        outfile_path => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$outfile_path
+        },
+        target_intervals_file => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$target_intervals_file
+        },
+        referencefile_path => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$referencefile_path
+        },
+        pedigree                 => { strict_type => 1, store => \$pedigree },
+        pedigree_validation_type => {
+            default     => q{SILENT},
+            allow       => [qw{ STRICT SILENT}],
+            strict_type => 1,
+            store       => \$pedigree_validation_type
+        },
+        downsample_to_coverage => {
+            allow       => qr/ ^\d+$ /sxm,
+            strict_type => 1,
+            store       => \$downsample_to_coverage
+        },
+        gatk_disable_auto_index_and_file_lock => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$gatk_disable_auto_index_and_file_lock
+        },
+        logging_level => {
+            default     => q{INFO},
+            allow       => [qw{ INFO ERROR FATAL }],
+            strict_type => 1,
+            store       => \$logging_level
+        },
+        consensus_determination_model => {
+            default     => q{USE_READS},
+            allow       => [qw{ KNOWNS_ONLY USE_READS USE_SW }],
+            strict_type => 1,
+            store       => \$consensus_determination_model
+        },
+        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+        FILEHANDLE => { store => \$FILEHANDLE },
+
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Gatk indelrealigne
+    # Stores commands depending on input parameters
+    my @commands;
+
+    ## Write java core commands to filehandle.
+    if ($java_jar) {
+
+        @commands = java_core(
+            {
+                memory_allocation    => $memory_allocation,
+                java_use_large_pages => $java_use_large_pages,
+                temp_directory       => $temp_directory,
+                java_jar             => $java_jar,
+            }
+        );
+    }
+
+    ### Gatk base args
+    @commands = gatk_base(
+        {
+            commands_ref             => \@commands,
+            analysis_type            => q{IndelRealigner},
+            logging_level            => $logging_level,
+            intervals_ref            => $intervals_ref,
+            referencefile_path       => $referencefile_path,
+            pedigree                 => $pedigree,
+            pedigree_validation_type => $pedigree_validation_type,
+            downsample_to_coverage   => $downsample_to_coverage,
+            gatk_disable_auto_index_and_file_lock =>
+              $gatk_disable_auto_index_and_file_lock,
+        }
+    );
+
+    if ($consensus_determination_model) {
+
+        push @commands,
+            q{--consensusDeterminationModel}
+          . $SPACE
+          . $consensus_determination_model;
+    }
+
+    push @commands, q{--targetIntervals} . $SPACE . $target_intervals_file;
+
+    ## Known alleles reference
+    push @commands,
+      q{--knownAlleles} . $SPACE . join $SPACE . q{--knownAlleles} . $SPACE,
+      @{$known_alleles_ref};
+
+    ## Infile
+    push @commands, q{--input_file} . $SPACE . $infile_path;
+
+    ## Output
+    push @commands, q{--out} . $SPACE . $outfile_path;
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path => $stderrfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+    return @commands;
+}
+
+sub gatk_printreads {
+
+## Function : Perl wrapper for writing GATK printreads recipe to $FILEHANDLE. Based on GATK 3.7.0.
+## Returns  : @commands
+## Arguments: $intervals_ref                         => One or more genomic intervals over which to operate {REF}
+##          : $read_filters_ref                      => Filters to apply to reads before analysis {REF}
+##          : $static_quantized_quals_ref            => Use static quantized quality scores to a given number of levels (with -BQSR) {REF}
+##          : $memory_allocation                     => Memory allocation to run Gatk
+##          : $java_use_large_pages                  => Use java large pages
+##          : $temp_directory                        => Redirect tmp files to java temp
+##          : $java_jar                              => Java jar
+##          : $infile_path                           => Infile paths
+##          : $outfile_path                          => Outfile path
+##          : $referencefile_path                    => Reference sequence file
+##          : $pedigree                              => Pedigree files
+##          : $pedigree_validation_type              => Validation strictness for pedigree
+##          : $base_quality_score_recalibration_file => Input covariates table file for on-the-fly base quality score recalibration
+##          : $num_cpu_threads_per_data_thread       => Number of CPU threads to allocate per data thread
+##          : $downsample_to_coverage                => Target coverage threshold for downsampling to coverage
+##          : $gatk_disable_auto_index_and_file_lock => Disable both auto-generation of index files and index file locking
+##          : $disable_indel_qual                    => Disable printing of base insertion and deletion tags (with -BQSR)
+##          : $logging_level                         => Set the minimum level of logging
+##          : $stderrfile_path                       => Stderrfile path
+##          : $FILEHANDLE                            => Sbatch filehandle to write to
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $gatk_disable_auto_index_and_file_lock;
+    my $disable_indel_qual;
+    my $logging_level;
+
+    ## Flatten argument(s)
+    my $intervals_ref;
+    my $read_filters_ref;
+    my $static_quantized_quals_ref;
+    my $memory_allocation;
+    my $java_use_large_pages;
+    my $temp_directory;
+    my $java_jar;
+    my $infile_path;
+    my $outfile_path;
+    my $referencefile_path;
+    my $pedigree;
+    my $pedigree_validation_type;
+    my $base_quality_score_recalibration_file;
+    my $num_cpu_threads_per_data_thread;
+    my $downsample_to_coverage;
+    my $stderrfile_path;
+    my $FILEHANDLE;
+
+    my $tmpl = {
+        intervals_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => [],
+            strict_type => 1,
+            store       => \$intervals_ref
+        },
+        read_filters_ref =>
+          { default => [], strict_type => 1, store => \$read_filters_ref },
+        static_quantized_quals_ref => {
+            default     => [],
+            strict_type => 1,
+            store       => \$static_quantized_quals_ref
+        },
+        memory_allocation => { strict_type => 1, store => \$memory_allocation },
+        java_use_large_pages => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$java_use_large_pages
+        },
+        temp_directory => { strict_type => 1, store => \$temp_directory },
+        java_jar       => { strict_type => 1, store => \$java_jar },
+        infile_path    => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$infile_path
+        },
+        outfile_path => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$outfile_path
+        },
+        referencefile_path => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$referencefile_path
+        },
+        base_quality_score_recalibration_file => {
+            strict_type => 1,
+            store       => \$base_quality_score_recalibration_file
+        },
+        pedigree                 => { strict_type => 1, store => \$pedigree },
+        pedigree_validation_type => {
+            default     => q{SILENT},
+            allow       => [qw{ STRICT SILENT}],
+            strict_type => 1,
+            store       => \$pedigree_validation_type
+        },
+        num_cpu_threads_per_data_thread => {
+            allow       => qr/ ^\d+$ /sxm,
+            strict_type => 1,
+            store       => \$num_cpu_threads_per_data_thread
+        },
+        downsample_to_coverage => {
+            allow       => qr/ ^\d+$ /sxm,
+            strict_type => 1,
+            store       => \$downsample_to_coverage
+        },
+        gatk_disable_auto_index_and_file_lock => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$gatk_disable_auto_index_and_file_lock
+        },
+        disable_indel_qual => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$disable_indel_qual
+        },
+        logging_level => {
+            default     => q{INFO},
+            allow       => [qw{ INFO ERROR FATAL }],
+            strict_type => 1,
+            store       => \$logging_level
+        },
+        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+        FILEHANDLE => { store => \$FILEHANDLE },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Gatk printreads
+    # Stores commands depending on input parameters
+    my @commands;
+
+    ## Write java core commands to filehandle.
+    if ($java_jar) {
+
+        @commands = java_core(
+            {
+                memory_allocation    => $memory_allocation,
+                java_use_large_pages => $java_use_large_pages,
+                temp_directory       => $temp_directory,
+                java_jar             => $java_jar,
+            }
+        );
+    }
+
+    ### Gatk base args
+    @commands = gatk_base(
+        {
+            commands_ref                    => \@commands,
+            analysis_type                   => q{PrintReads},
+            logging_level                   => $logging_level,
+            intervals_ref                   => $intervals_ref,
+            read_filters_ref                => $read_filters_ref,
+            static_quantized_quals_ref      => $static_quantized_quals_ref,
+            num_cpu_threads_per_data_thread => $num_cpu_threads_per_data_thread,
+            referencefile_path              => $referencefile_path,
+            pedigree                        => $pedigree,
+            pedigree_validation_type        => $pedigree_validation_type,
+            downsample_to_coverage          => $downsample_to_coverage,
+            gatk_disable_auto_index_and_file_lock =>
+              $gatk_disable_auto_index_and_file_lock,
+            base_quality_score_recalibration_file =>
+              $base_quality_score_recalibration_file,
+            disable_indel_qual => $disable_indel_qual,
+        }
+    );
+
+    ## Infile
+    push @commands, q{--input_file} . $SPACE . $infile_path;
+
+    ## Output
+    push @commands, q{--out} . $SPACE . $outfile_path;
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path => $stderrfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+    return @commands;
+}
+
+sub gatk_realignertargetcreator {
+
+## Function : Perl wrapper for writing GATK realignertargetcreator recipe to $FILEHANDLE. Based on GATK 3.7.0.
+## Returns  : @commands
+## Arguments: $known_alleles_ref                     => Input VCF file(s) with known indels {REF}
+##          : $intervals_ref                         => One or more genomic intervals over which to operate {REF}
+##          : $memory_allocation                     => Memory allocation to run Gatk
+##          : $java_use_large_pages                  => Use java large pages
+##          : $temp_directory                        => Redirect tmp files to java temp
+##          : $java_jar                              => Java jar
+##          : $infile_path                           => Infile paths
+##          : $outfile_path                          => Outfile path
+##          : $referencefile_path                    => Reference sequence file
+##          : $pedigree                              => Pedigree files
+##          : $pedigree_validation_type              => Validation strictness for pedigree
+##          : $downsample_to_coverage                => Target coverage threshold for downsampling to coverage
+##          : $gatk_disable_auto_index_and_file_lock => Disable both auto-generation of index files and index file locking
+##          : $logging_level                         => Set the minimum level of logging
+##          : $stderrfile_path                       => Stderrfile path
+##          : $FILEHANDLE                            => Sbatch filehandle to write to
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $gatk_disable_auto_index_and_file_lock;
+    my $logging_level;
+
+    ## Flatten argument(s)
+    my $known_alleles_ref;
+    my $intervals_ref;
+    my $memory_allocation;
+    my $java_use_large_pages;
+    my $temp_directory;
+    my $java_jar;
+    my $infile_path;
+    my $outfile_path;
+    my $referencefile_path;
+    my $pedigree;
+    my $pedigree_validation_type;
+    my $downsample_to_coverage;
+    my $stderrfile_path;
+    my $FILEHANDLE;
+
+    my $tmpl = {
+        known_alleles_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => [],
+            strict_type => 1,
+            store       => \$known_alleles_ref
+        },
+        intervals_ref => {
+            required    => 1,
+            defined     => 1,
+            default     => [],
+            strict_type => 1,
+            store       => \$intervals_ref
+        },
+        memory_allocation => { strict_type => 1, store => \$memory_allocation },
+        java_use_large_pages => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$java_use_large_pages
+        },
+        temp_directory => { strict_type => 1, store => \$temp_directory },
+        java_jar       => { strict_type => 1, store => \$java_jar },
+        infile_path    => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$infile_path
+        },
+        outfile_path => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$outfile_path
+        },
+        referencefile_path => {
+            required    => 1,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$referencefile_path
+        },
+        pedigree                 => { strict_type => 1, store => \$pedigree },
+        pedigree_validation_type => {
+            default     => q{SILENT},
+            allow       => [qw{ STRICT SILENT}],
+            strict_type => 1,
+            store       => \$pedigree_validation_type
+        },
+        downsample_to_coverage => {
+            allow       => qr/ ^\d+$ /sxm,
+            strict_type => 1,
+            store       => \$downsample_to_coverage
+        },
+        gatk_disable_auto_index_and_file_lock => {
+            default     => 0,
+            allow       => [ 0, 1 ],
+            strict_type => 1,
+            store       => \$gatk_disable_auto_index_and_file_lock
+        },
+        logging_level => {
+            default     => q{INFO},
+            allow       => [qw{ INFO ERROR FATAL }],
+            strict_type => 1,
+            store       => \$logging_level
+        },
+        stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+        FILEHANDLE => { store => \$FILEHANDLE },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Gatk realignertargetcreator
+    # Stores commands depending on input parameters
+    my @commands;
+
+    ## Write java core commands to filehandle.
+    if ($java_jar) {
+
+        @commands = java_core(
+            {
+                memory_allocation    => $memory_allocation,
+                java_use_large_pages => $java_use_large_pages,
+                temp_directory       => $temp_directory,
+                java_jar             => $java_jar,
+            }
+        );
+    }
+
+    ## Gatk base args
+    @commands = gatk_base(
+        {
+            commands_ref             => \@commands,
+            analysis_type            => q{RealignerTargetCreator},
+            logging_level            => $logging_level,
+            intervals_ref            => $intervals_ref,
+            referencefile_path       => $referencefile_path,
+            pedigree                 => $pedigree,
+            pedigree_validation_type => $pedigree_validation_type,
+            downsample_to_coverage   => $downsample_to_coverage,
+            gatk_disable_auto_index_and_file_lock =>
+              $gatk_disable_auto_index_and_file_lock,
+        }
+    );
+
+    ## Known alleles reference
+    push @commands, q{--known} . $SPACE . join $SPACE . q{--known} . $SPACE,
+      @{$known_alleles_ref};
+
+    ## Infile
+    push @commands, q{--input_file} . $SPACE . $infile_path;
+
+    ## Output
+    push @commands, q{--out} . $SPACE . $outfile_path;
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path => $stderrfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            separator    => $SPACE,
+            FILEHANDLE   => $FILEHANDLE,
+        }
+    );
+    return @commands;
+}
+
+sub gatk_splitncigarreads {
+
+## Function : Perl wrapper for writing GATK splitNCigarReads recipe to $FILEHANDLE. Based on GATK 3.7.0.
+## Returns  : @commands
+## Arguments: $FILEHANDLE           => Sbatch filehandle to write to
+##          : $infile_path          => Infile paths
+##          : $java_jar             => Java jar
+##          : $java_use_large_pages => Use java large pages
+##          : $logging_level        => Set the minimum level of logging
+##          : $maping_quality_from  => Input mapping quality values
+##          : $maping_quality_to    => Output mapping quality values
+##          : $memory_allocation    => Memory allocation to run Gatk
+##          : $outfile_path         => Outfile path
+##          : $operation            => The read operation that is to be applied on the bam file
+##          : $readfilter           => Read-filter settings
+##          : $referencefile_path   => Reference sequence file
+##          : $stderrfile_path      => Stderrfile path
+##          : $temp_directory       => Redirect tmp files to java temp
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $infile_path;
+    my $java_jar;
+    my $java_use_large_pages;
+    my $memory_allocation;
+    my $outfile_path;
+    my $stderrfile_path;
+    my $referencefile_path;
+    my $temp_directory;
+
+    ## Default(s)
+    my $logging_level;
+    my $maping_quality_from;
+    my $maping_quality_to;
+    my $operation;
+    my $readfilter;
+
+    ## Constants
+    Readonly my $MAPPING_QUALITY_FROM => 255;
+    Readonly my $MAPPING_QUALITY_TO   => 60;
+
+    my $tmpl = {
+        FILEHANDLE  => { store => \$FILEHANDLE, },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            strict_type => 1,
+            store       => \$infile_path,
+        },
+        java_jar             => { strict_type => 1, store => \$java_jar, },
+        java_use_large_pages => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            strict_type => 1,
+            store       => \$java_use_large_pages,
+        },
+        logging_level => {
+            allow       => [qw{ INFO ERROR FATAL }],
+            default     => q{INFO},
+            strict_type => 1,
+            store       => \$logging_level,
+        },
+        maping_quality_from => {
+            default     => $MAPPING_QUALITY_FROM,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$maping_quality_from,
+        },
+        maping_quality_to => {
+            default     => $MAPPING_QUALITY_TO,
+            defined     => 1,
+            strict_type => 1,
+            store       => \$maping_quality_to,
+        },
+        memory_allocation =>
+          { strict_type => 1, store => \$memory_allocation, },
+        outfile_path => {
+            defined     => 1,
+            required    => 1,
+            strict_type => 1,
+            store       => \$outfile_path,
+        },
+        operation => {
+            default     => q{ALLOW_N_CIGAR_READS},
+            defined     => 1,
+            strict_type => 1,
+            store       => \$operation,
+        },
+        readfilter => {
+            default     => q{ReassignOneMappingQuality},
+            defined     => 1,
+            strict_type => 1,
+            store       => \$readfilter,
+        },
+        referencefile_path => {
+            defined     => 1,
+            required    => 1,
+            strict_type => 1,
+            store       => \$referencefile_path,
+        },
+        stderrfile_path => { strict_type => 1, store => \$stderrfile_path, },
+        temp_directory  => { strict_type => 1, store => \$temp_directory, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    # Stores commands depending on input parameters
+    my @commands;
+
+    ## Write java core commands to filehandle.
+    if ($java_jar) {
+
+        @commands = java_core(
+            {
+                java_jar             => $java_jar,
+                java_use_large_pages => $java_use_large_pages,
+                memory_allocation    => $memory_allocation,
+                temp_directory       => $temp_directory,
+
+            }
+        );
+    }
+
+    ### Gatk base args
+    @commands = gatk_base(
+        {
+            analysis_type      => q{SplitNCigarReads},
+            commands_ref       => \@commands,
+            logging_level      => $logging_level,
+            referencefile_path => $referencefile_path,
+        }
+    );
+
+    push @commands, q{-I} . $SPACE . $infile_path;
+
+    push @commands, q{-o} . $SPACE . $outfile_path;
+
+    push @commands, q{-rf} . $SPACE . $readfilter;
+
+    push @commands, q{-RMQF} . $SPACE . $maping_quality_from;
+
+    push @commands, q{-RMQT} . $SPACE . $maping_quality_to;
+
+    push @commands, q{-U} . $SPACE . $operation;
 
     push @commands,
       unix_standard_streams(
