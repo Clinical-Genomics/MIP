@@ -72,7 +72,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.03;
+    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -323,9 +323,13 @@ sub mip_analyse {
           bwa_build_reference
           exome_target_bed
           expansionhunter_repeat_specs_dir
+          gatk_path
           infile_dirs
+          picardtools_path
           sample_info_file
+          snpeff_path
           rtg_vcfeval_reference_genome
+          vep_directory_path
         };
 
         if ( any { $_ eq $parameter_name } @custom_default_parameters ) {
@@ -2971,7 +2975,6 @@ sub add_to_sample_info {
         && $active_parameter_href->{picardtools_path} )
     {
         ## To enable addition of version to sample_info
-
         my $picardtools_version;
         if ( $active_parameter_href->{picardtools_path} =~
             /picard-tools-([^,]+)/ )
