@@ -10,8 +10,10 @@ requires qw{ Data::Printer 0.40 };                  # MIP
 requires qw{ DB_File 1.840 };                       # STAR-Fusion
 requires qw{ DBD::mysql 4.043 };                    # VEP
 requires qw{ DBI 1.637 };                           # VEP
+requires qw{ DB_File 1.840 };                       # STAR-Fusion
 requires qw{ Email::Valid 1.202 };                  # MIP
 requires qw{ File::Copy::Recursive 0.38 };          # VEP
+requires qw{ File::Find::Rule 0.34 };               # MIP
 requires qw{ HTML::Lint 2.26 };                     # VEP
 requires qw{ IO::Interactive 1.022 };               # MIP
 requires qw{ IO::Uncompress::Gunzip 2.074 };        # VEP

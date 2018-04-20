@@ -29,7 +29,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.0.16;
+    our $VERSION = 1.0.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -379,10 +379,10 @@ sub install_bioconda_packages {
     say {$FILEHANDLE} q{## Installing bioconda modules in conda environment};
     conda_install(
         {
-            conda_channel => q{bioconda},
-            env_name      => $conda_env,
-            FILEHANDLE    => $FILEHANDLE,
-            packages_ref  => \@packages,
+            conda_channels_ref => [qw{ bioconda conda-forge }],
+            env_name           => $conda_env,
+            FILEHANDLE         => $FILEHANDLE,
+            packages_ref       => \@packages,
         }
     );
     say {$FILEHANDLE} $NEWLINE;
@@ -1026,7 +1026,7 @@ sub _get_full_snpeff_version {
     my $command =
 
       # Get the snpeff version that will be installed
-      qq{conda search -c bioconda --spec snpeff=$snpeff_version}
+      qq{conda search -c bioconda -c conda-forge --spec snpeff=$snpeff_version}
 
       # Isolate the version with the latest sub patch
       . q{ | tail -1 };
