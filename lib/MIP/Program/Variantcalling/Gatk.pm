@@ -2050,20 +2050,22 @@ sub gatk_asereadcounter {
     ## Flatten argument(s)
     my $downsample_to_coverage;
     my $FILEHANDLE;
-    my $gatk_disable_auto_index_and_file_lock;
     my $gatk_sites_vcffile;
     my $infile_path;
     my $intervals_ref;
     my $java_jar;
-    my $java_use_large_pages;
-    my $logging_level;
     my $memory_allocation;
     my $outfile_path;
     my $pedigree;
-    my $pedigree_validation_type;
     my $referencefile_path;
     my $stderrfile_path;
     my $temp_directory;
+
+    ## Default(s)
+    my $gatk_disable_auto_index_and_file_lock;
+    my $java_use_large_pages;
+    my $logging_level;
+    my $pedigree_validation_type;
 
     my $tmpl = {
         downsample_to_coverage => {
@@ -2186,14 +2188,11 @@ sub gatk_asereadcounter {
 
     ## Infile
     if ($infile_path) {
-
         push @commands, q{--variant} . $SPACE . $infile_path;
-
     }
 
     ## Output
     if ($outfile_path) {
-
         push @commands, q{--out} . $SPACE . $outfile_path;
     }
 
