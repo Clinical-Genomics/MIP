@@ -37,7 +37,7 @@ use Readonly;
 use MIP::Check::Cluster qw{ check_max_core_number };
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Check::Parameter
-  qw{ check_allowed_temp_directory check_cmd_config_vs_definition_file check_email_address check_parameter_hash check_pprogram_exists_in_hash };
+  qw{ check_allowed_temp_directory check_cmd_config_vs_definition_file check_email_address check_parameter_hash check_vep_directories check_pprogram_exists_in_hash };
 use MIP::Check::Path qw{ check_target_bed_file_suffix check_parameter_files };
 use MIP::Check::Reference
   qw{ check_human_genome_file_endings check_parameter_metafiles };
@@ -72,7 +72,7 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
@@ -654,8 +654,8 @@ sub mip_analyse {
 ## Check that VEP directory and VEP cache match
     check_vep_directories(
         {
-            vep_directory_path_ref  => \$active_parameter{vep_directory_path},
-            vep_directory_cache_ref => \$active_parameter{vep_directory_cache},
+            vep_directory_path  => $active_parameter{vep_directory_path},
+            vep_directory_cache => $active_parameter{vep_directory_cache},
         }
     );
 
@@ -3071,65 +3071,6 @@ sub add_to_sample_info {
         $sample_info_href->{last_log_file_path} =
           $active_parameter_href->{log_file};
     }
-}
-
-sub check_vep_directories {
-
-##check_vep_directories
-
-##Function : Compare VEP directory and VEP chache versions
-##Returns  : ""
-##Arguments: $vep_directory_path_ref, $vep_directory_cache_ref
-##         : $vep_directory_path_ref  => VEP directory path {REF}
-##         : $vep_directory_cache_ref => VEP cache directory path {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $vep_directory_path_ref;
-    my $vep_directory_cache_ref;
-
-    my $tmpl = {
-        vep_directory_path_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$vep_directory_path_ref
-        },
-        vep_directory_cache_ref => {
-            required    => 1,
-            defined     => 1,
-            default     => \$$,
-            strict_type => 1,
-            store       => \$vep_directory_cache_ref
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    if ( $$vep_directory_path_ref =~ /ensembl-tools-release-(\d+)/ ) {
-
-        my $vep_directory_path_version = $1;
-
-        unless ( $$vep_directory_cache_ref =~
-            /ensembl-tools-release-$vep_directory_path_version/ )
-        {
-
-            print $log->fatal(
-                "Differing versions between '-vep_directory_path': "
-                  . $$vep_directory_path_ref
-                  . " and '-vep_directory_cache': "
-                  . $$vep_directory_cache_ref,
-                "\n"
-            );
-            exit 1;
-        }
-    }
-
 }
 
 sub check_string {
