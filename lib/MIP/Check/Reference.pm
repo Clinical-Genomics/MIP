@@ -281,6 +281,7 @@ sub check_human_genome_file_endings {
 ## Arguments: $active_parameter_href              => Holds all set parameter for analysis {REF}
 ##          : $file_info_href                     => File info hash {REF}
 ##          : $human_genome_reference_name_prefix => The associated human genome file without file ending {REF}
+##          : $log                                => Log object to write to
 ##          : $parameter_href                     => Parameter hash {REF}
 ##          : $parameter_name                     => The parameter under evaluation
 ##          : $reference_dir                      => MIP reference directory {REF}
@@ -292,6 +293,7 @@ sub check_human_genome_file_endings {
     my $file_info_href;
     my $parameter_href;
     my $parameter_name;
+    my $log;
 
     ## Default(s)
     my $human_genome_reference_name_prefix;
@@ -318,6 +320,7 @@ sub check_human_genome_file_endings {
             store       => \$human_genome_reference_name_prefix,
             strict_type => 1,
         },
+        log            => { store => \$log, },
         parameter_href => {
             default     => {},
             defined     => 1,
@@ -337,9 +340,6 @@ sub check_human_genome_file_endings {
 
     use MIP::Check::Path qw{ check_filesystem_objects_existance };
     use MIP::Get::File qw{ get_seq_dict_contigs };
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
 
     ## Count the number of files that exists
     my $existence_check_counter = 0;
@@ -361,7 +361,7 @@ sub check_human_genome_file_endings {
             $path = catfile( $dir_path, $file );
         }
 
-        #Add current ending
+        ## Add current ending
         $path = $path . $file_ending;
 
         my ($does_exist) = check_filesystem_objects_existance(

@@ -451,9 +451,10 @@ sub mip_analyse {
 ## Check the existance of associated human genome files
     check_human_genome_file_endings(
         {
-            parameter_href        => \%parameter,
             active_parameter_href => \%active_parameter,
             file_info_href        => \%file_info,
+            log                   => $log,
+            parameter_href        => \%parameter,
             parameter_name        => q{human_genome_reference},
         }
     );
