@@ -674,7 +674,6 @@ sub check_object_suffixes_to_build {
                 parameter_name => $parameter_name,
             }
         );
-
         ## Sum up the number of file that exists
         $existence_check_counter = $existence_check_counter + $exist;
     }
@@ -734,7 +733,7 @@ sub check_parameter_metafiles {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
   PARAMETER:
-    foreach my $parameter_name ( %{$file_info_href} ) {
+    foreach my $parameter_name ( keys %{$file_info_href} ) {
 
         ## Active parameter
         my $parameter = $active_parameter_href->{$parameter_name};
@@ -770,6 +769,11 @@ sub check_parameter_metafiles {
                             parameter_name => $parameter_name,
                         }
                     );
+
+                    ## If single $path needs building - build for all as switch
+                    ## is set on parameter_name and not path
+                    next PARAMETER
+                      if ( $parameter_href->{$parameter_name}{build_file} );
                 }
             }
             else {
