@@ -42,7 +42,7 @@ use MIP::Check::Path qw{ check_target_bed_file_suffix check_parameter_files };
 use MIP::Check::Reference
   qw{ check_human_genome_file_endings check_parameter_metafiles };
 use MIP::File::Format::Pedigree
-  qw{ create_fam_file parse_yaml_pedigree_file reload_previous_pedigree_info };
+  qw{ create_fam_file detect_trio parse_yaml_pedigree_file reload_previous_pedigree_info };
 use MIP::File::Format::Yaml qw{ load_yaml write_yaml order_parameter_names };
 use MIP::Get::Analysis qw{ get_dependency_tree get_overall_analysis_type };
 use MIP::Get::File qw{ get_select_file_contigs };
@@ -3197,100 +3197,6 @@ sub detect_founders {
         }
     }
     return scalar(@founders);
-}
-
-sub detect_trio {
-
-##detect_trio
-
-##Function : Detect family constellation based on pedigree file
-##Returns  : ""|1
-##Arguments: $active_parameter_href, $sample_info_href
-##         : $active_parameter_href => Active parameters for this analysis hash {REF}
-##         : $sample_info_href      => Info on samples and family hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $sample_info_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$active_parameter_href,
-        },
-        sample_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$sample_info_href,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    my %trio;
-
-    if ( scalar( @{ $active_parameter_href->{sample_ids} } ) eq 1 ) {
-
-        $log->info(
-            "Found single sample: " . $active_parameter_href->{sample_ids}[0],
-            "\n" );
-        return;
-    }
-    elsif ( scalar( @{ $active_parameter_href->{sample_ids} } ) eq 3 ) {
-
-        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-            my $father_info =
-              $sample_info_href->{sample}{$sample_id}{father};    #Alias
-            my $mother_info =
-              $sample_info_href->{sample}{$sample_id}{mother};    #Alias
-
-            if ( ( $father_info ne 0 ) && ( $mother_info ne 0 ) ) {    #Child
-
-                $trio{child} = $sample_id;
-
-                if (
-                    any { $_ eq $father_info }
-                    @{ $active_parameter_href->{sample_ids} }
-                  )
-                {    #If element is part of array
-
-                    $trio{father} = $father_info;
-                }
-                if (
-                    any { $_ eq $mother_info }
-                    @{ $active_parameter_href->{sample_ids} }
-                  )
-                {    #If element is part of array
-
-                    $trio{mother} = $mother_info;
-                }
-            }
-        }
-        if ( scalar( keys %trio ) == 3 ) {
-
-            $log->info(
-                "Found trio: Child = "
-                  . $trio{child}
-                  . ", Father = "
-                  . $trio{father}
-                  . ", Mother = "
-                  . $trio{mother},
-                "\n"
-            );
-            return 1;
-        }
-    }
 }
 
 sub check_string {

@@ -14,6 +14,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie;
+use List::MoreUtils qw { any };
 use Readonly;
 
 ## MIPs lib/
@@ -24,11 +25,11 @@ BEGIN {
     require Exporter;
 
     # Set the version for version checking
-    our $VERSION = 1.04;
+    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ create_fam_file gatk_pedigree_flag parse_yaml_pedigree_file reload_previous_pedigree_info };
+      qw{ create_fam_file detect_trio gatk_pedigree_flag parse_yaml_pedigree_file reload_previous_pedigree_info };
 }
 
 ## Constants
@@ -37,6 +38,7 @@ Readonly my $NEWLINE      => qq{\n};
 Readonly my $QUOTE        => q{'};
 Readonly my $SPACE        => q{ };
 Readonly my $TAB          => qq{\t};
+Readonly my $TRIO_MEMBERS => 3;
 Readonly my $UNDERSCORE   => q{_};
 
 sub create_fam_file {
@@ -216,6 +218,80 @@ q{Create fam file[subroutine]:Using 'execution_mode=sbatch' requires a }
     ## Add newly created family file to qc_sample_info
     $sample_info_href->{pedigree_minimal} = $fam_file_path;
 
+    return;
+}
+
+sub detect_trio {
+
+## Function  : Detect family constellation based on pedigree file
+## Returns   : undef | 1
+## Arguments : $active_parameter_href => Active parameters for this analysis hash {REF}
+##           : $log                   => Log
+##           : $sample_info_href      => Info on samples and family hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $log;
+    my $sample_info_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    if ( scalar @{ $active_parameter_href->{sample_ids} } == 1 ) {
+
+        $log->info( q{Found single sample: }
+              . $active_parameter_href->{sample_ids}[0] );
+        return;
+    }
+    elsif ( scalar @{ $active_parameter_href->{sample_ids} } == $TRIO_MEMBERS )
+    {
+
+        my $is_trio;
+
+      SAMPLE_ID:
+        foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+            ## Alias
+            my $father_id =
+              $sample_info_href->{sample}{$sample_id}{father};
+            my $mother_id =
+              $sample_info_href->{sample}{$sample_id}{mother};
+            $is_trio = _parse_trio_members(
+                {
+                    father_id      => $father_id,
+                    log            => $log,
+                    mother_id      => $mother_id,
+                    sample_id      => $sample_id,
+                    sample_ids_ref => $active_parameter_href->{sample_ids},
+                }
+            );
+            ## Return if a trio is found
+            return $is_trio if ($is_trio);
+        }
+    }
     return;
 }
 
@@ -656,6 +732,97 @@ sub _update_sample_info_hash {
         }
     }
     return %{$previous_sample_info_href};
+}
+
+sub _parse_trio_members {
+
+## Function  : Parse trio constellation
+## Returns   : %trio
+## Arguments : $father_id      => Potential father
+##           : $log            => Log
+##           : $mother_id      => Potential mother
+##           : $sample_id      => Sample under investigation
+##           : $sample_ids_ref => Sample_ids in current analysis {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $father_id;
+    my $log;
+    my $mother_id;
+    my $sample_id;
+    my $sample_ids_ref;
+
+    my $tmpl = {
+        father_id => {
+            required => 1,
+            store    => \$father_id,
+        },
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        mother_id => {
+            required => 1,
+            store    => \$mother_id,
+        },
+        sample_id => {
+            required => 1,
+            store    => \$sample_id,
+        },
+        sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_ids_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %trio;
+
+    ## Child
+    if ( $father_id and $mother_id ) {
+
+        ## Sample_id must be a child
+        $trio{child} = $sample_id;
+
+        my %parent = (
+            father => $father_id,
+            mother => $mother_id,
+        );
+
+      PARENT:
+        while ( my ( $parent_role, $parent_id ) = each %parent ) {
+
+            ## If parent is present in current analysis
+            if (
+                any { $_ eq $parent_id }
+                @{$sample_ids_ref}
+              )
+            {
+
+                ## Set as parents
+                $trio{$parent_role} = $parent_id;
+            }
+        }
+    }
+    if ( scalar( keys %trio ) == $TRIO_MEMBERS ) {
+
+        $log->info(
+                q{Found trio: Child = }
+              . $trio{child}
+              . q{", Father = "}
+              . $trio{father}
+              . q{", Mother = "}
+              . $trio{mother},
+        );
+        return 1;
+    }
+    return;
 }
 
 1;
