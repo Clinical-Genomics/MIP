@@ -22,7 +22,6 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
 
 our $USAGE = build_usage( {} );
@@ -71,10 +70,7 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Log::MIP_log4perl} => [qw{ initiate_logger }],
-        q{MIP::Script::Utils}     => [qw{ help }],
-    );
+    my %perl_module = ( q{MIP::Script::Utils} => [qw{ help }], );
 
   PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
@@ -91,9 +87,9 @@ BEGIN {
     }
 }
 
-use MIP::File::Format::Pedigree qw{ detect_trio };
+use MIP::File::Format::Pedigree qw{ detect_founders };
 
-diag(   q{Test detect_trio from PEDIGREE.pm v}
+diag(   q{Test detect_founders from Pedigree.pm v}
       . $MIP::File::Format::Pedigree::VERSION
       . $COMMA
       . $SPACE . q{Perl}
@@ -102,95 +98,21 @@ diag(   q{Test detect_trio from PEDIGREE.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Create temp logger
-my $test_dir = File::Temp->newdir();
-my $test_log_path = catfile( $test_dir, q{test.log} );
-
-## Creates log object
-my $log = initiate_logger(
-    {
-        file_path => $test_log_path,
-        log_name  => q{TEST},
-    }
-);
-
 ## Given only single sample
 my %active_parameter = ( sample_ids => [qw{ sample_1 }], );
 my %sample_info;
 
-my $is_trio = detect_trio(
+my $founders_count = detect_founders(
     {
         active_parameter_href => \%active_parameter,
-        log                   => $log,
         sample_info_href      => \%sample_info,
     }
 );
 
 ## Then do not detect trio
-is( $is_trio, undef, q{Single sample - did not detect trio} );
+is( $founders_count, 0, q{Single sample - did not detect founders} );
 
-## Given sample info when 3 children are present and no parents
-%active_parameter = ( sample_ids => [qw{ child_1 child_2 child_3 }], );
-%sample_info = (
-    sample => {
-        child_1 => {
-            father => 0,
-            mother => 0,
-        },
-        child_2 => {
-            father => 0,
-            mother => 0,
-        },
-        child_3 => {
-            father => 0,
-            mother => 0,
-        },
-    },
-);
-
-$is_trio = detect_trio(
-    {
-        active_parameter_href => \%active_parameter,
-        log                   => $log,
-        sample_info_href      => \%sample_info,
-    }
-);
-
-## Then do not detect trio
-is( $is_trio, undef, q{Three children - did not detect trio} );
-
-## Given more samples than a trio, when one child has parents, but not in analysis
-%sample_info = (
-    sample => {
-        child_1 => {
-            father => 1,
-            mother => 2,
-        },
-        child_2 => {
-            father => 0,
-            mother => 0,
-        },
-        child_3 => {
-            father => 0,
-            mother => 0,
-        },
-    },
-);
-
-$is_trio = detect_trio(
-    {
-        active_parameter_href => \%active_parameter,
-        log                   => $log,
-        sample_info_href      => \%sample_info,
-    }
-);
-
-## Then do not detect trio
-is( $is_trio, undef,
-q{Three children where one is trio but not in analysis - did not detect trio}
-);
-
-## Given more samples than a trio, when one child has parents in analysis
+## Given more samples than a trio, when one child has a single parent in analysis
 %active_parameter =
   ( sample_ids => [qw{ child_1 child_2 child_3 father_1 mother_1 }], );
 
@@ -211,19 +133,19 @@ q{Three children where one is trio but not in analysis - did not detect trio}
     },
 );
 
-$is_trio = detect_trio(
+$founders_count = detect_founders(
     {
         active_parameter_href => \%active_parameter,
-        log                   => $log,
         sample_info_href      => \%sample_info,
     }
 );
 
-## Then do not detect trio due to to many samples
-is( $is_trio, undef,
-    q{Three children where one is trio in analysis - did not detect trio} );
+## Then do find one parent due to to many samples
+is( $founders_count, 1,
+q{Three children where one is trio with one parent in analysis - did detect founders}
+);
 
-## Given a trio, when correct number of samples in analysis
+## Given a correct trio, when correct number of samples in analysis
 %active_parameter = ( sample_ids => [qw{ child_1 father_1 mother_1 }], );
 
 %sample_info = (
@@ -243,16 +165,15 @@ is( $is_trio, undef,
     },
 );
 
-$is_trio = detect_trio(
+$founders_count = detect_founders(
     {
         active_parameter_href => \%active_parameter,
-        log                   => $log,
         sample_info_href      => \%sample_info,
     }
 );
 
 ## Then do detect trio
-is( $is_trio, 1, q{Trio - did detect trio} );
+is( $founders_count, 2, q{Correct trio - did detect all founders} );
 done_testing();
 
 ######################
