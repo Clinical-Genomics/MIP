@@ -654,6 +654,7 @@ sub mip_analyse {
 ## Check that VEP directory and VEP cache match
     check_vep_directories(
         {
+            log                 => $log,
             vep_directory_path  => $active_parameter{vep_directory_path},
             vep_directory_cache => $active_parameter{vep_directory_cache},
         }

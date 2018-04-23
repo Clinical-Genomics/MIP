@@ -4,11 +4,11 @@ use 5.018;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use open qw{ :encoding(UTF-8) :std };
 use File::Basename qw{ basename dirname };
 use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use Getopt::Long;
+use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use Test::More;
 use utf8;
@@ -106,64 +106,77 @@ my $test_log_path = catfile( $test_dir, q{test.log} );
 my $log = initiate_logger(
     {
         file_path => $test_log_path,
-        log_name  => q{MIP},
+        log_name  => q{test},
     }
 );
 
-## Test matching API and cache
+## Given matching vep API and cache version
 my $vep_directory_path =
   catdir( $Bin, qw{ data modules miniconda envs test_env ensembl-vep } );
 my $vep_directory_cache = catdir( $Bin,
     qw{ data modules miniconda envs test_env ensembl-tools-91 cache } );
+## When comparing API and cache version
+my $match = check_vep_directories(
+    {
+        log                 => $log,
+        vep_directory_cache => $vep_directory_cache,
+        vep_directory_path  => $vep_directory_path,
+    }
+);
+## Then return true
+ok( $match, q{Return on matching versions} );
+
+## Given non matching API and cache
+$vep_directory_cache = catdir( $Bin,
+    qw{ data modules miniconda envs test_env ensembl-tools-92 cache } );
+## When comparing API and cache version
 my @respons = trap {
     check_vep_directories(
         {
-            vep_directory_path  => $vep_directory_path,
+            log                 => $log,
             vep_directory_cache => $vep_directory_cache,
+            vep_directory_path  => $vep_directory_path,
         }
       )
 };
-ok( $trap->return, q{Return on matching versions} );
+## Then exit and print fatal error message
+ok( $trap->exit, q{Exit on non matching versions} );
+like( $trap->stderr, qr/FATAL/xms, q{Throw FATAL log message} );
 
-## Test non matching API and cache
-$vep_directory_cache = catdir( $Bin,
-    qw{ data modules miniconda envs test_env ensembl-tools-92 cache } );
+## Given a cache folder lacking the homo_sapiens subdirectory
+$vep_directory_cache =
+  catdir( $Bin, qw{ data modules miniconda envs test_env ensembl-vep } );
+## When trying to retireve the cache versions
 @respons = trap {
     check_vep_directories(
         {
-            vep_directory_path  => $vep_directory_path,
+            log                 => $log,
             vep_directory_cache => $vep_directory_cache,
+            vep_directory_path  => $vep_directory_path,
         }
       )
 };
-is( $trap->exit, 1, q{Exit on non matching versions} );
-like( $trap->stderr, qr/FATAL/xms, q{Throw FATAL log message} );
-
-## Test can't find cache version
-$vep_directory_cache = catdir($Bin);
-@respons             = trap {
-    check_vep_directories(
-        {
-            vep_directory_path  => $vep_directory_path,
-            vep_directory_cache => $vep_directory_cache,
-        }
-      )
-};
+## Then return and print warning message
+ok( $trap->return, q{Return on unknown cache version} );
 like( $trap->stderr, qr/WARN/xms, q{Warn for unknown VEP cache version} );
 
-## Test can't find API version
+## Given a directory lacking the version number in the .version/ensembl file
 $vep_directory_path =
   catdir( $Bin, qw{ data modules miniconda envs test_env_1 ensembl-vep } );
 $vep_directory_cache = catdir( $Bin,
     qw{ data modules miniconda envs test_env ensembl-tools-91 cache } );
+## When trying to retrieve API version
 @respons = trap {
     check_vep_directories(
         {
-            vep_directory_path  => $vep_directory_path,
+            log                 => $log,
             vep_directory_cache => $vep_directory_cache,
+            vep_directory_path  => $vep_directory_path,
         }
       )
 };
+## Then return and print warning message
+ok( $trap->return, q{Return on unknown API version} );
 like( $trap->stderr, qr/WARN/xms, q{Warn for unknown VEP api version} );
 
 done_testing();
