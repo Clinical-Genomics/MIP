@@ -30,14 +30,17 @@ BEGIN {
       check_allowed_array_values
       check_allowed_temp_directory
       check_cmd_config_vs_definition_file
-      check_email_address check_parameter_hash
+      check_email_address
+      check_parameter_hash
       check_gzipped
     };
 }
 
 ## Constants
-Readonly my $SINGLE_QUOTE => q{'};
-Readonly my $NEWLINE      => qq{\n};
+Readonly my $DOLLAR_SIGN   => q{$};
+Readonly my $FORWARD_SLASH => q{/};
+Readonly my $SINGLE_QUOTE  => q{'};
+Readonly my $NEWLINE       => qq{\n};
 
 sub check_allowed_array_values {
 
@@ -113,8 +116,8 @@ sub check_allowed_temp_directory {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my %is_not_allowed = (
-        q{/scratch}  => undef,
-        q{/scratch/} => undef,
+        $FORWARD_SLASH . q{scratch}                  => undef,
+        $FORWARD_SLASH . q{scratch} . $FORWARD_SLASH => undef,
     );
 
     # Test if value is allowed

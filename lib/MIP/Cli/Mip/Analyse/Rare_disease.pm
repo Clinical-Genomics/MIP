@@ -659,7 +659,8 @@ q{Sambamba size of the io buffer for reading and writing BAM during the second p
 
     option(
         q{expansionhunter_repeat_specs_dir} => (
-            cmd_aliases => [qw{ exphun_rep_spec_dir }],
+            cmd_aliases => [qw{ exphun_rspd }],
+            cmd_flag    => q{exphun_rep_spec_dir},
             documentation =>
               q{Path to reference genome specic folder with repeat specs},
             is  => q{rw},

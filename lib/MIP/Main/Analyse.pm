@@ -541,7 +541,7 @@ sub mip_analyse {
         $log->fatal( q{'--temp_directory }
               . $active_parameter{temp_directory}
               . q{' is not allowed because MIP will remove the temp directory after processing.}
-              . "\n" );
+        );
         exit 1;
     }
 
