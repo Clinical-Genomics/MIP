@@ -882,12 +882,12 @@ sub _parse_trio_members {
     if ( scalar( keys %trio ) == $TRIO_MEMBERS_COUNT ) {
 
         $log->info(
-                q{Found trio: Child = }
+                q{Found trio: Child = "}
               . $trio{child}
               . q{", Father = "}
               . $trio{father}
               . q{", Mother = "}
-              . $trio{mother},
+              . $trio{mother} . q{"},
         );
         return 1;
     }

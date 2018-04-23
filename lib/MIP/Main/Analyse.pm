@@ -507,6 +507,7 @@ sub mip_analyse {
     $parameter{dynamic_parameter}{trio} = detect_trio(
         {
             active_parameter_href => \%active_parameter,
+            log                   => $log,
             sample_info_href      => \%sample_info,
         }
     );
