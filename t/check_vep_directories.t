@@ -130,7 +130,7 @@ ok( $match, q{Return on matching versions} );
 $vep_directory_cache = catdir( $Bin,
     qw{ data modules miniconda envs test_env ensembl-tools-92 cache } );
 ## When comparing API and cache version
-my @respons = trap {
+trap {
     check_vep_directories(
         {
             log                 => $log,
@@ -147,7 +147,7 @@ like( $trap->stderr, qr/FATAL/xms, q{Throw FATAL log message} );
 $vep_directory_cache =
   catdir( $Bin, qw{ data modules miniconda envs test_env ensembl-vep } );
 ## When trying to retireve the cache versions
-@respons = trap {
+trap {
     check_vep_directories(
         {
             log                 => $log,
@@ -166,7 +166,7 @@ $vep_directory_path =
 $vep_directory_cache = catdir( $Bin,
     qw{ data modules miniconda envs test_env ensembl-tools-91 cache } );
 ## When trying to retrieve API version
-@respons = trap {
+trap {
     check_vep_directories(
         {
             log                 => $log,
