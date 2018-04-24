@@ -17,6 +17,7 @@ emip:
   bioconda:
     cufflinks: 2.2
     fastqc: 0.11.4
+    gatk: 3.8
     htslib: 1.7
     java-jdk:
     picard: 2.18
