@@ -37,7 +37,7 @@ use Readonly;
 use MIP::Check::Cluster qw{ check_max_core_number };
 use MIP::Check::Modules qw{ check_perl_modules };
 use MIP::Check::Parameter
-  qw{ check_allowed_temp_directory check_cmd_config_vs_definition_file check_email_address check_parameter_hash };
+  qw{ check_allowed_temp_directory check_cmd_config_vs_definition_file check_email_address check_parameter_hash check_pprogram_exists_in_hash };
 use MIP::Check::Path qw{ check_target_bed_file_suffix check_parameter_files };
 use MIP::Check::Reference
   qw{ check_human_genome_file_endings check_parameter_metafiles };
@@ -548,14 +548,16 @@ sub mip_analyse {
 ## Parameters that have keys as MIP program names
     my @parameter_keys_to_check =
       (qw{ module_time module_core_number module_source_environment_command });
+  PARAMETER_NAME:
     foreach my $parameter_name (@parameter_keys_to_check) {
 
         ## Test if key from query hash exists truth hash
-        check_key_exists_in_hash(
+        check_pprogram_exists_in_hash(
             {
-                truth_href     => \%parameter,
-                query_href     => \%{ $active_parameter{$parameter_name} },
+                log            => $log,
                 parameter_name => $parameter_name,
+                query_href     => \%{ $active_parameter{$parameter_name} },
+                truth_href     => \%parameter,
             }
         );
     }
@@ -3873,60 +3875,6 @@ sub check_snpsift_keys {
             exit 1;
         }
     }
-}
-
-sub check_key_exists_in_hash {
-
-##Function : Test if key from query hash exists truth hash
-##Returns  :
-##Arguments: $parameter_name => Parameter name
-##         : $truth_href     => Truth hash
-##         : $query_href     => Query hash
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_name;
-    my $truth_href;
-    my $query_href;
-
-    my $tmpl = {
-        parameter_name =>
-          { required => 1, defined => 1, store => \$parameter_name },
-        truth_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$truth_href
-        },
-        query_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$query_href
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-  QUERY_KEY:
-    foreach my $key ( keys %{$query_href} ) {
-
-        if ( not exists( $truth_href->{$key} ) ) {
-
-            $log->fatal( $parameter_name
-                  . q{ key '}
-                  . $key
-                  . q{' - Does not exist as module program parameter in MIP} );
-            exit 1;
-        }
-    }
-    return;
 }
 
 sub check_element_exists_in_hash {

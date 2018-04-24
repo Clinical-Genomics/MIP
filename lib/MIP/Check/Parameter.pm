@@ -32,6 +32,7 @@ BEGIN {
       check_cmd_config_vs_definition_file
       check_email_address
       check_parameter_hash
+      check_pprogram_exists_in_hash
       check_gzipped
     };
 }
@@ -304,6 +305,64 @@ sub check_parameter_hash {
                 parameter_href => $parameter_href,
             }
         );
+    }
+    return;
+}
+
+sub check_pprogram_exists_in_hash {
+
+## Function : Test if key as "mip_program name" from query hash exists truth hash
+## Returns  :
+## Arguments: $log            => Log object
+##          : $parameter_name => Parameter name
+##          : $query_href     => Query hash {REF}
+##          : $truth_href     => Truth hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $log;
+    my $parameter_name;
+    my $query_href;
+    my $truth_href;
+
+    my $tmpl = {
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        parameter_name =>
+          { defined => 1, required => 1, store => \$parameter_name, },
+        truth_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$truth_href,
+            strict_type => 1,
+        },
+        query_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$query_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  PROGRAM_NAME:
+    foreach my $mip_program_name ( keys %{$query_href} ) {
+
+        next PROGRAM_NAME if ( exists $truth_href->{$mip_program_name} );
+
+        $log->fatal( $parameter_name
+              . qq{ key $SINGLE_QUOTE}
+              . $mip_program_name
+              . qq{$SINGLE_QUOTE - Does not exist as module program parameter in MIP}
+        );
+        exit 1;
     }
     return;
 }
