@@ -108,5 +108,5 @@ env_name => {
 ```
 [t dir]: https://github.com/Clinical-Genomics/MIP/tree/master/t
 [Given-When-Then]: https://www.agilealliance.org/glossary/gwt/#q=~(filters~(postType~(~'page~'post~'aa_book~'aa_event_session~'aa_experience_report~'aa_glossary~'aa_research_paper~'aa_video)~tags~(~'given*20when*20then))~searchTerm~'~sort~false~sortDirection~'asc~page~1)
-[here]:(documentation/API/Tests/Exit_signals)
+[here]: Tests/Exit_signals.md
 [code dir]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/code/
