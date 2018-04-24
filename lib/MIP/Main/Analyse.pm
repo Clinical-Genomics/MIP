@@ -556,7 +556,7 @@ sub mip_analyse {
             {
                 log            => $log,
                 parameter_name => $parameter_name,
-                query_href     => \%{ $active_parameter{$parameter_name} },
+                query_ref      => \%{ $active_parameter{$parameter_name} },
                 truth_href     => \%parameter,
             }
         );

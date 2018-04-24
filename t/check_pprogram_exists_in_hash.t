@@ -123,6 +123,7 @@ my %active_parameter = (
         pbwa_mem          => 1,
         pbcftools_mpileup => 1,
     },
+    associated_program => [ qw{ pfastqc }, ],
 );
 ## When one does not exist in truth hash
 trap {
@@ -130,14 +131,14 @@ trap {
         {
             log            => $log,
             parameter_name => q{module_time},
-            query_href     => \%{ $active_parameter{module_time} },
+            query_ref      => \%{ $active_parameter{module_time} },
             truth_href     => \%parameter,
         }
       )
 };
 
 ## Then exist and throw error
-ok( $trap->exit, q{Exit if program does not exist} );
+ok( $trap->exit, q{Exit if program key does not exist} );
 like( $trap->stderr, qr/FATAL/xms, q{Throw FATAL log message} );
 
 ## Given program names
@@ -151,11 +152,45 @@ my $return = check_pprogram_exists_in_hash(
     {
         log            => $log,
         parameter_name => q{module_time},
-        query_href     => \%{ $active_parameter{module_time} },
+        query_ref      => \%{ $active_parameter{module_time} },
         truth_href     => \%parameter,
     }
 );
-is( $return, undef, q{All program exists in truth hash} );
+is( $return, undef, q{All program keys exists in truth hash} );
+
+## Given program names, when none exists in truth hash
+trap {
+    check_pprogram_exists_in_hash(
+        {
+            log            => $log,
+            parameter_name => q{associated_program},
+            query_ref      => \@{ $active_parameter{associated_program} },
+            truth_href     => \%parameter,
+        }
+      )
+};
+
+## Then exist and throw error
+ok( $trap->exit, q{Exit if program element does not exist} );
+like( $trap->stderr, qr/FATAL/xms, q{Throw FATAL log message} );
+
+## Given program names
+%parameter = (
+    q{pbcftools_mpileup} => 1,
+    q{pbwa_mem}          => 1,
+    q{pfastqc}           => 1,
+);
+
+## When all exists in truth hash
+$return = check_pprogram_exists_in_hash(
+    {
+        log            => $log,
+        parameter_name => q{associated_program},
+        query_ref      => \@{ $active_parameter{associated_program} },
+        truth_href     => \%parameter,
+    }
+);
+is( $return, undef, q{All program element exists in truth hash} );
 
 done_testing();
 
