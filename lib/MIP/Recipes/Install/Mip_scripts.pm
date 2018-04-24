@@ -20,7 +20,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ install_mip_scripts };
@@ -118,7 +118,7 @@ sub install_mip_scripts {
     my $pwd = cwd();
 
     ## Define MIP scripts and yaml files
-    my @mip_scripts = qw{ download_reference.pl mip vcfparser.pl qccollect.pl };
+    my @mip_scripts = qw{ mip vcfparser.pl qccollect.pl };
 
     my %mip_sub_script = (
         utility_scripts =>

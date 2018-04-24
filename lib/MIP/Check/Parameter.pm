@@ -2,7 +2,7 @@ package MIP::Check::Parameter;
 
 use Carp;
 use charnames qw{ :full :short };
-use File::Spec::Functions qw{ catfile };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
@@ -23,7 +23,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.02;
+    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -34,14 +34,17 @@ BEGIN {
       check_parameter_hash
       check_pprogram_exists_in_hash
       check_gzipped
+      check_vep_directories
     };
 }
 
 ## Constants
 Readonly my $DOLLAR_SIGN   => q{$};
+Readonly my $DOT          => q{.};
 Readonly my $FORWARD_SLASH => q{/};
-Readonly my $SINGLE_QUOTE  => q{'};
 Readonly my $NEWLINE       => qq{\n};
+Readonly my $SINGLE_QUOTE  => q{'};
+Readonly my $SPACE        => q{ };
 
 sub check_allowed_array_values {
 
@@ -307,6 +310,133 @@ sub check_parameter_hash {
         );
     }
     return;
+}
+
+sub check_gzipped {
+
+## Function : Check if a file is gzipped.
+## Returns  : "0 (=uncompressed)| 1 (=compressed)"
+## Arguments: $file_name => File name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_name;
+
+    my $tmpl = {
+        file_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $file_compression_status = 0;
+
+    if ( $file_name =~ / [.]gz$ /xms ) {
+
+        $file_compression_status = 1;
+    }
+    return $file_compression_status;
+}
+
+sub check_vep_directories {
+
+## Function : Compare VEP directory and VEP chache versions. Exit if non-match
+## Returns  :
+## Arguments: $log                 => Log object
+##          : $vep_directory_path  => VEP directory path {REF}
+##          : $vep_directory_cache => VEP cache directory path {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $log;
+    my $vep_directory_path;
+    my $vep_directory_cache;
+
+    my $tmpl = {
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
+        vep_directory_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$vep_directory_path,
+            strict_type => 1,
+        },
+        vep_directory_cache => {
+            defined     => 1,
+            required    => 1,
+            store       => \$vep_directory_cache,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use File::Find::Rule;
+    use Cwd qw{ abs_path };
+
+    ## Get VEP version from file
+    my $vep_version_file =
+      catfile( $vep_directory_path, $DOT . q{version}, q{ensembl} );
+    open my $vep_version_fh, q{<}, $vep_version_file;
+    my $vep_version_line = <$vep_version_fh>;
+    close $vep_version_fh;
+
+    ## Capture version number
+    my ($vep_version) = $vep_version_line =~ /( \d+ )/xms;
+
+    ## Check that a version number was picked up
+    if ( not $vep_version ) {
+        $log->warn(
+q{Could not retrieve VEP version. Skipping checking that VEP api and cache matches.}
+        );
+        return;
+    }
+
+    ## Get absolute path to VEP cache as it is commonly linked
+    my $vep_cache_dir_path =
+      abs_path( catdir( $vep_directory_cache, q{homo_sapiens} ) );
+
+    ## Get folders in cache directory
+    my @vep_cache_version_folders = File::Find::Rule
+      # Find directories
+      ->directory
+      # Only get directories in the current folder
+      ->maxdepth(1)
+      # Get relative paths
+      ->relative
+      # Directory to search
+      ->in($vep_cache_dir_path);
+
+    ## Check that
+    if ( not @vep_cache_version_folders ) {
+        $log->warn(
+q{Could not retrieve VEP cache version. Skipping checking that VEP api and cache matches.}
+        );
+        return;
+    }
+
+    ## Check if the VEP api version and cache versions matches
+    if ( any { $_ !~ m/$vep_version/xms } @vep_cache_version_folders ) {
+        print $log->fatal(
+                q{Differing versions between '--vep_directory_path':}
+              . $SPACE
+              . $vep_directory_path
+              . $SPACE
+              . q{and '--vep_directory_cache':}
+              . $SPACE
+              . $vep_directory_cache );
+        exit 1;
+    }
+    return 1;
 }
 
 sub check_pprogram_exists_in_hash {
@@ -685,36 +815,4 @@ sub _check_parameter_data_type {
     return;
 }
 
-sub check_gzipped {
-
-## Function : Check if a file is gzipped.
-## Returns  : "0 (=uncompressed)| 1 (=compressed)"
-## Arguments: $file_name => File name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_name;
-
-    my $tmpl = {
-        file_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$file_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my $file_compression_status = 0;
-
-    if ( $file_name =~ / .gz$ /xms ) {
-
-        $file_compression_status = 1;
-    }
-    return $file_compression_status;
-}
-
 1;
-
