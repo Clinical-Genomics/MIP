@@ -79,11 +79,12 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $DOT       => q{.};
-Readonly my $EMPTY_STR => q{};
-Readonly my $NEWLINE   => qq{\n};
-Readonly my $SPACE     => q{ };
-Readonly my $TAB       => qq{\t};
+Readonly my $DOT          => q{.};
+Readonly my $EMPTY_STR    => q{};
+Readonly my $NEWLINE      => qq{\n};
+Readonly my $SINGLE_QUOTE => q{'};
+Readonly my $SPACE        => q{ };
+Readonly my $TAB          => qq{\t};
 
 sub mip_analyse {
 
@@ -538,9 +539,9 @@ sub mip_analyse {
       )
     {
 
-        $log->fatal( q{'--temp_directory }
+        $log->fatal( qq{$SINGLE_QUOTE--temp_directory }
               . $active_parameter{temp_directory}
-              . q{' is not allowed because MIP will remove the temp directory after processing.}
+              . qq{$SINGLE_QUOTE is not allowed because MIP will remove the temp directory after processing.}
         );
         exit 1;
     }
@@ -556,7 +557,45 @@ sub mip_analyse {
             {
                 log            => $log,
                 parameter_name => $parameter_name,
-                query_href     => \%{ $active_parameter{$parameter_name} },
+                query_ref      => \%{ $active_parameter{$parameter_name} },
+                truth_href     => \%parameter,
+            }
+        );
+    }
+
+## Parameters with key(s) that have elements as MIP program names
+    my @parameter_element_to_check = qw(associated_program);
+  PARAMETER:
+    foreach my $parameter ( keys %parameter ) {
+
+      KEY:
+        foreach my $parameter_name (@parameter_element_to_check) {
+
+            next KEY if ( not exists $parameter{$parameter}{$parameter_name} );
+
+            ## Test if element from query array exists truth hash
+            check_pprogram_exists_in_hash(
+                {
+                    log            => $log,
+                    parameter_name => $parameter_name,
+                    query_ref  => \@{ $parameter{$parameter}{$parameter_name} },
+                    truth_href => \%parameter,
+                }
+            );
+        }
+    }
+
+## Parameters that have elements as MIP program names
+    my @parameter_elements_to_check =
+      (qw(associated_program decompose_normalize_references));
+    foreach my $parameter_name (@parameter_elements_to_check) {
+
+        ## Test if element from query array exists truth hash
+        check_pprogram_exists_in_hash(
+            {
+                log            => $log,
+                parameter_name => $parameter_name,
+                query_ref      => \@{ $active_parameter{$parameter_name} },
                 truth_href     => \%parameter,
             }
         );
@@ -575,44 +614,6 @@ sub mip_analyse {
                   $active_parameter{module_core_number}{$program_name},
             }
           );
-    }
-
-## Parameters that have elements as MIP program names
-    my @parameter_elements_to_check =
-      (qw(associated_program decompose_normalize_references));
-    foreach my $parameter_name (@parameter_elements_to_check) {
-
-        ## Test if element from query array exists truth hash
-        check_element_exists_in_hash(
-            {
-                truth_href     => \%parameter,
-                queryies       => \@{ $active_parameter{$parameter_name} },
-                parameter_name => $parameter_name,
-            }
-        );
-    }
-
-## Parameters with key(s) that have elements as MIP program names
-    my @parameter_key_to_check = qw(associated_program);
-  PARAMETER:
-    foreach my $parameter ( keys %parameter ) {
-
-      KEY:
-        foreach my $parameter_name (@parameter_key_to_check) {
-
-            if ( exists $parameter{$parameter}{$parameter_name} ) {
-
-                ## Test if element from query array exists truth hash
-                check_element_exists_in_hash(
-                    {
-                        truth_href => \%parameter,
-                        queryies =>
-                          \@{ $parameter{$parameter}{$parameter_name} },
-                        parameter_name => $parameter_name,
-                    }
-                );
-            }
-        }
     }
 
 ## Check programs in path, and executable
@@ -3872,61 +3873,6 @@ sub check_snpsift_keys {
             );
             $log->fatal( "Supplied snpsift_annotation_files files:\n"
                   . join( "\n", keys %$snpsift_annotation_files_href ) );
-            exit 1;
-        }
-    }
-}
-
-sub check_element_exists_in_hash {
-
-##check_element_exists_in_hash
-
-##Function : Test if element from query array exists truth hash
-##Returns  : ""
-##Arguments: $truth_href, $queryies, $parameter_name
-##         : $truth_href     => Truth hash
-##         : $queryies       => Query array
-##         : $parameter_name => Parameter name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $truth_href;
-    my $queryies;
-    my $parameter_name;
-
-    my $tmpl = {
-        truth_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$truth_href
-        },
-        queryies => {
-            required    => 1,
-            defined     => 1,
-            default     => [],
-            strict_type => 1,
-            store       => \$queryies
-        },
-        parameter_name =>
-          { required => 1, defined => 1, store => \$parameter_name },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger(q{MIP});
-
-    foreach my $element ( @{$queryies} ) {
-
-        if ( !exists( $truth_href->{$element} ) ) {
-
-            $log->fatal( $parameter_name
-                  . " element '"
-                  . $element
-                  . "' - Does not exist as module program parameter in MIP" );
             exit 1;
         }
     }
