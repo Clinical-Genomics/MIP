@@ -532,19 +532,13 @@ sub mip_analyse {
         );
     }
 
-    if (
-        not check_allowed_temp_directory(
-            { temp_directory => $active_parameter{temp_directory}, }
-        )
-      )
-    {
-
-        $log->fatal( qq{$SINGLE_QUOTE--temp_directory }
-              . $active_parameter{temp_directory}
-              . qq{$SINGLE_QUOTE is not allowed because MIP will remove the temp directory after processing.}
-        );
-        exit 1;
-    }
+## Check that the temp directory value is allowed
+    check_allowed_temp_directory(
+        {
+            log            => $log,
+            temp_directory => $active_parameter{temp_directory},
+        }
+    );
 
 ## Parameters that have keys as MIP program names
     my @parameter_keys_to_check =

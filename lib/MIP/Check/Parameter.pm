@@ -40,11 +40,11 @@ BEGIN {
 
 ## Constants
 Readonly my $DOLLAR_SIGN   => q{$};
-Readonly my $DOT          => q{.};
+Readonly my $DOT           => q{.};
 Readonly my $FORWARD_SLASH => q{/};
 Readonly my $NEWLINE       => qq{\n};
 Readonly my $SINGLE_QUOTE  => q{'};
-Readonly my $SPACE        => q{ };
+Readonly my $SPACE         => q{ };
 
 sub check_allowed_array_values {
 
@@ -101,14 +101,21 @@ sub check_allowed_temp_directory {
 
 ## Function : Check that the temp directory value is allowed
 ## Returns  :
-## Arguments: $temp_directory => Temp directory
+## Arguments: $log            => Log object
+##          : $temp_directory => Temp directory
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $log;
     my $temp_directory;
 
     my $tmpl = {
+        log => {
+            defined  => 1,
+            required => 1,
+            store    => \$log,
+        },
         temp_directory => {
             defined     => 1,
             required    => 1,
@@ -127,7 +134,11 @@ sub check_allowed_temp_directory {
     # Test if value is allowed
     if ( exists $is_not_allowed{$temp_directory} ) {
 
-        return 0;
+        $log->fatal( qq{$SINGLE_QUOTE--temp_directory }
+              . $temp_directory
+              . qq{$SINGLE_QUOTE is not allowed because MIP will remove the temp directory after processing.}
+        );
+        exit 1;
     }
 
     # All ok
@@ -407,12 +418,16 @@ q{Could not retrieve VEP version. Skipping checking that VEP api and cache match
 
     ## Get folders in cache directory
     my @vep_cache_version_folders = File::Find::Rule
+
       # Find directories
       ->directory
+
       # Only get directories in the current folder
       ->maxdepth(1)
+
       # Get relative paths
       ->relative
+
       # Directory to search
       ->in($vep_cache_dir_path);
 

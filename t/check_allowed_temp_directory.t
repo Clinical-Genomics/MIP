@@ -5,7 +5,8 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ basename dirname };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
+use File::Temp;
 use FindBin qw{ $Bin };
 use Getopt::Long;
 use Params::Check qw{ allow check last_error };
@@ -18,9 +19,11 @@ use warnings qw{ FATAL utf8 };
 use autodie qw { :all };
 use Modern::Perl qw{ 2014 };
 use Readonly;
+use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Script::Utils qw{ help };
 
 our $USAGE = build_usage( {} );
@@ -71,7 +74,10 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = ( q{MIP::Script::Utils} => [qw{ help }], );
+    my %perl_module = (
+        q{MIP::Log::MIP_log4perl} => [qw{ initiate_logger }],
+        q{MIP::Script::Utils}     => [qw{ help }],
+    );
 
   PERL_MODULE:
     while ( my ( $module, $module_import ) = each %perl_module ) {
@@ -99,6 +105,18 @@ diag(   q{Test check_allowed_temp_directory from Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+## Create temp logger
+my $test_dir = File::Temp->newdir();
+my $test_log_path = catfile( $test_dir, q{test.log} );
+
+## Creates log object
+my $log = initiate_logger(
+    {
+        file_path => $test_log_path,
+        log_name  => q{TEST},
+    }
+);
+
 ## Given not allowed temp dirs
 my @is_not_allowed_temp_dirs =
   ( $FORWARD_SLASH . q{scratch}, $FORWARD_SLASH . q{scratch} . $FORWARD_SLASH );
@@ -106,11 +124,19 @@ my @is_not_allowed_temp_dirs =
 TEMP_DIR:
 foreach my $temp_dir (@is_not_allowed_temp_dirs) {
 
-    my $is_allowed =
-      check_allowed_temp_directory( { temp_directory => $temp_dir, } );
+    trap {
+        check_allowed_temp_directory(
+            {
+                log            => $log,
+                temp_directory => $temp_dir,
+            }
+          )
+    };
 
-## Then return "0"
-    is( $is_allowed, 0, q{Not allowed dir: } . $temp_dir );
+## Then exit and throw FATAL log message
+    ok( $trap->exit, q{Exit if not allowed temp dir: } . $temp_dir );
+    like( $trap->stderr, qr/FATAL/xms,
+        q{Throw fatal log message: } . $temp_dir );
 
 }
 
@@ -118,8 +144,12 @@ foreach my $temp_dir (@is_not_allowed_temp_dirs) {
 my $allowed_temp_dir =
   $FORWARD_SLASH . q{scratch} . $FORWARD_SLASH . $DOLLAR_SIGN . q{SLURM_JOB_ID};
 
-my $is_allowed =
-  check_allowed_temp_directory( { temp_directory => $allowed_temp_dir, } );
+my $is_allowed = check_allowed_temp_directory(
+    {
+        log            => $log,
+        temp_directory => $allowed_temp_dir,
+    }
+);
 
 ## Then return "1"
 is( $is_allowed, 1, q{Allowed dir: } . $allowed_temp_dir );
